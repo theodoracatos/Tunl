@@ -221,12 +221,6 @@ function coinBlockedByStal(wx, y) {
 }
 
 function makeCoin(wx) {
-    // Wave params depend on scrollX, but the corridor at wx will look different
-    // when the player actually arrives (scrollX = wx - PX). Evaluate everything
-    // at collection time so the coin lands in the corridor the player sees.
-    const [sp, shg, sA1, sA2, sF1, sF2] = [_prog, _halfGap, _wA1, _wA2, _wF1, _wF2];
-    refreshWave(Math.max(0, wx - PX));
-
     const b = boundsBase(wx);
     const margin = (b.bot - b.top) * 0.32;
     const cy     = (b.top + b.bot) / 2;
@@ -237,7 +231,6 @@ function makeCoin(wx) {
     const type = r < blueEnd ? 'gold' : r < redEnd ? 'blue' : 'red';
     const blocked = coinBlockedByStal(wx, coinY);
 
-    [_prog, _halfGap, _wA1, _wA2, _wF1, _wF2] = [sp, shg, sA1, sA2, sF1, sF2];
     if (blocked) return null;
     return { wx, y: coinY, collected: false, type, fade: 1.0 };
 }
