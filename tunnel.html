@@ -645,22 +645,38 @@ function draw() {
     }
     const n = xs.length;
 
-    // Top wall
+    // Precompute corridor edge extents for gradient anchors
+    let topMax = topArr[0], botMin = botArr[0];
+    for (let i = 1; i < n; i++) {
+        if (topArr[i] > topMax) topMax = topArr[i];
+        if (botArr[i] < botMin) botMin = botArr[i];
+    }
+    const edgeClrInner = lerpClr(theme.wall, theme.wallBase, 0.28);
+
+    // Top wall – dark at canvas top, accent-tinted at corridor edge
     ctx.beginPath();
     ctx.moveTo(xs[0], -2);
     for (let i = 0; i < n; i++) ctx.lineTo(xs[i], topArr[i]);
     ctx.lineTo(xs[n-1], -2);
     ctx.closePath();
-    ctx.fillStyle = rgb(theme.wall);
+    const topGrd = ctx.createLinearGradient(0, -2, 0, topMax);
+    topGrd.addColorStop(0,    rgb(theme.wall));
+    topGrd.addColorStop(0.72, rgb(theme.wall));
+    topGrd.addColorStop(1,    rgb(edgeClrInner));
+    ctx.fillStyle = topGrd;
     ctx.fill();
 
-    // Bottom wall
+    // Bottom wall – accent-tinted at corridor edge, dark at canvas bottom
     ctx.beginPath();
     ctx.moveTo(xs[0], H+2);
     for (let i = 0; i < n; i++) ctx.lineTo(xs[i], botArr[i]);
     ctx.lineTo(xs[n-1], H+2);
     ctx.closePath();
-    ctx.fillStyle = rgb(theme.wall);
+    const botGrd = ctx.createLinearGradient(0, botMin, 0, H+2);
+    botGrd.addColorStop(0,    rgb(edgeClrInner));
+    botGrd.addColorStop(0.28, rgb(theme.wall));
+    botGrd.addColorStop(1,    rgb(theme.wall));
+    ctx.fillStyle = botGrd;
     ctx.fill();
 
     // Stalactites
@@ -677,7 +693,18 @@ function draw() {
             ctx.moveTo(sx-hw, b.bot); ctx.lineTo(sx+hw, b.bot); ctx.lineTo(sx, tipY);
         }
         ctx.closePath();
-        ctx.fillStyle = rgb(theme.stal);
+        const stalTipClr = lerpClr(theme.stal, theme.stalEdge, 0.38);
+        let stalGrd;
+        if (s.isTop) {
+            stalGrd = ctx.createLinearGradient(sx, b.top, sx, tipY);
+            stalGrd.addColorStop(0, rgb(theme.wall));
+            stalGrd.addColorStop(1, rgb(stalTipClr));
+        } else {
+            stalGrd = ctx.createLinearGradient(sx, tipY, sx, b.bot);
+            stalGrd.addColorStop(0, rgb(stalTipClr));
+            stalGrd.addColorStop(1, rgb(theme.wall));
+        }
+        ctx.fillStyle = stalGrd;
         ctx.fill();
         ctx.strokeStyle = rgb(theme.stalEdge, 0.72);
         ctx.lineWidth = 1.5;
