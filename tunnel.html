@@ -1577,6 +1577,13 @@ function draw() {
             ctx.fillText(`BEST  ${best}`, W/2, H/2+H*0.280);
         }
 
+        if (streak > 0) {
+            const flame = streak >= 7 ? ' **' : streak >= 3 ? ' *' : '';
+            ctx.font      = `${W*0.022}px 'Courier New',monospace`;
+            ctx.fillStyle = streak >= 3 ? 'rgba(255,160,50,0.65)' : 'rgba(120,140,175,0.48)';
+            ctx.fillText(`DAY ${streak}${flame}`, W/2, H/2+H*0.318);
+        }
+
         // Skin picker (shown once at least one extra skin is unlocked)
         if (unlockedSkins > 1) {
             const dotR   = W * 0.020;
