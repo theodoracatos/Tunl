@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct TunnelApp: App {
+struct TunlApp: App {
     var body: some Scene {
         WindowGroup {
             GameView()

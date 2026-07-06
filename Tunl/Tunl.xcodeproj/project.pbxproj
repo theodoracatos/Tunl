@@ -7,21 +7,21 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		BB0002000000000000000001 /* TunnelApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0001000000000000000001 /* TunnelApp.swift */; };
+		BB0002000000000000000001 /* TunlApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0001000000000000000001 /* TunlApp.swift */; };
 		BB0004000000000000000001 /* GameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0003000000000000000001 /* GameView.swift */; };
 		BB0007000000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BB0006000000000000000001 /* Assets.xcassets */; };
-		BB0009000000000000000001 /* tunnel.html in Resources */ = {isa = PBXBuildFile; fileRef = BB0008000000000000000001 /* tunnel.html */; };
+		BB0009000000000000000001 /* tunl.html in Resources */ = {isa = PBXBuildFile; fileRef = BB0008000000000000000001 /* tunl.html */; };
 		BB000B000000000000000001 /* the_mountain.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = BB000A000000000000000001 /* the_mountain.mp3 */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		BB0001000000000000000001 /* TunnelApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelApp.swift; sourceTree = "<group>"; };
+		BB0001000000000000000001 /* TunlApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunlApp.swift; sourceTree = "<group>"; };
 		BB0003000000000000000001 /* GameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameView.swift; sourceTree = "<group>"; };
 		BB0005000000000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BB0006000000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		BB0008000000000000000001 /* tunnel.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = tunnel.html; path = ../tunnel.html; sourceTree = "<group>"; };
+		BB0008000000000000000001 /* tunl.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = tunl.html; path = ../tunl.html; sourceTree = "<group>"; };
 		BB000A000000000000000001 /* the_mountain.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = the_mountain.mp3; path = ../the_mountain.mp3; sourceTree = "<group>"; };
-		BB000C000000000000000001 /* Tunnel.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tunnel.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB000C000000000000000001 /* TUNL.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TUNL.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -38,7 +38,7 @@
 		AA0002000000000000000001 = {
 			isa = PBXGroup;
 			children = (
-				AA0004000000000000000001 /* TunnelApp */,
+				AA0004000000000000000001 /* Tunl */,
 				AA0005000000000000000001 /* Game Files */,
 				AA0003000000000000000001 /* Products */,
 			);
@@ -47,26 +47,26 @@
 		AA0003000000000000000001 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				BB000C000000000000000001 /* Tunnel.app */,
+				BB000C000000000000000001 /* TUNL.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		AA0004000000000000000001 /* TunnelApp */ = {
+		AA0004000000000000000001 /* Tunl */ = {
 			isa = PBXGroup;
 			children = (
-				BB0001000000000000000001 /* TunnelApp.swift */,
+				BB0001000000000000000001 /* TunlApp.swift */,
 				BB0003000000000000000001 /* GameView.swift */,
 				BB0005000000000000000001 /* Info.plist */,
 				BB0006000000000000000001 /* Assets.xcassets */,
 			);
-			path = TunnelApp;
+			path = Tunl;
 			sourceTree = "<group>";
 		};
 		AA0005000000000000000001 /* Game Files */ = {
 			isa = PBXGroup;
 			children = (
-				BB0008000000000000000001 /* tunnel.html */,
+				BB0008000000000000000001 /* tunl.html */,
 				BB000A000000000000000001 /* the_mountain.mp3 */,
 			);
 			name = "Game Files";
@@ -75,9 +75,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		AA0006000000000000000001 /* Tunnel */ = {
+		AA0006000000000000000001 /* Tunl */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AA000B000000000000000001 /* Build configuration list for PBXNativeTarget "Tunnel" */;
+			buildConfigurationList = AA000B000000000000000001 /* Build configuration list for PBXNativeTarget "Tunl" */;
 			buildPhases = (
 				AA0007000000000000000001 /* Sources */,
 				AA0008000000000000000001 /* Resources */,
@@ -87,9 +87,9 @@
 			);
 			dependencies = (
 			);
-			name = Tunnel;
-			productName = Tunnel;
-			productReference = BB000C000000000000000001 /* Tunnel.app */;
+			name = Tunl;
+			productName = Tunl;
+			productReference = BB000C000000000000000001 /* TUNL.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -100,14 +100,14 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 2660;
 				TargetAttributes = {
 					AA0006000000000000000001 = {
 						CreatedOnToolsVersion = 15.0;
 					};
 				};
 			};
-			buildConfigurationList = AA000A000000000000000001 /* Build configuration list for PBXProject "TunnelApp" */;
+			buildConfigurationList = AA000A000000000000000001 /* Build configuration list for PBXProject "Tunl" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -120,7 +120,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				AA0006000000000000000001 /* Tunnel */,
+				AA0006000000000000000001 /* Tunl */,
 			);
 		};
 /* End PBXProject section */
@@ -131,7 +131,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BB0007000000000000000001 /* Assets.xcassets in Resources */,
-				BB0009000000000000000001 /* tunnel.html in Resources */,
+				BB0009000000000000000001 /* tunl.html in Resources */,
 				BB000B000000000000000001 /* the_mountain.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -143,7 +143,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BB0002000000000000000001 /* TunnelApp.swift in Sources */,
+				BB0002000000000000000001 /* TunlApp.swift in Sources */,
 				BB0004000000000000000001 /* GameView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -170,11 +170,14 @@
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_LOOPS = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_CYCLES = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -183,8 +186,10 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 4437D23K3P;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -199,11 +204,12 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -228,11 +234,14 @@
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INFINITE_LOOPS = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_CYCLES = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -241,8 +250,10 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 4437D23K3P;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -251,9 +262,10 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VALIDATE_PRODUCT = YES;
@@ -267,9 +279,8 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4437D23K3P;
-				INFOPLIST_FILE = TunnelApp/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				INFOPLIST_FILE = Tunl/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theodoracatos.tunl;
 				PRODUCT_NAME = TUNL;
@@ -286,9 +297,8 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4437D23K3P;
-				INFOPLIST_FILE = TunnelApp/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				INFOPLIST_FILE = Tunl/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theodoracatos.tunl;
 				PRODUCT_NAME = TUNL;
@@ -301,7 +311,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AA000A000000000000000001 /* Build configuration list for PBXProject "TunnelApp" */ = {
+		AA000A000000000000000001 /* Build configuration list for PBXProject "Tunl" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA000C000000000000000001 /* Debug */,
@@ -310,7 +320,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AA000B000000000000000001 /* Build configuration list for PBXNativeTarget "Tunnel" */ = {
+		AA000B000000000000000001 /* Build configuration list for PBXNativeTarget "Tunl" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA000E000000000000000001 /* Debug */,

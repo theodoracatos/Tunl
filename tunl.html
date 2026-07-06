@@ -5,19 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <title>TUNL</title>
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
+* { margin:0; padding:0; box-sizing:border-box; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }
 body {
     background:#04040a;
     display:flex; justify-content:center; align-items:center;
-    height:100vh; overflow:hidden; touch-action:none; user-select:none;
+    height:100vh; overflow:hidden; touch-action:none;
 }
 canvas { display:block; }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<audio id="bgm" src="the_mountain.mp3" preload="auto" style="display:none"></audio>
 <script>
+document.addEventListener('contextmenu', e => e.preventDefault());
+
 // =====================================================================
 // TUNNEL – Hold-to-Thrust Cave Flyer
 // -----------------------------------------------------------------------
@@ -29,8 +30,9 @@ canvas { display:block; }
 const cv  = document.getElementById('c');
 const ctx = cv.getContext('2d');
 
-const W = Math.min(window.innerWidth, 600);
-const H = Math.min(window.innerHeight, 600);
+const W  = window.innerWidth;
+const H  = Math.min(window.innerHeight, 600);
+const FS = Math.sqrt(W * H);   // font scale: ~603 in landscape, matches old 600x600 sizes
 cv.width = W; cv.height = H;
 
 const PX      = W  * 0.22;
@@ -73,7 +75,7 @@ let _prog, _prog2, _halfGap, _wA1, _wA2, _wF1, _wF2;
 function refreshWave() {
     _prog    = Math.min(scrollX / 10000, 1);
     _prog2   = Math.min(Math.max(scrollX - 10000, 0) / 40000, 1);
-    _halfGap = lerp(H * 0.21,  H * 0.092, _prog);
+    _halfGap = lerp(H * 0.27,  H * 0.092, _prog);
     _wA1     = lerp(H * 0.07,  H * 0.12,  _prog);
     _wA2     = lerp(H * 0.035, H * 0.055, _prog);
     _wF1     = lerp(0.0025,    0.0048,    _prog);
@@ -89,11 +91,11 @@ function mineSpacing() { return lerp(900,  340, _prog); }
 const MINE_R = W * 0.022;
 
 const SKINS = [
-    { color: '#d2f5ff', shadow: [90,230,255],  name: 'CYAN'              },
-    { color: '#ffe87a', shadow: [255,200,50],  name: 'GOLD',   req: 50   },
-    { color: '#ff7070', shadow: [255,60,60],   name: 'RED',    req: 100  },
-    { color: '#7aff8e', shadow: [50,255,80],   name: 'GREEN',  req: 200  },
-    { color: '#c87aff', shadow: [160,80,255],  name: 'PURPLE', req: 300  },
+    { color: '#e8eeff', shadow: [210,220,255],  name: 'PEARL'                },
+    { color: '#ffaa00', shadow: [255,155,0],    name: 'AMBER',   req: 50    },
+    { color: '#ff1a33', shadow: [255,30,55],    name: 'CRIMSON', req: 100   },
+    { color: '#00ccff', shadow: [0,190,255],    name: 'ELECTRIC',req: 200   },
+    { color: '#99ff00', shadow: [140,255,0],    name: 'TOXIC',   req: 300   },
 ];
 
 function centerAt(wx) {
@@ -151,7 +153,7 @@ if (!(unlockedSkins & (1 << activeSkin))) activeSkin = 0;
 let skinUnlockIdx = -1;
 let _skinBtnRects = [];
 let streak = parseInt(localStorage.getItem('tunnel_streak') || '0');
-let _shareBtnRect = null;
+let _shareBtnRect = null, _homeBtnRect = null, _playBtnRect = null;
 let shareCopied = 0;
 let parts, thrustParts, deadT, flashA, shake, trailY;
 let stalactites, nextStalWx;
@@ -471,22 +473,21 @@ function burstCoin(x, y, baseHue = 44) {
 
 let _ac = null, _tNode = null, _tGain = null;
 let _bgmBuf = null, _bgmBufRev = null, _bgmNode = null, _bgmGain = null;
-let _bgmDir = 1, _bgmActive = false;
+let _bgmDir = 1, _bgmActive = false, _bgmPending = false;
 
 function _startBgMusic() {
     if (!musicOn) return;
+    if (_bgmActive) return;  // already playing - don't restart
     _bgmActive = true;
     _bgmDir = 1;
+    // Reset gain in case it was faded to near-zero during death
+    if (_bgmGain && _ac) {
+        _bgmGain.gain.cancelScheduledValues(_ac.currentTime);
+        _bgmGain.gain.setValueAtTime(0.32, _ac.currentTime);
+    }
     if (_bgmBuf) { _playBgmBuffer(); return; }
-    // buffer still decoding - use audio element; hand off to Web Audio when it ends
-    const el = document.getElementById('bgm');
-    el.volume = 0.32;
-    el.currentTime = 0;
-    el.play().catch(() => {});
-    el.onended = () => {
-        el.onended = null;
-        if (_bgmActive && _bgmBuf) { _bgmDir = -1; _playBgmBuffer(); }
-    };
+    // buffer still decoding - mark pending; _initAC will start playback when ready
+    _bgmPending = true;
 }
 
 function _playBgmBuffer() {
@@ -503,26 +504,16 @@ function _playBgmBuffer() {
 
 function _fadeBgMusic() {
     _bgmActive = false;
-    // fade audio element if still playing (pre-buffer fallback)
-    const el = document.getElementById('bgm');
-    if (el && !el.paused) {
-        const step = el.volume / 18;
-        const id = setInterval(() => {
-            if (el.volume > step) {
-                el.volume = Math.max(0, el.volume - step);
-            } else {
-                el.volume = 0; el.pause(); clearInterval(id);
-            }
-        }, 40);
-    }
-    // fade Web Audio bgm gain
+    _bgmPending = false;
+    // stop Web Audio bgm (tiny ramp to avoid click, then hard stop)
     if (_bgmGain && _bgmNode) {
         const t = _ac.currentTime;
         _bgmGain.gain.cancelScheduledValues(t);
         _bgmGain.gain.setValueAtTime(_bgmGain.gain.value, t);
-        _bgmGain.gain.linearRampToValueAtTime(0.001, t + 0.7);
+        _bgmGain.gain.linearRampToValueAtTime(0.001, t + 0.05);
         const n = _bgmNode; _bgmNode = null;
-        setTimeout(() => { try { n.stop(); } catch(e){} }, 750);
+        n.onended = null;  // prevent ghost restart from stopped node
+        setTimeout(() => { try { n.stop(); } catch(e){} }, 80);
     }
 }
 
@@ -540,6 +531,7 @@ function _initAC() {
                 const rev = _bgmBufRev.getChannelData(c);
                 for (let i = 0; i < buf.length; i++) rev[i] = fwd[buf.length - 1 - i];
             }
+            if (_bgmPending && _bgmActive) { _bgmPending = false; _playBgmBuffer(); }
         })
         .catch(() => {});
 }
@@ -761,11 +753,11 @@ function onDown(e) {
     _initAC();
     if (phase === 'title') { startPlay(); return; }
     if (phase === 'dead' && deadT > 0.9) {
-        if (e && _shareBtnRect) {
+        if (e) {
             const rect = cv.getBoundingClientRect();
             const cx = (e.clientX - rect.left) * (W / rect.width);
             const cy = (e.clientY - rect.top)  * (H / rect.height);
-            if (inRect(cx, cy, _shareBtnRect)) {
+            if (_shareBtnRect && inRect(cx, cy, _shareBtnRect)) {
                 const d  = new Date();
                 const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
                 const sp = [`${score}pts`];
@@ -777,6 +769,7 @@ function onDown(e) {
                 shareCopied = 1.8;
                 return;
             }
+            if (_homeBtnRect && inRect(cx, cy, _homeBtnRect)) { titleScreen(); return; }
         }
         startPlay(); return;
     }
@@ -1118,6 +1111,7 @@ function die(bypassShield = false) {
     }
     thrustOff();
     phase = 'dead'; deadT = 0; flashA = 1.0; shake = 14; holding = false;
+    _homeBtnRect = null; _playBtnRect = null; _shareBtnRect = null;
     prevRunScore = lastRunScore;
     lastRunScore = score;
     newBest = score > best;
@@ -1145,8 +1139,8 @@ function die(bypassShield = false) {
     }
     burst(PX, py);
     sfxDie();
-    window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
     _fadeBgMusic();
+    window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
     return true;
 }
 
@@ -1191,6 +1185,20 @@ function drawCoinIcon(cx, cy, type, r) {
     ctx.arc(cx - r*0.28, cy - r*0.28, r*0.38, 0, Math.PI*2);
     ctx.fillStyle = 'rgba(255,255,220,0.55)';
     ctx.fill();
+}
+
+// ── Draw helpers ──────────────────────────────────────────────────────
+
+function shipPath(x, y, r) {
+    // Angular spaceship: pointed nose, swept wings, tail notch
+    ctx.beginPath();
+    ctx.moveTo(x + r * 1.5,  y);           // nose
+    ctx.lineTo(x - r * 0.5,  y - r);       // top wing tip
+    ctx.lineTo(x - r * 0.9,  y - r * 0.3); // tail top
+    ctx.lineTo(x - r * 0.4,  y);           // tail notch (indent)
+    ctx.lineTo(x - r * 0.9,  y + r * 0.3); // tail bottom
+    ctx.lineTo(x - r * 0.5,  y + r);       // bottom wing tip
+    ctx.closePath();
 }
 
 // ── Draw ──────────────────────────────────────────────────────────────
@@ -1679,8 +1687,7 @@ function draw() {
     if (phase !== 'dead' || deadT < 0.18) {
         const sk = SKINS[activeSkin] || SKINS[0];
         const [sr, sg, sb] = sk.shadow;
-        ctx.beginPath();
-        ctx.arc(PX, py, PR, 0, Math.PI*2);
+        shipPath(PX, py, PR);
         ctx.fillStyle   = phase === 'dead' ? '#ff4040' : sk.color;
         ctx.shadowColor = `rgba(${sr},${sg},${sb},0.95)`;
         ctx.shadowBlur  = 20;
@@ -1701,7 +1708,7 @@ function draw() {
     for (const n of notifs) {
         const [nr, ng, nb] = n.color || [255,220,55];
         const a = Math.max(n.life, 0);
-        ctx.font        = `bold ${W*0.038}px 'Courier New',monospace`;
+        ctx.font        = `bold ${FS*0.038}px 'Courier New',monospace`;
         ctx.fillStyle   = `rgba(${nr},${ng},${nb},${a})`;
         ctx.shadowColor = `rgba(${nr},${ng},${nb},${a*0.8})`;
         ctx.shadowBlur  = 8;
@@ -1729,7 +1736,7 @@ function draw() {
 
     if (phase === 'play') {
         const nearPB = best > 0 && score >= best - 5;
-        ctx.font        = `bold ${W*0.085}px 'Courier New',monospace`;
+        ctx.font        = `bold ${FS*0.085}px 'Courier New',monospace`;
         ctx.fillStyle   = nearPB ? 'rgba(255,230,80,0.96)' : 'rgba(215,235,255,0.96)';
         ctx.shadowColor = nearPB ? 'rgba(255,200,40,0.80)' : 'rgba(0,0,0,0.85)';
         ctx.shadowBlur  = nearPB ? 18 : 5;
@@ -1738,7 +1745,7 @@ function draw() {
     }
 
     if (best > 0 && phase === 'play') {
-        ctx.font        = `${W*0.025}px 'Courier New',monospace`;
+        ctx.font        = `${FS*0.025}px 'Courier New',monospace`;
         ctx.fillStyle   = 'rgba(170,195,255,0.90)';
         ctx.shadowColor = 'rgba(0,0,0,0.85)';
         ctx.shadowBlur  = 4;
@@ -1752,7 +1759,7 @@ function draw() {
         if (nextSkin && score < nextSkin.req && nextSkin.req - score <= 20) {
             const [sr, sg, sb] = nextSkin.shadow;
             const pulse = 0.28 + 0.18 * Math.sin(gtime * 2.8);
-            ctx.font      = `${W*0.020}px 'Courier New',monospace`;
+            ctx.font      = `${FS*0.020}px 'Courier New',monospace`;
             ctx.fillStyle = `rgba(${sr},${sg},${sb},${pulse})`;
             ctx.fillText(`${nextSkin.req - score} to ${nextSkin.name}`, W/2, H*0.185);
         }
@@ -1800,7 +1807,7 @@ function draw() {
         ctx.save();
         ctx.textAlign    = 'center';
         ctx.textBaseline = 'middle';
-        ctx.font         = `bold ${W*0.11}px 'Courier New',monospace`;
+        ctx.font         = `bold ${FS*0.11}px 'Courier New',monospace`;
         ctx.fillStyle    = `rgba(255,225,65,${mfa})`;
         ctx.shadowColor  = `rgba(255,180,0,${mfa * 0.9})`;
         ctx.shadowBlur   = 28;
@@ -1810,25 +1817,33 @@ function draw() {
     }
 
     if (phase === 'title') {
+        // In landscape (W > H*1.15) use a two-column layout to avoid vertical crowding.
+        // In portrait keep a centered stack but anchor the skin picker to the bottom.
+        const LAND   = W > H * 1.15;
+        const titleX = LAND ? W * 0.28 : W / 2;
+        const infoX  = LAND ? W * 0.73 : W / 2;
+
         ctx.textBaseline = 'middle';
         ctx.shadowColor  = 'rgba(0,0,0,0.90)';
         ctx.shadowBlur   = 6;
-        ctx.font      = `bold ${W*0.085}px 'Courier New',monospace`;
+        ctx.font      = `bold ${FS*0.085}px 'Courier New',monospace`;
         ctx.fillStyle = 'rgba(195,220,255,0.97)';
-        ctx.fillText('TUNL', W/2, H/2-H*0.10);
+        ctx.fillText('TUNL', titleX, LAND ? H * 0.26 : H/2 - H*0.10);
 
-        ctx.font      = `${W*0.030}px 'Courier New',monospace`;
+        ctx.font      = `${FS*0.030}px 'Courier New',monospace`;
         ctx.fillStyle = 'rgba(170,195,255,0.92)';
-        ctx.fillText('HOLD to climb  /  RELEASE to fall', W/2, H/2+H*0.025);
+        ctx.fillText('HOLD to climb  /  RELEASE to fall', titleX, LAND ? H * 0.50 : H/2 + H*0.025);
 
-        ctx.font      = `bold ${W*0.036}px 'Courier New',monospace`;
+        ctx.font      = `bold ${FS*0.036}px 'Courier New',monospace`;
         ctx.fillStyle = 'rgba(195,220,255,0.96)';
-        ctx.fillText('tap / click / space', W/2, H/2+H*0.135);
-        ctx.shadowBlur   = 0;
+        ctx.fillText('tap / click / space', titleX, LAND ? H * 0.72 : H/2 + H*0.135);
+        ctx.shadowBlur = 0;
 
         // Audio toggle buttons
-        const tBtnY = H/2 + H*0.215;
-        ctx.font = `${W*0.024}px 'Courier New',monospace`;
+        const tBtnY   = LAND ? H * 0.87 : H/2 + H*0.215;
+        const musicBX = LAND ? titleX - W * 0.055 : W * 0.285;
+        const fxBX    = LAND ? titleX + W * 0.055 : W * 0.715;
+        ctx.font = `${FS*0.024}px 'Courier New',monospace`;
         const drawBtn = (bCx, bCy, label, active) => {
             const m  = ctx.measureText(label);
             const bw = m.width + W*0.038, bh = H*0.050;
@@ -1842,75 +1857,91 @@ function draw() {
             ctx.fillText(label, bCx, bCy);
             return { x: bx, y: by, w: bw, h: bh };
         };
-        _btnMusicRect = drawBtn(W * 0.285, tBtnY, musicOn ? 'MUSIC ON' : 'MUSIC OFF', musicOn);
-        _btnFxRect    = drawBtn(W * 0.715, tBtnY, fxOn    ? 'FX ON'    : 'FX OFF',    fxOn);
+        _btnMusicRect = drawBtn(musicBX, tBtnY, musicOn ? 'MUSIC ON' : 'MUSIC OFF', musicOn);
+        _btnFxRect    = drawBtn(fxBX,    tBtnY, fxOn    ? 'FX ON'    : 'FX OFF',    fxOn);
 
         if (best > 0) {
-            ctx.font        = `${W*0.026}px 'Courier New',monospace`;
+            ctx.font        = `${FS*0.026}px 'Courier New',monospace`;
             ctx.fillStyle   = 'rgba(160,185,255,0.92)';
             ctx.shadowColor = 'rgba(0,0,0,0.85)';
             ctx.shadowBlur  = 4;
-            ctx.fillText(`BEST  ${best}`, W/2, H/2+H*0.280);
+            ctx.fillText(`BEST  ${best}`, infoX, LAND ? H * 0.18 : H/2 + H*0.280);
             ctx.shadowBlur  = 0;
         }
 
         if (streak > 0) {
             const flame = streak >= 7 ? ' **' : streak >= 3 ? ' *' : '';
-            ctx.font        = `${W*0.022}px 'Courier New',monospace`;
+            ctx.font        = `${FS*0.022}px 'Courier New',monospace`;
             ctx.fillStyle   = streak >= 3 ? 'rgba(255,170,55,0.95)' : 'rgba(155,175,220,0.88)';
             ctx.shadowColor = 'rgba(0,0,0,0.85)';
             ctx.shadowBlur  = 4;
-            ctx.fillText(`DAY ${streak}${flame}`, W/2, H/2+H*0.318);
+            ctx.fillText(`DAY ${streak}${flame}`, infoX, LAND ? H * 0.33 : H/2 + H*0.318);
             ctx.shadowBlur  = 0;
         }
 
-        // Skin picker (shown once at least one extra skin is unlocked)
+        // Skin picker
         if (unlockedSkins > 1) {
-            const dotR   = W * 0.020;
-            const dotGap = W * 0.065;
-            const startX = W / 2 - (SKINS.length - 1) * dotGap / 2;
-            const dotY   = H / 2 + H * 0.345;
+            // dotR: slightly smaller in portrait so names fit above bottom edge
+            const dotR   = LAND ? H * 0.048 : H * 0.035;
+            // dotGap must be wide enough that ship shapes don't overlap
+            const dotGap = Math.max(dotR * 2.8, LAND ? H * 0.155 : W * 0.180);
+            const skinCX = infoX;
+            // In portrait anchor to bottom so ships never overlap BEST/streak above them
+            const dotY   = LAND ? H * 0.64 : H - dotR * 2.4;
+            const startX = skinCX - (SKINS.length - 1) * dotGap / 2;
             _skinBtnRects = [];
-            ctx.font        = `${W*0.017}px 'Courier New',monospace`;
-            ctx.fillStyle   = 'rgba(150,170,220,0.82)';
+            ctx.font        = `${FS*0.018}px 'Courier New',monospace`;
+            ctx.fillStyle   = 'rgba(150,170,220,0.70)';
             ctx.shadowColor = 'rgba(0,0,0,0.80)';
             ctx.shadowBlur  = 3;
-            ctx.fillText('SHIP', W/2, dotY - dotR * 2.3);
+            ctx.fillText('SHIP', skinCX, dotY - dotR * 2.0);
             ctx.shadowBlur  = 0;
             for (let i = 0; i < SKINS.length; i++) {
                 const cx       = startX + i * dotGap;
                 const unlocked = !!(unlockedSkins & (1 << i));
                 const selected = activeSkin === i;
-                _skinBtnRects.push({ cx, cy: dotY, r: dotR * 1.6 });
+                _skinBtnRects.push({ cx, cy: dotY, r: dotR * 1.5 });
                 if (!unlocked) {
                     ctx.beginPath();
                     ctx.arc(cx, dotY, dotR, 0, Math.PI * 2);
-                    ctx.strokeStyle = 'rgba(110,115,150,0.65)';
-                    ctx.lineWidth   = 1;
+                    ctx.strokeStyle = 'rgba(90,95,130,0.50)';
+                    ctx.lineWidth   = 1.5;
                     ctx.stroke();
-                    ctx.font        = `${W*0.013}px 'Courier New',monospace`;
-                    ctx.fillStyle   = 'rgba(130,135,170,0.80)';
+                    ctx.font        = `${FS*0.014}px 'Courier New',monospace`;
+                    ctx.fillStyle   = 'rgba(110,115,155,0.70)';
                     ctx.shadowColor = 'rgba(0,0,0,0.80)';
                     ctx.shadowBlur  = 3;
-                    ctx.fillText(SKINS[i].req, cx, dotY + dotR * 2.0);
+                    ctx.fillText(SKINS[i].req, cx, dotY + dotR * 1.7);
                     ctx.shadowBlur  = 0;
-                    ctx.font = `${W*0.017}px 'Courier New',monospace`;
+                    ctx.font = `${FS*0.018}px 'Courier New',monospace`;
                 } else {
                     const [sr, sg, sb] = SKINS[i].shadow;
-                    ctx.beginPath();
-                    ctx.arc(cx, dotY, dotR, 0, Math.PI * 2);
+                    if (selected) {
+                        ctx.save();
+                        shipPath(cx, dotY, dotR * 1.6);
+                        ctx.strokeStyle = `rgba(${sr},${sg},${sb},0.50)`;
+                        ctx.lineWidth   = 2.5;
+                        ctx.shadowColor = `rgba(${sr},${sg},${sb},0.60)`;
+                        ctx.shadowBlur  = 12;
+                        ctx.stroke();
+                        ctx.shadowBlur  = 0;
+                        ctx.restore();
+                    }
+                    shipPath(cx, dotY, dotR);
                     ctx.fillStyle   = SKINS[i].color;
-                    ctx.shadowColor = `rgba(${sr},${sg},${sb},${selected ? 0.85 : 0.40})`;
-                    ctx.shadowBlur  = selected ? 14 : 5;
+                    ctx.shadowColor = `rgba(${sr},${sg},${sb},${selected ? 0.90 : 0.45})`;
+                    ctx.shadowBlur  = selected ? 22 : 8;
                     ctx.fill();
                     ctx.shadowBlur  = 0;
-                    if (selected) {
-                        ctx.beginPath();
-                        ctx.arc(cx, dotY, dotR * 1.65, 0, Math.PI * 2);
-                        ctx.strokeStyle = `rgba(${sr},${sg},${sb},0.65)`;
-                        ctx.lineWidth   = 1.5;
-                        ctx.stroke();
-                    }
+                    ctx.font        = `${FS*0.016}px 'Courier New',monospace`;
+                    ctx.fillStyle   = selected
+                        ? `rgba(${sr},${sg},${sb},0.95)`
+                        : 'rgba(160,175,220,0.65)';
+                    ctx.shadowColor = 'rgba(0,0,0,0.85)';
+                    ctx.shadowBlur  = selected ? 8 : 3;
+                    ctx.fillText(SKINS[i].name, cx, dotY + dotR * 1.7);
+                    ctx.shadowBlur  = 0;
+                    ctx.font = `${FS*0.018}px 'Courier New',monospace`;
                 }
             }
         }
@@ -1921,46 +1952,60 @@ function draw() {
         const a  = Math.min(1, deadT * 5);
         const sh = (blur, col = 'rgba(0,0,0,0.90)') => { ctx.shadowColor = col; ctx.shadowBlur = blur; };
 
-        sh(6);
-        ctx.font      = `bold ${W*0.082}px 'Courier New',monospace`;
-        ctx.fillStyle = `rgba(255,75,75,${a})`;
-        ctx.fillText('DEAD', W/2, H/2 - H*0.10);
+        // Dark overlay to dim the frozen game background
+        ctx.fillStyle = `rgba(4,4,14,${a * 0.78})`;
+        ctx.fillRect(0, 0, W, H);
 
-        ctx.font      = `bold ${W*0.072}px 'Courier New',monospace`;
+        const LC = W * 0.24;   // left column x
+        const RC = W * 0.67;   // right column x
+        const LN = H * 0.155;  // line height in right col
+
+        // ── Left column: DEAD + score ─────────────────────────────
+        sh(6);
+        ctx.font      = `bold ${FS*0.095}px 'Courier New',monospace`;
+        ctx.fillStyle = `rgba(255,70,70,${a})`;
+        ctx.fillText('DEAD', LC, H * 0.30);
+
+        ctx.font      = `bold ${FS*0.140}px 'Courier New',monospace`;
         ctx.fillStyle = newBest ? `rgba(255,225,65,${a})` : `rgba(225,240,255,${a})`;
-        sh(newBest ? 20 : 6, newBest ? `rgba(255,190,0,${a*0.75})` : 'rgba(0,0,0,0.90)');
-        ctx.fillText(score, W/2, H/2 + H*0.00);
+        sh(newBest ? 28 : 6, newBest ? `rgba(255,190,0,${a*0.75})` : 'rgba(0,0,0,0.90)');
+        ctx.fillText(score, LC, H * 0.52);
 
         if (newBest && score > 0) {
-            sh(8, `rgba(255,200,40,${a*0.7})`);
-            ctx.font      = `${W*0.026}px 'Courier New',monospace`;
+            sh(10, `rgba(255,200,40,${a*0.7})`);
+            ctx.font      = `${FS*0.034}px 'Courier New',monospace`;
             ctx.fillStyle = `rgba(255,225,70,${a})`;
-            ctx.fillText('new best!', W/2, H/2 + H*0.08);
+            ctx.fillText('new best!', LC, H * 0.73);
         }
+
+        // ── Right column: stats ───────────────────────────────────
+        let ry = H * 0.22;
 
         if (best > 0 && !newBest) {
             sh(4);
-            ctx.font      = `${W*0.024}px 'Courier New',monospace`;
+            ctx.font      = `${FS*0.038}px 'Courier New',monospace`;
             ctx.fillStyle = `rgba(175,200,255,${a})`;
-            ctx.fillText(`best  ${best}`, W/2, H/2 + H*0.08);
-        }
-
-        if (!newBest && runsWithoutPB >= 2) {
-            const t   = Math.min(1, (runsWithoutPB - 1) / 9);
-            const rr  = 255, rg = Math.round(lerp(160, 30, t)), rb = Math.round(lerp(50, 10, t));
-            sh(4);
-            ctx.font      = `${W*0.022}px 'Courier New',monospace`;
-            ctx.fillStyle = `rgba(${rr},${rg},${rb},${a})`;
-            ctx.fillText(`${runsWithoutPB} runs without a pb`, W/2, H/2 + H*0.115);
+            ctx.fillText(`best  ${best}`, RC, ry);
+            ry += LN;
         }
 
         if (prevRunScore > 0 && score !== prevRunScore) {
             const diff = score - prevRunScore;
-            const sign = diff > 0 ? '+' : '';
             sh(4);
-            ctx.font      = `${W*0.022}px 'Courier New',monospace`;
+            ctx.font      = `${FS*0.038}px 'Courier New',monospace`;
             ctx.fillStyle = `rgba(${diff >= 0 ? '140,230,140' : '220,140,140'},${a})`;
-            ctx.fillText(`${sign}${diff} vs last`, W/2, H/2 + H*0.155);
+            ctx.fillText(`${diff >= 0 ? '+' : ''}${diff} vs last`, RC, ry);
+            ry += LN;
+        }
+
+        if (!newBest && runsWithoutPB >= 2) {
+            const t  = Math.min(1, (runsWithoutPB - 1) / 9);
+            const rg = Math.round(lerp(160, 30, t)), rb = Math.round(lerp(50, 10, t));
+            sh(4);
+            ctx.font      = `${FS*0.030}px 'Courier New',monospace`;
+            ctx.fillStyle = `rgba(255,${rg},${rb},${a})`;
+            ctx.fillText(`${runsWithoutPB}x no pb`, RC, ry);
+            ry += LN;
         }
 
         {
@@ -1968,50 +2013,60 @@ function draw() {
             if (runNearMisses > 0) statParts.push(`${runNearMisses} close`);
             if (runMaxCombo   > 1) statParts.push(`x${runMaxCombo} combo`);
             sh(3);
-            ctx.font      = `${W*0.020}px 'Courier New',monospace`;
+            ctx.font      = `${FS*0.030}px 'Courier New',monospace`;
             ctx.fillStyle = `rgba(160,180,220,${a})`;
-            ctx.fillText(statParts.join('  '), W/2, H/2 + H*0.185);
+            ctx.fillText(statParts.join('   '), RC, ry);
+            ry += LN;
         }
 
         if (skinUnlockIdx >= 0) {
             const sk = SKINS[skinUnlockIdx];
             const [sr, sg, sb] = sk.shadow;
-            ctx.font        = `bold ${W*0.024}px 'Courier New',monospace`;
+            ctx.font        = `bold ${FS*0.030}px 'Courier New',monospace`;
             ctx.fillStyle   = `rgba(${sr},${sg},${sb},${a*0.95})`;
             ctx.shadowColor = `rgba(${sr},${sg},${sb},${a*0.60})`;
             ctx.shadowBlur  = 14;
-            ctx.fillText(`${sk.name} SHIP UNLOCKED!`, W/2, H/2 + H*0.230);
+            ctx.fillText(`${sk.name} UNLOCKED!`, RC, ry);
             ctx.shadowBlur  = 0;
         }
 
+        // ── Bottom row: HOME | tap hint | SHARE ───────────────────
         if (deadT > 0.9) {
-            const b       = Math.min(1, (deadT - 0.9) * 4);
-            const baseY   = skinUnlockIdx >= 0 ? H*0.270 : H*0.230;
+            const b    = Math.min(1, (deadT - 0.9) * 4);
+            const botY = H * 0.88;
+            const btnH = H * 0.18, btnW = W * 0.14;
 
-            // Share button
-            ctx.font = `${W*0.022}px 'Courier New',monospace`;
+            // HOME button
+            ctx.font = `bold ${FS*0.036}px 'Courier New',monospace`;
+            const homeX = LC - btnW / 2;
+            _homeBtnRect = { x: homeX, y: botY - btnH/2, w: btnW, h: btnH };
+            ctx.fillStyle   = `rgba(28,36,58,${b * 0.80})`;
+            ctx.fillRect(homeX, botY - btnH/2, btnW, btnH);
+            ctx.strokeStyle = `rgba(90,110,180,${b * 0.60})`;
+            ctx.lineWidth   = 1.5; ctx.strokeRect(homeX, botY - btnH/2, btnW, btnH);
+            sh(4); ctx.fillStyle = `rgba(140,165,240,${b * 0.92})`;
+            ctx.fillText('HOME', LC, botY);
+
+            // Tap hint (center)
+            sh(3);
+            ctx.font      = `${FS*0.026}px 'Courier New',monospace`;
+            ctx.fillStyle = `rgba(120,145,200,${b * 0.60})`;
+            ctx.fillText('tap to play again', W * 0.50, botY);
+
+            // SHARE button (right)
+            ctx.font = `${FS*0.022}px 'Courier New',monospace`;
             const shareLabel = shareCopied > 0 ? 'COPIED!' : 'SHARE';
             const sm  = ctx.measureText(shareLabel);
-            const sbw = sm.width + W*0.046, sbh = H*0.046;
-            const sbx = W/2 - sbw/2, sby = H/2 + baseY - sbh/2;
+            const sbw = sm.width + W*0.040, sbh = btnH;
+            const sbx = RC - sbw / 2, sby = botY - sbh / 2;
             _shareBtnRect = { x: sbx, y: sby, w: sbw, h: sbh };
-            ctx.fillStyle   = shareCopied > 0
-                ? `rgba(50,180,90,${b * 0.55})`
-                : `rgba(35,45,70,${b * 0.55})`;
+            ctx.fillStyle   = shareCopied > 0 ? `rgba(40,160,80,${b*0.55})`  : `rgba(25,30,50,${b*0.55})`;
             ctx.fillRect(sbx, sby, sbw, sbh);
-            ctx.strokeStyle = shareCopied > 0
-                ? `rgba(80,220,120,${b * 0.60})`
-                : `rgba(100,130,200,${b * 0.40})`;
-            ctx.lineWidth   = 1;
-            ctx.strokeRect(sbx, sby, sbw, sbh);
-            ctx.fillStyle   = shareCopied > 0
-                ? `rgba(100,240,140,${b * 0.95})`
-                : `rgba(150,180,255,${b * 0.85})`;
-            ctx.fillText(shareLabel, W/2, H/2 + baseY);
-
-            ctx.font      = `${W*0.022}px 'Courier New',monospace`;
-            ctx.fillStyle = `rgba(130,155,210,${b * 0.60})`;
-            ctx.fillText('tap to play again', W/2, H/2 + baseY + H*0.065);
+            ctx.strokeStyle = shareCopied > 0 ? `rgba(80,220,120,${b*0.55})` : `rgba(80,100,160,${b*0.40})`;
+            ctx.lineWidth   = 1.5; ctx.strokeRect(sbx, sby, sbw, sbh);
+            sh(shareCopied > 0 ? 6 : 3);
+            ctx.fillStyle   = shareCopied > 0 ? `rgba(100,240,140,${b*0.95})`: `rgba(120,145,210,${b*0.80})`;
+            ctx.fillText(shareLabel, RC, botY);
         }
     }
 }

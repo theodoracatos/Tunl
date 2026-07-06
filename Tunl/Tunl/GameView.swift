@@ -16,26 +16,56 @@ struct GameView: UIViewRepresentable {
         config.userContentController.add(context.coordinator, name: "haptic")
 
         let webView = WKWebView(frame: .zero, configuration: config)
+        webView.uiDelegate = context.coordinator
+        webView.navigationDelegate = context.coordinator
         webView.scrollView.isScrollEnabled = false
         webView.scrollView.bounces = false
         webView.scrollView.contentInsetAdjustmentBehavior = .never
+        webView.allowsLinkPreview = false
         webView.isOpaque = false
         webView.backgroundColor = UIColor(red: 4/255, green: 4/255, blue: 10/255, alpha: 1)
 
-        if let url = Bundle.main.url(forResource: "tunnel", withExtension: "html") {
-            // allowingReadAccessTo grants WKWebView read access to the whole bundle
-            // directory so fetch('the_mountain.mp3') resolves correctly
+        if let url = Bundle.main.url(forResource: "tunl", withExtension: "html") {
             webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
         }
 
+        // Disable long-press recognizers after layout to suppress the selection loupe
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            GameView.killLongPress(in: webView)
+        }
+
         return webView
+    }
+
+    private static func killLongPress(in view: UIView) {
+        view.gestureRecognizers?
+            .filter { $0 is UILongPressGestureRecognizer }
+            .forEach { $0.isEnabled = false }
+        view.subviews.forEach { killLongPress(in: $0) }
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {}
 
     // MARK: - Haptic bridge
 
-    class Coordinator: NSObject, WKScriptMessageHandler {
+    class Coordinator: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNavigationDelegate {
+
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            GameView.killLongPress(in: webView)
+        }
+
+        func webView(_ webView: WKWebView,
+                     contextMenuConfigurationForElement elementInfo: WKContextMenuElementInfo,
+                     completionHandler: @escaping (UIContextMenuConfiguration?) -> Void) {
+            completionHandler(nil)
+        }
+
+        @available(iOS 16.0, *)
+        func webView(_ webView: WKWebView,
+                     editMenuForTextIn range: UITextRange,
+                     suggestedActions: [UIMenuElement]) -> UIMenu? {
+            return nil
+        }
         func userContentController(_ controller: WKUserContentController,
                                    didReceive message: WKScriptMessage) {
             guard message.name == "haptic", let type = message.body as? String else { return }

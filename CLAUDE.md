@@ -1,4 +1,4 @@
-# TUNNEL - Claude Code Instructions
+# TUNL - Claude Code Instructions
 
 ## Working style
 
