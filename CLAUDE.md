@@ -12,6 +12,8 @@ TUNL is a single-file HTML5 Canvas hold-to-thrust cave flyer game.
 Single file: `tunl.html` - no libraries, no build step.
 Open in a browser to play.
 
+**Orientation: landscape only.** The iOS app (`Info.plist`) locks to `LandscapeLeft + LandscapeRight`. Never change this to portrait.
+
 ## How to play
 
 - **HOLD** (tap/click/Space/ArrowUp) = thrust upward
