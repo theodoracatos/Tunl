@@ -47,7 +47,7 @@ const COIN_R          = W  * 0.009;   // visual radius
 const COIN_HIT_R      = W  * 0.032;   // collection radius (generous)
 const GAP_PER_COIN    = H  * 0.025;   // bonus halfGap added per coin
 const GAP_BONUS_MAX   = H  * 0.06;    // cap: max ~36px halfGap bonus (72px full gap)
-const GAP_DECAY       = H  * 0.010;   // bonus lost per second (~2.5s per coin)
+const GAP_DECAY       = H  * 0.006;   // bonus lost per second (~4s per coin)
 
 function lerp(a, b, t) { return a + (b - a) * Math.min(Math.max(t, 0), 1); }
 function lerpClr(a, b, t) {
@@ -73,17 +73,17 @@ function rng() {
 let _prog, _prog2, _halfGap, _wA1, _wA2, _wF1, _wF2;
 
 function refreshWave() {
-    _prog    = Math.min(scrollX / 10000, 1);
-    _prog2   = Math.min(Math.max(scrollX - 10000, 0) / 40000, 1);
-    _halfGap = lerp(H * 0.27,  H * 0.092, _prog);
+    _prog    = Math.min(Math.sqrt(scrollX / 14000), 1);
+    _prog2   = Math.min(Math.max(scrollX - 14000, 0) / 40000, 1);
+    _halfGap = lerp(H * 0.32,  H * 0.125, _prog);
     _wA1     = lerp(H * 0.07,  H * 0.12,  _prog);
     _wA2     = lerp(H * 0.035, H * 0.055, _prog);
     _wF1     = lerp(0.0025,    0.0048,    _prog);
     _wF2     = lerp(0.0060,    0.0115,    _prog);
 }
 
-function scrollSpd()   { return lerp(lerp(200,  560, _prog), 700, _prog2); }
-function stalSpacing() { return lerp(lerp(260,  100, _prog),  70, _prog2); }
+function scrollSpd()   { return lerp(lerp(380,  650, _prog), 900, _prog2); }
+function stalSpacing() { return lerp(lerp(260,  145, _prog),  70, _prog2); }
 function stalLenFrac() { return lerp(lerp(0.36, 0.50, _prog), 0.60, _prog2); }
 function coinSpacing() { return lerp(lerp(600,  320, _prog), 230, _prog2); }
 function mineSpacing() { return lerp(900,  340, _prog); }
@@ -140,7 +140,7 @@ function boundsBase(wx) {
 
 // ── State ─────────────────────────────────────────────────────────────
 
-let phase, py, vy, holding, scrollX, score, newBest;
+let phase, py, vy, holding, scrollX, score, newBest, startRamp;
 let best          = parseInt(localStorage.getItem('tunnel_best')    || '0');
 let bestSX        = parseInt(localStorage.getItem('tunnel_best_sx') || '0');
 let runsWithoutPB = parseInt(localStorage.getItem('tunnel_no_pb')   || '0');
@@ -170,6 +170,7 @@ let milestoneFlash, milestoneText;
 let followerActive, followerGap, followerY, followerFade, followerRespawnTimer, followerPulseTimer, followerLifeTimer;
 let gtime = 0;
 let skinFx = [], skinFxT = 0;
+let shipPitch = 0;
 let ambParts = [];
 let deathMarkers = [];   // persists across runs: { wx, wallY }
 const MAX_DEATH_MARKERS = 25;
@@ -190,7 +191,7 @@ function titleScreen() {
     phase = 'title'; py = H / 2; vy = 0; holding = false; scrollX = 0;
     score = 0; newBest = false;
     parts = []; thrustParts = []; deadT = 0; flashA = 0; shake = 0; trailY = [];
-    skinFx = []; skinFxT = 0;
+    skinFx = []; skinFxT = 0; shipPitch = 0;
     stalactites = []; nextStalWx = 99999;
     coins = [];     nextCoinWx = 99999;
     chicaneCoins = [];
@@ -205,10 +206,10 @@ function titleScreen() {
 
 function startPlay() {
     thrustOff();
-    phase = 'play'; py = H / 2; vy = 0; holding = false; scrollX = 0;
+    phase = 'play'; py = H / 2; vy = 0; holding = false; scrollX = 0; startRamp = 0;
     score = 0; newBest = false;
     parts = []; thrustParts = []; deadT = 0; flashA = 0; shake = 0; trailY = [];
-    skinFx = []; skinFxT = 0;
+    skinFx = []; skinFxT = 0; shipPitch = 0;
     stalactites = []; nextStalWx = 420;
     coins = [];     nextCoinWx = 500;
     chicaneCoins = [];
@@ -229,13 +230,10 @@ function startPlay() {
     }
     milestoneFlash = 0; milestoneText = '';
     followerActive = false; followerGap = W * 2; followerFade = 0;
-    followerRespawnTimer = 35.0; followerPulseTimer = 0; followerLifeTimer = 0;
+    followerRespawnTimer = 15.0; followerPulseTimer = 0; followerLifeTimer = 0;
     const _d = new Date();
     seedRng(_d.getUTCFullYear() * 10000 + (_d.getUTCMonth() + 1) * 100 + _d.getUTCDate());
     refreshWave();
-    // Force an early red coin so the player meets the shield mechanic quickly
-    const rb = boundsBase(750);
-    coins.push({ wx: 750, y: (rb.top + rb.bot) / 2, collected: false, type: 'red', fade: 1.0 });
     _startBgMusic();
 }
 
@@ -299,20 +297,37 @@ function coinBlockedByStal(wx, y) {
 }
 
 function makeCoin(wx) {
-    const b   = boundsBase(wx);
-    // buf = coin body + headroom for wave-center drift over lookahead distance
-    const buf = COIN_R * 3;
-    const lo  = b.top + buf;
-    const hi  = b.bot - buf;
+    const bBase  = boundsBase(wx);
+    // Also intersect with the current visual corridor so the coin never
+    // appears inside a wall while still in the lookahead area.
+    const visCy  = centerAt(wx);
+    const visTop = visCy - _halfGap;
+    const visBot = visCy + _halfGap;
+    const buf = COIN_R * 2;
+    const lo  = Math.max(bBase.top, visTop) + buf;
+    const hi  = Math.min(bBase.bot, visBot) - buf;
     if (hi <= lo) return null;
     const cy     = (lo + hi) / 2;
     const margin = (hi - lo) * 0.40;
     const coinY  = Math.max(lo, Math.min(hi, cy + (rng() - 0.5) * 2 * margin));
     const r = rng();
-    const blueEnd  = lerp(0.60, 0.44, _prog);
-    const redEnd   = lerp(0.77, 0.61, _prog);
-    const greenEnd = 0.90;
-    const type = r < blueEnd ? 'gold' : r < redEnd ? 'blue' : r < greenEnd ? 'red' : 'green';
+    let type = 'gold';
+    if (_prog >= 0.72) {
+        // score ~120+: all types including magnet
+        const blueEnd = lerp(0.60, 0.44, _prog);
+        const redEnd  = lerp(0.77, 0.61, _prog);
+        type = r < blueEnd ? 'gold' : r < redEnd ? 'blue' : r < 0.90 ? 'red' : 'green';
+    } else if (_prog >= 0.55) {
+        // score ~70-120: gold, slow, shield (no magnet yet)
+        const blueEnd = lerp(0.60, 0.44, _prog);
+        const redEnd  = lerp(0.77, 0.61, _prog);
+        type = r < blueEnd ? 'gold' : r < redEnd ? 'blue' : 'red';
+    } else if (_prog >= 0.36) {
+        // score ~30-70: gold and slow only
+        const blueEnd = lerp(0.60, 0.50, _prog);
+        type = r < blueEnd ? 'gold' : 'blue';
+    }
+    // score ~0-30: gold only (type stays 'gold')
     if (coinBlockedByStal(wx, coinY)) return null;
     return { wx, y: coinY, collected: false, type, fade: 1.0 };
 }
@@ -820,7 +835,7 @@ function update(dt) {
     // Particles (always running)
     for (let i = parts.length - 1; i >= 0; i--) {
         const p = parts[i];
-        p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= 0.90; p.vy *= 0.90;
+        p.x += p.vx*dt; p.y += p.vy*dt; const d0 = 0.90 ** (dt * 60); p.vx *= d0; p.vy *= d0;
         p.life -= dt * 2.0;
         if (p.life <= 0) parts.splice(i, 1);
     }
@@ -828,7 +843,7 @@ function update(dt) {
     // Thruster particles
     for (let i = thrustParts.length - 1; i >= 0; i--) {
         const p = thrustParts[i];
-        p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= 0.88; p.vy *= 0.88;
+        p.x += p.vx*dt; p.y += p.vy*dt; const d1 = 0.88 ** (dt * 60); p.vx *= d1; p.vy *= d1;
         p.life -= dt * 3.2;
         if (p.life <= 0) thrustParts.splice(i, 1);
     }
@@ -879,6 +894,9 @@ function update(dt) {
         return;
     }
 
+    // Ease scroll speed 0→full over 1s so obstacles arrive gradually
+    if (startRamp < 1) startRamp = Math.min(startRamp + dt, 1);
+
     // Physics
     vy += (holding ? -THRUST + GRAVITY : GRAVITY) * dt;
     vy  = Math.max(-MAX_VY, Math.min(MAX_VY, vy));
@@ -890,7 +908,7 @@ function update(dt) {
     magnetTime = Math.max(0, magnetTime - dt);
 
     // Scroll + score
-    const spd = scrollSpd() * (slowTime > 0 ? 0.60 : 1.0);
+    const spd = scrollSpd() * (startRamp * startRamp) * (slowTime > 0 && !followerActive ? 0.60 : 1.0);
     scrollX += spd * dt;
     refreshWave();
     score = Math.floor(scrollX / 60) + bonusScore;
@@ -957,6 +975,15 @@ function update(dt) {
             if (f.t === 3) { f.x += f.vx*dt; f.y += f.vy*dt; f.r = Math.max(f.r - dt*3, 0.3); }
             if (f.life <= 0) skinFx.splice(i, 1);
         }
+    }
+
+    // Ship pitch - velocity vector angle, capped at ~40 deg, smoothed
+    {
+        const MAX_PITCH = 0.70;
+        const target = phase === 'play'
+            ? Math.max(-MAX_PITCH, Math.min(MAX_PITCH, Math.atan2(vy, scrollSpd())))
+            : 0;
+        shipPitch += (target - shipPitch) * Math.min(dt * 14, 1);
     }
 
     // Trail
@@ -1054,7 +1081,7 @@ function update(dt) {
             followerFade  = Math.max(0, Math.min(1, followerFade));
             // Spring: approach on entry/visit, retreat when time's up, lunge on slow-time
             const targetGap = slowTime > 0 ? -PR * 3 : retreating ? W * 1.5 : PR * 3;
-            const k = followerFade < 1 && !retreating ? 1.5 : slowTime > 0 ? 1.5 : retreating ? 1.2 : 0.35;
+            const k = followerFade < 1 && !retreating ? 1.5 : slowTime > 0 ? 4.0 : retreating ? 1.2 : 0.35;
             followerGap += k * (targetGap - followerGap) * dt;
             // Deactivate once fully faded out and far enough away
             if (retreating && followerFade <= 0) {
@@ -1698,9 +1725,11 @@ function draw() {
         ctx.fill();
     }
 
-    // Speed lines – horizontal streaks when vertical velocity is high
+    // Speed lines – horizontal streaks driven by vertical velocity OR scroll speed
     if (phase === 'play') {
-        const speedFrac = Math.max(0, (Math.abs(vy) - 300) / (MAX_VY - 300));
+        const vyFrac    = Math.max(0, (Math.abs(vy) - 300) / (MAX_VY - 300));
+        const spdFrac   = Math.max(0, (scrollSpd() - 460) / (650 - 460));
+        const speedFrac = Math.max(vyFrac, spdFrac);
         if (speedFrac > 0.05) {
             const sk = SKINS[activeSkin] || SKINS[0];
             const [sr, sg, sb] = sk.shadow;
@@ -1768,7 +1797,7 @@ function draw() {
     if (phase !== 'dead' || deadT < 0.18) {
         const sk = SKINS[activeSkin] || SKINS[0];
         const [sr, sg, sb] = sk.shadow;
-        const pitchAngle = phase === 'play' ? (vy / MAX_VY) * 0.34 : 0;
+        const pitchAngle = shipPitch;
         ctx.save();
         ctx.translate(PX, py);
         ctx.rotate(pitchAngle);

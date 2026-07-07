@@ -46,12 +46,10 @@ const PR = W * 0.018;  // radius (≈10.8px at W=600)
 
 ### Procedural tunnel
 Two overlapping sin waves, amplitude and frequency scale with difficulty (`_prog`).
-`_prog = Math.min(scrollX / 10000, 1)` - reaches max difficulty at 10000 world px (~score 167).
+`_prog = Math.min(scrollX / 14000, 1)` - reaches max difficulty at 14000 world px (~score 233).
 
 ```javascript
-_halfGap = lerp(H * 0.27,  H * 0.092, _prog);  // 162→55px half-gap (rendering/collision)
-// Note: boundsBase() for placement uses halfGapAt() = lerp(H*0.21, H*0.092, ...) = 126→55px
-// The rendering corridor is wider than the placement bounds early on, giving extra wall margin.
+_halfGap = lerp(H * 0.32,  H * 0.125, _prog);  // 192→75px half-gap (rendering/collision)
 _wA1     = lerp(H * 0.07,  H * 0.12,  _prog);   // wave amplitude 1
 _wA2     = lerp(H * 0.035, H * 0.055, _prog);   // wave amplitude 2
 _wF1     = lerp(0.0025,    0.0048,    _prog);    // wave frequency 1
@@ -71,25 +69,25 @@ Coins collect into `gapBonus` (extra halfGap px, capped, decays over time):
 ```javascript
 const GAP_PER_COIN  = H * 0.025;   // +15px halfGap per coin
 const GAP_BONUS_MAX = H * 0.06;    // cap: max ~36px halfGap bonus (72px full gap)
-const GAP_DECAY     = H * 0.010;   // ~2.5s per coin at constant decay rate
+const GAP_DECAY     = H * 0.006;   // ~4s per coin at constant decay rate
 ```
 Wall glow shifts purple → cyan when bonus is active. Gold bar at bottom shows remaining bonus.
 
 ### Difficulty scaling functions
 
 Two-phase difficulty system:
-- `_prog  = Math.min(scrollX / 10000, 1)` - main ramp, 0→1 over first 10000px (~score 167)
-- `_prog2 = Math.min(Math.max(scrollX - 10000, 0) / 40000, 1)` - inferno, 0→1 from 10000→50000px
+- `_prog  = Math.min(scrollX / 14000, 1)` - main ramp, 0→1 over first 14000px (~score 233)
+- `_prog2 = Math.min(Math.max(scrollX - 14000, 0) / 40000, 1)` - inferno, 0→1 from 14000→54000px
 
 ```javascript
-scrollSpd()    // 200 → 560 → 700 px/s
-stalSpacing()  // 260 → 100 → 70 px between stalactites
+scrollSpd()    // 300 → 650 → 900 px/s
+stalSpacing()  // 260 → 115 → 70 px between stalactites
 stalLenFrac()  // 0.36 → 0.50 → 0.60 fraction of halfGap (also the max cap)
 coinSpacing()  // 600 → 320 → 230 px between coins
 chicaneProb    // 0 → 0.24 → 0.42 probability of paired stalactites
 ```
 
-At full inferno (scrollX=50000, dist score ~833): chicane min passable gap = 44px (player dia=21.6px).
+At full inferno (scrollX=54000, dist score ~900): chicane min passable gap = 44px (player dia=21.6px).
 With gapBonus maxed (+36px): effective chicane gap ~116px - coins remain crucial at high difficulty.
 
 ### Addictive systems
@@ -111,7 +109,7 @@ Blue/red coins join the streak but their notif doesn't change (power-up is the r
 
 ## Key design decisions (do not revert)
 
-- **Coin bonus is intentionally modest**: +15px per coin, max +36px halfGap. At max difficulty the full corridor is 110px; one coin adds ~27%, max bonus adds ~65%. This is helpful but not a free pass.
+- **Coin bonus is intentionally modest**: +15px per coin, max +36px halfGap. At max difficulty the full corridor is 126px; one coin adds ~24%, max bonus adds ~57%. This is helpful but not a free pass.
 - **boundsBase for coin placement**: Coins placed ignoring current bonus so they're always reachable even without a bonus. Never use `boundsAt()` for coin placement.
 - **Triangle-circle collision**: Stalactites use proper geometric collision matching the visual triangle, not AABB. Changing to AABB would make invisible collisions at the edges.
 - **No em dashes (-)** anywhere in code, comments, or UI text. Use hyphen-minus (-) instead.
