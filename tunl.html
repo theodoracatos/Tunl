@@ -47,9 +47,9 @@ const DEV_INVINCIBLE = false; // set true to disable all deaths (testing only)
 // Coin constants
 const COIN_R          = W  * 0.009;   // visual radius
 const COIN_HIT_R      = W  * 0.032;   // collection radius (generous)
-const GAP_PER_COIN    = H  * 0.04;    // bonus halfGap added per coin
-const GAP_BONUS_MAX   = H  * 0.10;    // cap: max halfGap bonus
-const GAP_DECAY       = H  * 0.010;   // bonus lost per second
+const GAP_PER_COIN    = H  * 0.06;    // bonus halfGap added per coin
+const GAP_BONUS_MAX   = H  * 0.15;    // cap: max halfGap bonus
+const GAP_DECAY       = H  * 0.015;   // bonus lost per second
 
 function lerp(a, b, t) { return a + (b - a) * Math.min(Math.max(t, 0), 1); }
 function lerpClr(a, b, t) {
@@ -76,21 +76,24 @@ let _prog, _prog2, _halfGap, _wA1, _wA2, _wF1, _wF2;
 
 function refreshWave() {
     _prog    = Math.min(Math.sqrt(scrollX / 14000), 1);
-    _prog2   = Math.min(Math.max(scrollX - 14000, 0) / 40000, 1);
+    _prog2   = Math.max(scrollX - 14000, 0) / 40000;          // no cap - escalates forever
     _halfGap = lerp(H * 0.34,  H * 0.163, _prog);
-    _wA1     = lerp(H * 0.07,  H * 0.12,  _prog);
-    _wA2     = lerp(H * 0.035, H * 0.055, _prog);
-    _wF1     = lerp(0.0025,    0.0048,    _prog);
-    _wF2     = lerp(0.0060,    0.0115,    _prog);
+    // Wave amplitude/frequency keep growing with _prog2 (capped at 2x to stay navigable)
+    const wMult  = 1 + 0.12 * Math.min(_prog2, 2);            // up to +24% amplitude
+    const wFMult = 1 + 0.14 * Math.min(_prog2, 2);            // up to +28% frequency = tighter bends
+    _wA1     = lerp(H * 0.07,  H * 0.12,  _prog) * wMult;
+    _wA2     = lerp(H * 0.035, H * 0.055, _prog) * wMult;
+    _wF1     = lerp(0.0025,    0.0048,    _prog) * wFMult;
+    _wF2     = lerp(0.0060,    0.0115,    _prog) * wFMult;
 }
 
-function scrollSpd()   { return lerp(lerp(380,  650, _prog), 900, _prog2); }
-function stalSpacing() { return lerp(lerp(260,  145, _prog),  70, _prog2); }
-function stalLenFrac() { return lerp(lerp(0.36, 0.50, _prog), 0.60, _prog2); }
-function coinSpacing() { return lerp(lerp(600,  320, _prog), 230, _prog2); }
-function mineSpacing() { return lerp(900,  340, _prog); }
+function scrollSpd()   { return Math.min(lerp(lerp(380,  650, _prog), 900,  _prog2), 1300); }
+function stalSpacing() { return Math.max(lerp(lerp(260,  145, _prog),  70,  _prog2), 50); }
+function stalLenFrac() { return Math.min(lerp(lerp(0.46, 0.64, _prog), 0.76, _prog2), 0.80); }
+function coinSpacing() { return Math.max(lerp(lerp(600,  320, _prog), 230,  _prog2), 175); }
+function mineSpacing() { return Math.max(lerp(lerp(900, 340, _prog), 200, _prog2), 200); }
 
-const MINE_R = W * 0.022;
+const MINE_R = W * 0.011;
 
 const SKINS = [
     { color: '#e8eeff', shadow: [210,220,255],  name: 'PEARL'                                      },
@@ -149,12 +152,11 @@ function centerAt(wx) {
     return Math.max(_halfGap + 8, Math.min(H - _halfGap - 8, raw));
 }
 
-// halfGapAt computes the corridor half-gap for a specific world x.
-// Coins and stalactites are placed up to ~900px ahead, so using the global
-// _halfGap (derived from the CURRENT scrollX) would give a wider gap than
-// the player will actually see when they arrive - placing coins inside walls.
+// halfGapAt predicts the corridor half-gap when the player reaches world x.
+// Uses the same sqrt(wx/14000) progression as refreshWave so bounds are accurate
+// for placement up to ~900px ahead.
 function halfGapAt(wx) {
-    return lerp(H * 0.21, H * 0.092, Math.min(wx / 10000, 1));
+    return lerp(H * 0.34, H * 0.163, Math.min(Math.sqrt(wx / 14000), 1));
 }
 
 // boundsAt uses base _halfGap + current bonus so both rendering and
@@ -165,17 +167,18 @@ function boundsAt(wx) {
     return { top: cy - hg, bot: cy + hg };
 }
 
-// boundsBase computes placement bounds using the wave params that will actually
-// be in effect when the player reaches wx (not the current global params).
-// centerAt() uses global _wA1/_wF1 etc., which are derived from the current
-// scrollX - those params change as the player progresses, so evaluating them
-// at a future wx gives a different center than what rendering will use.
+// boundsBase predicts placement bounds using the wave params and halfGap that
+// will be in effect when the player reaches wx. Mirrors refreshWave's scaling
+// (including the _prog2 wave amplitude/frequency boost) for accurate lookahead.
 function boundsBase(wx) {
-    const p   = Math.min(wx / 10000, 1);
-    const wA1 = lerp(H * 0.07,  H * 0.12,  p);
-    const wA2 = lerp(H * 0.035, H * 0.055, p);
-    const wF1 = lerp(0.0025,    0.0048,    p);
-    const wF2 = lerp(0.0060,    0.0115,    p);
+    const p      = Math.min(Math.sqrt(wx / 14000), 1);
+    const p2     = Math.max(wx - 14000, 0) / 40000;
+    const wMult  = 1 + 0.12 * Math.min(p2, 2);
+    const wFMult = 1 + 0.14 * Math.min(p2, 2);
+    const wA1 = lerp(H * 0.07,  H * 0.12,  p) * wMult;
+    const wA2 = lerp(H * 0.035, H * 0.055, p) * wMult;
+    const wF1 = lerp(0.0025,    0.0048,    p) * wFMult;
+    const wF2 = lerp(0.0060,    0.0115,    p) * wFMult;
     const hg  = halfGapAt(wx);
     const raw = H / 2 + wA1 * Math.sin(wx * wF1) + wA2 * Math.sin(wx * wF2 + 1.57);
     const cy  = Math.max(hg + 8, Math.min(H - hg - 8, raw));
@@ -287,15 +290,15 @@ function startPlay() {
 // ── Stalactite system ─────────────────────────────────────────────────
 
 function makeStal(wx, isTop) {
-    const length = _halfGap * stalLenFrac() * (0.70 + rng() * 0.30);
-    const width  = W * lerp(0.048, 0.030, _prog);
+    const length = _halfGap * stalLenFrac() * (0.55 + rng() * 0.45);
+    const width  = W * lerp(0.030, 0.018, _prog) * (0.70 + rng() * 0.40);
     return { wx, isTop, length, width, fade: 1.0, dying: false };
 }
 
 function maintainStalactites() {
     while (nextStalWx < scrollX + W + 600) {
         const spacing = stalSpacing() * (0.65 + rng() * 0.70);
-        if (_prog > 0.40 && rng() < lerp(0.24, 0.42, _prog2)) {
+        if (_prog > 0.40 && rng() < Math.min(lerp(0.24, 0.42, _prog2), 0.62)) {
             stalactites.push(makeStal(nextStalWx,       true));
             stalactites.push(makeStal(nextStalWx + 65, false));
             const coinWx = nextStalWx - 85;
@@ -322,7 +325,7 @@ function coinBlockedByStal(wx, y) {
     const r2   = safe * safe;
     for (const s of stalactites) {
         if (Math.abs(wx - s.wx) > s.width + safe * 2) continue;
-        const b = boundsBase(s.wx), hw = s.width / 2;
+        const b = boundsBase(s.wx), hw = s.width / 2 * 0.85;
         const tipY = s.isTop ? b.top + s.length : b.bot - s.length;
         let ax, ay, bx, by;
         if (s.isTop) {
@@ -333,10 +336,10 @@ function coinBlockedByStal(wx, y) {
             if (y < tipY + safe) return true;   // too close to tip vertically
         } else {
             ax = s.wx-hw; ay = b.bot; bx = s.wx+hw; by = b.bot;
-            if (inTri(wx,y,ax,ay,bx,by,s.wx,tipY)) return true;
-            if (ptSeg2(wx,y,ax,ay,s.wx,tipY) < r2)  return true;
-            if (ptSeg2(wx,y,bx,by,s.wx,tipY) < r2)  return true;
-            if (y > tipY - safe) return true;   // too close to tip vertically
+            if (inTri(wx,y,ax,ay,bx,by,s.wx,tipY))  return true;
+            if (ptSeg2(wx,y,ax,ay,s.wx,tipY) < r2)   return true;
+            if (ptSeg2(wx,y,bx,by,s.wx,tipY) < r2)   return true;
+            if (y > tipY - safe) return true;
         }
     }
     return false;
@@ -362,12 +365,12 @@ function makeCoin(wx) {
         // score ~77+: all types including magnet
         const blueEnd = lerp(0.60, 0.44, _prog);
         const redEnd  = lerp(0.77, 0.61, _prog);
-        type = r < blueEnd ? 'gold' : r < redEnd ? 'blue' : r < 0.87 ? 'red' : r < 0.95 ? 'green' : 'orange';
+        type = r < blueEnd ? 'gold' : r < redEnd ? 'blue' : r < 0.82 ? 'red' : r < 0.88 ? 'green' : 'orange';
     } else if (_prog >= 0.38) {
         // score ~40-77: gold, slow, shield, bullets
         const blueEnd = lerp(0.64, 0.56, _prog);
         const redEnd  = lerp(0.82, 0.72, _prog);
-        type = r < blueEnd ? 'gold' : r < redEnd ? 'blue' : r < 0.95 ? 'red' : 'orange';
+        type = r < blueEnd ? 'gold' : r < redEnd ? 'blue' : r < 0.83 ? 'red' : 'orange';
     } else if (_prog >= 0.22) {
         // score ~12-40: gold and slow time only
         type = r < 0.72 ? 'gold' : 'blue';
@@ -461,7 +464,7 @@ function updateBullets(dt) {
         const b = bullets[i];
         b.wx += bulletSpd * dt;
         const bsx = b.wx - scrollX;
-        if (bsx > W + 20) { bullets.splice(i, 1); continue; }
+        if (bsx > W * 1.8 + 20) { bullets.splice(i, 1); continue; }
         let hit = false;
         for (const s of stalactites) {
             if (s.dying) continue;
@@ -496,7 +499,7 @@ function drawBullets() {
         ctx.shadowBlur  = 14;
         ctx.fillStyle   = '#ffaa00';
         ctx.beginPath();
-        ctx.ellipse(bsx, b.y, 10, 3.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(bsx, b.y, 18, 3.5, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
         ctx.restore();
@@ -566,7 +569,7 @@ function inTri(px, py, ax, ay, bx, by, cx, cy) {
 function stalHit(s, r = PR) {
     const sx = s.wx - scrollX;
     if (sx < -80 || sx > W + 80) return false;
-    const b = boundsAt(s.wx), hw = s.width / 2, r2 = r * r;
+    const b = boundsAt(s.wx), hw = s.width / 2 * 0.85, r2 = r * r;
     let ax, ay, bx2, by2, tx, ty;
     if (s.isTop) {
         ax = sx-hw; ay = b.top; bx2 = sx+hw; by2 = b.top; tx = sx; ty = b.top+s.length;
@@ -582,7 +585,7 @@ function stalHit(s, r = PR) {
 function stalHitBullet(s, bsx, by) {
     const sx = s.wx - scrollX;
     if (Math.abs(sx - bsx) > s.width / 2 + 8) return false;
-    const b = boundsAt(s.wx), hw = s.width / 2;
+    const b = boundsAt(s.wx), hw = s.width / 2 * 0.85;
     let ax, ay, bx2, by2, tx, ty;
     if (s.isTop) {
         ax = sx-hw; ay = b.top; bx2 = sx+hw; by2 = b.top; tx = sx; ty = b.top+s.length;
@@ -856,6 +859,20 @@ function sfxFollowerPulse() {
     g.gain.setValueAtTime(0.13, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
     o.start(t); o.stop(t + 0.24);
+}
+
+function sfxFollowerEscape() {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    [150, 100, 65].forEach((freq, i) => {
+        const o = _ac.createOscillator(), g = _ac.createGain();
+        o.connect(g); g.connect(_ac.destination);
+        o.type = 'sawtooth'; o.frequency.value = freq;
+        const t0 = t + i * 0.10;
+        g.gain.setValueAtTime(0.08, t0);
+        g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.35);
+        o.start(t0); o.stop(t0 + 0.37);
+    });
 }
 
 function sfxBulletPickup() {
@@ -1210,8 +1227,6 @@ function update(dt) {
         const csx = coin.wx - scrollX;
         if (csx < 0) {
             coin.fade = Math.max(0, coin.fade - dt * 8);
-        } else if (csx < W + 60 && coinBlockedByStal(coin.wx, coin.y)) {
-            coin.fade = Math.max(0, coin.fade - dt * 5);
         }
     }
 
@@ -1250,7 +1265,7 @@ function update(dt) {
     // Magnet: pull visible uncollected coins toward the player
     if (magnetTime > 0) {
         const playerWx = scrollX + PX;
-        const pullSpeed = W * 3.0;
+        const pullSpeed = W * 1.4;
         for (const arr of [coins, chicaneCoins]) for (const coin of arr) {
             if (coin.collected || coin.fade <= 0) continue;
             const csx = coin.wx - scrollX;
@@ -1277,7 +1292,7 @@ function update(dt) {
             followerRespawnTimer = Math.max(0, followerRespawnTimer - dt);
             if (followerRespawnTimer <= 0) {
                 followerActive = true;
-                followerGap    = W * 0.15;
+                followerGap    = W * 0.85;
                 followerY      = py;
                 followerFade   = 0;
                 followerPulseTimer = 0;
@@ -1290,17 +1305,30 @@ function update(dt) {
             followerLifeTimer += dt;
             const VISIT_DUR = 3.0;  // seconds before retreating
             const retreating = followerLifeTimer > VISIT_DUR && slowTime <= 0;
-            // Fade in on entry only - no fade out on retreat
-            followerFade = Math.min(followerFade + 0.7 * dt, 1);
+            // Fade in normally; fade out fast when magnet is active
+            const magnetRepel = magnetTime > 0;
+            if (magnetRepel) {
+                followerFade = Math.max(0, followerFade - dt * 1.5);
+            } else {
+                followerFade = Math.min(followerFade + 0.7 * dt, 1);
+            }
             // Spring: approach on entry/visit, drift slowly off-screen on retreat, lunge on slow-time
-            const targetGap = slowTime > 0 ? -PR * 3 : retreating ? W * 0.9 : PR * 3;
-            const k = followerFade < 1 && !retreating ? 1.5 : slowTime > 0 ? 4.0 : retreating ? 0.12 : 0.35;
+            // Magnet: fast repel so follower leaves immediately instead of drifting back in
+            const targetGap = magnetRepel ? W * 0.9 : slowTime > 0 ? -PR * 3 : retreating ? W * 0.9 : PR * 3;
+            const k = magnetRepel ? 1.0 : followerFade < 1 && !retreating ? 1.5 : slowTime > 0 ? 4.0 : retreating ? 0.12 : 0.35;
             followerGap += k * (targetGap - followerGap) * dt;
-            // Deactivate once drifted off-screen (gap > PX means it's left of the canvas)
-            if (retreating && followerGap >= W * 0.65) {
+            // Deactivate the moment it exits the left edge of the screen
+            const shouldDeactivate = (retreating || magnetRepel) && followerGap >= PX;
+            const magnetFadedOut   = magnetRepel && followerFade <= 0;
+            if (shouldDeactivate || magnetFadedOut) {
+                if (shouldDeactivate) {
+                    burst(4, followerY);
+                    notifs.push({ x: 8, y: followerY - H*0.06, life: 1.3, text: 'ESCAPED!', color: [80, 255, 120] });
+                    sfxFollowerEscape();
+                }
                 followerActive = false;
                 followerFade   = 0;
-                followerRespawnTimer = 6;
+                followerRespawnTimer = 20;
             }
 
             // Chase player Y, steering around stalactites
@@ -1338,7 +1366,7 @@ function update(dt) {
                     if (_hit) {
                         followerActive       = false;
                         followerFade         = 0;
-                        followerRespawnTimer = 6;
+                        followerRespawnTimer = 20;
                         burst(_fsx, followerY);
                         notifs.push({ x: _fsx, y: followerY - H*0.06, life: 1.3, text: 'ESCAPED!', color: [80, 255, 120] });
                         break;
@@ -1584,6 +1612,100 @@ function draw() {
     }
     const edgeClrInner = lerpClr(theme.wall, theme.wallBase, 0.28);
 
+    // Stalactite bodies - drawn BEFORE walls so the wall fill masks the base seam
+    for (const s of stalactites) {
+        const sx = s.wx - scrollX;
+        if (sx < -70 || sx > W+70) continue;
+        if (s.fade <= 0) continue;
+        if (s.fade < 1.0) ctx.globalAlpha = s.fade;
+        const b = boundsAt(s.wx), hw = s.width / 2;
+        const len = s.length;
+        const dir = s.isTop ? 1 : -1;
+        const hw_base = hw;
+        const bLwall = s.isTop ? boundsAt(s.wx - hw_base).top : boundsAt(s.wx - hw_base).bot;
+        const bRwall = s.isTop ? boundsAt(s.wx + hw_base).top : boundsAt(s.wx + hw_base).bot;
+        const tipY = s.isTop ? b.top + len : b.bot - len;
+        const canvasBase = s.isTop ? -10 : H + 10;
+        const gradY0 = s.isTop ? Math.min(bLwall, bRwall) : Math.max(bLwall, bRwall);
+
+        // Gradient: dark at root, warmer mid-body, bright at tip
+        const stalMidClr = lerpClr(theme.stal, theme.stalEdge, 0.18);
+        const stalTipClr = lerpClr(theme.stal, theme.stalEdge, 0.58);
+        let stalGrd;
+        if (s.isTop) {
+            stalGrd = ctx.createLinearGradient(sx, gradY0, sx, tipY);
+            stalGrd.addColorStop(0,    rgb(theme.stal));
+            stalGrd.addColorStop(0.50, rgb(stalMidClr));
+            stalGrd.addColorStop(1,    rgb(stalTipClr));
+        } else {
+            stalGrd = ctx.createLinearGradient(sx, tipY, sx, gradY0);
+            stalGrd.addColorStop(0,    rgb(stalTipClr));
+            stalGrd.addColorStop(0.50, rgb(stalMidClr));
+            stalGrd.addColorStop(1,    rgb(theme.stal));
+        }
+
+        // Shared path helper (reused for fill clip and doesn't need redrawing)
+        const traceStal = () => {
+            ctx.moveTo(sx - hw_base, canvasBase);
+            ctx.lineTo(sx + hw_base, canvasBase);
+            ctx.lineTo(sx + hw_base, bRwall);
+            ctx.bezierCurveTo(sx + hw*0.70, bRwall + dir*len*0.38, sx + hw*0.12, tipY - dir*len*0.18, sx, tipY);
+            ctx.bezierCurveTo(sx - hw*0.12, tipY - dir*len*0.18, sx - hw*0.70, bLwall + dir*len*0.38, sx - hw_base, bLwall);
+            ctx.lineTo(sx - hw_base, canvasBase);
+            ctx.closePath();
+        };
+
+        // Base fill
+        ctx.beginPath(); traceStal();
+        ctx.fillStyle = stalGrd;
+        ctx.fill();
+
+        // Inner glow: clip to shape, paint radial spot for mineral depth/luminescence
+        ctx.save();
+        ctx.clip();
+        const igCY = gradY0 + dir * len * 0.40;
+        const igGrd = ctx.createRadialGradient(sx - hw*0.10, igCY, 0, sx, gradY0 + dir*len*0.12, hw * 1.15);
+        igGrd.addColorStop(0,   rgb(lerpClr(theme.stalEdge, [255,255,255], 0.25), 0.30));
+        igGrd.addColorStop(0.5, rgb(theme.stalEdge, 0.07));
+        igGrd.addColorStop(1,   'rgba(0,0,0,0)');
+        ctx.fillStyle = igGrd;
+        const gy0 = Math.min(canvasBase, tipY) - 5, gy1 = Math.max(canvasBase, tipY) + 5;
+        ctx.fillRect(sx - hw*1.3, gy0, hw*2.6, gy1 - gy0);
+        ctx.restore();
+
+        // Edge glow with soft shadow halo
+        ctx.shadowBlur  = 11;
+        ctx.shadowColor = rgb(theme.stalEdge, 0.48);
+        ctx.beginPath();
+        ctx.moveTo(sx - hw_base, bLwall);
+        ctx.bezierCurveTo(sx - hw*0.70, bLwall + dir*len*0.38, sx - hw*0.12, tipY - dir*len*0.18, sx, tipY);
+        ctx.bezierCurveTo(sx + hw*0.12, tipY - dir*len*0.18, sx + hw*0.70, bRwall + dir*len*0.38, sx + hw_base, bRwall);
+        ctx.strokeStyle = rgb(theme.stalEdge, 0.78);
+        ctx.lineWidth   = 1.5;
+        ctx.lineCap = 'butt';
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.lineCap = 'round';
+
+        // Specular streak: bright reflection line left of center
+        const hlA   = gradY0 + dir * len * 0.07;
+        const hlB   = gradY0 + dir * len * 0.76;
+        const hlClr = lerpClr(theme.stalEdge, [255,255,255], 0.38);
+        const hlGrd = ctx.createLinearGradient(sx, hlA, sx, hlB);
+        hlGrd.addColorStop(0,    rgb(hlClr, 0));
+        hlGrd.addColorStop(0.18, rgb(hlClr, 0.50));
+        hlGrd.addColorStop(0.60, rgb(hlClr, 0.25));
+        hlGrd.addColorStop(1,    rgb(hlClr, 0));
+        ctx.beginPath();
+        ctx.moveTo(sx - hw * 0.07, hlA);
+        ctx.lineTo(sx - hw * 0.04, hlB);
+        ctx.strokeStyle = hlGrd;
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        if (s.fade < 1.0) ctx.globalAlpha = 1.0;
+    }
+
     // Top wall – dark at canvas top, accent-tinted at corridor edge
     ctx.beginPath();
     ctx.moveTo(xs[0], -2);
@@ -1610,57 +1732,6 @@ function draw() {
     ctx.fillStyle = botGrd;
     ctx.fill();
 
-    // Stalactite bodies - drawn before walls so the wall fill covers the base join
-    for (const s of stalactites) {
-        const sx = s.wx - scrollX;
-        if (sx < -70 || sx > W+70) continue;
-        if (s.fade <= 0) continue;
-        if (s.fade < 1.0) ctx.globalAlpha = s.fade;
-        const b  = boundsAt(s.wx), hw = s.width / 2;
-        // Sample wall height at left/right edges so the base follows the wall curve
-        const bL = s.isTop ? boundsAt(s.wx - hw).top : boundsAt(s.wx - hw).bot;
-        const bR = s.isTop ? boundsAt(s.wx + hw).top : boundsAt(s.wx + hw).bot;
-        const tipY = s.isTop ? b.top + s.length : b.bot - s.length;
-        // Control points are relative to each side's own base height
-        const lcp1y = s.isTop ? bL + s.length * 0.45 : bL - s.length * 0.45;
-        const lcp2y = s.isTop ? bL + s.length * 0.88 : bL - s.length * 0.88;
-        const rcp1y = s.isTop ? bR + s.length * 0.45 : bR - s.length * 0.45;
-        const rcp2y = s.isTop ? bR + s.length * 0.88 : bR - s.length * 0.88;
-        const stalTipClr = lerpClr(theme.stal, theme.stalEdge, 0.38);
-
-        const gradY0 = s.isTop ? Math.min(bL, bR) : Math.max(bL, bR);
-        let stalGrd;
-        if (s.isTop) {
-            stalGrd = ctx.createLinearGradient(sx, gradY0, sx, tipY);
-            stalGrd.addColorStop(0, rgb(theme.stal));
-            stalGrd.addColorStop(1, rgb(stalTipClr));
-        } else {
-            stalGrd = ctx.createLinearGradient(sx, tipY, sx, gradY0);
-            stalGrd.addColorStop(0, rgb(stalTipClr));
-            stalGrd.addColorStop(1, rgb(theme.stal));
-        }
-
-        ctx.beginPath();
-        ctx.moveTo(sx - hw, bL);
-        ctx.lineTo(sx + hw, bR);
-        ctx.bezierCurveTo(sx + hw, rcp1y,  sx + hw * 0.08, rcp2y,  sx, tipY);
-        ctx.bezierCurveTo(sx - hw * 0.08, lcp2y,  sx - hw, lcp1y,  sx - hw, bL);
-        ctx.closePath();
-        ctx.fillStyle = stalGrd;
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.moveTo(sx - hw, bL);
-        ctx.bezierCurveTo(sx - hw, lcp1y,  sx - hw * 0.08, lcp2y,  sx, tipY);
-        ctx.bezierCurveTo(sx + hw * 0.08, rcp2y,  sx + hw, rcp1y,  sx + hw, bR);
-        ctx.strokeStyle = rgb(theme.stalEdge, 0.68);
-        ctx.lineWidth = 1.5;
-        ctx.lineCap = 'butt';
-        ctx.stroke();
-        ctx.lineCap = 'round';
-        if (s.fade < 1.0) ctx.globalAlpha = 1.0;
-    }
-
     // Bullets
     drawBullets();
 
@@ -1677,7 +1748,7 @@ function draw() {
     ctx.beginPath();
     for (let i = 0; i < n; i++) {
         const wx = scrollX + xs[i];
-        const blocked = stalactites.some(s => s.isTop && Math.abs(wx - s.wx) <= s.width / 2);
+        const blocked = stalactites.some(s => s.isTop && Math.abs(wx - s.wx) <= s.width / 2 - RSTEP);
         if (blocked) { brk = true; continue; }
         if (brk) { ctx.moveTo(xs[i], topArr[i]); brk = false; }
         else      ctx.lineTo(xs[i], topArr[i]);
@@ -1688,7 +1759,7 @@ function draw() {
     ctx.beginPath();
     for (let i = 0; i < n; i++) {
         const wx = scrollX + xs[i];
-        const blocked = stalactites.some(s => !s.isTop && Math.abs(wx - s.wx) <= s.width / 2);
+        const blocked = stalactites.some(s => !s.isTop && Math.abs(wx - s.wx) <= s.width / 2 - RSTEP);
         if (blocked) { brk = true; continue; }
         if (brk) { ctx.moveTo(xs[i], botArr[i]); brk = false; }
         else      ctx.lineTo(xs[i], botArr[i]);
@@ -1928,7 +1999,7 @@ function draw() {
 
         // Body (drawn when at least partially on-screen)
         if (fsx > -W * 0.25) {
-            const fr    = PR * 0.95;
+            const fr    = PR * 0.65;
             const pulse = 0.88 + 0.12 * Math.sin(gtime * 11.0);
             const fsy   = followerY;
             const fa    = followerFade;
