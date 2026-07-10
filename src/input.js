@@ -9,6 +9,10 @@ function onDown(e) {
 
         // Language panel intercepts all taps when open
         if (showSettings) {
+            if (_resetBtnRect && inRect(cx, cy, _resetBtnRect)) {
+                _resetHolding = true;
+                return;
+            }
             for (const b of _langBtnRects) {
                 if (inRect(cx, cy, b)) {
                     setLang(b.code);
@@ -58,7 +62,7 @@ function onDown(e) {
     holding = true;
     if (phase === 'play') thrustOn();
 }
-function onUp() { holding = false; thrustOff(); }
+function onUp() { holding = false; thrustOff(); _resetHolding = false; }
 
 window.addEventListener('pointerdown', e => { e.preventDefault(); onDown(e); });
 window.addEventListener('pointerup',   e => { e.preventDefault(); onUp();   });

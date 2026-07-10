@@ -58,8 +58,8 @@ function update(dt) {
         titleT  += dt;
         scrollX += 110 * dt;
         refreshWave();
-        const { top: _tTop } = boundsAt(scrollX + PX);
-        py += (_tTop + PR * 2.5 - py) * dt * 2.5;
+        const { top: _tTop, bot: _tBot } = boundsAt(scrollX + PX);
+        py += (_tTop + (_tBot - _tTop) * 0.65 - py) * dt * 2.5;
         const aTSpd = 110 * 0.18;
         for (const p of ambParts) {
             p.x -= aTSpd * p.par * dt;
@@ -68,6 +68,18 @@ function update(dt) {
             if (p.y < 0)  p.y = H;
             if (p.y > H)  p.y = 0;
         }
+        if (showSettings && _resetHolding) {
+            resetHoldT = Math.min(resetHoldT + dt / RESET_HOLD_TIME, 1);
+            if (resetHoldT >= 1) {
+                resetProgress();
+                _resetHolding = false;
+                resetHoldT = 0;
+                resetFlash = 1;
+            }
+        } else {
+            resetHoldT = Math.max(resetHoldT - dt * 3, 0);
+        }
+        if (resetFlash > 0) resetFlash = Math.max(0, resetFlash - dt / 1.2);
         return;
     }
 

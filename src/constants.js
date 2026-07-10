@@ -42,6 +42,8 @@ function rng() {
 
 const MINE_R = W * 0.011;
 
+const RESET_HOLD_TIME = 1.1; // seconds to hold the reset-progress button to confirm
+
 const SKINS = [
     { color: '#e8eeff', shadow: [210,220,255],  name: 'PEARL'                                      },
     { color: '#ffaa00', shadow: [255,155,0],    name: 'AMBER',   req: 100,  perk: 'COIN REACH +50%' },

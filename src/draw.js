@@ -920,135 +920,144 @@ function draw() {
 
         ctx.textBaseline = 'middle';
 
-        // Panel card backdrop (left column)
-        sh(0);
-        ctx.fillStyle = `rgba(6,8,22,${a * 0.52})`;
-        if (LAND) {
-            ctx.beginPath();
-            ctx.roundRect(W * 0.04, H * 0.07, W * 0.44, H * 0.84, 10);
-            ctx.fill();
-            ctx.strokeStyle = `rgba(55,75,140,${a * 0.28})`;
-            ctx.lineWidth = 1;
-            ctx.stroke();
-        } else {
-            ctx.beginPath();
-            ctx.roundRect(W * 0.04, H/2 - H*0.22, W * 0.92, H * 0.44, 10);
-            ctx.fill();
-            ctx.strokeStyle = `rgba(55,75,140,${a * 0.28})`;
-            ctx.lineWidth = 1;
-            ctx.stroke();
-        }
+        // Darken the scene so the card pops
+        ctx.fillStyle = `rgba(4,4,14,${a * 0.55})`;
+        ctx.fillRect(0, 0, W, H);
+
+        const logoY = LAND ? H * 0.33 : H/2 - H*0.12;
 
         // Gradient separator between columns (landscape only)
         if (LAND) {
             const sepGrd = ctx.createLinearGradient(0, H * 0.10, 0, H * 0.90);
             sepGrd.addColorStop(0,   `rgba(55,75,140,0)`);
-            sepGrd.addColorStop(0.2, `rgba(55,75,140,${a * 0.32})`);
-            sepGrd.addColorStop(0.8, `rgba(55,75,140,${a * 0.32})`);
+            sepGrd.addColorStop(0.2, `rgba(80,110,200,${a * 0.40})`);
+            sepGrd.addColorStop(0.8, `rgba(80,110,200,${a * 0.40})`);
             sepGrd.addColorStop(1,   `rgba(55,75,140,0)`);
             ctx.fillStyle = sepGrd;
             ctx.fillRect(W * 0.49, H * 0.08, 1, H * 0.84);
         }
 
-        // TUNL logo with breathing glow
-        const logoPulse = 18 + 10 * Math.sin(gtime * 1.8);
-        sh(logoPulse, `rgba(120,160,255,${a * 0.55})`);
-        ctx.font      = `bold ${FS*0.085}px 'Courier New',monospace`;
-        ctx.fillStyle = `rgba(195,220,255,${a * 0.97})`;
-        const logoY   = LAND ? H * 0.26 : H/2 - H*0.12;
+        // Radial halo behind TUNL logo
+        const haloR  = FS * 0.14;
+        const haloPulse = 0.65 + 0.35 * Math.sin(gtime * 1.4);
+        const halo = ctx.createRadialGradient(titleX, logoY, 0, titleX, logoY, haloR);
+        halo.addColorStop(0,   `rgba(80,120,255,${a * haloPulse * 0.22})`);
+        halo.addColorStop(0.5, `rgba(60, 90,220,${a * haloPulse * 0.10})`);
+        halo.addColorStop(1,   `rgba(40, 60,180,0)`);
+        ctx.fillStyle = halo;
+        ctx.fillRect(titleX - haloR, logoY - haloR, haloR * 2, haloR * 2);
+
+        // TUNL logo -- double-render for stronger glow
+        ctx.font = `bold ${FS*0.090}px 'Courier New',monospace`;
+        const logoPulse = 24 + 14 * Math.sin(gtime * 1.4);
+        ctx.shadowColor = `rgba(100,150,255,${a * 0.70})`; ctx.shadowBlur = logoPulse * 1.6;
+        ctx.fillStyle   = `rgba(195,220,255,${a * 0.30})`;
         ctx.fillText('TUNL', titleX, logoY);
+        ctx.shadowBlur  = logoPulse;
+        ctx.fillStyle   = `rgba(215,232,255,${a * 0.97})`;
+        ctx.fillText('TUNL', titleX, logoY);
+        ctx.shadowBlur  = 0;
 
-        // Accent underline below logo
-        sh(0);
-        ctx.fillStyle = `rgba(100,140,255,${a * 0.45})`;
+        // Accent underline
         const logoW = ctx.measureText('TUNL').width;
-        ctx.fillRect(titleX - logoW * 0.5, logoY + FS * 0.050, logoW, 1.5);
+        const ulY   = logoY + FS * 0.055;
+        const ulGrd = ctx.createLinearGradient(titleX - logoW*0.5, ulY, titleX + logoW*0.5, ulY);
+        ulGrd.addColorStop(0,   `rgba(80,120,255,0)`);
+        ulGrd.addColorStop(0.3, `rgba(120,165,255,${a * 0.80})`);
+        ulGrd.addColorStop(0.7, `rgba(120,165,255,${a * 0.80})`);
+        ulGrd.addColorStop(1,   `rgba(80,120,255,0)`);
+        ctx.fillStyle = ulGrd;
+        ctx.fillRect(titleX - logoW*0.5, ulY, logoW, 1.5);
 
-        sh(4);
+        ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 4;
         ctx.font      = `${FS*0.026}px 'Courier New',monospace`;
         ctx.fillStyle = `rgba(120,155,215,${a * 0.72})`;
-        ctx.fillText(WORLD_NAME.toUpperCase(), titleX, LAND ? H * 0.385 : H/2 - H*0.038);
+        ctx.fillText(WORLD_NAME.toUpperCase(), titleX, LAND ? H * 0.455 : H/2 - H*0.038);
 
-        sh(6);
-        ctx.font      = `${FS*0.030}px 'Courier New',monospace`;
-        ctx.fillStyle = `rgba(170,195,255,${a * 0.92})`;
-        ctx.fillText(T.hold, titleX, LAND ? H * 0.50 : H/2 + H*0.038);
-
-        // TAP TO START with subtle pulse
-        const tapPulse = 0.80 + 0.20 * Math.sin(gtime * 2.2);
-        sh(8, `rgba(100,140,255,${a * tapPulse * 0.45})`);
-        ctx.font      = `bold ${FS*0.036}px 'Courier New',monospace`;
-        ctx.fillStyle = `rgba(195,220,255,${a * tapPulse * 0.96})`;
-        ctx.fillText(T.tap, titleX, LAND ? H * 0.72 : H/2 + H*0.135);
-        sh(0);
+        // TAP TO START -- strong pulsing glow, the main CTA
+        const tapPulse  = 0.72 + 0.28 * Math.sin(gtime * 2.4);
+        const tapGlow   = 14 + 10 * Math.sin(gtime * 2.4);
+        ctx.font        = `bold ${FS*0.040}px 'Courier New',monospace`;
+        ctx.shadowColor = `rgba(90,140,255,${a * tapPulse * 0.70})`;
+        ctx.shadowBlur  = tapGlow * 1.8;
+        ctx.fillStyle   = `rgba(190,215,255,${a * tapPulse * 0.35})`;
+        ctx.fillText(T.tap, titleX, LAND ? H * 0.63 : H/2 + H*0.140);
+        ctx.shadowBlur  = tapGlow;
+        ctx.fillStyle   = `rgba(210,228,255,${a * (0.80 + 0.20 * tapPulse)})`;
+        ctx.fillText(T.tap, titleX, LAND ? H * 0.63 : H/2 + H*0.140);
+        ctx.shadowBlur  = 0;
 
         // Audio toggle + language buttons
-        const tBtnY   = LAND ? H * 0.87 : H/2 + H*0.215;
+        const tBtnY   = LAND ? H * 0.80 : H/2 + H*0.225;
         const musicBX = LAND ? titleX - W * 0.055 : W * 0.285;
         const fxBX    = LAND ? titleX + W * 0.055 : W * 0.715;
-        ctx.font = `${FS*0.024}px 'Courier New',monospace`;
-        const drawBtn = (bCx, bCy, label, active, tint) => {
+        ctx.font = `${FS*0.022}px 'Courier New',monospace`;
+        const drawBtn = (bCx, bCy, label, active, blue) => {
             const m  = ctx.measureText(label);
-            const bw = m.width + W*0.038, bh = H*0.058;
+            const bw = m.width + W*0.034, bh = H*0.055;
             const bx = bCx - bw/2, by = bCy - bh/2;
-            sh(active ? 6 : 0, tint ? `rgba(80,120,220,${a*0.40})` : `rgba(80,180,100,${a*0.40})`);
-            ctx.fillStyle   = active
-                ? (tint ? `rgba(16,28,65,${a*0.80})` : `rgba(16,48,28,${a*0.80})`)
-                : `rgba(12,14,30,${a*0.65})`;
-            ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 4); ctx.fill();
+            const bgA = active ? a*0.82 : a*0.55;
+            const bg  = active
+                ? (blue ? `rgba(14,26,62,${bgA})` : `rgba(12,44,24,${bgA})`)
+                : `rgba(10,12,26,${bgA})`;
+            ctx.shadowColor = active
+                ? (blue ? `rgba(80,130,255,${a*0.45})` : `rgba(60,200,100,${a*0.45})`)
+                : 'transparent';
+            ctx.shadowBlur = active ? 8 : 0;
+            ctx.fillStyle = bg;
+            ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 5); ctx.fill();
             ctx.strokeStyle = active
-                ? (tint ? `rgba(90,130,255,${a*0.60})` : `rgba(80,210,110,${a*0.60})`)
-                : `rgba(60,65,100,${a*0.35})`;
-            ctx.lineWidth = 1.2; ctx.stroke();
+                ? (blue ? `rgba(90,140,255,${a*0.65})` : `rgba(70,215,110,${a*0.65})`)
+                : `rgba(50,55,90,${a*0.40})`;
+            ctx.lineWidth = 1; ctx.shadowBlur = 0; ctx.stroke();
             ctx.fillStyle = active
-                ? (tint ? `rgba(130,165,255,${a*0.95})` : `rgba(100,230,130,${a*0.95})`)
-                : `rgba(110,115,160,${a*0.65})`;
+                ? (blue ? `rgba(140,175,255,${a})` : `rgba(90,230,125,${a})`)
+                : `rgba(95,100,145,${a*0.70})`;
             ctx.fillText(label, bCx, bCy);
-            sh(0);
             return { x: bx, y: by, w: bw, h: bh };
         };
         _btnMusicRect = drawBtn(musicBX, tBtnY, musicOn ? T.musicOn : T.musicOff, musicOn, false);
         _btnFxRect    = drawBtn(fxBX,    tBtnY, fxOn    ? T.fxOn    : T.fxOff,    fxOn,    false);
 
-        // Language picker button (blue-tinted, right column in landscape)
+        // Settings button (cog)
         {
-            const langBX = LAND ? infoX : W / 2;
-            const langBY = LAND ? tBtnY : tBtnY + H * 0.070;
-            const label  = activeLang.toUpperCase();
-            const m      = ctx.measureText(label);
-            const bw = m.width + W * 0.038, bh = H * 0.058;
+            const langBX = LAND ? titleX + W * 0.165 : W / 2;
+            const langBY = LAND ? tBtnY : tBtnY + H * 0.072;
+            ctx.font = `${FS*0.028}px -apple-system,'Helvetica Neue',Arial,sans-serif`;
+            const m  = ctx.measureText('⚙️');
+            const bw = m.width + W * 0.034, bh = H * 0.055;
             const bx = langBX - bw / 2, by = langBY - bh / 2;
-            sh(6, `rgba(80,120,220,${a*0.40})`);
-            ctx.fillStyle   = `rgba(16,28,65,${a*0.80})`;
-            ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 4); ctx.fill();
-            ctx.strokeStyle = `rgba(90,130,255,${a*0.60})`;
-            ctx.lineWidth   = 1.2; ctx.stroke();
-            ctx.fillStyle   = `rgba(130,165,255,${a*0.95})`;
-            ctx.fillText(label, langBX, langBY);
-            sh(0);
+            ctx.shadowColor = `rgba(80,130,255,${a*0.45})`; ctx.shadowBlur = 8;
+            ctx.fillStyle   = `rgba(14,26,62,${a*0.82})`;
+            ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 5); ctx.fill();
+            ctx.strokeStyle = `rgba(90,140,255,${a*0.65})`;
+            ctx.lineWidth   = 1; ctx.shadowBlur = 0; ctx.stroke();
+            ctx.fillStyle   = `rgba(140,175,255,${a})`;
+            ctx.fillText('⚙️', langBX, langBY);
             _settingsBtnRect = { x: bx, y: by, w: bw, h: bh };
         }
 
         {
-            sh(4);
+            ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 4;
             ctx.font        = `${FS*0.026}px 'Courier New',monospace`;
             ctx.fillStyle   = `rgba(160,185,255,${a * 0.92})`;
-            ctx.fillText(`${T.today}  ${dailyRuns > 0 ? dailyBest : '-'}`, infoX, LAND ? H * 0.18 : H/2 + H*0.272);
+            ctx.fillText(`${T.today}  ${dailyRuns > 0 ? dailyBest : '-'}`, infoX, LAND ? H * 0.33 : H/2 + H*0.280);
             if (best > dailyBest) {
                 ctx.font      = `${FS*0.019}px 'Courier New',monospace`;
                 ctx.fillStyle = `rgba(100,122,172,${a * 0.55})`;
-                ctx.fillText(`${T.allTime}  ${best}`, infoX, LAND ? H * 0.262 : H/2 + H*0.308);
+                ctx.fillText(`${T.allTime}  ${best}`, infoX, LAND ? H * 0.42 : H/2 + H*0.316);
             }
-            sh(0);
+            ctx.shadowBlur = 0;
         }
 
         if (streak > 0) {
             const flame = streak >= 7 ? ' **' : streak >= 3 ? ' *' : '';
             ctx.font        = `${FS*0.022}px 'Courier New',monospace`;
             ctx.fillStyle   = streak >= 3 ? `rgba(255,170,55,${a * 0.95})` : `rgba(155,175,220,${a * 0.88})`;
-            sh(4);
-            ctx.fillText(`${streak}${flame} ${T.day}`, infoX, LAND ? H * 0.33 : H/2 + H*0.340);
-            sh(0);
+            ctx.shadowColor = streak >= 3 ? `rgba(255,140,20,${a * 0.50})` : 'rgba(0,0,0,0.85)';
+            ctx.shadowBlur  = streak >= 3 ? 8 : 4;
+            ctx.fillText(`${streak}${flame} ${T.day}`, infoX, LAND ? H * 0.50 : H/2 + H*0.348);
+            ctx.shadowBlur  = 0;
         }
 
         // Skin picker
@@ -1059,7 +1068,7 @@ function draw() {
             const dotGap = Math.max(dotR * 2.8, LAND ? H * 0.155 : W * 0.180);
             const skinCX = infoX;
             // In portrait anchor to bottom so ships never overlap BEST/streak above them
-            const dotY   = LAND ? H * 0.64 : H - dotR * 2.4;
+            const dotY   = LAND ? H * 0.70 : H - dotR * 2.4;
             const startX = skinCX - (SKINS.length - 1) * dotGap / 2;
             _skinBtnRects = [];
             ctx.font        = `${FS*0.018}px 'Courier New',monospace`;
@@ -1127,7 +1136,7 @@ function draw() {
             ctx.fillRect(0, 0, W, H);
 
             const panW = Math.min(W * 0.52, 320);
-            const panH = H * 0.76;
+            const panH = H * 0.95;
             const panX = W / 2 - panW / 2;
             const panY = H / 2 - panH / 2;
 
@@ -1145,8 +1154,13 @@ function draw() {
             ctx.fillStyle    = 'rgba(165,190,255,0.95)';
             ctx.shadowColor  = 'rgba(0,0,0,0.90)';
             ctx.shadowBlur   = 5;
-            ctx.fillText(T.language, W / 2, panY + panH * 0.115);
+            ctx.fillText(T.settings, W / 2, panY + panH * 0.088);
             ctx.shadowBlur   = 0;
+
+            // Language section label
+            ctx.font      = `${FS * 0.020}px 'Courier New',monospace`;
+            ctx.fillStyle = 'rgba(100,120,180,0.65)';
+            ctx.fillText(T.language, W / 2, panY + panH * 0.175);
 
             _langBtnRects = [];
             const lbw  = panW * 0.78;
@@ -1155,7 +1169,7 @@ function draw() {
             for (let i = 0; i < LANG_ORDER.length; i++) {
                 const code   = LANG_ORDER[i];
                 const lang   = LANGS[code];
-                const lby    = panY + panH * 0.225 + i * (lbh + H * 0.018);
+                const lby    = panY + panH * 0.215 + i * (lbh + H * 0.018);
                 const active = activeLang === code;
 
                 ctx.fillStyle = active ? 'rgba(28,50,90,0.88)' : 'rgba(15,18,40,0.72)';
@@ -1174,6 +1188,56 @@ function draw() {
 
                 _langBtnRects.push({ x: lbx0, y: lby, w: lbw, h: lbh, code });
             }
+
+            // Divider above reset section
+            ctx.strokeStyle = 'rgba(60,70,110,0.35)';
+            ctx.lineWidth   = 1;
+            ctx.beginPath();
+            ctx.moveTo(panX + panW * 0.10, panY + panH - H * 0.260);
+            ctx.lineTo(panX + panW * 0.90, panY + panH - H * 0.260);
+            ctx.stroke();
+
+            // Reset section label
+            ctx.font      = `${FS * 0.020}px 'Courier New',monospace`;
+            ctx.fillStyle = 'rgba(100,120,180,0.65)';
+            ctx.fillText('DATA', W / 2, panY + panH - H * 0.220);
+
+            // Reset progress button (hold-to-confirm)
+            {
+                const rbw = panW * 0.74, rbh = H * 0.110;
+                const rbx = W / 2 - rbw / 2, rby = panY + panH - H * 0.130 - rbh / 2;
+                const held = resetHoldT > 0;
+                const txt  = resetFlash > 0 ? T.resetDone : T.resetProgress;
+                const lines = txt.split('\n');
+
+                ctx.fillStyle = 'rgba(15,18,40,0.72)';
+                ctx.beginPath(); ctx.roundRect(rbx, rby, rbw, rbh, 7); ctx.fill();
+                if (held) {
+                    ctx.save();
+                    ctx.beginPath(); ctx.roundRect(rbx, rby, rbw, rbh, 7); ctx.clip();
+                    ctx.fillStyle = 'rgba(220,60,60,0.55)';
+                    ctx.fillRect(rbx, rby, rbw * resetHoldT, rbh);
+                    ctx.restore();
+                }
+                ctx.strokeStyle = held ? 'rgba(255,90,90,0.75)' : 'rgba(120,60,60,0.45)';
+                ctx.lineWidth   = held ? 1.5 : 1;
+                ctx.beginPath(); ctx.roundRect(rbx, rby, rbw, rbh, 7); ctx.stroke();
+
+                ctx.font      = `${FS * 0.023}px 'Courier New',monospace`;
+                ctx.fillStyle = resetFlash > 0 ? 'rgba(255,210,120,0.95)' : 'rgba(255,150,150,0.88)';
+                const lineH   = FS * 0.028;
+                const totalH  = lines.length > 1 ? lineH : 0;
+                lines.forEach((line, i) => {
+                    const ly = rby + rbh / 2 - totalH / 2 + i * lineH;
+                    ctx.fillText(line, W / 2, ly);
+                });
+
+                _resetBtnRect = { x: rbx, y: rby, w: rbw, h: rbh };
+            }
+
+            ctx.font      = `${FS * 0.016}px 'Courier New',monospace`;
+            ctx.fillStyle = 'rgba(140,150,180,0.55)';
+            ctx.fillText(T.resetHold, W / 2, panY + panH - H * 0.038);
         }
     }
 

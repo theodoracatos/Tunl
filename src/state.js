@@ -22,6 +22,10 @@ let _homeBtnRect = null, _playBtnRect = null;
 let showSettings = false;
 let _settingsBtnRect = null;
 let _langBtnRects = [];
+let _resetBtnRect = null;
+let _resetHolding = false;
+let resetHoldT = 0;    // 0..1 hold-to-confirm progress on the reset button
+let resetFlash = 0;    // confirmation flash after a reset, decays to 0
 let parts, thrustParts, deadT, titleT, flashA, shake, trailY;
 let stalactites, nextStalWx;
 let coins, nextCoinWx;

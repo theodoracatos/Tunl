@@ -9,6 +9,18 @@ function initAmbParts() {
     }));
 }
 
+function resetProgress() {
+    best = 0; bestSX = 0; runsWithoutPB = 0; top5 = [];
+    dailyBest = 0; dailyRuns = 0; streak = 0;
+    unlockedSkins = 1; activeSkin = 0;
+    deathMarkers = []; bestMarker = null;
+    for (const k of ['tunnel_best', 'tunnel_best_sx', 'tunnel_no_pb', 'tunnel_top5',
+                      'tunnel_daily_best', 'tunnel_daily_runs', 'tunnel_lastday',
+                      'tunnel_streak', 'tunnel_skins', 'tunnel_skin']) {
+        localStorage.removeItem(k);
+    }
+}
+
 function titleScreen() {
     phase = 'title'; py = H / 2; vy = 0; holding = false; scrollX = 0;
     score = 0; newBest = false; newDailyBest = false;
