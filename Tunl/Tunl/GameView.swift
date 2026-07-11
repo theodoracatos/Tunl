@@ -93,7 +93,7 @@ struct GameView: UIViewRepresentable {
         private func showLeaderboard() {
             guard GKLocalPlayer.local.isAuthenticated else { return }
             let vc = GKGameCenterViewController(leaderboardID: Coordinator.leaderboardID,
-                                                 playerScope: .global, timeScope: .allTime)
+                                                 playerScope: .global, timeScope: .today)
             vc.gameCenterDelegate = self
             rootViewController()?.present(vc, animated: true)
         }
