@@ -60,18 +60,18 @@ function onDown(e) {
     }
     if (phase === 'dead' && deadT > 0.9) {
         if (!e) {
-            window.webkit?.messageHandlers?.ads?.postMessage({ action: 'interstitialRequest' });
+            window.webkit?.messageHandlers?.ads?.postMessage({ action: 'interstitialRequest', score });
             startPlay(); holding = true; thrustOn(); return;
         }
         const rect = cv.getBoundingClientRect();
         const cx = (e.clientX - rect.left) * (W / rect.width);
         const cy = (e.clientY - rect.top)  * (H / rect.height);
         if (_homeBtnRect && inRect(cx, cy, _homeBtnRect)) {
-            window.webkit?.messageHandlers?.ads?.postMessage({ action: 'interstitialRequest' });
+            window.webkit?.messageHandlers?.ads?.postMessage({ action: 'interstitialRequest', score });
             titleScreen(); return;
         }
         if (_playBtnRect && inRect(cx, cy, _playBtnRect)) {
-            window.webkit?.messageHandlers?.ads?.postMessage({ action: 'interstitialRequest' });
+            window.webkit?.messageHandlers?.ads?.postMessage({ action: 'interstitialRequest', score });
             startPlay(); holding = true; thrustOn(); return;
         }
         return;

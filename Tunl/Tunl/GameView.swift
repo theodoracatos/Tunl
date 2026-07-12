@@ -122,6 +122,7 @@ struct GameView: UIViewRepresentable {
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             GameView.killPressInteractions(in: webView)
             Task { await self.iap.refreshEntitlements() }
+            ads.start()
         }
 
         func webView(_ webView: WKWebView,
@@ -168,7 +169,8 @@ struct GameView: UIViewRepresentable {
                       let action = body["action"] as? String else { return }
                 switch action {
                 case "interstitialRequest":
-                    ads.requestInterstitial(removeAdsOwned: iap.removeAdsOwned)
+                    let score = body["score"] as? Int ?? 0
+                    ads.requestInterstitial(removeAdsOwned: iap.removeAdsOwned, score: score)
                 default: break
                 }
                 return

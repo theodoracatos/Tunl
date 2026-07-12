@@ -886,10 +886,10 @@ function draw() {
         }
         ctx.shadowBlur = 0;
         ctx.save();
-        ctx.font         = `${FS*0.016}px 'Courier New',monospace`;
+        ctx.font         = `bold ${FS*0.016}px 'Courier New',monospace`;
         ctx.textAlign    = 'left';
         ctx.textBaseline = 'middle';
-        ctx.fillStyle    = 'rgba(255,150,0,0.52)';
+        ctx.fillStyle    = 'rgba(255,175,60,0.85)';
         ctx.fillText(T.ammo, startX + bulletAmmo * dotR * 2.8 + W * 0.010, dotY);
         ctx.restore();
     }
@@ -1041,8 +1041,8 @@ function draw() {
             ctx.fillStyle   = `rgba(190,212,255,${a * 0.98})`;
             ctx.fillText(`${T.today}  ${dailyRuns > 0 ? dailyBest : '-'}`, infoX, LAND ? H * 0.33 : H/2 + H*0.280);
             if (best > dailyBest) {
-                ctx.font      = `${FS*0.019}px 'Courier New',monospace`;
-                ctx.fillStyle = `rgba(100,122,172,${a * 0.55})`;
+                ctx.font      = `bold ${FS*0.020}px 'Courier New',monospace`;
+                ctx.fillStyle = `rgba(150,175,225,${a * 0.85})`;
                 ctx.fillText(`${T.allTime}  ${best}`, infoX, LAND ? H * 0.42 : H/2 + H*0.316);
             }
             ctx.shadowBlur = 0;
@@ -1069,9 +1069,9 @@ function draw() {
             const dotY   = LAND ? H * 0.70 : H - dotR * 2.4;
             const startX = skinCX - (SKINS.length - 1) * dotGap / 2;
             _skinBtnRects = [];
-            ctx.font        = `${FS*0.018}px 'Courier New',monospace`;
-            ctx.fillStyle   = 'rgba(150,170,220,0.70)';
-            ctx.shadowColor = 'rgba(0,0,0,0.80)';
+            ctx.font        = `bold ${FS*0.018}px 'Courier New',monospace`;
+            ctx.fillStyle   = 'rgba(190,205,240,0.92)';
+            ctx.shadowColor = 'rgba(0,0,0,0.85)';
             ctx.shadowBlur  = 3;
             ctx.fillText(T.ship, skinCX, dotY - dotR * 2.0);
             ctx.shadowBlur  = 0;
@@ -1086,9 +1086,9 @@ function draw() {
                     ctx.strokeStyle = 'rgba(90,95,130,0.50)';
                     ctx.lineWidth   = 1.5;
                     ctx.stroke();
-                    ctx.font        = `${FS*0.014}px 'Courier New',monospace`;
-                    ctx.fillStyle   = 'rgba(110,115,155,0.70)';
-                    ctx.shadowColor = 'rgba(0,0,0,0.80)';
+                    ctx.font        = `bold ${FS*0.014}px 'Courier New',monospace`;
+                    ctx.fillStyle   = 'rgba(150,160,205,0.85)';
+                    ctx.shadowColor = 'rgba(0,0,0,0.85)';
                     ctx.shadowBlur  = 3;
                     ctx.fillText(SKINS[i].req, cx, dotY + dotR * 1.7);
                     ctx.shadowBlur  = 0;
@@ -1117,7 +1117,7 @@ function draw() {
                     ctx.shadowBlur  = 0;
                     const perk = T.skinPerks && T.skinPerks[i];
                     if (selected && perk) {
-                        ctx.font        = `${FS*0.016}px -apple-system,'Helvetica Neue',Arial,sans-serif`;
+                        ctx.font        = `${FS*0.016}px 'Courier New',monospace`;
                         ctx.fillStyle   = `rgba(${sr},${sg},${sb},0.85)`;
                         ctx.shadowColor = 'rgba(0,0,0,0.90)';
                         ctx.shadowBlur  = 4;
@@ -1340,6 +1340,12 @@ function draw() {
             ctx.font      = `bold ${FS*0.036}px 'Courier New',monospace`;
             ctx.fillStyle = `rgba(255,240,120,${a})`;
             ctx.fillText(T.newDailyBest, LC, H * 0.74);
+            if (best > 0) {
+                sh(2);
+                ctx.font      = `bold ${FS*0.022}px 'Courier New',monospace`;
+                ctx.fillStyle = `rgba(160,190,240,${a * 0.85})`;
+                ctx.fillText(`${T.best}  ${best}`, LC, H * 0.79);
+            }
         } else if (best > 0) {
             sh(2);
             ctx.font      = `bold ${FS*0.026}px 'Courier New',monospace`;
