@@ -3,6 +3,8 @@
 let _ac = null, _tNode = null, _tGain = null;
 let _bgmBuf = null, _bgmBufRev = null, _bgmNode = null, _bgmGain = null;
 let _bgmDir = 1, _bgmActive = false, _bgmPending = false;
+let _titleBgmBuf = null, _titleBgmNode = null, _titleBgmGain = null;
+let _titleBgmActive = false, _titleBgmPending = false;
 
 function _startBgMusic() {
     if (!musicOn) return;
@@ -46,9 +48,50 @@ function _fadeBgMusic() {
     }
 }
 
+function _startTitleMusic() {
+    if (!musicOn) return;
+    if (_titleBgmActive) return;  // already playing - don't restart
+    _titleBgmActive = true;
+    if (_titleBgmGain && _ac) {
+        _titleBgmGain.gain.cancelScheduledValues(_ac.currentTime);
+        _titleBgmGain.gain.setValueAtTime(0.32, _ac.currentTime);
+    }
+    if (_titleBgmBuf) { _playTitleBgmBuffer(); return; }
+    // buffer still decoding - mark pending; _initAC will start playback when ready
+    _titleBgmPending = true;
+}
+
+function _playTitleBgmBuffer() {
+    if (!_ac || !_titleBgmBuf || !_titleBgmActive) return;
+    _titleBgmGain = _titleBgmGain || (() => {
+        const g = _ac.createGain(); g.gain.value = 0.32; g.connect(_ac.destination); return g;
+    })();
+    _titleBgmNode = _ac.createBufferSource();
+    _titleBgmNode.buffer = _titleBgmBuf;
+    _titleBgmNode.loop = true;
+    _titleBgmNode.connect(_titleBgmGain);
+    _titleBgmNode.start();
+}
+
+function _fadeTitleMusic() {
+    _titleBgmActive = false;
+    _titleBgmPending = false;
+    if (_titleBgmGain && _titleBgmNode) {
+        const t = _ac.currentTime;
+        _titleBgmGain.gain.cancelScheduledValues(t);
+        _titleBgmGain.gain.setValueAtTime(_titleBgmGain.gain.value, t);
+        _titleBgmGain.gain.linearRampToValueAtTime(0.001, t + 0.05);
+        const n = _titleBgmNode; _titleBgmNode = null;
+        setTimeout(() => { try { n.stop(); } catch(e){} }, 80);
+    }
+}
+
 function _initAC() {
     if (_ac) { if (_ac.state === 'suspended') _ac.resume(); return; }
     _ac = new (window.AudioContext || window.webkitAudioContext)();
+    // WebKit sometimes creates the context in 'suspended' state even inside a
+    // user gesture - resume it explicitly now, still within the gesture.
+    if (_ac.state === 'suspended') _ac.resume();
     fetch('the_mountain.mp3')
         .then(r => r.arrayBuffer())
         .then(ab => _ac.decodeAudioData(ab))
@@ -61,6 +104,14 @@ function _initAC() {
                 for (let i = 0; i < buf.length; i++) rev[i] = fwd[buf.length - 1 - i];
             }
             if (_bgmPending && _bgmActive) { _bgmPending = false; _playBgmBuffer(); }
+        })
+        .catch(() => {});
+    fetch('the_mountain_documentary.mp3')
+        .then(r => r.arrayBuffer())
+        .then(ab => _ac.decodeAudioData(ab))
+        .then(buf => {
+            _titleBgmBuf = buf;
+            if (_titleBgmPending && _titleBgmActive) { _titleBgmPending = false; _playTitleBgmBuffer(); }
         })
         .catch(() => {});
 }

@@ -20,7 +20,7 @@ function update(dt) {
         p.life -= dt * 3.2;
         if (p.life <= 0) thrustParts.splice(i, 1);
     }
-    if (holding && phase === 'play') {
+    if (holding && (phase === 'play' || phase === 'title')) {
         for (const ns of [-1, 1]) {
             const ey = py + ns * PR * 0.50;
             for (let i = 0; i < 4; i++) {
@@ -59,7 +59,14 @@ function update(dt) {
         scrollX += 110 * dt;
         refreshWave();
         const { top: _tTop, bot: _tBot } = boundsAt(scrollX + PX);
+        const prevPy = py;
         py += (_tTop + (_tBot - _tTop) * 0.65 - py) * dt * 2.5;
+        const demoVy = dt > 0 ? (py - prevPy) / dt : 0;
+        holding = demoVy < -4;
+        const MAX_PITCH = 0.70;
+        const pitchTarget = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, Math.atan2(demoVy, 110)));
+        shipPitch += (pitchTarget - shipPitch) * Math.min(dt * 14, 1);
+        maintainStalactites();
         const aTSpd = 110 * 0.18;
         for (const p of ambParts) {
             p.x -= aTSpd * p.par * dt;
@@ -328,6 +335,7 @@ function die(bypassShield = false) {
     burst(PX, py);
     sfxDie();
     _fadeBgMusic();
+    _startTitleMusic();
     window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
     return true;
 }

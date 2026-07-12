@@ -55,12 +55,9 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
 
             guard ConsentInformation.shared.canRequestAds else { return }
 
-            ATTrackingManager.requestTrackingAuthorization { [weak self] _ in
-                DispatchQueue.main.async {
-                    MobileAds.shared.start(completionHandler: nil)
-                    Task { await self?.loadInterstitial() }
-                }
-            }
+            _ = await ATTrackingManager.requestTrackingAuthorization()
+            _ = await MobileAds.shared.start()
+            await self.loadInterstitial()
         }
     }
 

@@ -14,7 +14,7 @@ function titleScreen() {
     score = 0; newBest = false; newDailyBest = false;
     parts = []; thrustParts = []; deadT = 0; titleT = 0; flashA = 0; shake = 0; trailY = [];
     skinFx = []; skinFxT = 0; shipPitch = 0;
-    stalactites = []; nextStalWx = 99999;
+    stalactites = []; nextStalWx = 420;
     coins = [];     nextCoinWx = 99999;
     chicaneCoins = [];
     gapBonus = 0; slowTime = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
@@ -24,10 +24,12 @@ function titleScreen() {
     runCoins = 0; runNearMisses = 0; runMaxCombo = 0; skinUnlockIdx = -1;
     initAmbParts();
     refreshWave();
+    _startTitleMusic();
 }
 
 function startPlay() {
     thrustOff();
+    _fadeTitleMusic();
     phase = 'play'; py = H + PR * 4; vy = 0; holding = false; scrollX = 0; startRamp = 0;
     score = 0; newBest = false; newDailyBest = false;
     parts = []; thrustParts = []; deadT = 0; flashA = 0; shake = 0; trailY = [];

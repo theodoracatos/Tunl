@@ -20,6 +20,7 @@ function onDown(e) {
             if (_btnMusicRect && inRect(cx, cy, _btnMusicRect)) {
                 musicOn = !musicOn;
                 localStorage.setItem('tunnel_music', musicOn ? '1' : '0');
+                if (musicOn) _startTitleMusic(); else _fadeTitleMusic();
                 return;
             }
             if (_btnFxRect && inRect(cx, cy, _btnFxRect)) {

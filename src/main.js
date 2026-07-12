@@ -19,5 +19,8 @@ function loop(ts) {
     requestAnimationFrame(loop);
 }
 
+// GameView.swift disables WKWebView's "user action required for playback"
+// policy, so audio can start immediately without waiting for the first tap.
+_initAC();
 titleScreen();
 requestAnimationFrame(ts => { prev = ts; requestAnimationFrame(loop); });

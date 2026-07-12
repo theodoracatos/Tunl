@@ -658,7 +658,7 @@ function draw() {
         ctx.rotate(pitchAngle);
         ctx.translate(-PX, -py);
 
-        if ((holding || startRamp < 1) && phase === 'play') {
+        if ((holding || startRamp < 1) && (phase === 'play' || phase === 'title')) {
             const pulse = 0.75 + 0.25 * Math.sin(gtime * 22);
             for (const ns of [-1, 1]) {
                 const nx = PX - PR * 0.74, ny = py + ns * PR * 0.50;
@@ -1382,47 +1382,47 @@ function draw() {
         sh(5, `rgba(200,30,30,${a * 0.55})`);
         ctx.font      = `bold ${FS*0.095}px 'Courier New',monospace`;
         ctx.fillStyle = `rgba(255,70,70,${a})`;
-        ctx.fillText(T.dead, LC, H * 0.25);
+        ctx.fillText(T.dead, LC, H * 0.20);
 
         // Accent underline
         sh(0);
         ctx.fillStyle = `rgba(255,80,80,${a * 0.75})`;
         const deadW = ctx.measureText(T.dead).width;
-        ctx.fillRect(LC - deadW * 0.5, H * 0.317, deadW, 2);
+        ctx.fillRect(LC - deadW * 0.5, H * 0.267, deadW, 2);
 
         // Score with pulsing glow
         const scorePulse = newDailyBest ? 18 + 5 * Math.sin(deadT * 3.5) : 4;
         sh(scorePulse, newDailyBest ? `rgba(255,190,0,${a*0.75})` : 'rgba(0,0,0,0.90)');
         ctx.font      = `bold ${FS*0.140}px 'Courier New',monospace`;
         ctx.fillStyle = newDailyBest ? `rgba(255,225,65,${a})` : `rgba(225,240,255,${a})`;
-        ctx.fillText(score, LC, H * 0.52);
+        ctx.fillText(score, LC, H * 0.44);
 
         sh(2);
         ctx.font      = `bold ${FS*0.026}px 'Courier New',monospace`;
         ctx.fillStyle = `rgba(160,190,240,${a * 0.95})`;
-        ctx.fillText(`${T.runs} ${dailyRuns}`, LC, H * 0.645);
+        ctx.fillText(`${T.runs} ${dailyRuns}`, LC, H * 0.565);
 
         if (newBest && score > 0) {
             sh(6, `rgba(255,200,40,${a*0.7})`);
             ctx.font      = `bold ${FS*0.036}px 'Courier New',monospace`;
             ctx.fillStyle = `rgba(255,240,120,${a})`;
-            ctx.fillText(T.newBest, LC, H * 0.74);
+            ctx.fillText(T.newBest, LC, H * 0.66);
         } else if (newDailyBest && score > 0) {
             sh(6, `rgba(255,200,40,${a*0.7})`);
             ctx.font      = `bold ${FS*0.036}px 'Courier New',monospace`;
             ctx.fillStyle = `rgba(255,240,120,${a})`;
-            ctx.fillText(T.newDailyBest, LC, H * 0.74);
+            ctx.fillText(T.newDailyBest, LC, H * 0.66);
             if (best > 0) {
                 sh(2);
                 ctx.font      = `bold ${FS*0.022}px 'Courier New',monospace`;
                 ctx.fillStyle = `rgba(160,190,240,${a * 0.85})`;
-                ctx.fillText(`${T.best}  ${best}`, LC, H * 0.79);
+                ctx.fillText(`${T.best}  ${best}`, LC, H * 0.71);
             }
         } else if (best > 0) {
             sh(2);
             ctx.font      = `bold ${FS*0.026}px 'Courier New',monospace`;
             ctx.fillStyle = `rgba(160,190,240,${a * 0.95})`;
-            ctx.fillText(`${T.best}  ${best}`, LC, H * 0.74);
+            ctx.fillText(`${T.best}  ${best}`, LC, H * 0.66);
         }
 
         // Right column: top-5 leaderboard + stats
