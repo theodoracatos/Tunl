@@ -1382,13 +1382,13 @@ function draw() {
         sh(5, `rgba(200,30,30,${a * 0.55})`);
         ctx.font      = `bold ${FS*0.095}px 'Courier New',monospace`;
         ctx.fillStyle = `rgba(255,70,70,${a})`;
-        ctx.fillText(T.dead, LC, H * 0.285);
+        ctx.fillText(T.dead, LC, H * 0.25);
 
         // Accent underline
         sh(0);
         ctx.fillStyle = `rgba(255,80,80,${a * 0.75})`;
-        const deadW = ctx.measureText('DEAD').width;
-        ctx.fillRect(LC - deadW * 0.5, H * 0.352, deadW, 2);
+        const deadW = ctx.measureText(T.dead).width;
+        ctx.fillRect(LC - deadW * 0.5, H * 0.317, deadW, 2);
 
         // Score with pulsing glow
         const scorePulse = newDailyBest ? 18 + 5 * Math.sin(deadT * 3.5) : 4;
