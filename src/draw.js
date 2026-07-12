@@ -378,16 +378,17 @@ function draw() {
         ctx.fillStyle = mgrd;
         ctx.fill();
 
-        // Spikes (8 directions)
+        // Spikes (8 directions) - all share one style, so drawn as a single
+        // multi-segment path + one stroke() instead of 8 separate strokes
         ctx.strokeStyle = 'rgba(200,60,40,0.80)';
         ctx.lineWidth   = 1.4;
+        ctx.beginPath();
         for (let i = 0; i < 8; i++) {
             const a = (i / 8) * Math.PI * 2;
-            ctx.beginPath();
             ctx.moveTo(sx + Math.cos(a) * MINE_R * 0.85, my + Math.sin(a) * MINE_R * 0.85);
             ctx.lineTo(sx + Math.cos(a) * (MINE_R * 1.65), my + Math.sin(a) * (MINE_R * 1.65));
-            ctx.stroke();
         }
+        ctx.stroke();
 
         // Body
         ctx.beginPath();
@@ -482,23 +483,29 @@ function draw() {
         const spin = gtime * 0.9 + coin.wx * 0.008;
         ctx.rotate(spin);
 
-        // 8 sparkle rays: 4 long + 4 short, each pulsing independently
-        for (let i = 0; i < 8; i++) {
-            const long = i % 2 === 0;
-            const rp   = 0.72 + 0.28 * Math.sin(gtime * 3.2 + i * 1.1 + coin.wx * 0.005);
-            ctx.save();
-            ctx.rotate(i * Math.PI * 0.25);
+        // 8 sparkle rays: 4 long + 4 short, each pulsing independently.
+        // Style is identical within each group (only direction + pulsing
+        // length differ), so each group is one multi-segment path + one
+        // stroke() instead of 8 separate save/rotate/stroke cycles. Ray
+        // endpoints are rotated by hand (equivalent to the old per-ray
+        // ctx.rotate(i*45deg) applied to a point at (0,-d)) since they no
+        // longer get their own transform.
+        ctx.shadowColor = `rgba(${gr},${gg},${gb},0.65)`;
+        for (const long of [true, false]) {
             ctx.beginPath();
-            ctx.moveTo(0, -(r * 1.50));
-            ctx.lineTo(0, -(r * (long ? 2.75 : 1.90) * rp));
+            for (let i = long ? 0 : 1; i < 8; i += 2) {
+                const rp = 0.72 + 0.28 * Math.sin(gtime * 3.2 + i * 1.1 + coin.wx * 0.005);
+                const th = i * Math.PI * 0.25, s = Math.sin(th), c = Math.cos(th);
+                const d1 = r * 1.50, d2 = r * (long ? 2.75 : 1.90) * rp;
+                ctx.moveTo(d1 * s, -d1 * c);
+                ctx.lineTo(d2 * s, -d2 * c);
+            }
             ctx.strokeStyle = `rgba(${gr},${gg},${gb},${long ? 0.88 : 0.42})`;
             ctx.lineWidth   = long ? 1.5 : 0.8;
-            ctx.shadowColor = `rgba(${gr},${gg},${gb},0.65)`;
             ctx.shadowBlur  = long ? 3 : 1;
             ctx.stroke();
-            ctx.shadowBlur  = 0;
-            ctx.restore();
         }
+        ctx.shadowBlur  = 0;
 
         // Diamond outline helper
         const gem = () => {
