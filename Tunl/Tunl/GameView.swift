@@ -10,8 +10,12 @@ struct GameView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         // Without this, WKWebView audio defaults to the "ambient" session
         // category and is silenced by the hardware mute switch.
-        try? AVAudioSession.sharedInstance().setCategory(.playback, options: [.mixWithOthers])
-        try? AVAudioSession.sharedInstance().setActive(true)
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, options: [.mixWithOthers])
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("AVAudioSession setup failed: \(error.localizedDescription)")
+        }
 
         let config = WKWebViewConfiguration()
         // Allow audio to play without requiring a user gesture each time
@@ -85,6 +89,16 @@ struct GameView: UIViewRepresentable {
                 let json = "{\"removeAdsOwned\":\(owned)}"
                 DispatchQueue.main.async {
                     self?.webView?.evaluateJavaScript("window._tunlNativeUpdate && window._tunlNativeUpdate(\(json))")
+                }
+            }
+            ads.onWillPresent = { [weak self] in
+                DispatchQueue.main.async {
+                    self?.webView?.evaluateJavaScript("window._pauseAudioForAd && window._pauseAudioForAd()")
+                }
+            }
+            ads.onDidDismiss = { [weak self] in
+                DispatchQueue.main.async {
+                    self?.webView?.evaluateJavaScript("window._resumeAudioAfterAd && window._resumeAudioAfterAd()")
                 }
             }
         }

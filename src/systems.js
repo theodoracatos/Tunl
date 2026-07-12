@@ -120,26 +120,30 @@ function checkCoinCollection() {
             if (coinCombo > runMaxCombo) runMaxCombo = coinCombo;
             if (coin.type === 'blue') {
                 slowTime = Math.min(slowTime + (activeSkin === 3 ? 6.0 : 4.0), activeSkin === 3 ? 12.0 : 8.0);
-                burstCoin(sx, coin.y, 195);
+                burstCoin(sx, coin.y, 195, 26);
+                shake += 3;
                 notifs.push({ x: sx, y: coin.y - 16, life: 1.1, text: T.notifSlow,   color: [60,210,255] });
                 sfxSlow();
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             } else if (coin.type === 'red') {
                 shieldCount = Math.min(shieldCount + 1, 3);
-                burstCoin(sx, coin.y, 0);
+                burstCoin(sx, coin.y, 0, 26);
+                shake += 3;
                 notifs.push({ x: sx, y: coin.y - 16, life: 1.1, text: T.notifShield, color: [255,90,90] });
                 sfxShield();
                 window.webkit?.messageHandlers?.haptic?.postMessage('success');
             } else if (coin.type === 'green') {
                 magnetTime = Math.min(magnetTime + 3.0, 5.0);
-                burstCoin(sx, coin.y, 120);
+                burstCoin(sx, coin.y, 120, 26);
+                shake += 3;
                 notifs.push({ x: sx, y: coin.y - 16, life: 1.1, text: T.notifMagnet, color: [80,255,130] });
                 sfxMagnet();
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             } else if (coin.type === 'orange') {
                 bulletAmmo = Math.min(bulletAmmo + 5, 10);
                 bulletFireTimer = 0;
-                burstCoin(sx, coin.y, 28);
+                burstCoin(sx, coin.y, 28, 26);
+                shake += 3;
                 notifs.push({ x: sx, y: coin.y - 16, life: 1.1, text: T.notifAmmo, color: [255,85,0] });
                 sfxBulletPickup();
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
@@ -331,18 +335,19 @@ function stalHitBullet(s, bsx, by) {
 
 // ── Particles ─────────────────────────────────────────────────────────
 
-function burst(x, y) {
-    for (let i = 0; i < 32; i++) {
+function burst(x, y, count = 32) {
+    for (let i = 0; i < count; i++) {
         const a = Math.random()*Math.PI*2, v = 65+Math.random()*225;
         parts.push({ x, y, vx: Math.cos(a)*v, vy: Math.sin(a)*v,
                      life: 1.0, r: 1.5+Math.random()*4, h: 22+Math.random()*55 });
     }
 }
 
-// Coin sparkle: tight ring of gold particles
-function burstCoin(x, y, baseHue = 44) {
-    for (let i = 0; i < 14; i++) {
-        const a = (i / 14) * Math.PI * 2;
+// Coin sparkle: tight ring of gold particles. Power-up coins pass a larger
+// count so they read as a bigger moment than the constant stream of gold.
+function burstCoin(x, y, baseHue = 44, count = 14) {
+    for (let i = 0; i < count; i++) {
+        const a = (i / count) * Math.PI * 2;
         const v = 70 + Math.random() * 110;
         parts.push({ x, y, vx: Math.cos(a)*v, vy: Math.sin(a)*v,
                      life: 0.75, r: 1.2+Math.random()*2.5, h: baseHue+Math.random()*20 });

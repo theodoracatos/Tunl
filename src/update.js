@@ -288,7 +288,8 @@ function die(bypassShield = false) {
     if (DEV_INVINCIBLE) return false;
     if (!bypassShield && shieldCount > 0) {
         shieldCount--;
-        shieldFlash = 1.0; shake = 8;
+        shieldFlash = 1.0; shake = 10;
+        burst(PX, py, 26);
         // Push to corridor center so the next frame passes collision
         const b = boundsAt(scrollX + PX);
         py = (b.top + b.bot) / 2;
@@ -332,7 +333,7 @@ function die(bypassShield = false) {
         bestSX = _dmWx;
         localStorage.setItem('tunnel_best_sx', bestSX);
     }
-    burst(PX, py);
+    burst(PX, py, 46);
     sfxDie();
     _fadeBgMusic();
     _startTitleMusic();

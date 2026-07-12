@@ -1,7 +1,30 @@
 // ── Input ─────────────────────────────────────────────────────────────
 
 function inRect(cx, cy, r) { return cx >= r.x && cx <= r.x+r.w && cy >= r.y && cy <= r.y+r.h; }
+
+// Backgrounding/closing the app (task switcher swipe, tab hide, etc.) can fire
+// a spurious pointerdown/up right as the transition happens. Suppress input
+// while hidden/unfocused and for a short grace period after returning, so that
+// transition doesn't get misread as a tap-to-start.
+let _inputSuppressedUntil = 0;
+const INPUT_RESUME_GRACE_MS = 400;
+function _suppressInput() {
+    holding = false; thrustOff();
+    _inputSuppressedUntil = performance.now() + INPUT_RESUME_GRACE_MS;
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) _suppressInput(); else _inputSuppressedUntil = performance.now() + INPUT_RESUME_GRACE_MS; });
+window.addEventListener('blur', _suppressInput);
+window.addEventListener('pagehide', _suppressInput);
+
+// A blank-area tap on the title screen starts a run. But that tap's pointerdown
+// is indistinguishable from the start of a system edge-swipe gesture (e.g. iOS
+// swipe-up to close the app), which iOS cancels rather than completes. So an
+// empty-area press on the title screen doesn't start the game immediately -
+// it waits for a confirmed pointerup, and a pointercancel aborts it.
+let _titleStartPending = null;
+
 function onDown(e) {
+    if (document.hidden || performance.now() < _inputSuppressedUntil) return;
     if (phase === 'title' && e) {
         const rect = cv.getBoundingClientRect();
         const cx = (e.clientX - rect.left) * (W / rect.width);
@@ -31,9 +54,11 @@ function onDown(e) {
             for (const b of _langBtnRects) {
                 if (inRect(cx, cy, b)) {
                     setLang(b.code);
+                    return;
                 }
             }
-            showSettings = false;
+            // Tap outside the panel closes it; a tap inside on empty space does nothing.
+            if (!_settingsPanelRect || !inRect(cx, cy, _settingsPanelRect)) showSettings = false;
             return;
         }
 
@@ -53,11 +78,15 @@ function onDown(e) {
                 return;
             }
         }
+
+        // Nothing hit: wait for a confirmed release before starting a run (see note above).
+        _titleStartPending = e.pointerId;
+        return;
     }
     _initAC();
     if (phase === 'title') {
         if (showSettings) { showSettings = false; return; }
-        startPlay(); return;
+        startPlay(); return;   // reached only for keyboard/synthetic triggers (no e)
     }
     if (phase === 'dead' && deadT > 0.9) {
         if (!e) {
@@ -80,10 +109,22 @@ function onDown(e) {
     holding = true;
     if (phase === 'play') thrustOn();
 }
-function onUp() { holding = false; thrustOff(); }
+function onUp(e) {
+    holding = false; thrustOff();
+    if (phase === 'title' && _titleStartPending !== null && (!e || e.pointerId === _titleStartPending)) {
+        _titleStartPending = null;
+        _initAC();
+        startPlay();
+    }
+}
+function onCancel(e) {
+    holding = false; thrustOff();
+    if (!e || e.pointerId === _titleStartPending) _titleStartPending = null;
+}
 
-window.addEventListener('pointerdown', e => { e.preventDefault(); onDown(e); });
-window.addEventListener('pointerup',   e => { e.preventDefault(); onUp();   });
+window.addEventListener('pointerdown',   e => { e.preventDefault(); onDown(e); });
+window.addEventListener('pointerup',     e => { e.preventDefault(); onUp(e);   });
+window.addEventListener('pointercancel', onCancel);
 window.addEventListener('keydown', e => {
     if (['Space','ArrowUp'].includes(e.code)) { e.preventDefault(); onDown(); }
     if (e.code === 'KeyP') {

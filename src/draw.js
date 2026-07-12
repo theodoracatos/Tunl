@@ -1129,27 +1129,69 @@ function draw() {
             }
         }
 
+        // rightColY tracks how far down the right-column stack (TODAY/ALL TIME/
+        // STREAK/TOP 5) reaches in landscape, so each line uses the same step
+        // and the skin picker below never overlaps regardless of which lines
+        // end up shown.
+        let rightColY  = H * 0.33;
+        const lineStep = H * 0.085;
+
         {
             ctx.shadowColor = 'rgba(0,0,0,0.90)'; ctx.shadowBlur = 3;
             ctx.font        = `bold ${FS*0.026}px 'Courier New',monospace`;
             ctx.fillStyle   = `rgba(190,212,255,${a * 0.98})`;
-            ctx.fillText(`${T.today}  ${dailyRuns > 0 ? dailyBest : '-'}`, infoX, LAND ? H * 0.33 : H/2 + H*0.280);
+            ctx.fillText(`${T.today}  ${dailyRuns > 0 ? dailyBest : '-'}`, infoX, LAND ? rightColY : H/2 + H*0.280);
             if (best > dailyBest) {
+                rightColY += lineStep;
                 ctx.font      = `bold ${FS*0.020}px 'Courier New',monospace`;
                 ctx.fillStyle = `rgba(150,175,225,${a * 0.85})`;
-                ctx.fillText(`${T.allTime}  ${best}`, infoX, LAND ? H * 0.42 : H/2 + H*0.316);
+                ctx.fillText(`${T.allTime}  ${best}`, infoX, LAND ? rightColY : H/2 + H*0.316);
             }
             ctx.shadowBlur = 0;
         }
 
         if (streak > 0) {
+            rightColY += lineStep;
             const flame = streak >= 7 ? ' **' : streak >= 3 ? ' *' : '';
             ctx.font        = `bold ${FS*0.022}px 'Courier New',monospace`;
             ctx.fillStyle   = streak >= 3 ? `rgba(255,180,70,${a * 0.98})` : `rgba(185,205,245,${a * 0.96})`;
             ctx.shadowColor = streak >= 3 ? `rgba(255,140,20,${a * 0.50})` : 'rgba(0,0,0,0.90)';
             ctx.shadowBlur  = streak >= 3 ? 6 : 3;
-            ctx.fillText(`${streak}${flame} ${T.day}`, infoX, LAND ? H * 0.50 : H/2 + H*0.348);
+            ctx.fillText(`${streak}${flame} ${T.day}`, infoX, LAND ? rightColY : H/2 + H*0.348);
             ctx.shadowBlur  = 0;
+        }
+
+        // Today's top runs -- fills the empty lower half of the right column
+        // (title screen previously left this blank once TODAY/streak were drawn).
+        // Only shown before the skin picker unlocks (unlockedSkins <= 1); once
+        // the picker appears that column is already full, and the two
+        // variable-height stacks can't coexist without either overlapping or
+        // (once shortened enough to avoid it) rendering pointlessly small.
+        // Skipped in portrait, where the column is centered and already tight.
+        if (LAND && dailyRuns > 0 && unlockedSkins <= 1) {
+            rightColY += H * 0.075;
+
+            ctx.shadowColor = 'rgba(0,0,0,0.90)'; ctx.shadowBlur = 3;
+            ctx.font        = `bold ${FS*0.020}px 'Courier New',monospace`;
+            ctx.fillStyle   = `rgba(170,195,240,${a * 0.85})`;
+            ctx.fillText(T.top5, infoX, rightColY);
+            ctx.shadowBlur  = 0;
+            rightColY += H * 0.052;
+
+            const topStep = H * 0.050;
+            for (let i = 0; i < 5; i++) {
+                const entry = top5[i];
+                ctx.shadowColor = 'rgba(0,0,0,0.90)'; ctx.shadowBlur = 2;
+                // Same size as the STREAK line -- TOP 5 is secondary info that
+                // supports the two headline stats above it, not a third headline.
+                ctx.font        = `bold ${FS*0.022}px 'Courier New',monospace`;
+                ctx.fillStyle   = entry !== undefined
+                    ? `rgba(175,200,240,${a * 0.85})`
+                    : `rgba(100,120,165,${a * 0.55})`;
+                ctx.fillText(`#${i + 1}  ${entry !== undefined ? entry : '-'}`, infoX, rightColY);
+                ctx.shadowBlur  = 0;
+                rightColY += topStep;
+            }
         }
 
         // Skin picker
@@ -1255,6 +1297,7 @@ function draw() {
 
             const panX = W / 2 - panW / 2;
             const panY = Math.max(H * 0.02, Math.min(H * 0.98 - panH, H / 2 - panH / 2));
+            _settingsPanelRect = { x: panX, y: panY, w: panW, h: panH };
 
             ctx.fillStyle = 'rgba(7,10,28,0.97)';
             ctx.beginPath();
@@ -1447,6 +1490,20 @@ function draw() {
             ctx.fillText(`${T.best}  ${best}`, LC, H * 0.66);
         }
 
+        // Skin-unlock banner sits in the left column's empty space below the
+        // best/streak line; the right column is already packed (top5 + vsLast
+        // + stats) and collides with the HOME/PLAY AGAIN buttons if it lands there.
+        if (skinUnlockIdx >= 0) {
+            const sk = SKINS[skinUnlockIdx];
+            const [sr, sg, sb] = sk.shadow;
+            ctx.font        = `bold ${FS*0.030}px 'Courier New',monospace`;
+            ctx.fillStyle   = `rgba(${sr},${sg},${sb},${a*0.95})`;
+            ctx.shadowColor = `rgba(${sr},${sg},${sb},${a*0.60})`;
+            ctx.shadowBlur  = 8;
+            ctx.fillText(`${sk.name} ${T.unlocked}`, LC, H * 0.78);
+            ctx.shadowBlur  = 0;
+        }
+
         // Right column: top-5 leaderboard + stats
         let ry = H * 0.155;
         const LB_STEP = H * 0.095;
@@ -1496,17 +1553,6 @@ function draw() {
             ctx.fillStyle = `rgba(160,180,220,${a})`;
             ctx.fillText(statParts.join('   '), RC, ry);
             ry += H * 0.088;
-        }
-
-        if (skinUnlockIdx >= 0) {
-            const sk = SKINS[skinUnlockIdx];
-            const [sr, sg, sb] = sk.shadow;
-            ctx.font        = `bold ${FS*0.030}px 'Courier New',monospace`;
-            ctx.fillStyle   = `rgba(${sr},${sg},${sb},${a*0.95})`;
-            ctx.shadowColor = `rgba(${sr},${sg},${sb},${a*0.60})`;
-            ctx.shadowBlur  = 8;
-            ctx.fillText(`${sk.name} ${T.unlocked}`, RC, ry);
-            ctx.shadowBlur  = 0;
         }
 
         // Bottom row: HOME | PLAY AGAIN (centered pair)

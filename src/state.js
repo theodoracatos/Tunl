@@ -22,6 +22,7 @@ let streak = parseInt(localStorage.getItem('tunnel_streak') || '0');
 let _homeBtnRect = null, _playBtnRect = null;
 let showSettings = false;
 let _settingsBtnRect = null;
+let _settingsPanelRect = null;
 let _leaderboardBtnRect = null;
 let _langBtnRects = [];
 let _removeAdsBtnRect = null;

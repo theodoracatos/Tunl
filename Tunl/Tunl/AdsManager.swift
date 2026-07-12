@@ -13,10 +13,15 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
     private static let deathsPerAd = 3
     // Runs scoring below this are instant faceplants (common in this fast-death
     // game) and shouldn't burn through the cadence counter or interrupt with an ad.
-    private static let minScoreForAd = 10
+    private static let minScoreForAd = 25
 
     private var interstitial: InterstitialAd?
     private var started = false
+
+    // Wired up by GameView.Coordinator to pause/resume the WKWebView's Web
+    // Audio graph so bgm doesn't play under the interstitial's own audio.
+    var onWillPresent: (() -> Void)?
+    var onDidDismiss: (() -> Void)?
 
     // Called once the WKWebView content is visible (see GameView.swift's
     // webView(_:didFinish:)) so both the UMP consent form and Apple's ATT
@@ -92,13 +97,19 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
             .first?.rootViewController
     }
 
+    func adWillPresentFullScreenContent(_ ad: FullScreenPresentingAd) {
+        onWillPresent?()
+    }
+
     func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) {
+        onDidDismiss?()
         interstitial = nil
         Task { await loadInterstitial() }
     }
 
     func ad(_ ad: FullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) {
         print("AdsManager: failed to present interstitial: \(error.localizedDescription)")
+        onDidDismiss?()
         interstitial = nil
         Task { await loadInterstitial() }
     }

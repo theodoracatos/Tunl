@@ -2,6 +2,21 @@
 
 let _prog, _prog2, _halfGap, _wA1, _wA2, _wF1, _wF2;
 
+// Per-day phase offset for the two corridor waves, derived from the same UTC
+// day-int used to seed the obstacle rng() (not the rng() stream itself, so it
+// doesn't shift obstacle placement). Only the phase varies - amplitude and
+// frequency stay exactly as tuned - so every day's corridor is a genuinely
+// different shape without touching the hand-tuned difficulty feel.
+let _wavePhase1 = 0, _wavePhase2 = 0;
+function seedWavePhase(dayInt) {
+    let h = Math.imul(dayInt ^ 0x9e3779b9, 0x45d9f3b) >>> 0;
+    h = Math.imul(h ^ (h >>> 16), 0x45d9f3b) >>> 0;
+    h = (h ^ (h >>> 16)) >>> 0;
+    _wavePhase1 = (h % 6283) / 1000;
+    h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0;
+    _wavePhase2 = (h % 6283) / 1000;
+}
+
 function refreshWave() {
     _prog    = Math.min(Math.sqrt(scrollX / 14000), 1);
     _prog2   = Math.max(scrollX - 14000, 0) / 40000;          // no cap - escalates forever
@@ -65,8 +80,8 @@ const WORLD_NAME = dailyWorldName();
 
 function centerAt(wx) {
     const raw = H / 2
-        + _wA1 * Math.sin(wx * _wF1)
-        + _wA2 * Math.sin(wx * _wF2 + 1.57);
+        + _wA1 * Math.sin(wx * _wF1 + _wavePhase1)
+        + _wA2 * Math.sin(wx * _wF2 + 1.57 + _wavePhase2);
     return Math.max(_halfGap + 8, Math.min(H - _halfGap - 8, raw));
 }
 
@@ -98,7 +113,7 @@ function boundsBase(wx) {
     const wF1 = lerp(0.0025,    0.0048,    p) * wFMult;
     const wF2 = lerp(0.0060,    0.0115,    p) * wFMult;
     const hg  = halfGapAt(wx);
-    const raw = H / 2 + wA1 * Math.sin(wx * wF1) + wA2 * Math.sin(wx * wF2 + 1.57);
+    const raw = H / 2 + wA1 * Math.sin(wx * wF1 + _wavePhase1) + wA2 * Math.sin(wx * wF2 + 1.57 + _wavePhase2);
     const cy  = Math.max(hg + 8, Math.min(H - hg - 8, raw));
     return { top: cy - hg, bot: cy + hg };
 }

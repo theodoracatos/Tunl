@@ -14,7 +14,7 @@ function _startBgMusic() {
     // Reset gain in case it was faded to near-zero during death
     if (_bgmGain && _ac) {
         _bgmGain.gain.cancelScheduledValues(_ac.currentTime);
-        _bgmGain.gain.setValueAtTime(0.32, _ac.currentTime);
+        _bgmGain.gain.setValueAtTime(0.10, _ac.currentTime);
     }
     if (_bgmBuf) { _playBgmBuffer(); return; }
     // buffer still decoding - mark pending; _initAC will start playback when ready
@@ -24,7 +24,7 @@ function _startBgMusic() {
 function _playBgmBuffer() {
     if (!_ac || !_bgmBuf || !_bgmActive) return;
     _bgmGain = _bgmGain || (() => {
-        const g = _ac.createGain(); g.gain.value = 0.32; g.connect(_ac.destination); return g;
+        const g = _ac.createGain(); g.gain.value = 0.10; g.connect(_ac.destination); return g;
     })();
     _bgmNode = _ac.createBufferSource();
     _bgmNode.buffer = _bgmDir === 1 ? _bgmBuf : _bgmBufRev;
@@ -54,7 +54,7 @@ function _startTitleMusic() {
     _titleBgmActive = true;
     if (_titleBgmGain && _ac) {
         _titleBgmGain.gain.cancelScheduledValues(_ac.currentTime);
-        _titleBgmGain.gain.setValueAtTime(0.32, _ac.currentTime);
+        _titleBgmGain.gain.setValueAtTime(0.10, _ac.currentTime);
     }
     if (_titleBgmBuf) { _playTitleBgmBuffer(); return; }
     // buffer still decoding - mark pending; _initAC will start playback when ready
@@ -64,7 +64,7 @@ function _startTitleMusic() {
 function _playTitleBgmBuffer() {
     if (!_ac || !_titleBgmBuf || !_titleBgmActive) return;
     _titleBgmGain = _titleBgmGain || (() => {
-        const g = _ac.createGain(); g.gain.value = 0.32; g.connect(_ac.destination); return g;
+        const g = _ac.createGain(); g.gain.value = 0.10; g.connect(_ac.destination); return g;
     })();
     _titleBgmNode = _ac.createBufferSource();
     _titleBgmNode.buffer = _titleBgmBuf;
@@ -105,7 +105,7 @@ function _initAC() {
             }
             if (_bgmPending && _bgmActive) { _bgmPending = false; _playBgmBuffer(); }
         })
-        .catch(() => {});
+        .catch(err => console.error('[audio] the_mountain.mp3 load/decode failed:', err));
     fetch('the_mountain_documentary.mp3')
         .then(r => r.arrayBuffer())
         .then(ab => _ac.decodeAudioData(ab))
@@ -113,7 +113,16 @@ function _initAC() {
             _titleBgmBuf = buf;
             if (_titleBgmPending && _titleBgmActive) { _titleBgmPending = false; _playTitleBgmBuffer(); }
         })
-        .catch(() => {});
+        .catch(err => console.error('[audio] the_mountain_documentary.mp3 load/decode failed:', err));
+}
+
+// Called from native (see AdsManager.swift) around interstitial ad presentation
+// so bgm/sfx don't play under the ad's own audio.
+function _pauseAudioForAd() {
+    if (_ac && _ac.state === 'running') _ac.suspend();
+}
+function _resumeAudioAfterAd() {
+    if (_ac && _ac.state === 'suspended') _ac.resume();
 }
 
 function _noiseBuf(dur) {
@@ -122,6 +131,13 @@ function _noiseBuf(dur) {
     const d   = buf.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = Math.random()*2-1;
     return buf;
+}
+
+function _distortionCurve(amount) {
+    const n = 4096;
+    const curve = new Float32Array(n);
+    for (let i = 0; i < n; i++) curve[i] = Math.tanh((i * 2 / n - 1) * amount);
+    return curve;
 }
 
 function sfxCoin() {
@@ -138,20 +154,92 @@ function sfxCoin() {
     });
 }
 
-function sfxDie() {
+function sfxEngineSpoolUp() {
     if (!_ac || !fxOn) return;
-    const t   = _ac.currentTime;
+    const t = _ac.currentTime;
+    const dur = 1.3;
+    // Deep broadband roar - measured real jet engine recordings are bass-dominant
+    // noise (spectral centroid ~450Hz, low-band energy ~8x high-band), not a
+    // bright tone or whine: fast attack, gradual loudness swell.
     const src = _ac.createBufferSource();
-    src.buffer = _noiseBuf(0.6);
+    src.buffer = _noiseBuf(dur);
     const flt = _ac.createBiquadFilter();
     flt.type = 'lowpass';
-    flt.frequency.setValueAtTime(900, t);
-    flt.frequency.exponentialRampToValueAtTime(55, t + 0.45);
+    flt.frequency.setValueAtTime(160, t);
+    flt.frequency.linearRampToValueAtTime(420, t + dur);
     const g = _ac.createGain();
-    g.gain.setValueAtTime(0.50, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.60);
+    g.gain.setValueAtTime(0.001, t);
+    g.gain.linearRampToValueAtTime(0.30, t + 0.12);
+    g.gain.linearRampToValueAtTime(0.40, t + dur * 0.9);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
     src.connect(flt); flt.connect(g); g.connect(_ac.destination);
-    src.start(t); src.stop(t + 0.62);
+    src.start(t); src.stop(t + dur + 0.05);
+    // Mid roar color - broad, low-centered bandpass for engine "growl" texture
+    const src2 = _ac.createBufferSource();
+    src2.buffer = _noiseBuf(dur);
+    const flt2 = _ac.createBiquadFilter();
+    flt2.type = 'bandpass'; flt2.Q.value = 0.6; flt2.frequency.value = 480;
+    const g2 = _ac.createGain();
+    g2.gain.setValueAtTime(0.001, t);
+    g2.gain.linearRampToValueAtTime(0.14, t + 0.15);
+    g2.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    src2.connect(flt2); flt2.connect(g2); g2.connect(_ac.destination);
+    src2.start(t); src2.stop(t + dur + 0.05);
+}
+
+function sfxDie() {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    const dur = 1.3;  // matches sfxEngineSpoolUp's duration - this is that sound played in reverse
+    // Deep broadband roar - literal time-reversal of the spool-up's roar layer:
+    // frequency ramp reversed (420->160, mirroring the up-sweep's 160->420),
+    // and the gain envelope's three segments reversed in order and direction.
+    const src = _ac.createBufferSource();
+    src.buffer = _noiseBuf(dur);
+    const flt = _ac.createBiquadFilter();
+    flt.type = 'lowpass';
+    flt.frequency.setValueAtTime(420, t);
+    flt.frequency.linearRampToValueAtTime(160, t + dur);
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(0.001, t);
+    g.gain.exponentialRampToValueAtTime(0.40, t + 0.13);
+    g.gain.linearRampToValueAtTime(0.30, t + dur - 0.12);
+    g.gain.linearRampToValueAtTime(0.001, t + dur);
+    src.connect(flt); flt.connect(g); g.connect(_ac.destination);
+    src.start(t); src.stop(t + dur + 0.05);
+    // Mid roar color - reversed gain envelope of the spool-up's growl layer
+    const src2 = _ac.createBufferSource();
+    src2.buffer = _noiseBuf(dur);
+    const flt2 = _ac.createBiquadFilter();
+    flt2.type = 'bandpass'; flt2.Q.value = 0.6; flt2.frequency.value = 480;
+    const g2 = _ac.createGain();
+    g2.gain.setValueAtTime(0.001, t);
+    g2.gain.exponentialRampToValueAtTime(0.14, t + dur - 0.15);
+    g2.gain.linearRampToValueAtTime(0.001, t + dur);
+    src2.connect(flt2); flt2.connect(g2); g2.connect(_ac.destination);
+    src2.start(t); src2.stop(t + dur + 0.05);
+    // Impact crash near the end - low thump + sharp crack
+    const tImpact = t + dur - 0.08;
+    const crash = _ac.createBufferSource();
+    crash.buffer = _noiseBuf(0.3);
+    const crashFlt = _ac.createBiquadFilter();
+    crashFlt.type = 'lowpass';
+    crashFlt.frequency.setValueAtTime(700, tImpact);
+    crashFlt.frequency.exponentialRampToValueAtTime(60, tImpact + 0.22);
+    const crashGain = _ac.createGain();
+    crashGain.gain.setValueAtTime(0.32, tImpact);
+    crashGain.gain.exponentialRampToValueAtTime(0.001, tImpact + 0.26);
+    crash.connect(crashFlt); crashFlt.connect(crashGain); crashGain.connect(_ac.destination);
+    crash.start(tImpact); crash.stop(tImpact + 0.28);
+    const crack = _ac.createBufferSource();
+    crack.buffer = _noiseBuf(0.08);
+    const crackFlt = _ac.createBiquadFilter();
+    crackFlt.type = 'highpass'; crackFlt.frequency.value = 1800;
+    const crackGain = _ac.createGain();
+    crackGain.gain.setValueAtTime(0.20, tImpact);
+    crackGain.gain.exponentialRampToValueAtTime(0.001, tImpact + 0.07);
+    crack.connect(crackFlt); crackFlt.connect(crackGain); crackGain.connect(_ac.destination);
+    crack.start(tImpact); crack.stop(tImpact + 0.08);
 }
 
 function sfxSlow() {
