@@ -8,7 +8,7 @@ import GoogleMobileAds
 // concern kept out of the shared game layer.
 final class AdsManager: NSObject, FullScreenContentDelegate {
 
-    static let interstitialAdUnitID = "ca-app-pub-3940256099942544/4411468910"
+    static let interstitialAdUnitID = "ca-app-pub-4882203470005029/5351137825"
     private static let deathCountKey = "tunnel_death_count"
     private static let deathsPerAd = 3
     // Runs scoring below this are instant faceplants (common in this fast-death

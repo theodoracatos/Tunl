@@ -18,6 +18,7 @@
 		E4AE65DC300317A20067F8C9 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = E4AE65DB300317A20067F8C9 /* GoogleMobileAds */; };
 		EE0002000000000000000001 /* IAPManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE0001000000000000000001 /* IAPManager.swift */; };
 		AD0002000000000000000001 /* AdsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD0001000000000000000001 /* AdsManager.swift */; };
+		PP0002000000000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = PP0001000000000000000001 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +36,7 @@
 		EE0001000000000000000001 /* IAPManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IAPManager.swift; sourceTree = "<group>"; };
 		AD0001000000000000000001 /* AdsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdsManager.swift; sourceTree = "<group>"; };
 		FF0001000000000000000001 /* Configuration.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Configuration.storekit; sourceTree = "<group>"; };
+		PP0001000000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,6 +79,7 @@
 				EE0001000000000000000001 /* IAPManager.swift */,
 				AD0001000000000000000001 /* AdsManager.swift */,
 				FF0001000000000000000001 /* Configuration.storekit */,
+				PP0001000000000000000001 /* PrivacyInfo.xcprivacy */,
 				BB0005000000000000000001 /* Info.plist */,
 				BB0006000000000000000001 /* Assets.xcassets */,
 				CC0001000000000000000001 /* Tunl.entitlements */,
@@ -168,6 +171,7 @@
 				BB0009000000000000000001 /* tunl.html in Resources */,
 				BB000B000000000000000001 /* the_mountain.mp3 in Resources */,
 				BB000E000000000000000001 /* src in Resources */,
+				PP0002000000000000000001 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
