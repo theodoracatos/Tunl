@@ -1,6 +1,11 @@
 package com.theodoracatos.tunl
 
+import android.content.Context
+import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.util.Log
 import android.view.View
 import android.webkit.JavascriptInterface
@@ -32,8 +37,10 @@ class MainActivity : ComponentActivity() {
     private val billing by lazy { BillingManager(this) }
     private val ads by lazy { AdsManager(this) }
 
-    // Shims window.webkit.messageHandlers.{gameCenter,iap,ads} so the game's existing
-    // iOS bridge calls (see update.js/draw.js/input.js) work unchanged on Android.
+    // Shims window.webkit.messageHandlers.{gameCenter,iap,ads,haptic} so the game's
+    // existing iOS bridge calls (see update.js/draw.js/input.js/systems.js) work
+    // unchanged on Android. haptic gets its own bridge method since it posts a bare
+    // string ('heavy'/'light'/...), not a JSON object like the other three.
     private val nativeShimJs = """
         (function() {
             if (!window.webkit) window.webkit = {};
@@ -51,6 +58,11 @@ class MainActivity : ComponentActivity() {
             window.webkit.messageHandlers.ads = {
                 postMessage: function(body) {
                     TunlNative.postMessage('ads', JSON.stringify(body));
+                }
+            };
+            window.webkit.messageHandlers.haptic = {
+                postMessage: function(type) {
+                    TunlNative.postHaptic(type);
                 }
             };
         })();
@@ -79,6 +91,41 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+
+        @JavascriptInterface
+        fun postHaptic(type: String) {
+            runOnUiThread { triggerHaptic(type) }
+        }
+    }
+
+    private val vibrator: Vibrator by lazy {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            (getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+    }
+
+    // Mirrors the iOS bridge's UIImpactFeedbackGenerator/UINotificationFeedbackGenerator
+    // mapping (see GameView.swift's "haptic" case). Amplitude control needs API 26+;
+    // below that this falls back to duration-only vibration.
+    private fun triggerHaptic(type: String) {
+        if (!vibrator.hasVibrator()) return
+        val (timings, amplitudes) = when (type) {
+            "heavy" -> longArrayOf(0, 35) to intArrayOf(0, 255)
+            "medium" -> longArrayOf(0, 20) to intArrayOf(0, 180)
+            "light" -> longArrayOf(0, 12) to intArrayOf(0, 90)
+            "success" -> longArrayOf(0, 12, 60, 18) to intArrayOf(0, 110, 0, 200)
+            "error" -> longArrayOf(0, 45, 50, 45) to intArrayOf(0, 220, 0, 220)
+            else -> longArrayOf(0, 20) to intArrayOf(0, 180)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createWaveform(timings, amplitudes, -1))
+        } else {
+            @Suppress("DEPRECATION")
+            vibrator.vibrate(timings, -1)
         }
     }
 
