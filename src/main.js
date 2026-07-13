@@ -9,6 +9,15 @@ window._tunlNativeUpdate = function (state) {
     }
 };
 
+// Android's system/gesture back button has no iOS equivalent, so there's no
+// shared bridge call for it. MainActivity calls this directly: closes the
+// settings panel and reports true if one was open, so back dismisses the
+// panel first instead of always exiting the app.
+window._tunlCloseSettingsIfOpen = function () {
+    if (showSettings) { showSettings = false; return true; }
+    return false;
+};
+
 // ── Loop ──────────────────────────────────────────────────────────────
 
 window._freezeDraw = false;

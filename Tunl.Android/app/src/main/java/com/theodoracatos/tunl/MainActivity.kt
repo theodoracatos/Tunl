@@ -14,6 +14,7 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -200,6 +201,39 @@ class MainActivity : ComponentActivity() {
         }
 
         webView.loadUrl("https://appassets.androidplatform.net/assets/tunl.html")
+
+        // Android's system/gesture back button has no iOS equivalent (no hardware
+        // back button exists there). Without this, back always exits the app
+        // immediately, even while the canvas-drawn settings panel is open --
+        // ask the page to close the panel first and only exit if none was open.
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (isFinishing || isDestroyed) return
+                webView.evaluateJavascript("window._tunlCloseSettingsIfOpen && window._tunlCloseSettingsIfOpen()") { result ->
+                    if (result != "true") {
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                        isEnabled = true
+                    }
+                }
+            }
+        })
+    }
+
+    override fun onPause() {
+        // WebView timers (rAF, setInterval) and the page's AudioContext keep
+        // running through Activity.onPause unless explicitly paused here --
+        // iOS gets this for free from UIScene backgrounding WKWebView with it;
+        // plain Android WebView does not.
+        webView.onPause()
+        webView.pauseTimers()
+        super.onPause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        webView.onResume()
+        webView.resumeTimers()
     }
 
     // billing/ads callbacks are async SDK calls that can land after the user

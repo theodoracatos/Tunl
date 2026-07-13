@@ -134,8 +134,14 @@ class BillingManager(context: Context) {
         if (purchaseInFlight) return
         purchaseInFlight = true
         scope.launch {
-            queryProductDetails()
-            purchaseInFlight = false
+            try {
+                queryProductDetails()
+            } finally {
+                // Reset even if queryProductDetails() throws (network/IPC error),
+                // otherwise purchaseInFlight sticks true and every future tap
+                // silently no-ops for the rest of the process's lifetime.
+                purchaseInFlight = false
+            }
             val details = removeAdsDetails
             if (details == null) {
                 Log.w(TAG, "purchaseRemoveAds: no product found for id $REMOVE_ADS_PRODUCT_ID")
