@@ -57,13 +57,14 @@ android {
     }
 }
 
-// The game itself (tunl.html, src/*.js, the_mountain.mp3) lives at the repo root
-// so the web build stays a single source of truth. Copy it into assets before
+// The game itself (tunl.html, src/*.js, audio) lives at the repo root so the
+// web build stays a single source of truth. Copy it into assets before
 // packaging instead of duplicating it inside the Android module.
 task copyGameFiles(type: Copy) {
     from(project.rootDir.parentFile) {
         include 'tunl.html'
         include 'the_mountain.mp3'
+        include 'the_mountain_documentary.mp3'
         include 'src/**/*.js'
     }
     into 'src/main/assets'
