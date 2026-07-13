@@ -14,3 +14,4 @@ DerivedData/
 *.ipa
 *.dSYM.zip
 *.dSYM
+/build/
