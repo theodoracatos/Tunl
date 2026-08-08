@@ -7,36 +7,36 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AD0002000000000000000001 /* AdsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD0001000000000000000001 /* AdsManager.swift */; };
 		BB0002000000000000000001 /* TunlApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0001000000000000000001 /* TunlApp.swift */; };
 		BB0004000000000000000001 /* GameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0003000000000000000001 /* GameView.swift */; };
 		BB0007000000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BB0006000000000000000001 /* Assets.xcassets */; };
 		BB0009000000000000000001 /* tunl.html in Resources */ = {isa = PBXBuildFile; fileRef = BB0008000000000000000001 /* tunl.html */; };
 		BB000B000000000000000001 /* the_mountain.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = BB000A000000000000000001 /* the_mountain.mp3 */; };
-		BB0010000000000000000001 /* the_mountain_documentary.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = BB000F000000000000000001 /* the_mountain_documentary.mp3 */; };
 		BB000E000000000000000001 /* src in Resources */ = {isa = PBXBuildFile; fileRef = BB000D000000000000000001 /* src */; };
+		BB0010000000000000000001 /* the_mountain_documentary.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = BB000F000000000000000001 /* the_mountain_documentary.mp3 */; };
 		CC0003000000000000000001 /* GameKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CC0002000000000000000001 /* GameKit.framework */; };
 		DD0002000000000000000001 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD0001000000000000000001 /* StoreKit.framework */; };
 		E4AE65DC300317A20067F8C9 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = E4AE65DB300317A20067F8C9 /* GoogleMobileAds */; };
 		EE0002000000000000000001 /* IAPManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE0001000000000000000001 /* IAPManager.swift */; };
-		AD0002000000000000000001 /* AdsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD0001000000000000000001 /* AdsManager.swift */; };
 		PP0002000000000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = PP0001000000000000000001 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		AD0001000000000000000001 /* AdsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdsManager.swift; sourceTree = "<group>"; };
 		BB0001000000000000000001 /* TunlApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunlApp.swift; sourceTree = "<group>"; };
 		BB0003000000000000000001 /* GameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameView.swift; sourceTree = "<group>"; };
 		BB0005000000000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BB0006000000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BB0008000000000000000001 /* tunl.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = tunl.html; path = ../tunl.html; sourceTree = "<group>"; };
 		BB000A000000000000000001 /* the_mountain.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = the_mountain.mp3; path = ../the_mountain.mp3; sourceTree = "<group>"; };
-		BB000F000000000000000001 /* the_mountain_documentary.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = the_mountain_documentary.mp3; path = ../the_mountain_documentary.mp3; sourceTree = "<group>"; };
 		BB000C000000000000000001 /* TUNL.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TUNL.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB000D000000000000000001 /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = ../src; sourceTree = "<group>"; };
+		BB000F000000000000000001 /* the_mountain_documentary.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = the_mountain_documentary.mp3; path = ../the_mountain_documentary.mp3; sourceTree = "<group>"; };
 		CC0001000000000000000001 /* Tunl.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Tunl.entitlements; sourceTree = "<group>"; };
 		CC0002000000000000000001 /* GameKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GameKit.framework; path = System/Library/Frameworks/GameKit.framework; sourceTree = SDKROOT; };
 		DD0001000000000000000001 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		EE0001000000000000000001 /* IAPManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IAPManager.swift; sourceTree = "<group>"; };
-		AD0001000000000000000001 /* AdsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdsManager.swift; sourceTree = "<group>"; };
 		FF0001000000000000000001 /* Configuration.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Configuration.storekit; sourceTree = "<group>"; };
 		PP0001000000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -324,10 +324,10 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Tunl/Tunl.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 8;
 				INFOPLIST_FILE = Tunl/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theodoracatos.tunl;
 				PRODUCT_NAME = TUNL;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -343,10 +343,10 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Tunl/Tunl.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 8;
 				INFOPLIST_FILE = Tunl/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theodoracatos.tunl;
 				PRODUCT_NAME = TUNL;
 				SWIFT_EMIT_LOC_STRINGS = YES;
