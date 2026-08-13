@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 
 @main
 struct TunlApp: App {
@@ -36,6 +37,19 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(deviceOrientationDidChange),
                                                 name: UIDevice.orientationDidChangeNotification, object: nil)
         return true
+    }
+
+    // Without the "audio" background mode, iOS deactivates our AVAudioSession
+    // when the app is backgrounded. Nothing reactivates it afterwards, so both
+    // bgm and sfx stay silent once the app returns to the foreground - reactivate
+    // it here (in addition to resuming the WKWebView's AudioContext, handled in
+    // src/audio.js's visibilitychange listener).
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("AVAudioSession reactivation failed: \(error.localizedDescription)")
+        }
     }
 
     @objc private func deviceOrientationDidChange() {

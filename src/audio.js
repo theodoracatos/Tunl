@@ -116,6 +116,15 @@ function _initAC() {
         .catch(err => console.error('[audio] the_mountain_documentary.mp3 load/decode failed:', err));
 }
 
+// WebKit auto-suspends the AudioContext after the app has been backgrounded
+// for a while (observed after roughly a minute). Nothing else resumes it when
+// the app returns to the foreground, so bgm and every sfx* call would
+// otherwise silently no-op forever - resume it as soon as the page is visible
+// again.
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && _ac && _ac.state === 'suspended') _ac.resume();
+});
+
 // Called from native (see AdsManager.swift) around interstitial ad presentation
 // so bgm/sfx don't play under the ad's own audio.
 function _pauseAudioForAd() {
