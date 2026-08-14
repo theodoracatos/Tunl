@@ -30,7 +30,14 @@ function refreshWave() {
     _wF2     = lerp(0.0060,    0.0115,    _prog) * wFMult;
 }
 
-function scrollSpd()   { return Math.min(lerp(lerp(230,  400, _prog), 560,  _prog2), 790) * W / 600; }
+function scrollSpd() {
+    const base = lerp(lerp(230, 400, _prog), 560, Math.min(_prog2, 1));
+    // Past the _prog2 ramp (score ~900), speed never plateaus - it keeps
+    // creeping up forever (sqrt eased, like _prog's ramp) instead of the other
+    // difficulty knobs, which stay capped so the corridor stays navigable.
+    const beyond = Math.max(_prog2 - 1, 0);
+    return (base + Math.sqrt(beyond) * 90) * W / 600;
+}
 function stalSpacing() { return Math.max(lerp(lerp(260,  145, _prog),  70,  _prog2), 50); }
 function stalLenFrac() { return Math.min(lerp(lerp(0.46, 0.64, _prog), 0.76, _prog2), 0.80); }
 function coinSpacing() { return Math.max(lerp(lerp(600,  320, _prog), 230,  _prog2), 175); }
