@@ -312,12 +312,15 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun showLeaderboard() {
-        // Mirrors GameView.swift's GKGameCenterViewController(timeScope: .today):
-        // opens straight to the daily leaderboard, matching the game's daily reset.
+        // Unlike Game Center (which needed a second, Classic leaderboard resource for
+        // an all-time view - see GameView.swift's tunl_highscore_alltime), Play Games
+        // leaderboards are a single resource with Daily/Weekly/All-time built into the
+        // native leaderboard screen itself, switchable by the player without leaving it.
+        // Default to all-time so the persistent record is what players see first.
         PlayGames.getLeaderboardsClient(this)
             .getLeaderboardIntent(
                 getString(R.string.leaderboard_id),
-                LeaderboardVariant.TIME_SPAN_DAILY,
+                LeaderboardVariant.TIME_SPAN_ALL_TIME,
                 LeaderboardVariant.COLLECTION_PUBLIC
             )
             .addOnSuccessListener { intent -> leaderboardLauncher.launch(intent) }
