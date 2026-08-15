@@ -87,7 +87,10 @@ function _fadeTitleMusic() {
 }
 
 function _initAC() {
-    if (_ac) { if (_ac.state === 'suspended') _ac.resume(); return; }
+    // Every thrust tap during play routes through here too (see input.js) - if
+    // backgrounding fully closed the context, this must be able to recover it,
+    // not just resume a merely-suspended one (see _reviveAudioContext below).
+    if (_ac) { _reviveAudioContext(); return; }
     _ac = new (window.AudioContext || window.webkitAudioContext)();
     // WebKit sometimes creates the context in 'suspended' state even inside a
     // user gesture - resume it explicitly now, still within the gesture.
@@ -117,13 +120,30 @@ function _initAC() {
 }
 
 // WebKit auto-suspends the AudioContext after the app has been backgrounded
-// for a while (observed after roughly a minute). Nothing else resumes it when
-// the app returns to the foreground, so bgm and every sfx* call would
-// otherwise silently no-op forever - resume it as soon as the page is visible
-// again.
-document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && _ac && _ac.state === 'suspended') _ac.resume();
-});
+// for a while, and after long enough can fully *close* it rather than just
+// suspend it - .resume() is a no-op on a closed context, and its buffers
+// belong to that dead context so they can't be reused either. Recreate
+// everything from scratch in that case, letting _bgmPending/_titleBgmPending
+// (the same flags _initAC already uses while the mp3s are still decoding)
+// replay whichever tracks were active once the fresh buffers are ready.
+function _reviveAudioContext() {
+    if (!_ac || _ac.state === 'running') return;
+    if (_ac.state === 'suspended') { _ac.resume(); return; }
+    if (_ac.state === 'closed') {
+        _bgmPending = _bgmActive;
+        _titleBgmPending = _titleBgmActive;
+        _ac = null; _bgmBuf = null; _bgmBufRev = null; _bgmNode = null; _bgmGain = null;
+        _titleBgmBuf = null; _titleBgmNode = null; _titleBgmGain = null;
+        _initAC();
+    }
+}
+// visibilitychange is the fallback path - WKWebView doesn't always fire it
+// reliably when the *native* app (rather than the page itself) backgrounds,
+// which is why GameView.swift's Coordinator also calls window._tunlResumeAudio
+// directly from applicationDidBecomeActive. Both paths funnel into the same
+// revive logic so whichever fires first wins.
+document.addEventListener('visibilitychange', () => { if (!document.hidden) _reviveAudioContext(); });
+window._tunlResumeAudio = _reviveAudioContext;
 
 // Called from native (see AdsManager.swift) around interstitial ad presentation
 // so bgm/sfx don't play under the ad's own audio.

@@ -102,6 +102,20 @@ struct GameView: UIViewRepresentable {
                     self?.webView?.evaluateJavaScript("window._resumeAudioAfterAd && window._resumeAudioAfterAd()")
                 }
             }
+            // TunlApp.swift's AppDelegate reactivates the *native* AVAudioSession on
+            // this same notification, but that alone doesn't recover the WKWebView's
+            // own AudioContext once WebKit has fully closed it after extended
+            // backgrounding - kick the page's own revive path directly rather than
+            // relying only on document.visibilitychange, which WKWebView doesn't
+            // always fire when it's the host app (not the page) that backgrounded.
+            NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification,
+                                                    object: nil, queue: .main) { [weak self] _ in
+                self?.webView?.evaluateJavaScript("window._tunlResumeAudio && window._tunlResumeAudio()")
+            }
+        }
+
+        deinit {
+            NotificationCenter.default.removeObserver(self)
         }
 
         func authenticateGameCenter() {
