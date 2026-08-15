@@ -78,6 +78,7 @@ struct GameView: UIViewRepresentable {
     class Coordinator: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNavigationDelegate, GKGameCenterControllerDelegate {
 
         static let leaderboardID = "tunl_highscore"
+        static let allTimeLeaderboardID = "tunl_highscore_alltime"
 
         weak var webView: WKWebView?
         let iap = IAPManager()
@@ -121,16 +122,20 @@ struct GameView: UIViewRepresentable {
 
         private func submitScore(_ score: Int) {
             guard GKLocalPlayer.local.isAuthenticated else { return }
+            // Same run's score goes to both boards: the recurring daily one and
+            // the classic (never-resets) all-time one. One call, one round trip.
             GKLeaderboard.submitScore(score, context: 0, player: GKLocalPlayer.local,
-                                       leaderboardIDs: [Coordinator.leaderboardID]) { error in
+                                       leaderboardIDs: [Coordinator.leaderboardID,
+                                                         Coordinator.allTimeLeaderboardID]) { error in
                 if let error { print("Game Center score submit failed: \(error.localizedDescription)") }
             }
         }
 
         private func showLeaderboard() {
             guard GKLocalPlayer.local.isAuthenticated else { return }
-            let vc = GKGameCenterViewController(leaderboardID: Coordinator.leaderboardID,
-                                                 playerScope: .global, timeScope: .today)
+            // Show the full leaderboard set rather than jumping straight to the
+            // daily board, so players can switch between Daily and All-Time.
+            let vc = GKGameCenterViewController(state: .leaderboards)
             vc.gameCenterDelegate = self
             rootViewController()?.present(vc, animated: true)
         }
