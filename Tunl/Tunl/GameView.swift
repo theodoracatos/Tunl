@@ -198,7 +198,7 @@ struct GameView: UIViewRepresentable {
         // while this app can handle it. There's no custom screen for a specific
         // challenge to route to here, so just surface the leaderboards the challenge
         // was based on.
-        func player(_ player: GKPlayer, wantsToPlayChallenge challenge: GKChallenge) {
+        func player(_ player: GKPlayer, wantsToPlay challenge: GKChallenge) {
             showLeaderboard()
         }
 
