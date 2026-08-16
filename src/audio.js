@@ -128,7 +128,25 @@ function _initAC() {
 // replay whichever tracks were active once the fresh buffers are ready.
 function _reviveAudioContext() {
     if (!_ac || _ac.state === 'running') return;
-    if (_ac.state === 'suspended') { _ac.resume(); return; }
+    if (_ac.state === 'suspended') {
+        // WebKit often flips state to 'running' here without actually reconnecting
+        // the audio route to hardware - a node that was start()ed before the
+        // suspend (i.e. exactly bgm/title bgm, the only long-lived nodes here)
+        // then stays silent forever even though nothing looks wrong from JS. Don't
+        // trust the old node to keep producing sound - throw it away and start a
+        // fresh one from the buffer we already have decoded (cheap, no re-fetch).
+        _ac.resume().then(() => {
+            if (_bgmActive) {
+                if (_bgmNode) { _bgmNode.onended = null; try { _bgmNode.stop(); } catch(e){} _bgmNode = null; }
+                _playBgmBuffer();
+            }
+            if (_titleBgmActive) {
+                if (_titleBgmNode) { try { _titleBgmNode.stop(); } catch(e){} _titleBgmNode = null; }
+                _playTitleBgmBuffer();
+            }
+        });
+        return;
+    }
     if (_ac.state === 'closed') {
         _bgmPending = _bgmActive;
         _titleBgmPending = _titleBgmActive;
