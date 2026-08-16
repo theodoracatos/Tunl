@@ -85,6 +85,16 @@ function dailyWorldName() {
 
 const WORLD_NAME = dailyWorldName();
 
+// Level number shown in the run-start banner: day-of-year (1-366, UTC, resets
+// each Jan 1) so it reads like a level index without needing separate storage.
+function dailyLevelNum() {
+    const now   = new Date();
+    const start = Date.UTC(now.getUTCFullYear(), 0, 1);
+    const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+    return Math.floor((today - start) / 86400000) + 1;
+}
+const LEVEL_NUM = dailyLevelNum();
+
 function centerAt(wx) {
     const raw = H / 2
         + _wA1 * Math.sin(wx * _wF1 + _wavePhase1)

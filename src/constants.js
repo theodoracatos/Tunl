@@ -42,6 +42,10 @@ function rng() {
 
 const MINE_R = W * 0.011;
 
+// Run-start "LEVEL n: Name" banner timing
+const LEVEL_INTRO_DUR  = 1.6; // total seconds visible
+const LEVEL_INTRO_FADE = 0.5; // seconds of that spent fading out at the end
+
 // Perk descriptions live in i18n.js (LANGS[*].skinPerks, same index order) so
 // they stay live if the player switches language without reloading.
 const SKINS = [

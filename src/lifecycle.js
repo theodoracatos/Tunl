@@ -22,6 +22,7 @@ function titleScreen() {
     mines = []; nextMineWx = 99999;
     prevRunScore = 0; lastRunScore = 0; milestoneFlash = 0; milestoneText = '';
     runCoins = 0; runNearMisses = 0; runMaxCombo = 0; skinUnlockIdx = -1;
+    levelIntroT = 0;
     initAmbParts();
     const _dt = new Date();
     seedWavePhase(_dt.getUTCFullYear() * 10000 + (_dt.getUTCMonth() + 1) * 100 + _dt.getUTCDate());
@@ -62,6 +63,7 @@ function startPlay() {
     dailyRuns++;
     localStorage.setItem('tunnel_daily_runs', dailyRuns);
     milestoneFlash = 0; milestoneText = '';
+    levelIntroT = LEVEL_INTRO_DUR;
     const _d = new Date();
     const _dayInt = _d.getUTCFullYear() * 10000 + (_d.getUTCMonth() + 1) * 100 + _d.getUTCDate();
     seedRng(_dayInt);

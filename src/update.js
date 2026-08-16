@@ -5,6 +5,10 @@ let prev = 0;
 function update(dt) {
     gtime += dt;
 
+    // Level intro banner decay -- counts down real elapsed time from run start,
+    // independent of the launch-ramp/physics sub-phases below.
+    if (phase === 'play') levelIntroT = Math.max(0, levelIntroT - dt);
+
     // Particles (always running)
     for (let i = parts.length - 1; i >= 0; i--) {
         const p = parts[i];

@@ -930,6 +930,21 @@ function draw() {
         ctx.restore();
     }
 
+    // Level intro banner -- "LEVEL n: Name", shown briefly at the start of each run
+    if (levelIntroT > 0 && phase === 'play') {
+        const lia = Math.min(1, levelIntroT / LEVEL_INTRO_FADE);
+        ctx.save();
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font         = `bold ${FS*0.045}px 'Courier New',monospace`;
+        ctx.shadowColor  = `rgba(90,140,255,${lia * 0.85})`;
+        ctx.shadowBlur   = 20;
+        ctx.fillStyle    = `rgba(200,222,255,${lia})`;
+        ctx.fillText(`${T.level} ${LEVEL_NUM}: ${WORLD_NAME.toUpperCase()}`, W/2, H * 0.30);
+        ctx.shadowBlur   = 0;
+        ctx.restore();
+    }
+
     // Milestone flash
     if (milestoneFlash > 0 && phase === 'play') {
         const mfa = milestoneFlash;

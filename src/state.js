@@ -40,6 +40,7 @@ let bonusScore, milestoneNext, nearMissTimer, coinCombo, coinComboTimer;
 let runCoins, runNearMisses, runMaxCombo;
 let prevRunScore, lastRunScore;
 let milestoneFlash, milestoneText;
+let levelIntroT = 0;
 let gtime = 0;
 let skinFx = [], skinFxT = 0;
 let shipPitch = 0;
