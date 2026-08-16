@@ -1304,7 +1304,7 @@ function draw() {
             const restoreH   = H * 0.032;
             const iapSectionH = hasIAP ? sectionGap + iapBtnH + (removeAdsOwned ? 0 : restoreGap + restoreH) : 0;
 
-            const langCols  = 2;
+            const langCols  = LANG_ORDER.length > 10 ? 3 : 2;
             const langRows  = Math.ceil(LANG_ORDER.length / langCols);
             const langListH = langRows * lbh + Math.max(0, langRows - 1) * lbGap;
             const panH = padTop + titleH + audioRowH + sectionGap + langLabelH + langListH + iapSectionH + padBottom;
@@ -1381,7 +1381,16 @@ function draw() {
                 ctx.lineWidth   = active ? 1.5 : 1;
                 ctx.stroke();
 
-                ctx.font      = `${active ? 'bold ' : ''}${FS * 0.023}px 'Courier New',monospace`;
+                // Shrink the label font to fit narrower buttons (3-col grid, long
+                // names like "Indonesia" / "Tiếng Việt") instead of overflowing.
+                let langFontPx = FS * 0.023;
+                ctx.font = `${active ? 'bold ' : ''}${langFontPx}px 'Courier New',monospace`;
+                const nameW = ctx.measureText(lang.name).width;
+                const maxNameW = lbw * 0.88;
+                if (nameW > maxNameW) {
+                    langFontPx *= maxNameW / nameW;
+                    ctx.font = `${active ? 'bold ' : ''}${langFontPx}px 'Courier New',monospace`;
+                }
                 ctx.fillStyle = active ? 'rgba(140,180,255,0.97)' : 'rgba(150,170,220,0.88)';
                 if (active) { ctx.shadowColor = 'rgba(80,140,255,0.55)'; ctx.shadowBlur = 10; }
                 ctx.fillText(lang.name, lbx + lbw / 2, lby + lbh / 2);
