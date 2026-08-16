@@ -24,6 +24,7 @@ let showSettings = false;
 let _settingsBtnRect = null;
 let _settingsPanelRect = null;
 let _leaderboardBtnRect = null;
+let _challengeBtnRect = null;
 let _langBtnRects = [];
 let _removeAdsBtnRect = null;
 let _restoreBtnRect = null;

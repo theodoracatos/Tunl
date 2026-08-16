@@ -1140,19 +1140,25 @@ function draw() {
         };
         // Settings button -- its (localized) text label can be as wide as it
         // needs without bumping into the info column.
-        // Paired with the Game Center leaderboard button when that native bridge exists;
-        // widths are measured first so long localized labels never overlap.
+        // Paired with the Game Center leaderboard + challenge buttons when that
+        // native bridge exists; widths are measured first so long localized
+        // labels never overlap, and the row is centered as a whole around titleX.
         {
             const settingsBY = tBtnY;
             const hasGameCenter = !!window.webkit?.messageHandlers?.gameCenter;
             if (hasGameCenter) {
                 const settingsW    = ctx.measureText(T.settings).width + W*0.034;
                 const leaderboardW = ctx.measureText(T.leaderboard).width + W*0.034;
+                const challengeW   = ctx.measureText(T.challenge).width + W*0.034;
                 const rowGap = W * 0.02;
-                const settingsCX    = titleX - settingsW/2 - rowGap/2;
-                const leaderboardCX = titleX + leaderboardW/2 + rowGap/2;
+                const totalW = settingsW + leaderboardW + challengeW + rowGap * 2;
+                let bx = titleX - totalW / 2;
+                const settingsCX = bx + settingsW / 2; bx += settingsW + rowGap;
+                const leaderboardCX = bx + leaderboardW / 2; bx += leaderboardW + rowGap;
+                const challengeCX = bx + challengeW / 2;
                 _settingsBtnRect    = drawBtn(settingsCX, settingsBY, T.settings, true, true);
                 _leaderboardBtnRect = drawBtn(leaderboardCX, settingsBY, T.leaderboard, true, false);
+                _challengeBtnRect   = drawBtn(challengeCX, settingsBY, T.challenge, true, false);
             } else {
                 _settingsBtnRect = drawBtn(titleX, settingsBY, T.settings, true, true);
             }

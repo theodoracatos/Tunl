@@ -70,6 +70,10 @@ function onDown(e) {
             window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'show' });
             return;
         }
+        if (_challengeBtnRect && inRect(cx, cy, _challengeBtnRect)) {
+            window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'challenge' });
+            return;
+        }
         for (let i = 0; i < _skinBtnRects.length; i++) {
             const b = _skinBtnRects[i], dx = cx - b.cx, dy = cy - b.cy;
             if (dx*dx + dy*dy < b.r*b.r && (unlockedSkins & (1 << i))) {

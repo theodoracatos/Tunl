@@ -75,7 +75,7 @@ struct GameView: UIViewRepresentable {
 
     // MARK: - Haptic + Game Center bridge
 
-    class Coordinator: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNavigationDelegate, GKGameCenterControllerDelegate {
+    class Coordinator: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNavigationDelegate, GKGameCenterControllerDelegate, GKLocalPlayerListener {
 
         static let leaderboardID = "tunl_highscore"
         static let allTimeLeaderboardID = "tunl_highscore_alltime"
@@ -116,12 +116,19 @@ struct GameView: UIViewRepresentable {
 
         deinit {
             NotificationCenter.default.removeObserver(self)
+            GKLocalPlayer.local.unregisterListener(self)
         }
 
         func authenticateGameCenter() {
             GKLocalPlayer.local.authenticateHandler = { [weak self] viewController, error in
+                guard let self else { return }
                 if let viewController {
-                    self?.rootViewController()?.present(viewController, animated: true)
+                    self.rootViewController()?.present(viewController, animated: true)
+                } else if GKLocalPlayer.local.isAuthenticated {
+                    // Needed to receive challenge-related callbacks below (a tap on
+                    // "Play" in a friend's challenge notification, etc.) - without
+                    // registering, those taps just launch the app with no route in.
+                    GKLocalPlayer.local.register(self)
                 } else if let error {
                     print("Game Center auth failed: \(error.localizedDescription)")
                 }
@@ -154,8 +161,29 @@ struct GameView: UIViewRepresentable {
             rootViewController()?.present(vc, animated: true)
         }
 
+        // "Challenge a friend" isn't a standalone API on modern GameKit - it's a
+        // system affordance that appears when a player taps a friend's row on a
+        // friends-scoped leaderboard. Landing directly on that leaderboard (rather
+        // than the generic leaderboard list) puts the challenge action one tap away.
+        private func showFriendChallenge() {
+            guard GKLocalPlayer.local.isAuthenticated else { return }
+            let vc = GKGameCenterViewController(leaderboardID: Coordinator.allTimeLeaderboardID,
+                                                 playerScope: .friendsOnly,
+                                                 timeScope: .allTime)
+            vc.gameCenterDelegate = self
+            rootViewController()?.present(vc, animated: true)
+        }
+
         func gameCenterViewControllerDidFinish(_ gameCenterViewController: GKGameCenterViewController) {
             gameCenterViewController.dismiss(animated: true)
+        }
+
+        // Fires when the player taps "Play" on a challenge (from a push notification
+        // or the Game Center app) while this app can handle it. Route them to the
+        // friends leaderboard where the challenge lives so they can see what they're
+        // up against and jump straight into a run.
+        func player(_ player: GKPlayer, wantsToPlayChallenge challenge: GKChallenge) {
+            showFriendChallenge()
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -186,6 +214,8 @@ struct GameView: UIViewRepresentable {
                     if let score = body["score"] as? Int { submitScore(score) }
                 case "show":
                     showLeaderboard()
+                case "challenge":
+                    showFriendChallenge()
                 default: break
                 }
                 return
