@@ -29,6 +29,18 @@ struct GameView: UIViewRepresentable {
         config.userContentController.add(context.coordinator, name: "iap")
         config.userContentController.add(context.coordinator, name: "ads")
 
+        // Game Center Challenges (GKChallengeDefinition/GKAccessPoint.trigger...) need
+        // iOS 26+ - tell the JS side up front so it only draws the CHALLENGE button on
+        // devices that can actually use it, instead of showing a dead button everywhere.
+        let challengeSupported: Bool = {
+            if #available(iOS 26.0, *) { return true } else { return false }
+        }()
+        let capabilityScript = WKUserScript(
+            source: "window._tunlChallengeSupported = \(challengeSupported);",
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true)
+        config.userContentController.addUserScript(capabilityScript)
+
         context.coordinator.authenticateGameCenter()
 
         let webView = WKWebView(frame: .zero, configuration: config)
@@ -161,29 +173,33 @@ struct GameView: UIViewRepresentable {
             rootViewController()?.present(vc, animated: true)
         }
 
-        // "Challenge a friend" isn't a standalone API on modern GameKit - it's a
-        // system affordance that appears when a player taps a friend's row on a
-        // friends-scoped leaderboard. Landing directly on that leaderboard (rather
-        // than the generic leaderboard list) puts the challenge action one tap away.
-        private func showFriendChallenge() {
+        // Real Game Center Challenges (the redesigned system configured in App Store
+        // Connect - see the "tunl_challenge_alltime" definition) only exist as of
+        // iOS 26: GKChallengeDefinition and GKAccessPoint's trigger APIs aren't
+        // available before that, and there's no older equivalent. Below iOS 26 the
+        // CHALLENGE button doesn't even render (gated in src/draw.js via
+        // window._tunlChallengeSupported), so this never gets called on those devices.
+        @available(iOS 26.0, *)
+        private func presentChallengeCreation() {
             guard GKLocalPlayer.local.isAuthenticated else { return }
-            let vc = GKGameCenterViewController(leaderboardID: Coordinator.allTimeLeaderboardID,
-                                                 playerScope: .friendsOnly,
-                                                 timeScope: .allTime)
-            vc.gameCenterDelegate = self
-            rootViewController()?.present(vc, animated: true)
+            Task {
+                // Presents Apple's own system UI for picking a challenge (from the
+                // definitions configured in App Store Connect) and friends to send it
+                // to - there's no custom UI to build here, GameKit owns this screen.
+                await GKAccessPoint.shared.triggerForPlayTogether()
+            }
         }
 
         func gameCenterViewControllerDidFinish(_ gameCenterViewController: GKGameCenterViewController) {
             gameCenterViewController.dismiss(animated: true)
         }
 
-        // Fires when the player taps "Play" on a challenge (from a push notification
-        // or the Game Center app) while this app can handle it. Route them to the
-        // friends leaderboard where the challenge lives so they can see what they're
-        // up against and jump straight into a run.
+        // Fires when the player taps "Play" on a (legacy-style) challenge notification
+        // while this app can handle it. There's no custom screen for a specific
+        // challenge to route to here, so just surface the leaderboards the challenge
+        // was based on.
         func player(_ player: GKPlayer, wantsToPlayChallenge challenge: GKChallenge) {
-            showFriendChallenge()
+            showLeaderboard()
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -215,7 +231,7 @@ struct GameView: UIViewRepresentable {
                 case "show":
                     showLeaderboard()
                 case "challenge":
-                    showFriendChallenge()
+                    if #available(iOS 26.0, *) { presentChallengeCreation() }
                 default: break
                 }
                 return
