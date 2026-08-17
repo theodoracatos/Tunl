@@ -32,6 +32,7 @@ const LANGS = {
         notifMagnet: '+MAGNET',  notifAmmo: '+AMMO',
         boom: 'BOOM!',           blocked: 'BLOCKED',
         skinPerks: [null, 'COIN REACH +50%', 'SLIM HITBOX -18%', 'SLOW TIME +50%', '2x COIN BONUS', 'SHIELD CAP +1', 'MAGNET TIME +60%'],
+        skinDrawbacks: [null, 'HITBOX +10%', 'SHIELD CAP -1', 'COMBO TIME -25%', 'DECAY +60%', 'CLOSE RANGE -25%', 'AMMO CAP -40%'],
     },
     de: {
         name: 'Deutsch',
@@ -64,6 +65,7 @@ const LANGS = {
         notifMagnet: '+MAGNET',  notifAmmo: '+MUNITION',
         boom: 'BUMM!',           blocked: 'GEBLOCKT',
         skinPerks: [null, 'MÜNZREICHWEITE +50%', 'SCHMALE HITBOX -18%', 'ZEITLUPE +50%', '2x MÜNZBONUS', 'SCHILDKAPAZITÄT +1', 'MAGNETZEIT +60%'],
+        skinDrawbacks: [null, 'HITBOX +10%', 'SCHILDKAPAZITÄT -1', 'COMBO-ZEIT -25%', 'VERFALL +60%', 'NAHDISTANZ -25%', 'MUNITION -40%'],
     },
     fr: {
         name: 'Francais',
@@ -96,6 +98,7 @@ const LANGS = {
         notifMagnet: '+AIMANT',  notifAmmo: '+MUNITIONS',
         boom: 'BOUM!',           blocked: 'BLOQUE',
         skinPerks: [null, 'PORTEE PIECES +50%', 'HITBOX FINE -18%', 'RALENTI +50%', 'BONUS PIECES x2', 'CAPACITE BOUCLIER +1', 'DUREE AIMANT +60%'],
+        skinDrawbacks: [null, 'HITBOX +10%', 'CAPACITE BOUCLIER -1', 'DUREE COMBO -25%', 'DECLIN +60%', 'PORTEE PRES -25%', 'MUNITIONS -40%'],
     },
     it: {
         name: 'Italiano',
@@ -128,6 +131,7 @@ const LANGS = {
         notifMagnet: '+MAGNETE', notifAmmo: '+MUNIZIONI',
         boom: 'BOOM!',           blocked: 'BLOCCATO',
         skinPerks: [null, 'RAGGIO MONETE +50%', 'HITBOX SOTTILE -18%', 'TEMPO LENTO +50%', 'BONUS MONETE x2', 'CAPACITA SCUDO +1', 'DURATA CALAMITA +60%'],
+        skinDrawbacks: [null, 'HITBOX +10%', 'CAPACITA SCUDO -1', 'DURATA COMBO -25%', 'DECADIMENTO +60%', 'RAGGIO VICINO -25%', 'MUNIZIONI -40%'],
     },
     es: {
         name: 'Espanol',
@@ -160,6 +164,7 @@ const LANGS = {
         notifMagnet: '+IMAN',    notifAmmo: '+MUNICION',
         boom: 'BOOM!',           blocked: 'BLOQUEADO',
         skinPerks: [null, 'ALCANCE MONEDAS +50%', 'HITBOX FINA -18%', 'TIEMPO LENTO +50%', 'BONUS MONEDAS x2', 'CAPACIDAD ESCUDO +1', 'DURACION IMAN +60%'],
+        skinDrawbacks: [null, 'HITBOX +10%', 'CAPACIDAD ESCUDO -1', 'TIEMPO COMBO -25%', 'DECAIMIENTO +60%', 'RANGO CERCANO -25%', 'MUNICION -40%'],
     },
     pt: {
         name: 'Portugues',
@@ -192,6 +197,7 @@ const LANGS = {
         notifMagnet: '+IMA',     notifAmmo: '+MUNICAO',
         boom: 'BOOM!',           blocked: 'BLOQUEADO',
         skinPerks: [null, 'ALCANCE MOEDAS +50%', 'HITBOX FINA -18%', 'CAMERA LENTA +50%', 'BONUS MOEDAS x2', 'CAPACIDADE ESCUDO +1', 'DURACAO IMA +60%'],
+        skinDrawbacks: [null, 'HITBOX +10%', 'CAPACIDADE ESCUDO -1', 'TEMPO COMBO -25%', 'DECAIMENTO +60%', 'ALCANCE PROXIMO -25%', 'MUNICAO -40%'],
     },
     ja: {
         name: '日本語',
@@ -224,6 +230,7 @@ const LANGS = {
         notifMagnet: '+マグネット', notifAmmo: '+弾薬',
         boom: 'ドカーン!',       blocked: 'ブロック',
         skinPerks: [null, 'コイン範囲 +50%', 'ヒットボックス縮小 -18%', 'スロー時間 +50%', 'コインボーナス x2', 'シールド容量 +1', 'マグネット時間 +60%'],
+        skinDrawbacks: [null, 'ヒットボックス +10%', 'シールド容量 -1', 'コンボ時間 -25%', '減衰速度 +60%', 'ニアミス範囲 -25%', '弾薬容量 -40%'],
     },
     ko: {
         name: '한국어',
@@ -256,6 +263,7 @@ const LANGS = {
         notifMagnet: '+마그넷',  notifAmmo: '+탄약',
         boom: '쾅!',             blocked: '방어됨',
         skinPerks: [null, '코인 범위 +50%', '히트박스 축소 -18%', '슬로우 타임 +50%', '코인 보너스 x2', '쉴드 용량 +1', '마그넷 시간 +60%'],
+        skinDrawbacks: [null, '히트박스 +10%', '쉴드 용량 -1', '콤보 시간 -25%', '감쇠 +60%', '근접 범위 -25%', '탄약 용량 -40%'],
     },
     zh: {
         name: '繁體中文',
@@ -288,6 +296,7 @@ const LANGS = {
         notifMagnet: '+磁鐵',    notifAmmo: '+彈藥',
         boom: '轟!',             blocked: '格擋',
         skinPerks: [null, '金幣範圍 +50%', '碰撞範圍縮小 -18%', '減速時間 +50%', '金幣加成 x2', '護盾容量 +1', '磁鐵時間 +60%'],
+        skinDrawbacks: [null, '碰撞範圍 +10%', '護盾容量 -1', '連擊時間 -25%', '衰減 +60%', '擦身範圍 -25%', '彈藥容量 -40%'],
     },
     ru: {
         name: 'Русский',
@@ -320,6 +329,7 @@ const LANGS = {
         notifMagnet: '+МАГНИТ',  notifAmmo: '+ПАТРОНЫ',
         boom: 'БУМ!',            blocked: 'БЛОК',
         skinPerks: [null, 'РАДИУС МОНЕТ +50%', 'ХИТБОКС -18%', 'ЗАМЕДЛЕНИЕ +50%', 'x2 БОНУС МОНЕТ', 'ЁМКОСТЬ ЩИТА +1', 'ВРЕМЯ МАГНИТА +60%'],
+        skinDrawbacks: [null, 'ХИТБОКС +10%', 'ЩИТ -1', 'ВРЕМЯ КОМБО -25%', 'РАСПАД +60%', 'БЛИЗКИЙ ДИАПАЗОН -25%', 'БОЕЗАПАС -40%'],
     },
     ar: {
         name: 'العربية',
@@ -352,6 +362,7 @@ const LANGS = {
         notifMagnet: '+مغناطيس',  notifAmmo: '+ذخيرة',
         boom: 'انفجار!',          blocked: 'تم الصد',
         skinPerks: [null, 'مدى العملات +50%', 'صندوق تصادم أصغر -18%', 'إبطاء الزمن +50%', 'مكافأة عملات x2', 'سعة الدرع +1', 'مدة المغناطيس +60%'],
+        skinDrawbacks: [null, 'صندوق تصادم أكبر +10%', 'سعة الدرع -1', 'وقت الكومبو -25%', 'التلاشي +60%', 'نطاق القرب -25%', 'سعة الذخيرة -40%'],
     },
     tr: {
         name: 'Türkçe',
@@ -384,6 +395,7 @@ const LANGS = {
         notifMagnet: '+MIKNATIS', notifAmmo: '+MERMİ',
         boom: 'BUM!',            blocked: 'ENGELLENDİ',
         skinPerks: [null, 'PARA ÇEKME MENZİLİ +50%', 'İNCE ÇARPIŞMA -18%', 'YAVAŞ ZAMAN +50%', '2x PARA BONUSU', 'KALKAN KAPASİTESİ +1', 'MIKNATIS SÜRESİ +60%'],
+        skinDrawbacks: [null, 'ÇARPIŞMA +10%', 'KALKAN KAPASİTESİ -1', 'KOMBO SÜRESİ -25%', 'AZALMA +60%', 'YAKIN MENZİL -25%', 'CEPHANE -40%'],
     },
     id: {
         name: 'Indonesia',
@@ -416,6 +428,7 @@ const LANGS = {
         notifMagnet: '+MAGNET',  notifAmmo: '+AMUNISI',
         boom: 'BUM!',            blocked: 'DIBLOKIR',
         skinPerks: [null, 'JANGKAUAN KOIN +50%', 'HITBOX RAMPING -18%', 'WAKTU LAMBAT +50%', 'BONUS KOIN x2', 'KAPASITAS PERISAI +1', 'DURASI MAGNET +60%'],
+        skinDrawbacks: [null, 'HITBOX +10%', 'KAPASITAS PERISAI -1', 'WAKTU KOMBO -25%', 'PELURUHAN +60%', 'JANGKAUAN DEKAT -25%', 'AMUNISI -40%'],
     },
     vi: {
         name: 'Tiếng Việt',
@@ -448,6 +461,7 @@ const LANGS = {
         notifMagnet: '+NAM CHÂM', notifAmmo: '+ĐẠN',
         boom: 'BÙM!',            blocked: 'CHẶN',
         skinPerks: [null, 'TẦM HÚT XU +50%', 'VA CHẠM NHỎ -18%', 'CHẬM THỜI GIAN +50%', 'THƯỞNG XU x2', 'SỨC CHỨA KHIÊN +1', 'THỜI GIAN NAM CHÂM +60%'],
+        skinDrawbacks: [null, 'VA CHẠM +10%', 'SỨC CHỨA KHIÊN -1', 'THỜI GIAN COMBO -25%', 'SUY GIẢM +60%', 'TẦM GẦN -25%', 'SỨC CHỨA ĐẠN -40%'],
     },
     hi: {
         name: 'हिन्दी',
@@ -480,6 +494,7 @@ const LANGS = {
         notifMagnet: '+मैग्नेट',   notifAmmo: '+गोलियां',
         boom: 'धमाका!',           blocked: 'रोका गया',
         skinPerks: [null, 'सिक्का रेंज +50%', 'हिटबॉक्स -18%', 'धीमा समय +50%', '2x सिक्का बोनस', 'शील्ड क्षमता +1', 'मैग्नेट समय +60%'],
+        skinDrawbacks: [null, 'हिटबॉक्स +10%', 'शील्ड क्षमता -1', 'कॉम्बो समय -25%', 'क्षय +60%', 'निकट सीमा -25%', 'गोला-बारूद -40%'],
     },
 };
 

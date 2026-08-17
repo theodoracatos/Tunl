@@ -113,7 +113,8 @@ function checkCoinCollection() {
         if (dx*dx + dy*dy < r2) {
             coin.collected = true;
             if (coinComboTimer > 0) coinCombo++; else coinCombo = 1;
-            coinComboTimer = activeSkin === 4 ? 3.0 : 2.0;
+            // ELECTRIC trades a shorter combo window for its slow-time buff below.
+            coinComboTimer = activeSkin === 3 ? 1.5 : 2.0;
             const pts = coinCombo * 3;
             bonusScore += pts;
             runCoins++;
@@ -126,7 +127,10 @@ function checkCoinCollection() {
                 sfxSlow();
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             } else if (coin.type === 'red') {
-                shieldCount = Math.min(shieldCount + 1, activeSkin === 5 ? 4 : 3);
+                // CRIMSON trades shield capacity away for its slim-hitbox buff below;
+                // VOID's buff IS extra shield capacity.
+                const shieldCap = activeSkin === 5 ? 4 : activeSkin === 2 ? 2 : 3;
+                shieldCount = Math.min(shieldCount + 1, shieldCap);
                 burstCoin(sx, coin.y, 0, 26);
                 shake += 3;
                 notifs.push({ x: sx, y: coin.y - 16, life: 1.1, text: T.notifShield, color: [255,90,90] });
@@ -140,7 +144,8 @@ function checkCoinCollection() {
                 sfxMagnet();
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             } else if (coin.type === 'orange') {
-                bulletAmmo = Math.min(bulletAmmo + 5, 10);
+                // NOVA trades ammo capacity away for its magnet-duration buff below.
+                bulletAmmo = Math.min(bulletAmmo + (activeSkin === 6 ? 3 : 5), activeSkin === 6 ? 6 : 10);
                 bulletFireTimer = 0;
                 burstCoin(sx, coin.y, 28, 26);
                 shake += 3;

@@ -114,7 +114,9 @@ function update(dt) {
     py += vy * dt;
 
     // Gap bonus / slow / magnet decay
-    gapBonus   = Math.max(0, gapBonus   - GAP_DECAY * dt);
+    // TOXIC trades faster gap-bonus decay for its 2x-per-coin buff (systems.js) --
+    // has to keep collecting to hold the wider corridor, not just bank it once.
+    gapBonus   = Math.max(0, gapBonus   - GAP_DECAY * (activeSkin === 4 ? 1.6 : 1.0) * dt);
     slowTime   = Math.max(0, slowTime   - dt);
     magnetTime = Math.max(0, magnetTime - dt);
 
@@ -135,7 +137,9 @@ function update(dt) {
     if (nearMissTimer <= 0) {
         const nmB = boundsAt(scrollX + PX);
         const nmC = Math.min(py - PR - nmB.top, nmB.bot - (py + PR));
-        if (nmC >= 0 && nmC < PR * (activeSkin === 2 ? 3.0 : 2.0)) {
+        // VOID trades a smaller near-miss window for its extra shield capacity
+        // (systems.js) -- it tanks hits instead of skimming past them for bonus.
+        if (nmC >= 0 && nmC < PR * (activeSkin === 5 ? 1.5 : 2.0)) {
             bonusScore++;
             nearMissTimer = 1.5;
             runNearMisses++;
@@ -228,8 +232,9 @@ function update(dt) {
         }
     }
 
-    // Wall + stalactite collision (CRIMSON has a slimmer hitbox)
-    const cPR = activeSkin === 2 ? PR * 0.82 : PR;
+    // Wall + stalactite collision. CRIMSON has a slimmer hitbox (its buff); AMBER
+    // trades a slightly larger one away for its bigger coin-collection radius.
+    const cPR = activeSkin === 2 ? PR * 0.82 : activeSkin === 1 ? PR * 1.10 : PR;
     for (const dx of [-cPR * 0.7, 0, cPR * 0.7]) {
         const b = boundsAt(scrollX + PX + dx);
         if (py - cPR < b.top || py + cPR > b.bot) { if (die()) return; break; }
@@ -240,8 +245,8 @@ function update(dt) {
         if (stalHit(s, cPR)) { if (die()) return; break; }
     }
 
-    // Mine collision
-    const mineHitR2 = (PR + MINE_R) * (PR + MINE_R);
+    // Mine collision (same trade-off hitbox as walls/stalactites above)
+    const mineHitR2 = (cPR + MINE_R) * (cPR + MINE_R);
     for (let mi = 0; mi < mines.length; mi++) {
         const m  = mines[mi];
         const sx = m.wx - scrollX;

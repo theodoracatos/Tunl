@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Zero-dependency check: every language in src/i18n.js must expose the same
-// keys as English, and skinPerks arrays must line up by index (they're
+// keys as English, and skinPerks/skinDrawbacks arrays must line up by index (they're
 // looked up positionally against SKINS in draw.js).
 const fs   = require('fs');
 const path = require('path');
@@ -21,8 +21,9 @@ vm.runInContext('this.__LANGS = LANGS; this.__LANG_ORDER = LANG_ORDER;', sandbox
 
 const { __LANGS: LANGS, __LANG_ORDER: LANG_ORDER } = sandbox;
 
-const refKeys    = Object.keys(LANGS.en).sort();
-const refPerkLen = LANGS.en.skinPerks.length;
+const refKeys        = Object.keys(LANGS.en).sort();
+const refPerkLen     = LANGS.en.skinPerks.length;
+const refDrawbackLen = LANGS.en.skinDrawbacks.length;
 let failed = false;
 
 for (const langCode of LANG_ORDER) {
@@ -45,6 +46,9 @@ for (const langCode of LANG_ORDER) {
     } else if (lang.skinPerks.length !== refPerkLen) {
         failed = true;
         console.error(`✗ ${langCode}: skinPerks length ${lang.skinPerks.length} !== ${refPerkLen}`);
+    } else if (lang.skinDrawbacks.length !== refDrawbackLen) {
+        failed = true;
+        console.error(`✗ ${langCode}: skinDrawbacks length ${lang.skinDrawbacks.length} !== ${refDrawbackLen}`);
     } else {
         console.log(`✓ ${langCode}`);
     }

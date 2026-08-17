@@ -55,13 +55,21 @@ const LEVEL_INTRO_FADE = 0.5; // seconds of that spent fading out at the end
 // playtesting.
 const DAILY_SHARD_CAP = 350;
 
-// Perk descriptions live in i18n.js (LANGS[*].skinPerks, same index order) so
-// they stay live if the player switches language without reloading.
-// Unlock cost is in shards (persistent currency banked from collected coins across all
-// runs, see state.js `shards` + update.js die() banking), not single-run score anymore.
-// VOID/NOVA are new prestige tiers for players who used to max out the old score-gated
-// list in one good run: VOID raises max shield stacks 3->4 (systems.js red-coin pickup),
-// NOVA raises the magnet duration cap 5s->8s (systems.js green-coin pickup).
+// Perk (buff) and drawback (nerf) descriptions live in i18n.js (LANGS[*].skinPerks /
+// skinDrawbacks, same index order) so they stay live if the player switches language
+// without reloading. Unlock cost is in shards (persistent currency banked from collected
+// coins across all runs, see state.js `shards` + update.js die() banking).
+//
+// Every non-PEARL ship pairs one buff with one nerf -- a build choice, not a strict
+// upgrade ladder. All players were reset to PEARL-only when the shard system shipped
+// (state.js), so this rebalance has no legacy-unlock compatibility to preserve:
+//   AMBER    (systems.js coin pickup, update.js cPR)       +50% coin reach   / +10% hitbox
+//   CRIMSON  (update.js cPR, systems.js shield pickup)      -18% hitbox      / shield cap -1
+//   ELECTRIC (systems.js blue coin, systems.js combo timer) +50% slow time   / -25% combo window
+//   TOXIC    (systems.js gold coin, update.js gap decay)    2x coin bonus    / +60% decay rate
+//   VOID     (systems.js shield pickup, update.js near-miss) shield cap +1  / -25% near-miss window
+//   NOVA     (systems.js green coin, systems.js ammo pickup) +60% magnet    / -40% ammo capacity
+// PEARL stays the neutral baseline with no perk/drawback, just cosmetic FX.
 const SKINS = [
     { color: '#e8eeff', shadow: [210,220,255],  name: 'PEARL'                       },
     { color: '#ffaa00', shadow: [255,155,0],    name: 'AMBER',   cost: 60           },

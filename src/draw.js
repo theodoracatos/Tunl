@@ -1332,13 +1332,24 @@ function draw() {
                     ctx.shadowBlur  = selected ? 8 : 3;
                     ctx.fillText(SKINS[i].name, cx, dotY + dotR * 1.7);
                     ctx.shadowBlur  = 0;
-                    const perk = T.skinPerks && T.skinPerks[i];
+                    const perk     = T.skinPerks     && T.skinPerks[i];
+                    const drawback = T.skinDrawbacks && T.skinDrawbacks[i];
                     if (selected && perk) {
                         ctx.font        = `${FS*0.016}px 'Courier New',monospace`;
                         ctx.fillStyle   = `rgba(${sr},${sg},${sb},0.85)`;
                         ctx.shadowColor = 'rgba(0,0,0,0.90)';
                         ctx.shadowBlur  = 4;
                         ctx.fillText(perk, cx, dotY + dotR * 2.7);
+                        ctx.shadowBlur  = 0;
+                    }
+                    // Trade-off: each buff above is paired with a drawback, a size step
+                    // smaller so the perk stays the visual headline.
+                    if (selected && drawback) {
+                        ctx.font        = `${FS*0.013}px 'Courier New',monospace`;
+                        ctx.fillStyle   = 'rgba(255,120,90,0.80)';
+                        ctx.shadowColor = 'rgba(0,0,0,0.90)';
+                        ctx.shadowBlur  = 4;
+                        ctx.fillText(drawback, cx, dotY + dotR * 3.5);
                         ctx.shadowBlur  = 0;
                     }
                     ctx.font = `${FS*0.018}px 'Courier New',monospace`;
