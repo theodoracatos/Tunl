@@ -1057,6 +1057,10 @@ function draw() {
         // triangle graphic itself extends further left, see dotR*1.6 below); before any
         // ship is unlocked/played there's nothing to clear yet, so fall back to a fixed
         // fraction close to the old constant.
+        // Hoisted out of the `if (LAND)` block below so the level/world-name subtitle
+        // further down can also fit itself against the divider's real position, not
+        // just the gradient line drawn here.
+        let dividerX = W * 0.44;
         if (LAND) {
             const sepGrd = ctx.createLinearGradient(0, H * 0.10, 0, H * 0.90);
             sepGrd.addColorStop(0,   `rgba(55,75,140,0)`);
@@ -1065,7 +1069,7 @@ function draw() {
             sepGrd.addColorStop(1,   `rgba(55,75,140,0)`);
             ctx.fillStyle = sepGrd;
             const dividerMargin = 12;
-            let dividerX = showShipPanel ? (startX - dotR * 1.6 - dividerMargin) : W * 0.44;
+            dividerX = showShipPanel ? (startX - dotR * 1.6 - dividerMargin) : W * 0.44;
             // Don't let the divider crash into the left column's own content either.
             dividerX = Math.max(dividerX, W * 0.34);
             ctx.fillRect(dividerX, H * 0.08, 1, H * 0.84);
@@ -1176,9 +1180,26 @@ function draw() {
         ctx.fillRect(titleX - logoW*0.5, ulY, logoW, 1.5);
 
         ctx.shadowColor = 'rgba(0,0,0,0.90)'; ctx.shadowBlur = 3;
-        ctx.font      = `bold ${FS*0.026}px 'Courier New',monospace`;
         ctx.fillStyle = `rgba(175,205,255,${a * 0.95})`;
-        ctx.fillText(WORLD_NAME.toUpperCase(), titleX, LAND ? H * 0.365 : H/2 - H*0.038);
+        // Prefixed with "LEVEL <day-of-year>:" so the world name reads like a level
+        // index -- same LEVEL_NUM/T.level pair already used in the run-start banner
+        // (see above), just surfaced here too per user request. This line is centered
+        // on titleX, but titleX sits much closer to the divider than to the left screen
+        // edge on narrow devices, so the divider side is the binding constraint -- shrink
+        // the font to fit rather than let long language/level combos cross the divider.
+        const levelLine = `${T.level} ${LEVEL_NUM}: ${WORLD_NAME.toUpperCase()}`;
+        let levelFsz = FS * 0.026;
+        ctx.font = `bold ${levelFsz}px 'Courier New',monospace`;
+        if (LAND) {
+            const levelAvailHalfW = Math.min(titleX - 8, dividerX - titleX - 8);
+            const levelW = ctx.measureText(levelLine).width;
+            if (levelW / 2 > levelAvailHalfW) {
+                levelFsz *= (levelAvailHalfW * 2) / levelW;
+                levelFsz = Math.max(levelFsz, FS * 0.015); // legibility floor
+                ctx.font = `bold ${levelFsz}px 'Courier New',monospace`;
+            }
+        }
+        ctx.fillText(levelLine, titleX, LAND ? H * 0.365 : H/2 - H*0.038);
 
         // TAP TO START -- strong pulsing glow, the main CTA
         const tapPulse  = 0.72 + 0.28 * Math.sin(gtime * 2.4);
