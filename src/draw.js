@@ -859,15 +859,20 @@ function draw() {
         ctx.shadowBlur  = 0;
     }
 
-    // Next skin nudge - faint pulsing hint when within 20 pts of unlock
+    // Next skin nudge - faint pulsing hint when this run's banked-so-far shards would
+    // cross the next unlock (shards + runCoins, since the actual bank happens at death)
     if (phase === 'play') {
-        const nextSkin = SKINS.find((sk, i) => sk.req && !(unlockedSkins & (1 << i)));
-        if (nextSkin && score < nextSkin.req && nextSkin.req - score <= 20) {
-            const [sr, sg, sb] = nextSkin.shadow;
-            const pulse = 0.28 + 0.18 * Math.sin(gtime * 2.8);
-            ctx.font      = `${FS*0.020}px 'Courier New',monospace`;
-            ctx.fillStyle = `rgba(${sr},${sg},${sb},${pulse})`;
-            ctx.fillText(`${nextSkin.req - score} ${T.toSkin} ${nextSkin.name}`, W/2, H*0.185);
+        const nextSkin = SKINS.find((sk, i) => sk.cost && !(unlockedSkins & (1 << i)));
+        if (nextSkin) {
+            const projected = shards + runCoins;
+            const remaining = nextSkin.cost - projected;
+            if (remaining > 0 && remaining <= 15) {
+                const [sr, sg, sb] = nextSkin.shadow;
+                const pulse = 0.28 + 0.18 * Math.sin(gtime * 2.8);
+                ctx.font      = `${FS*0.020}px 'Courier New',monospace`;
+                ctx.fillStyle = `rgba(${sr},${sg},${sb},${pulse})`;
+                ctx.fillText(`${remaining} ${T.toSkin} ${nextSkin.name}`, W/2, H*0.185);
+            }
         }
     }
 
@@ -1257,7 +1262,7 @@ function draw() {
             ctx.fillStyle   = 'rgba(190,205,240,0.92)';
             ctx.shadowColor = 'rgba(0,0,0,0.85)';
             ctx.shadowBlur  = 3;
-            ctx.fillText(T.ship, skinCX, dotY - dotR * 2.0);
+            ctx.fillText(`${T.ship}   ${shards}⧫`, skinCX, dotY - dotR * 2.0);
             ctx.shadowBlur  = 0;
             for (let i = 0; i < SKINS.length; i++) {
                 const cx       = startX + i * dotGap;
@@ -1274,7 +1279,7 @@ function draw() {
                     ctx.fillStyle   = 'rgba(150,160,205,0.85)';
                     ctx.shadowColor = 'rgba(0,0,0,0.85)';
                     ctx.shadowBlur  = 3;
-                    ctx.fillText(SKINS[i].req, cx, dotY + dotR * 1.7);
+                    ctx.fillText(`${SKINS[i].cost}⧫`, cx, dotY + dotR * 1.7);
                     ctx.shadowBlur  = 0;
                     ctx.font = `${FS*0.018}px 'Courier New',monospace`;
                 } else {
@@ -1605,6 +1610,10 @@ function draw() {
             const statParts = [`${runCoins} ${runCoins !== 1 ? T.powerups : T.powerup}`];
             if (runNearMisses > 0) statParts.push(`${runNearMisses} ${T.close}`);
             if (runMaxCombo   > 1) statParts.push(`x${runMaxCombo} ${T.combo}`);
+            // Shards earned this run (banked in die()) plus running total, icon-only so it
+            // needs no new translated string -- matches the wordless "x2"/"#1" style already
+            // used elsewhere on this screen.
+            if (runCoins > 0) statParts.push(`+${runCoins}⧫ · ${shards}⧫`);
             sh(3);
             ctx.font      = `${FS*0.026}px 'Courier New',monospace`;
             ctx.fillStyle = `rgba(160,180,220,${a})`;

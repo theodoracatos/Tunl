@@ -318,13 +318,21 @@ function die(bypassShield = false) {
         localStorage.setItem('tunnel_top5', JSON.stringify(top5));
         window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'submit', score });
     }
+    // Bank this run's collected coins into the persistent shard balance.
+    if (runCoins > 0) shards += runCoins;
+    // Auto-unlock the next affordable ship (cheapest-first, one per run/death) once enough
+    // shards are banked. Capped at one unlock per run so a single marathon run can't clear
+    // several tiers at once -- that was the old score-gate problem this replaces.
     skinUnlockIdx = -1;
     for (let i = 1; i < SKINS.length; i++) {
-        if (SKINS[i].req && !(unlockedSkins & (1 << i)) && score >= SKINS[i].req) {
+        if (SKINS[i].cost && !(unlockedSkins & (1 << i)) && shards >= SKINS[i].cost) {
+            shards -= SKINS[i].cost;
             unlockedSkins |= (1 << i);
             skinUnlockIdx = i;
+            break;
         }
     }
+    localStorage.setItem('tunnel_shards', shards);
     if (skinUnlockIdx >= 0) localStorage.setItem('tunnel_skins', unlockedSkins);
     // Record a death marker on the nearest wall
     const _dmWx = scrollX + PX;

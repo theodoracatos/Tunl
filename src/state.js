@@ -13,6 +13,19 @@ let musicOn = localStorage.getItem('tunnel_music') !== '0';
 let fxOn    = localStorage.getItem('tunnel_fx')    !== '0';
 let _btnMusicRect = null, _btnFxRect = null;
 let unlockedSkins = parseInt(localStorage.getItem('tunnel_skins') || '1');
+// Shards: persistent currency banked from collected coins across all runs, spent on ship
+// unlocks (see SKINS[].cost in constants.js). Replaces the old single-run-score gate.
+let shards;
+if (localStorage.getItem('tunnel_shards') === null) {
+    // First launch after the shard update: grandfather existing players in.
+    // unlockedSkins is left untouched (ships already earned stay earned), but grant a
+    // starting balance from their lifetime best score so returning veterans aren't stuck
+    // at 0 while the new higher tiers still take real play to reach.
+    shards = Math.floor(best / 2);
+    localStorage.setItem('tunnel_shards', shards);
+} else {
+    shards = parseInt(localStorage.getItem('tunnel_shards') || '0');
+}
 let removeAdsOwned = localStorage.getItem('tunnel_remove_ads') === '1';
 let activeSkin    = parseInt(localStorage.getItem('tunnel_skin')  || '0');
 if (!(unlockedSkins & (1 << activeSkin))) activeSkin = 0;

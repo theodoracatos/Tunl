@@ -48,10 +48,16 @@ const LEVEL_INTRO_FADE = 0.5; // seconds of that spent fading out at the end
 
 // Perk descriptions live in i18n.js (LANGS[*].skinPerks, same index order) so
 // they stay live if the player switches language without reloading.
+// Unlock cost is in shards (persistent currency banked from collected coins across all
+// runs, see state.js `shards` + update.js die() banking), not single-run score anymore.
+// VOID/NOVA are new prestige tiers for players who used to max out the old score-gated
+// list in one good run -- they still only have PEARL's plain perk-less FX for now.
 const SKINS = [
-    { color: '#e8eeff', shadow: [210,220,255],  name: 'PEARL'                      },
-    { color: '#ffaa00', shadow: [255,155,0],    name: 'AMBER',   req: 100          },
-    { color: '#ff1a33', shadow: [255,30,55],    name: 'CRIMSON', req: 300          },
-    { color: '#00ccff', shadow: [0,190,255],    name: 'ELECTRIC',req: 500          },
-    { color: '#99ff00', shadow: [140,255,0],    name: 'TOXIC',   req: 1000         },
+    { color: '#e8eeff', shadow: [210,220,255],  name: 'PEARL'                       },
+    { color: '#ffaa00', shadow: [255,155,0],    name: 'AMBER',   cost: 60           },
+    { color: '#ff1a33', shadow: [255,30,55],    name: 'CRIMSON', cost: 220          },
+    { color: '#00ccff', shadow: [0,190,255],    name: 'ELECTRIC',cost: 550          },
+    { color: '#99ff00', shadow: [140,255,0],    name: 'TOXIC',   cost: 1200         },
+    { color: '#c080ff', shadow: [180,90,255],   name: 'VOID',    cost: 3000         },
+    { color: '#ffffff', shadow: [255,255,255],  name: 'NOVA',    cost: 8000         },
 ];
