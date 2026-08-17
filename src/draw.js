@@ -997,7 +997,10 @@ function draw() {
         // In landscape (W > H*1.15) use a two-column layout to avoid vertical crowding.
         // In portrait keep a centered stack but anchor the skin picker to the bottom.
         const LAND   = W > H * 1.15;
-        const titleX = LAND ? W * 0.28 : W / 2;
+        // Was 0.28 -- direct feedback that there's still a lot of unused space toward the
+        // top-left of the title screen. Shifted left by the same amount (0.05W) the death
+        // screen's left column moved for the same reason.
+        const titleX = LAND ? W * 0.23 : W / 2;
         const infoX  = LAND ? W * 0.73 : W / 2;
         const a      = Math.min(1, titleT * 4);
         const sh     = (blur, col = 'rgba(0,0,0,0.90)') => { ctx.shadowColor = col; ctx.shadowBlur = blur; };
@@ -1008,9 +1011,52 @@ function draw() {
         ctx.fillStyle = `rgba(4,4,14,${a * 0.55})`;
         ctx.fillRect(0, 0, W, H);
 
-        const logoY = LAND ? H * 0.33 : H/2 - H*0.12;
+        // Was 0.33 -- shifted up with titleX above, same reasoning. Every other left-
+        // column Y anchor below (subtitle/tap-text/settings-button/missions) keeps its
+        // old gap from this one, so the whole block moves up together rather than only
+        // the logo, which would otherwise crowd into the subtitle beneath it.
+        const logoY = LAND ? H * 0.24 : H/2 - H*0.12;
 
-        // Gradient separator between columns (landscape only)
+        // Ship-picker layout is computed here (hoisted above its actual drawing further
+        // below) purely so the divider immediately after can be positioned against
+        // PEARL's real on-screen left edge instead of a fixed W-fraction. A fixed
+        // fraction (tried W*0.49, then W*0.44) looked fine on one device/aspect-ratio
+        // and put the divider ON TOP of the ship icon on another -- same root cause as
+        // the skinCX overflow bug: fixed fractions don't track how the dynamically-
+        // clamped ship row actually shifts across device widths. See measureShipLabelHalfW.
+        const showShipPanel = best > 0 || unlockedSkins > 1;
+        const dotR   = LAND ? H * 0.048 : H * 0.035;
+        const dotGap = Math.max(dotR * 2.8, LAND ? H * 0.155 : W * 0.180);
+        const measureShipLabelHalfW = (i) => {
+            ctx.font = `bold ${FS*0.016}px 'Courier New',monospace`;
+            let lw = ctx.measureText(SKINS[i].name).width;
+            if (T.skinPerks && T.skinPerks[i]) {
+                ctx.font = `${FS*0.016}px 'Courier New',monospace`;
+                lw = Math.max(lw, ctx.measureText(T.skinPerks[i]).width);
+            }
+            if (T.skinDrawbacks && T.skinDrawbacks[i]) {
+                ctx.font = `${FS*0.013}px 'Courier New',monospace`;
+                lw = Math.max(lw, ctx.measureText(T.skinDrawbacks[i]).width);
+            }
+            return lw / 2;
+        };
+        const rowHalfW   = (SKINS.length - 1) * dotGap / 2;
+        const edgeMargin = 6;
+        let skinCX = infoX;
+        if (LAND) {
+            const rightLimit = W - edgeMargin - rowHalfW - measureShipLabelHalfW(SKINS.length - 1);
+            const leftLimit  = edgeMargin + rowHalfW + measureShipLabelHalfW(0);
+            skinCX = Math.min(skinCX, rightLimit);
+            skinCX = Math.max(skinCX, leftLimit);
+        }
+        const dotY   = LAND ? H * 0.70 : H - dotR * 2.4;
+        const startX = skinCX - rowHalfW;
+
+        // Gradient separator between columns (landscape only). When the ship panel is
+        // showing, sit just left of PEARL's actual icon (not its text label -- the
+        // triangle graphic itself extends further left, see dotR*1.6 below); before any
+        // ship is unlocked/played there's nothing to clear yet, so fall back to a fixed
+        // fraction close to the old constant.
         if (LAND) {
             const sepGrd = ctx.createLinearGradient(0, H * 0.10, 0, H * 0.90);
             sepGrd.addColorStop(0,   `rgba(55,75,140,0)`);
@@ -1018,7 +1064,11 @@ function draw() {
             sepGrd.addColorStop(0.8, `rgba(80,110,200,${a * 0.40})`);
             sepGrd.addColorStop(1,   `rgba(55,75,140,0)`);
             ctx.fillStyle = sepGrd;
-            ctx.fillRect(W * 0.49, H * 0.08, 1, H * 0.84);
+            const dividerMargin = 12;
+            let dividerX = showShipPanel ? (startX - dotR * 1.6 - dividerMargin) : W * 0.44;
+            // Don't let the divider crash into the left column's own content either.
+            dividerX = Math.max(dividerX, W * 0.34);
+            ctx.fillRect(dividerX, H * 0.08, 1, H * 0.84);
         }
 
         // Radial halo behind TUNL logo
@@ -1128,7 +1178,7 @@ function draw() {
         ctx.shadowColor = 'rgba(0,0,0,0.90)'; ctx.shadowBlur = 3;
         ctx.font      = `bold ${FS*0.026}px 'Courier New',monospace`;
         ctx.fillStyle = `rgba(175,205,255,${a * 0.95})`;
-        ctx.fillText(WORLD_NAME.toUpperCase(), titleX, LAND ? H * 0.455 : H/2 - H*0.038);
+        ctx.fillText(WORLD_NAME.toUpperCase(), titleX, LAND ? H * 0.365 : H/2 - H*0.038);
 
         // TAP TO START -- strong pulsing glow, the main CTA
         const tapPulse  = 0.72 + 0.28 * Math.sin(gtime * 2.4);
@@ -1137,15 +1187,15 @@ function draw() {
         ctx.shadowColor = `rgba(90,140,255,${a * tapPulse * 0.70})`;
         ctx.shadowBlur  = tapGlow * 1.8;
         ctx.fillStyle   = `rgba(190,215,255,${a * tapPulse * 0.35})`;
-        ctx.fillText(T.tap, titleX, LAND ? H * 0.63 : H/2 + H*0.140);
+        ctx.fillText(T.tap, titleX, LAND ? H * 0.54 : H/2 + H*0.140);
         ctx.shadowBlur  = tapGlow;
         ctx.fillStyle   = `rgba(210,228,255,${a * (0.80 + 0.20 * tapPulse)})`;
-        ctx.fillText(T.tap, titleX, LAND ? H * 0.63 : H/2 + H*0.140);
+        ctx.fillText(T.tap, titleX, LAND ? H * 0.54 : H/2 + H*0.140);
         ctx.shadowBlur  = 0;
 
         // Settings/leaderboard row + shared button-drawing helper
         // (also reused inside the settings panel for the audio toggles)
-        const tBtnY = LAND ? H * 0.80 : H/2 + H*0.225;
+        const tBtnY = LAND ? H * 0.71 : H/2 + H*0.225;
         ctx.font = `${FS*0.022}px 'Courier New',monospace`;
         const drawBtn = (bCx, bCy, label, active, blue) => {
             const m  = ctx.measureText(label);
@@ -1217,7 +1267,7 @@ function draw() {
         // the 3 active missions are the same for every player on a given day
         // (constants.js pickDailyMissionIndices), not per-player randomized.
         if (LAND) {
-            let missionY = H * 0.865;
+            let missionY = H * 0.775;
             ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 3;
             ctx.font        = `bold ${FS*0.017}px 'Courier New',monospace`;
             ctx.fillStyle   = `rgba(180,198,235,${a * 0.80})`;
@@ -1287,50 +1337,12 @@ function draw() {
         // Game Center covers competitive leaderboards (where available -- Android's
         // own leaderboard setup is still pending, per project notes) and this panel
         // is now visible from the first run on anyway, not just after a 2nd unlock.
-        const showShipPanel = best > 0 || unlockedSkins > 1;
+        // (showShipPanel and the whole dotR/dotGap/skinCX/startX layout are computed
+        // above, before the divider, so the divider can be positioned against PEARL's
+        // real position -- reused here rather than recomputed.)
 
         // Skin picker
         if (showShipPanel) {
-            // dotR: slightly smaller in portrait so names fit above bottom edge. Stays on
-            // the real H, not UI_H: tried scaling icon size/spacing up with the bigger
-            // text too, but at 7 ships the row itself then no longer fit inside W on a
-            // real device -- row width is a horizontal-space budget, not a legibility
-            // concern the text-size fix was meant to address. skinCX below clamps
-            // dynamically instead to keep the (still bigger, FS-scaled) per-icon labels
-            // on-canvas regardless of device width or language.
-            const dotR   = LAND ? H * 0.048 : H * 0.035;
-            // dotGap must be wide enough that ship shapes don't overlap
-            const dotGap = Math.max(dotR * 2.8, LAND ? H * 0.155 : W * 0.180);
-            // Clamp the row's anchor so the widest label at either end -- measured live
-            // for the current device/language, not a hardcoded guess -- never renders
-            // past the canvas edge. A fixed-fraction anchor overflowed NOVA's perk/
-            // drawback text on some device/language combos and not others, since text
-            // width vs. available W scales differently per screen.
-            const measureShipLabelHalfW = (i) => {
-                ctx.font = `bold ${FS*0.016}px 'Courier New',monospace`;
-                let lw = ctx.measureText(SKINS[i].name).width;
-                if (T.skinPerks && T.skinPerks[i]) {
-                    ctx.font = `${FS*0.016}px 'Courier New',monospace`;
-                    lw = Math.max(lw, ctx.measureText(T.skinPerks[i]).width);
-                }
-                if (T.skinDrawbacks && T.skinDrawbacks[i]) {
-                    ctx.font = `${FS*0.013}px 'Courier New',monospace`;
-                    lw = Math.max(lw, ctx.measureText(T.skinDrawbacks[i]).width);
-                }
-                return lw / 2;
-            };
-            const rowHalfW   = (SKINS.length - 1) * dotGap / 2;
-            const edgeMargin = 6;
-            let skinCX = infoX;
-            if (LAND) {
-                const rightLimit = W - edgeMargin - rowHalfW - measureShipLabelHalfW(SKINS.length - 1);
-                const leftLimit  = edgeMargin + rowHalfW + measureShipLabelHalfW(0);
-                skinCX = Math.min(skinCX, rightLimit);
-                skinCX = Math.max(skinCX, leftLimit);
-            }
-            // In portrait anchor to bottom so ships never overlap BEST/streak above them
-            const dotY   = LAND ? H * 0.70 : H - dotR * 2.4;
-            const startX = skinCX - (SKINS.length - 1) * dotGap / 2;
             _skinBtnRects = [];
             ctx.font        = `bold ${FS*0.018}px 'Courier New',monospace`;
             ctx.fillStyle   = 'rgba(190,205,240,0.92)';
@@ -1705,9 +1717,16 @@ function draw() {
         // is already that run's headline moment.
         if (runCoins > 0 && skinUnlockIdx < 0 && skinMasteryUpIdx < 0) {
             sh(3);
-            ctx.font      = `${FS*0.017}px 'Courier New',monospace`; // see unlock banner comment above
+            // Bumped from 0.017 -- user feedback that this line specifically read too
+            // small. The banked total (`shards`) has no upper bound (grinding never
+            // stops once every ship is owned), so past 10000 it's shown rounded to the
+            // nearest thousand ("13k") rather than full digits -- keeps this line's
+            // width from creeping past the divider the longer someone's played, without
+            // needing yet another font shrink. Below that threshold, exact digits.
+            ctx.font      = `${FS*0.018}px 'Courier New',monospace`; // see unlock banner comment above
             ctx.fillStyle = `rgba(160,180,220,${a * 0.85})`;
-            let shardLine = `+${runShardsBanked} ⧫ · ${shards} ⧫`;
+            const shardsDisp = shards >= 10000 ? Math.round(shards / 1000) + 'k' : shards;
+            let shardLine = `+${runShardsBanked} ⧫ · ${shardsDisp} ⧫`;
             if (runShardsBanked < runCoins) shardLine += `  (${T.dailyCap})`;
             ctx.fillText(shardLine, LC, H * 0.78);
         }
