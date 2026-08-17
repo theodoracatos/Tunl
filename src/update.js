@@ -366,6 +366,29 @@ function die(bypassShield = false) {
     // skinXP[activeSkin] was already incremented live during play (systems.js).
     skinMasteryUpIdx = masteryLevel(activeSkin) > runStartMasteryLevel ? activeSkin : -1;
     localStorage.setItem('tunnel_skin_xp', JSON.stringify(skinXP));
+    // Daily missions: fold this run's stats into today's cumulative totals, then check
+    // today's 3 active missions (constants.js MISSION_DEFS via state.js dailyMissionIdx)
+    // for newly-met targets. Rewards are granted once per mission per day.
+    dailyMissionStats.gold       += runCoinsByType.gold;
+    dailyMissionStats.blue       += runCoinsByType.blue;
+    dailyMissionStats.red        += runCoinsByType.red;
+    dailyMissionStats.green      += runCoinsByType.green;
+    dailyMissionStats.orange     += runCoinsByType.orange;
+    dailyMissionStats.nearMisses += runNearMisses;
+    dailyMissionStats.bestCombo   = Math.max(dailyMissionStats.bestCombo, runMaxCombo);
+    dailyMissionStats.bestScore   = Math.max(dailyMissionStats.bestScore, score);
+    dailyMissionStats.runs        = dailyRuns;
+    for (let m = 0; m < dailyMissionIdx.length; m++) {
+        if (dailyMissionsClaimed[m]) continue;
+        const def = MISSION_DEFS[dailyMissionIdx[m]];
+        if (dailyMissionStats[def.stat] >= def.target) {
+            dailyMissionsClaimed[m] = true;
+            shards += MISSION_REWARD;
+        }
+    }
+    localStorage.setItem('tunnel_daily_mission_stats', JSON.stringify(dailyMissionStats));
+    localStorage.setItem('tunnel_daily_missions_claimed', JSON.stringify(dailyMissionsClaimed));
+    localStorage.setItem('tunnel_shards', shards);
     // Record a death marker on the nearest wall
     const _dmWx = scrollX + PX;
     const _dmB  = boundsAt(_dmWx);

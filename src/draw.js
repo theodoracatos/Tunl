@@ -1210,6 +1210,35 @@ function draw() {
             }
         }
 
+        // Daily missions -- left column, below the settings row. Landscape only: this
+        // column is centered and already tight in portrait (same call the pre-unlock
+        // TOP 5 block below makes for the right column). Progress is cumulative across
+        // today's runs (state.js dailyMissionStats, folded in by update.js die()), and
+        // the 3 active missions are the same for every player on a given day
+        // (constants.js pickDailyMissionIndices), not per-player randomized.
+        if (LAND) {
+            let missionY = H * 0.865;
+            ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 3;
+            ctx.font        = `bold ${FS*0.017}px 'Courier New',monospace`;
+            ctx.fillStyle   = `rgba(180,198,235,${a * 0.80})`;
+            ctx.fillText(T.missions, titleX, missionY);
+            ctx.shadowBlur  = 0;
+            missionY += H * 0.040;
+
+            ctx.font = `${FS*0.015}px 'Courier New',monospace`;
+            for (let m = 0; m < dailyMissionIdx.length; m++) {
+                const def   = MISSION_DEFS[dailyMissionIdx[m]];
+                const label = (T.missionDesc && T.missionDesc[def.id]) || def.id;
+                const done  = dailyMissionsClaimed[m];
+                const val   = Math.min(dailyMissionStats[def.stat] || 0, def.target);
+                ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 2;
+                ctx.fillStyle   = done ? `rgba(120,255,150,${a * 0.90})` : `rgba(175,190,225,${a * 0.72})`;
+                ctx.fillText(`${done ? '✓' : val + '/' + def.target}  ${label}`, titleX, missionY);
+                ctx.shadowBlur  = 0;
+                missionY += H * 0.037;
+            }
+        }
+
         // rightColY tracks how far down the right-column stack (TODAY/ALL TIME/
         // STREAK/TOP 5) reaches in landscape, so each line uses the same step
         // and the skin picker below never overlaps regardless of which lines

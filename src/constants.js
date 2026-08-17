@@ -74,6 +74,41 @@ const LEVEL_INTRO_FADE = 0.5; // seconds of that spent fading out at the end
 // playtesting.
 const DAILY_SHARD_CAP = 350;
 
+// ── Daily missions ────────────────────────────────────────────────────
+// Three short daily challenges, picked deterministically from the calendar day (see
+// pickDailyMissionIndices) so every player sees the same 3 on a given day. Progress is
+// cumulative across all of today's runs (state.js `dailyMissionStats`, folded in by
+// update.js die()), not a single-run target -- keeps them reachable across casual
+// multi-session play, not just one long grind run. Completing one grants MISSION_REWARD
+// shards immediately, exempt from DAILY_SHARD_CAP: a bounded, once-per-mission-per-day
+// reward isn't the unlimited-grind problem that cap guards against.
+const MISSION_REWARD = 40;
+const MISSION_DEFS = [
+    { id: 'gold',     stat: 'gold',       target: 15  },
+    { id: 'blue',     stat: 'blue',       target: 8   },
+    { id: 'red',      stat: 'red',        target: 6   },
+    { id: 'green',    stat: 'green',      target: 5   },
+    { id: 'orange',   stat: 'orange',     target: 6   },
+    { id: 'nearMiss', stat: 'nearMisses', target: 10  },
+    { id: 'combo',    stat: 'bestCombo',  target: 5   },
+    { id: 'score',    stat: 'bestScore',  target: 150 },
+    { id: 'runs',     stat: 'runs',       target: 3   },
+];
+function pickDailyMissionIndices(dayInt) {
+    // Self-contained LCG, deliberately independent of the shared seedRng()/rng() used
+    // for wave generation -- drawing from that shared stream here would shift its call
+    // order and desync the tunnel shape from that same day's WORLD_NAME elsewhere.
+    const n = MISSION_DEFS.length;
+    const picked = [];
+    let seed = dayInt >>> 0;
+    while (picked.length < 3) {
+        seed = (Math.imul(seed, 1103515245) + 12345) >>> 0;
+        const idx = seed % n;
+        if (!picked.includes(idx)) picked.push(idx);
+    }
+    return picked;
+}
+
 // Perk (buff) and drawback (nerf) descriptions live in i18n.js (LANGS[*].skinPerks /
 // skinDrawbacks, same index order) so they stay live if the player switches language
 // without reloading. Unlock cost is in shards (persistent currency banked from collected

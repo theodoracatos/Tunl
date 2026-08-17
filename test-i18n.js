@@ -21,9 +21,10 @@ vm.runInContext('this.__LANGS = LANGS; this.__LANG_ORDER = LANG_ORDER;', sandbox
 
 const { __LANGS: LANGS, __LANG_ORDER: LANG_ORDER } = sandbox;
 
-const refKeys        = Object.keys(LANGS.en).sort();
-const refPerkLen     = LANGS.en.skinPerks.length;
-const refDrawbackLen = LANGS.en.skinDrawbacks.length;
+const refKeys         = Object.keys(LANGS.en).sort();
+const refPerkLen      = LANGS.en.skinPerks.length;
+const refDrawbackLen  = LANGS.en.skinDrawbacks.length;
+const refMissionKeys  = Object.keys(LANGS.en.missionDesc).sort();
 let failed = false;
 
 for (const langCode of LANG_ORDER) {
@@ -49,6 +50,9 @@ for (const langCode of LANG_ORDER) {
     } else if (lang.skinDrawbacks.length !== refDrawbackLen) {
         failed = true;
         console.error(`✗ ${langCode}: skinDrawbacks length ${lang.skinDrawbacks.length} !== ${refDrawbackLen}`);
+    } else if (JSON.stringify(Object.keys(lang.missionDesc).sort()) !== JSON.stringify(refMissionKeys)) {
+        failed = true;
+        console.error(`✗ ${langCode}: missionDesc keys ${Object.keys(lang.missionDesc).sort().join(',')} !== ${refMissionKeys.join(',')}`);
     } else {
         console.log(`✓ ${langCode}`);
     }

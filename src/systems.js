@@ -120,6 +120,7 @@ function checkCoinCollection() {
             bonusScore += pts;
             runCoins++;
             skinXP[activeSkin] = (skinXP[activeSkin] || 0) + 1;
+            runCoinsByType[coin.type] = (runCoinsByType[coin.type] || 0) + 1; // daily missions
             if (coinCombo > runMaxCombo) runMaxCombo = coinCombo;
             if (coin.type === 'blue') {
                 slowTime = Math.min(slowTime + (activeSkin === 3 ? masteryLerp(3, 6.0, 7.5) : 4.0), activeSkin === 3 ? masteryLerp(3, 12.0, 15.0) : 8.0);

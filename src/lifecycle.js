@@ -22,6 +22,7 @@ function titleScreen() {
     mines = []; nextMineWx = 99999;
     prevRunScore = 0; lastRunScore = 0; milestoneFlash = 0; milestoneText = '';
     runCoins = 0; runNearMisses = 0; runMaxCombo = 0; skinUnlockIdx = -1;
+    runCoinsByType = { gold: 0, blue: 0, red: 0, green: 0, orange: 0 };
     levelIntroT = 0;
     initAmbParts();
     const _dt = new Date();
@@ -47,6 +48,7 @@ function startPlay() {
     runCoins = 0; runNearMisses = 0; runMaxCombo = 0; skinUnlockIdx = -1;
     skinMasteryUpIdx = -1;
     runStartMasteryLevel = masteryLevel(activeSkin);
+    runCoinsByType = { gold: 0, blue: 0, red: 0, green: 0, orange: 0 };
     // Day streak update
     const _td = new Date();
     const _todayInt = _td.getUTCFullYear() * 10000 + (_td.getUTCMonth() + 1) * 100 + _td.getUTCDate();
@@ -62,6 +64,11 @@ function startPlay() {
         localStorage.setItem('tunnel_daily_runs', '0');
         localStorage.setItem('tunnel_daily_shards', '0');
         top5 = []; localStorage.setItem('tunnel_top5', '[]');
+        dailyMissionStats = { gold: 0, blue: 0, red: 0, green: 0, orange: 0, nearMisses: 0, bestCombo: 0, bestScore: 0, runs: 0 };
+        dailyMissionsClaimed = [false, false, false];
+        dailyMissionIdx = pickDailyMissionIndices(_todayInt);
+        localStorage.setItem('tunnel_daily_mission_stats', JSON.stringify(dailyMissionStats));
+        localStorage.setItem('tunnel_daily_missions_claimed', JSON.stringify(dailyMissionsClaimed));
     }
     dailyRuns++;
     localStorage.setItem('tunnel_daily_runs', dailyRuns);
