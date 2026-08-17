@@ -329,8 +329,14 @@ function die(bypassShield = false) {
         localStorage.setItem('tunnel_top5', JSON.stringify(top5));
         window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'submit', score });
     }
-    // Bank this run's collected coins into the persistent shard balance.
-    if (runCoins > 0) shards += runCoins;
+    // Bank this run's collected coins into the persistent shard balance, capped per day so
+    // unlocks track days played, not just a single grind session (DAILY_SHARD_CAP).
+    runShardsBanked = Math.max(0, Math.min(runCoins, DAILY_SHARD_CAP - dailyShardsEarned));
+    if (runShardsBanked > 0) {
+        shards += runShardsBanked;
+        dailyShardsEarned += runShardsBanked;
+        localStorage.setItem('tunnel_daily_shards', dailyShardsEarned);
+    }
     // Auto-unlock the next affordable ship (cheapest-first, one per run/death) once enough
     // shards are banked. Capped at one unlock per run so a single marathon run can't clear
     // several tiers at once -- that was the old score-gate problem this replaces.

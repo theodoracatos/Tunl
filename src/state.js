@@ -26,6 +26,10 @@ if (localStorage.getItem('tunnel_shards') === null) {
 } else {
     shards = parseInt(localStorage.getItem('tunnel_shards') || '0');
 }
+// How many shards have already been banked today (DAILY_SHARD_CAP in constants.js), reset
+// on the same UTC day boundary as dailyBest/dailyRuns above (see lifecycle.js startPlay()).
+let dailyShardsEarned = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tunnel_daily_shards') || '0') : 0;
+let runShardsBanked = 0; // this run's actual post-cap shard gain, shown on the death screen
 let removeAdsOwned = localStorage.getItem('tunnel_remove_ads') === '1';
 let activeSkin    = parseInt(localStorage.getItem('tunnel_skin')  || '0');
 if (!(unlockedSkins & (1 << activeSkin))) activeSkin = 0;

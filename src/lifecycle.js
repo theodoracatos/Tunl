@@ -55,9 +55,10 @@ function startPlay() {
         streak = _lastDay === _yesterdayInt ? streak + 1 : 1;
         localStorage.setItem('tunnel_streak', streak);
         localStorage.setItem('tunnel_lastday', _todayInt);
-        dailyBest = 0; dailyRuns = 0;
+        dailyBest = 0; dailyRuns = 0; dailyShardsEarned = 0;
         localStorage.setItem('tunnel_daily_best', '0');
         localStorage.setItem('tunnel_daily_runs', '0');
+        localStorage.setItem('tunnel_daily_shards', '0');
         top5 = []; localStorage.setItem('tunnel_top5', '[]');
     }
     dailyRuns++;

@@ -1580,9 +1580,11 @@ function draw() {
             ctx.fillText(`${T.best}  ${best}`, LC, H * 0.66);
         }
 
-        // Skin-unlock banner sits in the left column's empty space below the
-        // best/streak line; the right column is already packed (top5 + vsLast
-        // + stats) and collides with the HOME/PLAY AGAIN buttons if it lands there.
+        // Skin-unlock banner (+ shards line below it) sits in the left column's empty
+        // space below the best/streak line; the right column is already packed (top5 +
+        // vsLast + stats) and collides with the HOME/PLAY AGAIN buttons if it lands there
+        // -- confirmed by measuring text width at common viewport sizes, so don't move
+        // this back to the right column.
         if (skinUnlockIdx >= 0) {
             const sk = SKINS[skinUnlockIdx];
             const [sr, sg, sb] = sk.shadow;
@@ -1592,6 +1594,19 @@ function draw() {
             ctx.shadowBlur  = 8;
             ctx.fillText(`${sk.name} ${T.unlocked}`, LC, H * 0.78);
             ctx.shadowBlur  = 0;
+        }
+
+        // Shards banked this run (post daily-cap, see update.js die()) plus running total,
+        // in the same left-column slot the unlock banner uses. Skipped on unlock runs --
+        // there's no room for both above the panel edge/buttons, and the unlock banner is
+        // already that run's headline moment.
+        if (runCoins > 0 && skinUnlockIdx < 0) {
+            sh(3);
+            ctx.font      = `${FS*0.020}px 'Courier New',monospace`;
+            ctx.fillStyle = `rgba(160,180,220,${a * 0.85})`;
+            let shardLine = `+${runShardsBanked} ⧫ · ${shards} ⧫`;
+            if (runShardsBanked < runCoins) shardLine += `  (${T.dailyCap})`;
+            ctx.fillText(shardLine, LC, H * 0.78);
         }
 
         // Right column: top-5 leaderboard + stats
@@ -1638,10 +1653,6 @@ function draw() {
             const statParts = [`${runCoins} ${runCoins !== 1 ? T.powerups : T.powerup}`];
             if (runNearMisses > 0) statParts.push(`${runNearMisses} ${T.close}`);
             if (runMaxCombo   > 1) statParts.push(`x${runMaxCombo} ${T.combo}`);
-            // Shards earned this run (banked in die()) plus running total, icon-only so it
-            // needs no new translated string -- matches the wordless "x2"/"#1" style already
-            // used elsewhere on this screen.
-            if (runCoins > 0) statParts.push(`+${runCoins} ⧫ · ${shards} ⧫`);
             sh(3);
             ctx.font      = `${FS*0.026}px 'Courier New',monospace`;
             ctx.fillStyle = `rgba(160,180,220,${a})`;

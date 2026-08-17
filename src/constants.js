@@ -46,6 +46,15 @@ const MINE_R = W * 0.011;
 const LEVEL_INTRO_DUR  = 1.6; // total seconds visible
 const LEVEL_INTRO_FADE = 0.5; // seconds of that spent fading out at the end
 
+// Shards banked per calendar day are capped so unlocks track *days played*, not just
+// *coins collected* -- without this a single long grind session could bank enough shards
+// to unlock everything at once, which defeats the point of the shard system (see
+// lifecycle.js day-boundary reset + update.js die() banking). Total cost of every tier is
+// 60+220+550+1200+3000+8000 = 13030, so at this cap a player who returns daily reaches
+// NOVA in ~37 days -- a starting estimate like the tier costs themselves, tune after
+// playtesting.
+const DAILY_SHARD_CAP = 350;
+
 // Perk descriptions live in i18n.js (LANGS[*].skinPerks, same index order) so
 // they stay live if the player switches language without reloading.
 // Unlock cost is in shards (persistent currency banked from collected coins across all
