@@ -1271,14 +1271,22 @@ function draw() {
             ctx.shadowBlur  = 0;
         }
 
+        // Ship wallet + picker (below) shows once the player has actually played --
+        // `best > 0` covers the "still on PEARL only" case, since with the shard
+        // economy that can last several sessions and the wallet/next-unlock-cost
+        // roadmap needs to stay visible that whole time, unlike the old score-gate
+        // system where reaching a 2nd ship happened almost immediately. Computed once
+        // here since the TOP 5 filler right below is its exact negation.
+        const showShipPanel = best > 0 || unlockedSkins > 1;
+
         // Today's top runs -- fills the empty lower half of the right column
         // (title screen previously left this blank once TODAY/streak were drawn).
-        // Only shown before the skin picker unlocks (unlockedSkins <= 1); once
-        // the picker appears that column is already full, and the two
-        // variable-height stacks can't coexist without either overlapping or
-        // (once shortened enough to avoid it) rendering pointlessly small.
-        // Skipped in portrait, where the column is centered and already tight.
-        if (LAND && dailyRuns > 0 && unlockedSkins <= 1) {
+        // Only shown before the ship panel above appears; once it does, that column
+        // is already full, and the two variable-height stacks can't coexist without
+        // either overlapping or (once shortened enough to avoid it) rendering
+        // pointlessly small. Skipped in portrait, where the column is centered and
+        // already tight.
+        if (LAND && dailyRuns > 0 && !showShipPanel) {
             rightColY += H * 0.075;
 
             ctx.shadowColor = 'rgba(0,0,0,0.90)'; ctx.shadowBlur = 3;
@@ -1305,7 +1313,7 @@ function draw() {
         }
 
         // Skin picker
-        if (unlockedSkins > 1) {
+        if (showShipPanel) {
             // dotR: slightly smaller in portrait so names fit above bottom edge
             const dotR   = LAND ? H * 0.048 : H * 0.035;
             // dotGap must be wide enough that ship shapes don't overlap
