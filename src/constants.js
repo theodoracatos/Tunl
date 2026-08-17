@@ -3,7 +3,20 @@ const ctx = cv.getContext('2d');
 
 const W  = window.innerWidth;
 const H  = Math.min(window.innerHeight, 600);
-const FS = Math.sqrt(W * H);   // font scale: ~603 in landscape, matches old 600x600 sizes
+// UI_H/FS drive text AND UI element sizing (ship icons, spacing) -- deliberately NOT the
+// real H 1:1: H is capped at 600 for corridor-difficulty reasons (CLAUDE.md) but virtually
+// never gets near that cap on an actual landscape phone (~400-450pt tall, vs. desktop
+// windows that easily clear 600), so sizing everything off plain H makes every label,
+// perk, and mission line noticeably smaller on the exact devices most players actually
+// use -- confirmed against a real iPhone 17 Pro Max simulator screenshot (956x440pt),
+// where several labels rendered under 10px. Any UI metric (font size, icon radius, icon
+// spacing) that reads H directly instead of UI_H will grow out of step with the rest of
+// the screen on short-wide devices -- that mismatch is exactly what caused the ship
+// picker's per-icon text to overflow past the canvas edge when only FS got this fix
+// initially, so use UI_H for icon geometry too, not just text. This floor only affects
+// UI sizing, never H itself, so corridor width/difficulty is completely unaffected.
+const UI_H = Math.max(H, 600);
+const FS = Math.sqrt(W * UI_H);   // font scale: ~603 in landscape, matches old 600x600 sizes
 cv.width = W; cv.height = H;
 
 const PX      = W  * 0.22;

@@ -1291,11 +1291,43 @@ function draw() {
 
         // Skin picker
         if (showShipPanel) {
-            // dotR: slightly smaller in portrait so names fit above bottom edge
+            // dotR: slightly smaller in portrait so names fit above bottom edge. Stays on
+            // the real H, not UI_H: tried scaling icon size/spacing up with the bigger
+            // text too, but at 7 ships the row itself then no longer fit inside W on a
+            // real device -- row width is a horizontal-space budget, not a legibility
+            // concern the text-size fix was meant to address. skinCX below clamps
+            // dynamically instead to keep the (still bigger, FS-scaled) per-icon labels
+            // on-canvas regardless of device width or language.
             const dotR   = LAND ? H * 0.048 : H * 0.035;
             // dotGap must be wide enough that ship shapes don't overlap
             const dotGap = Math.max(dotR * 2.8, LAND ? H * 0.155 : W * 0.180);
-            const skinCX = infoX;
+            // Clamp the row's anchor so the widest label at either end -- measured live
+            // for the current device/language, not a hardcoded guess -- never renders
+            // past the canvas edge. A fixed-fraction anchor overflowed NOVA's perk/
+            // drawback text on some device/language combos and not others, since text
+            // width vs. available W scales differently per screen.
+            const measureShipLabelHalfW = (i) => {
+                ctx.font = `bold ${FS*0.016}px 'Courier New',monospace`;
+                let lw = ctx.measureText(SKINS[i].name).width;
+                if (T.skinPerks && T.skinPerks[i]) {
+                    ctx.font = `${FS*0.016}px 'Courier New',monospace`;
+                    lw = Math.max(lw, ctx.measureText(T.skinPerks[i]).width);
+                }
+                if (T.skinDrawbacks && T.skinDrawbacks[i]) {
+                    ctx.font = `${FS*0.013}px 'Courier New',monospace`;
+                    lw = Math.max(lw, ctx.measureText(T.skinDrawbacks[i]).width);
+                }
+                return lw / 2;
+            };
+            const rowHalfW   = (SKINS.length - 1) * dotGap / 2;
+            const edgeMargin = 6;
+            let skinCX = infoX;
+            if (LAND) {
+                const rightLimit = W - edgeMargin - rowHalfW - measureShipLabelHalfW(SKINS.length - 1);
+                const leftLimit  = edgeMargin + rowHalfW + measureShipLabelHalfW(0);
+                skinCX = Math.min(skinCX, rightLimit);
+                skinCX = Math.max(skinCX, leftLimit);
+            }
             // In portrait anchor to bottom so ships never overlap BEST/streak above them
             const dotY   = LAND ? H * 0.70 : H - dotR * 2.4;
             const startX = skinCX - (SKINS.length - 1) * dotGap / 2;
