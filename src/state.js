@@ -12,18 +12,19 @@ let dailyRuns = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tu
 let musicOn = localStorage.getItem('tunnel_music') !== '0';
 let fxOn    = localStorage.getItem('tunnel_fx')    !== '0';
 let _btnMusicRect = null, _btnFxRect = null;
-let unlockedSkins = parseInt(localStorage.getItem('tunnel_skins') || '1');
 // Shards: persistent currency banked from collected coins across all runs, spent on ship
 // unlocks (see SKINS[].cost in constants.js). Replaces the old single-run-score gate.
-let shards;
+// First launch under this system (no tunnel_shards key yet) resets ship unlocks to just
+// PEARL and shards to 0 for everyone -- including players who'd earned ships under the
+// old score-gated system. Deliberate product decision: keep the new economy consistent
+// for all players rather than grandfather a handful of early unlocks.
+let unlockedSkins, shards;
 if (localStorage.getItem('tunnel_shards') === null) {
-    // First launch after the shard update: grandfather existing players in.
-    // unlockedSkins is left untouched (ships already earned stay earned), but grant a
-    // starting balance from their lifetime best score so returning veterans aren't stuck
-    // at 0 while the new higher tiers still take real play to reach.
-    shards = Math.floor(best / 2);
+    unlockedSkins = 1; shards = 0;
+    localStorage.setItem('tunnel_skins', unlockedSkins);
     localStorage.setItem('tunnel_shards', shards);
 } else {
+    unlockedSkins = parseInt(localStorage.getItem('tunnel_skins') || '1');
     shards = parseInt(localStorage.getItem('tunnel_shards') || '0');
 }
 // How many shards have already been banked today (DAILY_SHARD_CAP in constants.js), reset
