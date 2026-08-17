@@ -1592,27 +1592,31 @@ function draw() {
         ctx.fillStyle = `rgba(4,4,14,${a * 0.82})`;
         ctx.fillRect(0, 0, W, H);
 
-        // Panel card backdrop
+        // Panel card backdrop. Margins were 0.07/0.07 on every side (14% of W and H spent
+        // on empty margin, on top of the LC/RC columns' own inset from the panel edge) --
+        // direct feedback that there was too much unused space top/left. Tightened to
+        // 0.03/0.04; LC/RC shift outward by the same amount reclaimed on each side so the
+        // content actually uses the extra room instead of just sitting in a bigger frame.
         sh(0);
         ctx.fillStyle = `rgba(6,8,22,${a * 0.64})`;
         ctx.beginPath();
-        ctx.roundRect(W * 0.07, H * 0.07, W * 0.86, H * 0.75, 10);
+        ctx.roundRect(W * 0.03, H * 0.04, W * 0.94, H * 0.78, 10);
         ctx.fill();
         ctx.strokeStyle = `rgba(70,95,170,${a * 0.55})`;
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        const LC = W * 0.24;
-        const RC = W * 0.67;
+        const LC = W * 0.20;
+        const RC = W * 0.71;
 
         // Vertical separator
-        const sepGrd = ctx.createLinearGradient(0, H * 0.12, 0, H * 0.82);
+        const sepGrd = ctx.createLinearGradient(0, H * 0.09, 0, H * 0.82);
         sepGrd.addColorStop(0,   `rgba(55,75,140,0)`);
         sepGrd.addColorStop(0.2, `rgba(70,95,170,${a * 0.50})`);
         sepGrd.addColorStop(0.8, `rgba(70,95,170,${a * 0.50})`);
         sepGrd.addColorStop(1,   `rgba(55,75,140,0)`);
         ctx.fillStyle = sepGrd;
-        ctx.fillRect(W * 0.455, H * 0.10, 1, H * 0.73);
+        ctx.fillRect(W * 0.455, H * 0.07, 1, H * 0.76);
 
         // Left column: DEAD + score
         sh(5, `rgba(200,30,30,${a * 0.55})`);
@@ -1669,7 +1673,11 @@ function draw() {
         if (skinUnlockIdx >= 0) {
             const sk = SKINS[skinUnlockIdx];
             const [sr, sg, sb] = sk.shadow;
-            ctx.font        = `bold ${FS*0.030}px 'Courier New',monospace`;
+            // Font sized down from the panel-tightening pass above (0.03 -> 0.023): the
+            // wider left column helped, but this banner's text (ship name + a whole
+            // localized word) is long enough that it still reached the divider on a
+            // smaller device at the old size -- measured across all 15 languages.
+            ctx.font        = `bold ${FS*0.023}px 'Courier New',monospace`;
             ctx.fillStyle   = `rgba(${sr},${sg},${sb},${a*0.95})`;
             ctx.shadowColor = `rgba(${sr},${sg},${sb},${a*0.60})`;
             ctx.shadowBlur  = 8;
@@ -1683,7 +1691,7 @@ function draw() {
         if (skinUnlockIdx < 0 && skinMasteryUpIdx >= 0) {
             const sk = SKINS[skinMasteryUpIdx];
             const [sr, sg, sb] = sk.shadow;
-            ctx.font        = `bold ${FS*0.028}px 'Courier New',monospace`;
+            ctx.font        = `bold ${FS*0.023}px 'Courier New',monospace`; // see unlock banner comment above
             ctx.fillStyle   = `rgba(${sr},${sg},${sb},${a*0.95})`;
             ctx.shadowColor = `rgba(${sr},${sg},${sb},${a*0.60})`;
             ctx.shadowBlur  = 8;
@@ -1697,7 +1705,7 @@ function draw() {
         // is already that run's headline moment.
         if (runCoins > 0 && skinUnlockIdx < 0 && skinMasteryUpIdx < 0) {
             sh(3);
-            ctx.font      = `${FS*0.020}px 'Courier New',monospace`;
+            ctx.font      = `${FS*0.017}px 'Courier New',monospace`; // see unlock banner comment above
             ctx.fillStyle = `rgba(160,180,220,${a * 0.85})`;
             let shardLine = `+${runShardsBanked} ⧫ · ${shards} ⧫`;
             if (runShardsBanked < runCoins) shardLine += `  (${T.dailyCap})`;
@@ -1764,7 +1772,7 @@ function draw() {
             if (runNearMisses > 0) statParts.push(`${runNearMisses} ${T.close}`);
             if (runMaxCombo   > 1) statParts.push(`x${runMaxCombo} ${T.combo}`);
             sh(3);
-            ctx.font      = `${FS*0.026}px 'Courier New',monospace`;
+            ctx.font      = `${FS*0.022}px 'Courier New',monospace`; // see unlock banner comment above
             ctx.fillStyle = `rgba(160,180,220,${a})`;
             ctx.fillText(statParts.join('   '), RC, ry);
             ry += H * 0.088;
