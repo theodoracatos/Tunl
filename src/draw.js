@@ -1246,71 +1246,48 @@ function draw() {
         let rightColY  = H * 0.33;
         const lineStep = H * 0.085;
 
-        {
+        // BEST (all-time record) is the single headline stat -- it rarely changes, so
+        // it reads as "your record" rather than a volatile daily figure. TODAY and the
+        // day streak fold into one small secondary line instead of each getting their
+        // own full row: was 3 stacked LABEL/value rows that read as a data table, not
+        // a HUD (direct feedback: "wirkt ein bisschen überladen"). Skipped entirely
+        // before the player's first real run -- an empty title screen doesn't need a
+        // "BEST 0" placeholder.
+        if (best > 0) {
             ctx.shadowColor = 'rgba(0,0,0,0.90)'; ctx.shadowBlur = 3;
-            ctx.font        = `bold ${FS*0.026}px 'Courier New',monospace`;
+            ctx.font        = `bold ${FS*0.028}px 'Courier New',monospace`;
             ctx.fillStyle   = `rgba(190,212,255,${a * 0.98})`;
-            ctx.fillText(`${T.today}  ${dailyRuns > 0 ? dailyBest : '-'}`, infoX, LAND ? rightColY : H/2 + H*0.280);
-            if (best > dailyBest) {
-                rightColY += lineStep;
-                ctx.font      = `bold ${FS*0.020}px 'Courier New',monospace`;
-                ctx.fillStyle = `rgba(150,175,225,${a * 0.85})`;
-                ctx.fillText(`${T.allTime}  ${best}`, infoX, LAND ? rightColY : H/2 + H*0.316);
-            }
-            ctx.shadowBlur = 0;
-        }
-
-        if (streak > 0) {
-            rightColY += lineStep;
-            const flame = streak >= 7 ? ' **' : streak >= 3 ? ' *' : '';
-            ctx.font        = `bold ${FS*0.022}px 'Courier New',monospace`;
-            ctx.fillStyle   = streak >= 3 ? `rgba(255,180,70,${a * 0.98})` : `rgba(185,205,245,${a * 0.96})`;
-            ctx.shadowColor = streak >= 3 ? `rgba(255,140,20,${a * 0.50})` : 'rgba(0,0,0,0.90)';
-            ctx.shadowBlur  = streak >= 3 ? 6 : 3;
-            ctx.fillText(`${streak}${flame} ${T.day}`, infoX, LAND ? rightColY : H/2 + H*0.348);
+            ctx.fillText(`${T.allTime}  ${best}`, infoX, LAND ? rightColY : H/2 + H*0.280);
             ctx.shadowBlur  = 0;
+
+            const subParts = [];
+            if (dailyRuns > 0) subParts.push(`${T.today} ${dailyBest}`);
+            if (streak > 0) {
+                const flame = streak >= 7 ? ' **' : streak >= 3 ? ' *' : '';
+                subParts.push(`${streak}${flame} ${T.day}`);
+            }
+            if (subParts.length) {
+                rightColY += lineStep;
+                ctx.font        = `bold ${FS*0.019}px 'Courier New',monospace`;
+                ctx.fillStyle   = streak >= 3 ? `rgba(255,180,70,${a * 0.90})` : `rgba(160,185,230,${a * 0.85})`;
+                ctx.shadowColor = streak >= 3 ? `rgba(255,140,20,${a * 0.45})` : 'rgba(0,0,0,0.90)';
+                ctx.shadowBlur  = streak >= 3 ? 5 : 3;
+                ctx.fillText(subParts.join('   ·   '), infoX, LAND ? rightColY : H/2 + H*0.316);
+                ctx.shadowBlur  = 0;
+            }
         }
 
-        // Ship wallet + picker (below) shows once the player has actually played --
+        // Ship wallet + picker shows once the player has actually played --
         // `best > 0` covers the "still on PEARL only" case, since with the shard
         // economy that can last several sessions and the wallet/next-unlock-cost
         // roadmap needs to stay visible that whole time, unlike the old score-gate
-        // system where reaching a 2nd ship happened almost immediately. Computed once
-        // here since the TOP 5 filler right below is its exact negation.
+        // system where reaching a 2nd ship happened almost immediately. The right
+        // column used to also host a "today's top 5 runs" filler here before this
+        // panel unlocked, competing for the same space; removed as redundant once
+        // Game Center covers competitive leaderboards (where available -- Android's
+        // own leaderboard setup is still pending, per project notes) and this panel
+        // is now visible from the first run on anyway, not just after a 2nd unlock.
         const showShipPanel = best > 0 || unlockedSkins > 1;
-
-        // Today's top runs -- fills the empty lower half of the right column
-        // (title screen previously left this blank once TODAY/streak were drawn).
-        // Only shown before the ship panel above appears; once it does, that column
-        // is already full, and the two variable-height stacks can't coexist without
-        // either overlapping or (once shortened enough to avoid it) rendering
-        // pointlessly small. Skipped in portrait, where the column is centered and
-        // already tight.
-        if (LAND && dailyRuns > 0 && !showShipPanel) {
-            rightColY += H * 0.075;
-
-            ctx.shadowColor = 'rgba(0,0,0,0.90)'; ctx.shadowBlur = 3;
-            ctx.font        = `bold ${FS*0.020}px 'Courier New',monospace`;
-            ctx.fillStyle   = `rgba(170,195,240,${a * 0.85})`;
-            ctx.fillText(T.top5, infoX, rightColY);
-            ctx.shadowBlur  = 0;
-            rightColY += H * 0.052;
-
-            const topStep = H * 0.050;
-            for (let i = 0; i < 5; i++) {
-                const entry = top5[i];
-                ctx.shadowColor = 'rgba(0,0,0,0.90)'; ctx.shadowBlur = 2;
-                // Same size as the STREAK line -- TOP 5 is secondary info that
-                // supports the two headline stats above it, not a third headline.
-                ctx.font        = `bold ${FS*0.022}px 'Courier New',monospace`;
-                ctx.fillStyle   = entry !== undefined
-                    ? `rgba(175,200,240,${a * 0.85})`
-                    : `rgba(100,120,165,${a * 0.55})`;
-                ctx.fillText(`#${i + 1}  ${entry !== undefined ? entry : '-'}`, infoX, rightColY);
-                ctx.shadowBlur  = 0;
-                rightColY += topStep;
-            }
-        }
 
         // Skin picker
         if (showShipPanel) {
