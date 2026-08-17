@@ -126,14 +126,14 @@ function checkCoinCollection() {
                 sfxSlow();
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             } else if (coin.type === 'red') {
-                shieldCount = Math.min(shieldCount + 1, 3);
+                shieldCount = Math.min(shieldCount + 1, activeSkin === 5 ? 4 : 3);
                 burstCoin(sx, coin.y, 0, 26);
                 shake += 3;
                 notifs.push({ x: sx, y: coin.y - 16, life: 1.1, text: T.notifShield, color: [255,90,90] });
                 sfxShield();
                 window.webkit?.messageHandlers?.haptic?.postMessage('success');
             } else if (coin.type === 'green') {
-                magnetTime = Math.min(magnetTime + 3.0, 5.0);
+                magnetTime = Math.min(magnetTime + 3.0, activeSkin === 6 ? 8.0 : 5.0);
                 burstCoin(sx, coin.y, 120, 26);
                 shake += 3;
                 notifs.push({ x: sx, y: coin.y - 16, life: 1.1, text: T.notifMagnet, color: [80,255,130] });

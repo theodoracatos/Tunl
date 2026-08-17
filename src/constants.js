@@ -51,7 +51,8 @@ const LEVEL_INTRO_FADE = 0.5; // seconds of that spent fading out at the end
 // Unlock cost is in shards (persistent currency banked from collected coins across all
 // runs, see state.js `shards` + update.js die() banking), not single-run score anymore.
 // VOID/NOVA are new prestige tiers for players who used to max out the old score-gated
-// list in one good run -- they still only have PEARL's plain perk-less FX for now.
+// list in one good run: VOID raises max shield stacks 3->4 (systems.js red-coin pickup),
+// NOVA raises the magnet duration cap 5s->8s (systems.js green-coin pickup).
 const SKINS = [
     { color: '#e8eeff', shadow: [210,220,255],  name: 'PEARL'                       },
     { color: '#ffaa00', shadow: [255,155,0],    name: 'AMBER',   cost: 60           },

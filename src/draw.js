@@ -797,6 +797,34 @@ function draw() {
                 ctx.shadowBlur  = 6;
                 ctx.fill();
                 ctx.shadowBlur  = 0;
+            } else if (f.t === 4) {
+                // VOID: dark mote drawn inward toward the ship, fading as it arrives
+                const mx = PX + Math.cos(f.ang) * f.dist;
+                const my = py + Math.sin(f.ang) * f.dist;
+                ctx.beginPath();
+                ctx.arc(mx, my, 1.3, 0, Math.PI*2);
+                ctx.fillStyle   = `rgba(180,90,255,${a * 0.8})`;
+                ctx.shadowColor = `rgba(180,90,255,${a * 0.6})`;
+                ctx.shadowBlur  = 5;
+                ctx.fill();
+                ctx.shadowBlur  = 0;
+            } else if (f.t === 5) {
+                // NOVA: brief radial starburst of short white rays
+                const rays = 6;
+                for (let i = 0; i < rays; i++) {
+                    const ang = (i / rays) * Math.PI * 2 + f.seed * Math.PI * 2;
+                    const r0  = PR * (1.1 + (1 - f.life) * 2.2);
+                    const r1  = r0 + PR * 1.1 * f.life;
+                    ctx.beginPath();
+                    ctx.moveTo(PX + Math.cos(ang)*r0, py + Math.sin(ang)*r0);
+                    ctx.lineTo(PX + Math.cos(ang)*r1, py + Math.sin(ang)*r1);
+                    ctx.strokeStyle = `rgba(255,255,255,${a * 0.7})`;
+                    ctx.lineWidth   = 1.4;
+                    ctx.shadowColor = `rgba(255,255,255,${a * 0.5})`;
+                    ctx.shadowBlur  = 5;
+                    ctx.stroke();
+                }
+                ctx.shadowBlur  = 0;
             }
         }
     }
@@ -1262,7 +1290,7 @@ function draw() {
             ctx.fillStyle   = 'rgba(190,205,240,0.92)';
             ctx.shadowColor = 'rgba(0,0,0,0.85)';
             ctx.shadowBlur  = 3;
-            ctx.fillText(`${T.ship}   ${shards}⧫`, skinCX, dotY - dotR * 2.0);
+            ctx.fillText(`${T.ship}   ${shards} ⧫`, skinCX, dotY - dotR * 2.0);
             ctx.shadowBlur  = 0;
             for (let i = 0; i < SKINS.length; i++) {
                 const cx       = startX + i * dotGap;
@@ -1279,7 +1307,7 @@ function draw() {
                     ctx.fillStyle   = 'rgba(150,160,205,0.85)';
                     ctx.shadowColor = 'rgba(0,0,0,0.85)';
                     ctx.shadowBlur  = 3;
-                    ctx.fillText(`${SKINS[i].cost}⧫`, cx, dotY + dotR * 1.7);
+                    ctx.fillText(`${SKINS[i].cost} ⧫`, cx, dotY + dotR * 1.7);
                     ctx.shadowBlur  = 0;
                     ctx.font = `${FS*0.018}px 'Courier New',monospace`;
                 } else {
@@ -1613,7 +1641,7 @@ function draw() {
             // Shards earned this run (banked in die()) plus running total, icon-only so it
             // needs no new translated string -- matches the wordless "x2"/"#1" style already
             // used elsewhere on this screen.
-            if (runCoins > 0) statParts.push(`+${runCoins}⧫ · ${shards}⧫`);
+            if (runCoins > 0) statParts.push(`+${runCoins} ⧫ · ${shards} ⧫`);
             sh(3);
             ctx.font      = `${FS*0.026}px 'Courier New',monospace`;
             ctx.fillStyle = `rgba(160,180,220,${a})`;

@@ -175,17 +175,28 @@ function update(dt) {
                 skinFx.push({ t: 3, x: PX+(Math.random()-0.5)*PR*1.0, y: py+PR*0.4,
                               vx: (Math.random()-0.5)*10, vy: 40+Math.random()*55, life: 1, r: 1.0+Math.random()*1.2 });
             }
+            // VOID (5): dark motes drawn inward from a ring, opposite of AMBER's outward embers
+            if (activeSkin === 5 && Math.random() < dt * 5) {
+                const ang = Math.random() * Math.PI * 2;
+                skinFx.push({ t: 4, ang, dist: PR * (2.2 + Math.random()*0.8), life: 1 });
+            }
+            // NOVA (6): brief radial starburst every ~0.6s
+            if (activeSkin === 6 && skinFxT > 0.6) {
+                skinFxT = 0;
+                skinFx.push({ t: 5, life: 1, seed: Math.random() });
+            }
         } else {
             skinFxT = 0;
         }
         // Advance existing particles
         for (let i = skinFx.length-1; i >= 0; i--) {
             const f = skinFx[i];
-            const decay = f.t === 1 ? 3.5 : f.t === 2 ? 14 : 2.8;
+            const decay = f.t === 1 ? 3.5 : f.t === 2 ? 14 : f.t === 5 ? 4.5 : 2.8;
             f.life -= dt * decay;
             if (f.t === 0) { f.x += f.vx*dt; f.y += f.vy*dt; f.vy += 30*dt; }
             if (f.t === 1) { f.r  += PR * 6 * dt; }
             if (f.t === 3) { f.x += f.vx*dt; f.y += f.vy*dt; }
+            if (f.t === 4) { f.dist = Math.max(0, f.dist - PR * 3.2 * dt); }
             if (f.life <= 0) skinFx.splice(i, 1);
         }
     }
