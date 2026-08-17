@@ -115,8 +115,9 @@ function update(dt) {
 
     // Gap bonus / slow / magnet decay
     // TOXIC trades faster gap-bonus decay for its 2x-per-coin buff (systems.js) --
-    // has to keep collecting to hold the wider corridor, not just bank it once.
-    gapBonus   = Math.max(0, gapBonus   - GAP_DECAY * (activeSkin === 4 ? 1.6 : 1.0) * dt);
+    // has to keep collecting to hold the wider corridor, not just bank it once. Mastery
+    // eases the decay rate back down (never fully to baseline -- see masteryLerp doc).
+    gapBonus   = Math.max(0, gapBonus   - GAP_DECAY * (activeSkin === 4 ? masteryLerp(4, 1.6, 1.2) : 1.0) * dt);
     slowTime   = Math.max(0, slowTime   - dt);
     magnetTime = Math.max(0, magnetTime - dt);
 
@@ -139,7 +140,8 @@ function update(dt) {
         const nmC = Math.min(py - PR - nmB.top, nmB.bot - (py + PR));
         // VOID trades a smaller near-miss window for its extra shield capacity
         // (systems.js) -- it tanks hits instead of skimming past them for bonus.
-        if (nmC >= 0 && nmC < PR * (activeSkin === 5 ? 1.5 : 2.0)) {
+        // Mastery eases the window back toward the 2.0x baseline.
+        if (nmC >= 0 && nmC < PR * (activeSkin === 5 ? masteryLerp(5, 1.5, 2.0) : 2.0)) {
             bonusScore++;
             nearMissTimer = 1.5;
             runNearMisses++;
@@ -233,8 +235,11 @@ function update(dt) {
     }
 
     // Wall + stalactite collision. CRIMSON has a slimmer hitbox (its buff); AMBER
-    // trades a slightly larger one away for its bigger coin-collection radius.
-    const cPR = activeSkin === 2 ? PR * 0.82 : activeSkin === 1 ? PR * 1.10 : PR;
+    // trades a slightly larger one away for its bigger coin-collection radius. Mastery
+    // pushes CRIMSON's slimmer further and eases AMBER's back toward neutral.
+    const cPR = activeSkin === 2 ? PR * masteryLerp(2, 0.82, 0.74)
+              : activeSkin === 1 ? PR * masteryLerp(1, 1.10, 1.03)
+              : PR;
     for (const dx of [-cPR * 0.7, 0, cPR * 0.7]) {
         const b = boundsAt(scrollX + PX + dx);
         if (py - cPR < b.top || py + cPR > b.bot) { if (die()) return; break; }
@@ -356,6 +361,11 @@ function die(bypassShield = false) {
     }
     localStorage.setItem('tunnel_shards', shards);
     if (skinUnlockIdx >= 0) localStorage.setItem('tunnel_skins', unlockedSkins);
+    // Ship mastery: did flying this run's ship cross a new XP threshold (constants.js
+    // MASTERY_XP_THRESHOLDS)? Compared against the level snapshotted at startPlay() since
+    // skinXP[activeSkin] was already incremented live during play (systems.js).
+    skinMasteryUpIdx = masteryLevel(activeSkin) > runStartMasteryLevel ? activeSkin : -1;
+    localStorage.setItem('tunnel_skin_xp', JSON.stringify(skinXP));
     // Record a death marker on the nearest wall
     const _dmWx = scrollX + PX;
     const _dmB  = boundsAt(_dmWx);

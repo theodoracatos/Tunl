@@ -34,6 +34,11 @@ let runShardsBanked = 0; // this run's actual post-cap shard gain, shown on the 
 let removeAdsOwned = localStorage.getItem('tunnel_remove_ads') === '1';
 let activeSkin    = parseInt(localStorage.getItem('tunnel_skin')  || '0');
 if (!(unlockedSkins & (1 << activeSkin))) activeSkin = 0;
+// Per-ship mastery XP (constants.js masteryLevel/masteryLerp), index-aligned with SKINS.
+// One coin collected while a given ship is active = 1 XP for that ship.
+let skinXP = JSON.parse(localStorage.getItem('tunnel_skin_xp') || '[0,0,0,0,0,0,0]');
+let skinMasteryUpIdx  = -1; // which ship leveled up this run (-1 if none), death-screen banner
+let runStartMasteryLevel = 0; // snapshot at startPlay() so die() can detect a level-up
 let skinUnlockIdx = -1;
 let _skinBtnRects = [];
 let streak = parseInt(localStorage.getItem('tunnel_streak') || '0');

@@ -45,6 +45,8 @@ function startPlay() {
     mines = []; nextMineWx = 1800;
     bonusScore = 0; milestoneNext = 25; nearMissTimer = 0; coinCombo = 0; coinComboTimer = 0;
     runCoins = 0; runNearMisses = 0; runMaxCombo = 0; skinUnlockIdx = -1;
+    skinMasteryUpIdx = -1;
+    runStartMasteryLevel = masteryLevel(activeSkin);
     // Day streak update
     const _td = new Date();
     const _todayInt = _td.getUTCFullYear() * 10000 + (_td.getUTCMonth() + 1) * 100 + _td.getUTCDate();

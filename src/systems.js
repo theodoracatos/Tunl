@@ -103,7 +103,7 @@ function maintainCoins() {
 }
 
 function checkCoinCollection() {
-    const hitR = activeSkin === 1 ? COIN_HIT_R * 1.5 : COIN_HIT_R;
+    const hitR = activeSkin === 1 ? COIN_HIT_R * masteryLerp(1, 1.5, 1.7) : COIN_HIT_R;
     const r2 = (PR + hitR) * (PR + hitR);
     for (const arr of [coins, chicaneCoins]) for (const coin of arr) {
         if (coin.collected) continue;
@@ -113,14 +113,16 @@ function checkCoinCollection() {
         if (dx*dx + dy*dy < r2) {
             coin.collected = true;
             if (coinComboTimer > 0) coinCombo++; else coinCombo = 1;
-            // ELECTRIC trades a shorter combo window for its slow-time buff below.
-            coinComboTimer = activeSkin === 3 ? 1.5 : 2.0;
+            // ELECTRIC trades a shorter combo window for its slow-time buff below; mastery
+            // eases it back toward the 2.0s baseline (see constants.js masteryLerp).
+            coinComboTimer = activeSkin === 3 ? masteryLerp(3, 1.5, 2.0) : 2.0;
             const pts = coinCombo * 3;
             bonusScore += pts;
             runCoins++;
+            skinXP[activeSkin] = (skinXP[activeSkin] || 0) + 1;
             if (coinCombo > runMaxCombo) runMaxCombo = coinCombo;
             if (coin.type === 'blue') {
-                slowTime = Math.min(slowTime + (activeSkin === 3 ? 6.0 : 4.0), activeSkin === 3 ? 12.0 : 8.0);
+                slowTime = Math.min(slowTime + (activeSkin === 3 ? masteryLerp(3, 6.0, 7.5) : 4.0), activeSkin === 3 ? masteryLerp(3, 12.0, 15.0) : 8.0);
                 burstCoin(sx, coin.y, 195, 26);
                 shake += 3;
                 notifs.push({ x: sx, y: coin.y - 16, life: 1.1, text: T.notifSlow,   color: [60,210,255] });
@@ -128,8 +130,10 @@ function checkCoinCollection() {
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             } else if (coin.type === 'red') {
                 // CRIMSON trades shield capacity away for its slim-hitbox buff below;
-                // VOID's buff IS extra shield capacity.
-                const shieldCap = activeSkin === 5 ? 4 : activeSkin === 2 ? 2 : 3;
+                // VOID's buff IS extra shield capacity. Mastery grows/heals each toward 5/3.
+                const shieldCap = activeSkin === 5 ? Math.round(masteryLerp(5, 4, 5))
+                                 : activeSkin === 2 ? Math.round(masteryLerp(2, 2, 3))
+                                 : 3;
                 shieldCount = Math.min(shieldCount + 1, shieldCap);
                 burstCoin(sx, coin.y, 0, 26);
                 shake += 3;
@@ -137,15 +141,17 @@ function checkCoinCollection() {
                 sfxShield();
                 window.webkit?.messageHandlers?.haptic?.postMessage('success');
             } else if (coin.type === 'green') {
-                magnetTime = Math.min(magnetTime + 3.0, activeSkin === 6 ? 8.0 : 5.0);
+                magnetTime = Math.min(magnetTime + 3.0, activeSkin === 6 ? masteryLerp(6, 8.0, 11.0) : 5.0);
                 burstCoin(sx, coin.y, 120, 26);
                 shake += 3;
                 notifs.push({ x: sx, y: coin.y - 16, life: 1.1, text: T.notifMagnet, color: [80,255,130] });
                 sfxMagnet();
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             } else if (coin.type === 'orange') {
-                // NOVA trades ammo capacity away for its magnet-duration buff below.
-                bulletAmmo = Math.min(bulletAmmo + (activeSkin === 6 ? 3 : 5), activeSkin === 6 ? 6 : 10);
+                // NOVA trades ammo capacity away for its magnet-duration buff below; mastery
+                // heals both the pickup amount and the cap back toward the 5/10 baseline.
+                bulletAmmo = Math.min(bulletAmmo + (activeSkin === 6 ? Math.round(masteryLerp(6, 3, 5)) : 5),
+                                       activeSkin === 6 ? Math.round(masteryLerp(6, 6, 10)) : 10);
                 bulletFireTimer = 0;
                 burstCoin(sx, coin.y, 28, 26);
                 shake += 3;
@@ -153,7 +159,7 @@ function checkCoinCollection() {
                 sfxBulletPickup();
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             } else {
-                gapBonus = Math.min(GAP_BONUS_MAX, gapBonus + GAP_PER_COIN * (activeSkin === 4 ? 2 : 1));
+                gapBonus = Math.min(GAP_BONUS_MAX, gapBonus + GAP_PER_COIN * (activeSkin === 4 ? masteryLerp(4, 2.0, 2.5) : 1));
                 burstCoin(sx, coin.y, 44);
                 notifs.push({ x: sx, y: coin.y - 16, life: 1.1, text: `+${pts}`, color: [255,220,55] });
                 if (coinCombo > 1) {

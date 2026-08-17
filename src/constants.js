@@ -30,6 +30,25 @@ function rgb(c, a) {
     return a === undefined ? `rgb(${c[0]},${c[1]},${c[2]})` : `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 }
 
+// ── Ship mastery ──────────────────────────────────────────────────────
+// Per-ship XP (state.js `skinXP`, one coin collected while that ship is active
+// = 1 XP) unlocks up to 3 mastery levels. Each level eases that ship's buff a
+// little further and its drawback a little closer back toward neutral -- the
+// more you fly a specific ship, the more you overcome its built-in weakness,
+// on top of (not instead of) the base trade-off from constants.js SKINS.
+// Levels never fully erase the drawback (see masteryLerp call sites in
+// systems.js/update.js) so the ship keeps some identity even fully mastered.
+const MASTERY_XP_THRESHOLDS = [0, 150, 400, 900]; // coins collected while flying that ship
+function masteryLevel(skin) {
+    const xp = (typeof skinXP !== 'undefined' && skinXP[skin]) || 0;
+    let lvl = 0;
+    for (let i = 1; i < MASTERY_XP_THRESHOLDS.length; i++) if (xp >= MASTERY_XP_THRESHOLDS[i]) lvl = i;
+    return lvl;
+}
+function masteryLerp(skin, base, maxed) {
+    return lerp(base, maxed, masteryLevel(skin) / (MASTERY_XP_THRESHOLDS.length - 1));
+}
+
 // ── Seeded PRNG (mulberry32) ──────────────────────────────────────────
 let _seed = 0;
 function seedRng(s) { _seed = s >>> 0; }
@@ -69,7 +88,10 @@ const DAILY_SHARD_CAP = 350;
 //   TOXIC    (systems.js gold coin, update.js gap decay)    2x coin bonus    / +60% decay rate
 //   VOID     (systems.js shield pickup, update.js near-miss) shield cap +1  / -25% near-miss window
 //   NOVA     (systems.js green coin, systems.js ammo pickup) +60% magnet    / -40% ammo capacity
-// PEARL stays the neutral baseline with no perk/drawback, just cosmetic FX.
+// PEARL stays the neutral baseline with no perk/drawback, just cosmetic FX. Values above
+// are the level-0 (unmastered) numbers -- flying a ship grows its buff and heals its
+// drawback further per masteryLerp() below, see that call site in each file for the
+// level-3 endpoint of every stat.
 const SKINS = [
     { color: '#e8eeff', shadow: [210,220,255],  name: 'PEARL'                       },
     { color: '#ffaa00', shadow: [255,155,0],    name: 'AMBER',   cost: 60           },

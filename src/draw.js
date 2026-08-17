@@ -1324,6 +1324,30 @@ function draw() {
                         ctx.restore();
                     }
                     drawShip(cx, dotY, dotR, SKINS[i].color, sr, sg, sb, selected ? 22 : 8);
+                    // Mastery pips: how far this ship's buff/drawback have grown from flying
+                    // it (constants.js masteryLevel/masteryLerp). PEARL has no perk to master.
+                    if (selected && i > 0) {
+                        const lvl = masteryLevel(i);
+                        const pipR = dotR * 0.09, pipGap = dotR * 0.30;
+                        const pipsW = (MASTERY_XP_THRESHOLDS.length - 2) * pipGap;
+                        for (let p = 0; p < MASTERY_XP_THRESHOLDS.length - 1; p++) {
+                            const px = cx - pipsW/2 + p * pipGap;
+                            const py2 = dotY - dotR * 1.35;
+                            ctx.beginPath();
+                            ctx.arc(px, py2, pipR, 0, Math.PI*2);
+                            if (p < lvl) {
+                                ctx.fillStyle   = `rgba(${sr},${sg},${sb},0.90)`;
+                                ctx.shadowColor = `rgba(${sr},${sg},${sb},0.70)`;
+                                ctx.shadowBlur  = 5;
+                                ctx.fill();
+                                ctx.shadowBlur  = 0;
+                            } else {
+                                ctx.strokeStyle = `rgba(${sr},${sg},${sb},0.40)`;
+                                ctx.lineWidth   = 1;
+                                ctx.stroke();
+                            }
+                        }
+                    }
                     ctx.font        = `${FS*0.016}px 'Courier New',monospace`;
                     ctx.fillStyle   = selected
                         ? `rgba(${sr},${sg},${sb},0.95)`
@@ -1607,11 +1631,25 @@ function draw() {
             ctx.shadowBlur  = 0;
         }
 
+        // Mastery level-up banner -- same left-column slot, one priority step below a
+        // fresh unlock (ship-unlock is the bigger moment; skip this if both happen the
+        // same run rather than stacking two banners in the same cramped space).
+        if (skinUnlockIdx < 0 && skinMasteryUpIdx >= 0) {
+            const sk = SKINS[skinMasteryUpIdx];
+            const [sr, sg, sb] = sk.shadow;
+            ctx.font        = `bold ${FS*0.028}px 'Courier New',monospace`;
+            ctx.fillStyle   = `rgba(${sr},${sg},${sb},${a*0.95})`;
+            ctx.shadowColor = `rgba(${sr},${sg},${sb},${a*0.60})`;
+            ctx.shadowBlur  = 8;
+            ctx.fillText(`${sk.name} ${T.masteryUp} ${masteryLevel(skinMasteryUpIdx)}`, LC, H * 0.78);
+            ctx.shadowBlur  = 0;
+        }
+
         // Shards banked this run (post daily-cap, see update.js die()) plus running total,
-        // in the same left-column slot the unlock banner uses. Skipped on unlock runs --
-        // there's no room for both above the panel edge/buttons, and the unlock banner is
-        // already that run's headline moment.
-        if (runCoins > 0 && skinUnlockIdx < 0) {
+        // in the same left-column slot the unlock banner uses. Skipped on unlock/mastery
+        // runs -- there's no room for both above the panel edge/buttons, and either banner
+        // is already that run's headline moment.
+        if (runCoins > 0 && skinUnlockIdx < 0 && skinMasteryUpIdx < 0) {
             sh(3);
             ctx.font      = `${FS*0.020}px 'Courier New',monospace`;
             ctx.fillStyle = `rgba(160,180,220,${a * 0.85})`;
