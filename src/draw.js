@@ -1676,10 +1676,24 @@ function draw() {
         let ry = H * 0.155;
         const LB_STEP = H * 0.095;
 
+        // Left-align the rank/score column to a shared start X instead of centering each
+        // line independently -- centering per-line let the numbers drift left/right with
+        // digit count so they didn't read as a column. The column itself is still
+        // centered as a block around RC (measured against the widest of the 5 possible
+        // lines, in whichever font that line would actually use).
+        let listW = 0;
+        for (let i = 0; i < 5; i++) {
+            const entry = top5[i];
+            ctx.font = entry !== undefined ? `bold ${FS*0.040}px 'Courier New',monospace` : `${FS*0.032}px 'Courier New',monospace`;
+            listW = Math.max(listW, ctx.measureText(entry !== undefined ? `#${i + 1}  ${entry}` : `#${i + 1}  -`).width);
+        }
+        const listX = RC - listW / 2;
+        ctx.textAlign = 'left';
+
         sh(2);
         ctx.font      = `bold ${FS*0.024}px 'Courier New',monospace`;
         ctx.fillStyle = `rgba(170,195,240,${a * 0.90})`;
-        ctx.fillText(T.top5, RC, ry);
+        ctx.fillText(T.top5, listX, ry);
         ry += H * 0.072;
 
         const myRank = top5.findIndex(s => s === score);
@@ -1693,15 +1707,16 @@ function draw() {
                 ctx.fillStyle = isMe
                     ? (newBest ? `rgba(255,225,65,${a})` : `rgba(210,235,255,${a})`)
                     : `rgba(175,200,240,${a * 0.90})`;
-                ctx.fillText(`#${i + 1}  ${entry}`, RC, ry);
+                ctx.fillText(`#${i + 1}  ${entry}`, listX, ry);
             } else {
                 sh(2);
                 ctx.font      = `${FS*0.032}px 'Courier New',monospace`;
                 ctx.fillStyle = `rgba(100,120,165,${a * 0.55})`;
-                ctx.fillText(`#${i + 1}  -`, RC, ry);
+                ctx.fillText(`#${i + 1}  -`, listX, ry);
             }
             ry += LB_STEP;
         }
+        ctx.textAlign = 'center'; // restore -- vsLast/stats/buttons below expect centered text
 
         if (prevRunScore > 0 && score !== prevRunScore) {
             const diff = score - prevRunScore;
