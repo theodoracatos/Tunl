@@ -1142,14 +1142,21 @@ function draw() {
         buildUPath();
         ctx.clip();
 
-        const bgGrd = ctx.createRadialGradient(holeCX, logoY, 0, holeCX, logoY, uHalfW * 1.6);
+        const bgGrd = ctx.createRadialGradient(holeCX, logoY, 0, holeCX, logoY, uHalfW * 1.15);
         bgGrd.addColorStop(0,   `rgba(20,28,68,${a})`);
         bgGrd.addColorStop(0.6, `rgba(8,11,34,${a})`);
         bgGrd.addColorStop(1,   `rgba(4,4,14,${a})`);
         ctx.fillStyle = bgGrd;
         ctx.fillRect(holeCX - uHalfW * 2, uTopY - holeR, uHalfW * 4, (uDipY - uTopY) + holeR * 2);
 
-        const ringR    = [1.55, 1.10, 0.675].map(f => f * uHalfW);
+        // Radii ratios (1 : 0.71 : 0.435) match wordmark.svg's own 124:88:54, but
+        // rescaled to this U's actual clip headroom -- the SVG's U is proportioned
+        // differently (much more room above its ring center than below), so porting
+        // its literal 1.55x/1.10x/0.675x-of-half-width radii here clipped the outer
+        // ring almost entirely off the top and the whole ring off the bottom, leaving
+        // barely more than a dot. Sized against uHalfW (roughly this U's tightest
+        // headroom) instead keeps all three rings actually visible on both halves.
+        const ringR    = [1.0, 0.71, 0.435].map(f => f * uHalfW);
         const ringW    = [holeR * 0.15, holeR * 0.15, holeR * 0.13];
         const ringOpac = [0.85, 1, 1];
         // Blur scaled proportionally to each ring's own radius (matching
