@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="834" height="320" viewBox="0 0 834 320">
+  <defs>
+    <linearGradient id="purpleGrd" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7a3ce0"/><stop offset="50%" stop-color="#a75bff"/><stop offset="100%" stop-color="#7a3ce0"/>
+    </linearGradient>
+    <linearGradient id="cyanGrd" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1aa8d6"/><stop offset="50%" stop-color="#3fe0ff"/><stop offset="100%" stop-color="#1aa8d6"/>
+    </linearGradient>
+    <radialGradient id="coreGrd" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/><stop offset="40%" stop-color="#d7e8ff"/><stop offset="100%" stop-color="#6f9cff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="letterGrd" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#c7d9ff"/>
+    </linearGradient>
+    <filter id="ub0" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5"/></filter>
+    <filter id="ub1" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2"/></filter>
+    <filter id="letterGlow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="10" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <g transform="translate(60,60)">
+    <g filter="url(#letterGlow)">
+      <path d="M0,0 H140 V34 H87 V200 H53 V34 H0 Z" fill="url(#letterGrd)"/>
+      <path d="M404,0 L438,0 L544,160.9 L544,200 L510,200 L404,39.099999999999994 Z M404,0 L438,0 L438,200 L404,200 Z M510,0 L544,0 L544,200 L510,200 Z" fill="url(#letterGrd)"/>
+      <path d="M574,0 H608 V166 H714 V200 H574 Z" fill="url(#letterGrd)"/>
+    </g>
+    <g>
+  <path d="M 172 100 A 100 100 0 0 1 372 100" fill="none" stroke="url(#purpleGrd)" stroke-width="12" stroke-linecap="round" opacity="0.9" filter="url(#ub0)"/>
+  <path d="M 372 100 A 100 100 0 0 1 172 100" fill="none" stroke="url(#cyanGrd)" stroke-width="12" stroke-linecap="round" opacity="0.9" filter="url(#ub0)"/>
+  <path d="M 204 100 A 68 68 0 0 1 340 100" fill="none" stroke="url(#purpleGrd)" stroke-width="14" stroke-linecap="round" opacity="1" filter="url(#ub1)"/>
+  <path d="M 340 100 A 68 68 0 0 1 204 100" fill="none" stroke="url(#cyanGrd)" stroke-width="14" stroke-linecap="round" opacity="1" filter="url(#ub1)"/>
+  <circle cx="272" cy="100" r="32" fill="url(#coreGrd)"/>
+  <circle cx="272" cy="100" r="15" fill="#ffffff"/></g>
+  </g>
+</svg>

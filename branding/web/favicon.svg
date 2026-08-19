@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bgGrd" cx="50%" cy="44%" r="72%">
+      <stop offset="0%"  stop-color="#141c44"/>
+      <stop offset="55%" stop-color="#080b22"/>
+      <stop offset="100%" stop-color="#04040e"/>
+    </radialGradient>
+    <linearGradient id="purpleGrd" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#7a3ce0"/>
+      <stop offset="50%"  stop-color="#a75bff"/>
+      <stop offset="100%" stop-color="#7a3ce0"/>
+    </linearGradient>
+    <linearGradient id="cyanGrd" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#1aa8d6"/>
+      <stop offset="50%"  stop-color="#3fe0ff"/>
+      <stop offset="100%" stop-color="#1aa8d6"/>
+    </linearGradient>
+    <radialGradient id="coreGrd" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#ffffff"/>
+      <stop offset="35%"  stop-color="#d7e8ff"/>
+      <stop offset="100%" stop-color="#6f9cff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="coreHalo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"  stop-color="#bcd4ff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#5b7fff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur0" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+  <filter id="blur1" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>
+  <filter id="blur2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="11"/></filter>
+  <filter id="blur3" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
+  <filter id="blur4" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+  <filter id="blur5" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2"/></filter>
+  <filter id="blur6" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1"/></filter>
+    <filter id="coreBlur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="26"/></filter>
+    <filter id="coreBlurTight" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="6"/></filter>
+  </defs>
+
+  <rect width="1024" height="1024" fill="url(#bgGrd)"/>
+
+  <!-- vanishing-point halo -->
+  <circle cx="512" cy="512" r="190" fill="url(#coreHalo)" filter="url(#coreBlur)"/>
+
+  
+  <path d="M 40 512 A 472 472 0 0 1 984 512" fill="none" stroke="url(#purpleGrd)"
+        stroke-width="5" stroke-linecap="round" opacity="0.3"
+        filter="url(#blur0)"/>
+  <path d="M 984 512 A 472 472 0 0 1 40 512" fill="none" stroke="url(#cyanGrd)"
+        stroke-width="5" stroke-linecap="round" opacity="0.3"
+        filter="url(#blur0)"/>
+  <path d="M 92 512 A 420 420 0 0 1 932 512" fill="none" stroke="url(#purpleGrd)"
+        stroke-width="6" stroke-linecap="round" opacity="0.4"
+        filter="url(#blur1)"/>
+  <path d="M 932 512 A 420 420 0 0 1 92 512" fill="none" stroke="url(#cyanGrd)"
+        stroke-width="6" stroke-linecap="round" opacity="0.4"
+        filter="url(#blur1)"/>
+  <path d="M 152 512 A 360 360 0 0 1 872 512" fill="none" stroke="url(#purpleGrd)"
+        stroke-width="7" stroke-linecap="round" opacity="0.5"
+        filter="url(#blur2)"/>
+  <path d="M 872 512 A 360 360 0 0 1 152 512" fill="none" stroke="url(#cyanGrd)"
+        stroke-width="7" stroke-linecap="round" opacity="0.5"
+        filter="url(#blur2)"/>
+  <path d="M 216 512 A 296 296 0 0 1 808 512" fill="none" stroke="url(#purpleGrd)"
+        stroke-width="8" stroke-linecap="round" opacity="0.62"
+        filter="url(#blur3)"/>
+  <path d="M 808 512 A 296 296 0 0 1 216 512" fill="none" stroke="url(#cyanGrd)"
+        stroke-width="8" stroke-linecap="round" opacity="0.62"
+        filter="url(#blur3)"/>
+  <path d="M 284 512 A 228 228 0 0 1 740 512" fill="none" stroke="url(#purpleGrd)"
+        stroke-width="10" stroke-linecap="round" opacity="0.78"
+        filter="url(#blur4)"/>
+  <path d="M 740 512 A 228 228 0 0 1 284 512" fill="none" stroke="url(#cyanGrd)"
+        stroke-width="10" stroke-linecap="round" opacity="0.78"
+        filter="url(#blur4)"/>
+  <path d="M 356 512 A 156 156 0 0 1 668 512" fill="none" stroke="url(#purpleGrd)"
+        stroke-width="12" stroke-linecap="round" opacity="0.92"
+        filter="url(#blur5)"/>
+  <path d="M 668 512 A 156 156 0 0 1 356 512" fill="none" stroke="url(#cyanGrd)"
+        stroke-width="12" stroke-linecap="round" opacity="0.92"
+        filter="url(#blur5)"/>
+  <path d="M 428 512 A 84 84 0 0 1 596 512" fill="none" stroke="url(#purpleGrd)"
+        stroke-width="14" stroke-linecap="round" opacity="1"
+        filter="url(#blur6)"/>
+  <path d="M 596 512 A 84 84 0 0 1 428 512" fill="none" stroke="url(#cyanGrd)"
+        stroke-width="14" stroke-linecap="round" opacity="1"
+        filter="url(#blur6)"/>
+
+  <!-- bright core: the light at the end of the tunnel -->
+  <circle cx="512" cy="512" r="68" fill="url(#coreGrd)" filter="url(#coreBlurTight)"/>
+  <circle cx="512" cy="512" r="34" fill="#ffffff"/>
+</svg>

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="432" height="432" viewBox="0 0 432 432">
+  <defs>
+    <linearGradient id="purpleGrd" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7a3ce0"/><stop offset="50%" stop-color="#a75bff"/><stop offset="100%" stop-color="#7a3ce0"/>
+    </linearGradient>
+    <linearGradient id="cyanGrd" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1aa8d6"/><stop offset="50%" stop-color="#3fe0ff"/><stop offset="100%" stop-color="#1aa8d6"/>
+    </linearGradient>
+    <radialGradient id="coreGrd" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/><stop offset="35%" stop-color="#d7e8ff"/><stop offset="100%" stop-color="#6f9cff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="coreHalo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#bcd4ff" stop-opacity="0.9"/><stop offset="100%" stop-color="#5b7fff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur0" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="8.456949152542373"/></filter>
+  <filter id="blur1" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="6.150508474576271"/></filter>
+  <filter id="blur2" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="4.228474576271187"/></filter>
+  <filter id="blur3" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="2.6908474576271186"/></filter>
+  <filter id="blur4" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="1.5376271186440678"/></filter>
+  <filter id="blur5" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="0.7688135593220339"/></filter>
+  <filter id="blur6" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="0.4"/></filter>
+    <filter id="coreBlur" x="-120%" y="-120%" width="340%" height="340%"><feGaussianBlur stdDeviation="7.138983050847457"/></filter>
+    <filter id="coreBlurTight" x="-120%" y="-120%" width="340%" height="340%"><feGaussianBlur stdDeviation="1.647457627118644"/></filter>
+  </defs>
+  <circle cx="216" cy="216" r="52.16949152542373" fill="url(#coreHalo)" filter="url(#coreBlur)"/>
+  
+  <path d="M 86.4 216 A 129.6 129.6 0 0 1 345.6 216" fill="none" stroke="url(#purpleGrd)" stroke-width="1.9220338983050844" stroke-linecap="round" opacity="0.3" filter="url(#blur0)"/>
+  <path d="M 345.6 216 A 129.6 129.6 0 0 1 86.4 216" fill="none" stroke="url(#cyanGrd)" stroke-width="1.9220338983050844" stroke-linecap="round" opacity="0.3" filter="url(#blur0)"/>
+  <path d="M 100.67796610169492 216 A 115.32203389830508 115.32203389830508 0 0 1 331.3220338983051 216" fill="none" stroke="url(#purpleGrd)" stroke-width="2.3064406779661017" stroke-linecap="round" opacity="0.4" filter="url(#blur1)"/>
+  <path d="M 331.3220338983051 216 A 115.32203389830508 115.32203389830508 0 0 1 100.67796610169492 216" fill="none" stroke="url(#cyanGrd)" stroke-width="2.3064406779661017" stroke-linecap="round" opacity="0.4" filter="url(#blur1)"/>
+  <path d="M 117.15254237288136 216 A 98.84745762711864 98.84745762711864 0 0 1 314.8474576271186 216" fill="none" stroke="url(#purpleGrd)" stroke-width="2.6908474576271186" stroke-linecap="round" opacity="0.5" filter="url(#blur2)"/>
+  <path d="M 314.8474576271186 216 A 98.84745762711864 98.84745762711864 0 0 1 117.15254237288136 216" fill="none" stroke="url(#cyanGrd)" stroke-width="2.6908474576271186" stroke-linecap="round" opacity="0.5" filter="url(#blur2)"/>
+  <path d="M 134.72542372881355 216 A 81.27457627118645 81.27457627118645 0 0 1 297.27457627118645 216" fill="none" stroke="url(#purpleGrd)" stroke-width="3.0752542372881355" stroke-linecap="round" opacity="0.62" filter="url(#blur3)"/>
+  <path d="M 297.27457627118645 216 A 81.27457627118645 81.27457627118645 0 0 1 134.72542372881355 216" fill="none" stroke="url(#cyanGrd)" stroke-width="3.0752542372881355" stroke-linecap="round" opacity="0.62" filter="url(#blur3)"/>
+  <path d="M 153.3966101694915 216 A 62.603389830508476 62.603389830508476 0 0 1 278.6033898305085 216" fill="none" stroke="url(#purpleGrd)" stroke-width="3.844067796610169" stroke-linecap="round" opacity="0.78" filter="url(#blur4)"/>
+  <path d="M 278.6033898305085 216 A 62.603389830508476 62.603389830508476 0 0 1 153.3966101694915 216" fill="none" stroke="url(#cyanGrd)" stroke-width="3.844067796610169" stroke-linecap="round" opacity="0.78" filter="url(#blur4)"/>
+  <path d="M 173.16610169491526 216 A 42.833898305084745 42.833898305084745 0 0 1 258.83389830508474 216" fill="none" stroke="url(#purpleGrd)" stroke-width="4.6128813559322035" stroke-linecap="round" opacity="0.92" filter="url(#blur5)"/>
+  <path d="M 258.83389830508474 216 A 42.833898305084745 42.833898305084745 0 0 1 173.16610169491526 216" fill="none" stroke="url(#cyanGrd)" stroke-width="4.6128813559322035" stroke-linecap="round" opacity="0.92" filter="url(#blur5)"/>
+  <path d="M 192.93559322033897 216 A 23.064406779661017 23.064406779661017 0 0 1 239.06440677966103 216" fill="none" stroke="url(#purpleGrd)" stroke-width="5.381694915254237" stroke-linecap="round" opacity="1" filter="url(#blur6)"/>
+  <path d="M 239.06440677966103 216 A 23.064406779661017 23.064406779661017 0 0 1 192.93559322033897 216" fill="none" stroke="url(#cyanGrd)" stroke-width="5.381694915254237" stroke-linecap="round" opacity="1" filter="url(#blur6)"/>
+  <circle cx="216" cy="216" r="18.671186440677968" fill="url(#coreGrd)" filter="url(#coreBlurTight)"/>
+  <circle cx="216" cy="216" r="9.335593220338984" fill="#ffffff"/>
+</svg>
