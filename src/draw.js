@@ -1258,7 +1258,9 @@ function draw() {
 
         // Settings/leaderboard row + shared button-drawing helper
         // (also reused inside the settings panel for the audio toggles)
-        const tBtnY = LAND ? H * 0.71 : H/2 + H*0.225;
+        // Was 0.71 -- nudged up a bit per feedback, still with plenty of clearance
+        // from TAP TO START above and the daily-missions block below.
+        const tBtnY = LAND ? H * 0.665 : H/2 + H*0.225;
         ctx.font = `${FS*0.022}px 'Courier New',monospace`;
         const drawBtn = (bCx, bCy, label, active, blue) => {
             const m  = ctx.measureText(label);
