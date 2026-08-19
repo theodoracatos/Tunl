@@ -26,7 +26,7 @@ function titleScreen() {
     levelIntroT = 0;
     initAmbParts();
     const _dt = new Date();
-    seedWavePhase(_dt.getUTCFullYear() * 10000 + (_dt.getUTCMonth() + 1) * 100 + _dt.getUTCDate());
+    seedDailyVariety(_dt.getUTCFullYear() * 10000 + (_dt.getUTCMonth() + 1) * 100 + _dt.getUTCDate());
     refreshWave();
     _startTitleMusic();
 }
@@ -77,7 +77,7 @@ function startPlay() {
     const _d = new Date();
     const _dayInt = _d.getUTCFullYear() * 10000 + (_d.getUTCMonth() + 1) * 100 + _d.getUTCDate();
     seedRng(_dayInt);
-    seedWavePhase(_dayInt);
+    seedDailyVariety(_dayInt);
     refreshWave();
     _startBgMusic();
     sfxEngineSpoolUp();

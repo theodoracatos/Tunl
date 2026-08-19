@@ -8,13 +8,38 @@ let _prog, _prog2, _halfGap, _wA1, _wA2, _wF1, _wF2;
 // frequency stay exactly as tuned - so every day's corridor is a genuinely
 // different shape without touching the hand-tuned difficulty feel.
 let _wavePhase1 = 0, _wavePhase2 = 0;
-function seedWavePhase(dayInt) {
+// Small per-day multipliers on top of that same phase: +/-8% on wave amplitude
+// and (independently) +/-8% on frequency, so a day's corridor isn't just the
+// same curve shifted in time - it can be a bit wider/lazier or tighter/wigglier
+// too. Kept tight on purpose: centerAt() already clamps the wave to stay inside
+// _halfGap regardless of amplitude, but a big swing would still make the *feel*
+// of a day wildly inconsistent with the hand-tuned baseline, which is the thing
+// CLAUDE.md says not to touch.
+let _waveJitterA = 1, _waveJitterF = 1;
+// Which of DAY_ARCHETYPES (below) applies today - nudges obstacle/coin
+// spacing and chicane odds, all within their existing tuned ranges (see
+// stalSpacing/coinSpacing/mineSpacing below and maintainStalactites in
+// systems.js).
+let _dayArchetype = 0;
+function seedDailyVariety(dayInt) {
+    // Same hash chain as before (phase1/phase2), just kept going for the extra
+    // draws below - still fully independent of the rng() stream used for
+    // obstacle placement, so none of this shifts stalactite/coin/mine layout.
     let h = Math.imul(dayInt ^ 0x9e3779b9, 0x45d9f3b) >>> 0;
     h = Math.imul(h ^ (h >>> 16), 0x45d9f3b) >>> 0;
     h = (h ^ (h >>> 16)) >>> 0;
     _wavePhase1 = (h % 6283) / 1000;
     h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0;
     _wavePhase2 = (h % 6283) / 1000;
+    const draw = () => {
+        h = Math.imul(h ^ (h >>> 15), 1 | h);
+        h = (h + Math.imul(h ^ (h >>> 7), 61 | h)) ^ h;
+        h = (h ^ (h >>> 14)) >>> 0;
+        return h / 4294967296;
+    };
+    _waveJitterA = 1 + (draw() * 2 - 1) * 0.08;
+    _waveJitterF = 1 + (draw() * 2 - 1) * 0.08;
+    _dayArchetype = Math.floor(draw() * DAY_ARCHETYPES.length);
 }
 
 function refreshWave() {
@@ -24,10 +49,10 @@ function refreshWave() {
     // Wave amplitude/frequency keep growing with _prog2 (capped at 2x to stay navigable)
     const wMult  = 1 + 0.12 * Math.min(_prog2, 2);            // up to +24% amplitude
     const wFMult = 1 + 0.14 * Math.min(_prog2, 2);            // up to +28% frequency = tighter bends
-    _wA1     = lerp(H * 0.07,  H * 0.12,  _prog) * wMult;
-    _wA2     = lerp(H * 0.035, H * 0.055, _prog) * wMult;
-    _wF1     = lerp(0.0025,    0.0048,    _prog) * wFMult;
-    _wF2     = lerp(0.0060,    0.0115,    _prog) * wFMult;
+    _wA1     = lerp(H * 0.07,  H * 0.12,  _prog) * wMult * _waveJitterA;
+    _wA2     = lerp(H * 0.035, H * 0.055, _prog) * wMult * _waveJitterA;
+    _wF1     = lerp(0.0025,    0.0048,    _prog) * wFMult * _waveJitterF;
+    _wF2     = lerp(0.0060,    0.0115,    _prog) * wFMult * _waveJitterF;
 }
 
 function scrollSpd() {
@@ -38,10 +63,21 @@ function scrollSpd() {
     const beyond = Math.max(_prog2 - 1, 0);
     return (base + Math.sqrt(beyond) * 90) * W / 600;
 }
-function stalSpacing() { return Math.max(lerp(lerp(260,  145, _prog),  70,  _prog2), 50); }
+// Nudges stal/coin/mine density and chicane odds per day, on top of the
+// existing _prog/_prog2 curves - see seedDailyVariety. Classic is the
+// no-op baseline; the other three each push one knob further and pull
+// another back so a day reads as a distinct "flavor", not just harder
+// or easier across the board.
+const DAY_ARCHETYPES = [
+    { stal: 1,    coin: 1,    mine: 1,    chic: 1    }, // Classic
+    { stal: 0.85, coin: 1,    mine: 1,    chic: 1.35 }, // Chicane Day
+    { stal: 1,    coin: 1,    mine: 0.75, chic: 1    }, // Mine Gauntlet
+    { stal: 1.15, coin: 0.72, mine: 1.15, chic: 0.8  }, // Coin Rush
+];
+function stalSpacing() { return Math.max(lerp(lerp(260,  145, _prog),  70,  _prog2) * DAY_ARCHETYPES[_dayArchetype].stal, 50); }
 function stalLenFrac() { return Math.min(lerp(lerp(0.46, 0.64, _prog), 0.76, _prog2), 0.80); }
-function coinSpacing() { return Math.max(lerp(lerp(600,  320, _prog), 230,  _prog2), 175); }
-function mineSpacing() { return Math.max(lerp(lerp(900, 340, _prog), 200, _prog2), 200); }
+function coinSpacing() { return Math.max(lerp(lerp(600,  320, _prog), 230,  _prog2) * DAY_ARCHETYPES[_dayArchetype].coin, 175); }
+function mineSpacing() { return Math.max(lerp(lerp(900, 340, _prog), 200, _prog2) * DAY_ARCHETYPES[_dayArchetype].mine, 200); }
 
 // -- Daily world name -------------------------------------------------
 const WORLD_ADJ  = ['Crimson','Frozen','Ancient','Dark','Burning','Hollow','Scarlet','Azure',
@@ -125,10 +161,10 @@ function boundsBase(wx) {
     const p2     = Math.max(wx - 14000, 0) / 40000;
     const wMult  = 1 + 0.12 * Math.min(p2, 2);
     const wFMult = 1 + 0.14 * Math.min(p2, 2);
-    const wA1 = lerp(H * 0.07,  H * 0.12,  p) * wMult;
-    const wA2 = lerp(H * 0.035, H * 0.055, p) * wMult;
-    const wF1 = lerp(0.0025,    0.0048,    p) * wFMult;
-    const wF2 = lerp(0.0060,    0.0115,    p) * wFMult;
+    const wA1 = lerp(H * 0.07,  H * 0.12,  p) * wMult * _waveJitterA;
+    const wA2 = lerp(H * 0.035, H * 0.055, p) * wMult * _waveJitterA;
+    const wF1 = lerp(0.0025,    0.0048,    p) * wFMult * _waveJitterF;
+    const wF2 = lerp(0.0060,    0.0115,    p) * wFMult * _waveJitterF;
     const hg  = halfGapAt(wx);
     const raw = H / 2 + wA1 * Math.sin(wx * wF1 + _wavePhase1) + wA2 * Math.sin(wx * wF2 + 1.57 + _wavePhase2);
     const cy  = Math.max(hg + 8, Math.min(H - hg - 8, raw));

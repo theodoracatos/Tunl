@@ -9,7 +9,7 @@ function makeStal(wx, isTop) {
 function maintainStalactites() {
     while (nextStalWx < scrollX + W + 600) {
         const spacing = stalSpacing() * (0.65 + rng() * 0.70);
-        if (_prog > 0.40 && rng() < Math.min(lerp(0.24, 0.42, _prog2), 0.62)) {
+        if (_prog > 0.40 && rng() < Math.min(lerp(0.24, 0.42, _prog2) * DAY_ARCHETYPES[_dayArchetype].chic, 0.62)) {
             stalactites.push(makeStal(nextStalWx,       true));
             stalactites.push(makeStal(nextStalWx + 65, false));
             const coinWx = nextStalWx - 85;
