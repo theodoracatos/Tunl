@@ -82,10 +82,26 @@ const LEVEL_INTRO_FADE = 0.5; // seconds of that spent fading out at the end
 // *coins collected* -- without this a single long grind session could bank enough shards
 // to unlock everything at once, which defeats the point of the shard system (see
 // lifecycle.js day-boundary reset + update.js die() banking). Total cost of every tier is
-// 60+220+550+1200+3000+8000 = 13030, so at this cap a player who returns daily reaches
-// NOVA in ~37 days -- a starting estimate like the tier costs themselves, tune after
-// playtesting.
-const DAILY_SHARD_CAP = 350;
+// 60+220+550+1200+3000+8000 = 13030.
+//
+// Raised from the original 350 after simulating real coin income against coinSpacing()
+// at 3 skill tiers (~100/300/1000 score, ~65/75/85% coin-collection rate): at 350, a
+// "good" run (~score 300, ~355 shards/day uncapped over 10 runs) and a "great" run
+// (~score 1000, ~1760 shards/day uncapped) both just hit the cap and banked the
+// *identical* 350/day -- skill above "decent" stopped affecting unlock speed at all.
+//
+// Deliberately set at ~10 runs/day worth of a "great" player's income (not lower):
+// user wants a genuinely excellent player to *need* something like 10 runs in one day
+// to hit their daily max, as a real daily-engagement hook, not a cap they blow past in
+// 3-4 runs. A "good" run's ~355/day natural rate stays comfortably under this cap
+// either way (~37 days to unlock everything, unaffected by where exactly the cap
+// sits), while a maxed-out "great" player now clears the full 13030-shard roster in
+// roughly a week of sustained daily play -- fast enough to feel like real, satisfying
+// progress for the most engaged players, without a single day ever buying it outright
+// (1800 << 13030). A "bad" run (~score 100, ~82 shards/day) never sniffs any cap in
+// this range, so this tuning doesn't touch that end of the curve -- see the per-tier
+// cost comment on SKINS below if that slow end ever needs its own pass.
+const DAILY_SHARD_CAP = 1800;
 
 // ── Daily missions ────────────────────────────────────────────────────
 // Three short daily challenges, picked deterministically from the calendar day (see
