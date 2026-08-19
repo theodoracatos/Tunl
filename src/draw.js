@@ -1131,23 +1131,65 @@ function draw() {
             ctx.lineTo(holeCX + uHalfW, uTopY);
         };
 
+        // Ring rendering matches branding/wordmark.svg's "uclip" ring group exactly
+        // (same radii ratios, same purple/cyan split, same core) so the in-game logo,
+        // the exported wordmark, and the app icon are finally the same drawing instead
+        // of the icon/wordmark having a crisper portal than what actually ships on
+        // screen. Top half purple, bottom half cyan, largest/blurriest ring first so
+        // each smaller one shows as a distinct rim -- reads as a corridor receding
+        // into the U, same motif as the tunnel walls themselves.
         ctx.save();
         buildUPath();
         ctx.clip();
-        ctx.shadowColor = `rgba(100,150,255,${a * 0.70})`;
-        ctx.shadowBlur  = logoPulse * 1.2;
-        const rings = 4;
-        for (let i = rings; i >= 0; i--) {
-            const t = i / rings; // 1 = outer rim, 0 = vanishing point
-            const r = holeR * 1.3 * (0.15 + 0.85 * t);
-            const grd = ctx.createRadialGradient(holeCX, logoY, 0, holeCX, logoY, r);
-            grd.addColorStop(0, `rgba(6,8,20,${a})`);
-            grd.addColorStop(1, `rgba(${40+30*t},${60+40*t},${140+60*t},${a * (0.35 + 0.5*t)})`);
-            ctx.fillStyle = grd;
-            ctx.beginPath();
-            ctx.arc(holeCX, logoY, r, 0, Math.PI * 2);
-            ctx.fill();
+
+        const bgGrd = ctx.createRadialGradient(holeCX, logoY, 0, holeCX, logoY, uHalfW * 1.6);
+        bgGrd.addColorStop(0,   `rgba(20,28,68,${a})`);
+        bgGrd.addColorStop(0.6, `rgba(8,11,34,${a})`);
+        bgGrd.addColorStop(1,   `rgba(4,4,14,${a})`);
+        ctx.fillStyle = bgGrd;
+        ctx.fillRect(holeCX - uHalfW * 2, uTopY - holeR, uHalfW * 4, (uDipY - uTopY) + holeR * 2);
+
+        const ringR    = [1.55, 1.10, 0.675].map(f => f * uHalfW);
+        const ringW    = [holeR * 0.15, holeR * 0.15, holeR * 0.13];
+        const ringOpac = [0.85, 1, 1];
+        // Blur scaled proportionally to each ring's own radius (matching
+        // branding/wordmark.svg's blur/radius ratios, ~5%/3.5%/2.5%) rather than a
+        // fixed pulse-based value -- an absolute blur that looked right on the 1024px
+        // SVG export was wildly oversized against this ~35px in-game ring, smearing
+        // all three bands into one soft blob instead of distinct rims.
+        const ringBlur = ringR.map((r, i) => r * [0.05, 0.035, 0.025][i] + logoPulse * 0.03);
+        ctx.lineCap = 'round';
+        for (let i = 0; i < ringR.length; i++) {
+            const r = ringR[i];
+            const purpleGrd = ctx.createLinearGradient(holeCX - r, 0, holeCX + r, 0);
+            purpleGrd.addColorStop(0, '#7a3ce0'); purpleGrd.addColorStop(0.5, '#a75bff'); purpleGrd.addColorStop(1, '#7a3ce0');
+            const cyanGrd = ctx.createLinearGradient(holeCX - r, 0, holeCX + r, 0);
+            cyanGrd.addColorStop(0, '#1aa8d6'); cyanGrd.addColorStop(0.5, '#3fe0ff'); cyanGrd.addColorStop(1, '#1aa8d6');
+            ctx.lineWidth   = ringW[i];
+            ctx.globalAlpha = a * ringOpac[i];
+            ctx.shadowColor = 'rgba(120,100,255,0.7)';
+            ctx.shadowBlur  = ringBlur[i];
+            ctx.strokeStyle = purpleGrd;
+            ctx.beginPath(); ctx.arc(holeCX, logoY, r, Math.PI, Math.PI * 2); ctx.stroke();
+            ctx.strokeStyle = cyanGrd;
+            ctx.beginPath(); ctx.arc(holeCX, logoY, r, 0, Math.PI); ctx.stroke();
         }
+        ctx.globalAlpha = a;
+        ctx.shadowBlur  = 0;
+
+        // Bright core -- the light at the end of the tunnel, same two-circle
+        // treatment (soft halo + solid center) as icon-mark.svg/wordmark.svg.
+        const coreR    = 0.325 * uHalfW;
+        const coreDotR = 0.15  * uHalfW;
+        const coreGrd  = ctx.createRadialGradient(holeCX, logoY, 0, holeCX, logoY, coreR);
+        coreGrd.addColorStop(0,   '#ffffff');
+        coreGrd.addColorStop(0.4, '#d7e8ff');
+        coreGrd.addColorStop(1,   'rgba(111,156,255,0)');
+        ctx.fillStyle = coreGrd;
+        ctx.beginPath(); ctx.arc(holeCX, logoY, coreR, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = `rgba(255,255,255,${a})`;
+        ctx.beginPath(); ctx.arc(holeCX, logoY, coreDotR, 0, Math.PI * 2); ctx.fill();
+
         ctx.restore();
 
         ctx.save();
