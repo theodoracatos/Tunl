@@ -883,7 +883,10 @@ function draw() {
         ctx.fillStyle   = 'rgba(170,195,255,0.90)';
         ctx.shadowColor = 'rgba(0,0,0,0.85)';
         ctx.shadowBlur  = 4;
-        ctx.fillText(`${T.best}  ${best}`, W/2, H*0.145);
+        // 0.165 not 0.145: the UI_H font-scale bump (c7e2f90) grew the score digits above
+        // ~17% without this offset following, so on real device sizes (e.g. 956x440pt) the
+        // two lines nearly touched. Shifted down to restore the pre-bump gap.
+        ctx.fillText(`${T.best}  ${best}`, W/2, H*0.165);
         ctx.shadowBlur  = 0;
     }
 
