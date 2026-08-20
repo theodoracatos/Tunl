@@ -78,6 +78,29 @@ function stalSpacing() { return Math.max(lerp(lerp(260,  145, _prog),  70,  _pro
 function stalLenFrac() { return Math.min(lerp(lerp(0.46, 0.64, _prog), 0.76, _prog2), 0.80); }
 function coinSpacing() { return Math.max(lerp(lerp(600,  320, _prog), 230,  _prog2) * DAY_ARCHETYPES[_dayArchetype].coin, 175); }
 function mineSpacing() { return Math.max(lerp(lerp(900, 340, _prog), 200, _prog2) * DAY_ARCHETYPES[_dayArchetype].mine, 200); }
+// Cannons: rare on purpose, so the spacing floor stays far above every other
+// obstacle's (stalSpacing/coinSpacing/mineSpacing all bottom out well under
+// 1000) even at max difficulty -- this should read as an occasional set-piece
+// ambush, not a recurring hazard type.
+function cannonSpacing() { return Math.max(lerp(lerp(4200, 2400, _prog), 1500, _prog2), 1200); }
+
+// Milestone spacing (25/50/100/etc. step added to milestoneNext each time one fires --
+// see update.js). Widens in stages so milestones stay a frequent early-game reward but
+// thin out for strong players who blow past 200-1000 in well under a minute: at the old
+// flat +50 step, a great run hit a milestone every ~50 points all the way up, and every
+// one from 200 on showed the same maxed-out "!!!" (triggerMilestone, input.js) -- same
+// popup, over and over, reading as noise rather than a reward. Also uncapped past the
+// last band (keeps growing by the same +1000 forever) rather than settling into a fixed
+// step, matching this file's existing philosophy that nothing here should feel like
+// flat-pace endurance once a run goes long (see CLAUDE.md's scrollSpd() doc).
+function milestoneStep(n) {
+    if (n < 100)   return 25;
+    if (n < 300)   return 50;
+    if (n < 1000)  return 100;
+    if (n < 3000)  return 250;
+    if (n < 10000) return 500;
+    return 1000;
+}
 
 // -- Daily world name -------------------------------------------------
 const WORLD_ADJ  = ['Crimson','Frozen','Ancient','Dark','Burning','Hollow','Scarlet','Azure',

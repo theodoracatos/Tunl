@@ -148,7 +148,10 @@ window.addEventListener('keyup', e => {
 
 function triggerMilestone(n) {
     milestoneFlash = 1.0;
-    milestoneText  = n >= 200 ? `${n}!!!` : n >= 100 ? `${n}!!` : `${n}!`;
+    // Widened milestoneStep() (world.js) already thins these out for strong players;
+    // this adds a 4th tier so a truly deep milestone still reads as a step up rather
+    // than the same maxed-out "!!!" every time from 200 all the way to the top.
+    milestoneText  = n >= 1000 ? `${n}!!!!` : n >= 200 ? `${n}!!!` : n >= 100 ? `${n}!!` : `${n}!`;
     for (let i = 0; i < 28; i++) {
         const a = (i / 28) * Math.PI * 2;
         const v = 120 + Math.random() * 220;

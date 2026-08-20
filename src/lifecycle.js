@@ -20,6 +20,11 @@ function titleScreen() {
     gapBonus = 0; slowTime = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
     bullets = []; bulletAmmo = 0; bulletFireTimer = 0;
     mines = []; nextMineWx = 99999;
+    cannons = []; nextCannonWx = 99999; cannonShots = [];
+    // Coins never spawn on the title screen (nextCoinWx = 99999 above), so these are
+    // never actually consulted here -- just kept defined to avoid stray undefineds.
+    poisonClock = 0; nextPoisonAt = POISON_INTERVAL_SEC;
+    bombClock   = 0; nextBombAt   = BOMB_INTERVAL_SEC;
     prevRunScore = 0; lastRunScore = 0; milestoneFlash = 0; milestoneText = '';
     runCoins = 0; runNearMisses = 0; runMaxCombo = 0; skinUnlockIdx = -1;
     runCoinsByType = { gold: 0, blue: 0, red: 0, green: 0, orange: 0 };
@@ -44,6 +49,9 @@ function startPlay() {
     gapBonus = 0; slowTime = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
     bullets = []; bulletAmmo = 0; bulletFireTimer = 0;
     mines = []; nextMineWx = 1800;
+    // Cannons start much later than mines (score ~100) and are spaced far apart -- a
+    // rare hazard, not a constant one (see world.js cannonSpacing()).
+    cannons = []; nextCannonWx = 6000; cannonShots = [];
     bonusScore = 0; milestoneNext = 25; nearMissTimer = 0; coinCombo = 0; coinComboTimer = 0;
     runCoins = 0; runNearMisses = 0; runMaxCombo = 0; skinUnlockIdx = -1;
     skinMasteryUpIdx = -1;
@@ -78,6 +86,12 @@ function startPlay() {
     const _dayInt = _d.getUTCFullYear() * 10000 + (_d.getUTCMonth() + 1) * 100 + _d.getUTCDate();
     seedRng(_dayInt);
     seedDailyVariety(_dayInt);
+    // Poison/bomb clocks (constants.js POISON_INTERVAL_SEC doc): jittered +/-30% like
+    // every other next*Wx spacing in this file, and drawn from the same seeded rng()
+    // so a given calendar day plays out identically for every player, same as the
+    // tunnel shape and every other obstacle's placement.
+    poisonClock = 0; nextPoisonAt = POISON_INTERVAL_SEC * (0.7 + rng() * 0.6);
+    bombClock   = 0; nextBombAt   = BOMB_INTERVAL_SEC   * (0.7 + rng() * 0.6);
     refreshWave();
     _startBgMusic();
     sfxEngineSpoolUp();

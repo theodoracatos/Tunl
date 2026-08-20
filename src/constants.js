@@ -74,6 +74,64 @@ function rng() {
 
 const MINE_R = W * 0.011;
 
+// ── Cannons ───────────────────────────────────────────────────────────
+// Rare wall-mounted turret hazard: sits flush against a wall like a
+// stalactite root, fires exactly one diagonal shot as the player closes in,
+// then goes inert for the rest of the run. CANNON_FIRE_LEAD is the
+// world-px lead the player has when it fires (see systems.js
+// updateCannonShots); CANNON_SHOT_TRAVEL is how long the shot takes to
+// close that same distance, so together they fix the shot's closing speed.
+const CANNON_R           = W * 0.020;
+const CANNON_SHOT_R      = W * 0.013;
+const CANNON_FIRE_LEAD   = W * 0.62;
+const CANNON_SHOT_TRAVEL = 1.15;
+
+// Bomb coin (purple): blast radius for the "destroy nearby obstacles" pickup effect --
+// see systems.js triggerBombExplosion(). "Small" on purpose -- clears immediate danger,
+// not the whole visible screen.
+const BOMB_RADIUS = W * 0.30;
+
+// ── Poison / bomb rarity ─────────────────────────────────────────────
+// Both are driven by a real-time clock (state.js poisonClock/bombClock, incremented
+// every play-frame in update.js), not a per-candidate percentage. An earlier version
+// used `rate * coinSpacing()/scrollSpd()` per coin *candidate* -- that correctly held
+// the candidate rate constant, but silently assumed every candidate becomes a real
+// coin. It doesn't: coinBlockedByStal() (systems.js) rejects candidates that land too
+// close to a stalactite, and a live replay of a real daily seed to score 1000 showed a
+// ~90% rejection rate, varying with difficulty/chicane density/day archetype -- so the
+// *actual* cadence players saw was roughly 10x rarer than intended and drifted with
+// conditions no formula here could see. A real-time clock sidesteps the whole problem:
+// once it passes its (jittered) target interval, the next coin that actually clears
+// placement becomes poison/bomb (see makeCoin() in systems.js) -- immune to rejection
+// rate, day archetype, and screen width by construction, not by calibration. Bomb is
+// deliberately a bit more frequent than poison -- a reward landing at least as often as
+// a punishment reads more generous.
+// 55s/45s (the original guess) turned out to badly outlast how long runs actually
+// last: a live replay of today's real seed found a "good" run (score ~300, the
+// DAILY_SHARD_CAP-doc benchmark) takes only ~20-36 real seconds end to end on
+// realistic phone widths (844-1512px), and even a "great" run (score ~1000) is only
+// ~54-97s -- both far shorter than the ~136s a W=600 reference calc had implied.
+// 55/45s meant many/most runs, especially on wider screens where scroll speed scales
+// up, saw literally zero of either. Retuned so a great run sees several and even a
+// good run has real odds of at least one.
+const POISON_INTERVAL_SEC = 20; // avg real seconds between poison coins
+const BOMB_INTERVAL_SEC   = 16; // avg real seconds between bomb coins
+
+// Poison's runCoins penalty (this run's pending shard bank -- see update.js die()) is a
+// flat amount, not a percentage of the pool: a %-based tax compounds multiplicatively
+// over repeated hits (survivor fraction ~0.8^N for a 20% tax hit N times), which can
+// wipe out a long marathon run's entire shard payout. A flat amount just subtracts, so
+// total damage over a run is bounded and linear (hits x this amount) instead of
+// exponential. Scales modestly with difficulty since coins are "worth more" (rarer,
+// harder-earned) late-game -- see POISON_LOSS_MIN/MAX lerp in checkCoinCollection.
+// Sized against POISON_INTERVAL_SEC above: a "great" run (score ~1000) sees roughly
+// 1-4 poison hits at that cadence (measured against a real daily seed), so this stays
+// small enough that total damage across a whole run is a noticeable but not crushing
+// bite out of the ~50-100 coins such a run typically banks -- not the old 4-10 range,
+// which was sized for the original ~55s interval and would over-tax at this frequency.
+const POISON_LOSS_MIN = 3;
+const POISON_LOSS_MAX = 6;
+
 // Run-start "LEVEL n: Name" banner timing
 const LEVEL_INTRO_DUR  = 1.6; // total seconds visible
 const LEVEL_INTRO_FADE = 0.5; // seconds of that spent fading out at the end

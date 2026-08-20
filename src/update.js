@@ -104,7 +104,7 @@ function update(dt) {
         scrollX += scrollSpd() * lf * lf * dt;
         refreshWave();
         score = Math.floor(scrollX / 60) + bonusScore;
-        maintainStalactites(); maintainCoins(); maintainMines();
+        maintainStalactites(); maintainCoins(); maintainMines(); maintainCannons();
         return;
     }
 
@@ -127,10 +127,16 @@ function update(dt) {
     refreshWave();
     score = Math.floor(scrollX / 60) + bonusScore;
 
+    // Poison/bomb clocks: real elapsed play time, not tied to coin density/rejection
+    // rate/day archetype/screen width -- see constants.js POISON_INTERVAL_SEC doc and
+    // makeCoin() in systems.js for where these get consumed.
+    poisonClock += dt;
+    bombClock   += dt;
+
     // Milestone check
     if (score >= milestoneNext) {
         triggerMilestone(milestoneNext);
-        milestoneNext += milestoneNext < 100 ? 25 : 50;
+        milestoneNext += milestoneStep(milestoneNext);
     }
 
     // Near-miss bonus (wall proximity)
@@ -224,6 +230,7 @@ function update(dt) {
     maintainStalactites();
     maintainCoins();
     maintainMines();
+    maintainCannons();
 
     // Fade coins that are blocked by a stalactite or have scrolled off the left edge
     for (const arr of [coins, chicaneCoins]) for (const coin of arr) {
@@ -231,6 +238,13 @@ function update(dt) {
         const csx = coin.wx - scrollX;
         if (csx < 0) {
             coin.fade = Math.max(0, coin.fade - dt * 8);
+        }
+        // Poison coins visibly ooze while they sit in the corridor -- a continuous
+        // cue (not just color/shape, see draw.js) that this one is actively
+        // dangerous, not a static decoration like every legitimate coin.
+        if (coin.type === 'poison' && csx > -40 && csx < W + 40 && Math.random() < dt * 2.5) {
+            parts.push({ x: csx, y: coin.y + COIN_R * 0.6, vx: (Math.random()-0.5)*8, vy: 30+Math.random()*35,
+                         life: 0.6+Math.random()*0.3, r: 1.0+Math.random()*1.6, h: 95+Math.random()*20 });
         }
     }
 
@@ -270,6 +284,27 @@ function update(dt) {
         }
     }
 
+    // Cannon shot collision (same trade-off hitbox as walls/mines above). Firing +
+    // movement live in updateCannonShots below, called after this so a shot that
+    // fires this frame can't also hit the player on the same frame it spawns.
+    const cannonHitR2 = (cPR + CANNON_SHOT_R) * (cPR + CANNON_SHOT_R);
+    for (let ci = 0; ci < cannonShots.length; ci++) {
+        const s  = cannonShots[ci];
+        const sx = s.wx - scrollX;
+        if (sx < -100 || sx > W + 100) continue;
+        const dx = PX - sx, dy = py - s.y;
+        if (dx*dx + dy*dy < cannonHitR2) {
+            if (die()) return;
+            // Shield absorbed - destroy the shot so it can't immediately re-hit
+            cannonShots.splice(ci, 1);
+            shake += 10;
+            burst(sx, s.y);
+            notifs.push({ x: sx, y: s.y - H*0.06, life: 1.1, text: T.blocked, color: [255, 90, 40] });
+            window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
+            break;
+        }
+    }
+
     // Magnet: pull visible uncollected coins toward the player
     if (magnetTime > 0) {
         const playerWx = scrollX + PX;
@@ -293,6 +328,10 @@ function update(dt) {
 
     // Bullets
     updateBullets(dt);
+
+    // Cannons: trigger any that the player has now closed within range of, and
+    // advance every shot already in flight
+    updateCannonShots(dt);
 
     shake         = Math.max(0, shake         - dt * 30);
     shieldFlash   = Math.max(0, shieldFlash   - dt * 5);

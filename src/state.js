@@ -66,6 +66,10 @@ let _settingsBtnRect = null;
 let _settingsPanelRect = null;
 let _leaderboardBtnRect = null;
 let _challengeBtnRect = null;
+// Bottom Y of the title-screen settings/leaderboard/challenge button cluster, set each
+// draw() call -- the daily-missions block below cascades off this instead of an
+// independent fixed H fraction, so it can't collide when that cluster grows a 2nd row.
+let _btnRowBottom = null;
 let _langBtnRects = [];
 let _removeAdsBtnRect = null;
 let _restoreBtnRect = null;
@@ -78,6 +82,14 @@ let gapBonus;
 let slowTime, shieldCount, shieldFlash, magnetTime;
 let bullets, bulletAmmo, bulletFireTimer;
 let mines, nextMineWx;
+let cannons, nextCannonWx;
+let cannonShots;
+// Poison/bomb: real-time clocks (see constants.js POISON_INTERVAL_SEC doc), not
+// per-coin-candidate probabilities. poisonClock/bombClock accumulate play seconds
+// (update.js); once one passes its jittered next*At target, the next coin that
+// actually clears placement (makeCoin, systems.js) becomes that type.
+let poisonClock, nextPoisonAt;
+let bombClock, nextBombAt;
 let notifs;
 let bonusScore, milestoneNext, nearMissTimer, coinCombo, coinComboTimer;
 let runCoins, runNearMisses, runMaxCombo;

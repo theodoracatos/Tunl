@@ -25,9 +25,9 @@ function getTheme() {
 }
 
 function drawCoinIcon(cx, cy, type, r) {
-    const isBlu = type === 'blue', isRed = type === 'red', isGrn = type === 'green', isOrng = type === 'orange';
-    const bodyClr = isBlu ? '#4dd9ff' : isRed ? '#ff4444' : isGrn ? '#44ff88' : isOrng ? '#ff5500' : '#ffe040';
-    const [gr, gg, gb] = isBlu ? [60,200,255] : isRed ? [255,60,60] : isGrn ? [50,255,120] : isOrng ? [255,85,0] : [255,225,50];
+    const isBlu = type === 'blue', isRed = type === 'red', isGrn = type === 'green', isOrng = type === 'orange', isPsn = type === 'poison', isBmb = type === 'bomb';
+    const bodyClr = isBlu ? '#4dd9ff' : isRed ? '#ff4444' : isGrn ? '#44ff88' : isOrng ? '#ff5500' : isPsn ? '#5fbf00' : isBmb ? '#b833ff' : '#ffe040';
+    const [gr, gg, gb] = isBlu ? [60,200,255] : isRed ? [255,60,60] : isGrn ? [50,255,120] : isOrng ? [255,85,0] : isPsn ? [110,200,20] : isBmb ? [190,50,255] : [255,225,50];
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI*2);
     ctx.fillStyle   = bodyClr;
@@ -412,6 +412,76 @@ function draw() {
         ctx.fill();
     }
 
+    // Cannons - military artillery bolted to the wall: gunmetal carriage + barrel,
+    // dimmed once spent (fired) so a glance tells whether one still has its shot
+    // coming. Fires the exact same projectile sprite as the player's own bullets
+    // (drawProjectile, systems.js) so its shots read as literal enemy fire.
+    for (const c of cannons) {
+        const sx = c.wx - scrollX;
+        if (sx < -60 || sx > W + 60) continue;
+        const b     = boundsAt(c.wx);
+        const wallY = c.isTop ? b.top : b.bot;
+        const dir   = c.isTop ? 1 : -1;
+        const barrelLen = CANNON_R * 2.2, barrelW = CANNON_R * 0.60;
+        ctx.save();
+        ctx.globalAlpha = c.fired ? 0.45 : 1.0;
+        ctx.translate(sx, wallY);
+
+        // Barrel, angled into the corridor toward its firing direction
+        ctx.save();
+        ctx.rotate(dir * 0.55);
+        const barrelGrd = ctx.createLinearGradient(-barrelW/2, 0, barrelW/2, 0);
+        barrelGrd.addColorStop(0,   '#18181a');
+        barrelGrd.addColorStop(0.5, '#5c5c62');
+        barrelGrd.addColorStop(1,   '#18181a');
+        ctx.fillStyle = barrelGrd;
+        ctx.fillRect(-barrelW/2, 0, barrelW, dir * barrelLen);
+        // Muzzle brake at the tip
+        ctx.fillStyle = '#0d0d0f';
+        ctx.fillRect(-barrelW*0.72, dir*barrelLen*0.84, barrelW*1.44, dir*barrelLen*0.16);
+        // Hazard stripe partway down the barrel
+        ctx.fillStyle = 'rgba(255,140,0,0.85)';
+        ctx.fillRect(-barrelW/2, dir*barrelLen*0.52, barrelW, dir*barrelLen*0.09);
+        ctx.restore();
+
+        // Base carriage bolted flush to the wall
+        ctx.beginPath();
+        ctx.moveTo(-CANNON_R*1.1, 0);
+        ctx.lineTo(CANNON_R*1.1, 0);
+        ctx.lineTo(CANNON_R*0.72, dir*CANNON_R*0.85);
+        ctx.lineTo(-CANNON_R*0.72, dir*CANNON_R*0.85);
+        ctx.closePath();
+        const baseGrd = ctx.createLinearGradient(0, 0, 0, dir*CANNON_R*0.85);
+        baseGrd.addColorStop(0, '#4a4a50');
+        baseGrd.addColorStop(1, '#1a1a1c');
+        ctx.fillStyle   = baseGrd;
+        ctx.shadowColor = 'rgba(255,140,0,0.35)';
+        ctx.shadowBlur  = 6;
+        ctx.fill();
+        ctx.shadowBlur  = 0;
+        ctx.strokeStyle = 'rgba(255,160,40,0.45)';
+        ctx.lineWidth   = 1.2;
+        ctx.stroke();
+
+        // Turret pivot housing
+        ctx.beginPath();
+        ctx.arc(0, 0, CANNON_R * 0.44, 0, Math.PI * 2);
+        ctx.fillStyle   = '#333338';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,150,40,0.5)';
+        ctx.lineWidth   = 1;
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    // Cannon shots - fired diagonal projectiles, same sprite as the player's bullets
+    for (const s of cannonShots) {
+        const sx = s.wx - scrollX;
+        if (sx < -20 || sx > W + 20) continue;
+        drawProjectile(sx, s.y, Math.atan2(s.vy, s.vx));
+    }
+
     // Ambient motes - subtle dust drifting through the tunnel
     const [mr, mg, mb] = theme.wallBase;
     for (const p of ambParts) {
@@ -461,11 +531,89 @@ function draw() {
 
         ctx.globalAlpha = coin.fade;
 
-        const isBlu = coin.type === 'blue', isRed = coin.type === 'red', isGrn = coin.type === 'green', isOrng = coin.type === 'orange';
-        const bodyClr = isBlu ? '#4dd9ff' : isRed ? '#ff4444' : isGrn ? '#44ff88' : isOrng ? '#ff5500' : '#ffe040';
-        const [gr, gg, gb] = isBlu ? [60,200,255] : isRed ? [255,60,60] : isGrn ? [50,255,120] : isOrng ? [255,85,0] : [255,225,50];
+        const isBlu = coin.type === 'blue', isRed = coin.type === 'red', isGrn = coin.type === 'green', isOrng = coin.type === 'orange', isPsn = coin.type === 'poison', isBmb = coin.type === 'bomb';
+        const bodyClr = isBlu ? '#4dd9ff' : isRed ? '#ff4444' : isGrn ? '#44ff88' : isOrng ? '#ff5500' : isPsn ? '#5fbf00' : isBmb ? '#b833ff' : '#ffe040';
+        const [gr, gg, gb] = isBlu ? [60,200,255] : isRed ? [255,60,60] : isGrn ? [50,255,120] : isOrng ? [255,85,0] : isPsn ? [110,200,20] : isBmb ? [190,50,255] : [255,225,50];
         const darkR = Math.floor(gr * 0.28), darkG = Math.floor(gg * 0.28), darkB = Math.floor(gb * 0.28);
 
+        if (isPsn) {
+            // Poison gets an entirely different silhouette and motion, not just a
+            // recolored gem -- shape and motion register before color does, and every
+            // legitimate coin already owns "faceted gem, smooth pulse, bright sparkle."
+            // A jagged, unevenly-pulsing spore with visible drips reads as unstable/
+            // dangerous on sight, independent of the X mark or the color itself.
+            const jag = coin.wx * 0.017;
+            const flicker = 0.55 + 0.25 * Math.sin(gtime * 9.5 + jag) + 0.20 * Math.sin(gtime * 3.1 + jag * 2.3);
+            const pr = COIN_R * (0.95 + 0.10 * Math.sin(gtime * 6.3 + jag));
+
+            // Hazy glow that strobes irregularly, unlike the calm single-sine glow
+            // every other coin shares
+            const grdP = ctx.createRadialGradient(sx, coin.y, pr * 0.3, sx, coin.y, pr * 3.2);
+            grdP.addColorStop(0,   `rgba(${gr},${gg},${gb},${0.30 * flicker})`);
+            grdP.addColorStop(0.4, `rgba(${gr},${gg},${gb},${0.10 * flicker})`);
+            grdP.addColorStop(1,   'transparent');
+            ctx.beginPath(); ctx.arc(sx, coin.y, pr * 3.2, 0, Math.PI * 2);
+            ctx.fillStyle = grdP; ctx.fill();
+
+            ctx.save();
+            ctx.translate(sx, coin.y);
+
+            // Irregular 7-point spore silhouette: alternating long/short spikes, each
+            // nudged by a fixed per-point jitter (stable per coin, not reshaping every
+            // frame) so the outline itself reads as organic/unstable rather than a
+            // clean polished facet.
+            const N = 7;
+            ctx.beginPath();
+            for (let i = 0; i <= N; i++) {
+                const ang = (i / N) * Math.PI * 2;
+                const jitter = 0.75 + 0.35 * Math.sin(jag + i * 2.4);
+                const rad = pr * (i % 2 === 0 ? 1.15 : 0.55) * jitter;
+                const x = Math.sin(ang) * rad, y = -Math.cos(ang) * rad;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            const bGrdP = ctx.createRadialGradient(0, -pr * 0.2, 0, 0, 0, pr * 1.3);
+            bGrdP.addColorStop(0,    `rgb(${Math.min(255,gr+60)},${Math.min(255,gg+60)},${Math.min(255,gb+40)})`);
+            bGrdP.addColorStop(0.55, bodyClr);
+            bGrdP.addColorStop(1,    `rgb(${Math.floor(gr*0.22)},${Math.floor(gg*0.30)},${Math.floor(gb*0.15)})`);
+            ctx.fillStyle   = bGrdP;
+            ctx.shadowColor = `rgba(${gr},${gg},${gb},${0.7 * flicker})`;
+            ctx.shadowBlur  = 9;
+            ctx.fill();
+            ctx.shadowBlur  = 0;
+            // Dark rim -- no bright polished facet lines like the treasure coins get,
+            // this one shouldn't look "valuable"
+            ctx.strokeStyle = 'rgba(10,20,0,0.65)';
+            ctx.lineWidth   = Math.max(pr * 0.10, 1);
+            ctx.stroke();
+
+            // Dripping ooze hanging from the underside -- continuous "this is actively
+            // leaking" cue, not just a static icon
+            for (const ddx of [-0.35, 0.4]) {
+                const dripLen = pr * (0.55 + 0.25 * Math.sin(gtime * 4 + jag + ddx * 10));
+                ctx.beginPath();
+                ctx.moveTo(pr * ddx, pr * 0.7);
+                ctx.quadraticCurveTo(pr * ddx * 1.1, pr * 0.7 + dripLen * 0.6, pr * ddx * 0.7, pr * 0.7 + dripLen);
+                ctx.strokeStyle = `rgba(${gr},${gg},${gb},0.55)`;
+                ctx.lineWidth   = Math.max(pr * 0.12, 1);
+                ctx.lineCap     = 'round';
+                ctx.stroke();
+                ctx.lineCap = 'butt';
+            }
+
+            // Warning X on top -- still there as a colorblind-safe "avoid" cue,
+            // independent of the new shape too
+            ctx.beginPath();
+            ctx.moveTo(-pr*0.40, -pr*0.40); ctx.lineTo(pr*0.40, pr*0.40);
+            ctx.moveTo(pr*0.40, -pr*0.40);  ctx.lineTo(-pr*0.40, pr*0.40);
+            ctx.strokeStyle = 'rgba(15,0,20,0.85)';
+            ctx.lineWidth   = Math.max(pr * 0.15, 1.2);
+            ctx.lineCap     = 'round';
+            ctx.stroke();
+            ctx.lineCap = 'butt';
+
+            ctx.restore();
+        } else {
         const pulse = 1 + 0.18 * Math.sin(gtime * 5.5 + coin.wx * 0.013);
         const r  = COIN_R * pulse;
         const dh = r * 1.35, dw = r * 0.90;
@@ -575,7 +723,24 @@ function draw() {
         ctx.fillStyle = 'rgba(255,255,255,0.60)';
         ctx.fill();
 
+        // Bomb spark mark: a small 8-point burst so it reads as "trigger me"
+        if (isBmb) {
+            ctx.beginPath();
+            for (let k = 0; k < 8; k++) {
+                const ang = k * Math.PI / 4;
+                const c = Math.cos(ang), s = Math.sin(ang);
+                ctx.moveTo(c*dw*0.16, s*dh*0.16);
+                ctx.lineTo(c*dw*0.52, s*dh*0.52);
+            }
+            ctx.strokeStyle = 'rgba(255,255,255,0.90)';
+            ctx.lineWidth   = Math.max(r * 0.13, 1.1);
+            ctx.lineCap     = 'round';
+            ctx.stroke();
+            ctx.lineCap = 'butt';
+        }
+
         ctx.restore();
+        }
         ctx.globalAlpha = 1;
     }
 
@@ -868,26 +1033,39 @@ function draw() {
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'top';
 
+    // Score / BEST / next-skin-nudge cascade top to bottom off `hudY`, each line's Y
+    // derived from the actual rendered size of the one above it, not independent fixed
+    // H-fractions. Those used to be tuned by eye against one reference device (956x440pt)
+    // -- fine for that exact aspect ratio, but UI_H only floors font *size* at a 600px
+    // reference, not vertical *position*, so a shorter-but-similarly-wide screen (e.g.
+    // iPhone 12 mini, 812x375pt) got the same big score digits with proportionally less
+    // real H to fit the fixed-fraction gaps in, and the lines nearly touched again. A
+    // cascade clears the line above it by construction on any aspect ratio, and also
+    // means adding a new line here later can't silently collide with one that already
+    // seemed to have a safe fixed offset.
+    const scoreFsz = FS * 0.085;
+    let hudY = H * 0.03;
+
     if (phase === 'play') {
         const nearPB = best > 0 && score >= best - 5;
-        ctx.font        = `bold ${FS*0.085}px 'Courier New',monospace`;
+        ctx.font        = `bold ${scoreFsz}px 'Courier New',monospace`;
         ctx.fillStyle   = nearPB ? 'rgba(255,230,80,0.96)' : 'rgba(215,235,255,0.96)';
         ctx.shadowColor = nearPB ? 'rgba(255,200,40,0.80)' : 'rgba(0,0,0,0.85)';
         ctx.shadowBlur  = nearPB ? 18 : 5;
-        ctx.fillText(score, W/2, H*0.03);
+        ctx.fillText(score, W/2, hudY);
         ctx.shadowBlur  = 0;
     }
+    hudY += scoreFsz * 0.80 + H * 0.02;
 
     if (best > 0 && phase === 'play') {
-        ctx.font        = `${FS*0.025}px 'Courier New',monospace`;
+        const bestFsz = FS * 0.025;
+        ctx.font        = `${bestFsz}px 'Courier New',monospace`;
         ctx.fillStyle   = 'rgba(170,195,255,0.90)';
         ctx.shadowColor = 'rgba(0,0,0,0.85)';
         ctx.shadowBlur  = 4;
-        // 0.165 not 0.145: the UI_H font-scale bump (c7e2f90) grew the score digits above
-        // ~17% without this offset following, so on real device sizes (e.g. 956x440pt) the
-        // two lines nearly touched. Shifted down to restore the pre-bump gap.
-        ctx.fillText(`${T.best}  ${best}`, W/2, H*0.165);
+        ctx.fillText(`${T.best}  ${best}`, W/2, hudY);
         ctx.shadowBlur  = 0;
+        hudY += bestFsz * 0.85 + H * 0.01;
     }
 
     // Next skin nudge - faint pulsing hint when this run's banked-so-far shards would
@@ -902,7 +1080,7 @@ function draw() {
                 const pulse = 0.28 + 0.18 * Math.sin(gtime * 2.8);
                 ctx.font      = `${FS*0.020}px 'Courier New',monospace`;
                 ctx.fillStyle = `rgba(${sr},${sg},${sb},${pulse})`;
-                ctx.fillText(`${remaining} ${T.toSkin} ${nextSkin.name}`, W/2, H*0.185);
+                ctx.fillText(`${remaining} ${T.toSkin} ${nextSkin.name}`, W/2, hudY);
             }
         }
     }
@@ -1254,23 +1432,31 @@ function draw() {
         ctx.fillText(levelLine, titleX, LAND ? H * 0.365 : H/2 - H*0.038);
 
         // TAP TO START -- strong pulsing glow, the main CTA
+        // Landscape Y was 0.54; shifted up by liftLand (their relative gap to each other
+        // is unchanged, only both moved up together) to open up more room between the
+        // button cluster and Daily Missions below, per user request -- Daily Missions,
+        // the logo, and the level line all stay put; the missionY cascade a bit below
+        // (see _btnRowBottom) settles back onto its own fixed position once the button
+        // cluster is short enough not to need it, which this lift achieves.
+        const liftLand  = H * 0.05;
         const tapPulse  = 0.72 + 0.28 * Math.sin(gtime * 2.4);
         const tapGlow   = 14 + 10 * Math.sin(gtime * 2.4);
         ctx.font        = `bold ${FS*0.040}px 'Courier New',monospace`;
         ctx.shadowColor = `rgba(90,140,255,${a * tapPulse * 0.70})`;
         ctx.shadowBlur  = tapGlow * 1.8;
         ctx.fillStyle   = `rgba(190,215,255,${a * tapPulse * 0.35})`;
-        ctx.fillText(T.tap, titleX, LAND ? H * 0.54 : H/2 + H*0.140);
+        ctx.fillText(T.tap, titleX, LAND ? H * 0.54 - liftLand : H/2 + H*0.140);
         ctx.shadowBlur  = tapGlow;
         ctx.fillStyle   = `rgba(210,228,255,${a * (0.80 + 0.20 * tapPulse)})`;
-        ctx.fillText(T.tap, titleX, LAND ? H * 0.54 : H/2 + H*0.140);
+        ctx.fillText(T.tap, titleX, LAND ? H * 0.54 - liftLand : H/2 + H*0.140);
         ctx.shadowBlur  = 0;
 
         // Settings/leaderboard row + shared button-drawing helper
         // (also reused inside the settings panel for the audio toggles)
         // Was 0.71 -- nudged up a bit per feedback, still with plenty of clearance
-        // from TAP TO START above and the daily-missions block below.
-        const tBtnY = LAND ? H * 0.665 : H/2 + H*0.225;
+        // from TAP TO START above and the daily-missions block below. Then lifted by
+        // liftLand along with TAP TO START above (see that comment).
+        const tBtnY = LAND ? H * 0.665 - liftLand : H/2 + H*0.225;
         ctx.font = `${FS*0.022}px 'Courier New',monospace`;
         const drawBtn = (bCx, bCy, label, active, blue) => {
             const m  = ctx.measureText(label);
@@ -1309,23 +1495,72 @@ function draw() {
             const hasGameCenter = !!window.webkit?.messageHandlers?.gameCenter;
             const hasChallenge  = hasGameCenter && !!window._tunlChallengeSupported;
             _challengeBtnRect = null;
+            const rowGap = W * 0.02;
+            const pad    = W * 0.034;
+            const bh     = H * 0.055;
+            // Row is centered on titleX, which sits much closer to the left screen edge
+            // than to the divider on narrow devices (titleX = W*0.23) -- so on a device
+            // that's both narrow (e.g. iPhone 12 mini, 812pt wide landscape) and running
+            // a verbose language (German labels especially, e.g. "HERAUSFORDERUNG"), a
+            // single 3-button row's left edge can land off-screen, clipping text at the
+            // edge. Kept the shrink-to-fit guard below as a safety net, but the real fix
+            // (per user suggestion) is two rows instead of one: Rangliste + Herausforderung
+            // (the two "compete" buttons) on top, Einstellungen alone below -- reads better
+            // than shrunk text even on devices where one row would technically have fit.
+            const rowMarginL = W * 0.02, rowMarginR = W * 0.02;
+            const maxRowW = 2 * Math.max(Math.min(titleX - rowMarginL, dividerX - titleX - rowMarginR), W * 0.10);
+            // Bottom Y of whatever got drawn -- daily missions below cascades off this
+            // instead of an independent fixed H fraction, so it can't collide with a
+            // button row that grew an extra line.
+            _btnRowBottom = settingsBY + bh / 2;
             if (hasChallenge) {
-                const settingsW    = ctx.measureText(T.settings).width + W*0.034;
-                const leaderboardW = ctx.measureText(T.leaderboard).width + W*0.034;
-                const challengeW   = ctx.measureText(T.challenge).width + W*0.034;
-                const rowGap = W * 0.02;
-                const totalW = settingsW + leaderboardW + challengeW + rowGap * 2;
+                let leaderboardW = ctx.measureText(T.leaderboard).width;
+                let challengeW   = ctx.measureText(T.challenge).width;
+                let textSum = leaderboardW + challengeW;
+                let totalW = textSum + pad * 2 + rowGap;
+                let scale = 1;
+                if (totalW > maxRowW) {
+                    scale = Math.max((maxRowW - pad * 2 - rowGap) / textSum, 0.50);
+                    ctx.font = `${FS * 0.022 * scale}px 'Courier New',monospace`;
+                    leaderboardW = ctx.measureText(T.leaderboard).width;
+                    challengeW   = ctx.measureText(T.challenge).width;
+                    totalW = leaderboardW + challengeW + pad * 2 + rowGap;
+                }
+                leaderboardW += pad; challengeW += pad;
                 let bx = titleX - totalW / 2;
-                const settingsCX = bx + settingsW / 2; bx += settingsW + rowGap;
                 const leaderboardCX = bx + leaderboardW / 2; bx += leaderboardW + rowGap;
                 const challengeCX = bx + challengeW / 2;
-                _settingsBtnRect    = drawBtn(settingsCX, settingsBY, T.settings, true, true);
                 _leaderboardBtnRect = drawBtn(leaderboardCX, settingsBY, T.leaderboard, true, false);
                 _challengeBtnRect   = drawBtn(challengeCX, settingsBY, T.challenge, true, false);
+
+                // Settings alone on the row below, same scale as the row above for a
+                // visually consistent pair of rows (it virtually never needs to shrink
+                // on its own, but matching size beats mismatched sizes in one cluster).
+                // Vertical gap was H*0.02 -- read as cramped on a real device screenshot,
+                // the two rows nearly touching. Widened to H*0.035, matched to the gap
+                // below (see missionY's H*0.03 buffer) so the whole stack reads as one
+                // consistent rhythm -- an earlier pass widened just this gap without the
+                // one below it, which made Daily Missions look like it was crammed
+                // against Settings by comparison (~7px vs this gap's ~20px on a real
+                // screenshot). The missions block still cascades off this cluster's
+                // actual bottom edge (_btnRowBottom), so it can't collide just because
+                // this grew.
+                ctx.font = `${FS * 0.022 * scale}px 'Courier New',monospace`;
+                const settingsBY2 = settingsBY + bh + H * 0.035;
+                _settingsBtnRect = drawBtn(titleX, settingsBY2, T.settings, true, true);
+                _btnRowBottom = settingsBY2 + bh / 2;
             } else if (hasGameCenter) {
-                const settingsW    = ctx.measureText(T.settings).width + W*0.034;
-                const leaderboardW = ctx.measureText(T.leaderboard).width + W*0.034;
-                const rowGap = W * 0.02;
+                let settingsWraw    = ctx.measureText(T.settings).width;
+                let leaderboardWraw = ctx.measureText(T.leaderboard).width;
+                let textSum = settingsWraw + leaderboardWraw;
+                if (textSum + pad * 2 + rowGap > maxRowW) {
+                    const scale = Math.max((maxRowW - pad * 2 - rowGap) / textSum, 0.50);
+                    ctx.font = `${FS * 0.022 * scale}px 'Courier New',monospace`;
+                    settingsWraw    = ctx.measureText(T.settings).width;
+                    leaderboardWraw = ctx.measureText(T.leaderboard).width;
+                }
+                const settingsW    = settingsWraw + pad;
+                const leaderboardW = leaderboardWraw + pad;
                 const settingsCX    = titleX - settingsW/2 - rowGap/2;
                 const leaderboardCX = titleX + leaderboardW/2 + rowGap/2;
                 _settingsBtnRect    = drawBtn(settingsCX, settingsBY, T.settings, true, true);
@@ -1342,7 +1577,10 @@ function draw() {
         // the 3 active missions are the same for every player on a given day
         // (constants.js pickDailyMissionIndices), not per-player randomized.
         if (LAND) {
-            let missionY = H * 0.775;
+            // Was a fixed H*0.775; now the greater of that and the button cluster's
+            // actual bottom edge (see _btnRowBottom above) so a two-row cluster on a
+            // narrow device can't push into this block.
+            let missionY = Math.max(H * 0.775, _btnRowBottom + H * 0.03);
             ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 3;
             ctx.font        = `bold ${FS*0.017}px 'Courier New',monospace`;
             ctx.fillStyle   = `rgba(180,198,235,${a * 0.80})`;

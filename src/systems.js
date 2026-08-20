@@ -88,6 +88,31 @@ function makeCoin(wx) {
     }
     // score 0-12: gold only
     if (coinBlockedByStal(wx, coinY)) return null;
+    // Poison/bomb: rare events layered on top of the ladder above once there's some
+    // shard economy to matter (score ~40+, same gate as red/orange). Deliberately
+    // checked here, AFTER the placement rejection above, not before it: an earlier
+    // version rolled a per-candidate probability before this check and calibrated it
+    // assuming every candidate survives placement, but coinBlockedByStal rejects a
+    // large and difficulty-dependent fraction of candidates (~90% in one measured
+    // sample), so that approach was silently ~10x rarer than intended in practice. A
+    // real-time clock (constants.js POISON_INTERVAL_SEC doc) sidesteps that: once it
+    // passes its jittered target, the next coin that actually clears placement (i.e.
+    // reaches this line) becomes that type -- immune to the rejection rate by
+    // construction. Poison checked first, bomb second so it can still override on the
+    // rare coin where both clocks happen to be ready at once; each resets/rerolls
+    // independently regardless of which one wins that tie.
+    if (_prog >= 0.38) {
+        if (poisonClock >= nextPoisonAt) {
+            type = 'poison';
+            poisonClock = 0;
+            nextPoisonAt = POISON_INTERVAL_SEC * (0.7 + rng() * 0.6);
+        }
+        if (bombClock >= nextBombAt) {
+            type = 'bomb';
+            bombClock = 0;
+            nextBombAt = BOMB_INTERVAL_SEC * (0.7 + rng() * 0.6);
+        }
+    }
     return { wx, y: coinY, collected: false, type, fade: 1.0 };
 }
 
@@ -112,6 +137,26 @@ function checkCoinCollection() {
         const dx = PX - sx, dy = py - coin.y;
         if (dx*dx + dy*dy < r2) {
             coin.collected = true;
+            if (coin.type === 'poison') {
+                // Hazard coin: breaks any active combo and claws back a flat amount of
+                // this run's *pending* shard bank instead of adding to it -- the
+                // risk/reward counterweight to gold. Flat, not a % of the pool (see
+                // constants.js POISON_LOSS_MIN/MAX doc), so repeated hits over a long
+                // run add up linearly instead of compounding multiplicatively. Comes out
+                // of runCoins (this run's collected-coin count, banked into the
+                // persistent `shards` balance at death, capped by DAILY_SHARD_CAP -- see
+                // update.js die()), never the persistent balance itself, so a poison
+                // touch can only cost progress not yet banked.
+                coinCombo = 0; coinComboTimer = 0;
+                const loss = Math.min(runCoins, Math.round(lerp(POISON_LOSS_MIN, POISON_LOSS_MAX, _prog)));
+                runCoins -= loss;
+                burstCoin(sx, coin.y, 100, 22);
+                shake += 6;
+                if (loss > 0) notifs.push({ x: sx, y: coin.y - 16, life: 1.1, text: `-${loss} ⧫`, color: [140,225,40] });
+                sfxPoison();
+                window.webkit?.messageHandlers?.haptic?.postMessage('warning');
+                continue;
+            }
             if (coinComboTimer > 0) coinCombo++; else coinCombo = 1;
             // ELECTRIC trades a shorter combo window for its slow-time buff below; mastery
             // eases it back toward the 2.0s baseline (see constants.js masteryLerp).
@@ -159,6 +204,16 @@ function checkCoinCollection() {
                 notifs.push({ x: sx, y: coin.y - 16, life: 1.1, text: T.notifAmmo, color: [255,85,0] });
                 sfxBulletPickup();
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
+            } else if (coin.type === 'bomb') {
+                // Explosive power-up: small blast around the pickup point that clears
+                // nearby hazards (see triggerBombExplosion). Sfx lives here, not inside
+                // that function, so the "ding-then-boom" pickup identity is a
+                // presentation choice, not baked into the explosion logic itself.
+                triggerBombExplosion(sx, coin.y);
+                burstCoin(sx, coin.y, 280, 26);
+                notifs.push({ x: sx, y: coin.y - 16, life: 1.1, text: T.boom, color: [190,60,255] });
+                sfxBomb();
+                window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
             } else {
                 gapBonus = Math.min(GAP_BONUS_MAX, gapBonus + GAP_PER_COIN * (activeSkin === 4 ? masteryLerp(4, 2.0, 2.5) : 1));
                 burstCoin(sx, coin.y, 44);
@@ -225,6 +280,21 @@ function updateBullets(dt) {
                 }
             }
         }
+        if (!hit) {
+            for (let ci = cannonShots.length - 1; ci >= 0; ci--) {
+                const s   = cannonShots[ci];
+                const scx = s.wx - scrollX;
+                const cdx = bsx - scx, cdy = b.y - s.y;
+                if (cdx*cdx + cdy*cdy < (CANNON_SHOT_R + 10) * (CANNON_SHOT_R + 10)) {
+                    cannonShots.splice(ci, 1);
+                    burstStalCrack(bsx, b.y);
+                    sfxStalCrack();
+                    window.webkit?.messageHandlers?.haptic?.postMessage('light');
+                    hit = true;
+                    break;
+                }
+            }
+        }
         if (hit) bullets.splice(i, 1);
     }
     for (let i = stalactites.length - 1; i >= 0; i--) {
@@ -235,19 +305,28 @@ function updateBullets(dt) {
     }
 }
 
+// Shared projectile sprite: player bullets (always horizontal) and cannon shots
+// (fired diagonally, see updateCannonShots) both render through this, so a cannon
+// shot reads as literal enemy artillery fire, not a different weapon type.
+function drawProjectile(x, y, angle) {
+    ctx.save();
+    ctx.translate(x, y);
+    if (angle) ctx.rotate(angle);
+    ctx.shadowColor = 'rgba(255,150,0,0.95)';
+    ctx.shadowBlur  = 14;
+    ctx.fillStyle   = '#ffaa00';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 18, 3.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+}
+
 function drawBullets() {
     for (const b of bullets) {
         const bsx = b.wx - scrollX;
         if (bsx < -10 || bsx > W + 10) continue;
-        ctx.save();
-        ctx.shadowColor = 'rgba(255,150,0,0.95)';
-        ctx.shadowBlur  = 14;
-        ctx.fillStyle   = '#ffaa00';
-        ctx.beginPath();
-        ctx.ellipse(bsx, b.y, 18, 3.5, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.restore();
+        drawProjectile(bsx, b.y, 0);
     }
 }
 
@@ -293,6 +372,119 @@ function maintainMines() {
         nextMineWx += mineSpacing() * (0.70 + rng() * 0.60);
     }
     while (mines.length && mines[0].wx < scrollX - 150) mines.shift();
+}
+
+// ── Cannon system ─────────────────────────────────────────────────────
+// A cannon is a wall-mounted turret, not a projectile itself -- it's inert
+// (not solid, can't be flown into) until the player closes to within
+// CANNON_FIRE_LEAD world-px, at which point it fires exactly one diagonal
+// shot and goes dormant. See updateCannonShots for the fire trigger + the
+// shot's own movement/collision.
+
+function makeCannon(wx) {
+    // Skip if it'd land right on top of a stalactite chicane -- keeps the visual
+    // (and the fair-warning read) clean rather than layering two hazards at once.
+    for (const s of stalactites) {
+        if (Math.abs(s.wx - wx) < 140) return null;
+    }
+    return { wx, isTop: rng() < 0.5, fireAtWx: wx - CANNON_FIRE_LEAD, fired: false };
+}
+
+function maintainCannons() {
+    while (nextCannonWx < scrollX + W + 900) {
+        const cannon = makeCannon(nextCannonWx);
+        if (cannon) cannons.push(cannon);
+        nextCannonWx += cannonSpacing() * (0.75 + rng() * 0.50);
+    }
+    while (cannons.length && cannons[0].wx < scrollX - 200) cannons.shift();
+}
+
+function updateCannonShots(dt) {
+    const playerWx = scrollX + PX;
+    for (const c of cannons) {
+        if (c.fired || playerWx < c.fireAtWx) continue;
+        c.fired = true;
+        const b = boundsAt(c.wx);
+        const muzzleY    = c.isTop ? b.top + CANNON_R * 1.1 : b.bot - CANNON_R * 1.1;
+        const closingSpd = CANNON_FIRE_LEAD / CANNON_SHOT_TRAVEL;
+        // Crosses most (not all) of the corridor diagonally -- a rng()-picked span so
+        // successive cannons don't all draw the exact same line across the tunnel.
+        const spanY = (b.bot - b.top) * (0.55 + rng() * 0.35) * (c.isTop ? 1 : -1);
+        cannonShots.push({
+            wx: c.wx, y: muzzleY,
+            vx: scrollSpd() - closingSpd,
+            vy: spanY / CANNON_SHOT_TRAVEL,
+        });
+        burst(c.wx - scrollX, muzzleY, 10);
+        sfxCannonFire();
+    }
+    for (let i = cannonShots.length - 1; i >= 0; i--) {
+        const s = cannonShots[i];
+        s.wx += s.vx * dt;
+        s.y  += s.vy * dt;
+        const bsx = s.wx - scrollX;
+        if (bsx < -100) { cannonShots.splice(i, 1); continue; }
+        // Flew into a wall before reaching the player -- spark and remove rather than
+        // letting it visibly clip through solid rock.
+        const sb = boundsAt(s.wx);
+        if (s.y < sb.top - 4 || s.y > sb.bot + 4) {
+            burstStalCrack(bsx, Math.max(sb.top, Math.min(sb.bot, s.y)));
+            cannonShots.splice(i, 1);
+        }
+    }
+}
+
+// ── Bomb explosion ────────────────────────────────────────────────────
+// Triggered by collecting a bomb coin (see checkCoinCollection). A small blast
+// centered on the pickup point (cx/cy in screen space) that clears every nearby
+// hazard: fades out stalactites the same way a bullet-destroyed one does, pops
+// mines and in-flight cannon shots, and disables (but doesn't remove) any cannon
+// that hasn't fired yet, same as a bullet/shield destroying one of those. Purely
+// logic + particles -- the sfx lives with the pickup itself (systems.js
+// checkCoinCollection) so this can't double up if ever called from elsewhere.
+
+function triggerBombExplosion(cx, cy) {
+    const r2 = BOMB_RADIUS * BOMB_RADIUS;
+    for (const s of stalactites) {
+        if (s.dying) continue;
+        const sx = s.wx - scrollX;
+        const b  = boundsAt(s.wx);
+        const tipY = s.isTop ? b.top + s.length : b.bot - s.length;
+        const dx = sx - cx, dy = tipY - cy;
+        if (dx*dx + dy*dy < r2) {
+            s.dying = true; s.fade = 1.0;
+            burstStalCrack(sx, tipY);
+        }
+    }
+    for (let mi = mines.length - 1; mi >= 0; mi--) {
+        const m  = mines[mi];
+        const sx = m.wx - scrollX;
+        const my = m.baseY + m.bobAmp * Math.sin(gtime * 1.8 + m.phase);
+        const dx = sx - cx, dy = my - cy;
+        if (dx*dx + dy*dy < r2) {
+            mines.splice(mi, 1);
+            burst(sx, my);
+        }
+    }
+    for (let ci = cannonShots.length - 1; ci >= 0; ci--) {
+        const s  = cannonShots[ci];
+        const sx = s.wx - scrollX;
+        const dx = sx - cx, dy = s.y - cy;
+        if (dx*dx + dy*dy < r2) {
+            cannonShots.splice(ci, 1);
+            burstStalCrack(sx, s.y);
+        }
+    }
+    for (const c of cannons) {
+        if (c.fired) continue;
+        const sx = c.wx - scrollX;
+        const b  = boundsAt(c.wx);
+        const wallY = c.isTop ? b.top : b.bot;
+        const dx = sx - cx, dy = wallY - cy;
+        if (dx*dx + dy*dy < r2) c.fired = true; // disabled, same dimmed look as spent
+    }
+    burst(cx, cy, 60, 265, 300);
+    shake += 14;
 }
 
 // ── Triangle-circle collision ─────────────────────────────────────────
@@ -347,11 +539,11 @@ function stalHitBullet(s, bsx, by) {
 
 // ── Particles ─────────────────────────────────────────────────────────
 
-function burst(x, y, count = 32) {
+function burst(x, y, count = 32, hueMin = 22, hueMax = 77) {
     for (let i = 0; i < count; i++) {
         const a = Math.random()*Math.PI*2, v = 65+Math.random()*225;
         parts.push({ x, y, vx: Math.cos(a)*v, vy: Math.sin(a)*v,
-                     life: 1.0, r: 1.5+Math.random()*4, h: 22+Math.random()*55 });
+                     life: 1.0, r: 1.5+Math.random()*4, h: hueMin+Math.random()*(hueMax-hueMin) });
     }
 }
 

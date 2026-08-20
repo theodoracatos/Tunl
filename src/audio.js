@@ -121,39 +121,27 @@ function _initAC() {
 
 // WebKit auto-suspends the AudioContext after the app has been backgrounded
 // for a while, and after long enough can fully *close* it rather than just
-// suspend it - .resume() is a no-op on a closed context, and its buffers
-// belong to that dead context so they can't be reused either. Recreate
-// everything from scratch in that case, letting _bgmPending/_titleBgmPending
-// (the same flags _initAC already uses while the mp3s are still decoding)
-// replay whichever tracks were active once the fresh buffers are ready.
+// suspend it. Previously this only fully rebuilt on 'closed' and tried
+// .resume() + a fresh bgm node on 'suspended', on the theory that only the
+// long-lived bgm/title-bgm nodes (started before the suspend) were affected.
+// That undersold the bug: reports of *all* sound going silent (sfx included,
+// not just bgm) after ~1min backgrounded show the problem isn't a stale node
+// but the AudioContext's route to hardware itself not reconnecting - WebKit
+// flips state to 'running' without actually restoring output. Since sfx get
+// brand-new nodes on every call and still went silent, a fresh node into the
+// same broken destination doesn't help. Don't trust resume() at all: tear
+// down and recreate the whole context on 'suspended' exactly like 'closed'
+// does, letting _bgmPending/_titleBgmPending (the same flags _initAC already
+// uses while the mp3s are still decoding) replay whichever tracks were
+// active once the fresh context + buffers are ready.
 function _reviveAudioContext() {
     if (!_ac || _ac.state === 'running') return;
-    if (_ac.state === 'suspended') {
-        // WebKit often flips state to 'running' here without actually reconnecting
-        // the audio route to hardware - a node that was start()ed before the
-        // suspend (i.e. exactly bgm/title bgm, the only long-lived nodes here)
-        // then stays silent forever even though nothing looks wrong from JS. Don't
-        // trust the old node to keep producing sound - throw it away and start a
-        // fresh one from the buffer we already have decoded (cheap, no re-fetch).
-        _ac.resume().then(() => {
-            if (_bgmActive) {
-                if (_bgmNode) { _bgmNode.onended = null; try { _bgmNode.stop(); } catch(e){} _bgmNode = null; }
-                _playBgmBuffer();
-            }
-            if (_titleBgmActive) {
-                if (_titleBgmNode) { try { _titleBgmNode.stop(); } catch(e){} _titleBgmNode = null; }
-                _playTitleBgmBuffer();
-            }
-        });
-        return;
-    }
-    if (_ac.state === 'closed') {
-        _bgmPending = _bgmActive;
-        _titleBgmPending = _titleBgmActive;
-        _ac = null; _bgmBuf = null; _bgmBufRev = null; _bgmNode = null; _bgmGain = null;
-        _titleBgmBuf = null; _titleBgmNode = null; _titleBgmGain = null;
-        _initAC();
-    }
+    try { _ac.close(); } catch(e){}
+    _bgmPending = _bgmActive;
+    _titleBgmPending = _titleBgmActive;
+    _ac = null; _bgmBuf = null; _bgmBufRev = null; _bgmNode = null; _bgmGain = null;
+    _titleBgmBuf = null; _titleBgmNode = null; _titleBgmGain = null;
+    _initAC();
 }
 // visibilitychange is the fallback path - WKWebView doesn't always fire it
 // reliably when the *native* app (rather than the page itself) backgrounds,
@@ -335,6 +323,68 @@ function sfxMagnet() {
     });
 }
 
+function sfxPoison() {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    // Sour descending sawtooth pair -- the negative mirror of sfxCoin's bright rising
+    // sine chime, so it reads as a "bad" pickup even before the player sees the notif.
+    [400, 340].forEach((freq, i) => {
+        const o = _ac.createOscillator(), g = _ac.createGain();
+        o.connect(g); g.connect(_ac.destination);
+        o.type = 'sawtooth';
+        const t0 = t + i * 0.09;
+        o.frequency.setValueAtTime(freq, t0);
+        o.frequency.exponentialRampToValueAtTime(freq * 0.55, t0 + 0.22);
+        g.gain.setValueAtTime(0.12, t0);
+        g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.26);
+        o.start(t0); o.stop(t0 + 0.27);
+    });
+}
+
+function sfxBomb() {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    // Bright ascending chime (the "power triggered" cue) immediately followed by a
+    // punchy low boom, so the pickup reads as one "charge then detonate" gesture.
+    [500, 750, 1100].forEach((freq, i) => {
+        const o = _ac.createOscillator(), g = _ac.createGain();
+        o.connect(g); g.connect(_ac.destination);
+        o.type = 'triangle'; o.frequency.value = freq;
+        const t0 = t + i * 0.045;
+        g.gain.setValueAtTime(0.13, t0);
+        g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.14);
+        o.start(t0); o.stop(t0 + 0.15);
+    });
+    const tBoom = t + 0.16;
+    const src = _ac.createBufferSource();
+    src.buffer = _noiseBuf(0.4);
+    const flt = _ac.createBiquadFilter();
+    flt.type = 'lowpass';
+    flt.frequency.setValueAtTime(750, tBoom);
+    flt.frequency.exponentialRampToValueAtTime(50, tBoom + 0.34);
+    const g2 = _ac.createGain();
+    g2.gain.setValueAtTime(0.40, tBoom);
+    g2.gain.exponentialRampToValueAtTime(0.001, tBoom + 0.38);
+    src.connect(flt); flt.connect(g2); g2.connect(_ac.destination);
+    src.start(tBoom); src.stop(tBoom + 0.40);
+}
+
+function sfxCannonFire() {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    const src = _ac.createBufferSource();
+    src.buffer = _noiseBuf(0.16);
+    const flt = _ac.createBiquadFilter();
+    flt.type = 'bandpass'; flt.Q.value = 1.4;
+    flt.frequency.setValueAtTime(900, t);
+    flt.frequency.exponentialRampToValueAtTime(220, t + 0.14);
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(0.30, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+    src.connect(flt); flt.connect(g); g.connect(_ac.destination);
+    src.start(t); src.stop(t + 0.17);
+}
+
 function sfxShieldBreak() {
     if (!_ac || !fxOn) return;
     const t   = _ac.currentTime;
@@ -352,7 +402,7 @@ function sfxShieldBreak() {
 function sfxMilestone(n) {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
-    const base = n >= 200 ? 660 : n >= 100 ? 550 : 440;
+    const base = n >= 1000 ? 780 : n >= 200 ? 660 : n >= 100 ? 550 : 440;
     [base, base*1.25, base*1.5, base*2].forEach((freq, i) => {
         const o = _ac.createOscillator(), g = _ac.createGain();
         o.connect(g); g.connect(_ac.destination);
