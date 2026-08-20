@@ -15,9 +15,38 @@
     <radialGradient id="coreGrd" cx="50%" cy="50%" r="50%">
       <stop offset="0%" stop-color="#ffffff"/><stop offset="40%" stop-color="#d7e8ff"/><stop offset="100%" stop-color="#6f9cff" stop-opacity="0"/>
     </radialGradient>
+    <radialGradient id="coreHalo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"  stop-color="#bcd4ff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#5b7fff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="shipGrd" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#c9d8ff"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+    <linearGradient id="flameGrdA" gradientUnits="userSpaceOnUse" x1="333.8" y1="447" x2="59.9" y2="505.2">
+      <stop offset="0%"   stop-color="#fff6d9"/>
+      <stop offset="15%"  stop-color="#ffb347"/>
+      <stop offset="45%"  stop-color="#ff5a2e"/>
+      <stop offset="75%"  stop-color="#b3202a"/>
+      <stop offset="100%" stop-color="#4a1a55" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="flameGrdB" gradientUnits="userSpaceOnUse" x1="333.8" y1="577" x2="52" y2="680">
+      <stop offset="0%"   stop-color="#fff6d9"/>
+      <stop offset="15%"  stop-color="#ffb347"/>
+      <stop offset="45%"  stop-color="#ff5a2e"/>
+      <stop offset="75%"  stop-color="#b3202a"/>
+      <stop offset="100%" stop-color="#4a1a55" stop-opacity="0"/>
+    </linearGradient>
     <filter id="soft"><feGaussianBlur stdDeviation="10"/></filter>
     <filter id="soft2"><feGaussianBlur stdDeviation="4"/></filter>
     <filter id="wglow"><feGaussianBlur stdDeviation="3"/></filter>
+    <filter id="blur0" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
+    <filter id="blur1" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>
+    <filter id="coreBlur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="26"/></filter>
+    <filter id="coreBlurTight" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="trailBlur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="9"/></filter>
+    <filter id="shipGlow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="14"/></filter>
+    <filter id="flameBlur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4"/></filter>
   </defs>
   <rect width="1024" height="500" fill="url(#bgGrd)"/>
 
@@ -25,15 +54,46 @@
   <path d="M -20,60 C 220,20 420,110 680,70 C 860,45 960,80 1044,55" fill="none" stroke="#8b5cf6" stroke-width="3" opacity="0.55" filter="url(#wglow)"/>
   <path d="M -20,440 C 240,470 460,395 700,430 C 880,455 960,420 1044,445" fill="none" stroke="#38bdf8" stroke-width="3" opacity="0.55" filter="url(#wglow)"/>
 
-  <!-- portal mark, bleeding off the right edge -->
-  <g transform="translate(870,250)">
-    <circle r="240" fill="url(#coreGrd)" opacity="0.5" filter="url(#soft)"/>
-    <circle r="210" fill="none" stroke="url(#purpleGrd)" stroke-width="5" opacity="0.35" filter="url(#soft)"/>
-    <circle r="160" fill="none" stroke="url(#cyanGrd)" stroke-width="6" opacity="0.5" filter="url(#soft2)"/>
-    <circle r="110" fill="none" stroke="url(#purpleGrd)" stroke-width="8" opacity="0.75" filter="url(#soft2)"/>
-    <circle r="60"  fill="none" stroke="url(#cyanGrd)" stroke-width="10" opacity="0.95"/>
-    <circle r="26" fill="url(#coreGrd)"/>
-    <circle r="12" fill="#ffffff"/>
+  <!-- Ship mark, bleeding off the right edge. Lifted wholesale from icon-mark.svg
+       (halo/walls/trails/core/thrust/ship all share that file's absolute coordinate
+       space, centered on the vanishing point at icon-space (560,512)) and remapped
+       so that same point lands at (870,250) here, see the transform below. -->
+  <g transform="translate(422,-159.6) scale(0.8)">
+    <circle cx="560" cy="512" r="190" fill="url(#coreHalo)" filter="url(#coreBlur)"/>
+    <path d="M 60 512 A 452 452 0 0 1 964 512" fill="none" stroke="url(#purpleGrd)" stroke-width="6" stroke-linecap="round" opacity="0.28" filter="url(#blur0)"/>
+    <path d="M 964 512 A 452 452 0 0 1 60 512" fill="none" stroke="url(#cyanGrd)" stroke-width="6" stroke-linecap="round" opacity="0.28" filter="url(#blur0)"/>
+    <path d="M 168 512 A 344 344 0 0 1 856 512" fill="none" stroke="url(#purpleGrd)" stroke-width="8" stroke-linecap="round" opacity="0.4" filter="url(#blur1)"/>
+    <path d="M 856 512 A 344 344 0 0 1 168 512" fill="none" stroke="url(#cyanGrd)" stroke-width="8" stroke-linecap="round" opacity="0.4" filter="url(#blur1)"/>
+    <path d="M 236 372 C 340 372 420 430 480 470" fill="none" stroke="url(#purpleGrd)" stroke-width="14" stroke-linecap="round" opacity="0.55" filter="url(#trailBlur)"/>
+    <path d="M 236 652 C 340 652 420 594 480 554" fill="none" stroke="url(#cyanGrd)" stroke-width="14" stroke-linecap="round" opacity="0.55" filter="url(#trailBlur)"/>
+    <circle cx="560" cy="512" r="60" fill="url(#coreGrd)" filter="url(#coreBlurTight)"/>
+    <circle cx="560" cy="512" r="28" fill="#ffffff"/>
+    <path d="M 331.9 438.2 L 59.7 504.2 L 60.1 506.2 L 335.7 455.8 Z" fill="url(#flameGrdA)" filter="url(#flameBlur)" opacity="0.7"/>
+    <path d="M 330.7 568.5 L 52 680 L 52.4 682 L 336.9 585.5 Z" fill="url(#flameGrdB)" filter="url(#flameBlur)" opacity="0.7"/>
+    <path d="M 331.9 438.2 L 59.7 504.2 L 60.1 506.2 L 335.7 455.8 Z" fill="url(#flameGrdA)"/>
+    <path d="M 330.7 568.5 L 52 680 L 52.4 682 L 336.9 585.5 Z" fill="url(#flameGrdB)"/>
+    <circle cx="333.8" cy="447" r="14" fill="#fff6d9" filter="url(#flameBlur)" opacity="0.85"/>
+    <circle cx="333.8" cy="577" r="14" fill="#fff6d9" filter="url(#flameBlur)" opacity="0.85"/>
+    <circle cx="310" cy="470" r="7" fill="#fff2c9" opacity="0.85"/>
+    <circle cx="295" cy="485" r="6" fill="#ffe9a8" opacity="0.75"/>
+    <circle cx="325" cy="500" r="5" fill="#fff2c9" opacity="0.7"/>
+    <circle cx="280" cy="505" r="6" fill="#ffcf7a" opacity="0.6"/>
+    <circle cx="305" cy="520" r="4" fill="#fff2c9" opacity="0.55"/>
+    <circle cx="270" cy="530" r="5" fill="#ffe9a8" opacity="0.5"/>
+    <circle cx="240" cy="500" r="3" fill="#ff9f80" opacity="0.5"/>
+    <circle cx="290" cy="545" r="4" fill="#ffcf7a" opacity="0.45"/>
+    <circle cx="255" cy="555" r="4" fill="#fff2c9" opacity="0.4"/>
+    <circle cx="315" cy="540" r="3" fill="#ffe9a8" opacity="0.4"/>
+    <g transform="translate(430,512)">
+      <path d="M 223.6 0 L 145.6 -22.1 L 49.4 -28.6 L -84.5 -119.6 L -140.4 -28.6 L -158.6 -41.6 L -136.5 -10.4 L -119.6 0 L -136.5 10.4 L -158.6 41.6 L -140.4 28.6 L -84.5 119.6 L 49.4 28.6 L 145.6 22.1 Z"
+            fill="#e8eeff" filter="url(#shipGlow)" opacity="0.55"/>
+      <path d="M 223.6 0 L 145.6 -22.1 L 49.4 -28.6 L -84.5 -119.6 L -140.4 -28.6 L -158.6 -41.6 L -136.5 -10.4 L -119.6 0 L -136.5 10.4 L -158.6 41.6 L -140.4 28.6 L -84.5 119.6 L 49.4 28.6 L 145.6 22.1 Z"
+            fill="url(#shipGrd)"/>
+      <path d="M 223.6 0 L 145.6 -22.1 L 49.4 -28.6 L -84.5 -119.6" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+      <ellipse cx="-41.6" cy="-65" rx="54.6" ry="14.95" fill="rgba(0,0,0,0.3)"/>
+      <ellipse cx="-41.6" cy="65" rx="54.6" ry="14.95" fill="rgba(0,0,0,0.3)"/>
+      <ellipse cx="143" cy="-6.5" rx="28.6" ry="11.05" transform="rotate(-6 143 -6.5)" fill="rgba(200,235,255,0.55)"/>
+    </g>
   </g>
 
   <!-- wordmark -->

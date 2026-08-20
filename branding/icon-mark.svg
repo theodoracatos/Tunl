@@ -24,67 +24,84 @@
       <stop offset="0%"  stop-color="#bcd4ff" stop-opacity="0.9"/>
       <stop offset="100%" stop-color="#5b7fff" stop-opacity="0"/>
     </radialGradient>
+    <linearGradient id="shipGrd" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#c9d8ff"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+    <linearGradient id="flameGrdA" gradientUnits="userSpaceOnUse" x1="333.8" y1="447" x2="59.9" y2="505.2">
+      <stop offset="0%"   stop-color="#fff6d9"/>
+      <stop offset="15%"  stop-color="#ffb347"/>
+      <stop offset="45%"  stop-color="#ff5a2e"/>
+      <stop offset="75%"  stop-color="#b3202a"/>
+      <stop offset="100%" stop-color="#4a1a55" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="flameGrdB" gradientUnits="userSpaceOnUse" x1="333.8" y1="577" x2="52" y2="680">
+      <stop offset="0%"   stop-color="#fff6d9"/>
+      <stop offset="15%"  stop-color="#ffb347"/>
+      <stop offset="45%"  stop-color="#ff5a2e"/>
+      <stop offset="75%"  stop-color="#b3202a"/>
+      <stop offset="100%" stop-color="#4a1a55" stop-opacity="0"/>
+    </linearGradient>
     <filter id="blur0" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
-  <filter id="blur1" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>
-  <filter id="blur2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="11"/></filter>
-  <filter id="blur3" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
-  <filter id="blur4" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
-  <filter id="blur5" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2"/></filter>
-  <filter id="blur6" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1"/></filter>
+    <filter id="blur1" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>
     <filter id="coreBlur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="26"/></filter>
     <filter id="coreBlurTight" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="trailBlur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="9"/></filter>
+    <filter id="shipGlow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="14"/></filter>
+    <filter id="flameBlur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4"/></filter>
   </defs>
 
   <rect width="1024" height="1024" fill="url(#bgGrd)"/>
 
-  <!-- vanishing-point halo -->
-  <circle cx="512" cy="512" r="190" fill="url(#coreHalo)" filter="url(#coreBlur)"/>
+  <!-- vanishing-point halo: the light the ship is flying toward -->
+  <circle cx="560" cy="512" r="190" fill="url(#coreHalo)" filter="url(#coreBlur)"/>
 
-  
-  <path d="M 40 512 A 472 472 0 0 1 984 512" fill="none" stroke="url(#purpleGrd)"
-        stroke-width="5" stroke-linecap="round" opacity="0.3"
-        filter="url(#blur0)"/>
-  <path d="M 984 512 A 472 472 0 0 1 40 512" fill="none" stroke="url(#cyanGrd)"
-        stroke-width="5" stroke-linecap="round" opacity="0.3"
-        filter="url(#blur0)"/>
-  <path d="M 92 512 A 420 420 0 0 1 932 512" fill="none" stroke="url(#purpleGrd)"
-        stroke-width="6" stroke-linecap="round" opacity="0.4"
-        filter="url(#blur1)"/>
-  <path d="M 932 512 A 420 420 0 0 1 92 512" fill="none" stroke="url(#cyanGrd)"
-        stroke-width="6" stroke-linecap="round" opacity="0.4"
-        filter="url(#blur1)"/>
-  <path d="M 152 512 A 360 360 0 0 1 872 512" fill="none" stroke="url(#purpleGrd)"
-        stroke-width="7" stroke-linecap="round" opacity="0.5"
-        filter="url(#blur2)"/>
-  <path d="M 872 512 A 360 360 0 0 1 152 512" fill="none" stroke="url(#cyanGrd)"
-        stroke-width="7" stroke-linecap="round" opacity="0.5"
-        filter="url(#blur2)"/>
-  <path d="M 216 512 A 296 296 0 0 1 808 512" fill="none" stroke="url(#purpleGrd)"
-        stroke-width="8" stroke-linecap="round" opacity="0.62"
-        filter="url(#blur3)"/>
-  <path d="M 808 512 A 296 296 0 0 1 216 512" fill="none" stroke="url(#cyanGrd)"
-        stroke-width="8" stroke-linecap="round" opacity="0.62"
-        filter="url(#blur3)"/>
-  <path d="M 284 512 A 228 228 0 0 1 740 512" fill="none" stroke="url(#purpleGrd)"
-        stroke-width="10" stroke-linecap="round" opacity="0.78"
-        filter="url(#blur4)"/>
-  <path d="M 740 512 A 228 228 0 0 1 284 512" fill="none" stroke="url(#cyanGrd)"
-        stroke-width="10" stroke-linecap="round" opacity="0.78"
-        filter="url(#blur4)"/>
-  <path d="M 356 512 A 156 156 0 0 1 668 512" fill="none" stroke="url(#purpleGrd)"
-        stroke-width="12" stroke-linecap="round" opacity="0.92"
-        filter="url(#blur5)"/>
-  <path d="M 668 512 A 156 156 0 0 1 356 512" fill="none" stroke="url(#cyanGrd)"
-        stroke-width="12" stroke-linecap="round" opacity="0.92"
-        filter="url(#blur5)"/>
-  <path d="M 428 512 A 84 84 0 0 1 596 512" fill="none" stroke="url(#purpleGrd)"
-        stroke-width="14" stroke-linecap="round" opacity="1"
-        filter="url(#blur6)"/>
-  <path d="M 596 512 A 84 84 0 0 1 428 512" fill="none" stroke="url(#cyanGrd)"
-        stroke-width="14" stroke-linecap="round" opacity="1"
-        filter="url(#blur6)"/>
+  <!-- tunnel walls, purple top / cyan bottom -->
+  <path d="M 60 512 A 452 452 0 0 1 964 512" fill="none" stroke="url(#purpleGrd)" stroke-width="6" stroke-linecap="round" opacity="0.28" filter="url(#blur0)"/>
+  <path d="M 964 512 A 452 452 0 0 1 60 512" fill="none" stroke="url(#cyanGrd)" stroke-width="6" stroke-linecap="round" opacity="0.28" filter="url(#blur0)"/>
+  <path d="M 168 512 A 344 344 0 0 1 856 512" fill="none" stroke="url(#purpleGrd)" stroke-width="8" stroke-linecap="round" opacity="0.4" filter="url(#blur1)"/>
+  <path d="M 856 512 A 344 344 0 0 1 168 512" fill="none" stroke="url(#cyanGrd)" stroke-width="8" stroke-linecap="round" opacity="0.4" filter="url(#blur1)"/>
 
-  <!-- bright core: the light at the end of the tunnel -->
-  <circle cx="512" cy="512" r="68" fill="url(#coreGrd)" filter="url(#coreBlurTight)"/>
-  <circle cx="512" cy="512" r="34" fill="#ffffff"/>
+  <!-- wingtip speed trails, echoing the wall colors -->
+  <path d="M 236 372 C 340 372 420 430 480 470" fill="none" stroke="url(#purpleGrd)" stroke-width="14" stroke-linecap="round" opacity="0.55" filter="url(#trailBlur)"/>
+  <path d="M 236 652 C 340 652 420 594 480 554" fill="none" stroke="url(#cyanGrd)" stroke-width="14" stroke-linecap="round" opacity="0.55" filter="url(#trailBlur)"/>
+
+  <!-- bright core -->
+  <circle cx="560" cy="512" r="60" fill="url(#coreGrd)" filter="url(#coreBlurTight)"/>
+  <circle cx="560" cy="512" r="28" fill="#ffffff"/>
+
+  <!-- Thrust: origin matches update.js's actual spawn point, x = PX - PR*0.74,
+       y = py ± PR*0.50 (ship-local (-96.2, ±65) at r=130). Thin, nearly-straight,
+       gold-to-violet tapers plus a scatter of ember particles, drawn before the
+       ship so it reads as trailing behind it. -->
+  <path d="M 331.9 438.2 L 59.7 504.2 L 60.1 506.2 L 335.7 455.8 Z" fill="url(#flameGrdA)" filter="url(#flameBlur)" opacity="0.7"/>
+  <path d="M 330.7 568.5 L 52 680 L 52.4 682 L 336.9 585.5 Z" fill="url(#flameGrdB)" filter="url(#flameBlur)" opacity="0.7"/>
+  <path d="M 331.9 438.2 L 59.7 504.2 L 60.1 506.2 L 335.7 455.8 Z" fill="url(#flameGrdA)"/>
+  <path d="M 330.7 568.5 L 52 680 L 52.4 682 L 336.9 585.5 Z" fill="url(#flameGrdB)"/>
+  <circle cx="333.8" cy="447" r="14" fill="#fff6d9" filter="url(#flameBlur)" opacity="0.85"/>
+  <circle cx="333.8" cy="577" r="14" fill="#fff6d9" filter="url(#flameBlur)" opacity="0.85"/>
+  <circle cx="310" cy="470" r="7" fill="#fff2c9" opacity="0.85"/>
+  <circle cx="295" cy="485" r="6" fill="#ffe9a8" opacity="0.75"/>
+  <circle cx="325" cy="500" r="5" fill="#fff2c9" opacity="0.7"/>
+  <circle cx="280" cy="505" r="6" fill="#ffcf7a" opacity="0.6"/>
+  <circle cx="305" cy="520" r="4" fill="#fff2c9" opacity="0.55"/>
+  <circle cx="270" cy="530" r="5" fill="#ffe9a8" opacity="0.5"/>
+  <circle cx="240" cy="500" r="3" fill="#ff9f80" opacity="0.5"/>
+  <circle cx="290" cy="545" r="4" fill="#ffcf7a" opacity="0.45"/>
+  <circle cx="255" cy="555" r="4" fill="#fff2c9" opacity="0.4"/>
+  <circle cx="315" cy="540" r="3" fill="#ffe9a8" opacity="0.4"/>
+
+  <!-- Ship: shipPath() from src/draw.js, r=130, unchanged, the actual player
+       sprite (SR-71-style needle nose + delta), PEARL skin colors, nose toward
+       the light. -->
+  <g transform="translate(430,512)">
+    <path d="M 223.6 0 L 145.6 -22.1 L 49.4 -28.6 L -84.5 -119.6 L -140.4 -28.6 L -158.6 -41.6 L -136.5 -10.4 L -119.6 0 L -136.5 10.4 L -158.6 41.6 L -140.4 28.6 L -84.5 119.6 L 49.4 28.6 L 145.6 22.1 Z"
+          fill="#e8eeff" filter="url(#shipGlow)" opacity="0.55"/>
+    <path d="M 223.6 0 L 145.6 -22.1 L 49.4 -28.6 L -84.5 -119.6 L -140.4 -28.6 L -158.6 -41.6 L -136.5 -10.4 L -119.6 0 L -136.5 10.4 L -158.6 41.6 L -140.4 28.6 L -84.5 119.6 L 49.4 28.6 L 145.6 22.1 Z"
+          fill="url(#shipGrd)"/>
+    <path d="M 223.6 0 L 145.6 -22.1 L 49.4 -28.6 L -84.5 -119.6" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+    <ellipse cx="-41.6" cy="-65" rx="54.6" ry="14.95" fill="rgba(0,0,0,0.3)"/>
+    <ellipse cx="-41.6" cy="65" rx="54.6" ry="14.95" fill="rgba(0,0,0,0.3)"/>
+    <ellipse cx="143" cy="-6.5" rx="28.6" ry="11.05" transform="rotate(-6 143 -6.5)" fill="rgba(200,235,255,0.55)"/>
+  </g>
 </svg>
