@@ -35,6 +35,11 @@ class AdsManager(private val activity: Activity) {
     var onWillPresent: (() -> Unit)? = null
     var onDidDismiss: (() -> Unit)? = null
 
+    // Wired up by MainActivity to push the UMP SDK's privacy-options requirement
+    // into the page (see AdsManager.swift for the iOS mirror) so the Settings
+    // panel's PRIVACY CHOICES row only renders where Google's policy requires it.
+    var onPrivacyOptionsRequiredChange: ((Boolean) -> Unit)? = null
+
     private var interstitialAd: InterstitialAd? = null
     private var started = false
     private lateinit var consentInformation: ConsentInformation
@@ -89,6 +94,10 @@ class AdsManager(private val activity: Activity) {
                     if (formError != null) {
                         Log.w(TAG, "Consent form error: ${formError.message}")
                     }
+                    onPrivacyOptionsRequiredChange?.invoke(
+                        consentInformation.privacyOptionsRequirementStatus ==
+                            ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+                    )
                     if (consentInformation.canRequestAds()) {
                         MobileAds.initialize(activity) {
                             loadInterstitial()
@@ -100,6 +109,18 @@ class AdsManager(private val activity: Activity) {
                 Log.w(TAG, "Consent info update failed: ${requestConsentError.message}")
             }
         )
+    }
+
+    // Reopens the same UMP consent form the player saw once at launch, invoked
+    // from the Settings panel's PRIVACY CHOICES row (only shown when
+    // onPrivacyOptionsRequiredChange reported true). Google requires this
+    // re-entry point wherever the original form was required.
+    fun showPrivacyOptionsForm(activity: Activity) {
+        UserMessagingPlatform.showPrivacyOptionsForm(activity) { formError ->
+            if (formError != null) {
+                Log.w(TAG, "Privacy options form error: ${formError.message}")
+            }
+        }
     }
 
     fun requestInterstitial(removeAdsOwned: Boolean, score: Int) {

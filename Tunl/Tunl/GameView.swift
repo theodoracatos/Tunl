@@ -114,6 +114,12 @@ struct GameView: UIViewRepresentable {
                     self?.webView?.evaluateJavaScript("window._resumeAudioAfterAd && window._resumeAudioAfterAd()")
                 }
             }
+            ads.onPrivacyOptionsRequiredChange = { [weak self] required in
+                let json = "{\"privacyOptionsRequired\":\(required)}"
+                DispatchQueue.main.async {
+                    self?.webView?.evaluateJavaScript("window._tunlNativeUpdate && window._tunlNativeUpdate(\(json))")
+                }
+            }
             // TunlApp.swift's AppDelegate reactivates the *native* AVAudioSession on
             // this same notification, but that alone doesn't recover the WKWebView's
             // own AudioContext once WebKit has fully closed it after extended
@@ -256,6 +262,8 @@ struct GameView: UIViewRepresentable {
                 case "interstitialRequest":
                     let score = body["score"] as? Int ?? 0
                     ads.requestInterstitial(removeAdsOwned: iap.removeAdsOwned, score: score)
+                case "privacyOptions":
+                    ads.showPrivacyOptionsForm()
                 default: break
                 }
                 return

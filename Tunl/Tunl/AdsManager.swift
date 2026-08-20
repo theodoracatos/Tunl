@@ -23,6 +23,12 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
     var onWillPresent: (() -> Void)?
     var onDidDismiss: (() -> Void)?
 
+    // Wired up by GameView.Coordinator to push the UMP SDK's privacy-options
+    // requirement into the page (see AdsManager.kt for the Android mirror) so
+    // the Settings panel's PRIVACY CHOICES row only renders where Google's
+    // policy requires it.
+    var onPrivacyOptionsRequiredChange: ((Bool) -> Void)?
+
     // Called once the WKWebView content is visible (see GameView.swift's
     // webView(_:didFinish:)) so both the UMP consent form and Apple's ATT
     // prompt fire while the window is key/active, not during Coordinator
@@ -58,11 +64,30 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
                 print("AdsManager: consent update failed: \(error.localizedDescription)")
             }
 
+            self.onPrivacyOptionsRequiredChange?(
+                ConsentInformation.shared.privacyOptionsRequirementStatus == .required
+            )
+
             guard ConsentInformation.shared.canRequestAds else { return }
 
             _ = await ATTrackingManager.requestTrackingAuthorization()
             _ = await MobileAds.shared.start()
             await self.loadInterstitial()
+        }
+    }
+
+    // Reopens the same UMP consent form the player saw once at launch, invoked
+    // from the Settings panel's PRIVACY CHOICES row (only shown when
+    // onPrivacyOptionsRequiredChange reported true). Google requires this
+    // re-entry point wherever the original form was required.
+    func showPrivacyOptionsForm() {
+        guard let root = rootViewController() else { return }
+        Task { @MainActor in
+            do {
+                try await ConsentForm.presentPrivacyOptionsForm(from: root)
+            } catch {
+                print("AdsManager: privacy options form failed: \(error.localizedDescription)")
+            }
         }
     }
 

@@ -1536,10 +1536,17 @@ function draw() {
             const restoreH   = H * 0.032;
             const iapSectionH = hasIAP ? sectionGap + iapBtnH + (removeAdsOwned ? 0 : restoreGap + restoreH) : 0;
 
+            // Only shown once the native layer confirms the UMP SDK actually requires
+            // it for this player's region (see state.js's privacyOptionsRequired) -
+            // most players outside the EEA/UK/CH/opted-in US states never see this row.
+            const hasPrivacyBtn  = !!window.webkit?.messageHandlers?.ads && privacyOptionsRequired;
+            const privacyBtnH    = H * 0.062;
+            const privacySectionH = hasPrivacyBtn ? sectionGap + privacyBtnH : 0;
+
             const langCols  = LANG_ORDER.length > 10 ? 3 : 2;
             const langRows  = Math.ceil(LANG_ORDER.length / langCols);
             const langListH = langRows * lbh + Math.max(0, langRows - 1) * lbGap;
-            const panH = padTop + titleH + audioRowH + sectionGap + langLabelH + langListH + iapSectionH + padBottom;
+            const panH = padTop + titleH + audioRowH + sectionGap + langLabelH + langListH + iapSectionH + privacySectionH + padBottom;
 
             const panX = W / 2 - panW / 2;
             const panY = Math.max(H * 0.02, Math.min(H * 0.98 - panH, H / 2 - panH / 2));
@@ -1663,6 +1670,27 @@ function draw() {
                     _restoreBtnRect = { x: W / 2 - panW * 0.35, y, w: panW * 0.70, h: restoreH };
                     y += restoreH;
                 }
+            }
+
+            // Re-entry point into the UMP consent form (see AdsManager.kt/.swift's
+            // showPrivacyOptionsForm) - required by Google's policy wherever the
+            // form itself is required, so players can change their mind after the
+            // one-time launch prompt without reinstalling the app.
+            _privacyChoicesBtnRect = null;
+            if (hasPrivacyBtn) {
+                y += sectionGap;
+                const pbw = panW * 0.78, pby = y;
+                const pbx = W / 2 - pbw / 2;
+                ctx.fillStyle = 'rgba(15,18,40,0.72)';
+                ctx.beginPath(); ctx.roundRect(pbx, pby, pbw, privacyBtnH, 7); ctx.fill();
+                ctx.strokeStyle = 'rgba(90,120,160,0.50)';
+                ctx.lineWidth   = 1;
+                ctx.beginPath(); ctx.roundRect(pbx, pby, pbw, privacyBtnH, 7); ctx.stroke();
+                ctx.font      = `${FS * 0.019}px 'Courier New',monospace`;
+                ctx.fillStyle = 'rgba(180,195,225,0.85)';
+                ctx.fillText(T.privacyChoices, W / 2, pby + privacyBtnH / 2);
+                _privacyChoicesBtnRect = { x: pbx, y: pby, w: pbw, h: privacyBtnH };
+                y += privacyBtnH;
             }
         }
     }

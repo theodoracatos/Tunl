@@ -93,6 +93,7 @@ class MainActivity : ComponentActivity() {
                     "ads" -> when (body.optString("action")) {
                         "interstitialRequest" ->
                             ads.requestInterstitial(billing.removeAdsOwned, body.optInt("score"))
+                        "privacyOptions" -> ads.showPrivacyOptionsForm(this@MainActivity)
                     }
                 }
             }
@@ -154,6 +155,9 @@ class MainActivity : ComponentActivity() {
         // which pause/resume the page's Web Audio graph under the interstitial.
         ads.onWillPresent = { runJs("window._pauseAudioForAd && window._pauseAudioForAd()") }
         ads.onDidDismiss = { runJs("window._resumeAudioAfterAd && window._resumeAudioAfterAd()") }
+        ads.onPrivacyOptionsRequiredChange = { required ->
+            runJs("window._tunlNativeUpdate && window._tunlNativeUpdate({\"privacyOptionsRequired\":$required})")
+        }
 
         webView = WebView(this).apply {
             settings.javaScriptEnabled = true

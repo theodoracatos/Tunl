@@ -7,6 +7,11 @@ window._tunlNativeUpdate = function (state) {
         removeAdsOwned = state.removeAdsOwned;
         localStorage.setItem('tunnel_remove_ads', removeAdsOwned ? '1' : '0');
     }
+    // Pushed once per launch after AdsManager's consent-info update resolves
+    // (see AdsManager.kt/.swift) - not persisted, see state.js's declaration.
+    if (typeof state.privacyOptionsRequired === 'boolean') {
+        privacyOptionsRequired = state.privacyOptionsRequired;
+    }
 };
 
 // Android's system/gesture back button has no iOS equivalent, so there's no

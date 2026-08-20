@@ -32,6 +32,12 @@ if (localStorage.getItem('tunnel_shards') === null) {
 let dailyShardsEarned = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tunnel_daily_shards') || '0') : 0;
 let runShardsBanked = 0; // this run's actual post-cap shard gain, shown on the death screen
 let removeAdsOwned = localStorage.getItem('tunnel_remove_ads') === '1';
+// Set by the native layer (see main.js's _tunlNativeUpdate) once the UMP SDK's
+// consent-info update resolves. Only true for players in a region where Google's
+// consent/privacy rules require an in-app way to revisit their choice (EEA/UK/CH
+// GDPR, or an opted-in US state) - not persisted, since it's a live SDK query
+// result, not a player preference.
+let privacyOptionsRequired = false;
 let activeSkin    = parseInt(localStorage.getItem('tunnel_skin')  || '0');
 if (!(unlockedSkins & (1 << activeSkin))) activeSkin = 0;
 // Per-ship mastery XP (constants.js masteryLevel/masteryLerp), index-aligned with SKINS.
@@ -63,6 +69,7 @@ let _challengeBtnRect = null;
 let _langBtnRects = [];
 let _removeAdsBtnRect = null;
 let _restoreBtnRect = null;
+let _privacyChoicesBtnRect = null;
 let parts, thrustParts, deadT, titleT, flashA, shake, trailY;
 let stalactites, nextStalWx;
 let coins, nextCoinWx;

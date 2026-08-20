@@ -40,6 +40,10 @@ function onDown(e) {
                 window.webkit?.messageHandlers?.iap?.postMessage({ action: 'restore' });
                 return;
             }
+            if (_privacyChoicesBtnRect && inRect(cx, cy, _privacyChoicesBtnRect)) {
+                window.webkit?.messageHandlers?.ads?.postMessage({ action: 'privacyOptions' });
+                return;
+            }
             if (_btnMusicRect && inRect(cx, cy, _btnMusicRect)) {
                 musicOn = !musicOn;
                 localStorage.setItem('tunnel_music', musicOn ? '1' : '0');
