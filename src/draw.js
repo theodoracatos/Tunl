@@ -1223,32 +1223,41 @@ function draw() {
         // the skinCX overflow bug: fixed fractions don't track how the dynamically-
         // clamped ship row actually shifts across device widths. See measureShipLabelHalfW.
         const showShipPanel = best > 0 || unlockedSkins > 1;
-        const dotR   = LAND ? UI_H * 0.040 : H * 0.035;
-        const dotGap = Math.max(dotR * 2.8, LAND ? UI_H * 0.130 : W * 0.180);
-        const measureShipLabelHalfW = (i) => {
-            ctx.font = `bold ${FS*0.021}px 'Courier New',monospace`;
-            let lw = ctx.measureText(SKINS[i].name).width;
-            if (T.skinPerks && T.skinPerks[i]) {
-                ctx.font = `${FS*0.019}px 'Courier New',monospace`;
-                lw = Math.max(lw, ctx.measureText(T.skinPerks[i]).width);
-            }
-            if (T.skinDrawbacks && T.skinDrawbacks[i]) {
-                ctx.font = `${FS*0.015}px 'Courier New',monospace`;
-                lw = Math.max(lw, ctx.measureText(T.skinDrawbacks[i]).width);
-            }
-            return lw / 2;
-        };
-        const rowHalfW   = (SKINS.length - 1) * dotGap / 2;
-        const edgeMargin = 6;
-        let skinCX = infoX;
-        if (LAND) {
-            const rightLimit = W - edgeMargin - rowHalfW - measureShipLabelHalfW(SKINS.length - 1);
-            const leftLimit  = edgeMargin + rowHalfW + measureShipLabelHalfW(0);
-            skinCX = Math.min(skinCX, rightLimit);
-            skinCX = Math.max(skinCX, leftLimit);
+        // Split skins into owned and locked lists for the two-row picker.
+        const unlockedList = [], lockedList = [];
+        for (let i = 0; i < SKINS.length; i++) {
+            if (unlockedSkins & (1 << i)) unlockedList.push(i);
+            else lockedList.push(i);
         }
-        const dotY   = LAND ? H * 0.70 : H - dotR * 2.4;
-        const startX = skinCX - rowHalfW;
+        // Two rows (landscape): unlocked ships larger on top, locked ships smaller below.
+        // App is landscape-only, but portrait aliases are kept so code paths stay intact.
+        const dotR1   = LAND ? UI_H * 0.044 : H * 0.035;
+        const dotGap1 = Math.max(dotR1 * 2.8, LAND ? UI_H * 0.130 : W * 0.180);
+        const dotR2   = UI_H * 0.031;   // locked row, landscape only
+        const dotGap2 = Math.max(dotR2 * 2.8, UI_H * 0.095);
+        // Portrait single-row aliases
+        const dotR    = LAND ? dotR1 : H * 0.035;
+        const dotGap  = LAND ? dotGap1 : Math.max(dotR * 2.8, W * 0.180);
+        const rowHalfW1  = (Math.max(unlockedList.length, 1) - 1) * dotGap1 / 2;
+        const rowHalfW2  = lockedList.length > 0 ? (lockedList.length - 1) * dotGap2 / 2 : 0;
+        const edgeMargin = 8;
+        let cx1 = infoX, cx2 = infoX;
+        if (LAND) {
+            cx1 = Math.min(Math.max(cx1, edgeMargin + rowHalfW1), W - edgeMargin - rowHalfW1);
+            cx2 = Math.min(Math.max(cx2, edgeMargin + rowHalfW2), W - edgeMargin - rowHalfW2);
+        }
+        const dotY1  = LAND ? H * 0.650 : H - dotR * 2.4;
+        const dotY2  = H * 0.875;   // locked row, landscape only
+        const startX1 = cx1 - rowHalfW1;
+        const startX2 = cx2 - rowHalfW2;
+        // Aliases used by the divider calculation and portrait path
+        const skinCX = cx1;
+        const dotY   = dotY1;
+        // Divider is pegged to the full 7-ship span width so it stays stable
+        // regardless of how many ships are currently unlocked -- basing it only on
+        // the unlocked row would push it too far right and clip the stats text.
+        const fullRowHalfW = (SKINS.length - 1) * dotGap1 / 2;
+        const startX       = Math.max(infoX - fullRowHalfW, edgeMargin);
 
         // Gradient separator between columns (landscape only). When the ship panel is
         // showing, sit just left of PEARL's actual icon (not its text label -- the
@@ -1267,7 +1276,7 @@ function draw() {
             sepGrd.addColorStop(1,   `rgba(55,75,140,0)`);
             ctx.fillStyle = sepGrd;
             const dividerMargin = 12;
-            dividerX = showShipPanel ? (startX - dotR * 1.6 - dividerMargin) : W * 0.44;
+            dividerX = showShipPanel ? (startX - dotR1 * 1.6 - dividerMargin) : W * 0.44;
             // Don't let the divider crash into the left column's own content either.
             dividerX = Math.max(dividerX, W * 0.34);
             ctx.fillRect(dividerX, H * 0.08, 1, H * 0.84);
@@ -1741,27 +1750,100 @@ function draw() {
         // Game Center covers competitive leaderboards (where available -- Android's
         // own leaderboard setup is still pending, per project notes) and this panel
         // is now visible from the first run on anyway, not just after a 2nd unlock.
-        // (showShipPanel and the whole dotR/dotGap/skinCX/startX layout are computed
-        // above, before the divider, so the divider can be positioned against PEARL's
-        // real position -- reused here rather than recomputed.)
+        // (showShipPanel and the two-row layout geometry are computed above, before
+        // the divider, so the divider can be positioned against the full ship span --
+        // reused here rather than recomputed.)
 
-        // Skin picker
+        // Skin picker - two rows: unlocked (larger) above, locked (smaller) below.
         if (showShipPanel) {
             _skinBtnRects = [];
+
+            // SHIP header + shard wallet, above the unlocked row
             ctx.font        = `bold ${FS*0.025}px 'Courier New',monospace`;
             ctx.fillStyle   = 'rgba(190,205,240,0.92)';
             ctx.shadowColor = 'rgba(0,0,0,0.85)';
             ctx.shadowBlur  = 3;
-            ctx.fillText(`${T.ship}   ${shards} ⧫`, skinCX, dotY - dotR * 2.0);
+            ctx.fillText(`${T.ship}   ${shards} ⧫`, cx1, dotY1 - dotR1 * 2.2);
             ctx.shadowBlur  = 0;
-            for (let i = 0; i < SKINS.length; i++) {
-                const cx       = startX + i * dotGap;
-                const unlocked = !!(unlockedSkins & (1 << i));
+
+            // -- Unlocked row --
+            for (let idx = 0; idx < unlockedList.length; idx++) {
+                const i        = unlockedList[idx];
+                const cx       = startX1 + idx * dotGap1;
                 const selected = activeSkin === i;
-                _skinBtnRects.push({ cx, cy: dotY, r: dotR * 1.5 });
-                if (!unlocked) {
+                _skinBtnRects.push({ cx, cy: dotY1, r: dotR1 * 1.5 });
+                const [sr, sg, sb] = SKINS[i].shadow;
+                if (selected) {
+                    ctx.save();
+                    shipPath(cx, dotY1, dotR1 * 1.6);
+                    ctx.strokeStyle = `rgba(${sr},${sg},${sb},0.50)`;
+                    ctx.lineWidth   = 2.5;
+                    ctx.shadowColor = `rgba(${sr},${sg},${sb},0.60)`;
+                    ctx.shadowBlur  = 12;
+                    ctx.stroke();
+                    ctx.shadowBlur  = 0;
+                    ctx.restore();
+                }
+                drawShip(cx, dotY1, dotR1, SKINS[i].color, sr, sg, sb, selected ? 22 : 8);
+                // Mastery pips above the selected ship (constants.js masteryLevel/masteryLerp).
+                // PEARL has no perk to master.
+                if (selected && i > 0) {
+                    const lvl = masteryLevel(i);
+                    const pipR = dotR1 * 0.09, pipGap = dotR1 * 0.30;
+                    const pipsW = (MASTERY_XP_THRESHOLDS.length - 2) * pipGap;
+                    for (let p = 0; p < MASTERY_XP_THRESHOLDS.length - 1; p++) {
+                        const px  = cx - pipsW/2 + p * pipGap;
+                        const py2 = dotY1 - dotR1 * 1.35;
+                        ctx.beginPath();
+                        ctx.arc(px, py2, pipR, 0, Math.PI*2);
+                        if (p < lvl) {
+                            ctx.fillStyle   = `rgba(${sr},${sg},${sb},0.90)`;
+                            ctx.shadowColor = `rgba(${sr},${sg},${sb},0.70)`;
+                            ctx.shadowBlur  = 5;
+                            ctx.fill();
+                            ctx.shadowBlur  = 0;
+                        } else {
+                            ctx.strokeStyle = `rgba(${sr},${sg},${sb},0.40)`;
+                            ctx.lineWidth   = 1;
+                            ctx.stroke();
+                        }
+                    }
+                }
+                ctx.font        = `${FS*0.021}px 'Courier New',monospace`;
+                ctx.fillStyle   = selected
+                    ? `rgba(${sr},${sg},${sb},0.95)`
+                    : 'rgba(160,175,220,0.65)';
+                ctx.shadowColor = 'rgba(0,0,0,0.85)';
+                ctx.shadowBlur  = selected ? 8 : 3;
+                ctx.fillText(SKINS[i].name, cx, dotY1 + dotR1 * 1.7);
+                ctx.shadowBlur  = 0;
+            }
+
+            // Active perk - shown in the gap between the two rows (or below the unlocked
+            // row when everything is unlocked). Drawback is omitted here; it reads as
+            // noise when the locked-row roadmap shares the same limited vertical band.
+            const activePerk = T.skinPerks && T.skinPerks[activeSkin];
+            if (activePerk) {
+                const [sr, sg, sb] = SKINS[activeSkin].shadow;
+                const perkY = lockedList.length > 0
+                    ? (dotY1 + dotR1 * 2.1 + dotY2 - dotR2 * 1.8) / 2   // midpoint between rows
+                    : dotY1 + dotR1 * 2.9;                                // below single row
+                ctx.font        = `${FS*0.019}px 'Courier New',monospace`;
+                ctx.fillStyle   = `rgba(${sr},${sg},${sb},0.82)`;
+                ctx.shadowColor = 'rgba(0,0,0,0.90)';
+                ctx.shadowBlur  = 4;
+                ctx.fillText(activePerk, cx1, perkY);
+                ctx.shadowBlur  = 0;
+            }
+
+            // -- Locked row (landscape only, rendered when there are ships left to buy) --
+            if (LAND && lockedList.length > 0) {
+                for (let idx = 0; idx < lockedList.length; idx++) {
+                    const i  = lockedList[idx];
+                    const cx = startX2 + idx * dotGap2;
+                    _skinBtnRects.push({ cx, cy: dotY2, r: dotR2 * 1.5 });
                     ctx.beginPath();
-                    ctx.arc(cx, dotY, dotR, 0, Math.PI * 2);
+                    ctx.arc(cx, dotY2, dotR2, 0, Math.PI * 2);
                     ctx.strokeStyle = 'rgba(90,95,130,0.50)';
                     ctx.lineWidth   = 1.5;
                     ctx.stroke();
@@ -1769,76 +1851,8 @@ function draw() {
                     ctx.fillStyle   = 'rgba(150,160,205,0.85)';
                     ctx.shadowColor = 'rgba(0,0,0,0.85)';
                     ctx.shadowBlur  = 3;
-                    ctx.fillText(`${SKINS[i].cost} ⧫`, cx, dotY + dotR * 1.7);
+                    ctx.fillText(`${SKINS[i].cost} ⧫`, cx, dotY2 + dotR2 * 1.7);
                     ctx.shadowBlur  = 0;
-                    ctx.font = `${FS*0.018}px 'Courier New',monospace`;
-                } else {
-                    const [sr, sg, sb] = SKINS[i].shadow;
-                    if (selected) {
-                        ctx.save();
-                        shipPath(cx, dotY, dotR * 1.6);
-                        ctx.strokeStyle = `rgba(${sr},${sg},${sb},0.50)`;
-                        ctx.lineWidth   = 2.5;
-                        ctx.shadowColor = `rgba(${sr},${sg},${sb},0.60)`;
-                        ctx.shadowBlur  = 12;
-                        ctx.stroke();
-                        ctx.shadowBlur  = 0;
-                        ctx.restore();
-                    }
-                    drawShip(cx, dotY, dotR, SKINS[i].color, sr, sg, sb, selected ? 22 : 8);
-                    // Mastery pips: how far this ship's buff/drawback have grown from flying
-                    // it (constants.js masteryLevel/masteryLerp). PEARL has no perk to master.
-                    if (selected && i > 0) {
-                        const lvl = masteryLevel(i);
-                        const pipR = dotR * 0.09, pipGap = dotR * 0.30;
-                        const pipsW = (MASTERY_XP_THRESHOLDS.length - 2) * pipGap;
-                        for (let p = 0; p < MASTERY_XP_THRESHOLDS.length - 1; p++) {
-                            const px = cx - pipsW/2 + p * pipGap;
-                            const py2 = dotY - dotR * 1.35;
-                            ctx.beginPath();
-                            ctx.arc(px, py2, pipR, 0, Math.PI*2);
-                            if (p < lvl) {
-                                ctx.fillStyle   = `rgba(${sr},${sg},${sb},0.90)`;
-                                ctx.shadowColor = `rgba(${sr},${sg},${sb},0.70)`;
-                                ctx.shadowBlur  = 5;
-                                ctx.fill();
-                                ctx.shadowBlur  = 0;
-                            } else {
-                                ctx.strokeStyle = `rgba(${sr},${sg},${sb},0.40)`;
-                                ctx.lineWidth   = 1;
-                                ctx.stroke();
-                            }
-                        }
-                    }
-                    ctx.font        = `${FS*0.021}px 'Courier New',monospace`;
-                    ctx.fillStyle   = selected
-                        ? `rgba(${sr},${sg},${sb},0.95)`
-                        : 'rgba(160,175,220,0.65)';
-                    ctx.shadowColor = 'rgba(0,0,0,0.85)';
-                    ctx.shadowBlur  = selected ? 8 : 3;
-                    ctx.fillText(SKINS[i].name, cx, dotY + dotR * 1.7);
-                    ctx.shadowBlur  = 0;
-                    const perk     = T.skinPerks     && T.skinPerks[i];
-                    const drawback = T.skinDrawbacks && T.skinDrawbacks[i];
-                    if (selected && perk) {
-                        ctx.font        = `${FS*0.019}px 'Courier New',monospace`;
-                        ctx.fillStyle   = `rgba(${sr},${sg},${sb},0.85)`;
-                        ctx.shadowColor = 'rgba(0,0,0,0.90)';
-                        ctx.shadowBlur  = 4;
-                        ctx.fillText(perk, cx, dotY + dotR * 2.7);
-                        ctx.shadowBlur  = 0;
-                    }
-                    // Trade-off: each buff above is paired with a drawback, a size step
-                    // smaller so the perk stays the visual headline.
-                    if (selected && drawback) {
-                        ctx.font        = `${FS*0.015}px 'Courier New',monospace`;
-                        ctx.fillStyle   = 'rgba(255,120,90,0.80)';
-                        ctx.shadowColor = 'rgba(0,0,0,0.90)';
-                        ctx.shadowBlur  = 4;
-                        ctx.fillText(drawback, cx, dotY + dotR * 3.5);
-                        ctx.shadowBlur  = 0;
-                    }
-                    ctx.font = `${FS*0.018}px 'Courier New',monospace`;
                 }
             }
         }
