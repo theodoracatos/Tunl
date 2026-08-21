@@ -330,10 +330,15 @@ class MainActivity : ComponentActivity() {
 
     private fun submitScore(score: Int) {
         if (score <= 0) return
+        // submitScoreImmediate, not submitScore: the plain v2 submitScore() is a fire-
+        // and-forget void call with no completion signal at all, so there is nothing to
+        // chain fetchWorldRank() off. submitScoreImmediate returns a real Task, at the
+        // cost of skipping the SDK's own batching -- worth it here since we need the
+        // submit to have actually landed before reading rank back. Only after the submit
+        // lands, so the rank reflects the run that just ended rather than the previous
+        // one. Mirrors GameView.swift's submitScore.
         PlayGames.getLeaderboardsClient(this)
-            .submitScore(getString(R.string.leaderboard_id), score.toLong())
-            // Only after the submit lands, so the rank reflects the run that just ended
-            // rather than the previous one. Mirrors GameView.swift's submitScore.
+            .submitScoreImmediate(getString(R.string.leaderboard_id), score.toLong())
             .addOnCompleteListener { fetchWorldRank() }
     }
 
