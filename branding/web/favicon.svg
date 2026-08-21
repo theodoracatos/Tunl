@@ -49,8 +49,8 @@
        reads as flying through a corridor, not just toward an abstract ring.
        Same y-position as before (150/874), now straight and white instead of
        wavy purple/cyan. -->
-  <path d="M -20,150 L 1044,150" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round" opacity="0.5" filter="url(#wglow)"/>
-  <path d="M -20,874 L 1044,874" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round" opacity="0.5" filter="url(#wglow)"/>
+  <path d="M -20,150 L 1044,150" fill="none" stroke="#ffffff" stroke-width="18" stroke-linecap="round" opacity="0.5" filter="url(#wglow)"/>
+  <path d="M -20,874 L 1044,874" fill="none" stroke="#ffffff" stroke-width="18" stroke-linecap="round" opacity="0.5" filter="url(#wglow)"/>
 
   <!-- vanishing-point halo: the light the ship is flying toward -->
   <circle cx="560" cy="512" r="190" fill="url(#coreHalo)" filter="url(#coreBlur)"/>
