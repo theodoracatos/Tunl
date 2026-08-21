@@ -36,9 +36,16 @@
     <filter id="shipGlow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="14"/></filter>
     <filter id="flameBlur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4"/></filter>
     <filter id="abGlow" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="11"/></filter>
+    <filter id="wglow"><feGaussianBlur stdDeviation="3"/></filter>
   </defs>
 
   <rect width="1024" height="1024" fill="url(#bgGrd)"/>
+
+  <!-- Corridor walls: the tunnel's own top/bottom wave lines (same motif as
+       feature-graphic.svg), framing the ship top and bottom so the mark reads
+       as flying through a corridor, not just toward an abstract ring. -->
+  <path d="M -20,150 C 220,100 420,200 680,150 C 860,120 960,170 1044,140" fill="none" stroke="url(#purpleGrd)" stroke-width="5" stroke-linecap="round" opacity="0.5" filter="url(#wglow)"/>
+  <path d="M -20,874 C 220,924 420,824 680,874 C 860,904 960,854 1044,884" fill="none" stroke="url(#cyanGrd)" stroke-width="5" stroke-linecap="round" opacity="0.5" filter="url(#wglow)"/>
 
   <!-- vanishing-point halo: the light the ship is flying toward -->
   <circle cx="560" cy="512" r="190" fill="url(#coreHalo)" filter="url(#coreBlur)"/>
