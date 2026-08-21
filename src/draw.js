@@ -1608,7 +1608,7 @@ function draw() {
             // actual bottom edge (see _btnRowBottom above) so a two-row cluster on a
             // narrow device can't push into this block. Both nudged down slightly for
             // a touch more breathing room above the block's "MISSIONS" header.
-            let missionY = Math.max(H * 0.785, _btnRowBottom + H * 0.045);
+            let missionY = Math.max(H * 0.820, _btnRowBottom + H * 0.060);
 
             // Laid out as a real three-column table (progress right-aligned, label
             // left-aligned, reward right-aligned) rather than centring each row's whole
