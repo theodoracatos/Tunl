@@ -1715,7 +1715,7 @@ function draw() {
         // STREAK/TOP 5) reaches in landscape, so each line uses the same step
         // and the skin picker below never overlaps regardless of which lines
         // end up shown.
-        let rightColY  = H * 0.18;
+        let rightColY  = H * 0.25;
         const lineStep = H * 0.105;
 
         // BEST (all-time record) is the single headline stat -- it rarely changes, so
