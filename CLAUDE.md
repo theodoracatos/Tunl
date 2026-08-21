@@ -321,5 +321,7 @@ rolled back one so the two rules don't compound into a much longer gap than inte
 - Friend ghosts carried inside a share link (see Ghost run below - the local ghost is
   already only a few hundred bytes, so a shared one is mostly a transport problem)
 - A playable web build. Deliberately NOT on the roadmap right now: the user decided
-  against it. If it comes back, the blockers are the 7.5 MB of MP3 that `audio.js`
-  fetches at launch, a portrait/rotate overlay, and an install CTA.
+  against it. If it comes back, the remaining blockers are a portrait/rotate overlay and
+  an install CTA - the launch-time audio cost that used to head this list is fixed (see
+  the lazy loaders in `audio.js`), though the two MP3s would still want smaller web
+  encodes before shipping over a link.

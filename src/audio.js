@@ -2,6 +2,7 @@
 
 let _ac = null, _tNode = null, _tGain = null;
 let _bgmBuf = null, _bgmBufRev = null, _bgmNode = null, _bgmGain = null;
+let _bgmLoading = false, _titleBgmLoading = false; // in-flight guards for the lazy loaders
 let _bgmDir = 1, _bgmActive = false, _bgmPending = false;
 let _titleBgmBuf = null, _titleBgmNode = null, _titleBgmGain = null;
 let _titleBgmActive = false, _titleBgmPending = false;
@@ -17,8 +18,10 @@ function _startBgMusic() {
         _bgmGain.gain.setValueAtTime(0.10, _ac.currentTime);
     }
     if (_bgmBuf) { _playBgmBuffer(); return; }
-    // buffer still decoding - mark pending; _initAC will start playback when ready
+    // Not loaded yet - mark pending and kick the loader (no-op if already in flight);
+    // it starts playback itself once the buffer lands.
     _bgmPending = true;
+    _loadBgmBuffer();
 }
 
 function _playBgmBuffer() {
@@ -57,8 +60,10 @@ function _startTitleMusic() {
         _titleBgmGain.gain.setValueAtTime(0.10, _ac.currentTime);
     }
     if (_titleBgmBuf) { _playTitleBgmBuffer(); return; }
-    // buffer still decoding - mark pending; _initAC will start playback when ready
+    // Not loaded yet - mark pending and kick the loader (no-op if already in flight);
+    // it starts playback itself once the buffer lands.
     _titleBgmPending = true;
+    _loadTitleBgmBuffer();
 }
 
 function _playTitleBgmBuffer() {
@@ -95,12 +100,40 @@ function _initAC() {
     // WebKit sometimes creates the context in 'suspended' state even inside a
     // user gesture - resume it explicitly now, still within the gesture.
     if (_ac.state === 'suspended') _ac.resume();
+    // Music buffers are NOT fetched here -- see _loadTitleBgmBuffer/_loadBgmBuffer.
+    // Only re-kick whatever was already playing when the context was torn down
+    // (_reviveAudioContext sets these), so backgrounding still recovers exactly as before.
+    if (_titleBgmPending) _loadTitleBgmBuffer();
+    if (_bgmPending)      _loadBgmBuffer();
+}
+
+// ── Lazy music loading ────────────────────────────────────────────────
+// Both tracks used to be fetched and decoded right here in _initAC, i.e. on every
+// launch, before the player had done anything -- 7.5 MB of mp3 plus the decoded PCM,
+// and the play track is decoded twice over (see the reversed copy below). None of it is
+// needed to launch: sfx only need the AudioContext, the title track isn't wanted until
+// title music actually starts, and the play track isn't wanted until a run begins.
+// Loading on demand also means a player with music switched off now downloads and
+// decodes nothing at all, where before they paid the full cost every launch and then
+// threw it away.
+//
+// Each loader is at-most-once (guarded by its own buffer + in-flight flag) and captures
+// the context it started against, so a decode still in flight when backgrounding tears
+// the context down resolves into nothing instead of installing a buffer built on a dead
+// context -- _reviveAudioContext re-kicks the loaders itself via _initAC above.
+
+function _loadBgmBuffer() {
+    if (!_ac || _bgmBuf || _bgmLoading) return;
+    _bgmLoading = true;
+    const ctx = _ac;
     fetch('the_mountain.mp3')
         .then(r => r.arrayBuffer())
-        .then(ab => _ac.decodeAudioData(ab))
+        .then(ab => ctx.decodeAudioData(ab))
         .then(buf => {
+            _bgmLoading = false;
+            if (_ac !== ctx) return;   // context rebuilt mid-load; revive path reloads
             _bgmBuf = buf;
-            _bgmBufRev = _ac.createBuffer(buf.numberOfChannels, buf.length, buf.sampleRate);
+            _bgmBufRev = ctx.createBuffer(buf.numberOfChannels, buf.length, buf.sampleRate);
             for (let c = 0; c < buf.numberOfChannels; c++) {
                 const fwd = buf.getChannelData(c);
                 const rev = _bgmBufRev.getChannelData(c);
@@ -108,15 +141,34 @@ function _initAC() {
             }
             if (_bgmPending && _bgmActive) { _bgmPending = false; _playBgmBuffer(); }
         })
-        .catch(err => console.error('[audio] the_mountain.mp3 load/decode failed:', err));
+        .catch(err => {
+            _bgmLoading = false;
+            console.error('[audio] the_mountain.mp3 load/decode failed:', err);
+        });
+}
+
+function _loadTitleBgmBuffer() {
+    if (!_ac || _titleBgmBuf || _titleBgmLoading) return;
+    _titleBgmLoading = true;
+    const ctx = _ac;
     fetch('the_mountain_documentary.mp3')
         .then(r => r.arrayBuffer())
-        .then(ab => _ac.decodeAudioData(ab))
+        .then(ab => ctx.decodeAudioData(ab))
         .then(buf => {
+            _titleBgmLoading = false;
+            if (_ac !== ctx) return;
             _titleBgmBuf = buf;
             if (_titleBgmPending && _titleBgmActive) { _titleBgmPending = false; _playTitleBgmBuffer(); }
+            // Warm the play track now that the title track is in and the player is
+            // sitting on the title screen anyway. Sequenced rather than parallel so it
+            // never competes with the track that's actually audible right now, and so
+            // the first run doesn't open on silence while 4.7 MB decodes.
+            if (musicOn) _loadBgmBuffer();
         })
-        .catch(err => console.error('[audio] the_mountain_documentary.mp3 load/decode failed:', err));
+        .catch(err => {
+            _titleBgmLoading = false;
+            console.error('[audio] the_mountain_documentary.mp3 load/decode failed:', err);
+        });
 }
 
 // WebKit auto-suspends the AudioContext after the app has been backgrounded
@@ -141,6 +193,9 @@ function _reviveAudioContext() {
     _titleBgmPending = _titleBgmActive;
     _ac = null; _bgmBuf = null; _bgmBufRev = null; _bgmNode = null; _bgmGain = null;
     _titleBgmBuf = null; _titleBgmNode = null; _titleBgmGain = null;
+    // Any decode still in flight belongs to the context just closed and will drop itself
+    // on the _ac !== ctx check; clear the guards so the fresh context can load again.
+    _bgmLoading = false; _titleBgmLoading = false;
     _initAC();
 }
 // visibilitychange is the fallback path - WKWebView doesn't always fire it
