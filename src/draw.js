@@ -1255,8 +1255,8 @@ function draw() {
             cx1 = Math.min(Math.max(cx1, edgeMargin + rowHalfW1), W - edgeMargin - rowHalfW1);
             cx2 = Math.min(Math.max(cx2, edgeMargin + rowHalfW2), W - edgeMargin - rowHalfW2);
         }
-        const dotY1  = LAND ? H * 0.630 : H - dotR * 2.4;
-        const dotY2  = H * 0.855;   // locked row, landscape only
+        const dotY1  = LAND ? H * 0.600 : H - dotR * 2.4;
+        const dotY2  = H * 0.825;   // locked row, landscape only
         const startX1 = cx1 - rowHalfW1;
         const startX2 = cx2 - rowHalfW2;
         // Aliases used by the divider calculation and portrait path
@@ -1715,7 +1715,7 @@ function draw() {
         // STREAK/TOP 5) reaches in landscape, so each line uses the same step
         // and the skin picker below never overlaps regardless of which lines
         // end up shown.
-        let rightColY  = H * 0.25;
+        let rightColY  = H * 0.22;
         const lineStep = H * 0.105;
 
         // BEST (all-time record) is the single headline stat -- it rarely changes, so
