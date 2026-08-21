@@ -248,6 +248,7 @@ function pickDailyMissionIndices(dayInt) {
 // are the level-0 (unmastered) numbers -- flying a ship grows its buff and heals its
 // drawback further per masteryLerp() below, see that call site in each file for the
 // level-3 endpoint of every stat.
+//   SOLARIS  (update.js near-miss, update.js cPR)           +100% near-miss range / +20% hitbox
 const SKINS = [
     { color: '#e8eeff', shadow: [210,220,255],  name: 'PEARL'                       },
     { color: '#ffaa00', shadow: [255,155,0],    name: 'AMBER',   cost: 60           },
@@ -256,4 +257,5 @@ const SKINS = [
     { color: '#99ff00', shadow: [140,255,0],    name: 'TOXIC',   cost: 1200         },
     { color: '#c080ff', shadow: [180,90,255],   name: 'VOID',    cost: 3000         },
     { color: '#ffffff', shadow: [255,255,255],  name: 'NOVA',    cost: 8000         },
+    { color: '#ff6600', shadow: [255,100,0],    name: 'SOLARIS', cost: 15000        },
 ];

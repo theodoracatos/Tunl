@@ -187,7 +187,9 @@ function update(dt) {
         // VOID trades a smaller near-miss window for its extra shield capacity
         // (systems.js) -- it tanks hits instead of skimming past them for bonus.
         // Mastery eases the window back toward the 2.0x baseline.
-        if (nmC >= 0 && nmC < PR * (activeSkin === 5 ? masteryLerp(5, 1.5, 2.0) : 2.0)) {
+        if (nmC >= 0 && nmC < PR * (activeSkin === 5 ? masteryLerp(5, 1.5, 2.0)
+                                  : activeSkin === 7 ? masteryLerp(7, 4.0, 5.0)
+                                  : 2.0)) {
             bonusScore++;
             nearMissTimer = 1.5;
             runNearMisses++;
@@ -237,6 +239,13 @@ function update(dt) {
                 skinFxT = 0;
                 skinFx.push({ t: 5, life: 1, seed: Math.random() });
             }
+            // SOLARIS (7): solar sparks streaming from the nose
+            if (activeSkin === 7 && Math.random() < dt * 7) {
+                skinFx.push({ t: 6, x: PX + PR*(0.65 + Math.random()*0.45),
+                               y: py + (Math.random()-0.5)*PR*0.7,
+                               vx: PR*(3 + Math.random()*4), vy: (Math.random()-0.5)*PR*2,
+                               r: 1.0 + Math.random()*0.8, life: 1 });
+            }
         } else {
             skinFxT = 0;
         }
@@ -249,6 +258,7 @@ function update(dt) {
             if (f.t === 1) { f.r  += PR * 6 * dt; }
             if (f.t === 3) { f.x += f.vx*dt; f.y += f.vy*dt; }
             if (f.t === 4) { f.dist = Math.max(0, f.dist - PR * 3.2 * dt); }
+            if (f.t === 6) { f.x += f.vx*dt; f.y += f.vy*dt; }
             if (f.life <= 0) skinFx.splice(i, 1);
         }
     }
@@ -293,6 +303,7 @@ function update(dt) {
     // pushes CRIMSON's slimmer further and eases AMBER's back toward neutral.
     const cPR = activeSkin === 2 ? PR * masteryLerp(2, 0.82, 0.74)
               : activeSkin === 1 ? PR * masteryLerp(1, 1.10, 1.03)
+              : activeSkin === 7 ? PR * masteryLerp(7, 1.20, 1.10)
               : PR;
     for (const dx of [-cPR * 0.7, 0, cPR * 0.7]) {
         const b = boundsAt(scrollX + PX + dx);

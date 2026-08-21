@@ -1007,6 +1007,15 @@ function draw() {
                     ctx.stroke();
                 }
                 ctx.shadowBlur  = 0;
+            } else if (f.t === 6) {
+                // SOLARIS: bright solar spark streaming from the nose
+                ctx.beginPath();
+                ctx.arc(f.x, f.y, Math.max(f.r * f.life, 0.3), 0, Math.PI*2);
+                ctx.fillStyle   = `rgba(255,${Math.floor(170 + 85*f.life)},30,${a * 0.85})`;
+                ctx.shadowColor = `rgba(255,140,0,${a * 0.75})`;
+                ctx.shadowBlur  = 7;
+                ctx.fill();
+                ctx.shadowBlur  = 0;
             }
         }
     }
