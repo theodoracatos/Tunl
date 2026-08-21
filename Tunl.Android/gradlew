@@ -200,7 +200,13 @@ fi
 
 
 # Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
-DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
+# org.gradle.java.home is pinned here (not just in gradle.properties) because
+# ~/.gradle/gradle.properties on this machine points at Android Studio's bundled JBR
+# (Java 25), which Gradle 8.11.1 can't run on ("Unsupported class file major version
+# 69") - that user-level file wins over a project-level gradle.properties, so the
+# override has to live somewhere with higher precedence, i.e. a JVM system property
+# passed on the command line. Adjust the path if the openjdk@17 install ever moves.
+DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m" "-Dorg.gradle.java.home=/opt/homebrew/opt/openjdk@17"'
 
 # Collect all arguments for the java command:
 #   * DEFAULT_JVM_OPTS, JAVA_OPTS, JAVA_OPTS, and optsEnvironmentVar are not allowed to contain shell fragments,
