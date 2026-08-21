@@ -1579,8 +1579,9 @@ function draw() {
         if (LAND) {
             // Was a fixed H*0.775; now the greater of that and the button cluster's
             // actual bottom edge (see _btnRowBottom above) so a two-row cluster on a
-            // narrow device can't push into this block.
-            let missionY = Math.max(H * 0.775, _btnRowBottom + H * 0.03);
+            // narrow device can't push into this block. Both nudged down slightly for
+            // a touch more breathing room above the block's "MISSIONS" header.
+            let missionY = Math.max(H * 0.785, _btnRowBottom + H * 0.045);
             ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 3;
             ctx.font        = `bold ${FS*0.017}px 'Courier New',monospace`;
             ctx.fillStyle   = `rgba(180,198,235,${a * 0.80})`;
@@ -2005,12 +2006,14 @@ function draw() {
             ctx.font      = `bold ${FS*0.036}px 'Courier New',monospace`;
             ctx.fillStyle = `rgba(255,240,120,${a})`;
             ctx.fillText(T.newDailyBest, LC, H * 0.66);
-            if (best > 0) {
-                sh(2);
-                ctx.font      = `bold ${FS*0.022}px 'Courier New',monospace`;
-                ctx.fillStyle = `rgba(160,190,240,${a * 0.85})`;
-                ctx.fillText(`${T.best}  ${best}`, LC, H * 0.71);
-            }
+            // No "previous best" sub-line here (there used to be one): "new daily best!"
+            // already implies it beat the old number, and the H*0.78 slot right below is
+            // shared with the skin-unlock/mastery/shards line -- whichever of those draws
+            // there, the sub-line kept colliding with it on short landscape phones (H well
+            // under 600, where FS = sqrt(W*H) still stays large), first with the mastery
+            // banner ("PEARL LV UP 1"), then with the shards line -- a new report each time
+            // the slot below happened to hold something else. Dropping the redundant line
+            // removes the whole collision class instead of chasing it banner by banner.
         } else if (best > 0) {
             sh(2);
             ctx.font      = `bold ${FS*0.026}px 'Courier New',monospace`;
@@ -2057,19 +2060,25 @@ function draw() {
         // runs -- there's no room for both above the panel edge/buttons, and either banner
         // is already that run's headline moment.
         if (runCoins > 0 && skinUnlockIdx < 0 && skinMasteryUpIdx < 0) {
-            sh(3);
-            // Bumped from 0.017 -- user feedback that this line specifically read too
-            // small. The banked total (`shards`) has no upper bound (grinding never
-            // stops once every ship is owned), so past 10000 it's shown rounded to the
-            // nearest thousand ("13k") rather than full digits -- keeps this line's
-            // width from creeping past the divider the longer someone's played, without
-            // needing yet another font shrink. Below that threshold, exact digits.
-            ctx.font      = `${FS*0.018}px 'Courier New',monospace`; // see unlock banner comment above
-            ctx.fillStyle = `rgba(160,180,220,${a * 0.85})`;
+            // Bumped again (0.017 -> 0.018 -> 0.024) plus a gold glow -- user feedback
+            // that even the 0.018 size still read as near-invisible against the panel.
+            // Matches the unlock/mastery banners' glow treatment above so this line
+            // carries similar visual weight to the reward it represents, instead of
+            // reading as fine print. The banked total (`shards`) has no upper bound
+            // (grinding never stops once every ship is owned), so past 10000 it's shown
+            // rounded to the nearest thousand ("13k") rather than full digits -- keeps
+            // this line's width from creeping past the divider the longer someone's
+            // played, without needing yet another font shrink. Below that threshold,
+            // exact digits.
+            ctx.font        = `bold ${FS*0.024}px 'Courier New',monospace`;
+            ctx.fillStyle   = `rgba(255,225,110,${a * 0.95})`;
+            ctx.shadowColor = `rgba(255,205,60,${a * 0.65})`;
+            ctx.shadowBlur  = 8;
             const shardsDisp = shards >= 10000 ? Math.round(shards / 1000) + 'k' : shards;
             let shardLine = `+${runShardsBanked} ⧫ · ${shardsDisp} ⧫`;
             if (runShardsBanked < runCoins) shardLine += `  (${T.dailyCap})`;
             ctx.fillText(shardLine, LC, H * 0.78);
+            ctx.shadowBlur  = 0;
         }
 
         // Right column: top-5 leaderboard + stats
