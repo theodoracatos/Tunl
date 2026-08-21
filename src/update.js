@@ -151,7 +151,7 @@ function update(dt) {
             bonusScore++;
             nearMissTimer = 1.5;
             runNearMisses++;
-            notifs.push({ x: PX + W*0.07, y: py - H*0.05, life: 1.0, text: T.notifClose, color: [255,160,60] });
+            pushNotif(PX + W*0.07, py - H*0.05, 1.0, T.notifClose, [255,160,60]);
             sfxNearMiss();
         }
     }
@@ -278,7 +278,7 @@ function update(dt) {
             mines.splice(mi, 1);
             shake += 12;
             burst(sx, my);
-            notifs.push({ x: sx, y: my - H*0.06, life: 1.1, text: T.blocked, color: [255, 90, 40] });
+            pushNotif(sx, my - H*0.06, 1.1, T.blocked, [255, 90, 40]);
             window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
             break;
         }
@@ -299,7 +299,7 @@ function update(dt) {
             cannonShots.splice(ci, 1);
             shake += 10;
             burst(sx, s.y);
-            notifs.push({ x: sx, y: s.y - H*0.06, life: 1.1, text: T.blocked, color: [255, 90, 40] });
+            pushNotif(sx, s.y - H*0.06, 1.1, T.blocked, [255, 90, 40]);
             window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
             break;
         }

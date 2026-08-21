@@ -29,6 +29,22 @@ function maintainStalactites() {
     }
 }
 
+// ── Floating notifications ──────────────────────────────────────────────
+
+// At high scroll speed, coins can chain fast enough that several pickup notifs
+// are alive at once, all spawned at roughly the same screen spot (the coin sits
+// right where the player just was). Left alone they render on top of each other
+// right over the ship. Counting how many live notifs are already near this x and
+// nudging the new one further up turns a pile into a readable vertical stack.
+function notifStackOffset(x) {
+    const nearby = notifs.filter(n => n.life > 0 && Math.abs(n.x - x) < 50).length;
+    return nearby * 20;
+}
+
+function pushNotif(x, y, life, text, color) {
+    notifs.push({ x, y: y - notifStackOffset(x), life, text, color });
+}
+
 // ── Coin system ───────────────────────────────────────────────────────
 
 function coinBlockedByStal(wx, y) {
@@ -152,7 +168,7 @@ function checkCoinCollection() {
                 runCoins -= loss;
                 burstCoin(sx, coin.y, 100, 22);
                 shake += 6;
-                if (loss > 0) notifs.push({ x: sx, y: coin.y - 16, life: 1.1, text: `-${loss} ⧫`, color: [140,225,40] });
+                if (loss > 0) pushNotif(sx, coin.y - 34, 1.1, `-${loss} ⧫`, [140,225,40]);
                 sfxPoison();
                 window.webkit?.messageHandlers?.haptic?.postMessage('warning');
                 continue;
@@ -171,7 +187,7 @@ function checkCoinCollection() {
                 slowTime = Math.min(slowTime + (activeSkin === 3 ? masteryLerp(3, 6.0, 7.5) : 4.0), activeSkin === 3 ? masteryLerp(3, 12.0, 15.0) : 8.0);
                 burstCoin(sx, coin.y, 195, 26);
                 shake += 3;
-                notifs.push({ x: sx, y: coin.y - 16, life: 1.1, text: T.notifSlow,   color: [60,210,255] });
+                pushNotif(sx, coin.y - 34, 1.1, T.notifSlow, [60,210,255]);
                 sfxSlow();
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             } else if (coin.type === 'red') {
@@ -183,14 +199,14 @@ function checkCoinCollection() {
                 shieldCount = Math.min(shieldCount + 1, shieldCap);
                 burstCoin(sx, coin.y, 0, 26);
                 shake += 3;
-                notifs.push({ x: sx, y: coin.y - 16, life: 1.1, text: T.notifShield, color: [255,90,90] });
+                pushNotif(sx, coin.y - 34, 1.1, T.notifShield, [255,90,90]);
                 sfxShield();
                 window.webkit?.messageHandlers?.haptic?.postMessage('success');
             } else if (coin.type === 'green') {
                 magnetTime = Math.min(magnetTime + 3.0, activeSkin === 6 ? masteryLerp(6, 8.0, 11.0) : 5.0);
                 burstCoin(sx, coin.y, 120, 26);
                 shake += 3;
-                notifs.push({ x: sx, y: coin.y - 16, life: 1.1, text: T.notifMagnet, color: [80,255,130] });
+                pushNotif(sx, coin.y - 34, 1.1, T.notifMagnet, [80,255,130]);
                 sfxMagnet();
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             } else if (coin.type === 'orange') {
@@ -201,7 +217,7 @@ function checkCoinCollection() {
                 bulletFireTimer = 0;
                 burstCoin(sx, coin.y, 28, 26);
                 shake += 3;
-                notifs.push({ x: sx, y: coin.y - 16, life: 1.1, text: T.notifAmmo, color: [255,85,0] });
+                pushNotif(sx, coin.y - 34, 1.1, T.notifAmmo, [255,85,0]);
                 sfxBulletPickup();
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             } else if (coin.type === 'bomb') {
@@ -211,15 +227,20 @@ function checkCoinCollection() {
                 // presentation choice, not baked into the explosion logic itself.
                 triggerBombExplosion(sx, coin.y);
                 burstCoin(sx, coin.y, 280, 26);
-                notifs.push({ x: sx, y: coin.y - 16, life: 1.1, text: T.boom, color: [190,60,255] });
+                pushNotif(sx, coin.y - 34, 1.1, T.boom, [190,60,255]);
                 sfxBomb();
                 window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
             } else {
                 gapBonus = Math.min(GAP_BONUS_MAX, gapBonus + GAP_PER_COIN * (activeSkin === 4 ? masteryLerp(4, 2.0, 2.5) : 1));
                 burstCoin(sx, coin.y, 44);
-                notifs.push({ x: sx, y: coin.y - 16, life: 1.1, text: `+${pts}`, color: [255,220,55] });
+                // Stack offset computed once and shared by both notifs below: they
+                // belong to the same pickup, so they keep their tight fixed 32px gap
+                // to each other while still shifting together as a pair when other
+                // pickups are already stacked nearby (see notifStackOffset/pushNotif).
+                const stackY = coin.y - 34 - notifStackOffset(sx);
+                notifs.push({ x: sx, y: stackY, life: 1.1, text: `+${pts}`, color: [255,220,55] });
                 if (coinCombo > 1) {
-                    notifs.push({ x: sx, y: coin.y - 48, life: 1.3, text: `x${coinCombo}`, color: [255,255,80] });
+                    notifs.push({ x: sx, y: stackY - 32, life: 1.3, text: `x${coinCombo}`, color: [255,255,80] });
                     sfxCombo(coinCombo);
                 }
                 sfxCoin();
@@ -272,7 +293,7 @@ function updateBullets(dt) {
                     mines.splice(mi, 1);
                     shake += 8;
                     burst(bsx, my);
-                    notifs.push({ x: bsx, y: my - H*0.06, life: 1.1, text: T.boom, color: [255, 120, 20] });
+                    pushNotif(bsx, my - H*0.06, 1.1, T.boom, [255, 120, 20]);
                     sfxMineExplode();
                     window.webkit?.messageHandlers?.haptic?.postMessage('medium');
                     hit = true;
