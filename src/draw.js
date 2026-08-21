@@ -1600,25 +1600,74 @@ function draw() {
             // narrow device can't push into this block. Both nudged down slightly for
             // a touch more breathing room above the block's "MISSIONS" header.
             let missionY = Math.max(H * 0.785, _btnRowBottom + H * 0.045);
+
+            // Laid out as a real three-column table (progress right-aligned, label
+            // left-aligned, reward right-aligned) rather than centring each row's whole
+            // string on titleX. Centring meant every row started at a different x --
+            // "9/150" is far wider than "0/6" -- so the labels never lined up and the
+            // block had a ragged left edge. The header shares the block's left edge too,
+            // so the whole thing reads as one column.
+            const rewStr = `+${MISSION_REWARD} \u29eb`;
+            let mFsz = FS * 0.015;
+            const measureCols = () => {
+                ctx.font = `${mFsz}px 'Courier New',monospace`;
+                let pw = 0, lw = 0;
+                for (let m = 0; m < dailyMissionIdx.length; m++) {
+                    const d = MISSION_DEFS[dailyMissionIdx[m]];
+                    const lb = (T.missionDesc && T.missionDesc[d.id]) || d.id;
+                    const v  = Math.min(dailyMissionStats[d.stat] || 0, d.target);
+                    pw = Math.max(pw, ctx.measureText(`${v}/${d.target}`).width);
+                    lw = Math.max(lw, ctx.measureText(lb).width);
+                }
+                const rw  = ctx.measureText(rewStr).width;
+                const gap = mFsz * 1.2;
+                return { pw, lw, rw, gap, total: pw + gap + lw + gap * 1.8 + rw };
+            };
+            let mc = measureCols();
+            // Shrink to fit rather than cross the divider. The reward column makes this
+            // block meaningfully wider than it was, and titleX sits much closer to the
+            // divider than to the left screen edge -- same constraint the level line
+            // above already deals with.
+            const mAvailHalf = Math.min(titleX - 8, dividerX - titleX - 8);
+            if (mc.total / 2 > mAvailHalf) {
+                mFsz = Math.max(mFsz * (mAvailHalf * 2) / mc.total, FS * 0.010);
+                mc = measureCols();
+            }
+            const blockX  = titleX - mc.total / 2;
+            const progRX  = blockX + mc.pw;              // right edge of progress column
+            const labelLX = progRX + mc.gap;             // left edge of label column
+            const rewRX   = blockX + mc.total;           // right edge of reward column
+
+            ctx.textAlign   = 'left';
             ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 3;
             ctx.font        = `bold ${FS*0.017}px 'Courier New',monospace`;
             ctx.fillStyle   = `rgba(180,198,235,${a * 0.80})`;
-            ctx.fillText(T.missions, titleX, missionY);
+            ctx.fillText(T.missions, blockX, missionY);
             ctx.shadowBlur  = 0;
             missionY += H * 0.040;
 
-            ctx.font = `${FS*0.015}px 'Courier New',monospace`;
             for (let m = 0; m < dailyMissionIdx.length; m++) {
                 const def   = MISSION_DEFS[dailyMissionIdx[m]];
                 const label = (T.missionDesc && T.missionDesc[def.id]) || def.id;
                 const done  = dailyMissionsClaimed[m];
                 const val   = Math.min(dailyMissionStats[def.stat] || 0, def.target);
+                ctx.font        = `${mFsz}px 'Courier New',monospace`;
                 ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 2;
                 ctx.fillStyle   = done ? `rgba(120,255,150,${a * 0.90})` : `rgba(175,190,225,${a * 0.72})`;
-                ctx.fillText(`${done ? '✓' : val + '/' + def.target}  ${label}`, titleX, missionY);
+                ctx.textAlign   = 'right';
+                ctx.fillText(done ? '✓' : `${val}/${def.target}`, progRX, missionY);
+                ctx.textAlign   = 'left';
+                ctx.fillText(label, labelLX, missionY);
+                // What the mission is actually worth. MISSION_REWARD shards, granted the
+                // moment the target is met and exempt from DAILY_SHARD_CAP (constants.js).
+                // Dimmed once claimed -- already banked, so it stops being an offer.
+                ctx.textAlign   = 'right';
+                ctx.fillStyle   = `rgba(255,225,110,${a * (done ? 0.32 : 0.78)})`;
+                ctx.fillText(rewStr, rewRX, missionY);
                 ctx.shadowBlur  = 0;
                 missionY += H * 0.037;
             }
+            ctx.textAlign = 'center';   // restore -- everything below expects centred text
         }
 
         // rightColY tracks how far down the right-column stack (TODAY/ALL TIME/
