@@ -1223,17 +1223,17 @@ function draw() {
         // the skinCX overflow bug: fixed fractions don't track how the dynamically-
         // clamped ship row actually shifts across device widths. See measureShipLabelHalfW.
         const showShipPanel = best > 0 || unlockedSkins > 1;
-        const dotR   = LAND ? H * 0.048 : H * 0.035;
-        const dotGap = Math.max(dotR * 2.8, LAND ? H * 0.155 : W * 0.180);
+        const dotR   = LAND ? UI_H * 0.040 : H * 0.035;
+        const dotGap = Math.max(dotR * 2.8, LAND ? UI_H * 0.130 : W * 0.180);
         const measureShipLabelHalfW = (i) => {
-            ctx.font = `bold ${FS*0.016}px 'Courier New',monospace`;
+            ctx.font = `bold ${FS*0.021}px 'Courier New',monospace`;
             let lw = ctx.measureText(SKINS[i].name).width;
             if (T.skinPerks && T.skinPerks[i]) {
-                ctx.font = `${FS*0.016}px 'Courier New',monospace`;
+                ctx.font = `${FS*0.019}px 'Courier New',monospace`;
                 lw = Math.max(lw, ctx.measureText(T.skinPerks[i]).width);
             }
             if (T.skinDrawbacks && T.skinDrawbacks[i]) {
-                ctx.font = `${FS*0.013}px 'Courier New',monospace`;
+                ctx.font = `${FS*0.015}px 'Courier New',monospace`;
                 lw = Math.max(lw, ctx.measureText(T.skinDrawbacks[i]).width);
             }
             return lw / 2;
@@ -1698,7 +1698,7 @@ function draw() {
         // and the skin picker below never overlaps regardless of which lines
         // end up shown.
         let rightColY  = H * 0.33;
-        const lineStep = H * 0.085;
+        const lineStep = H * 0.105;
 
         // BEST (all-time record) is the single headline stat -- it rarely changes, so
         // it reads as "your record" rather than a volatile daily figure. TODAY and the
@@ -1709,7 +1709,7 @@ function draw() {
         // "BEST 0" placeholder.
         if (best > 0) {
             ctx.shadowColor = 'rgba(0,0,0,0.90)'; ctx.shadowBlur = 3;
-            ctx.font        = `bold ${FS*0.028}px 'Courier New',monospace`;
+            ctx.font        = `bold ${FS*0.036}px 'Courier New',monospace`;
             ctx.fillStyle   = `rgba(190,212,255,${a * 0.98})`;
             ctx.fillText(`${T.allTime}  ${best}`, infoX, LAND ? rightColY : H/2 + H*0.280);
             ctx.shadowBlur  = 0;
@@ -1722,7 +1722,7 @@ function draw() {
             }
             if (subParts.length) {
                 rightColY += lineStep;
-                ctx.font        = `bold ${FS*0.019}px 'Courier New',monospace`;
+                ctx.font        = `bold ${FS*0.025}px 'Courier New',monospace`;
                 ctx.fillStyle   = streak >= 3 ? `rgba(255,180,70,${a * 0.90})` : `rgba(160,185,230,${a * 0.85})`;
                 ctx.shadowColor = streak >= 3 ? `rgba(255,140,20,${a * 0.45})` : 'rgba(0,0,0,0.90)';
                 ctx.shadowBlur  = streak >= 3 ? 5 : 3;
@@ -1748,7 +1748,7 @@ function draw() {
         // Skin picker
         if (showShipPanel) {
             _skinBtnRects = [];
-            ctx.font        = `bold ${FS*0.018}px 'Courier New',monospace`;
+            ctx.font        = `bold ${FS*0.025}px 'Courier New',monospace`;
             ctx.fillStyle   = 'rgba(190,205,240,0.92)';
             ctx.shadowColor = 'rgba(0,0,0,0.85)';
             ctx.shadowBlur  = 3;
@@ -1765,7 +1765,7 @@ function draw() {
                     ctx.strokeStyle = 'rgba(90,95,130,0.50)';
                     ctx.lineWidth   = 1.5;
                     ctx.stroke();
-                    ctx.font        = `bold ${FS*0.014}px 'Courier New',monospace`;
+                    ctx.font        = `bold ${FS*0.018}px 'Courier New',monospace`;
                     ctx.fillStyle   = 'rgba(150,160,205,0.85)';
                     ctx.shadowColor = 'rgba(0,0,0,0.85)';
                     ctx.shadowBlur  = 3;
@@ -1810,7 +1810,7 @@ function draw() {
                             }
                         }
                     }
-                    ctx.font        = `${FS*0.016}px 'Courier New',monospace`;
+                    ctx.font        = `${FS*0.021}px 'Courier New',monospace`;
                     ctx.fillStyle   = selected
                         ? `rgba(${sr},${sg},${sb},0.95)`
                         : 'rgba(160,175,220,0.65)';
@@ -1821,7 +1821,7 @@ function draw() {
                     const perk     = T.skinPerks     && T.skinPerks[i];
                     const drawback = T.skinDrawbacks && T.skinDrawbacks[i];
                     if (selected && perk) {
-                        ctx.font        = `${FS*0.016}px 'Courier New',monospace`;
+                        ctx.font        = `${FS*0.019}px 'Courier New',monospace`;
                         ctx.fillStyle   = `rgba(${sr},${sg},${sb},0.85)`;
                         ctx.shadowColor = 'rgba(0,0,0,0.90)';
                         ctx.shadowBlur  = 4;
@@ -1831,7 +1831,7 @@ function draw() {
                     // Trade-off: each buff above is paired with a drawback, a size step
                     // smaller so the perk stays the visual headline.
                     if (selected && drawback) {
-                        ctx.font        = `${FS*0.013}px 'Courier New',monospace`;
+                        ctx.font        = `${FS*0.015}px 'Courier New',monospace`;
                         ctx.fillStyle   = 'rgba(255,120,90,0.80)';
                         ctx.shadowColor = 'rgba(0,0,0,0.90)';
                         ctx.shadowBlur  = 4;
