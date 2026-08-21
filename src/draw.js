@@ -1772,7 +1772,7 @@ function draw() {
             ctx.fillStyle   = 'rgba(190,205,240,0.92)';
             ctx.shadowColor = 'rgba(0,0,0,0.85)';
             ctx.shadowBlur  = 3;
-            ctx.fillText(`${T.ship}   ${shards}\u202F⧫`, cx1, dotY1 - dotR1 * 2.2);
+            ctx.fillText(`${T.ship}   ${shards}\u200A⧫`, cx1, dotY1 - dotR1 * 2.2);
             ctx.shadowBlur  = 0;
 
             // -- Unlocked row --
@@ -1860,7 +1860,7 @@ function draw() {
                     ctx.fillStyle   = 'rgba(150,160,205,0.85)';
                     ctx.shadowColor = 'rgba(0,0,0,0.85)';
                     ctx.shadowBlur  = 3;
-                    ctx.fillText(`${SKINS[i].cost}\u202F⧫`, cx, dotY2 + dotR2 * 1.7);
+                    ctx.fillText(`${SKINS[i].cost}\u200A⧫`, cx, dotY2 + dotR2 * 1.7);
                     ctx.shadowBlur  = 0;
                 }
             }
@@ -2201,7 +2201,7 @@ function draw() {
                 // once every ship is owned), so past 10000 it's shown rounded to the
                 // nearest thousand ("13k") rather than full digits.
                 const shardsDisp = shards >= 10000 ? Math.round(shards / 1000) + 'k' : shards;
-                let shardLine = `+${runShardsBanked}\u202F\u29eb \u00b7 ${shardsDisp}\u202F\u29eb`;
+                let shardLine = `+${runShardsBanked}\u200A\u29eb \u00b7 ${shardsDisp}\u200A\u29eb`;
                 // The daily-cap note is the first thing dropped when space is tight --
                 // it explains a number rather than being one.
                 if (runShardsBanked < runCoins && !bannerClr) shardLine += `  (${T.dailyCap})`;
