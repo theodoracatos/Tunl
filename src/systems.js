@@ -168,7 +168,7 @@ function checkCoinCollection() {
                 runCoins -= loss;
                 burstCoin(sx, coin.y, 100, 22);
                 shake += 6;
-                if (loss > 0) pushNotif(sx, coin.y - 34, 1.1, `-${loss} ⧫`, [140,225,40]);
+                if (loss > 0) pushNotif(sx, coin.y - 34, 1.1, `-${loss}\u202F⧫`, [140,225,40]);
                 sfxPoison();
                 window.webkit?.messageHandlers?.haptic?.postMessage('warning');
                 continue;
