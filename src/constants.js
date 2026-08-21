@@ -62,6 +62,40 @@ function masteryLerp(skin, base, maxed) {
     return lerp(base, maxed, masteryLevel(skin) / (MASTERY_XP_THRESHOLDS.length - 1));
 }
 
+// ── Ghost run ─────────────────────────────────────────────────────────
+// The corridor is a pure function of world-x and the calendar day (world.js), so
+// replaying a past run needs nothing but the ship's vertical position over time --
+// no obstacle log, no input log, no seed capture. One sample every GHOST_STEP world
+// px, quantised to a byte over [0, H].
+//
+// Quantising against H rather than storing raw pixels makes the track
+// resolution-independent: py is bounded by [0, H] and the whole corridor scales with
+// H, so a ghost recorded on a phone replays correctly on a tablet or a resized desktop
+// window without any rescaling on load.
+//
+// GHOST_STEP is 60 to match the score formula (score = scrollX / 60), so one sample is
+// exactly one point of distance score -- a score-1000 run is 1000 samples, ~1.4 KB
+// base64. GHOST_MAX_SAMPLES bounds localStorage for marathon runs; past it the ghost
+// simply stops being recorded and the player is treated as having passed it (see
+// update.js), which is the correct outcome anyway at that distance.
+const GHOST_STEP = 60;
+const GHOST_MAX_SAMPLES = 4000;
+
+function ghostEncode(track) {
+    // Chunked because String.fromCharCode.apply blows the argument limit on a long run.
+    let s = '';
+    for (let i = 0; i < track.length; i += 1024) {
+        s += String.fromCharCode.apply(null, track.slice(i, i + 1024));
+    }
+    return btoa(s);
+}
+function ghostDecode(b64) {
+    const s = atob(b64);
+    const out = new Uint8Array(s.length);
+    for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
+    return out;
+}
+
 // ── Seeded PRNG (mulberry32) ──────────────────────────────────────────
 let _seed = 0;
 function seedRng(s) { _seed = s >>> 0; }

@@ -8,9 +8,10 @@
 
 ## What is this
 
-TUNL is a single-file HTML5 Canvas hold-to-thrust cave flyer game.
-Single file: `tunl.html` - no libraries, no build step.
-Open in a browser to play.
+TUNL is an HTML5 Canvas hold-to-thrust cave flyer game.
+`tunl.html` is an HTML/CSS shell that loads 12 plain scripts from `src/` in order - no
+libraries, no modules, no build step, one shared global scope. Run `/map` for the file
+map. Open `tunl.html` in a browser to play.
 
 **Orientation: landscape only.** The iOS app (`Info.plist`) locks to `LandscapeLeft + LandscapeRight`. Never change this to portrait.
 
@@ -31,12 +32,13 @@ One JS class-free script, state machine with three phases: `'title'` | `'play'` 
 
 ### Physics constants
 ```javascript
-const GRAVITY = 950;   // px/s² downward
-const THRUST  = 1900;  // px/s² upward when holding (net: 950 up)
-const MAX_VY  = 680;   // terminal velocity cap
+const GRAVITY = 1150;  // px/s² downward
+const THRUST  = 2400;  // px/s² upward when holding (net: 1250 up)
+const MAX_VY  = 820;   // terminal velocity cap
 ```
-The thrust/gravity balance is symmetric: net upward force = net downward force = 950 px/s².
-Do NOT change this ratio - it's the core feel of the game.
+Net upward force (1250) is slightly stronger than net downward (1150) - climbing is a
+touch more responsive than falling, deliberately. Do NOT change this ratio, it's the
+core feel of the game.
 
 ### Player
 ```javascript
@@ -80,9 +82,9 @@ in flight the same way they destroy a mine.
 ### Coin system
 Coins collect into `gapBonus` (extra halfGap px, capped, decays over time):
 ```javascript
-const GAP_PER_COIN  = H * 0.04;    // +15.6px halfGap per coin at H=390
-const GAP_BONUS_MAX = H * 0.10;    // cap: max ~39px halfGap bonus (+30% corridor width)
-const GAP_DECAY     = H * 0.010;   // ~4s per coin at constant decay rate
+const GAP_PER_COIN  = H * 0.06;    // +26px halfGap per coin at H=440
+const GAP_BONUS_MAX = H * 0.15;    // cap: max ~66px halfGap bonus at H=440
+const GAP_DECAY     = H * 0.015;   // ~4s per coin at constant decay rate
 ```
 Wall glow shifts purple → cyan when bonus is active. Gold bar at bottom shows remaining bonus.
 
@@ -92,16 +94,22 @@ Two-phase difficulty system:
 - `_prog  = Math.min(Math.sqrt(scrollX / 14000), 1)` - main ramp (sqrt eased), 0→1 over first 14000px (~score 233)
 - `_prog2 = Math.min(Math.max(scrollX - 14000, 0) / 40000, 1)` - inferno, 0→1 from 14000→54000px
 
+All of these are then multiplied by the day's `DAY_ARCHETYPES` entry (`world.js`), so a
+given day runs a bit denser or sparser than the base curve.
+
 ```javascript
-scrollSpd()    // 380 → 650 → 900 px/s
-stalSpacing()  // 260 → 145 → 70 px between stalactites
-stalLenFrac()  // 0.36 → 0.50 → 0.60 fraction of halfGap (also the max cap)
-coinSpacing()  // 600 → 320 → 230 px between coins
-chicaneProb    // 0 → 0.24 → 0.42 probability of paired stalactites
+scrollSpd()    // 230 → 400 → 560 px/s at W=600, scaled by W/600, then an uncapped sqrt tail
+stalSpacing()  // 260 → 145 → 70 px between stalactites (floor 50)
+stalLenFrac()  // 0.46 → 0.64 → 0.76 fraction of halfGap (hard cap 0.80)
+coinSpacing()  // 600 → 320 → 230 px between coins (floor 175)
+mineSpacing()  // 900 → 340 → 200 px between mines (floor 200)
+cannonSpacing()// 4200 → 2400 → 1500 px between cannons (floor 1200)
+chicaneProb    // 0.24 → 0.42 once _prog > 0.40 (hard cap 0.62)
 ```
 
-At score 233 (_prog=1): full corridor = 196px, chicane clear = ~78px (3.6× player dia=21.6px).
-With gapBonus maxed (+36px halfGap = +72px full): effective chicane clear ~150px - coins are essential at high difficulty.
+At score 233 (`_prog` = 1) the full corridor is `2 * H * 0.163`. With `gapBonus` maxed
+(`GAP_BONUS_MAX` = `H * 0.15` of extra halfGap, i.e. `H * 0.30` of extra full width) a
+maxed bonus nearly doubles the corridor - coins are essential at high difficulty.
 
 ### Coin type progression
 
@@ -197,12 +205,110 @@ it - see Poison coin above.
 
 **Death screen context**: Shows "+X vs last" / "-X vs last" after the second run. Uses `prevRunScore` (run before the current one). Score number glows gold when within 5 of personal best.
 
+### Daily run card (share)
+
+`src/share.js`. TUNL seeds every run from the UTC date (`lifecycle.js`), so every player
+on Earth flies a pixel-identical cave each day - the hard half of a shareable daily game.
+The card is the other half.
+
+The image is deliberately a picture of the **run**, not a score badge: the corridor is a
+pure function of world-x (`boundsBase`), so the whole flown tunnel is redrawn compressed
+into a strip, with the death point marked and the all-time best (`bestSX`) marked beside
+it. The corridor is sampled as a rolling average whose window scales with run length -
+drawing `boundsBase()` literally is accurate but renders a deep run as a seismograph,
+since ~60 wave periods get packed into 1100px. Short runs keep their real shape; long
+runs resolve into "the corridor narrowed this much and I got this far", which is the
+only thing readable at card size.
+
+Gated by `shareWorthy()` (new best, new daily best, or score >= 200) so the button reads
+as a reward, not a nag, and by `shareAvailable()` so it never renders without somewhere
+to send the card. The card crosses the JS->native boundary as a base64 PNG (the only
+channel a canvas has), which is why the background is a flat wash rather than a radial
+gradient - that one change took the payload from ~670 KB to ~180 KB.
+
+`SHARE_URL` in `share.js` is the only place the public marketing URL is written down in
+this repo; the store listing pages themselves live in the Schedly repo's `wwwroot/tunl`.
+
+Android needs a `FileProvider` for this (`AndroidManifest.xml` + `res/xml/file_paths.xml`)
+because `ACTION_SEND` requires a `content://` URI, not raw bytes.
+
+### World rank
+
+The death screen's right column leads with the player's standing on the daily
+leaderboard plus the movement since their last run, and the local list below it shrinks
+to 3 rows to pay for it. With no rank available (offline, no Game Center / Play Games
+session, first submit still in flight) the old 5-row layout renders unchanged.
+
+No backend: `GKLeaderboard.loadEntries` (`GameView.swift` `fetchWorldRank`) and
+`loadLeaderboardMetadata`'s `LeaderboardVariant` (`MainActivity.kt` `fetchWorldRank`)
+both already return rank *and* total count. Both fire after a submit resolves, and once
+at auth to prime the first death of a session. The delta is computed in
+`main.js _tunlNativeUpdate`, not natively - only the page knows what rank it last showed.
+
+That local list is `top5`, which is **wiped at the UTC day boundary** (`lifecycle.js`),
+so it is labelled `T.todayTop`, never "TOP 5" - the old label made it look like lost data
+every morning.
+
+### Ghost run
+
+`GHOST_STEP`/`ghostEncode` in `constants.js`, recorded and replayed in `update.js`, drawn
+in `draw.js`. Because the corridor is reproducible from a date, a replay needs nothing
+but the ship's vertical position over time - no obstacle log, no input log, no seed
+capture. One byte per 60 world-px (= 1 point of distance score), quantised over `[0, H]`
+so a ghost recorded on a phone replays correctly on any other screen size.
+
+Scoped to the **calendar day**, not all time: an older track would be racing through a
+cave that no longer exists. That also makes it reinforce the daily loop - each day opens
+with no ghost, and the day's first good run creates the thing you chase for the rest of
+it. Outlasting the ghost fires a one-shot notif and sound; that moment is the whole point
+of the feature.
+
+Recording and playback are indexed by `scrollX`, never elapsed time - a blue coin halves
+scroll speed for 4 seconds, which would desync a time-indexed ghost from the tunnel.
+
+The ghost is drawn *before* the Player block in `draw.js`, not inside it: that block
+applies a `rotate()` pivoted on the player's position, which would swing the ghost around
+the live ship on every pitch change.
+
+### Onboarding
+
+`runsTotal` (`state.js`) is a lifetime run counter, never reset at the day boundary. Its
+only consumer is `FIRST_RUN_RUNWAY_WX` (`lifecycle.js`), a clear stretch before the first
+stalactite on the very first run a player ever starts, so their first lesson is the feel
+of thrust-vs-gravity rather than the death screen.
+
+**Do not re-add a title-screen control hint.** A "HOLD to climb / RELEASE to fall" line
+under HOLD TO FLY was added in 5.0 and removed the same day after seeing it on a real
+device: it read as redundant next to HOLD TO FLY directly above it, it crowded the
+RANKS/CHALLENGE row below it, and the attract-mode ship flies straight through that exact
+line of the screen. The reasoning that motivated it (the title screen never says that
+releasing is half the control scheme) is real but is better served by the runway, which
+teaches it by letting the player feel it. The `T.hold` string it used has been deleted
+from all 15 locales - don't reintroduce a translated string for a UI element that doesn't
+exist.
+
+### Ad cadence
+
+Every 4th death **and** at most once per 120s of wall clock, above score 25, never with
+Remove Ads. The wall-clock floor is the rule that actually matters: a good run lasts only
+20-36 real seconds, so a pure every-Nth-death rule put a full-screen ad in front of
+engaged players roughly every 90 seconds. When the floor blocks, the death counter is
+rolled back one so the two rules don't compound into a much longer gap than intended.
+
 ## Key design decisions (do not revert)
 
 - **Coin bonus is intentionally modest**: +15px per coin, max +36px halfGap. At max difficulty the full corridor is 196px; one coin adds ~15%, max bonus adds ~37%. This is helpful but not a free pass.
 - **boundsBase for coin placement**: Coins placed ignoring current bonus so they're always reachable even without a bonus. Never use `boundsAt()` for coin placement.
 - **Triangle-circle collision**: Stalactites use proper geometric collision matching the visual triangle, not AABB. Changing to AABB would make invisible collisions at the edges.
 - **No em dashes (-)** anywhere in code, comments, or UI text. Use hyphen-minus (-) instead.
+- **The death screen's left-column banner is one merged line, not three branches**: ship
+  unlock, mastery level-up and the shard payout used to be three `if`s all targeting
+  `H*0.78` and all suppressing each other, so a good run could earn all three and be shown
+  one. There is genuinely only one slot there (panel edge below, button row below that),
+  so the parts concatenate onto that line and shrink to fit. Don't split them back out.
+- **XML comments can't contain `--`**: the no-em-dash rule means `--` is used constantly
+  in JS comments, but it is illegal inside an XML comment. `AndroidManifest.xml` and
+  `res/xml/*.xml` use single hyphens or a colon instead.
 - **`scrollSpd()` never plateaus**: every other difficulty knob (`stalSpacing`, `stalLenFrac`, `coinSpacing`, `mineSpacing`, wave amplitude/frequency) caps once `_prog2` saturates, because those define corridor *geometry* and pushing them further would make the tunnel unnavigable. Scroll speed has no such ceiling - it only shrinks reaction time - so past `_prog2 > 1` (score ~900) it keeps climbing forever via a sqrt-eased tail (`base + sqrt(_prog2-1)*90`), intentionally so a long enough run is never merely "endurance at a fixed pace." Don't re-add a hard cap here.
 
 ## Possible future features
@@ -211,4 +317,9 @@ it - see Poison coin above.
 - Multiple difficulty modes
 - Mobile fullscreen on iOS/Android
 - Level theming (lava/ice/neon)
-- Additional power-up types beyond the current six (gold/blue/red/orange/green/bomb)
+- Additional power-up types beyond the current seven (gold/blue/red/orange/green/bomb/poison)
+- Friend ghosts carried inside a share link (see Ghost run below - the local ghost is
+  already only a few hundred bytes, so a shared one is mostly a transport problem)
+- A playable web build. Deliberately NOT on the roadmap right now: the user decided
+  against it. If it comes back, the blockers are the 7.5 MB of MP3 that `audio.js`
+  fetches at launch, a portrait/rotate overlay, and an install CTA.

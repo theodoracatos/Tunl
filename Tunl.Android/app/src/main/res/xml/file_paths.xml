@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Backs the FileProvider declared in AndroidManifest.xml. Only the one cache
+     subdirectory the share card is written to (see MainActivity.shareRun) is
+     exposed: ACTION_SEND needs a content:// URI, and this is the narrowest
+     grant that provides one. -->
+<paths>
+    <cache-path name="share" path="share/" />
+</paths>

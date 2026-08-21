@@ -12,6 +12,17 @@ window._tunlNativeUpdate = function (state) {
     if (typeof state.privacyOptionsRequired === 'boolean') {
         privacyOptionsRequired = state.privacyOptionsRequired;
     }
+    // World rank on today's board, pushed after each score submit resolves. The delta
+    // is computed here rather than natively because only the page knows what rank it
+    // last displayed - the native side just reports the current number. Positive means
+    // the player climbed, since a smaller rank is better.
+    if (typeof state.worldRank === 'number' && state.worldRank > 0) {
+        if (worldRank !== null) worldRankDelta = worldRank - state.worldRank;
+        worldRank = state.worldRank;
+    }
+    if (typeof state.worldRankTotal === 'number' && state.worldRankTotal > 0) {
+        worldRankTotal = state.worldRankTotal;
+    }
 };
 
 // Android's system/gesture back button has no iOS equivalent, so there's no

@@ -1,6 +1,6 @@
 # TUNL source map
 
-The game is split across `tunl.html` (HTML/CSS shell only) and 10 JS files in `src/`. All files share one global scope — scripts load in order via `<script src>` tags, no modules, no build step.
+The game is split across `tunl.html` (HTML/CSS shell only) and 12 JS files in `src/`. All files share one global scope - scripts load in order via `<script src>` tags, no modules, no build step.
 
 ## Load order and contents
 
@@ -15,6 +15,7 @@ The game is split across `tunl.html` (HTML/CSS shell only) and 10 JS files in `s
 | `src/input.js` | `inRect()`, `onDown()`, `onUp()`, pointer/keyboard event listeners, `triggerMilestone()` |
 | `src/update.js` | `let prev`, `update(dt)` (physics, scroll, collision, skin FX, particle tick), `die()` |
 | `src/draw.js` | `getTheme()`, `drawCoinIcon()`, `shipPath()`, `drawShip()`, `draw()` (tunnel walls, stalactites, coins, player, HUD, title screen, death screen) |
+| `src/share.js` | Daily run card: `SHARE_URL`, `shareWorthy()`, `shareAvailable()`, `_shareCardCanvas()` (offscreen run-profile PNG), `shareRunText()`, `shareRun()` (native bridge / Web Share fallback) |
 | `src/main.js` | `window._freezeDraw`, `loop(ts)`, `titleScreen()` kick-off, initial `requestAnimationFrame` |
 
 ## Key cross-file dependencies
@@ -25,6 +26,10 @@ The game is split across `tunl.html` (HTML/CSS shell only) and 10 JS files in `s
 - `startPlay()` (lifecycle.js) calls `thrustOff()` and `_startBgMusic()` from audio.js
 - `checkCoinCollection()` (systems.js) calls all `sfx*` functions from audio.js
 - `update()` calls `triggerMilestone()` from input.js
+- `share.js` reads `lastRunWx`/`lastRunY` (set in update.js `die()`), `bestSX`, and
+  `boundsBase()` -- it must load before `main.js` starts the loop
+- the ghost is drawn in draw.js *before* the Player block, never inside it (that block
+  rotates around the player's own position)
 
 ## Finding things fast
 

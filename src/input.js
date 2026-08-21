@@ -108,6 +108,14 @@ function onDown(e) {
             window.webkit?.messageHandlers?.ads?.postMessage({ action: 'interstitialRequest', score });
             titleScreen(); return;
         }
+        // Share does NOT start a new run or request an interstitial -- it hands the
+        // card to the OS share sheet and leaves the death screen up, so the player
+        // comes back to the same screen afterwards and can still hit PLAY AGAIN.
+        if (_shareBtnRect && inRect(cx, cy, _shareBtnRect)) {
+            shareRun();
+            window.webkit?.messageHandlers?.haptic?.postMessage('light');
+            return;
+        }
         if (_playBtnRect && inRect(cx, cy, _playBtnRect)) {
             window.webkit?.messageHandlers?.ads?.postMessage({ action: 'interstitialRequest', score });
             startPlay(); holding = true; thrustOn(); return;

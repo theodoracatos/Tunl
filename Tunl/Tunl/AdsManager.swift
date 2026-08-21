@@ -3,14 +3,27 @@ import AppTrackingTransparency
 import UserMessagingPlatform
 import GoogleMobileAds
 
-// Interstitial shown every 3rd death, never when Remove Ads is owned. Cadence
-// state lives in UserDefaults (not JS) since ad frequency is a platform/store
-// concern kept out of the shared game layer.
+// Interstitial shown every 4th death AND at most once every minInterval seconds,
+// never when Remove Ads is owned. Cadence state lives in UserDefaults (not JS)
+// since ad frequency is a platform/store concern kept out of the shared game layer.
+//
+// The death counter alone isn't a cadence: a good run in this game lasts only
+// 20-36 real seconds (measured against a real daily seed, see constants.js's
+// POISON_INTERVAL_SEC doc), so a pure every-Nth-death rule put a full-screen ad in
+// front of engaged players roughly every 90 seconds -- worst for exactly the
+// players deciding whether TUNL becomes a habit. The wall-clock floor below is
+// what actually bounds interruption frequency; the counter just keeps short
+// sessions ad-free.
 final class AdsManager: NSObject, FullScreenContentDelegate {
 
     static let interstitialAdUnitID = "ca-app-pub-4882203470005029/5351137825"
     private static let deathCountKey = "tunnel_death_count"
-    private static let deathsPerAd = 3
+    private static let lastAdTimeKey = "tunnel_last_ad_time"
+    private static let deathsPerAd = 4
+    // Hard wall-clock floor between interstitials, independent of the death
+    // counter -- a burst of quick deaths can satisfy the counter in well under a
+    // minute, and this is what stops that from stacking into back-to-back ads.
+    private static let minInterval: TimeInterval = 120
     // Runs scoring below this are instant faceplants (common in this fast-death
     // game) and shouldn't burn through the cadence counter or interrupt with an ad.
     private static let minScoreForAd = 25
@@ -100,10 +113,23 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
 
         guard !removeAdsOwned, count % Self.deathsPerAd == 0 else { return }
 
+        // Wall-clock floor. When it blocks, roll the counter back one so the very
+        // next death re-tests instead of waiting out another full deathsPerAd
+        // cycle on top of the cooldown -- otherwise the two rules compound and a
+        // player can go many minutes past the intended cadence.
+        let now = Date().timeIntervalSince1970
+        let lastAd = defaults.double(forKey: Self.lastAdTimeKey)
+        if lastAd > 0, now - lastAd < Self.minInterval {
+            defaults.set(count - 1, forKey: Self.deathCountKey)
+            return
+        }
+
         guard let interstitial, let root = rootViewController() else {
+            defaults.set(count - 1, forKey: Self.deathCountKey)
             Task { await loadInterstitial() }
             return
         }
+        defaults.set(now, forKey: Self.lastAdTimeKey)
         interstitial.present(from: root)
     }
 

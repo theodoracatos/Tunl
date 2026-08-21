@@ -15,15 +15,22 @@ import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
 
-// Mirrors AdsManager.swift: interstitial shown every 3rd death, never when
-// Remove Ads is owned. Cadence state lives in SharedPreferences (not JS)
-// since ad frequency is a platform/store concern kept out of the shared
-// game layer, same rationale as the iOS version's UserDefaults use.
+// Mirrors AdsManager.swift: interstitial shown every 4th death AND at most once
+// every MIN_INTERVAL_MS, never when Remove Ads is owned. Cadence state lives in
+// SharedPreferences (not JS) since ad frequency is a platform/store concern kept
+// out of the shared game layer, same rationale as the iOS version's UserDefaults
+// use. See AdsManager.swift for why the wall-clock floor exists (runs here are
+// only 20-36 seconds, so a death counter alone doesn't bound interruptions).
 class AdsManager(private val activity: Activity) {
 
     companion object {
         private const val DEATH_COUNT_KEY = "tunnel_death_count"
-        private const val DEATHS_PER_AD = 3
+        private const val LAST_AD_TIME_KEY = "tunnel_last_ad_time"
+        private const val DEATHS_PER_AD = 4
+        // Hard wall-clock floor between interstitials, independent of the death
+        // counter -- a burst of quick deaths satisfies the counter in well under a
+        // minute, and this is what stops that stacking into back-to-back ads.
+        private const val MIN_INTERVAL_MS = 120_000L
         // Runs scoring below this are instant faceplants (common in this fast-death
         // game) and shouldn't burn through the cadence counter or interrupt with an ad.
         private const val MIN_SCORE_FOR_AD = 25
@@ -131,11 +138,24 @@ class AdsManager(private val activity: Activity) {
 
         if (removeAdsOwned || count % DEATHS_PER_AD != 0) return
 
+        // Wall-clock floor. When it blocks, roll the counter back one so the very
+        // next death re-tests instead of waiting out another full DEATHS_PER_AD
+        // cycle on top of the cooldown -- otherwise the two rules compound and a
+        // player can go many minutes past the intended cadence.
+        val now = System.currentTimeMillis()
+        val lastAd = prefs.getLong(LAST_AD_TIME_KEY, 0L)
+        if (lastAd > 0L && now - lastAd < MIN_INTERVAL_MS) {
+            prefs.edit().putInt(DEATH_COUNT_KEY, count - 1).apply()
+            return
+        }
+
         val ad = interstitialAd
         if (ad == null) {
+            prefs.edit().putInt(DEATH_COUNT_KEY, count - 1).apply()
             loadInterstitial()
             return
         }
+        prefs.edit().putLong(LAST_AD_TIME_KEY, now).apply()
         ad.fullScreenContentCallback = fullScreenContentCallback
         ad.show(activity)
     }

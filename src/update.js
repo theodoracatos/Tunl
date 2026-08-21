@@ -133,6 +133,46 @@ function update(dt) {
     poisonClock += dt;
     bombClock   += dt;
 
+    // ── Ghost (constants.js GHOST_STEP) ──────────────────────────────
+    // Record this run, and replay today's best alongside it. Both are indexed by
+    // scrollX rather than elapsed time so the ghost stays locked to the corridor even
+    // though a blue coin can halve the scroll speed for 4 seconds -- indexing by time
+    // would desync the ghost from the tunnel the moment either run used slow-time.
+    {
+        const gi = Math.floor(scrollX / GHOST_STEP);
+        if (gi < GHOST_MAX_SAMPLES) {
+            const q = Math.max(0, Math.min(255, Math.round(py / H * 255)));
+            // while, not if: a big dt (or a slow frame) can skip an index outright, and
+            // the array index has to stay equal to scrollX/GHOST_STEP or playback drifts.
+            while (ghostTrack.length <= gi) ghostTrack.push(q);
+        }
+        if (ghostPlay && ghostPlay.length > 1) {
+            const gp  = scrollX / GHOST_STEP;
+            const gi0 = Math.floor(gp);
+            if (gi0 < ghostPlay.length - 1) {
+                const f  = gp - gi0;
+                const y0 = ghostPlay[gi0] / 255 * H, y1 = ghostPlay[gi0 + 1] / 255 * H;
+                ghostY = y0 + (y1 - y0) * f;
+                // The live ship pitches by atan2(vy, scrollSpd()) -- which is just the
+                // arctangent of dy/dx -- so the recorded track's slope gives the ghost
+                // the same angle without needing vy stored. Same MAX_PITCH cap as the
+                // player (see the ship-pitch block below).
+                ghostPitch = Math.max(-0.70, Math.min(0.70, Math.atan((y1 - y0) / GHOST_STEP)));
+            } else {
+                // Player has outlasted today's best run. Fire once, then stop drawing --
+                // this is the payoff the whole feature exists for, so it gets a notif and
+                // a sound rather than the ghost just quietly vanishing.
+                ghostY = null;
+                if (!ghostPassed) {
+                    ghostPassed = true;
+                    pushNotif(PX + PR * 3, py - H * 0.07, 1.4, T.ghostPassed, [150, 200, 255]);
+                    sfxCombo(4);
+                    window.webkit?.messageHandlers?.haptic?.postMessage('light');
+                }
+            }
+        }
+    }
+
     // Milestone check
     if (score >= milestoneNext) {
         triggerMilestone(milestoneNext);
@@ -364,7 +404,7 @@ function die(bypassShield = false) {
     }
     thrustOff();
     phase = 'dead'; deadT = 0; flashA = 1.0; shake = 14; holding = false;
-    _homeBtnRect = null; _playBtnRect = null;
+    _homeBtnRect = null; _playBtnRect = null; _shareBtnRect = null;
     prevRunScore = lastRunScore;
     lastRunScore = score;
     newBest = score > best;
@@ -372,6 +412,24 @@ function die(bypassShield = false) {
     runsWithoutPB = newBest ? 0 : runsWithoutPB + 1;
     newDailyBest = score > dailyBest;
     if (newDailyBest) { dailyBest = score; localStorage.setItem('tunnel_daily_best', dailyBest); }
+    // Ghost: today's best run becomes the thing the next run races. Keyed to the day the
+    // run was actually played (recomputed here, not read from state.js's page-load
+    // _initToday) so a session left open across UTC midnight can't file a run under the
+    // wrong day's corridor. Wrapped because localStorage can throw when the quota is
+    // full or storage is blocked -- a failed ghost save must never cost the player the
+    // rest of die()'s bookkeeping (shards, unlocks, missions).
+    if (newDailyBest && score > 0 && ghostTrack.length > 1) {
+        try {
+            const _gd = new Date();
+            localStorage.setItem('tunnel_ghost', JSON.stringify({
+                day:   _gd.getUTCFullYear() * 10000 + (_gd.getUTCMonth() + 1) * 100 + _gd.getUTCDate(),
+                score,
+                data:  ghostEncode(ghostTrack),
+            }));
+            ghostPlay  = Uint8Array.from(ghostTrack);
+            ghostScore = score;
+        } catch (e) { /* ghost is a nice-to-have; never break the death flow over it */ }
+    }
     localStorage.setItem('tunnel_no_pb', runsWithoutPB);
     if (score > 0) {
         top5 = [...top5, score].sort((a, b) => b - a).slice(0, 5);
@@ -430,6 +488,9 @@ function die(bypassShield = false) {
     localStorage.setItem('tunnel_shards', shards);
     // Record a death marker on the nearest wall
     const _dmWx = scrollX + PX;
+    // Exact death point for the share card's run profile (share.js), kept separate from
+    // the wall-snapped marker below.
+    lastRunWx = _dmWx; lastRunY = py;
     const _dmB  = boundsAt(_dmWx);
     const _dmWY = py < (_dmB.top + _dmB.bot) / 2 ? _dmB.top : _dmB.bot;
     deathMarkers.push({ wx: _dmWx, wallY: _dmWY });

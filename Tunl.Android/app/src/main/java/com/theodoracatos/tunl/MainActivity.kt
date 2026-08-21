@@ -1,11 +1,13 @@
 package com.theodoracatos.tunl
 
 import android.content.Context
+import android.content.Intent
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Base64
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -19,6 +21,7 @@ import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.FileProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -28,6 +31,8 @@ import androidx.webkit.WebViewFeature
 import com.google.android.gms.games.PlayGames
 import com.google.android.gms.games.leaderboard.LeaderboardVariant
 import org.json.JSONObject
+import java.io.File
+import java.io.FileOutputStream
 
 class MainActivity : ComponentActivity() {
 
@@ -65,6 +70,11 @@ class MainActivity : ComponentActivity() {
                     TunlNative.postMessage('ads', JSON.stringify(body));
                 }
             };
+            window.webkit.messageHandlers.share = {
+                postMessage: function(body) {
+                    TunlNative.postMessage('share', JSON.stringify(body));
+                }
+            };
             window.webkit.messageHandlers.haptic = {
                 postMessage: function(type) {
                     TunlNative.postHaptic(type);
@@ -90,6 +100,10 @@ class MainActivity : ComponentActivity() {
                         "purchase" -> billing.purchaseRemoveAds(this@MainActivity)
                         "restore" -> billing.restore()
                     }
+                    "share" -> shareRun(
+                        body.optString("text"),
+                        body.optString("image")
+                    )
                     "ads" -> when (body.optString("action")) {
                         "interstitialRequest" ->
                             ads.requestInterstitial(billing.removeAdsOwned, body.optInt("score"))
@@ -306,6 +320,11 @@ class MainActivity : ComponentActivity() {
         signInClient.isAuthenticated.addOnCompleteListener { task ->
             val authenticated = task.isSuccessful && task.result.isAuthenticated
             if (!authenticated) signInClient.signIn()
+            // Prime the death screen's rank line either way: already-signed-in players
+            // get it immediately, and a fresh sign-in resolves before the first death in
+            // practice. Without this the first death of a session has no standing to show
+            // and no baseline to compute the first delta against.
+            else fetchWorldRank()
         }
     }
 
@@ -313,6 +332,70 @@ class MainActivity : ComponentActivity() {
         if (score <= 0) return
         PlayGames.getLeaderboardsClient(this)
             .submitScore(getString(R.string.leaderboard_id), score.toLong())
+            // Only after the submit lands, so the rank reflects the run that just ended
+            // rather than the previous one. Mirrors GameView.swift's submitScore.
+            .addOnCompleteListener { fetchWorldRank() }
+    }
+
+    // Mirrors GameView.swift's fetchWorldRank: pulls the player's standing on the daily
+    // board plus that board's size and hands both to the page for the death screen
+    // (src/draw.js right column, via main.js _tunlNativeUpdate). No backend needed --
+    // Play Games already knows both numbers.
+    //
+    // loadLeaderboardMetadata with forceReload=true is one round trip for both values:
+    // a Leaderboard carries a LeaderboardVariant per (time span, collection) pair, and
+    // each variant exposes the player's rank *and* the total number of scores. Fetching
+    // the score and the count separately would be two calls for the same data.
+    private fun fetchWorldRank() {
+        PlayGames.getLeaderboardsClient(this)
+            .loadLeaderboardMetadata(getString(R.string.leaderboard_id), true)
+            .addOnSuccessListener { data ->
+                val variant = data.get()?.variants?.firstOrNull {
+                    it.timeSpan == LeaderboardVariant.TIME_SPAN_DAILY &&
+                        it.collection == LeaderboardVariant.COLLECTION_PUBLIC
+                } ?: return@addOnSuccessListener
+                // hasPlayerInfo() is false until this player has a score on this board's
+                // current daily occurrence; rank would otherwise read as a placeholder.
+                if (!variant.hasPlayerInfo()) return@addOnSuccessListener
+                val rank = variant.playerRank
+                val total = variant.numScores
+                if (rank <= 0L) return@addOnSuccessListener
+                runJs(
+                    "window._tunlNativeUpdate && window._tunlNativeUpdate(" +
+                        "{\"worldRank\":$rank,\"worldRankTotal\":$total})"
+                )
+            }
+            .addOnFailureListener { e -> Log.w("TunlPlayGames", "Could not load rank", e) }
+    }
+
+    // Mirrors GameView.swift's presentShare: hands the daily run card (src/share.js) to
+    // the system share sheet. The image arrives as a base64 data: URL because that's the
+    // only way a canvas can cross the JavascriptInterface boundary, and Android's
+    // ACTION_SEND needs a content:// URI rather than raw bytes, so it's written to
+    // cacheDir and exposed through the FileProvider declared in AndroidManifest.xml.
+    // A failed decode degrades to sharing just the text rather than doing nothing.
+    private fun shareRun(text: String, imageDataUrl: String?) {
+        val intent = Intent(Intent.ACTION_SEND).apply { type = "text/plain" }
+        if (text.isNotEmpty()) intent.putExtra(Intent.EXTRA_TEXT, text)
+
+        val base64 = imageDataUrl?.substringAfter(",", "")
+        if (!base64.isNullOrEmpty()) {
+            try {
+                val bytes = Base64.decode(base64, Base64.DEFAULT)
+                val dir = File(cacheDir, "share").apply { mkdirs() }
+                // Fixed filename: the card is transient, and reusing it keeps the cache
+                // from growing by one PNG per share for the life of the install.
+                val file = File(dir, "tunl-run.png")
+                FileOutputStream(file).use { it.write(bytes) }
+                val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+                intent.type = "image/png"
+                intent.putExtra(Intent.EXTRA_STREAM, uri)
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (e: Exception) {
+                Log.w("TunlShare", "Could not attach run card", e)
+            }
+        }
+        startActivity(Intent.createChooser(intent, null))
     }
 
     private fun showLeaderboard() {

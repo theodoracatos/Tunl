@@ -1,3 +1,8 @@
+// World-x of the first stalactite on a player's first-ever run (see startPlay). The
+// player sits at PX, so they reach it at scrollX ~= this minus PX -- roughly 2.5-3
+// seconds of clear tunnel at the starting scroll speed, on top of the 1.3s launch ramp.
+const FIRST_RUN_RUNWAY_WX = 1100;
+
 function initAmbParts() {
     ambParts = Array.from({ length: 30 }, () => ({
         x:   Math.random() * W,
@@ -19,6 +24,7 @@ function titleScreen() {
     chicaneCoins = [];
     gapBonus = 0; slowTime = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
     bullets = []; bulletAmmo = 0; bulletFireTimer = 0;
+    ghostTrack = []; ghostY = null; ghostPitch = 0; ghostPassed = false;
     mines = []; nextMineWx = 99999;
     cannons = []; nextCannonWx = 99999; cannonShots = [];
     // Coins never spawn on the title screen (nextCoinWx = 99999 above), so these are
@@ -43,11 +49,20 @@ function startPlay() {
     score = 0; newBest = false; newDailyBest = false;
     parts = []; thrustParts = []; deadT = 0; flashA = 0; shake = 0; trailY = [];
     skinFx = []; skinFxT = 0; shipPitch = -Math.PI / 2;
-    stalactites = []; nextStalWx = 420;
+    // The very first run a player ever starts gets a clear runway before the first
+    // stalactite, so the first thing they learn is the feel of thrust-vs-gravity rather
+    // than the death screen. At the default 420 the first obstacle reaches the player
+    // ~0.7s after the tunnel starts scrolling, which is not enough time to work out that
+    // releasing is a control. Coins are deliberately left at their normal start distance
+    // -- they teach collection and can't kill anyone.
+    stalactites = []; nextStalWx = runsTotal === 0 ? FIRST_RUN_RUNWAY_WX : 420;
     coins = [];     nextCoinWx = 500;
     chicaneCoins = [];
     gapBonus = 0; slowTime = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
     bullets = []; bulletAmmo = 0; bulletFireTimer = 0;
+    // Ghost: fresh recording buffer for this run; ghostPlay itself (today's best, from
+    // state.js / die()) is untouched here so it survives across runs within the day.
+    ghostTrack = []; ghostY = null; ghostPitch = 0; ghostPassed = false;
     mines = []; nextMineWx = 1800;
     // Cannons start much later than mines (score ~100) and are spaced far apart -- a
     // rare hazard, not a constant one (see world.js cannonSpacing()).
@@ -72,6 +87,11 @@ function startPlay() {
         localStorage.setItem('tunnel_daily_runs', '0');
         localStorage.setItem('tunnel_daily_shards', '0');
         top5 = []; localStorage.setItem('tunnel_top5', '[]');
+        // The new day's corridor is a different shape, so yesterday's ghost is racing
+        // through a cave that no longer exists -- drop it along with the other daily
+        // state rather than let it replay against the wrong tunnel.
+        ghostPlay = null; ghostScore = 0;
+        localStorage.removeItem('tunnel_ghost');
         dailyMissionStats = { gold: 0, blue: 0, red: 0, green: 0, orange: 0, nearMisses: 0, bestCombo: 0, bestScore: 0, runs: 0 };
         dailyMissionsClaimed = [false, false, false];
         dailyMissionIdx = pickDailyMissionIndices(_todayInt);
@@ -80,6 +100,11 @@ function startPlay() {
     }
     dailyRuns++;
     localStorage.setItem('tunnel_daily_runs', dailyRuns);
+    // Incremented after the runway check above, so run #1 gets the runway and run #2
+    // onward doesn't. Never reset at the day boundary -- onboarding is a lifetime
+    // state, not a daily one.
+    runsTotal++;
+    localStorage.setItem('tunnel_runs_total', runsTotal);
     milestoneFlash = 0; milestoneText = '';
     levelIntroT = LEVEL_INTRO_DUR;
     const _d = new Date();

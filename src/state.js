@@ -12,6 +12,14 @@ let dailyRuns = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tu
 let musicOn = localStorage.getItem('tunnel_music') !== '0';
 let fxOn    = localStorage.getItem('tunnel_fx')    !== '0';
 let _btnMusicRect = null, _btnFxRect = null;
+// ── World rank ────────────────────────────────────────────────────────
+// Pushed in by the native layer after each score submit resolves (GameView.swift's
+// fetchWorldRank / MainActivity.kt's fetchWorldRank) -- see main.js _tunlNativeUpdate.
+// Not persisted: a stale rank is worse than no rank, and it's one cheap round trip.
+// null means "unknown" (no Game Center / Play Games session, offline, or the first
+// submit hasn't come back yet), and the death screen falls back to the local list.
+// worldRankDelta is positive when the player climbed, since a smaller rank is better.
+let worldRank = null, worldRankTotal = 0, worldRankDelta = 0;
 // Shards: persistent currency banked from collected coins across all runs, spent on ship
 // unlocks (see SKINS[].cost in constants.js). Replaces the old single-run-score gate.
 // First launch under this system (no tunnel_shards key yet) resets ship unlocks to just
@@ -60,7 +68,16 @@ let dailyMissionIdx = pickDailyMissionIndices(_initToday);
 let runCoinsByType = { gold: 0, blue: 0, red: 0, green: 0, orange: 0 }; // this run's per-type coin counts
 let _skinBtnRects = [];
 let streak = parseInt(localStorage.getItem('tunnel_streak') || '0');
-let _homeBtnRect = null, _playBtnRect = null;
+// Lifetime run count (never reset at the day boundary, unlike dailyRuns). Sole consumer
+// is the obstacle-free runway on a player's very first run (lifecycle.js
+// FIRST_RUN_RUNWAY_WX). There was briefly also a title-screen control hint gated on this
+// -- removed, see the Onboarding section in CLAUDE.md for why.
+//
+// Note this key doesn't exist for players upgrading from 4.x, so they all read 0 on
+// first launch and get the first-run runway once. Harmless (one slightly emptier run),
+// and not worth a migration.
+let runsTotal = parseInt(localStorage.getItem('tunnel_runs_total') || '0');
+let _homeBtnRect = null, _playBtnRect = null, _shareBtnRect = null;
 let showSettings = false;
 let _settingsBtnRect = null;
 let _settingsPanelRect = null;
@@ -74,6 +91,29 @@ let _langBtnRects = [];
 let _removeAdsBtnRect = null;
 let _restoreBtnRect = null;
 let _privacyChoicesBtnRect = null;
+// ── Ghost run (constants.js GHOST_STEP / ghostEncode) ─────────────────
+// ghostPlay is today's best run, replayed as a translucent ship alongside the player.
+// Deliberately scoped to the calendar day, not all time: the corridor is a different
+// shape every day (world.js seedDailyVariety), so an older track would be racing
+// through a cave that no longer exists. That also makes the ghost reinforce the daily
+// loop -- each day opens with no ghost, and the first decent run of the day creates the
+// thing you spend the rest of the day chasing.
+let ghostPlay = null, ghostScore = 0;
+try {
+    const _gRaw = localStorage.getItem('tunnel_ghost');
+    if (_gRaw) {
+        const _g = JSON.parse(_gRaw);
+        if (_g && _g.day === _initToday && _g.data) {
+            ghostPlay  = ghostDecode(_g.data);
+            ghostScore = _g.score | 0;
+        }
+    }
+} catch (e) { ghostPlay = null; ghostScore = 0; }
+let ghostTrack;   // this run's recording, one byte per GHOST_STEP of scrollX
+let ghostY;       // interpolated ghost screen y this frame, or null once it's behind
+let ghostPitch;   // ghost's nose angle, derived from the track's local slope (update.js)
+let ghostPassed;  // one-shot: has the player already outlasted the ghost this run
+
 let parts, thrustParts, deadT, titleT, flashA, shake, trailY;
 let stalactites, nextStalWx;
 let coins, nextCoinWx;
@@ -94,6 +134,11 @@ let notifs;
 let bonusScore, milestoneNext, nearMissTimer, coinCombo, coinComboTimer;
 let runCoins, runNearMisses, runMaxCombo;
 let prevRunScore, lastRunScore;
+// Where the last run ended, in world-x and screen-y. Only the share card reads these
+// (share.js), which needs the exact death point to mark on the run profile -- die()'s
+// existing deathMarkers entry snaps to the nearest *wall*, which is the right thing for
+// the in-game marker but would misplace the ship on the card.
+let lastRunWx = 0, lastRunY = 0;
 let milestoneFlash, milestoneText;
 let levelIntroT = 0;
 let gtime = 0;

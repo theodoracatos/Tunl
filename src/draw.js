@@ -849,6 +849,23 @@ function draw() {
         ctx.shadowBlur  = 0;
     }
 
+    // Ghost of today's best run (update.js). Drawn before the Player block below, not
+    // inside it: that block applies a rotate() pivoted on the *player's* position for
+    // shipPitch, so a ghost drawn inside it would swing around the live ship every time
+    // the player pitched. It carries its own pitch, derived from the recorded track's
+    // slope. Deliberately a flat desaturated blue rather than the active skin's colour --
+    // it has to read as "not you" at a glance, and re-tinting it per skin would make it
+    // look like a second live ship.
+    if (phase === 'play' && ghostY !== null && ghostY !== undefined) {
+        ctx.save();
+        ctx.globalAlpha = 0.34;
+        ctx.translate(PX, ghostY);
+        ctx.rotate(ghostPitch);
+        ctx.translate(-PX, -ghostY);
+        drawShip(PX, ghostY, PR, '#8fb4ec', 120, 165, 235, 8);
+        ctx.restore();
+    }
+
     // Player
     if (phase !== 'dead' || deadT < 0.18) {
         const sk = SKINS[activeSkin] || SKINS[0];
@@ -1444,11 +1461,12 @@ function draw() {
         ctx.font        = `bold ${FS*0.040}px 'Courier New',monospace`;
         ctx.shadowColor = `rgba(90,140,255,${a * tapPulse * 0.70})`;
         ctx.shadowBlur  = tapGlow * 1.8;
+        const tapY = LAND ? H * 0.54 - liftLand : H/2 + H*0.140;
         ctx.fillStyle   = `rgba(190,215,255,${a * tapPulse * 0.35})`;
-        ctx.fillText(T.tap, titleX, LAND ? H * 0.54 - liftLand : H/2 + H*0.140);
+        ctx.fillText(T.tap, titleX, tapY);
         ctx.shadowBlur  = tapGlow;
         ctx.fillStyle   = `rgba(210,228,255,${a * (0.80 + 0.20 * tapPulse)})`;
-        ctx.fillText(T.tap, titleX, LAND ? H * 0.54 - liftLand : H/2 + H*0.140);
+        ctx.fillText(T.tap, titleX, tapY);
         ctx.shadowBlur  = 0;
 
         // Settings/leaderboard row + shared button-drawing helper
@@ -2026,72 +2044,132 @@ function draw() {
         // vsLast + stats) and collides with the HOME/PLAY AGAIN buttons if it lands there
         // -- confirmed by measuring text width at common viewport sizes, so don't move
         // this back to the right column.
-        if (skinUnlockIdx >= 0) {
-            const sk = SKINS[skinUnlockIdx];
-            const [sr, sg, sb] = sk.shadow;
-            // Font sized down from the panel-tightening pass above (0.03 -> 0.023): the
-            // wider left column helped, but this banner's text (ship name + a whole
-            // localized word) is long enough that it still reached the divider on a
-            // smaller device at the old size -- measured across all 15 languages.
-            ctx.font        = `bold ${FS*0.023}px 'Courier New',monospace`;
-            ctx.fillStyle   = `rgba(${sr},${sg},${sb},${a*0.95})`;
-            ctx.shadowColor = `rgba(${sr},${sg},${sb},${a*0.60})`;
-            ctx.shadowBlur  = 8;
-            ctx.fillText(`${sk.name} ${T.unlocked}`, LC, H * 0.78);
-            ctx.shadowBlur  = 0;
+        // One shared line, not three competing ones. These used to be three separate
+        // `if` branches all targeting H*0.78 and all suppressing each other by priority,
+        // so a good run could earn a ship unlock, a mastery level *and* a shard payout
+        // and be shown exactly one of them -- the two most motivating outcomes in the
+        // game hidden by draw order. There is genuinely only one slot here (the panel
+        // edge is just below and the HOME/SHARE/PLAY row just below that), so instead of
+        // finding more room the parts are concatenated onto that one line and the whole
+        // thing is shrunk to fit.
+        {
+            const parts = [];
+            let  bannerClr = null;
+            // Ship unlock still outranks a mastery level-up when both land in one run:
+            // both are ship-coloured and showing two ship banners at once reads as a
+            // glitch, not a double reward.
+            if (skinUnlockIdx >= 0) {
+                const sk = SKINS[skinUnlockIdx];
+                parts.push(`${sk.name} ${T.unlocked}`);
+                bannerClr = sk.shadow;
+            } else if (skinMasteryUpIdx >= 0) {
+                const sk = SKINS[skinMasteryUpIdx];
+                parts.push(`${sk.name} ${T.masteryUp} ${masteryLevel(skinMasteryUpIdx)}`);
+                bannerClr = sk.shadow;
+            }
+            if (runCoins > 0) {
+                // The banked total (`shards`) has no upper bound (grinding never stops
+                // once every ship is owned), so past 10000 it's shown rounded to the
+                // nearest thousand ("13k") rather than full digits.
+                const shardsDisp = shards >= 10000 ? Math.round(shards / 1000) + 'k' : shards;
+                let shardLine = `+${runShardsBanked} \u29eb \u00b7 ${shardsDisp} \u29eb`;
+                // The daily-cap note is the first thing dropped when space is tight --
+                // it explains a number rather than being one.
+                if (runShardsBanked < runCoins && !bannerClr) shardLine += `  (${T.dailyCap})`;
+                parts.push(shardLine);
+            }
+
+            if (parts.length) {
+                const line = parts.join('   \u00b7   ');
+                // Shrink to fit rather than overflow. The binding constraint is the
+                // panel's left edge, not the divider: this line is centred on LC
+                // (W*0.20) and the panel starts at W*0.03, so there is only 0.17*W of
+                // half-width available on the left even though the divider at W*0.455
+                // is further away. Measured this way across all 15 languages.
+                let fsz = FS * 0.024;
+                ctx.font = `bold ${fsz}px 'Courier New',monospace`;
+                const availW = (LC - W * 0.045) * 2;
+                const lineW  = ctx.measureText(line).width;
+                if (lineW > availW) {
+                    fsz = Math.max(fsz * availW / lineW, FS * 0.014); // legibility floor
+                    ctx.font = `bold ${fsz}px 'Courier New',monospace`;
+                }
+                // Gold when it's only the shard payout; the ship's own colour whenever a
+                // ship banner is part of the line, since that's the bigger moment.
+                const [br, bg, bb] = bannerClr || [255, 205, 60];
+                ctx.fillStyle   = bannerClr
+                    ? `rgba(${br},${bg},${bb},${a * 0.95})`
+                    : `rgba(255,225,110,${a * 0.95})`;
+                ctx.shadowColor = `rgba(${br},${bg},${bb},${a * 0.62})`;
+                ctx.shadowBlur  = 8;
+                ctx.fillText(line, LC, H * 0.78);
+                ctx.shadowBlur  = 0;
+            }
         }
 
-        // Mastery level-up banner -- same left-column slot, one priority step below a
-        // fresh unlock (ship-unlock is the bigger moment; skip this if both happen the
-        // same run rather than stacking two banners in the same cramped space).
-        if (skinUnlockIdx < 0 && skinMasteryUpIdx >= 0) {
-            const sk = SKINS[skinMasteryUpIdx];
-            const [sr, sg, sb] = sk.shadow;
-            ctx.font        = `bold ${FS*0.023}px 'Courier New',monospace`; // see unlock banner comment above
-            ctx.fillStyle   = `rgba(${sr},${sg},${sb},${a*0.95})`;
-            ctx.shadowColor = `rgba(${sr},${sg},${sb},${a*0.60})`;
-            ctx.shadowBlur  = 8;
-            ctx.fillText(`${sk.name} ${T.masteryUp} ${masteryLevel(skinMasteryUpIdx)}`, LC, H * 0.78);
-            ctx.shadowBlur  = 0;
-        }
-
-        // Shards banked this run (post daily-cap, see update.js die()) plus running total,
-        // in the same left-column slot the unlock banner uses. Skipped on unlock/mastery
-        // runs -- there's no room for both above the panel edge/buttons, and either banner
-        // is already that run's headline moment.
-        if (runCoins > 0 && skinUnlockIdx < 0 && skinMasteryUpIdx < 0) {
-            // Bumped again (0.017 -> 0.018 -> 0.024) plus a gold glow -- user feedback
-            // that even the 0.018 size still read as near-invisible against the panel.
-            // Matches the unlock/mastery banners' glow treatment above so this line
-            // carries similar visual weight to the reward it represents, instead of
-            // reading as fine print. The banked total (`shards`) has no upper bound
-            // (grinding never stops once every ship is owned), so past 10000 it's shown
-            // rounded to the nearest thousand ("13k") rather than full digits -- keeps
-            // this line's width from creeping past the divider the longer someone's
-            // played, without needing yet another font shrink. Below that threshold,
-            // exact digits.
-            ctx.font        = `bold ${FS*0.024}px 'Courier New',monospace`;
-            ctx.fillStyle   = `rgba(255,225,110,${a * 0.95})`;
-            ctx.shadowColor = `rgba(255,205,60,${a * 0.65})`;
-            ctx.shadowBlur  = 8;
-            const shardsDisp = shards >= 10000 ? Math.round(shards / 1000) + 'k' : shards;
-            let shardLine = `+${runShardsBanked} ⧫ · ${shardsDisp} ⧫`;
-            if (runShardsBanked < runCoins) shardLine += `  (${T.dailyCap})`;
-            ctx.fillText(shardLine, LC, H * 0.78);
-            ctx.shadowBlur  = 0;
-        }
-
-        // Right column: top-5 leaderboard + stats
+        // Right column: world rank (when known) + today's local list + stats
         let ry = H * 0.155;
-        const LB_STEP = H * 0.095;
+
+        // The moment a player cares about their standing is the instant they die, and
+        // until now this column spent its best space on a local top-5 of the player's
+        // *own* scores from today -- the least emotionally charged data available -- while
+        // the real leaderboard sat behind a title-screen button they only see once
+        // they've already stopped playing. When the native layer has reported a rank
+        // (state.js worldRank), it takes the top of the column and the local list shrinks
+        // to 3 rows to pay for it. With no rank available (offline, no Game Center /
+        // Play Games session, or the first submit still in flight) the old 5-row layout
+        // is kept exactly as it was.
+        const hasRank = worldRank !== null && worldRank > 0;
+        const LB_N    = hasRank ? 3 : 5;
+        const LB_STEP = hasRank ? H * 0.080 : H * 0.095;
+
+        if (hasRank) {
+            const rankStr  = worldRankTotal > 0
+                ? `#${worldRank.toLocaleString()} / ${worldRankTotal.toLocaleString()}`
+                : `#${worldRank.toLocaleString()}`;
+            sh(2);
+            ctx.font      = `bold ${FS*0.022}px 'Courier New',monospace`;
+            ctx.fillStyle = `rgba(170,195,240,${a * 0.90})`;
+            ctx.fillText(T.worldRank, RC, ry);
+            ry += H * 0.058;
+
+            // Shrink to fit rather than overflow: rank strings grow with the player
+            // base ("#128,455 / 2,100,388" is a lot wider than "#42 / 900"), and this
+            // column is bounded by the panel edge on one side and the divider on the
+            // other.
+            let rankFsz = FS * 0.046;
+            ctx.font = `bold ${rankFsz}px 'Courier New',monospace`;
+            const rankAvailW = Math.min(RC - W * 0.475, W * 0.955 - RC) * 2;
+            const rankW = ctx.measureText(rankStr).width;
+            if (rankW > rankAvailW) {
+                rankFsz = Math.max(rankFsz * rankAvailW / rankW, FS * 0.024);
+                ctx.font = `bold ${rankFsz}px 'Courier New',monospace`;
+            }
+            sh(6, `rgba(255,190,0,${a*0.45})`);
+            ctx.fillStyle = `rgba(255,225,110,${a})`;
+            ctx.fillText(rankStr, RC, ry);
+            ry += H * 0.052;
+
+            // Rank movement since the previous submit -- this is what turns a standing
+            // into a loop rather than a stat, so it gets the colour treatment.
+            if (worldRankDelta !== 0) {
+                sh(3);
+                ctx.font      = `bold ${FS*0.024}px 'Courier New',monospace`;
+                ctx.fillStyle = worldRankDelta > 0
+                    ? `rgba(140,230,140,${a})`
+                    : `rgba(220,140,140,${a})`;
+                ctx.fillText(`${worldRankDelta > 0 ? '\u25B2' : '\u25BC'} ${Math.abs(worldRankDelta).toLocaleString()}`, RC, ry);
+            }
+            ry += H * 0.062;
+        }
 
         // Left-align the rank/score column to a shared start X instead of centering each
         // line independently -- centering per-line let the numbers drift left/right with
         // digit count so they didn't read as a column. The column itself is still
-        // centered as a block around RC (measured against the widest of the 5 possible
+        // centered as a block around RC (measured against the widest of the possible
         // lines, in whichever font that line would actually use).
         let listW = 0;
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < LB_N; i++) {
             const entry = top5[i];
             ctx.font = entry !== undefined ? `bold ${FS*0.040}px 'Courier New',monospace` : `${FS*0.032}px 'Courier New',monospace`;
             listW = Math.max(listW, ctx.measureText(entry !== undefined ? `#${i + 1}  ${entry}` : `#${i + 1}  -`).width);
@@ -2102,11 +2180,14 @@ function draw() {
         sh(2);
         ctx.font      = `bold ${FS*0.024}px 'Courier New',monospace`;
         ctx.fillStyle = `rgba(170,195,240,${a * 0.90})`;
-        ctx.fillText(T.top5, listX, ry);
+        // T.todayTop, not the old T.top5: this list is wiped at the UTC day boundary
+        // (lifecycle.js), so labelling it "TOP 5" made it look like lost data every
+        // morning. The label now says what it actually is.
+        ctx.fillText(T.todayTop, listX, ry);
         ry += H * 0.072;
 
         const myRank = top5.findIndex(s => s === score);
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < LB_N; i++) {
             const entry = top5[i];
             const isMe  = i === myRank && entry === score;
             if (entry !== undefined) {
@@ -2140,6 +2221,10 @@ function draw() {
             const statParts = [`${runCoins} ${runCoins !== 1 ? T.powerups : T.powerup}`];
             if (runNearMisses > 0) statParts.push(`${runNearMisses} ${T.close}`);
             if (runMaxCombo   > 1) statParts.push(`x${runMaxCombo} ${T.combo}`);
+            // What the next run will be racing (update.js ghost block). Skipped on a new
+            // daily best, where ghostScore was just overwritten with this very run's
+            // score and the line would only restate the big number on the left.
+            if (!newDailyBest && ghostScore > 0) statParts.push(`${T.ghost} ${ghostScore}`);
             sh(3);
             ctx.font      = `${FS*0.022}px 'Courier New',monospace`; // see unlock banner comment above
             ctx.fillStyle = `rgba(160,180,220,${a})`;
@@ -2147,15 +2232,25 @@ function draw() {
             ry += H * 0.088;
         }
 
-        // Bottom row: HOME | PLAY AGAIN (centered pair)
+        // Bottom row: HOME | (SHARE) | PLAY AGAIN, centered as a group. SHARE only
+        // appears on a run actually worth showing someone (share.js shareWorthy) and
+        // only where there's somewhere to send it (shareAvailable) -- a share button on
+        // every death is a nag, on a personal best it's a reward. The row re-centers
+        // around whichever buttons are present rather than leaving a gap.
         if (deadT > 0.75) {
             const b      = Math.min(1, (deadT - 0.75) * 6);
             const botY   = H * 0.905;
             const btnH   = H * 0.13;
-            const btnW   = W * 0.17;
-            const gap    = W * 0.04;
-            const homeCX = W * 0.50 - gap * 0.5 - btnW * 0.5;
-            const playCX = W * 0.50 + gap * 0.5 + btnW * 0.5;
+            const showShare = shareWorthy() && shareAvailable();
+            const btnW   = showShare ? W * 0.155 : W * 0.17;
+            const gap    = W * 0.035;
+            const nBtn   = showShare ? 3 : 2;
+            const rowW   = nBtn * btnW + (nBtn - 1) * gap;
+            let   bx     = W * 0.50 - rowW * 0.5;
+            const homeCX = bx + btnW * 0.5;  bx += btnW + gap;
+            const shareCX = showShare ? bx + btnW * 0.5 : 0;
+            if (showShare) bx += btnW + gap;
+            const playCX = bx + btnW * 0.5;
 
             // HOME button
             ctx.font = `bold ${FS*0.028}px 'Courier New',monospace`;
@@ -2168,6 +2263,34 @@ function draw() {
             ctx.lineWidth   = 1; ctx.strokeRect(homeX, botY - btnH * 0.5, btnW, btnH);
             sh(2); ctx.fillStyle = `rgba(130,155,230,${b * 0.90})`;
             ctx.fillText(T.home, homeCX, botY);
+
+            // SHARE button -- gold, matching the shard/personal-best treatment used
+            // everywhere else for "this was a good run", so it reads as a reward rather
+            // than a third piece of navigation.
+            _shareBtnRect = null;
+            if (showShare) {
+                const shareX = shareCX - btnW * 0.5;
+                _shareBtnRect = { x: shareX, y: botY - btnH * 0.5, w: btnW, h: btnH };
+                sh(6, `rgba(255,190,0,${b * 0.45})`);
+                ctx.fillStyle   = `rgba(42,32,10,${b * 0.90})`;
+                ctx.fillRect(shareX, botY - btnH * 0.5, btnW, btnH);
+                ctx.strokeStyle = `rgba(255,205,80,${b * 0.80})`;
+                ctx.lineWidth   = 1.5; ctx.strokeRect(shareX, botY - btnH * 0.5, btnW, btnH);
+                // Shrink to fit: SHARE is one short word in English but a long one in
+                // several locales (COMPARTILHAR, ПОДЕЛИТЬСЯ), and this button is the
+                // narrowest of the three.
+                let shFsz = FS * 0.028;
+                ctx.font = `bold ${shFsz}px 'Courier New',monospace`;
+                const shW = ctx.measureText(T.share).width;
+                if (shW > btnW * 0.86) {
+                    shFsz = Math.max(shFsz * (btnW * 0.86) / shW, FS * 0.015);
+                    ctx.font = `bold ${shFsz}px 'Courier New',monospace`;
+                }
+                sh(5, `rgba(255,200,60,${b * 0.55})`);
+                ctx.fillStyle = `rgba(255,228,130,${b * 0.95})`;
+                ctx.fillText(T.share, shareCX, botY);
+                ctx.font = `bold ${FS*0.028}px 'Courier New',monospace`;
+            }
 
             // PLAY AGAIN button
             ctx.font = `bold ${FS*0.028}px 'Courier New',monospace`;

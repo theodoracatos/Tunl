@@ -28,6 +28,7 @@ struct GameView: UIViewRepresentable {
         config.userContentController.add(context.coordinator, name: "gameCenter")
         config.userContentController.add(context.coordinator, name: "iap")
         config.userContentController.add(context.coordinator, name: "ads")
+        config.userContentController.add(context.coordinator, name: "share")
 
         // Game Center Challenges (GKChallengeDefinition/GKAccessPoint.trigger...) need
         // iOS 26+ - tell the JS side up front so it only draws the CHALLENGE button on
@@ -147,6 +148,10 @@ struct GameView: UIViewRepresentable {
                     // "Play" in a friend's challenge notification, etc.) - without
                     // registering, those taps just launch the app with no route in.
                     GKLocalPlayer.local.register(self)
+                    // Prime the death screen's rank line, so the first death of a
+                    // session already has a standing to show and a baseline to compute
+                    // the first delta against, instead of one blank run.
+                    self.fetchWorldRank()
                 } else if let error {
                     print("Game Center auth failed: \(error.localizedDescription)")
                 }
@@ -165,8 +170,37 @@ struct GameView: UIViewRepresentable {
             // the classic (never-resets) all-time one. One call, one round trip.
             GKLeaderboard.submitScore(score, context: 0, player: GKLocalPlayer.local,
                                        leaderboardIDs: [Coordinator.leaderboardID,
-                                                         Coordinator.allTimeLeaderboardID]) { error in
-                if let error { print("Game Center score submit failed: \(error.localizedDescription)") }
+                                                         Coordinator.allTimeLeaderboardID]) { [weak self] error in
+                if let error {
+                    print("Game Center score submit failed: \(error.localizedDescription)")
+                    return
+                }
+                // Only after the submit lands, so the rank reflects the run that just
+                // ended rather than the previous one.
+                self?.fetchWorldRank()
+            }
+        }
+
+        // Pulls the local player's standing on the daily board and the size of that
+        // board, and hands both to the page for the death screen (src/draw.js right
+        // column, via main.js _tunlNativeUpdate). No backend needed - GameKit already
+        // knows both numbers; they were simply never asked for.
+        private func fetchWorldRank() {
+            guard GKLocalPlayer.local.isAuthenticated else { return }
+            GKLeaderboard.loadLeaderboards(IDs: [Coordinator.leaderboardID]) { [weak self] boards, error in
+                guard error == nil, let board = boards?.first else { return }
+                // tunl_highscore is a *recurring* (daily) leaderboard, so GameKit already
+                // scopes entries to the current occurrence and the time scope is not
+                // applied - .allTime here means "this occurrence", not "all history".
+                board.loadEntries(for: .global,
+                                  timeScope: .allTime,
+                                  range: NSRange(location: 1, length: 1)) { localEntry, _, totalPlayers, entriesError in
+                    guard entriesError == nil, let localEntry else { return }
+                    let json = "{\"worldRank\":\(localEntry.rank),\"worldRankTotal\":\(totalPlayers)}"
+                    DispatchQueue.main.async {
+                        self?.webView?.evaluateJavaScript("window._tunlNativeUpdate && window._tunlNativeUpdate(\(json))")
+                    }
+                }
             }
         }
 
@@ -194,6 +228,35 @@ struct GameView: UIViewRepresentable {
                 // to - there's no custom UI to build here, GameKit owns this screen.
                 await GKAccessPoint.shared.triggerForPlayTogether()
             }
+        }
+
+        // Hands the daily run card (src/share.js) to the system share sheet. The image
+        // arrives as a base64 data: URL because that's the only way a canvas can cross
+        // the WKScriptMessage boundary; a failed decode degrades to sharing just the
+        // text rather than presenting nothing.
+        private func presentShare(text: String, imageDataURL: String?) {
+            var items: [Any] = []
+            if let imageDataURL,
+               let comma = imageDataURL.firstIndex(of: ","),
+               let data = Data(base64Encoded: String(imageDataURL[imageDataURL.index(after: comma)...])),
+               let image = UIImage(data: data) {
+                items.append(image)
+            }
+            if !text.isEmpty { items.append(text) }
+            guard !items.isEmpty, let root = rootViewController() else { return }
+
+            let vc = UIActivityViewController(activityItems: items, applicationActivities: nil)
+            // iPad presents this as a popover and hard-crashes without an anchor. The
+            // game is full-screen canvas with no view to attach to, so anchor to the
+            // bottom-centre of the root view, roughly where the SHARE button is drawn.
+            if let pop = vc.popoverPresentationController {
+                pop.sourceView = root.view
+                pop.sourceRect = CGRect(x: root.view.bounds.midX,
+                                        y: root.view.bounds.maxY - 40,
+                                        width: 1, height: 1)
+                pop.permittedArrowDirections = [.down]
+            }
+            root.present(vc, animated: true)
         }
 
         func gameCenterViewControllerDidFinish(_ gameCenterViewController: GKGameCenterViewController) {
@@ -240,6 +303,12 @@ struct GameView: UIViewRepresentable {
                     if #available(iOS 26.0, *) { presentChallengeCreation() }
                 default: break
                 }
+                return
+            }
+            if message.name == "share" {
+                guard let body = message.body as? [String: Any] else { return }
+                presentShare(text: body["text"] as? String ?? "",
+                             imageDataURL: body["image"] as? String)
                 return
             }
             if message.name == "iap" {
