@@ -1609,6 +1609,9 @@ function draw() {
             // so the whole thing reads as one column.
             const rewStr = `+${MISSION_REWARD} \u29eb`;
             let mFsz = FS * 0.015;
+            // The reward is drawn bold and a touch larger than the row text, so it has to
+            // be measured in its own font or the column lands short of where it renders.
+            const rewFont = () => `bold ${mFsz * 1.12}px 'Courier New',monospace`;
             const measureCols = () => {
                 ctx.font = `${mFsz}px 'Courier New',monospace`;
                 let pw = 0, lw = 0;
@@ -1616,12 +1619,25 @@ function draw() {
                     const d = MISSION_DEFS[dailyMissionIdx[m]];
                     const lb = (T.missionDesc && T.missionDesc[d.id]) || d.id;
                     const v  = Math.min(dailyMissionStats[d.stat] || 0, d.target);
-                    pw = Math.max(pw, ctx.measureText(`${v}/${d.target}`).width);
+                    // Measure what each row actually renders, not what it could render.
+                    // A claimed row draws a tick but was being measured as "150/150", so
+                    // once the day's missions were all done the progress column reserved
+                    // the width of a number nothing was drawing and shoved every label
+                    // right by a phantom column.
+                    const shown = dailyMissionsClaimed[m] ? '✓' : `${v}/${d.target}`;
+                    pw = Math.max(pw, ctx.measureText(shown).width);
                     lw = Math.max(lw, ctx.measureText(lb).width);
                 }
-                const rw  = ctx.measureText(rewStr).width;
-                const gap = mFsz * 1.2;
-                return { pw, lw, rw, gap, total: pw + gap + lw + gap * 1.8 + rw };
+                ctx.font = rewFont();
+                const rw = ctx.measureText(rewStr).width;
+                // Two different gaps, not one: the progress figure and its label are the
+                // same thought ("2 of 6 orange coins") and want to sit close, while the
+                // reward is a separate column and wants real separation. A single shared
+                // gap pushed the labels needlessly far right, which is the dominant text
+                // in the block and reads best hard against the left edge.
+                const gapPL = mFsz * 0.55;
+                const gapLR = mFsz * 2.0;
+                return { pw, lw, rw, gapPL, gapLR, total: pw + gapPL + lw + gapLR + rw };
             };
             let mc = measureCols();
             // Shrink to fit rather than cross the divider. The reward column makes this
@@ -1635,7 +1651,7 @@ function draw() {
             }
             const blockX  = titleX - mc.total / 2;
             const progRX  = blockX + mc.pw;              // right edge of progress column
-            const labelLX = progRX + mc.gap;             // left edge of label column
+            const labelLX = progRX + mc.gapPL;           // left edge of label column
             const rewRX   = blockX + mc.total;           // right edge of reward column
 
             ctx.textAlign   = 'left';
@@ -1660,9 +1676,16 @@ function draw() {
                 ctx.fillText(label, labelLX, missionY);
                 // What the mission is actually worth. MISSION_REWARD shards, granted the
                 // moment the target is met and exempt from DAILY_SHARD_CAP (constants.js).
-                // Dimmed once claimed -- already banked, so it stops being an offer.
+                // Bold, slightly larger and glowing rather than plain small text: at row
+                // weight and 78% alpha this read as near-invisible, exactly the way the
+                // death screen's shard line did before it got the same treatment. It is
+                // the reason to care about the mission, so it should carry the weight of
+                // one. Dimmed once claimed -- already banked, so it stops being an offer.
                 ctx.textAlign   = 'right';
-                ctx.fillStyle   = `rgba(255,225,110,${a * (done ? 0.32 : 0.78)})`;
+                ctx.font        = rewFont();
+                ctx.fillStyle   = `rgba(255,228,125,${a * (done ? 0.62 : 1.0)})`;
+                ctx.shadowColor = `rgba(255,205,60,${a * (done ? 0.35 : 0.60)})`;
+                ctx.shadowBlur  = 7;
                 ctx.fillText(rewStr, rewRX, missionY);
                 ctx.shadowBlur  = 0;
                 missionY += H * 0.037;
