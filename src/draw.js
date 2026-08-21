@@ -1978,7 +1978,41 @@ function draw() {
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        const LC = W * 0.20;
+        // The run just flown, drawn faintly across the whole panel as its backdrop
+        // (share.js drawRunProfile -- the same picture the share card carries).
+        //
+        // First attempt made this a small strip tucked into the left column's empty half.
+        // It didn't work: authored at card size (~1060px) the corridor reads beautifully,
+        // but squeezed into a ~350pt strip it became a smear with an oversized death
+        // marker, and on a short run -- where the corridor hasn't narrowed yet -- there
+        // was nothing to see at all. Scaled down it looked like an afterthought.
+        //
+        // As texture it works, because it stops competing with the numbers and starts
+        // doing the job the panel actually needed: this screen was sparse text in a big
+        // dark box, and the one thing that could fill it is the only image no other game
+        // could show. Kept well under the text's contrast so nothing here is harder to
+        // read than before.
+        if (lastRunWx > 0) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.roundRect(W * 0.03, H * 0.04, W * 0.94, H * 0.78, 10);
+            ctx.clip();
+            drawRunProfile(ctx, W * 0.055, H * 0.10, W * 0.89, H * 0.66, {
+                scale:     Math.max(0.5, (W * 0.89) / 1060),
+                alpha:     a * 0.30,
+                // No death cross or PB tick here: they land wherever the run ended,
+                // which behind a two-column text panel means on top of whatever happens
+                // to be there (the cross landed squarely on a leaderboard row). The
+                // lit-vs-dim split already carries "this is how far you got", which is
+                // the part that matters as texture.
+                marker:    false,
+                smoothMul: 2.5,
+            });
+            ctx.restore();
+            ctx.textAlign = 'center';
+        }
+
+        const LC = W * 0.2425;
         const RC = W * 0.71;
 
         // Vertical separator
@@ -1994,36 +2028,36 @@ function draw() {
         sh(5, `rgba(200,30,30,${a * 0.55})`);
         ctx.font      = `bold ${FS*0.095}px 'Courier New',monospace`;
         ctx.fillStyle = `rgba(255,70,70,${a})`;
-        ctx.fillText(T.dead, LC, H * 0.20);
+        ctx.fillText(T.dead, LC, H * 0.185);
 
         // Accent underline
         sh(0);
         ctx.fillStyle = `rgba(255,80,80,${a * 0.75})`;
         const deadW = ctx.measureText(T.dead).width;
-        ctx.fillRect(LC - deadW * 0.5, H * 0.267, deadW, 2);
+        ctx.fillRect(LC - deadW * 0.5, H * 0.252, deadW, 2);
 
         // Score with pulsing glow
         const scorePulse = newDailyBest ? 18 + 5 * Math.sin(deadT * 3.5) : 4;
         sh(scorePulse, newDailyBest ? `rgba(255,190,0,${a*0.75})` : 'rgba(0,0,0,0.90)');
         ctx.font      = `bold ${FS*0.140}px 'Courier New',monospace`;
         ctx.fillStyle = newDailyBest ? `rgba(255,225,65,${a})` : `rgba(225,240,255,${a})`;
-        ctx.fillText(score, LC, H * 0.44);
+        ctx.fillText(score, LC, H * 0.395);
 
         sh(2);
         ctx.font      = `bold ${FS*0.026}px 'Courier New',monospace`;
         ctx.fillStyle = `rgba(160,190,240,${a * 0.95})`;
-        ctx.fillText(`${T.runs} ${dailyRuns}`, LC, H * 0.565);
+        ctx.fillText(`${T.runs} ${dailyRuns}`, LC, H * 0.505);
 
         if (newBest && score > 0) {
             sh(6, `rgba(255,200,40,${a*0.7})`);
             ctx.font      = `bold ${FS*0.036}px 'Courier New',monospace`;
             ctx.fillStyle = `rgba(255,240,120,${a})`;
-            ctx.fillText(T.newBest, LC, H * 0.66);
+            ctx.fillText(T.newBest, LC, H * 0.573);
         } else if (newDailyBest && score > 0) {
             sh(6, `rgba(255,200,40,${a*0.7})`);
             ctx.font      = `bold ${FS*0.036}px 'Courier New',monospace`;
             ctx.fillStyle = `rgba(255,240,120,${a})`;
-            ctx.fillText(T.newDailyBest, LC, H * 0.66);
+            ctx.fillText(T.newDailyBest, LC, H * 0.573);
             // No "previous best" sub-line here (there used to be one): "new daily best!"
             // already implies it beat the old number, and the H*0.78 slot right below is
             // shared with the skin-unlock/mastery/shards line -- whichever of those draws
@@ -2036,7 +2070,7 @@ function draw() {
             sh(2);
             ctx.font      = `bold ${FS*0.026}px 'Courier New',monospace`;
             ctx.fillStyle = `rgba(160,190,240,${a * 0.95})`;
-            ctx.fillText(`${T.best}  ${best}`, LC, H * 0.66);
+            ctx.fillText(`${T.best}  ${best}`, LC, H * 0.573);
         }
 
         // Skin-unlock banner (+ shards line below it) sits in the left column's empty
@@ -2102,7 +2136,7 @@ function draw() {
                     : `rgba(255,225,110,${a * 0.95})`;
                 ctx.shadowColor = `rgba(${br},${bg},${bb},${a * 0.62})`;
                 ctx.shadowBlur  = 8;
-                ctx.fillText(line, LC, H * 0.78);
+                ctx.fillText(line, LC, H * 0.705);
                 ctx.shadowBlur  = 0;
             }
         }

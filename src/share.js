@@ -39,6 +39,141 @@ function shareAvailable() {
            (typeof navigator !== 'undefined' && !!navigator.share);
 }
 
+// ── Run profile ───────────────────────────────────────────────────────
+// Draws the tunnel the player just flew into an arbitrary rect on any 2D context.
+// Shared by the share card and the death screen (draw.js) -- the whole point of the
+// picture is that only this game can draw it, so it should be the thing the player sees
+// when they die, not only the thing a recipient sees.
+//
+// `scale` multiplies line widths, glows and marker sizes so the same drawing reads
+// correctly at card size (1060px wide) and at death-screen size (~340pt wide).
+// `alpha` lets the death screen fade it in with the rest of the panel.
+function drawRunProfile(g, x0, y0, w, h, opts) {
+    opts = opts || {};
+    const k = opts.scale === undefined ? 1 : opts.scale;
+    const A = opts.alpha === undefined ? 1 : opts.alpha;
+    const showPB = opts.showPB !== false;
+    // The death cross and PB tick are the subject on the share card, but landmarks the
+    // backdrop use can't place safely -- they land wherever the run ended, which on the
+    // death screen means on top of whatever text happens to be there. Off by request.
+    const showMarker = opts.marker !== false;
+    // Extra smoothing for the backdrop: what reads as cave texture at card size reads as
+    // noise behind body text.
+    const smoothMul = opts.smoothMul === undefined ? 1 : opts.smoothMul;
+
+    const endWx = Math.max(lastRunWx, 1);
+    // Extend the x-range past the run when the all-time best sits further in, so the
+    // marker the player is chasing is always visible. Bounded so a short run still fills
+    // most of the strip instead of shrinking to a stub next to a distant best.
+    const wxMax = Math.max(endWx, Math.min(bestSX || 0, endWx * 1.6));
+    const xOf = wx => x0 + (wx / wxMax) * w;
+    const yOf = y  => y0 + (y / H) * h;
+
+    // Sampled as a rolling average rather than point samples. Drawing boundsBase()
+    // literally is accurate but unreadable on a deep run: the corridor's own waves have
+    // a period of roughly 550-2500 world-px, so a score-500 run (~30000 px) packs ~60
+    // full oscillations into the strip and renders as a seismograph rather than a cave.
+    // The smoothing window scales with run length -- a short run gets almost none and
+    // keeps its real shape, a long run resolves into the thing that actually matters at
+    // a glance: the corridor drifting and narrowing the deeper the player got.
+    const smoothWin = Math.min(wxMax / 12, 1300) * smoothMul;
+    const SAMPLES = 420;
+    const SUB = smoothWin > 1 ? 9 : 1;
+    const tops = [], bots = [];
+    for (let i = 0; i <= SAMPLES; i++) {
+        const wx = (i / SAMPLES) * wxMax;
+        let t = 0, b = 0;
+        for (let j = 0; j < SUB; j++) {
+            const off = SUB === 1 ? 0 : (j / (SUB - 1) - 0.5) * smoothWin;
+            const bb = boundsBase(Math.max(0, wx + off));
+            t += bb.top; b += bb.bot;
+        }
+        tops.push([xOf(wx), yOf(t / SUB)]);
+        bots.push([xOf(wx), yOf(b / SUB)]);
+    }
+
+    const flownX = xOf(endWx);
+
+    // Corridor interior: the flown stretch is lit, whatever lies past it stays dark.
+    // The picture should show where the run stopped, not imply it kept going.
+    g.save();
+    g.beginPath();
+    g.moveTo(tops[0][0], tops[0][1]);
+    for (const [x, y] of tops) g.lineTo(x, y);
+    for (let i = bots.length - 1; i >= 0; i--) g.lineTo(bots[i][0], bots[i][1]);
+    g.closePath();
+    g.clip();
+    const fill = g.createLinearGradient(0, y0, 0, y0 + h);
+    fill.addColorStop(0,   `rgba(40,70,150,${0.30 * A})`);
+    fill.addColorStop(0.5, `rgba(60,95,190,${0.14 * A})`);
+    fill.addColorStop(1,   `rgba(40,70,150,${0.30 * A})`);
+    g.fillStyle = fill;
+    g.fillRect(x0, y0, flownX - x0, h);
+    g.fillStyle = `rgba(20,26,48,${0.55 * A})`;
+    g.fillRect(flownX, y0, x0 + w - flownX, h);
+    g.restore();
+
+    // Walls, drawn twice and clipped at the death point: bright for the stretch actually
+    // flown, dim for the rest. The fill difference alone was too subtle to read, and
+    // "how much of this did I fly" is the whole story.
+    g.save();
+    g.lineJoin = 'round'; g.lineCap = 'round';
+    const strokeWalls = (cx0, cx1, bright) => {
+        g.save();
+        g.beginPath(); g.rect(cx0, y0 - h, cx1 - cx0, h * 3); g.clip();
+        for (const line of [tops, bots]) {
+            g.beginPath();
+            g.moveTo(line[0][0], line[0][1]);
+            for (const [x, y] of line) g.lineTo(x, y);
+            g.strokeStyle = bright ? `rgba(195,220,255,${0.95 * A})` : `rgba(95,120,175,${0.42 * A})`;
+            g.lineWidth = Math.max(1, (bright ? 3 : 2) * k);
+            if (bright) { g.shadowColor = `rgba(100,150,255,${0.65 * A})`; g.shadowBlur = 12 * k; }
+            g.stroke();
+            g.shadowBlur = 0;
+        }
+        g.restore();
+    };
+    strokeWalls(x0, flownX, true);
+    if (flownX < x0 + w) strokeWalls(flownX, x0 + w, false);
+    g.restore();
+
+    // All-time best marker: a quiet gold tick, only when it isn't the same spot as this
+    // run's death (on a new personal best they coincide and one marker is enough).
+    if (showMarker && showPB && bestSX > 0 && Math.abs(bestSX - endWx) > wxMax * 0.02 && bestSX <= wxMax) {
+        const bx = xOf(bestSX);
+        g.save();
+        g.setLineDash([7 * k, 7 * k]);
+        g.strokeStyle = `rgba(255,205,60,${0.55 * A})`;
+        g.lineWidth = Math.max(1, 2 * k);
+        g.beginPath(); g.moveTo(bx, y0 - 12 * k); g.lineTo(bx, y0 + h + 12 * k); g.stroke();
+        g.restore();
+        if (opts.pbLabel !== false) {
+            g.textAlign = 'center';
+            g.font = `bold ${19 * k}px 'Courier New',monospace`;
+            g.fillStyle = `rgba(255,215,90,${0.85 * A})`;
+            g.fillText(T.pb, bx, y0 + h + 32 * k);
+        }
+    }
+
+    // Death point. Drawn as a marker rather than the ship sprite: shipPath/drawShip
+    // render into the game's own `ctx`, a const bound to the visible canvas, so they
+    // can't be pointed at the share card's offscreen one.
+    if (showMarker) {
+        const dx = xOf(endWx), dy = yOf(Math.max(0, Math.min(H, lastRunY)));
+        const r = 15 * k;
+        g.save();
+        g.shadowColor = `rgba(255,70,70,${0.85 * A})`; g.shadowBlur = 22 * k;
+        g.strokeStyle = `rgba(255,90,90,${0.95 * A})`;
+        g.lineWidth = Math.max(1.2, 3.5 * k);
+        g.beginPath(); g.arc(dx, dy, r, 0, Math.PI * 2); g.stroke();
+        g.beginPath();
+        g.moveTo(dx - r * 0.6, dy - r * 0.6); g.lineTo(dx + r * 0.6, dy + r * 0.6);
+        g.moveTo(dx + r * 0.6, dy - r * 0.6); g.lineTo(dx - r * 0.6, dy + r * 0.6);
+        g.stroke();
+        g.restore();
+    }
+}
+
 // ── Card renderer ─────────────────────────────────────────────────────
 
 function _shareCardCanvas() {
@@ -75,114 +210,7 @@ function _shareCardCanvas() {
     g.fillStyle = 'rgba(160,190,240,0.92)';
     g.fillText(`${T.level} ${LEVEL_NUM}: ${WORLD_NAME.toUpperCase()}`, SHARE_W - 70, 86);
 
-    // ── Corridor strip ────────────────────────────────────────────────
-    // x maps world-x onto the card; y maps game-space [0, H] onto the strip, so the
-    // corridor keeps its true proportions no matter what device recorded the run.
-    const padX = 70, stripY0 = 168, stripY1 = 404, stripH = stripY1 - stripY0;
-    const endWx = Math.max(lastRunWx, 1);
-    // Extend the x-range past the run when the all-time best sits further in, so the
-    // marker the player is chasing is always on the card. Bounded so a short run still
-    // fills most of the strip instead of shrinking to a stub next to a distant best.
-    const wxMax = Math.max(endWx, Math.min(bestSX || 0, endWx * 1.6));
-    const xOf = wx => padX + (wx / wxMax) * (SHARE_W - padX * 2);
-    const yOf = y  => stripY0 + (y / H) * stripH;
-
-    // Sampled as a rolling average rather than point samples. Drawing boundsBase()
-    // literally is accurate but unreadable on a deep run: the corridor's own waves have
-    // a period of roughly 550-2500 world-px, so a score-500 run (~30000 px) packs ~60
-    // full oscillations into the strip and renders as a seismograph rather than a cave.
-    // The smoothing window scales with the run length -- a short run gets almost none
-    // and keeps its real shape, a long run gets a full wave period and resolves into the
-    // thing that actually matters at a glance: the corridor drifting and narrowing the
-    // deeper the player got.
-    const smoothWin = Math.min(wxMax / 12, 1300);
-    const SAMPLES = 420;
-    const SUB = smoothWin > 1 ? 9 : 1;
-    const tops = [], bots = [];
-    for (let i = 0; i <= SAMPLES; i++) {
-        const wx = (i / SAMPLES) * wxMax;
-        let t = 0, b = 0;
-        for (let k = 0; k < SUB; k++) {
-            const off = SUB === 1 ? 0 : (k / (SUB - 1) - 0.5) * smoothWin;
-            const bb = boundsBase(Math.max(0, wx + off));
-            t += bb.top; b += bb.bot;
-        }
-        tops.push([xOf(wx), yOf(t / SUB)]);
-        bots.push([xOf(wx), yOf(b / SUB)]);
-    }
-
-    // Corridor interior: the flown part is lit, the part beyond the death point stays
-    // dark. The card should show where the run stopped, not imply it kept going.
-    const flownX = xOf(endWx);
-    g.save();
-    g.beginPath();
-    g.moveTo(tops[0][0], tops[0][1]);
-    for (const [x, y] of tops) g.lineTo(x, y);
-    for (let i = bots.length - 1; i >= 0; i--) g.lineTo(bots[i][0], bots[i][1]);
-    g.closePath();
-    g.clip();
-    const fill = g.createLinearGradient(0, stripY0, 0, stripY1);
-    fill.addColorStop(0,   'rgba(40,70,150,0.30)');
-    fill.addColorStop(0.5, 'rgba(60,95,190,0.14)');
-    fill.addColorStop(1,   'rgba(40,70,150,0.30)');
-    g.fillStyle = fill;
-    g.fillRect(0, stripY0, flownX, stripH);
-    g.fillStyle = 'rgba(20,26,48,0.55)';
-    g.fillRect(flownX, stripY0, SHARE_W - flownX, stripH);
-    g.restore();
-
-    // Walls, drawn twice and clipped at the death point: bright for the stretch actually
-    // flown, dim for whatever lies past it. The fill difference alone was too subtle to
-    // read, and "how much of this did I fly" is the card's whole story.
-    g.lineJoin = 'round'; g.lineCap = 'round';
-    const strokeWalls = (x0, x1, bright) => {
-        g.save();
-        g.beginPath(); g.rect(x0, 0, x1 - x0, SHARE_H); g.clip();
-        for (const line of [tops, bots]) {
-            g.beginPath();
-            g.moveTo(line[0][0], line[0][1]);
-            for (const [x, y] of line) g.lineTo(x, y);
-            g.strokeStyle = bright ? 'rgba(195,220,255,0.95)' : 'rgba(95,120,175,0.42)';
-            g.lineWidth = bright ? 3 : 2;
-            if (bright) { g.shadowColor = 'rgba(100,150,255,0.65)'; g.shadowBlur = 12; }
-            g.stroke();
-            g.shadowBlur = 0;
-        }
-        g.restore();
-    };
-    strokeWalls(0, flownX, true);
-    if (flownX < SHARE_W) strokeWalls(flownX, SHARE_W, false);
-
-    // All-time best marker: a quiet gold tick, only when it isn't the same spot as
-    // this run's death (on a new personal best they coincide and one marker is enough).
-    if (bestSX > 0 && Math.abs(bestSX - endWx) > wxMax * 0.02 && bestSX <= wxMax) {
-        const bx = xOf(bestSX);
-        g.setLineDash([7, 7]);
-        g.strokeStyle = 'rgba(255,205,60,0.55)';
-        g.lineWidth = 2;
-        g.beginPath(); g.moveTo(bx, stripY0 - 12); g.lineTo(bx, stripY1 + 12); g.stroke();
-        g.setLineDash([]);
-        g.textAlign = 'center';
-        g.font = F(19, true);
-        g.fillStyle = 'rgba(255,215,90,0.85)';
-        g.fillText(T.pb, bx, stripY1 + 32);
-    }
-
-    // Death point. Drawn as a marker rather than the ship sprite: shipPath/drawShip in
-    // draw.js render into the game's own `ctx`, which is a const bound to the visible
-    // canvas and can't be pointed at this offscreen one.
-    {
-        const dx = xOf(endWx), dy = yOf(Math.max(0, Math.min(H, lastRunY)));
-        g.shadowColor = 'rgba(255,70,70,0.85)'; g.shadowBlur = 22;
-        g.strokeStyle = 'rgba(255,90,90,0.95)';
-        g.lineWidth = 3.5;
-        g.beginPath(); g.arc(dx, dy, 15, 0, Math.PI * 2); g.stroke();
-        g.beginPath();
-        g.moveTo(dx - 9, dy - 9); g.lineTo(dx + 9, dy + 9);
-        g.moveTo(dx + 9, dy - 9); g.lineTo(dx - 9, dy + 9);
-        g.stroke();
-        g.shadowBlur = 0;
-    }
+    drawRunProfile(g, 70, 168, SHARE_W - 140, 236, { scale: 1 });
 
     // ── Score + stats ─────────────────────────────────────────────────
     // The right-hand block (rank, or the URL when there's no rank) is laid out first so
