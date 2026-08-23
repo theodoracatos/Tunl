@@ -856,7 +856,7 @@ function draw() {
     // slope. Deliberately a flat desaturated blue rather than the active skin's colour --
     // it has to read as "not you" at a glance, and re-tinting it per skin would make it
     // look like a second live ship.
-    if (phase === 'play' && ghostY !== null && ghostY !== undefined) {
+    if (ghostOn && phase === 'play' && ghostY !== null && ghostY !== undefined) {
         ctx.save();
         ctx.globalAlpha = 0.34;
         ctx.translate(PX, ghostY);
@@ -1494,9 +1494,27 @@ function draw() {
         // liftLand along with TAP TO START above (see that comment).
         const tBtnY = LAND ? H * 0.665 - liftLand : H/2 + H*0.225;
         ctx.font = `${FS*0.022}px 'Courier New',monospace`;
-        const drawBtn = (bCx, bCy, label, active, blue) => {
-            const m  = ctx.measureText(label);
-            const bw = m.width + W*0.034, bh = H*0.055;
+        // fixedW: grid-style buttons (settings panel's audio/ghost rows) pass an exact
+        // width so a row of buttons lines up edge-to-edge instead of sizing itself to
+        // its own label. Text can still overflow a fixed box on a long localized label
+        // (German "GEIST AUS" vs a narrow half-row slot), so shrink the font to fit
+        // rather than let it run past the button's edge -- same shrink-to-fit pattern
+        // the language grid buttons already use for the same reason.
+        const drawBtn = (bCx, bCy, label, active, blue, fixedW) => {
+            let bw = fixedW, bh = H*0.055;
+            if (bw == null) {
+                bw = ctx.measureText(label).width + W*0.034;
+            } else {
+                const maxTextW = bw * 0.86;
+                const textW = ctx.measureText(label).width;
+                if (textW > maxTextW) {
+                    const sizeMatch = ctx.font.match(/([\d.]+)px/);
+                    if (sizeMatch) {
+                        const shrunk = parseFloat(sizeMatch[1]) * maxTextW / textW;
+                        ctx.font = ctx.font.replace(/[\d.]+px/, `${shrunk}px`);
+                    }
+                }
+            }
             const bx = bCx - bw/2, by = bCy - bh/2;
             const bgA = active ? a*0.82 : a*0.55;
             const bg  = active
@@ -1831,13 +1849,35 @@ function draw() {
             // Active perk - shown in the gap between the two rows (or below the unlocked
             // row when everything is unlocked). Drawback is omitted here; it reads as
             // noise when the locked-row roadmap shares the same limited vertical band.
+            //
+            // dotY1/dotY2 (the row centres) are H-based and shrink on a short device
+            // (iPhone 12 mini etc.), but dotR1/dotR2 and this text's font are UI_H-based
+            // (constants.js pins UI_H at a 600px floor) and DON'T shrink with them - so
+            // the fixed-pixel padding that used to reserve the gap (dotR1*2.1, dotR2*1.8)
+            // could eat almost the entire band on a short device, leaving the perk text
+            // squeezed against the ship name above or the locked row below. Fixing that
+            // by moving dotY1 up or dotY2 down would fight the layout above/below them,
+            // both already tuned close to their own edges - instead this measures the
+            // real leftover band each frame and sizes the text to it, so it always has
+            // clear air on both sides regardless of device height.
             const activePerk = T.skinPerks && T.skinPerks[activeSkin];
             if (activePerk) {
                 const [sr, sg, sb] = SKINS[activeSkin].shadow;
-                const perkY = lockedList.length > 0
-                    ? (dotY1 + dotR1 * 2.1 + dotY2 - dotR2 * 1.8) / 2   // midpoint between rows
-                    : dotY1 + dotR1 * 2.9;                                // below single row
-                ctx.font        = `${FS*0.019}px 'Courier New',monospace`;
+                let perkFsz = FS * 0.019;
+                let perkY;
+                if (lockedList.length > 0) {
+                    // Trimmed from the old 2.1/1.8 (which reserved more clearance than
+                    // the name label and locked circles actually need) back to just
+                    // past their real edges, handing the freed pixels to bandH below.
+                    const bandTop    = dotY1 + dotR1 * 1.85;
+                    const bandBottom = dotY2 - dotR2 * 1.35;
+                    const bandH      = Math.max(bandBottom - bandTop, 0);
+                    perkFsz = Math.max(Math.min(perkFsz, bandH * 0.92), FS * 0.011);
+                    perkY   = (bandTop + bandBottom) / 2;
+                } else {
+                    perkY = dotY1 + dotR1 * 2.9;                          // below single row
+                }
+                ctx.font        = `${perkFsz}px 'Courier New',monospace`;
                 ctx.fillStyle   = `rgba(${sr},${sg},${sb},0.82)`;
                 ctx.shadowColor = 'rgba(0,0,0,0.90)';
                 ctx.shadowBlur  = 4;
@@ -1875,33 +1915,80 @@ function draw() {
             ctx.fillRect(0, 0, W, H);
 
             const panW = Math.min(W * 0.56, 340);
+            // Shared horizontal span for every row in the panel -- the audio row, the
+            // ghost row, and the language grid all start/end at the same x, so the whole
+            // stack reads as one aligned block instead of three differently-sized rows
+            // floating inside the panel.
+            const rowW  = panW * 0.80;
+            const rowX0 = W / 2 - rowW / 2;
 
-            const padTop     = H * 0.060;
-            const padBottom  = H * 0.040;
-            const titleH     = H * 0.070;
-            const audioRowH  = H * 0.075;
-            const langLabelH = H * 0.045;
-            const lbh        = H * 0.080;
-            const lbGap      = H * 0.018;
-            const sectionGap = H * 0.045;
+            // Nominal section heights, computed before knowing whether they'll actually
+            // fit. Optional sections (IAP, privacy) already made this variable; the
+            // ghost row added a fixed amount on top of that, and with everything present
+            // at once (IAP + restore + ghost + all 15 languages) the sum can exceed the
+            // screen on a short device -- exactly the "old fixed-percentage layout broke
+            // once a 5th language was added" failure this whole block's comment already
+            // warns about, just triggered by a new row instead of a new language. Rather
+            // than hand-tune every gap to *probably* fit, scale every nominal height down
+            // by the same factor when the total overshoots, so panH is only ever as big
+            // as what's actually on screen -- content stays proportioned, it's just
+            // uniformly denser on the device that needs it instead of hanging off the
+            // bottom edge.
+            const nPadTop     = H * 0.060;
+            const nPadBottom  = H * 0.040;
+            const nTitleH     = H * 0.070;
+            const nAudioRowH  = H * 0.075;
+            const nGhostRowH  = H * 0.075;
+            const nLangLabelH = H * 0.045;
+            const nLbh        = H * 0.080;
+            const nLbGap      = H * 0.018;
+            const nSectionGap = H * 0.045;
 
-            const hasIAP     = !!window.webkit?.messageHandlers?.iap;
-            const iapBtnH    = H * 0.085;
-            const restoreGap = H * 0.020;
-            const restoreH   = H * 0.032;
-            const iapSectionH = hasIAP ? sectionGap + iapBtnH + (removeAdsOwned ? 0 : restoreGap + restoreH) : 0;
+            const hasIAP      = !!window.webkit?.messageHandlers?.iap;
+            const nIapBtnH    = H * 0.085;
+            const nRestoreGap = H * 0.020;
+            const nRestoreH   = H * 0.032;
+            const nIapSectionH = hasIAP ? nSectionGap + nIapBtnH + (removeAdsOwned ? 0 : nRestoreGap + nRestoreH) : 0;
 
             // Only shown once the native layer confirms the UMP SDK actually requires
             // it for this player's region (see state.js's privacyOptionsRequired) -
             // most players outside the EEA/UK/CH/opted-in US states never see this row.
-            const hasPrivacyBtn  = !!window.webkit?.messageHandlers?.ads && privacyOptionsRequired;
-            const privacyBtnH    = H * 0.062;
-            const privacySectionH = hasPrivacyBtn ? sectionGap + privacyBtnH : 0;
+            const hasPrivacyBtn   = !!window.webkit?.messageHandlers?.ads && privacyOptionsRequired;
+            const nPrivacyBtnH    = H * 0.062;
+            const nPrivacySectionH = hasPrivacyBtn ? nSectionGap + nPrivacyBtnH : 0;
 
-            const langCols  = LANG_ORDER.length > 10 ? 3 : 2;
-            const langRows  = Math.ceil(LANG_ORDER.length / langCols);
-            const langListH = langRows * lbh + Math.max(0, langRows - 1) * lbGap;
-            const panH = padTop + titleH + audioRowH + sectionGap + langLabelH + langListH + iapSectionH + privacySectionH + padBottom;
+            const langCols   = LANG_ORDER.length > 10 ? 3 : 2;
+            const langRows   = Math.ceil(LANG_ORDER.length / langCols);
+            const nLangListH = langRows * nLbh + Math.max(0, langRows - 1) * nLbGap;
+            // Row1->row2 uses the tighter nLbGap rather than nSectionGap: the audio row
+            // and ghost row are the same control group (toggles), so they sit close to
+            // each other the way the language grid's own rows do; nSectionGap is saved
+            // for the gap into the next *labelled* section (SPRACHE) so that transition
+            // still reads as a break.
+            const nPanH = nPadTop + nTitleH + nAudioRowH + nLbGap + nGhostRowH + nSectionGap + nLangLabelH + nLangListH + nIapSectionH + nPrivacySectionH + nPadBottom;
+
+            // Leave a hair of margin inside the 0.02..0.98 clamp band below rather than
+            // filling it exactly, so this never comes down to a single rounding error.
+            const panHCap = H * 0.94;
+            const settingsScale = Math.min(1, panHCap / nPanH);
+
+            const padTop     = nPadTop     * settingsScale;
+            const padBottom  = nPadBottom  * settingsScale;
+            const titleH     = nTitleH     * settingsScale;
+            const audioRowH  = nAudioRowH  * settingsScale;
+            const ghostRowH  = nGhostRowH  * settingsScale;
+            const langLabelH = nLangLabelH * settingsScale;
+            const lbh        = nLbh        * settingsScale;
+            const lbGap      = nLbGap      * settingsScale;
+            const sectionGap = nSectionGap * settingsScale;
+            const iapBtnH    = nIapBtnH    * settingsScale;
+            const restoreGap = nRestoreGap * settingsScale;
+            const restoreH   = nRestoreH   * settingsScale;
+            const privacyBtnH = nPrivacyBtnH * settingsScale;
+            const langListH  = nLangListH  * settingsScale;
+            const iapSectionH = nIapSectionH * settingsScale;
+            const privacySectionH = nPrivacySectionH * settingsScale;
+            const panH = nPanH * settingsScale;
 
             const panX = W / 2 - panW / 2;
             const panY = Math.max(H * 0.02, Math.min(H * 0.98 - panH, H / 2 - panH / 2));
@@ -1929,21 +2016,39 @@ function draw() {
             ctx.shadowBlur  = 0;
             y += titleH;
 
-            // Audio toggle row (Music/FX)
+            // Audio toggle row (Music/FX) - each button takes exactly half of rowW, split
+            // by audioGap, so the pair spans the same edges as the ghost row and the
+            // language grid below rather than sizing itself to its own label.
             {
                 const audioBY    = y + audioRowH / 2;
                 const audioGap   = W * 0.02;
+                const halfW      = (rowW - audioGap) / 2;
+                const musicCX    = rowX0 + halfW / 2;
+                const fxCX       = rowX0 + rowW - halfW / 2;
                 const musicLabel = musicOn ? T.musicOn : T.musicOff;
                 const fxLabel    = fxOn    ? T.fxOn    : T.fxOff;
                 ctx.font = `${FS*0.022}px 'Courier New',monospace`;
-                const musicW = ctx.measureText(musicLabel).width + W*0.034;
-                const fxW    = ctx.measureText(fxLabel).width    + W*0.034;
-                const musicCX = W/2 - musicW/2 - audioGap/2;
-                const fxCX    = W/2 + fxW/2    + audioGap/2;
-                _btnMusicRect = drawBtn(musicCX, audioBY, musicLabel, musicOn, false);
-                _btnFxRect    = drawBtn(fxCX,    audioBY, fxLabel,    fxOn,    false);
+                _btnMusicRect = drawBtn(musicCX, audioBY, musicLabel, musicOn, false, halfW);
+                ctx.font = `${FS*0.022}px 'Courier New',monospace`;   // drawBtn may have shrunk it for musicLabel
+                _btnFxRect    = drawBtn(fxCX,    audioBY, fxLabel,    fxOn,    false, halfW);
             }
-            y += audioRowH + sectionGap;
+            y += audioRowH + lbGap;
+
+            // Ghost toggle - separate row, not folded into the audio row above, since a
+            // 3rd button there risks overflowing panW on longer localized labels (e.g.
+            // Turkish "HAYALET AÇIK"). Own row here instead of hiding the ghost's own
+            // colour or opacity, because the readability complaint was device-specific
+            // (some skins read close to the ghost's fixed blue) rather than universal -
+            // a toggle lets the player who's affected turn it off without changing the
+            // ghost's look for everyone else. Spans the full rowW, same edges as the
+            // audio row's pair and the language grid.
+            {
+                const ghostBY    = y + ghostRowH / 2;
+                const ghostLabel = ghostOn ? T.ghostOn : T.ghostOff;
+                ctx.font = `${FS*0.022}px 'Courier New',monospace`;
+                _btnGhostRect    = drawBtn(W / 2, ghostBY, ghostLabel, ghostOn, false, rowW);
+            }
+            y += ghostRowH + sectionGap;
 
             // Language section label
             ctx.font        = `bold ${FS * 0.021}px 'Courier New',monospace`;
@@ -1955,9 +2060,8 @@ function draw() {
             y += langLabelH;
 
             _langBtnRects = [];
-            const langRowW = panW * 0.80;
-            const lbw      = (langRowW - lbGap * (langCols - 1)) / langCols;
-            const lbx0     = W / 2 - langRowW / 2;
+            const lbw  = (rowW - lbGap * (langCols - 1)) / langCols;
+            const lbx0 = rowX0;
             for (let i = 0; i < LANG_ORDER.length; i++) {
                 const code   = LANG_ORDER[i];
                 const lang   = LANGS[code];

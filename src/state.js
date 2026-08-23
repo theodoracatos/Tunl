@@ -11,7 +11,12 @@ let dailyBest = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tu
 let dailyRuns = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tunnel_daily_runs') || '0') : 0;
 let musicOn = localStorage.getItem('tunnel_music') !== '0';
 let fxOn    = localStorage.getItem('tunnel_fx')    !== '0';
-let _btnMusicRect = null, _btnFxRect = null;
+// Ghost VISIBILITY only, not recording -- today's best keeps banking to
+// tunnel_ghost either way (state.js's ghostPlay load, update.js's death-time save)
+// so re-enabling this mid-day still has something to race. Separate localStorage
+// key from tunnel_ghost itself, which holds the actual recorded track.
+let ghostOn = localStorage.getItem('tunnel_ghost_visible') !== '0';
+let _btnMusicRect = null, _btnFxRect = null, _btnGhostRect = null;
 // ── World rank ────────────────────────────────────────────────────────
 // Pushed in by the native layer after each score submit resolves (GameView.swift's
 // fetchWorldRank / MainActivity.kt's fetchWorldRank) -- see main.js _tunlNativeUpdate.
