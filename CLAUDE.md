@@ -154,13 +154,15 @@ even with the X. Also continuously emits a slow ooze-drip particle while sitting
 uncollected on screen (`update.js`'s coin-fade loop), so it visibly reads as "active
 hazard" even at a glance, not a static pickup. Color is toxic/acid green ("giftgrün",
 `#5fbf00`, deliberately different from the magnet coin's mint `#44ff88`). Touching it
-breaks the coin combo and removes a flat amount of `runCoins`
-(`POISON_LOSS_MIN`->`POISON_LOSS_MAX`, 3 early -> 6 late, `lerp` on `_prog`) - flat, not
-a % of the pool, so repeated hits over a long run add up linearly instead of compounding
-multiplicatively (a %-based tax's survivor fraction is ~0.8^N over N hits - close to a
-full wipeout for a long marathon run). Sized against the ~20s poison interval above: a
-live replay of today's seed put total poison damage at ~10-23% of a "great" run's coin
-pool across realistic phone widths - noticeable, never zero, never crushing. Comes out
+breaks the coin combo and removes a **percentage** of `runCoins`
+(`POISON_LOSS_PCT_MIN`->`POISON_LOSS_PCT_MAX`, 12%->15%, `lerp` on `_prog`, `Math.ceil`
+so a small pool can't round to a 0-coin no-op) - deliberately punishing rather than a flat
+nudge: a %-based tax compounds over repeated hits (survivor fraction ~0.8^N over N hits
+at a 20% rate), so a long run that keeps getting careless with poison can lose most of
+its pool, not just N x a fixed amount regardless of how large the pool had grown. (An
+earlier version used a flat per-hit amount specifically to avoid this compounding -
+reverted on explicit request that poison "really punish" someone; see git history on
+`POISON_LOSS_MIN`/`POISON_LOSS_MAX` if that trade-off ever needs revisiting.) Comes out
 of this run's *pending* shard bank (see Score formula below), never the persistent
 `shards` balance directly, so it can only cost progress not yet banked. See
 `checkCoinCollection` in `src/systems.js`.

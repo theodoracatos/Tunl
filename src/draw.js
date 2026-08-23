@@ -755,14 +755,22 @@ function draw() {
             ctx.fillRect(-20,-20,W+40,H+40);
         }
     }
-    // Thruster particle trail (drawn before player so it appears behind)
+    // Thruster particle trail (drawn before player so it appears behind). On-fire embers
+    // (update.js, tagged `fire`) get a shadowBlur glow the plain thrust burst doesn't --
+    // they're meant to read as flame, not just colored exhaust, so they need actual light
+    // spilling onto the dark tunnel around them, not just a saturated fill.
     for (const p of thrustParts) {
         const a = Math.max(p.life, 0);
         const blue = p.h > 150;
         ctx.beginPath();
         ctx.arc(p.x, p.y, Math.max(p.r * p.life, 0.4), 0, Math.PI * 2);
         ctx.fillStyle = `hsla(${p.h},100%,${blue ? 68 : 84}%,${a})`;
+        if (p.fire) {
+            ctx.shadowColor = `hsla(${p.h},100%,60%,${a})`;
+            ctx.shadowBlur  = 10;
+        }
         ctx.fill();
+        if (p.fire) ctx.shadowBlur = 0;
     }
 
     // Speed lines - horizontal streaks driven by vertical velocity OR scroll speed
@@ -794,17 +802,28 @@ function draw() {
         }
     }
 
-    // Player trail
+    // Player trail - fire-tinted once this run's live score has overtaken today's daily
+    // best (onFire, state.js/update.js). Distinct from the physics-driven speed lines
+    // above: those say "you're moving fast", this says "you're beating today" -- a
+    // score-based state that only changes at run boundaries, not frame to frame. Bigger
+    // and more opaque too, so the same recolor reads at a glance rather than needing the
+    // player to compare it against the skin-tinted version from memory.
     {
         const sk = SKINS[activeSkin] || SKINS[0];
-        const [sr, sg, sb] = sk.shadow;
+        const [sr, sg, sb] = onFire ? [255, 110, 20] : sk.shadow;
+        const sizeMul = onFire ? 0.85 : 0.65, alphaMul = onFire ? 0.40 : 0.26;
+        if (onFire) {
+            ctx.shadowColor = 'rgba(255,130,30,0.9)';
+            ctx.shadowBlur  = 14;
+        }
         for (let i = 0; i < trailY.length; i++) {
             const frac = i / trailY.length, off = (trailY.length-1-i)*5;
             ctx.beginPath();
-            ctx.arc(PX-off, trailY[i], PR*frac*0.65, 0, Math.PI*2);
-            ctx.fillStyle = `rgba(${sr},${sg},${sb},${frac*0.26})`;
+            ctx.arc(PX-off, trailY[i], PR*frac*sizeMul, 0, Math.PI*2);
+            ctx.fillStyle = `rgba(${sr},${sg},${sb},${frac*alphaMul})`;
             ctx.fill();
         }
+        if (onFire) ctx.shadowBlur = 0;
     }
 
     // Shield bubble (one nested translucent bubble per charge)
@@ -856,9 +875,15 @@ function draw() {
     // slope. Deliberately a flat desaturated blue rather than the active skin's colour --
     // it has to read as "not you" at a glance, and re-tinting it per skin would make it
     // look like a second live ship.
-    if (ghostOn && phase === 'play' && ghostY !== null && ghostY !== undefined) {
+    //
+    // Late join (GHOST_LATE_JOIN_GAP, constants.js): the ship itself only renders once
+    // the player has closed to within that many points of the ghost's score. Further out
+    // it's the HUD's plain "GHOST -N" readout doing the work instead (below, next to the
+    // score) -- see that block's comment for why.
+    const _ghostGap = ghostScore - score;
+    if (ghostOn && phase === 'play' && ghostY !== null && ghostY !== undefined && _ghostGap <= GHOST_LATE_JOIN_GAP) {
         ctx.save();
-        ctx.globalAlpha = 0.34;
+        ctx.globalAlpha = 0.17;
         ctx.translate(PX, ghostY);
         ctx.rotate(ghostPitch);
         ctx.translate(-PX, -ghostY);
@@ -903,6 +928,36 @@ function draw() {
                 ctx.arc(nx, ny, PR * 0.55, 0, Math.PI * 2);
                 ctx.fillStyle = hg;
                 ctx.fill();
+            }
+        }
+
+        // On-fire afterburner: bigger than the ordinary thrust cone above and, unlike
+        // it, not gated on `holding` -- it has to read during BOTH hold and release
+        // (releasing is half the control scheme), so it can't flicker on and off with
+        // input the way the ordinary cone does. Same nozzle geometry and cone-gradient
+        // technique (so it reads as "the ship's exhaust", not a floating shape), but
+        // longer, wider, and pure hot orange-red rather than fading to blue-purple, so
+        // the two stay visually distinct on the frames both are burning at once.
+        if (onFire && phase === 'play') {
+            const pulse = 0.85 + 0.15 * Math.sin(gtime * 9);
+            for (const ns of [-1, 1]) {
+                const nx = PX - PR * 0.74, ny = py + ns * PR * 0.50;
+                const cLen = PR * 8.0 * pulse, cW = PR * 0.30;
+                ctx.beginPath();
+                ctx.moveTo(nx,        ny - cW);
+                ctx.lineTo(nx - cLen, ny);
+                ctx.lineTo(nx,        ny + cW);
+                ctx.closePath();
+                const lg = ctx.createLinearGradient(nx, ny, nx - cLen, ny);
+                lg.addColorStop(0,    'rgba(255,255,220,0.95)');
+                lg.addColorStop(0.15, 'rgba(255,150,30,0.85)');
+                lg.addColorStop(0.5,  'rgba(255,60,10,0.45)');
+                lg.addColorStop(1,    'rgba(255,20,0,0)');
+                ctx.fillStyle   = lg;
+                ctx.shadowColor = 'rgba(255,120,20,0.9)';
+                ctx.shadowBlur  = 20;
+                ctx.fill();
+                ctx.shadowBlur  = 0;
             }
         }
 
@@ -1092,6 +1147,26 @@ function draw() {
         ctx.fillText(`${T.best}  ${best}`, W/2, hudY);
         ctx.shadowBlur  = 0;
         hudY += bestFsz * 0.85 + H * 0.01;
+    }
+
+    // Ghost gap readout - GHOST ON only, standing in for the ship while it's still
+    // outside GHOST_LATE_JOIN_GAP (ship hasn't joined yet, see above). GHOST OFF means
+    // off: no ship, no readout, nothing racing on screen. Points remaining until scrollX
+    // reaches the ghost run's length, in the same units as the score above so it reads
+    // at a glance. ghostY !== null is the same "still racing" condition update.js uses
+    // to keep the ghost ship eligible, so this and that stay in sync and both stop
+    // together the moment ghostPassed fires its own notif+sound.
+    if (ghostOn && phase === 'play' && ghostScore > 0 && ghostY !== null && ghostY !== undefined
+        && _ghostGap > GHOST_LATE_JOIN_GAP) {
+        const remaining = _ghostGap;
+        const gapFsz = FS * 0.022;
+        ctx.font        = `${gapFsz}px 'Courier New',monospace`;
+        ctx.fillStyle   = 'rgba(143,180,236,0.85)'; // matches the ghost ship's blue (#8fb4ec)
+        ctx.shadowColor = 'rgba(0,0,0,0.85)';
+        ctx.shadowBlur  = 4;
+        ctx.fillText(`${T.ghost} -${remaining}`, W/2, hudY);
+        ctx.shadowBlur  = 0;
+        hudY += gapFsz * 0.85 + H * 0.01;
     }
 
     // Next skin nudge - faint pulsing hint when this run's banked-so-far shards would

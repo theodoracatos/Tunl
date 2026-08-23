@@ -3,7 +3,7 @@ import AppTrackingTransparency
 import UserMessagingPlatform
 import GoogleMobileAds
 
-// Interstitial shown every 4th death AND at most once every minInterval seconds,
+// Interstitial shown every 3rd death AND at most once every minInterval seconds,
 // never when Remove Ads is owned. Cadence state lives in UserDefaults (not JS)
 // since ad frequency is a platform/store concern kept out of the shared game layer.
 //
@@ -13,13 +13,19 @@ import GoogleMobileAds
 // front of engaged players roughly every 90 seconds -- worst for exactly the
 // players deciding whether TUNL becomes a habit. The wall-clock floor below is
 // what actually bounds interruption frequency; the counter just keeps short
-// sessions ad-free.
+// sessions ad-free. Once the floor exists, it's what protects fast/short-run
+// players (max(3 * ~20-36s, 120s) is still 120s for the bulk of them, identical
+// to deathsPerAd=4) -- so deathsPerAd only has to be tight enough to matter for
+// long-run players *above* the floor, and going to 4 there was giving up real
+// impressions from exactly the most-engaged segment for no corresponding gain
+// among the players the floor was actually protecting. 3 recovers that without
+// reopening the pre-floor problem this was meant to fix.
 final class AdsManager: NSObject, FullScreenContentDelegate {
 
     static let interstitialAdUnitID = "ca-app-pub-4882203470005029/5351137825"
     private static let deathCountKey = "tunnel_death_count"
     private static let lastAdTimeKey = "tunnel_last_ad_time"
-    private static let deathsPerAd = 4
+    private static let deathsPerAd = 3
     // Hard wall-clock floor between interstitials, independent of the death
     // counter -- a burst of quick deaths can satisfy the counter in well under a
     // minute, and this is what stops that from stacking into back-to-back ads.

@@ -154,17 +154,19 @@ function checkCoinCollection() {
         if (dx*dx + dy*dy < r2) {
             coin.collected = true;
             if (coin.type === 'poison') {
-                // Hazard coin: breaks any active combo and claws back a flat amount of
+                // Hazard coin: breaks any active combo and claws back a percentage of
                 // this run's *pending* shard bank instead of adding to it -- the
-                // risk/reward counterweight to gold. Flat, not a % of the pool (see
-                // constants.js POISON_LOSS_MIN/MAX doc), so repeated hits over a long
-                // run add up linearly instead of compounding multiplicatively. Comes out
-                // of runCoins (this run's collected-coin count, banked into the
-                // persistent `shards` balance at death, capped by DAILY_SHARD_CAP -- see
-                // update.js die()), never the persistent balance itself, so a poison
-                // touch can only cost progress not yet banked.
+                // risk/reward counterweight to gold, deliberately harsh (see constants.js
+                // POISON_LOSS_PCT_MIN/MAX doc: this compounds over repeated hits on
+                // purpose, unlike the flat model it replaced). Comes out of runCoins
+                // (this run's collected-coin count, banked into the persistent `shards`
+                // balance at death, capped by DAILY_SHARD_CAP -- see update.js die()),
+                // never the persistent balance itself, so a poison touch can only cost
+                // progress not yet banked. Math.ceil rather than round so a small pool's
+                // percentage can't round down to a 0-coin no-op hit.
                 coinCombo = 0; coinComboTimer = 0;
-                const loss = Math.min(runCoins, Math.round(lerp(POISON_LOSS_MIN, POISON_LOSS_MAX, _prog)));
+                const lossPct = lerp(POISON_LOSS_PCT_MIN, POISON_LOSS_PCT_MAX, _prog);
+                const loss = runCoins > 0 ? Math.min(runCoins, Math.max(1, Math.ceil(runCoins * lossPct))) : 0;
                 runCoins -= loss;
                 burstCoin(sx, coin.y, 100, 22);
                 shake += 6;

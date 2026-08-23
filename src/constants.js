@@ -80,6 +80,14 @@ function masteryLerp(skin, base, maxed) {
 // update.js), which is the correct outcome anyway at that distance.
 const GHOST_STEP = 60;
 const GHOST_MAX_SAMPLES = 4000;
+// Late-join threshold, in score points remaining. The ghost SHIP only renders once the
+// player has closed to within this gap of the ghost's final score; further out, draw.js
+// falls back to the plain "GHOST -N" readout it already uses for GHOST OFF. Early in a
+// run the player is still reading the corridor, not racing -- a second ship on screen
+// then is clutter, not tension. Matches the 25-point step milestoneStep() (world.js)
+// already uses below score 100, so it reads as one consistent "small stretch" across
+// the game rather than a bespoke number.
+const GHOST_LATE_JOIN_GAP = 25;
 
 function ghostEncode(track) {
     // Chunked because String.fromCharCode.apply blows the argument limit on a long run.
@@ -152,19 +160,21 @@ const POISON_INTERVAL_SEC = 20; // avg real seconds between poison coins
 const BOMB_INTERVAL_SEC   = 16; // avg real seconds between bomb coins
 
 // Poison's runCoins penalty (this run's pending shard bank -- see update.js die()) is a
-// flat amount, not a percentage of the pool: a %-based tax compounds multiplicatively
-// over repeated hits (survivor fraction ~0.8^N for a 20% tax hit N times), which can
-// wipe out a long marathon run's entire shard payout. A flat amount just subtracts, so
-// total damage over a run is bounded and linear (hits x this amount) instead of
-// exponential. Scales modestly with difficulty since coins are "worth more" (rarer,
-// harder-earned) late-game -- see POISON_LOSS_MIN/MAX lerp in checkCoinCollection.
-// Sized against POISON_INTERVAL_SEC above: a "great" run (score ~1000) sees roughly
-// 1-4 poison hits at that cadence (measured against a real daily seed), so this stays
-// small enough that total damage across a whole run is a noticeable but not crushing
-// bite out of the ~50-100 coins such a run typically banks -- not the old 4-10 range,
-// which was sized for the original ~55s interval and would over-tax at this frequency.
-const POISON_LOSS_MIN = 3;
-const POISON_LOSS_MAX = 6;
+// percentage of the current pool, not a flat amount -- deliberately, on the explicit
+// call that poison should "really punish" rather than just nudge. A %-based tax DOES
+// compound multiplicatively over repeated hits (survivor fraction ~0.8^N for a 20% tax
+// hit N times), which can gut a long marathon run's entire shard payout -- e.g. at 15%,
+// 8 hits in one run leaves ~27% of the pool. That's the whole point of this version: a
+// short unlucky run stings proportionally the same as a long one, but a long run that
+// keeps getting careless with poison can lose most of what it built, instead of the
+// previous flat model where N hits only ever cost N x a fixed amount no matter how
+// large the pool had grown. (An earlier flat-loss version deliberately avoided exactly
+// this compounding for exactly this reason -- see git history on POISON_LOSS_MIN/MAX
+// if that trade-off ever needs revisiting.) Scales modestly with difficulty via _prog,
+// same as the old flat version. Always removes at least 1 coin when runCoins > 0, so a
+// tiny pool can't round down to a no-op hit.
+const POISON_LOSS_PCT_MIN = 0.12;
+const POISON_LOSS_PCT_MAX = 0.15;
 
 // Run-start "LEVEL n: Name" banner timing
 const LEVEL_INTRO_DUR  = 1.6; // total seconds visible

@@ -11,10 +11,16 @@ let dailyBest = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tu
 let dailyRuns = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tunnel_daily_runs') || '0') : 0;
 let musicOn = localStorage.getItem('tunnel_music') !== '0';
 let fxOn    = localStorage.getItem('tunnel_fx')    !== '0';
-// Ghost VISIBILITY only, not recording -- today's best keeps banking to
+// Ghost RENDERING only, not recording -- today's best keeps banking to
 // tunnel_ghost either way (state.js's ghostPlay load, update.js's death-time save)
 // so re-enabling this mid-day still has something to race. Separate localStorage
 // key from tunnel_ghost itself, which holds the actual recorded track.
+// Off means off: neither the translucent ship nor its "GHOST -N" points-remaining
+// stand-in (draw.js, GHOST_LATE_JOIN_GAP) render, so nothing about today's best shows
+// on screen during the run. The comparison itself keeps running unconditionally though
+// (update.js's ghostPassed check isn't gated by this flag), so outlasting it still fires
+// its one-shot notif+sound -- the single moment that's the point of the feature survives
+// even with the ambient racing pressure turned off.
 let ghostOn = localStorage.getItem('tunnel_ghost_visible') !== '0';
 let _btnMusicRect = null, _btnFxRect = null, _btnGhostRect = null;
 // ── World rank ────────────────────────────────────────────────────────
@@ -118,6 +124,14 @@ let ghostTrack;   // this run's recording, one byte per GHOST_STEP of scrollX
 let ghostY;       // interpolated ghost screen y this frame, or null once it's behind
 let ghostPitch;   // ghost's nose angle, derived from the track's local slope (update.js)
 let ghostPassed;  // one-shot: has the player already outlasted the ghost this run
+
+// On fire: live, this-run signal that score has overtaken today's daily best (distinct
+// from newDailyBest, which is only computed once at death -- see update.js). Monotonic
+// within a run since score never drops, so once true it stays true until the next
+// titleScreen()/startPlay() reset (lifecycle.js). draw.js reads it to recolor the
+// player's ambient trail and thruster particles fire-hot; update.js fires a one-shot
+// notif+sfx the frame it flips, same pattern as ghostPassed above.
+let onFire;
 
 let parts, thrustParts, deadT, titleT, flashA, shake, trailY;
 let stalactites, nextStalWx;

@@ -16,18 +16,21 @@ import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
 
-// Mirrors AdsManager.swift: interstitial shown every 4th death AND at most once
+// Mirrors AdsManager.swift: interstitial shown every 3rd death AND at most once
 // every MIN_INTERVAL_MS, never when Remove Ads is owned. Cadence state lives in
 // SharedPreferences (not JS) since ad frequency is a platform/store concern kept
 // out of the shared game layer, same rationale as the iOS version's UserDefaults
 // use. See AdsManager.swift for why the wall-clock floor exists (runs here are
-// only 20-36 seconds, so a death counter alone doesn't bound interruptions).
+// only 20-36 seconds, so a death counter alone doesn't bound interruptions) and
+// for why DEATHS_PER_AD is 3 and not 4: once the floor exists it already caps
+// the bulk of players at MIN_INTERVAL_MS regardless of this value, so raising it
+// only cost impressions from the most-engaged, longest-run segment.
 class AdsManager(private val activity: Activity) {
 
     companion object {
         private const val DEATH_COUNT_KEY = "tunnel_death_count"
         private const val LAST_AD_TIME_KEY = "tunnel_last_ad_time"
-        private const val DEATHS_PER_AD = 4
+        private const val DEATHS_PER_AD = 3
         // Hard wall-clock floor between interstitials, independent of the death
         // counter -- a burst of quick deaths satisfies the counter in well under a
         // minute, and this is what stops that stacking into back-to-back ads.

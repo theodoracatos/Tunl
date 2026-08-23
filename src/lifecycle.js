@@ -25,6 +25,7 @@ function titleScreen() {
     gapBonus = 0; slowTime = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
     bullets = []; bulletAmmo = 0; bulletFireTimer = 0;
     ghostTrack = []; ghostY = null; ghostPitch = 0; ghostPassed = false;
+    onFire = false;
     mines = []; nextMineWx = 99999;
     cannons = []; nextCannonWx = 99999; cannonShots = [];
     // Coins never spawn on the title screen (nextCoinWx = 99999 above), so these are
@@ -63,6 +64,7 @@ function startPlay() {
     // Ghost: fresh recording buffer for this run; ghostPlay itself (today's best, from
     // state.js / die()) is untouched here so it survives across runs within the day.
     ghostTrack = []; ghostY = null; ghostPitch = 0; ghostPassed = false;
+    onFire = false;
     mines = []; nextMineWx = 1800;
     // Cannons start much later than mines (score ~100) and are spaced far apart -- a
     // rare hazard, not a constant one (see world.js cannonSpacing()).

@@ -42,6 +42,29 @@ function update(dt) {
             }
         }
     }
+    // On-fire ember trickle: a light, continuous stream distinct from the thrust burst
+    // above -- it has to read during BOTH hold and release (releasing is half the
+    // control scheme), so it can't be gated by `holding` the way the burst is. Spawned
+    // from the same exhaust nozzle points as the burst (PX - PR*0.74, py +/- PR*0.50,
+    // one nozzle picked at random each particle) rather than a generic point behind the
+    // ship, so it reads as coming out of the ship, not just trailing near it. Sparse
+    // (one particle/frame) on purpose: it's ambient texture behind the recolored player
+    // trail (draw.js), not the main effect. Hue capped at 22 (hotter/redder than the
+    // thrust burst's 15-60 orange range) so it still reads as "extra" next to it.
+    if (onFire && phase === 'play') {
+        const ns = Math.random() < 0.5 ? -1 : 1;
+        const ey = py + ns * PR * 0.50;
+        thrustParts.push({
+            x:    PX - PR * 0.74 + (Math.random() - 0.5) * PR * 0.15,
+            y:    ey + (Math.random() - 0.5) * PR * 0.15,
+            vx:   -(60 + Math.random() * 90),
+            vy:   ns * (10 + Math.random() * 20) + (Math.random() - 0.5) * 10,
+            life: 0.45 + Math.random() * 0.35,
+            r:    1.4 + Math.random() * 2.2,
+            h:    Math.random() * 22,
+            fire: true, // draw.js gives these a glow the plain thrust burst doesn't get
+        });
+    }
 
     // Floating notifs (always running)
     for (let i = notifs.length - 1; i >= 0; i--) {
@@ -126,6 +149,21 @@ function update(dt) {
     scrollX += spd * dt;
     refreshWave();
     score = Math.floor(scrollX / 60) + bonusScore;
+
+    // On fire: fires once, the frame live score first overtakes today's daily best.
+    // dailyBest > 0 gates the day's first run, where dailyBest is still 0 and score > 0
+    // would otherwise light this up at score 1 -- there's no record to beat yet on that
+    // run, just an empty one. (dailyRuns > 0 looks like the same gate but isn't: it's
+    // incremented in startPlay() before the run's first frame, so it's already >=1 by
+    // the time this code runs at all and never actually blocks anything.) Monotonic
+    // within a run (score only grows), so no un-set path needed -- draw.js and the ember
+    // spawn below just read the flag for the rest of the run.
+    if (!onFire && dailyBest > 0 && score > dailyBest) {
+        onFire = true;
+        pushNotif(PX + PR * 3, py - H * 0.07, 1.4, T.onFire, [255, 140, 30]);
+        sfxCombo(4);
+        window.webkit?.messageHandlers?.haptic?.postMessage('light');
+    }
 
     // Poison/bomb clocks: real elapsed play time, not tied to coin density/rejection
     // rate/day archetype/screen width -- see constants.js POISON_INTERVAL_SEC doc and
@@ -356,12 +394,15 @@ function update(dt) {
         }
     }
 
-    // Magnet: pull visible uncollected coins toward the player
+    // Magnet: pull visible uncollected coins toward the player. Poison is exempt -- it's
+    // a hazard, not a pickup, and magnet is a reward the player earned; pulling poison in
+    // would turn a power-up into a trap the instant one's on screen, punishing exactly the
+    // players who worked for the buff.
     if (magnetTime > 0) {
         const playerWx = scrollX + PX;
         const pullSpeed = W * 1.4;
         for (const arr of [coins, chicaneCoins]) for (const coin of arr) {
-            if (coin.collected || coin.fade <= 0) continue;
+            if (coin.collected || coin.fade <= 0 || coin.type === 'poison') continue;
             const csx = coin.wx - scrollX;
             if (csx < -20 || csx > W + 60) continue;
             const dx = playerWx - coin.wx, dy = py - coin.y;
