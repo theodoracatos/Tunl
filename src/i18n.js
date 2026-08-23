@@ -35,16 +35,16 @@ const LANGS = {
         notifSlow: '+SLOW',      notifShield: '+SHIELD',
         notifMagnet: '+MAGNET',  notifAmmo: '+AMMO',
         boom: 'BOOM!',           blocked: 'BLOCKED',
-        skinPerks: [null, 'COIN REACH +50%', 'SLIM HITBOX -18%', 'SLOW TIME +50%', '2x COIN BONUS', 'SHIELD CAP +1', 'MAGNET TIME +60%', 'NEAR-MISS RANGE +100%'],
+        skinPerks: [null, 'COIN REACH {v}', 'SLIM HITBOX {v}', 'SLOW TIME {v}', '{v} COIN BONUS', 'SHIELD CAP {v}', 'MAGNET TIME {v}', 'NEAR-MISS RANGE {v}'],
         skinDrawbacks: [null, 'HITBOX +10%', 'SHIELD CAP -1', 'COMBO TIME -25%', 'DECAY +60%', 'CLOSE RANGE -25%', 'AMMO CAP -40%', 'HITBOX +20%'],
     },
     de: {
         name: 'Deutsch',
-        tap: 'HALTEN ZUM FLIEGEN',
+        tap: 'TIPPEN & HALTEN',
         musicOn: 'MUSIK AN',     musicOff: 'MUSIK AUS',
         fxOn: 'TON AN',          fxOff: 'TON AUS',
         ghostOn: 'GEIST AN',     ghostOff: 'GEIST AUS',
-        today: 'HEUTE',          allTime: 'GESAMT',
+        today: 'HEUTE',          allTime: 'REKORD',
         day: 'TAGESSERIE',       ship: 'SCHIFF',
         runs: 'LÄUFE',
         best: 'REKORD',
@@ -72,7 +72,7 @@ const LANGS = {
         notifSlow: '+LANGSAM',   notifShield: '+SCHILD',
         notifMagnet: '+MAGNET',  notifAmmo: '+MUNITION',
         boom: 'BUMM!',           blocked: 'GEBLOCKT',
-        skinPerks: [null, 'MÜNZREICHWEITE +50%', 'SCHMALE HITBOX -18%', 'ZEITLUPE +50%', '2x MÜNZBONUS', 'SCHILDKAPAZITÄT +1', 'MAGNETZEIT +60%', 'NAHVORBEI-ZONE +100%'],
+        skinPerks: [null, 'MÜNZREICHWEITE {v}', 'SCHMALE HITBOX {v}', 'ZEITLUPE {v}', '{v} MÜNZBONUS', 'SCHILDKAPAZITÄT {v}', 'MAGNETZEIT {v}', 'NAHVORBEI-ZONE {v}'],
         skinDrawbacks: [null, 'HITBOX +10%', 'SCHILDKAPAZITÄT -1', 'COMBO-ZEIT -25%', 'VERFALL +60%', 'NAHDISTANZ -25%', 'MUNITION -40%', 'HITBOX +20%'],
     },
     fr: {
@@ -109,7 +109,7 @@ const LANGS = {
         notifSlow: '+LENT',      notifShield: '+BOUCLIER',
         notifMagnet: '+AIMANT',  notifAmmo: '+MUNITIONS',
         boom: 'BOUM!',           blocked: 'BLOQUE',
-        skinPerks: [null, 'PORTEE PIECES +50%', 'HITBOX FINE -18%', 'RALENTI +50%', 'BONUS PIECES x2', 'CAPACITE BOUCLIER +1', 'DUREE AIMANT +60%', 'ZONE QUASI-MISS +100%'],
+        skinPerks: [null, 'PORTEE PIECES {v}', 'HITBOX FINE {v}', 'RALENTI {v}', 'BONUS PIECES {v}', 'CAPACITE BOUCLIER {v}', 'DUREE AIMANT {v}', 'ZONE QUASI-MISS {v}'],
         skinDrawbacks: [null, 'HITBOX +10%', 'CAPACITE BOUCLIER -1', 'DUREE COMBO -25%', 'DECLIN +60%', 'PORTEE PRES -25%', 'MUNITIONS -40%', 'HITBOX +20%'],
     },
     it: {
@@ -146,7 +146,7 @@ const LANGS = {
         notifSlow: '+LENTO',     notifShield: '+SCUDO',
         notifMagnet: '+MAGNETE', notifAmmo: '+MUNIZIONI',
         boom: 'BOOM!',           blocked: 'BLOCCATO',
-        skinPerks: [null, 'RAGGIO MONETE +50%', 'HITBOX SOTTILE -18%', 'TEMPO LENTO +50%', 'BONUS MONETE x2', 'CAPACITA SCUDO +1', 'DURATA CALAMITA +60%', 'ZONA QUASI-MISS +100%'],
+        skinPerks: [null, 'RAGGIO MONETE {v}', 'HITBOX SOTTILE {v}', 'TEMPO LENTO {v}', 'BONUS MONETE {v}', 'CAPACITA SCUDO {v}', 'DURATA CALAMITA {v}', 'ZONA QUASI-MISS {v}'],
         skinDrawbacks: [null, 'HITBOX +10%', 'CAPACITA SCUDO -1', 'DURATA COMBO -25%', 'DECADIMENTO +60%', 'RAGGIO VICINO -25%', 'MUNIZIONI -40%', 'HITBOX +20%'],
     },
     es: {
@@ -183,7 +183,7 @@ const LANGS = {
         notifSlow: '+LENTO',     notifShield: '+ESCUDO',
         notifMagnet: '+IMAN',    notifAmmo: '+MUNICION',
         boom: 'BOOM!',           blocked: 'BLOQUEADO',
-        skinPerks: [null, 'ALCANCE MONEDAS +50%', 'HITBOX FINA -18%', 'TIEMPO LENTO +50%', 'BONUS MONEDAS x2', 'CAPACIDAD ESCUDO +1', 'DURACION IMAN +60%', 'ZONA CASI-MISS +100%'],
+        skinPerks: [null, 'ALCANCE MONEDAS {v}', 'HITBOX FINA {v}', 'TIEMPO LENTO {v}', 'BONUS MONEDAS {v}', 'CAPACIDAD ESCUDO {v}', 'DURACION IMAN {v}', 'ZONA CASI-MISS {v}'],
         skinDrawbacks: [null, 'HITBOX +10%', 'CAPACIDAD ESCUDO -1', 'TIEMPO COMBO -25%', 'DECAIMIENTO +60%', 'RANGO CERCANO -25%', 'MUNICION -40%', 'HITBOX +20%'],
     },
     pt: {
@@ -220,7 +220,7 @@ const LANGS = {
         notifSlow: '+LENTO',     notifShield: '+ESCUDO',
         notifMagnet: '+IMA',     notifAmmo: '+MUNICAO',
         boom: 'BOOM!',           blocked: 'BLOQUEADO',
-        skinPerks: [null, 'ALCANCE MOEDAS +50%', 'HITBOX FINA -18%', 'CAMERA LENTA +50%', 'BONUS MOEDAS x2', 'CAPACIDADE ESCUDO +1', 'DURACAO IMA +60%', 'ZONA QUASE-MISS +100%'],
+        skinPerks: [null, 'ALCANCE MOEDAS {v}', 'HITBOX FINA {v}', 'CAMERA LENTA {v}', 'BONUS MOEDAS {v}', 'CAPACIDADE ESCUDO {v}', 'DURACAO IMA {v}', 'ZONA QUASE-MISS {v}'],
         skinDrawbacks: [null, 'HITBOX +10%', 'CAPACIDADE ESCUDO -1', 'TEMPO COMBO -25%', 'DECAIMENTO +60%', 'ALCANCE PROXIMO -25%', 'MUNICAO -40%', 'HITBOX +20%'],
     },
     ja: {
@@ -257,7 +257,7 @@ const LANGS = {
         notifSlow: '+スロー',    notifShield: '+シールド',
         notifMagnet: '+マグネット', notifAmmo: '+弾薬',
         boom: 'ドカーン!',       blocked: 'ブロック',
-        skinPerks: [null, 'コイン範囲 +50%', 'ヒットボックス縮小 -18%', 'スロー時間 +50%', 'コインボーナス x2', 'シールド容量 +1', 'マグネット時間 +60%', 'ニアミス範囲 +100%'],
+        skinPerks: [null, 'コイン範囲 {v}', 'ヒットボックス縮小 {v}', 'スロー時間 {v}', 'コインボーナス {v}', 'シールド容量 {v}', 'マグネット時間 {v}', 'ニアミス範囲 {v}'],
         skinDrawbacks: [null, 'ヒットボックス +10%', 'シールド容量 -1', 'コンボ時間 -25%', '減衰速度 +60%', 'ニアミス範囲 -25%', '弾薬容量 -40%', 'ヒットボックス +20%'],
     },
     ko: {
@@ -294,7 +294,7 @@ const LANGS = {
         notifSlow: '+슬로우',    notifShield: '+실드',
         notifMagnet: '+마그넷',  notifAmmo: '+탄약',
         boom: '쾅!',             blocked: '방어됨',
-        skinPerks: [null, '코인 범위 +50%', '히트박스 축소 -18%', '슬로우 타임 +50%', '코인 보너스 x2', '쉴드 용량 +1', '마그넷 시간 +60%', '아슬아슬 범위 +100%'],
+        skinPerks: [null, '코인 범위 {v}', '히트박스 축소 {v}', '슬로우 타임 {v}', '코인 보너스 {v}', '쉴드 용량 {v}', '마그넷 시간 {v}', '아슬아슬 범위 {v}'],
         skinDrawbacks: [null, '히트박스 +10%', '쉴드 용량 -1', '콤보 시간 -25%', '감쇠 +60%', '근접 범위 -25%', '탄약 용량 -40%', '히트박스 +20%'],
     },
     zh: {
@@ -331,7 +331,7 @@ const LANGS = {
         notifSlow: '+減速',      notifShield: '+護盾',
         notifMagnet: '+磁鐵',    notifAmmo: '+彈藥',
         boom: '轟!',             blocked: '格擋',
-        skinPerks: [null, '金幣範圍 +50%', '碰撞範圍縮小 -18%', '減速時間 +50%', '金幣加成 x2', '護盾容量 +1', '磁鐵時間 +60%', '擦身範圍 +100%'],
+        skinPerks: [null, '金幣範圍 {v}', '碰撞範圍縮小 {v}', '減速時間 {v}', '金幣加成 {v}', '護盾容量 {v}', '磁鐵時間 {v}', '擦身範圍 {v}'],
         skinDrawbacks: [null, '碰撞範圍 +10%', '護盾容量 -1', '連擊時間 -25%', '衰減 +60%', '擦身範圍 -25%', '彈藥容量 -40%', '碰撞範圍 +20%'],
     },
     ru: {
@@ -368,7 +368,7 @@ const LANGS = {
         notifSlow: '+ЗАМЕДЛ',    notifShield: '+ЩИТ',
         notifMagnet: '+МАГНИТ',  notifAmmo: '+ПАТРОНЫ',
         boom: 'БУМ!',            blocked: 'БЛОК',
-        skinPerks: [null, 'РАДИУС МОНЕТ +50%', 'ХИТБОКС -18%', 'ЗАМЕДЛЕНИЕ +50%', 'x2 БОНУС МОНЕТ', 'ЁМКОСТЬ ЩИТА +1', 'ВРЕМЯ МАГНИТА +60%', 'ЗОНА БЛИЗКО +100%'],
+        skinPerks: [null, 'РАДИУС МОНЕТ {v}', 'ХИТБОКС {v}', 'ЗАМЕДЛЕНИЕ {v}', '{v} БОНУС МОНЕТ', 'ЁМКОСТЬ ЩИТА {v}', 'ВРЕМЯ МАГНИТА {v}', 'ЗОНА БЛИЗКО {v}'],
         skinDrawbacks: [null, 'ХИТБОКС +10%', 'ЩИТ -1', 'ВРЕМЯ КОМБО -25%', 'РАСПАД +60%', 'БЛИЗКИЙ ДИАПАЗОН -25%', 'БОЕЗАПАС -40%', 'ХИТБОКС +20%'],
     },
     ar: {
@@ -405,7 +405,7 @@ const LANGS = {
         notifSlow: '+بطيء',       notifShield: '+درع',
         notifMagnet: '+مغناطيس',  notifAmmo: '+ذخيرة',
         boom: 'انفجار!',          blocked: 'تم الصد',
-        skinPerks: [null, 'مدى العملات +50%', 'صندوق تصادم أصغر -18%', 'إبطاء الزمن +50%', 'مكافأة عملات x2', 'سعة الدرع +1', 'مدة المغناطيس +60%', 'نطاق الاقتراب +100%'],
+        skinPerks: [null, 'مدى العملات {v}', 'صندوق تصادم أصغر {v}', 'إبطاء الزمن {v}', 'مكافأة عملات {v}', 'سعة الدرع {v}', 'مدة المغناطيس {v}', 'نطاق الاقتراب {v}'],
         skinDrawbacks: [null, 'صندوق تصادم أكبر +10%', 'سعة الدرع -1', 'وقت الكومبو -25%', 'التلاشي +60%', 'نطاق القرب -25%', 'سعة الذخيرة -40%', 'صندوق تصادم أكبر +20%'],
     },
     tr: {
@@ -442,7 +442,7 @@ const LANGS = {
         notifSlow: '+YAVAŞ',     notifShield: '+KALKAN',
         notifMagnet: '+MIKNATIS', notifAmmo: '+MERMİ',
         boom: 'BUM!',            blocked: 'ENGELLENDİ',
-        skinPerks: [null, 'PARA ÇEKME MENZİLİ +50%', 'İNCE ÇARPIŞMA -18%', 'YAVAŞ ZAMAN +50%', '2x PARA BONUSU', 'KALKAN KAPASİTESİ +1', 'MIKNATIS SÜRESİ +60%', 'YAKIN GEÇİŞ +100%'],
+        skinPerks: [null, 'PARA ÇEKME MENZİLİ {v}', 'İNCE ÇARPIŞMA {v}', 'YAVAŞ ZAMAN {v}', '{v} PARA BONUSU', 'KALKAN KAPASİTESİ {v}', 'MIKNATIS SÜRESİ {v}', 'YAKIN GEÇİŞ {v}'],
         skinDrawbacks: [null, 'ÇARPIŞMA +10%', 'KALKAN KAPASİTESİ -1', 'KOMBO SÜRESİ -25%', 'AZALMA +60%', 'YAKIN MENZİL -25%', 'CEPHANE -40%', 'ÇARPIŞMA +20%'],
     },
     id: {
@@ -479,7 +479,7 @@ const LANGS = {
         notifSlow: '+LAMBAT',    notifShield: '+PERISAI',
         notifMagnet: '+MAGNET',  notifAmmo: '+AMUNISI',
         boom: 'BUM!',            blocked: 'DIBLOKIR',
-        skinPerks: [null, 'JANGKAUAN KOIN +50%', 'HITBOX RAMPING -18%', 'WAKTU LAMBAT +50%', 'BONUS KOIN x2', 'KAPASITAS PERISAI +1', 'DURASI MAGNET +60%', 'JANGKAUAN HAMPIR +100%'],
+        skinPerks: [null, 'JANGKAUAN KOIN {v}', 'HITBOX RAMPING {v}', 'WAKTU LAMBAT {v}', 'BONUS KOIN {v}', 'KAPASITAS PERISAI {v}', 'DURASI MAGNET {v}', 'JANGKAUAN HAMPIR {v}'],
         skinDrawbacks: [null, 'HITBOX +10%', 'KAPASITAS PERISAI -1', 'WAKTU KOMBO -25%', 'PELURUHAN +60%', 'JANGKAUAN DEKAT -25%', 'AMUNISI -40%', 'HITBOX +20%'],
     },
     vi: {
@@ -516,7 +516,7 @@ const LANGS = {
         notifSlow: '+CHẬM',      notifShield: '+KHIÊN',
         notifMagnet: '+NAM CHÂM', notifAmmo: '+ĐẠN',
         boom: 'BÙM!',            blocked: 'CHẶN',
-        skinPerks: [null, 'TẦM HÚT XU +50%', 'VA CHẠM NHỎ -18%', 'CHẬM THỜI GIAN +50%', 'THƯỞNG XU x2', 'SỨC CHỨA KHIÊN +1', 'THỜI GIAN NAM CHÂM +60%', 'TẦM GẦN +100%'],
+        skinPerks: [null, 'TẦM HÚT XU {v}', 'VA CHẠM NHỎ {v}', 'CHẬM THỜI GIAN {v}', 'THƯỞNG XU {v}', 'SỨC CHỨA KHIÊN {v}', 'THỜI GIAN NAM CHÂM {v}', 'TẦM GẦN {v}'],
         skinDrawbacks: [null, 'VA CHẠM +10%', 'SỨC CHỨA KHIÊN -1', 'THỜI GIAN COMBO -25%', 'SUY GIẢM +60%', 'TẦM GẦN -25%', 'SỨC CHỨA ĐẠN -40%', 'VA CHẠM +20%'],
     },
     hi: {
@@ -553,7 +553,7 @@ const LANGS = {
         notifSlow: '+धीमा',       notifShield: '+शील्ड',
         notifMagnet: '+मैग्नेट',   notifAmmo: '+गोलियां',
         boom: 'धमाका!',           blocked: 'रोका गया',
-        skinPerks: [null, 'सिक्का रेंज +50%', 'हिटबॉक्स -18%', 'धीमा समय +50%', '2x सिक्का बोनस', 'शील्ड क्षमता +1', 'मैग्नेट समय +60%', 'निकट सीमा +100%'],
+        skinPerks: [null, 'सिक्का रेंज {v}', 'हिटबॉक्स {v}', 'धीमा समय {v}', '{v} सिक्का बोनस', 'शील्ड क्षमता {v}', 'मैग्नेट समय {v}', 'निकट सीमा {v}'],
         skinDrawbacks: [null, 'हिटबॉक्स +10%', 'शील्ड क्षमता -1', 'कॉम्बो समय -25%', 'क्षय +60%', 'निकट सीमा -25%', 'गोला-बारूद -40%', 'हिटबॉक्स +20%'],
     },
 };

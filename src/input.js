@@ -104,7 +104,7 @@ function onDown(e) {
     if (phase === 'dead' && deadT > 0.9) {
         if (!e) {
             window.webkit?.messageHandlers?.ads?.postMessage({ action: 'interstitialRequest', score });
-            startPlay(); holding = true; thrustOn(); return;
+            startPlay(); holding = true; hasHeldThisRun = true; thrustOn(); return;
         }
         const rect = cv.getBoundingClientRect();
         const cx = (e.clientX - rect.left) * (W / rect.width);
@@ -123,12 +123,12 @@ function onDown(e) {
         }
         if (_playBtnRect && inRect(cx, cy, _playBtnRect)) {
             window.webkit?.messageHandlers?.ads?.postMessage({ action: 'interstitialRequest', score });
-            startPlay(); holding = true; thrustOn(); return;
+            startPlay(); holding = true; hasHeldThisRun = true; thrustOn(); return;
         }
         return;
     }
     holding = true;
-    if (phase === 'play') thrustOn();
+    if (phase === 'play') { hasHeldThisRun = true; thrustOn(); }
 }
 function onUp(e) {
     holding = false; thrustOff();

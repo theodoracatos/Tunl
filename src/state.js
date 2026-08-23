@@ -1,6 +1,21 @@
 // ── State ─────────────────────────────────────────────────────────────
 
 let phase, py, vy, holding, scrollX, score, newBest, newDailyBest, startRamp;
+// True once the player has pressed hold at least once during the current run. Gates
+// gravity in update.js's physics step (see comment there) -- without it, a run that
+// begins with holding already false (the title-screen tap-to-confirm path releases
+// the player's finger the instant startPlay() fires, see input.js onUp) free-falls
+// from a centered launch into the tunnel wall in well under a second, before a
+// first-time player has any chance to realize they need to press again. Reset false
+// in startPlay(), flipped true wherever input.js sets holding = true.
+let hasHeldThisRun;
+// Real seconds elapsed in-flight while hasHeldThisRun is still false. Once this passes
+// IDLE_HINT_DELAY (draw.js), a "HOLD TO FLY" nudge fades in above the parked ship --
+// the player who never pressed at all still needs to be told what to do, since the
+// gravity gate above only buys them time, not understanding. Reset in startPlay(),
+// counted up in update.js, read in draw.js; stops mattering forever once
+// hasHeldThisRun flips true.
+let idleHoldTimer;
 const _initToday    = (() => { const d = new Date(); return d.getUTCFullYear()*10000 + (d.getUTCMonth()+1)*100 + d.getUTCDate(); })();
 const _savedLastDay = parseInt(localStorage.getItem('tunnel_lastday') || '0');
 let best          = parseInt(localStorage.getItem('tunnel_best')    || '0');
@@ -95,9 +110,17 @@ let _settingsPanelRect = null;
 let _leaderboardBtnRect = null;
 let _challengeBtnRect = null;
 // Bottom Y of the title-screen settings/leaderboard/challenge button cluster, set each
-// draw() call -- the daily-missions block below cascades off this instead of an
-// independent fixed H fraction, so it can't collide when that cluster grows a 2nd row.
+// draw() call. No longer read by anything else in draw() (the missions block used to
+// cascade off it when buttons sat above missions; the two were swapped per feedback --
+// see _missionsBottom below), kept for any future layout that wants the buttons' real
+// bottom edge.
 let _btnRowBottom = null;
+// Bottom Y of the daily-missions block, set each draw() call -- the title-screen
+// settings/leaderboard/challenge button cluster (now positioned below missions, buttons
+// at the bottom of the screen rather than missions) cascades off this instead of an
+// independent fixed H fraction, so it can't collide when the button cluster grows a
+// 2nd row above a mission list that shifted position.
+let _missionsBottom = null;
 let _langBtnRects = [];
 let _removeAdsBtnRect = null;
 let _restoreBtnRect = null;

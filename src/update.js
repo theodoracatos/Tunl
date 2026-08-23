@@ -132,9 +132,20 @@ function update(dt) {
     }
 
     // Physics
-    vy += (holding ? -THRUST + GRAVITY : GRAVITY) * dt;
+    // Gravity is withheld entirely until the player's first hold input of this run
+    // (see hasHeldThisRun in state.js) -- otherwise a run that starts with holding
+    // already false plummets from a centered launch into the tunnel wall in under a
+    // second, with no obstacle to blame and no time to react. That grace expires on
+    // its own past HOLD_GATE_MAX_SEC (constants.js) even with zero input, so a player
+    // who never presses at all can't ride a risk-free straight glide indefinitely --
+    // gravity engages exactly as if the gate had never existed.
+    if (!hasHeldThisRun && idleHoldTimer > HOLD_GATE_MAX_SEC) hasHeldThisRun = true;
+    vy += (holding ? -THRUST + GRAVITY : (hasHeldThisRun ? GRAVITY : 0)) * dt;
     vy  = Math.max(-MAX_VY, Math.min(MAX_VY, vy));
     py += vy * dt;
+    // Idle-hold hint timer (draw.js IDLE_HINT_DELAY) -- only worth counting up before
+    // the player's first press; irrelevant forever after, so don't bother once true.
+    if (!hasHeldThisRun) idleHoldTimer += dt;
 
     // Gap bonus / slow / magnet decay
     // TOXIC trades faster gap-bonus decay for its 2x-per-coin buff (systems.js) --
