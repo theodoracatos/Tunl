@@ -965,6 +965,33 @@ function draw() {
         ctx.restore();
     }
 
+    // Idle-hold hint: the player pressed nothing at all after launch (see
+    // hasHeldThisRun/idleHoldTimer, state.js + update.js). Gravity is withheld until
+    // their first press, so they aren't in danger yet, but they still don't know what
+    // to do -- fades in above the parked ship after IDLE_HINT_DELAY and vanishes for
+    // good the instant they press. Reuses T.tap (the title screen's "HOLD TO FLY")
+    // rather than a new string -- same instruction, just relocated to where the ship
+    // actually is instead of a fixed title-screen line (see Onboarding in CLAUDE.md
+    // for why a *static* title-screen hint was tried and reverted; this one only ever
+    // appears when it's actually needed, and is gone by the player's first touch).
+    if (phase === 'play' && !hasHeldThisRun) {
+        const IDLE_HINT_DELAY = 1.0, IDLE_HINT_FADE = 0.4;
+        const ia = Math.max(0, Math.min(1, (idleHoldTimer - IDLE_HINT_DELAY) / IDLE_HINT_FADE));
+        if (ia > 0) {
+            const pulse = 0.80 + 0.20 * Math.sin(gtime * 6);
+            ctx.save();
+            ctx.textAlign    = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font         = `bold ${FS*0.026}px 'Courier New',monospace`;
+            ctx.shadowColor  = `rgba(140,190,255,${ia * 0.85 * pulse})`;
+            ctx.shadowBlur   = 16;
+            ctx.fillStyle    = `rgba(220,235,255,${ia * pulse})`;
+            ctx.fillText(T.tap, PX, py - PR * 3.4);
+            ctx.shadowBlur   = 0;
+            ctx.restore();
+        }
+    }
+
     // Per-skin effects (draw)
     if (phase === 'play') {
         // PEARL (0): tiny shimmer dots near nose while holding

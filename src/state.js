@@ -1,6 +1,21 @@
 // ── State ─────────────────────────────────────────────────────────────
 
 let phase, py, vy, holding, scrollX, score, newBest, newDailyBest, startRamp;
+// True once the player has pressed hold at least once during the current run. Gates
+// gravity in update.js's physics step (see comment there) -- without it, a run that
+// begins with holding already false (the title-screen tap-to-confirm path releases
+// the player's finger the instant startPlay() fires, see input.js onUp) free-falls
+// from a centered launch into the tunnel wall in well under a second, before a
+// first-time player has any chance to realize they need to press again. Reset false
+// in startPlay(), flipped true wherever input.js sets holding = true.
+let hasHeldThisRun;
+// Real seconds elapsed in-flight while hasHeldThisRun is still false. Once this passes
+// IDLE_HINT_DELAY (draw.js), a "HOLD TO FLY" nudge fades in above the parked ship --
+// the player who never pressed at all still needs to be told what to do, since the
+// gravity gate above only buys them time, not understanding. Reset in startPlay(),
+// counted up in update.js, read in draw.js; stops mattering forever once
+// hasHeldThisRun flips true.
+let idleHoldTimer;
 const _initToday    = (() => { const d = new Date(); return d.getUTCFullYear()*10000 + (d.getUTCMonth()+1)*100 + d.getUTCDate(); })();
 const _savedLastDay = parseInt(localStorage.getItem('tunnel_lastday') || '0');
 let best          = parseInt(localStorage.getItem('tunnel_best')    || '0');

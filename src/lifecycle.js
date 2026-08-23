@@ -46,7 +46,7 @@ function titleScreen() {
 function startPlay() {
     thrustOff();
     _fadeTitleMusic();
-    phase = 'play'; py = H + PR * 4; vy = 0; holding = false; scrollX = 0; startRamp = 0;
+    phase = 'play'; py = H + PR * 4; vy = 0; holding = false; hasHeldThisRun = false; idleHoldTimer = 0; scrollX = 0; startRamp = 0;
     score = 0; newBest = false; newDailyBest = false;
     parts = []; thrustParts = []; deadT = 0; flashA = 0; shake = 0; trailY = [];
     skinFx = []; skinFxT = 0; shipPitch = -Math.PI / 2;

@@ -40,7 +40,7 @@ const LANGS = {
     },
     de: {
         name: 'Deutsch',
-        tap: 'HALTEN ZUM FLIEGEN',
+        tap: 'TIPPEN & HALTEN',
         musicOn: 'MUSIK AN',     musicOff: 'MUSIK AUS',
         fxOn: 'TON AN',          fxOff: 'TON AUS',
         ghostOn: 'GEIST AN',     ghostOff: 'GEIST AUS',
