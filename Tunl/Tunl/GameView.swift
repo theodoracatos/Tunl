@@ -181,24 +181,41 @@ struct GameView: UIViewRepresentable {
             }
         }
 
-        // Pulls the local player's standing on the daily board and the size of that
-        // board, and hands both to the page for the death screen (src/draw.js right
-        // column, via main.js _tunlNativeUpdate). No backend needed - GameKit already
-        // knows both numbers; they were simply never asked for.
+        // Pulls the local player's standing on the daily board, and hands it to the
+        // page along with a player-base size for the death screen (src/draw.js right
+        // column, via main.js _tunlNativeUpdate). The total comes from the all-time
+        // board, not the daily one: the daily board recurs and only counts today's
+        // players, so its total reads as a tiny, confusing denominator ("#3 / 6") next
+        // to a rank number that's clearly drawn from a much bigger population - the
+        // all-time board's total is what a player actually expects "out of how many"
+        // to mean. No backend needed either way - GameKit already knows both numbers.
         private func fetchWorldRank() {
             guard GKLocalPlayer.local.isAuthenticated else { return }
-            GKLeaderboard.loadLeaderboards(IDs: [Coordinator.leaderboardID]) { [weak self] boards, error in
-                guard error == nil, let board = boards?.first else { return }
+            GKLeaderboard.loadLeaderboards(IDs: [Coordinator.leaderboardID, Coordinator.allTimeLeaderboardID]) { [weak self] boards, error in
+                guard error == nil, let boards else { return }
+                guard let dailyBoard = boards.first(where: { $0.baseLeaderboardID == Coordinator.leaderboardID }) else { return }
                 // tunl_highscore is a *recurring* (daily) leaderboard, so GameKit already
                 // scopes entries to the current occurrence and the time scope is not
                 // applied - .allTime here means "this occurrence", not "all history".
-                board.loadEntries(for: .global,
+                dailyBoard.loadEntries(for: .global,
                                   timeScope: .allTime,
-                                  range: NSRange(location: 1, length: 1)) { localEntry, _, totalPlayers, entriesError in
+                                  range: NSRange(location: 1, length: 1)) { localEntry, _, _, entriesError in
                     guard entriesError == nil, let localEntry else { return }
-                    let json = "{\"worldRank\":\(localEntry.rank),\"worldRankTotal\":\(totalPlayers)}"
-                    DispatchQueue.main.async {
-                        self?.webView?.evaluateJavaScript("window._tunlNativeUpdate && window._tunlNativeUpdate(\(json))")
+                    let rank = localEntry.rank
+                    let sendUpdate: (Int) -> Void = { total in
+                        let json = "{\"worldRank\":\(rank),\"worldRankTotal\":\(total)}"
+                        DispatchQueue.main.async {
+                            self?.webView?.evaluateJavaScript("window._tunlNativeUpdate && window._tunlNativeUpdate(\(json))")
+                        }
+                    }
+                    guard let allTimeBoard = boards.first(where: { $0.baseLeaderboardID == Coordinator.allTimeLeaderboardID }) else {
+                        sendUpdate(0) // shouldn't happen, but don't drop the rank update over a missing total
+                        return
+                    }
+                    allTimeBoard.loadEntries(for: .global,
+                                      timeScope: .allTime,
+                                      range: NSRange(location: 1, length: 1)) { _, _, totalPlayers, allTimeError in
+                        sendUpdate(allTimeError == nil ? totalPlayers : 0)
                     }
                 }
             }

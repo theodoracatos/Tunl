@@ -62,6 +62,24 @@ function masteryLerp(skin, base, maxed) {
     return lerp(base, maxed, masteryLevel(skin) / (MASTERY_XP_THRESHOLDS.length - 1));
 }
 
+// Live current-value token for the title screen's perk description (draw.js, fills the
+// '{v}' placeholder in i18n.js skinPerks). Re-derives the SAME masteryLerp() calls the
+// actual buff logic uses (systems.js/update.js, see the skin balance comment above SKINS)
+// so what the player reads always matches what mastery is giving them right now, not the
+// frozen level-0 number the strings used to hardcode.
+function skinPerkValue(skin) {
+    switch (skin) {
+        case 1: return `+${Math.round((masteryLerp(1, 1.5, 1.7) - 1) * 100)}%`;            // AMBER coin reach
+        case 2: return `-${Math.round((1 - masteryLerp(2, 0.82, 0.74)) * 100)}%`;          // CRIMSON slim hitbox
+        case 3: return `+${Math.round((masteryLerp(3, 6.0, 7.5) / 4 - 1) * 100)}%`;        // ELECTRIC slow time
+        case 4: { const v = masteryLerp(4, 2.0, 2.5); return `${v % 1 === 0 ? v : v.toFixed(1)}x`; } // TOXIC coin bonus
+        case 5: return `+${Math.round(masteryLerp(5, 4, 5)) - 3}`;                          // VOID shield cap
+        case 6: return `+${Math.round((masteryLerp(6, 8.0, 11.0) / 5 - 1) * 100)}%`;       // NOVA magnet time
+        case 7: return `+${Math.round((masteryLerp(7, 4.0, 5.0) / 2 - 1) * 100)}%`;        // SOLARIS near-miss range
+        default: return '';
+    }
+}
+
 // ── Ghost run ─────────────────────────────────────────────────────────
 // The corridor is a pure function of world-x and the calendar day (world.js), so
 // replaying a past run needs nothing but the ship's vertical position over time --

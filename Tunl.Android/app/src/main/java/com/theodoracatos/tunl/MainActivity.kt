@@ -343,28 +343,36 @@ class MainActivity : ComponentActivity() {
     }
 
     // Mirrors GameView.swift's fetchWorldRank: pulls the player's standing on the daily
-    // board plus that board's size and hands both to the page for the death screen
-    // (src/draw.js right column, via main.js _tunlNativeUpdate). No backend needed --
-    // Play Games already knows both numbers.
+    // board and hands it to the page along with a player-base size for the death screen
+    // (src/draw.js right column, via main.js _tunlNativeUpdate). The total comes from
+    // the ALL_TIME variant, not the daily one: the daily board recurs and only counts
+    // today's players, so its total read as a tiny, confusing denominator ("#3 / 6")
+    // next to a rank number clearly drawn from a much bigger population -- the all-time
+    // variant's total is what a player actually expects "out of how many" to mean.
     //
-    // loadLeaderboardMetadata with forceReload=true is one round trip for both values:
+    // loadLeaderboardMetadata with forceReload=true is one round trip for both variants:
     // a Leaderboard carries a LeaderboardVariant per (time span, collection) pair, and
-    // each variant exposes the player's rank *and* the total number of scores. Fetching
-    // the score and the count separately would be two calls for the same data.
+    // both the daily and all-time variants come back in the same `variants` list, so no
+    // second network call is needed for the all-time total.
     private fun fetchWorldRank() {
         PlayGames.getLeaderboardsClient(this)
             .loadLeaderboardMetadata(getString(R.string.leaderboard_id), true)
             .addOnSuccessListener { data ->
-                val variant = data.get()?.variants?.firstOrNull {
+                val variants = data.get()?.variants ?: return@addOnSuccessListener
+                val dailyVariant = variants.firstOrNull {
                     it.timeSpan == LeaderboardVariant.TIME_SPAN_DAILY &&
                         it.collection == LeaderboardVariant.COLLECTION_PUBLIC
                 } ?: return@addOnSuccessListener
                 // hasPlayerInfo() is false until this player has a score on this board's
                 // current daily occurrence; rank would otherwise read as a placeholder.
-                if (!variant.hasPlayerInfo()) return@addOnSuccessListener
-                val rank = variant.playerRank
-                val total = variant.numScores
+                if (!dailyVariant.hasPlayerInfo()) return@addOnSuccessListener
+                val rank = dailyVariant.playerRank
                 if (rank <= 0L) return@addOnSuccessListener
+                val allTimeVariant = variants.firstOrNull {
+                    it.timeSpan == LeaderboardVariant.TIME_SPAN_ALL_TIME &&
+                        it.collection == LeaderboardVariant.COLLECTION_PUBLIC
+                }
+                val total = allTimeVariant?.numScores ?: 0L
                 runJs(
                     "window._tunlNativeUpdate && window._tunlNativeUpdate(" +
                         "{\"worldRank\":$rank,\"worldRankTotal\":$total})"
