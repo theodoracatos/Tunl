@@ -1611,7 +1611,13 @@ function draw() {
         // edge on narrow devices, so the divider side is the binding constraint -- shrink
         // the font to fit rather than let long language/level combos cross the divider.
         const levelLine = `${T.level} ${LEVEL_NUM}: ${WORLD_NAME.toUpperCase()}`;
-        let levelFsz = FS * 0.022;
+        // Matches TAGESMISSIONEN's header size below (FS*0.023) -- was FS*0.022, ~4.3%
+        // smaller at every width (shrink-to-fit never triggers for either at any
+        // realistic device size, so it was a flat, consistent mismatch, not day-to-day
+        // noise from long world names). The two headers sit one screen apart and read
+        // as a matched pair, so a barely-perceptible size drift between them read as an
+        // inconsistency rather than a deliberate choice.
+        let levelFsz = FS * 0.023;
         ctx.font = `bold ${levelFsz}px 'Courier New',monospace`;
         if (LAND) {
             // Clamped against the screen edges, not the divider: the divider is a
@@ -2487,10 +2493,15 @@ function draw() {
         const deadW = ctx.measureText(T.dead).width;
         ctx.fillRect(LC - deadW * 0.5, H * 0.252, deadW, 2);
 
-        // Score with pulsing glow
+        // Score with pulsing glow. Sized down from 0.140 so a 6-digit score (a long
+        // run can clear 100000+ once bonusScore compounds via streaks/milestones)
+        // still fits between the panel edge and the divider. At 0.140, "123456" at
+        // the narrow reference device used elsewhere in this file (iPhone 12 mini
+        // landscape, 812x375) measured ~352px against ~345px available -- a real
+        // overflow, not a hypothetical one. 0.115 brings that to ~289px.
         const scorePulse = newDailyBest ? 18 + 5 * Math.sin(deadT * 3.5) : 4;
         sh(scorePulse, newDailyBest ? `rgba(255,190,0,${a*0.75})` : 'rgba(0,0,0,0.90)');
-        ctx.font      = `bold ${FS*0.140}px 'Courier New',monospace`;
+        ctx.font      = `bold ${FS*0.115}px 'Courier New',monospace`;
         ctx.fillStyle = newDailyBest ? `rgba(255,225,65,${a})` : `rgba(225,240,255,${a})`;
         ctx.fillText(score, LC, H * 0.395);
 
@@ -2524,71 +2535,86 @@ function draw() {
             ctx.fillText(`${T.best}  ${best}`, LC, H * 0.613);
         }
 
-        // Skin-unlock banner (+ shards line below it) sits in the left column's empty
-        // space below the best/streak line; the right column is already packed (top5 +
-        // vsLast + stats) and collides with the HOME/PLAY AGAIN buttons if it lands there
-        // -- confirmed by measuring text width at common viewport sizes, so don't move
-        // this back to the right column.
-        // One shared line, not three competing ones. These used to be three separate
-        // `if` branches all targeting H*0.78 and all suppressing each other by priority,
-        // so a good run could earn a ship unlock, a mastery level *and* a shard payout
-        // and be shown exactly one of them -- the two most motivating outcomes in the
-        // game hidden by draw order. There is genuinely only one slot here (the panel
-        // edge is just below and the HOME/SHARE/PLAY row just below that), so instead of
-        // finding more room the parts are concatenated onto that one line and the whole
-        // thing is shrunk to fit.
+        // Skin-unlock banner (+ shards line below/beside it) sits in the left column's
+        // empty space below the best/streak line; the right column is already packed
+        // (top5 + stats) and collides with the HOME/PLAY AGAIN buttons if it
+        // lands there -- confirmed by measuring text width at common viewport sizes, so
+        // don't move this back to the right column.
+        // These used to be three separate `if` branches (ship unlock / mastery-up /
+        // shards) all targeting H*0.78 and all suppressing each other by priority, so a
+        // good run could earn a ship unlock, a mastery level *and* a shard payout and be
+        // shown exactly one of them -- the two most motivating outcomes in the game
+        // hidden by draw order. They were then joined onto one shared, shrink-to-fit
+        // line -- but a ship name plus a full shard line is wide enough that the combined
+        // text could still overflow past the shrink floor, reading as a broken/misaligned
+        // version of the plain shard-only line one row above it. Each part now gets its
+        // own line, at the plain single-line case's usual size, when both are present.
         {
-            const parts = [];
-            let  bannerClr = null;
+            let bannerLine = null, bannerClr = null;
             // Ship unlock still outranks a mastery level-up when both land in one run:
             // both are ship-coloured and showing two ship banners at once reads as a
             // glitch, not a double reward.
             if (skinUnlockIdx >= 0) {
                 const sk = SKINS[skinUnlockIdx];
-                parts.push(`${sk.name} ${T.unlocked}`);
+                bannerLine = `${sk.name} ${T.unlocked}`;
                 bannerClr = sk.shadow;
             } else if (skinMasteryUpIdx >= 0) {
                 const sk = SKINS[skinMasteryUpIdx];
-                parts.push(`${sk.name} ${T.masteryUp} ${masteryLevel(skinMasteryUpIdx)}`);
+                bannerLine = `${sk.name} ${T.masteryUp} ${masteryLevel(skinMasteryUpIdx)}`;
                 bannerClr = sk.shadow;
             }
+
+            let shardLine = null;
             if (runCoins > 0) {
                 // The banked total (`shards`) has no upper bound (grinding never stops
                 // once every ship is owned), so past 10000 it's shown rounded to the
                 // nearest thousand ("13k") rather than full digits.
                 const shardsDisp = shards >= 10000 ? Math.round(shards / 1000) + 'k' : shards;
-                let shardLine = `+${runShardsBanked}\u200A\u29eb \u00b7 ${shardsDisp}\u200A\u29eb`;
-                // The daily-cap note is the first thing dropped when space is tight --
-                // it explains a number rather than being one.
-                if (runShardsBanked < runCoins && !bannerClr) shardLine += `  (${T.dailyCap})`;
-                parts.push(shardLine);
+                shardLine = `+${runShardsBanked}\u200A\u29eb \u00b7 ${shardsDisp}\u200A\u29eb`;
+                // Used to be dropped whenever a banner shared the line with it (the first
+                // thing cut when space was tight) -- now that the shard line always gets
+                // its own row with the same room as the shard-only case, it can stay.
+                if (runShardsBanked < runCoins) shardLine += `  (${T.dailyCap})`;
             }
 
-            if (parts.length) {
-                const line = parts.join('   \u00b7   ');
-                // Shrink to fit rather than overflow. The binding constraint is the
-                // panel's left edge, not the divider: this line is centred on LC
-                // (W*0.20) and the panel starts at W*0.03, so there is only 0.17*W of
-                // half-width available on the left even though the divider at W*0.455
-                // is further away. Measured this way across all 15 languages.
+            // Shrink an individual line to fit rather than overflow. The binding
+            // constraint is the panel's left edge, not the divider: this line is centred
+            // on LC (W*0.2425) and the panel starts at W*0.03, so there is only ~0.17*W
+            // of half-width available on the left even though the divider at W*0.455 is
+            // further away. Measured this way across all 15 languages.
+            const availW = (LC - W * 0.045) * 2;
+            const drawFitLine = (text, y, fillClr, glowClr) => {
                 let fsz = FS * 0.024;
                 ctx.font = `bold ${fsz}px 'Courier New',monospace`;
-                const availW = (LC - W * 0.045) * 2;
-                const lineW  = ctx.measureText(line).width;
+                const lineW = ctx.measureText(text).width;
                 if (lineW > availW) {
                     fsz = Math.max(fsz * availW / lineW, FS * 0.014); // legibility floor
                     ctx.font = `bold ${fsz}px 'Courier New',monospace`;
                 }
-                // Gold when it's only the shard payout; the ship's own colour whenever a
-                // ship banner is part of the line, since that's the bigger moment.
-                const [br, bg, bb] = bannerClr || [255, 205, 60];
-                ctx.fillStyle   = bannerClr
-                    ? `rgba(${br},${bg},${bb},${a * 0.95})`
-                    : `rgba(255,225,110,${a * 0.95})`;
-                ctx.shadowColor = `rgba(${br},${bg},${bb},${a * 0.62})`;
+                ctx.fillStyle   = fillClr;
+                ctx.shadowColor = glowClr;
                 ctx.shadowBlur  = 8;
-                ctx.fillText(line, LC, H * 0.705);
+                ctx.fillText(text, LC, y);
                 ctx.shadowBlur  = 0;
+                return fsz;
+            };
+
+            const shardClr = `rgba(255,225,110,${a * 0.95})`;
+            const shardGlow = `rgba(255,205,60,${a * 0.62})`;
+            if (bannerLine && shardLine) {
+                // Gap between the two lines is derived from the banner's own rendered
+                // size (not a fixed H-fraction) so it can't desync on a short-but-wide
+                // screen the way fixed-fraction gaps did before the death screen's
+                // score/BEST cascade fix -- see that fix's comment further up.
+                const [br, bg, bb] = bannerClr;
+                const fsz1 = drawFitLine(bannerLine, H * 0.688,
+                    `rgba(${br},${bg},${bb},${a * 0.95})`, `rgba(${br},${bg},${bb},${a * 0.62})`);
+                drawFitLine(shardLine, H * 0.688 + fsz1 * 1.35, shardClr, shardGlow);
+            } else if (bannerLine) {
+                const [br, bg, bb] = bannerClr;
+                drawFitLine(bannerLine, H * 0.705, `rgba(${br},${bg},${bb},${a * 0.95})`, `rgba(${br},${bg},${bb},${a * 0.62})`);
+            } else if (shardLine) {
+                drawFitLine(shardLine, H * 0.705, shardClr, shardGlow);
             }
         }
 
@@ -2693,43 +2719,38 @@ function draw() {
             }
             ry += LB_STEP;
         }
-        ctx.textAlign = 'center'; // restore -- vsLast/stats/buttons below expect centered text
+        ctx.textAlign = 'center'; // restore -- stats/buttons below expect centered text
 
-        if (prevRunScore > 0 && score !== prevRunScore) {
-            const diff = score - prevRunScore;
-            sh(4);
-            ctx.font      = `${FS*0.030}px 'Courier New',monospace`;
-            ctx.fillStyle = `rgba(${diff >= 0 ? '140,230,140' : '220,140,140'},${a})`;
-            ctx.fillText(`${diff >= 0 ? '+' : ''}${diff} ${T.vsLast}`, RC, ry);
-            ry += H * 0.088;
-        }
+        // A "+264 vs. last" line used to sit here (score minus prevRunScore). Dropped:
+        // it pushed the stats block down and widened with score magnitude/diff sign
+        // unpredictably, so it was the one line in this column liable to bump into
+        // neighbouring rows on a real device, for a number that's just this run's score
+        // restated as a delta -- low value for the layout risk it carried.
 
         {
             // Each stat gets its own colour instead of one flat grey-blue line -- the
-            // run's actual highlights (a good combo, a close call survived, the ghost
-            // you're now racing) were reading as filler text under the flashier score/
-            // rank numbers above. Gold matches the reward/shard theme used everywhere
-            // else in the game, the near-miss cyan and combo orange are new but distinct
-            // from each other, and the ghost blue is the ghost ship's own colour
-            // (rgba(143,180,236), see the death-screen ghost-passed line above).
+            // run's actual highlights (a good combo, a close call survived) were
+            // reading as filler text under the flashier score/rank numbers above.
+            // Gold matches the reward/shard theme used everywhere else in the game,
+            // and the near-miss cyan and combo orange are new but distinct from each
+            // other.
             //
             // Two lines, not one: run-total counts (powerups, near misses) on the first,
-            // run-highlight stats (combo, the ghost target) on the second -- four parts
-            // packed onto one row read as a cramped data dump.
+            // run-highlight stats (combo) on the second -- four parts packed onto one
+            // row read as a cramped data dump.
             // Default (non-yellow) colour -- yellow/gold is reserved for shard figures
             // elsewhere in the game, and a powerup count isn't one.
             const line1 = [{ text: `${runCoins} ${runCoins !== 1 ? T.powerups : T.powerup}`, clr: [175, 205, 255] }];
             if (runNearMisses > 0) line1.push({ text: `${runNearMisses} ${T.close}`, clr: [110, 210, 255] });
             const line2 = [];
             if (runMaxCombo > 1) line2.push({ text: `x${runMaxCombo} ${T.combo}`, clr: [255, 150, 110] });
-            // What the next run will be racing (update.js ghost block). Skipped on a new
-            // daily best, where ghostScore was just overwritten with this very run's
-            // score and the line would only restate the big number on the left.
-            if (!newDailyBest && ghostScore > 0) line2.push({ text: `${T.ghost} ${ghostScore}`, clr: [143, 180, 236] });
+            // The ghost target (T.ghost/ghostScore) used to also appear here, but the
+            // score it names is just the day's best, already shown in the left column
+            // -- redundant, so it was dropped from the death screen.
 
             // Extra breathing room before this block -- it used to sit right under the
-            // top5/vsLast block with no more gap than any other row in that list, which
-            // read as one more line of the same table rather than its own moment.
+            // top5 block with no more gap than any other row in that list, which read
+            // as one more line of the same table rather than its own moment.
             ry += H * 0.025 - 4;
             ctx.font = `bold ${FS*0.023}px 'Courier New',monospace`;
             // Dot separator between parts, matching the shard banner's own "+X * Y"

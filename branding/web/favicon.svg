@@ -48,22 +48,10 @@
     <filter id="shipGlow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="14"/></filter>
     <filter id="flameBlur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4"/></filter>
     <filter id="abGlow" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="11"/></filter>
-    <!-- userSpaceOnUse with an explicit region: a perfectly straight (flat)
-         line has a zero-height bounding box, and the default objectBoundingBox
-         filter region is a percentage of that box, zero either way, which
-         silently hides the whole stroke. -->
-    <filter id="wglow" filterUnits="userSpaceOnUse" x="-40" y="-40" width="1104" height="1104"><feGaussianBlur stdDeviation="3"/></filter>
     <filter id="coinGlow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4"/></filter>
   </defs>
 
   <rect width="1024" height="1024" fill="url(#bgGrd)"/>
-
-  <!-- Corridor walls: straight top/bottom lines framing the ship so the mark
-       reads as flying through a corridor, not just toward an abstract ring.
-       Same y-position as before (150/874), now straight and white instead of
-       wavy purple/cyan. -->
-  <path d="M -20,150 L 1044,150" fill="none" stroke="#ffffff" stroke-width="18" stroke-linecap="round" opacity="0.5" filter="url(#wglow)"/>
-  <path d="M -20,874 L 1044,874" fill="none" stroke="#ffffff" stroke-width="18" stroke-linecap="round" opacity="0.5" filter="url(#wglow)"/>
 
   <!-- vanishing-point halo: the light the ship is flying toward -->
   <circle cx="560" cy="512" r="190" fill="url(#coreHalo)" filter="url(#coreBlur)"/>
