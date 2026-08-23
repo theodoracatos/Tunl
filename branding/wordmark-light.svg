@@ -6,15 +6,37 @@
     <linearGradient id="cyanGrd" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#1aa8d6"/><stop offset="50%" stop-color="#3fe0ff"/><stop offset="100%" stop-color="#1aa8d6"/>
     </linearGradient>
-    <radialGradient id="coreGrd" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#ffffff"/><stop offset="40%" stop-color="#d7e8ff"/><stop offset="100%" stop-color="#6f9cff" stop-opacity="0"/>
-    </radialGradient>
     <linearGradient id="letterGrd" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#1c2550"/><stop offset="100%" stop-color="#050614"/>
     </linearGradient>
-    <filter id="ub0" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="6"/></filter>
-    <filter id="ub1" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>
-    <filter id="ub2" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.5"/></filter>
+    <!-- Gem-in-U treatment, ported from the title screen's current buildUPath()/
+         gem rendering in src/draw.js: the old ring-portal U (this file's
+         previous version) is what that code's own comments call "the old
+         tunnel-ring portal", the game replaced it with a small faceted gem
+         floating in the U's counter, same visual language as the real in-game
+         coin pickups, recolored purple to cyan. This master now matches that,
+         not the ring design. Aura/ray colors here are darker and more opaque
+         than the dark wordmark's version, since the same pale glow tuned for
+         a black backdrop would wash out against white. -->
+    <radialGradient id="gemAura" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#8a6bff" stop-opacity="0.30"/>
+      <stop offset="40%"  stop-color="#5a4ad0" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#4030a0" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gemGrd" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#e5d4ff"/>
+      <stop offset="45%"  stop-color="#a75bff"/>
+      <stop offset="55%"  stop-color="#3fe0ff"/>
+      <stop offset="100%" stop-color="#0d6a86"/>
+    </linearGradient>
+    <linearGradient id="ulGrd" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#5030c0" stop-opacity="0"/>
+      <stop offset="30%"  stop-color="#6a4fd6" stop-opacity="0.55"/>
+      <stop offset="70%"  stop-color="#6a4fd6" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#5030c0" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="gemGlow" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="5"/></filter>
+    <filter id="sparkGlow" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="1.4"/></filter>
     <filter id="letterGlow" x="-60%" y="-60%" width="220%" height="220%"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#0a0f2a" flood-opacity="0.25"/></filter>
     <clipPath id="uclip"><path d="M 190 -4 L 190 124 Q 190 200 270 200 Q 350 200 350 124 L 350 -4 L 350 -44 L 190 -44 Z"/></clipPath>
   </defs>
@@ -26,15 +48,35 @@
     </g>
     
   <g clip-path="url(#uclip)">
-    <path d="M 146 112.00000000000001 A 124 124 0 0 1 394 112.00000000000001" fill="none" stroke="url(#purpleGrd)" stroke-width="16" stroke-linecap="round" opacity="0.85" filter="url(#ub0)"/>
-    <path d="M 394 112.00000000000001 A 124 124 0 0 1 146 112.00000000000001" fill="none" stroke="url(#cyanGrd)" stroke-width="16" stroke-linecap="round" opacity="0.85" filter="url(#ub0)"/>
-    <path d="M 182 112.00000000000001 A 88 88 0 0 1 358 112.00000000000001" fill="none" stroke="url(#purpleGrd)" stroke-width="16" stroke-linecap="round" opacity="1" filter="url(#ub1)"/>
-    <path d="M 358 112.00000000000001 A 88 88 0 0 1 182 112.00000000000001" fill="none" stroke="url(#cyanGrd)" stroke-width="16" stroke-linecap="round" opacity="1" filter="url(#ub1)"/>
-    <path d="M 216 112.00000000000001 A 54 54 0 0 1 324 112.00000000000001" fill="none" stroke="url(#purpleGrd)" stroke-width="14" stroke-linecap="round" opacity="1" filter="url(#ub2)"/>
-    <path d="M 324 112.00000000000001 A 54 54 0 0 1 216 112.00000000000001" fill="none" stroke="url(#cyanGrd)" stroke-width="14" stroke-linecap="round" opacity="1" filter="url(#ub2)"/>
-    <circle cx="270" cy="112.00000000000001" r="26" fill="url(#coreGrd)"/>
-    <circle cx="270" cy="112.00000000000001" r="12" fill="#ffffff"/>
+    <circle cx="270" cy="102" r="108" fill="url(#gemAura)"/>
+    <!-- 8-ray sparkle burst: 4 long cardinal rays + 4 short diagonal rays,
+         same construction as the in-game coin/gem rays, static instead of
+         spinning since this is a still asset. -->
+    <g transform="translate(270,102)" filter="url(#sparkGlow)">
+      <path d="M 0,-40.5 L 0,-75 M 40.5,0 L 75,0 M 0,40.5 L 0,75 M -40.5,0 L -75,0"
+            fill="none" stroke="#7a6cdc" stroke-width="4.4" stroke-linecap="round" opacity="0.75"/>
+      <path d="M 28.6,-28.6 L 36,-36 M 28.6,28.6 L 36,36 M -28.6,28.6 L -36,36 M -28.6,-28.6 L -36,-36"
+            fill="none" stroke="#7a6cdc" stroke-width="2.6" stroke-linecap="round" opacity="0.35"/>
+    </g>
+    <g transform="translate(270,102)">
+      <!-- Faceted gem: purple top-half fading to cyan bottom-half, same split
+           the old rings used, so the swap still reads as the same mark. Blurred
+           duplicate behind the crisp fill for the glow (icon-mark's coin uses
+           the same trick - filtering the crisp shape directly blurs the facets
+           away instead of just adding a halo). -->
+      <path d="M 0,-40.5 L 27,0 L 0,40.5 L -27,0 Z" fill="url(#gemGrd)" opacity="0.5" filter="url(#gemGlow)"/>
+      <path d="M 0,-40.5 L 27,0 L 0,40.5 L -27,0 Z" fill="url(#gemGrd)"/>
+      <path d="M 0,-40.5 L 27,0 L 0,0 Z" fill="#ffffff" opacity="0.35"/>
+      <circle cx="0" cy="0" r="6.6" fill="#ffffff"/>
+    </g>
   </g>
-  <path d="M 190 -4 L 190 124 Q 190 200 270 200 Q 350 200 350 124 L 350 -4" fill="none" stroke="url(#letterGrd)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round" filter="url(#letterGlow)"/>
+  <!-- Top ends land exactly on T/N/L's cap height (y=0) with a butt cap, not
+       round: a round cap adds a lineWidth/2 bump past the path's own endpoint,
+       which pushed the U visibly above the other three letters. -->
+  <path d="M 190 0 L 190 124 Q 190 200 270 200 Q 350 200 350 124 L 350 0" fill="none" stroke="url(#letterGrd)" stroke-width="34" stroke-linecap="butt" stroke-linejoin="round" filter="url(#letterGlow)"/>
+
+  <!-- Accent underline beneath the wordmark, matching the title screen's
+       fade-in/fade-out gradient bar under TUNL. -->
+  <rect x="-10" y="212" width="730" height="4" fill="url(#ulGrd)"/>
   </g>
 </svg>
