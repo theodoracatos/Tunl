@@ -8,6 +8,7 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.RequestConfiguration
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.ump.ConsentDebugSettings
@@ -106,6 +107,14 @@ class AdsManager(private val activity: Activity) {
                             ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
                     )
                     if (consentInformation.canRequestAds()) {
+                        // TUNL carries a 4+/Everyone content rating - without this, the
+                        // Mobile Ads SDK applies no content restriction of its own and
+                        // ad networks can serve creative aimed at an adult audience.
+                        MobileAds.setRequestConfiguration(
+                            RequestConfiguration.Builder()
+                                .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G)
+                                .build()
+                        )
                         MobileAds.initialize(activity) {
                             loadInterstitial()
                         }

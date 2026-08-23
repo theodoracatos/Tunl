@@ -84,6 +84,10 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
             guard ConsentInformation.shared.canRequestAds else { return }
 
             _ = await ATTrackingManager.requestTrackingAuthorization()
+            // TUNL carries a 4+/Everyone content rating - without this, the Mobile
+            // Ads SDK applies no content restriction of its own and ad networks can
+            // serve creative aimed at an adult audience. Must be set before start().
+            MobileAds.shared.requestConfiguration.maxAdContentRating = GADMaxAdContentRating.general
             _ = await MobileAds.shared.start()
             await self.loadInterstitial()
         }
