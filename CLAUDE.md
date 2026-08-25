@@ -6,6 +6,17 @@
 - Don't ask clarifying questions if the intent is clear from context - make a reasonable choice and do it.
 - Only ask when something is genuinely ambiguous AND the wrong choice would be hard to undo.
 
+## Secret-scanning pre-push hook
+
+`.githooks/pre-push` blocks any `git push` (from Claude Code or the terminal) whose
+new commits add a secrets-looking filename (`.env`, `*.pem`, `appsettings.Production.json`,
+etc.) or content matching a known secret pattern (AWS/Google/GitHub/Slack/Stripe keys,
+private key headers, generic `key|secret|token|password = <value>` assignments). It's
+committed to the repo but git does not auto-trust a `core.hooksPath` from a clone, so each
+clone must run `git config core.hooksPath .githooks` once to activate it. Bypass with
+`git push --no-verify` only after confirming a hit is a false positive. Run `/check-secrets`
+to get the same verdict mid-session before attempting a push.
+
 ## What is this
 
 TUNL is an HTML5 Canvas hold-to-thrust cave flyer game.
@@ -299,7 +310,7 @@ rolled back one so the two rules don't compound into a much longer gap than inte
 
 ## Key design decisions (do not revert)
 
-- **Coin bonus is intentionally modest**: +15px per coin, max +36px halfGap. At max difficulty the full corridor is 196px; one coin adds ~15%, max bonus adds ~37%. This is helpful but not a free pass.
+- **Coin bonus is a real difficulty lever, not a marginal aid**: `GAP_PER_COIN` = H*0.06, `GAP_BONUS_MAX` = H*0.15 (see Coin system above) - at max difficulty (196px full corridor at H=600) one coin adds ~37% to the halfGap, a maxed bonus nearly doubles it. Coins are essential at high difficulty by design, not a small nudge - don't shrink these constants back down to make the bonus merely "helpful."
 - **boundsBase for coin placement**: Coins placed ignoring current bonus so they're always reachable even without a bonus. Never use `boundsAt()` for coin placement.
 - **Triangle-circle collision**: Stalactites use proper geometric collision matching the visual triangle, not AABB. Changing to AABB would make invisible collisions at the edges.
 - **No em dashes (-)** anywhere in code, comments, or UI text. Use hyphen-minus (-) instead.
