@@ -109,6 +109,9 @@ let _settingsBtnRect = null;
 let _settingsPanelRect = null;
 let _leaderboardBtnRect = null;
 let _challengeBtnRect = null;
+let showShop = false;
+let _shopBtnRect = null;
+let _shopPanelRect = null;
 // Bottom Y of the title-screen settings/leaderboard/challenge button cluster, set each
 // draw() call. No longer read by anything else in draw() (the missions block used to
 // cascade off it when buttons sat above missions; the two were swapped per feedback --

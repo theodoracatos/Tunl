@@ -530,14 +530,36 @@ function sfxBulletPickup() {
 function sfxBulletFire() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
+    // Body: sawtooth pitch-drop, higher start and louder than before so the
+    // player's own shot reads as a real laser, not a mouse squeak - this
+    // fires every 0.32s while ammo lasts, so it stays short to avoid mush.
     const o = _ac.createOscillator(), g = _ac.createGain();
     o.connect(g); g.connect(_ac.destination);
     o.type = 'sawtooth';
-    o.frequency.setValueAtTime(520, t);
-    o.frequency.exponentialRampToValueAtTime(140, t + 0.09);
-    g.gain.setValueAtTime(0.07, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.11);
-    o.start(t); o.stop(t + 0.12);
+    o.frequency.setValueAtTime(900, t);
+    o.frequency.exponentialRampToValueAtTime(150, t + 0.09);
+    g.gain.setValueAtTime(0.14, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.10);
+    o.start(t); o.stop(t + 0.11);
+    // Sub layer: a square wave an octave-plus down for weight under the zap.
+    const o2 = _ac.createOscillator(), g2 = _ac.createGain();
+    o2.connect(g2); g2.connect(_ac.destination);
+    o2.type = 'square';
+    o2.frequency.setValueAtTime(280, t);
+    o2.frequency.exponentialRampToValueAtTime(75, t + 0.07);
+    g2.gain.setValueAtTime(0.06, t);
+    g2.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+    o2.start(t); o2.stop(t + 0.09);
+    // Muzzle crack: a hair of filtered noise on the attack for punch.
+    const src = _ac.createBufferSource();
+    src.buffer = _noiseBuf(0.02);
+    const flt = _ac.createBiquadFilter();
+    flt.type = 'highpass'; flt.frequency.value = 3500;
+    const g3 = _ac.createGain();
+    g3.gain.setValueAtTime(0.10, t);
+    g3.gain.exponentialRampToValueAtTime(0.001, t + 0.02);
+    src.connect(flt); flt.connect(g3); g3.connect(_ac.destination);
+    src.start(t); src.stop(t + 0.02);
 }
 
 function sfxStalCrack() {

@@ -32,14 +32,6 @@ function onDown(e) {
 
         // Language panel intercepts all taps when open
         if (showSettings) {
-            if (_removeAdsBtnRect && inRect(cx, cy, _removeAdsBtnRect)) {
-                window.webkit?.messageHandlers?.iap?.postMessage({ action: 'purchase' });
-                return;
-            }
-            if (_restoreBtnRect && inRect(cx, cy, _restoreBtnRect)) {
-                window.webkit?.messageHandlers?.iap?.postMessage({ action: 'restore' });
-                return;
-            }
             if (_privacyChoicesBtnRect && inRect(cx, cy, _privacyChoicesBtnRect)) {
                 window.webkit?.messageHandlers?.ads?.postMessage({ action: 'privacyOptions' });
                 return;
@@ -70,9 +62,26 @@ function onDown(e) {
             if (!_settingsPanelRect || !inRect(cx, cy, _settingsPanelRect)) showSettings = false;
             return;
         }
+        if (showShop) {
+            if (_removeAdsBtnRect && inRect(cx, cy, _removeAdsBtnRect)) {
+                window.webkit?.messageHandlers?.iap?.postMessage({ action: 'purchase' });
+                return;
+            }
+            if (_restoreBtnRect && inRect(cx, cy, _restoreBtnRect)) {
+                window.webkit?.messageHandlers?.iap?.postMessage({ action: 'restore' });
+                return;
+            }
+            // Tap outside the panel closes it; a tap inside on empty space does nothing.
+            if (!_shopPanelRect || !inRect(cx, cy, _shopPanelRect)) showShop = false;
+            return;
+        }
 
         if (_settingsBtnRect && inRect(cx, cy, _settingsBtnRect)) {
             showSettings = true;
+            return;
+        }
+        if (_shopBtnRect && inRect(cx, cy, _shopBtnRect)) {
+            showShop = true;
             return;
         }
         if (_leaderboardBtnRect && inRect(cx, cy, _leaderboardBtnRect)) {
@@ -99,6 +108,7 @@ function onDown(e) {
     _initAC();
     if (phase === 'title') {
         if (showSettings) { showSettings = false; return; }
+        if (showShop) { showShop = false; return; }
         startPlay(); return;   // reached only for keyboard/synthetic triggers (no e)
     }
     if (phase === 'dead' && deadT > 0.9) {

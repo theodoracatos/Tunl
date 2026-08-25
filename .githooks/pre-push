@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# TUNL pre-push hook: blocks a push if any commit being pushed adds a
+# secrets-looking file or a line matching a known secret pattern.
+#
+# Installed via `git config core.hooksPath .githooks` (one-time, per clone -
+# git does not auto-trust a hooksPath committed in the repo). Run that once
+# after cloning to activate it.
+#
+# Bypass (only if you've confirmed a match is a false positive):
+#   git push --no-verify
+
+set -euo pipefail
+
+zero="0000000000000000000000000000000000000000"
+found=0
+
+# File paths that are sensitive by name alone, regardless of content.
+sensitive_path_re='(^|/)\.env($|\.[^.]+$)|appsettings\.(Production|Staging)\.json$|(^|/)id_rsa(\.|$)|\.(pem|p12|pfx|keystore|jks)$|(^|/)[^/]*secret[^/]*$|(^|/)[^/]*credential[^/]*$|(^|/)[^/]*password[^/]*$'
+
+# Known-safe filenames to skip entirely (path check and content check both).
+# Firebase's per-platform client config files carry an API_KEY that is a
+# public app identifier by Google's own design (restricted by API/bundle-ID
+# restrictions in Cloud Console, not by secrecy) - not a credential to flag.
+safe_basename_re='^(GoogleService-Info\.plist|google-services\.json)$'
+
+# Content patterns for common secret/key formats. Kept POSIX ERE (no PCRE
+# lookaround/inline flags) so this runs on macOS's stock BSD grep.
+content_patterns=(
+  '-----BEGIN (RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY-----'
+  'AKIA[0-9A-Z]{16}'
+  'AIza[0-9A-Za-z_-]{35}'
+  'gh[pousr]_[A-Za-z0-9]{36,255}'
+  'xox[baprs]-[0-9A-Za-z-]{10,48}'
+  'sk_live_[0-9a-zA-Z]{16,}'
+  '(api[_-]?key|secret|token|password|passwd|pwd)[[:space:]]*[:=][[:space:]]*[A-Za-z0-9_/+=-]{16,}'
+)
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue   # deleting a ref - nothing to scan
+
+  # Commits about to be pushed that aren't already on any remote-tracking ref.
+  commits=$(git rev-list "$local_sha" --not --remotes 2>/dev/null || true)
+  [ -z "$commits" ] && continue
+
+  for commit in $commits; do
+    short=$(git rev-parse --short "$commit")
+    while IFS= read -r f; do
+      [ -z "$f" ] && continue
+      base=$(basename "$f")
+      if printf '%s\n' "$base" | grep -Eq "$safe_basename_re"; then
+        continue   # known-safe file, see safe_basename_re above
+      fi
+
+      if printf '%s\n' "$f" | grep -Eiq "$sensitive_path_re"; then
+        echo "pre-push: blocked - '$f' in $short looks like a secrets file" >&2
+        found=1
+      fi
+
+      added_lines=$(git show "$commit" -- "$f" | grep -E '^\+' | grep -v '^+++' || true)
+      for pat in "${content_patterns[@]}"; do
+        if printf '%s\n' "$added_lines" | grep -EIiq -e "$pat"; then
+          echo "pre-push: blocked - commit $short adds text in '$f' matching secret pattern: $pat" >&2
+          found=1
+        fi
+      done
+    done < <(git show --pretty="" --name-only "$commit")
+  done
+done
+
+if [ "$found" -ne 0 ]; then
+  echo "" >&2
+  echo "pre-push: possible secret(s) detected - push aborted." >&2
+  echo "Fix the file/commit, or if this is a false positive: git push --no-verify" >&2
+  exit 1
+fi
+
+exit 0

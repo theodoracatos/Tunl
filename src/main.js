@@ -31,6 +31,7 @@ window._tunlNativeUpdate = function (state) {
 // panel first instead of always exiting the app.
 window._tunlCloseSettingsIfOpen = function () {
     if (showSettings) { showSettings = false; return true; }
+    if (showShop) { showShop = false; return true; }
     return false;
 };
 

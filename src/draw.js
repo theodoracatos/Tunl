@@ -1819,14 +1819,14 @@ function draw() {
             ctx.fillText(label, bCx, bCy);
             return { x: bx, y: by, w: bw, h: bh };
         };
-        // Settings button -- its (localized) text label can be as wide as it
-        // needs without bumping into the info column.
-        // Paired with the Game Center leaderboard button when that native bridge
-        // exists, and with a challenge button too on devices new enough to actually
-        // use Game Center Challenges (GKChallengeDefinition needs iOS 26+ - see
-        // GameView.swift, which sets window._tunlChallengeSupported before this ever
-        // runs). Widths are measured first so long localized labels never overlap,
-        // and the row is centered as a whole around titleX.
+        // Shop + Settings buttons -- Shop always sits immediately left of Settings,
+        // paired the same way Leaderboard pairs with Challenge. Paired with the Game
+        // Center leaderboard button when that native bridge exists, and with a
+        // challenge button too on devices new enough to actually use Game Center
+        // Challenges (GKChallengeDefinition needs iOS 26+ - see GameView.swift, which
+        // sets window._tunlChallengeSupported before this ever runs). Widths are
+        // measured first so long localized labels never overlap, and each row is
+        // centered as a whole around titleX.
         {
             const settingsBY = tBtnY;
             const hasGameCenter = !!window.webkit?.messageHandlers?.gameCenter;
@@ -1841,67 +1841,84 @@ function draw() {
             // single 3-button row's left edge can land off-screen, clipping text at the
             // edge. Kept the shrink-to-fit guard below as a safety net, but the real fix
             // (per user suggestion) is two rows instead of one: Rangliste + Herausforderung
-            // (the two "compete" buttons) on top, Einstellungen alone below -- reads better
-            // than shrunk text even on devices where one row would technically have fit.
+            // (the two "compete" buttons) on top, Shop + Einstellungen below -- reads
+            // better than shrunk text even on devices where one row would technically
+            // have fit.
             const rowMarginL = W * 0.02, rowMarginR = W * 0.02;
             const maxRowW = 2 * Math.max(Math.min(titleX - rowMarginL, dividerX - titleX - rowMarginR), W * 0.10);
             // Bottom Y of whatever got drawn (not currently read elsewhere -- see its
             // state.js comment).
             _btnRowBottom = settingsBY + bh / 2;
-            if (hasChallenge) {
-                let leaderboardW = ctx.measureText(T.leaderboard).width;
-                let challengeW   = ctx.measureText(T.challenge).width;
-                let textSum = leaderboardW + challengeW;
-                let totalW = textSum + pad * 2 + rowGap;
-                let scale = 1;
-                if (totalW > maxRowW) {
-                    scale = Math.max((maxRowW - pad * 2 - rowGap) / textSum, 0.50);
-                    ctx.font = `${btnFontSz * scale}px 'Courier New',monospace`;
-                    leaderboardW = ctx.measureText(T.leaderboard).width;
-                    challengeW   = ctx.measureText(T.challenge).width;
-                    totalW = leaderboardW + challengeW + pad * 2 + rowGap;
-                }
-                leaderboardW += pad; challengeW += pad;
-                let bx = titleX - totalW / 2;
-                const leaderboardCX = bx + leaderboardW / 2; bx += leaderboardW + rowGap;
-                const challengeCX = bx + challengeW / 2;
-                _leaderboardBtnRect = drawBtn(leaderboardCX, settingsBY, T.leaderboard, true, false, undefined, bh);
-                _challengeBtnRect   = drawBtn(challengeCX, settingsBY, T.challenge, true, false, undefined, bh);
 
-                // Settings alone on the row below, same scale as the row above for a
-                // visually consistent pair of rows (it virtually never needs to shrink
-                // on its own, but matching size beats mismatched sizes in one cluster).
-                // Vertical gap was H*0.02 -- read as cramped on a real device screenshot,
-                // the two rows nearly touching. Widened to H*0.035 so the pair reads as
-                // one consistent rhythm rather than two rows that happen to be stacked.
-                // This whole cluster is positioned off the missions block's bottom edge
-                // (see tBtnY above), not the other way around, so it can't collide just
-                // because it grew a 2nd row here.
-                // fixedW: matches the settings bar's width (and edges) to the leaderboard +
-                // challenge row above it, the same "full-width bar under a pair" pattern
-                // GEIST AN uses under MUSIK AN/TON AN in the settings panel.
-                ctx.font = `${btnFontSz * scale}px 'Courier New',monospace`;
+            // Natural (unshrunk) width a side-by-side pair would want, capped at
+            // maxRowW -- used only to pick a common span for both rows (see finalW
+            // below), never to actually draw at.
+            const measurePairW = (labelL, labelR) => {
+                ctx.font = `${btnFontSz}px 'Courier New',monospace`;
+                const textSum = ctx.measureText(labelL).width + ctx.measureText(labelR).width;
+                return Math.min(textSum + pad * 2 + rowGap, maxRowW);
+            };
+            // Draws two buttons side by side, each taking exactly half of totalW (minus
+            // rowGap), centered on titleX -- same fixedW-splits-evenly pattern the
+            // language grid and the settings panel's audio row already use, so a label
+            // too long for its half shrinks itself via drawBtn's own shrink-to-fit
+            // rather than pushing the row wider.
+            const drawPair = (labelL, labelR, cy, totalW, blue) => {
+                const slotW = (totalW - rowGap) / 2;
+                const bx = titleX - totalW / 2;
+                ctx.font = `${btnFontSz}px 'Courier New',monospace`;
+                const rectL = drawBtn(bx + slotW / 2, cy, labelL, true, blue, slotW, bh);
+                ctx.font = `${btnFontSz}px 'Courier New',monospace`;   // drawBtn may have shrunk it for labelL
+                const rectR = drawBtn(bx + slotW + rowGap + slotW / 2, cy, labelR, true, blue, slotW, bh);
+                return { rectL, rectR };
+            };
+
+            if (hasChallenge) {
+                // Both rows are stretched to the wider pair's natural width so their
+                // edges line up into one aligned block instead of two independently
+                // sized rows that happen to be stacked.
+                const finalW = Math.max(
+                    measurePairW(T.leaderboard, T.challenge),
+                    measurePairW(T.shop, T.settings),
+                );
+                const top = drawPair(T.leaderboard, T.challenge, settingsBY, finalW, false);
+                _leaderboardBtnRect = top.rectL;
+                _challengeBtnRect   = top.rectR;
+
+                // Shop + Settings on the row below. Vertical gap was H*0.02 -- read as
+                // cramped on a real device screenshot, the two rows nearly touching.
+                // Widened to H*0.035 so the pair reads as one consistent rhythm rather
+                // than two rows that happen to be stacked. This whole cluster is
+                // positioned off the missions block's bottom edge (see tBtnY above),
+                // not the other way around, so it can't collide just because it grew a
+                // 2nd row here.
                 const settingsBY2 = settingsBY + bh + H * 0.035;
-                _settingsBtnRect = drawBtn(titleX, settingsBY2, T.settings, true, true, totalW, bh);
+                const bottom = drawPair(T.shop, T.settings, settingsBY2, finalW, true);
+                _shopBtnRect     = bottom.rectL;
+                _settingsBtnRect = bottom.rectR;
                 _btnRowBottom = settingsBY2 + bh / 2;
             } else if (hasGameCenter) {
-                let settingsWraw    = ctx.measureText(T.settings).width;
-                let leaderboardWraw = ctx.measureText(T.leaderboard).width;
-                let textSum = settingsWraw + leaderboardWraw;
-                if (textSum + pad * 2 + rowGap > maxRowW) {
-                    const scale = Math.max((maxRowW - pad * 2 - rowGap) / textSum, 0.50);
-                    ctx.font = `${btnFontSz * scale}px 'Courier New',monospace`;
-                    settingsWraw    = ctx.measureText(T.settings).width;
-                    leaderboardWraw = ctx.measureText(T.leaderboard).width;
-                }
-                const settingsW    = settingsWraw + pad;
-                const leaderboardW = leaderboardWraw + pad;
-                const settingsCX    = titleX - settingsW/2 - rowGap/2;
-                const leaderboardCX = titleX + leaderboardW/2 + rowGap/2;
-                _settingsBtnRect    = drawBtn(settingsCX, settingsBY, T.settings, true, true, undefined, bh);
-                _leaderboardBtnRect = drawBtn(leaderboardCX, settingsBY, T.leaderboard, true, false, undefined, bh);
+                // Leaderboard alone on its own row above -- Shop+Settings always pair
+                // together below it now, so Leaderboard can no longer share a row with
+                // Settings the way it used to when nothing sat to Settings' left.
+                // Stretched to match the pair's width below it (same "single button
+                // matches the row's width" pattern GEIST AN uses under MUSIK AN/TON AN
+                // in the settings panel), rather than the pair matching Leaderboard's
+                // own width, since the pair is the row more likely to need the room.
+                ctx.font = `${btnFontSz}px 'Courier New',monospace`;
+                const finalW = Math.max(measurePairW(T.shop, T.settings), ctx.measureText(T.leaderboard).width + pad);
+                _leaderboardBtnRect = drawBtn(titleX, settingsBY, T.leaderboard, true, false, finalW, bh);
+
+                const settingsBY2 = settingsBY + bh + H * 0.035;
+                const bottom = drawPair(T.shop, T.settings, settingsBY2, finalW, true);
+                _shopBtnRect     = bottom.rectL;
+                _settingsBtnRect = bottom.rectR;
+                _btnRowBottom = settingsBY2 + bh / 2;
             } else {
-                _settingsBtnRect = drawBtn(titleX, settingsBY, T.settings, true, true, undefined, bh);
+                const finalW = measurePairW(T.shop, T.settings);
+                const solo = drawPair(T.shop, T.settings, settingsBY, finalW, true);
+                _shopBtnRect     = solo.rectL;
+                _settingsBtnRect = solo.rectR;
             }
         }
 
@@ -2194,11 +2211,11 @@ function draw() {
             const rowX0 = W / 2 - rowW / 2;
 
             // Nominal section heights, computed before knowing whether they'll actually
-            // fit. Optional sections (IAP, privacy) already made this variable; the
-            // ghost row added a fixed amount on top of that, and with everything present
-            // at once (IAP + restore + ghost + all 15 languages) the sum can exceed the
-            // screen on a short device -- exactly the "old fixed-percentage layout broke
-            // once a 5th language was added" failure this whole block's comment already
+            // fit. The optional privacy section already made this variable; the ghost
+            // row added a fixed amount on top of that, and with everything present at
+            // once (privacy + ghost + all 15 languages) the sum can exceed the screen
+            // on a short device -- exactly the "old fixed-percentage layout broke once
+            // a 5th language was added" failure this whole block's comment already
             // warns about, just triggered by a new row instead of a new language. Rather
             // than hand-tune every gap to *probably* fit, scale every nominal height down
             // by the same factor when the total overshoots, so panH is only ever as big
@@ -2215,12 +2232,6 @@ function draw() {
             const nLbGap      = H * 0.018;
             const nSectionGap = H * 0.045;
 
-            const hasIAP      = !!window.webkit?.messageHandlers?.iap;
-            const nIapBtnH    = H * 0.085;
-            const nRestoreGap = H * 0.022;
-            const nRestoreH   = H * 0.062;   // matched to nPrivacyBtnH -- 0.032 read as a squashed sliver
-            const nIapSectionH = hasIAP ? nSectionGap + nIapBtnH + (removeAdsOwned ? 0 : nRestoreGap + nRestoreH) : 0;
-
             // Only shown once the native layer confirms the UMP SDK actually requires
             // it for this player's region (see state.js's privacyOptionsRequired) -
             // most players outside the EEA/UK/CH/opted-in US states never see this row.
@@ -2236,7 +2247,7 @@ function draw() {
             // each other the way the language grid's own rows do; nSectionGap is saved
             // for the gap into the next *labelled* section (SPRACHE) so that transition
             // still reads as a break.
-            const nPanH = nPadTop + nTitleH + nAudioRowH + nLbGap + nGhostRowH + nSectionGap + nLangLabelH + nLangListH + nIapSectionH + nPrivacySectionH + nPadBottom;
+            const nPanH = nPadTop + nTitleH + nAudioRowH + nLbGap + nGhostRowH + nSectionGap + nLangLabelH + nLangListH + nPrivacySectionH + nPadBottom;
 
             // Leave a hair of margin inside the 0.02..0.98 clamp band below rather than
             // filling it exactly, so this never comes down to a single rounding error.
@@ -2252,12 +2263,8 @@ function draw() {
             const lbh        = nLbh        * settingsScale;
             const lbGap      = nLbGap      * settingsScale;
             const sectionGap = nSectionGap * settingsScale;
-            const iapBtnH    = nIapBtnH    * settingsScale;
-            const restoreGap = nRestoreGap * settingsScale;
-            const restoreH   = nRestoreH   * settingsScale;
             const privacyBtnH = nPrivacyBtnH * settingsScale;
             const langListH  = nLangListH  * settingsScale;
-            const iapSectionH = nIapSectionH * settingsScale;
             const privacySectionH = nPrivacySectionH * settingsScale;
             const panH = nPanH * settingsScale;
 
@@ -2369,11 +2376,95 @@ function draw() {
             }
             y += langListH;
 
-            // Remove Ads purchase (only when the native IAP bridge exists)
+            // Re-entry point into the UMP consent form (see AdsManager.kt/.swift's
+            // showPrivacyOptionsForm) - required by Google's policy wherever the
+            // form itself is required, so players can change their mind after the
+            // one-time launch prompt without reinstalling the app.
+            _privacyChoicesBtnRect = null;
+            if (hasPrivacyBtn) {
+                y += sectionGap;
+                const pbw = panW * 0.78, pby = y;
+                const pbx = W / 2 - pbw / 2;
+                ctx.fillStyle = 'rgba(15,18,40,0.72)';
+                ctx.beginPath(); ctx.roundRect(pbx, pby, pbw, privacyBtnH, 7); ctx.fill();
+                ctx.strokeStyle = 'rgba(90,120,160,0.50)';
+                ctx.lineWidth   = 1;
+                ctx.beginPath(); ctx.roundRect(pbx, pby, pbw, privacyBtnH, 7); ctx.stroke();
+                ctx.font      = `${FS * 0.019}px 'Courier New',monospace`;
+                ctx.fillStyle = 'rgba(180,195,225,0.85)';
+                ctx.fillText(T.privacyChoices, W / 2, pby + privacyBtnH / 2);
+                _privacyChoicesBtnRect = { x: pbx, y: pby, w: pbw, h: privacyBtnH };
+                y += privacyBtnH;
+            }
+        }
+
+        // Shop panel - Remove Ads + Restore Purchase, split out of the settings panel
+        // above so that panel isn't stretched by IAP UI most players never touch.
+        // Same nominal-height-then-scale-down pattern as the settings panel, just for
+        // a single IAP section instead of the whole settings stack.
+        if (showShop) {
+            ctx.fillStyle = 'rgba(0,0,12,0.88)';
+            ctx.fillRect(0, 0, W, H);
+
+            const panW = Math.min(W * 0.56, 340);
+            const hasIAP = !!window.webkit?.messageHandlers?.iap;
+
+            const nPadTop    = H * 0.060;
+            const nPadBottom = H * 0.040;
+            const nTitleH    = H * 0.070;
+            const nIapBtnH   = H * 0.085;
+            const nRestoreGap = H * 0.022;
+            const nRestoreH   = H * 0.062;   // matched to nPrivacyBtnH in the settings panel -- 0.032 read as a squashed sliver
+            // Empty-state row shown instead of the buttons when there's no native IAP
+            // bridge to talk to (web/dev build) -- the Shop button is always shown per
+            // product decision, so this is that build's landing spot rather than a
+            // hidden button.
+            const nEmptyH     = H * 0.090;
+
+            const nBodyH = hasIAP
+                ? (nIapBtnH + (removeAdsOwned ? 0 : nRestoreGap + nRestoreH))
+                : nEmptyH;
+            const nPanH = nPadTop + nTitleH + nBodyH + nPadBottom;
+
+            const panHCap = H * 0.94;
+            const shopScale = Math.min(1, panHCap / nPanH);
+
+            const padTop    = nPadTop    * shopScale;
+            const titleH    = nTitleH    * shopScale;
+            const iapBtnH   = nIapBtnH   * shopScale;
+            const restoreGap = nRestoreGap * shopScale;
+            const restoreH   = nRestoreH   * shopScale;
+            const emptyH     = nEmptyH     * shopScale;
+            const panH = nPanH * shopScale;
+
+            const panX = W / 2 - panW / 2;
+            const panY = Math.max(H * 0.02, Math.min(H * 0.98 - panH, H / 2 - panH / 2));
+            _shopPanelRect = { x: panX, y: panY, w: panW, h: panH };
+
+            ctx.fillStyle = 'rgba(7,10,28,0.97)';
+            ctx.beginPath();
+            ctx.roundRect(panX, panY, panW, panH, 12);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(65,88,155,0.55)';
+            ctx.lineWidth   = 1;
+            ctx.stroke();
+
+            ctx.textAlign    = 'center';
+            ctx.textBaseline = 'middle';
+
+            let y = panY + padTop;
+
+            ctx.font        = `bold ${FS * 0.030}px 'Courier New',monospace`;
+            ctx.fillStyle   = 'rgba(165,190,255,0.95)';
+            ctx.shadowColor = 'rgba(0,0,0,0.90)';
+            ctx.shadowBlur  = 5;
+            ctx.fillText(T.shop, W / 2, y + titleH / 2);
+            ctx.shadowBlur  = 0;
+            y += titleH;
+
             _removeAdsBtnRect = null;
             _restoreBtnRect = null;
             if (hasIAP) {
-                y += sectionGap;
                 if (removeAdsOwned) {
                     ctx.font      = `${FS * 0.020}px 'Courier New',monospace`;
                     ctx.fillStyle = 'rgba(120,200,150,0.75)';
@@ -2407,27 +2498,11 @@ function draw() {
                     _restoreBtnRect = { x: rbx, y: rby, w: rbw, h: restoreH };
                     y += restoreH;
                 }
-            }
-
-            // Re-entry point into the UMP consent form (see AdsManager.kt/.swift's
-            // showPrivacyOptionsForm) - required by Google's policy wherever the
-            // form itself is required, so players can change their mind after the
-            // one-time launch prompt without reinstalling the app.
-            _privacyChoicesBtnRect = null;
-            if (hasPrivacyBtn) {
-                y += sectionGap;
-                const pbw = panW * 0.78, pby = y;
-                const pbx = W / 2 - pbw / 2;
-                ctx.fillStyle = 'rgba(15,18,40,0.72)';
-                ctx.beginPath(); ctx.roundRect(pbx, pby, pbw, privacyBtnH, 7); ctx.fill();
-                ctx.strokeStyle = 'rgba(90,120,160,0.50)';
-                ctx.lineWidth   = 1;
-                ctx.beginPath(); ctx.roundRect(pbx, pby, pbw, privacyBtnH, 7); ctx.stroke();
-                ctx.font      = `${FS * 0.019}px 'Courier New',monospace`;
-                ctx.fillStyle = 'rgba(180,195,225,0.85)';
-                ctx.fillText(T.privacyChoices, W / 2, pby + privacyBtnH / 2);
-                _privacyChoicesBtnRect = { x: pbx, y: pby, w: pbw, h: privacyBtnH };
-                y += privacyBtnH;
+            } else {
+                ctx.font      = `${FS * 0.020}px 'Courier New',monospace`;
+                ctx.fillStyle = 'rgba(150,160,200,0.70)';
+                ctx.fillText(T.shopUnavailable, W / 2, y + emptyH / 2);
+                y += emptyH;
             }
         }
     }
