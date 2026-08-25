@@ -13,7 +13,7 @@ Those stay manual, gated steps for the user.
 
 - Confirm the target version number with the user if it's not already obvious from
   context (e.g. "V4.0"). iOS and Android don't have to share a version number history
-  (see `project_3_0_release_status` memory for why they've drifted before) but should
+  (see `project_release_status` memory for why they've drifted before) but should
   usually land on the same marketing version for a given release unless told otherwise.
 - Ask what's actually new in this release if it isn't clear from the conversation --
   the release notes and marketing copy need real content, not filler.
