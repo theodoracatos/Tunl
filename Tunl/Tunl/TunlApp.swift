@@ -1,5 +1,7 @@
 import SwiftUI
 import AVFoundation
+import FirebaseCore
+import FirebaseAnalytics
 
 @main
 struct TunlApp: App {
@@ -33,6 +35,21 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     private var lastLandscapeOrientation: UIDeviceOrientation = .landscapeLeft
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // Analytics-only: no Firebase Auth/Firestore/Crashlytics wired up. This
+        // exists solely so first_open reaches Google Analytics/Firebase, which
+        // is what Google Ads' iOS Download conversion action imports as its
+        // install signal -- there's no native Apple App Store conversion
+        // source in Google Ads, only Google Play, GA4/Firebase, or a
+        // third-party MMP, and third-party MMPs don't feed bidding-optimization
+        // data back to Google Ads. Must run before anything else touches Firebase.
+        FirebaseApp.configure()
+        // GoogleService-Info.plist ships with IS_ANALYTICS_ENABLED=false (Firebase's
+        // default for freshly-registered apps until something explicitly flips it) --
+        // that flag gates collection at the SDK level regardless of the linked GA4
+        // property being active, so first_open would never leave the device without
+        // this override. Force it on in code instead of trusting the downloaded plist.
+        Analytics.setAnalyticsCollectionEnabled(true)
+
         UIDevice.current.beginGeneratingDeviceOrientationNotifications()
         NotificationCenter.default.addObserver(self, selector: #selector(deviceOrientationDidChange),
                                                 name: UIDevice.orientationDidChangeNotification, object: nil)

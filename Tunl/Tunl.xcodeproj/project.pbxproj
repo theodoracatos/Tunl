@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3BEB5DF8B740E9AAF714EE6F /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 7907E9A2C550D991C4AEA6FF /* FirebaseAnalytics */; };
+		97F8E6A91CDC87555C1A10E6 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1AB3974C3B74C3A99DF28EB9 /* GoogleService-Info.plist */; };
 		AD0002000000000000000001 /* AdsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD0001000000000000000001 /* AdsManager.swift */; };
 		BB0002000000000000000001 /* TunlApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0001000000000000000001 /* TunlApp.swift */; };
 		BB0004000000000000000001 /* GameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0003000000000000000001 /* GameView.swift */; };
@@ -19,10 +21,12 @@
 		DD0002000000000000000001 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD0001000000000000000001 /* StoreKit.framework */; };
 		E4AE65DC300317A20067F8C9 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = E4AE65DB300317A20067F8C9 /* GoogleMobileAds */; };
 		EE0002000000000000000001 /* IAPManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE0001000000000000000001 /* IAPManager.swift */; };
+		F0A5B07E540A4C3C5CA97668 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 7EA08C1563E829530C401455 /* FirebaseCore */; };
 		PP0002000000000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = PP0001000000000000000001 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1AB3974C3B74C3A99DF28EB9 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		AD0001000000000000000001 /* AdsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdsManager.swift; sourceTree = "<group>"; };
 		BB0001000000000000000001 /* TunlApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunlApp.swift; sourceTree = "<group>"; };
 		BB0003000000000000000001 /* GameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameView.swift; sourceTree = "<group>"; };
@@ -49,6 +53,8 @@
 				E4AE65DC300317A20067F8C9 /* GoogleMobileAds in Frameworks */,
 				CC0003000000000000000001 /* GameKit.framework in Frameworks */,
 				DD0002000000000000000001 /* StoreKit.framework in Frameworks */,
+				F0A5B07E540A4C3C5CA97668 /* FirebaseCore in Frameworks */,
+				3BEB5DF8B740E9AAF714EE6F /* FirebaseAnalytics in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -85,6 +91,7 @@
 				BB0005000000000000000001 /* Info.plist */,
 				BB0006000000000000000001 /* Assets.xcassets */,
 				CC0001000000000000000001 /* Tunl.entitlements */,
+				1AB3974C3B74C3A99DF28EB9 /* GoogleService-Info.plist */,
 			);
 			path = Tunl;
 			sourceTree = "<group>";
@@ -155,6 +162,7 @@
 			mainGroup = AA0002000000000000000001;
 			packageReferences = (
 				E4AE65DA300317A20067F8C9 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+				C443210F22AA65CC80541141 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			productRefGroup = AA0003000000000000000001 /* Products */;
 			projectDirPath = "";
@@ -176,6 +184,7 @@
 				BB0010000000000000000001 /* the_mountain_documentary.mp3 in Resources */,
 				BB000E000000000000000001 /* src in Resources */,
 				PP0002000000000000000001 /* PrivacyInfo.xcprivacy in Resources */,
+				97F8E6A91CDC87555C1A10E6 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -324,10 +333,10 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Tunl/Tunl.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 23;
 				INFOPLIST_FILE = Tunl/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
-				MARKETING_VERSION = 5.2;
+				MARKETING_VERSION = 5.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theodoracatos.tunl;
 				PRODUCT_NAME = TUNL;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -343,10 +352,10 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Tunl/Tunl.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 22;
+				CURRENT_PROJECT_VERSION = 23;
 				INFOPLIST_FILE = Tunl/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
-				MARKETING_VERSION = 5.2;
+				MARKETING_VERSION = 5.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.theodoracatos.tunl;
 				PRODUCT_NAME = TUNL;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -379,6 +388,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		C443210F22AA65CC80541141 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.18.0;
+			};
+		};
 		E4AE65DA300317A20067F8C9 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
@@ -390,6 +407,16 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		7907E9A2C550D991C4AEA6FF /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C443210F22AA65CC80541141 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		7EA08C1563E829530C401455 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C443210F22AA65CC80541141 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
 		E4AE65DB300317A20067F8C9 /* GoogleMobileAds */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E4AE65DA300317A20067F8C9 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
