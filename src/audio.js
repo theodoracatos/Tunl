@@ -1,9 +1,9 @@
 // ── Audio ─────────────────────────────────────────────────────────────
 
 let _ac = null, _tNode = null, _tGain = null;
-let _bgmBuf = null, _bgmBufRev = null, _bgmNode = null, _bgmGain = null;
+let _bgmBuf = null, _bgmNode = null, _bgmGain = null;
 let _bgmLoading = false, _titleBgmLoading = false; // in-flight guards for the lazy loaders
-let _bgmDir = 1, _bgmActive = false, _bgmPending = false;
+let _bgmActive = false, _bgmPending = false;
 let _titleBgmBuf = null, _titleBgmNode = null, _titleBgmGain = null;
 let _titleBgmActive = false, _titleBgmPending = false;
 
@@ -11,7 +11,6 @@ function _startBgMusic() {
     if (!musicOn) return;
     if (_bgmActive) return;  // already playing - don't restart
     _bgmActive = true;
-    _bgmDir = 1;
     // Reset gain in case it was faded to near-zero during death
     if (_bgmGain && _ac) {
         _bgmGain.gain.cancelScheduledValues(_ac.currentTime);
@@ -30,9 +29,9 @@ function _playBgmBuffer() {
         const g = _ac.createGain(); g.gain.value = 0.10; g.connect(_ac.destination); return g;
     })();
     _bgmNode = _ac.createBufferSource();
-    _bgmNode.buffer = _bgmDir === 1 ? _bgmBuf : _bgmBufRev;
+    _bgmNode.buffer = _bgmBuf;
+    _bgmNode.loop = true;
     _bgmNode.connect(_bgmGain);
-    _bgmNode.onended = () => { _bgmDir *= -1; _playBgmBuffer(); };
     _bgmNode.start();
 }
 
@@ -109,9 +108,8 @@ function _initAC() {
 
 // ── Lazy music loading ────────────────────────────────────────────────
 // Both tracks used to be fetched and decoded right here in _initAC, i.e. on every
-// launch, before the player had done anything -- 7.5 MB of mp3 plus the decoded PCM,
-// and the play track is decoded twice over (see the reversed copy below). None of it is
-// needed to launch: sfx only need the AudioContext, the title track isn't wanted until
+// launch, before the player had done anything -- 7.5 MB of mp3 plus the decoded PCM.
+// None of it is needed to launch: sfx only need the AudioContext, the title track isn't wanted until
 // title music actually starts, and the play track isn't wanted until a run begins.
 // Loading on demand also means a player with music switched off now downloads and
 // decodes nothing at all, where before they paid the full cost every launch and then
@@ -133,12 +131,6 @@ function _loadBgmBuffer() {
             _bgmLoading = false;
             if (_ac !== ctx) return;   // context rebuilt mid-load; revive path reloads
             _bgmBuf = buf;
-            _bgmBufRev = ctx.createBuffer(buf.numberOfChannels, buf.length, buf.sampleRate);
-            for (let c = 0; c < buf.numberOfChannels; c++) {
-                const fwd = buf.getChannelData(c);
-                const rev = _bgmBufRev.getChannelData(c);
-                for (let i = 0; i < buf.length; i++) rev[i] = fwd[buf.length - 1 - i];
-            }
             if (_bgmPending && _bgmActive) { _bgmPending = false; _playBgmBuffer(); }
         })
         .catch(err => {
@@ -191,7 +183,7 @@ function _reviveAudioContext() {
     try { _ac.close(); } catch(e){}
     _bgmPending = _bgmActive;
     _titleBgmPending = _titleBgmActive;
-    _ac = null; _bgmBuf = null; _bgmBufRev = null; _bgmNode = null; _bgmGain = null;
+    _ac = null; _bgmBuf = null; _bgmNode = null; _bgmGain = null;
     _titleBgmBuf = null; _titleBgmNode = null; _titleBgmGain = null;
     // Any decode still in flight belongs to the context just closed and will drop itself
     // on the _ac !== ctx check; clear the guards so the fresh context can load again.
