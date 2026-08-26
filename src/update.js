@@ -171,8 +171,10 @@ function update(dt) {
     // spawn below just read the flag for the rest of the run.
     if (!onFire && dailyBest > 0 && score > dailyBest) {
         onFire = true;
+        onFireFlash = 1.0;
         pushNotif(PX + PR * 3, py - H * 0.07, 1.4, T.onFire, [255, 140, 30]);
-        sfxCombo(4);
+        sfxOnFire();
+        onFireLoopOn();
         window.webkit?.messageHandlers?.haptic?.postMessage('light');
     }
 
@@ -253,6 +255,10 @@ function update(dt) {
 
     // Milestone flash decay
     milestoneFlash = Math.max(0, milestoneFlash - dt * 1.6);
+
+    // On-fire ignition pop decay -- faster than milestoneFlash, a single quick punch
+    // rather than a lingering banner (onFire itself, not this, carries the rest of the run).
+    onFireFlash = Math.max(0, onFireFlash - dt * 3.0);
 
     // Per-skin effects - only spawn while holding, clear timer when released
     if (phase === 'play') {
@@ -466,6 +472,7 @@ function die(bypassShield = false) {
         return false;
     }
     thrustOff();
+    onFireLoopOff();
     phase = 'dead'; deadT = 0; flashA = 1.0; shake = 14; holding = false;
     _homeBtnRect = null; _playBtnRect = null; _shareBtnRect = null;
     prevRunScore = lastRunScore;
@@ -507,17 +514,37 @@ function die(bypassShield = false) {
         dailyShardsEarned += runShardsBanked;
         localStorage.setItem('tunnel_daily_shards', dailyShardsEarned);
     }
-    // Auto-unlock the next affordable ship (cheapest-first, one per run/death) once enough
-    // shards are banked. Capped at one unlock per run so a single marathon run can't clear
-    // several tiers at once -- that was the old score-gate problem this replaces.
+    // Auto-unlock the next affordable ship (cheapest-first, one per run/death) once its
+    // requirements are met. Capped at one unlock per run so a single marathon run can't
+    // clear several tiers at once -- that was the old score-gate problem this replaces.
+    // Every paid tier needs BOTH its `cost` in shards AND its `stardustGate` in days
+    // played (constants.js Stardust block). `stardust` itself is never decremented here:
+    // it's a monotonically increasing lifetime counter, and a gate is just a threshold
+    // check against it, not a purchase -- see that same comment for why (consuming it
+    // would stack each tier's gate on top of the next one's).
+    //
+    // Strictly sequential: a tier can't unlock before SKINS[i-1] has, even if its own
+    // requirements are independently met. `cost` and `stardustGate` both climb
+    // tier-over-tier today, so in practice this never fires -- but it's cheap insurance
+    // against a future re-tuning breaking that ordering (e.g. a tier priced heavier in
+    // one currency than the next one up, letting a player with lopsided income jump it).
+    // A concrete case that used to actually happen here: an earlier version left SOLARIS
+    // with no shard cost at all, so a slow player's stardust could cross its gate before
+    // their shards caught up to VOID/NOVA, unlocking SOLARIS first and skipping ships
+    // that are supposed to come before "the last ship." SOLARIS carries a shard cost now
+    // too, but the guard stays -- it's what made that bug impossible instead of just
+    // fixed for the numbers of the day.
     skinUnlockIdx = -1;
     for (let i = 1; i < SKINS.length; i++) {
-        if (SKINS[i].cost && !(unlockedSkins & (1 << i)) && shards >= SKINS[i].cost) {
-            shards -= SKINS[i].cost;
-            unlockedSkins |= (1 << i);
-            skinUnlockIdx = i;
-            break;
-        }
+        if (unlockedSkins & (1 << i)) continue;
+        if (!(unlockedSkins & (1 << (i - 1)))) break;
+        const sk = SKINS[i];
+        if (sk.cost && shards < sk.cost) continue;
+        if (sk.stardustGate && stardust < sk.stardustGate) continue;
+        if (sk.cost) shards -= sk.cost;
+        unlockedSkins |= (1 << i);
+        skinUnlockIdx = i;
+        break;
     }
     localStorage.setItem('tunnel_shards', shards);
     if (skinUnlockIdx >= 0) localStorage.setItem('tunnel_skins', unlockedSkins);

@@ -24,23 +24,34 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
-// Mirrors IAPManager.swift: a single non-consumable "Remove Ads" purchase via
-// Google Play Billing. Ownership is always re-derived from queryPurchasesAsync
-// rather than trusted from local cache alone, so a fresh install signed into
-// the same Google account stays unlocked.
+// Mirrors IAPManager.swift: non-consumable purchases via Google Play Billing.
+// Ownership is always re-derived from queryPurchasesAsync rather than trusted
+// from local cache alone, so a fresh install signed into the same Google
+// account stays unlocked.
+//
+// Two products share this one manager (generalized from a single-product
+// "Remove Ads" design when UNLOCK_ALL_SHIPS_PRODUCT_ID was added): ownership
+// is a Set rather than a single Bool, and every function takes/reports a
+// productId instead of assuming which one. removeAdsOwned below is a readable
+// view onto that set, kept so the call site in MainActivity (ads.requestInterstitial)
+// didn't need to change.
 class BillingManager(context: Context) {
 
     companion object {
         const val REMOVE_ADS_PRODUCT_ID = "remove_ads"
+        const val UNLOCK_ALL_SHIPS_PRODUCT_ID = "unlock_all_ships"
+        val ALL_PRODUCT_IDS = listOf(REMOVE_ADS_PRODUCT_ID, UNLOCK_ALL_SHIPS_PRODUCT_ID)
         private const val TAG = "TunlBilling"
     }
 
-    var removeAdsOwned: Boolean = false
+    var ownedProductIds: Set<String> = emptySet()
         private set
+    val removeAdsOwned: Boolean get() = ownedProductIds.contains(REMOVE_ADS_PRODUCT_ID)
+    val allShipsOwned: Boolean get() = ownedProductIds.contains(UNLOCK_ALL_SHIPS_PRODUCT_ID)
 
-    var onUpdate: ((Boolean) -> Unit)? = null
+    var onUpdate: ((Set<String>) -> Unit)? = null
 
-    private var removeAdsDetails: ProductDetails? = null
+    private val productDetails = mutableMapOf<String, ProductDetails>()
     private val scope = CoroutineScope(Dispatchers.Main)
 
     private val purchasesUpdatedListener = PurchasesUpdatedListener { billingResult, purchases ->
@@ -89,19 +100,21 @@ class BillingManager(context: Context) {
     private suspend fun queryProductDetails() {
         val params = QueryProductDetailsParams.newBuilder()
             .setProductList(
-                listOf(
+                ALL_PRODUCT_IDS.map { id ->
                     QueryProductDetailsParams.Product.newBuilder()
-                        .setProductId(REMOVE_ADS_PRODUCT_ID)
+                        .setProductId(id)
                         .setProductType(ProductType.INAPP)
                         .build()
-                )
+                }
             )
             .build()
         val result = billingClient.queryProductDetails(params)
         if (result.billingResult.responseCode == BillingResponseCode.OK) {
-            removeAdsDetails = result.productDetailsList?.firstOrNull()
-            if (removeAdsDetails == null) {
-                Log.w(TAG, "No product found for id $REMOVE_ADS_PRODUCT_ID - check it's configured in Play Console")
+            result.productDetailsList?.forEach { productDetails[it.productId] = it }
+            ALL_PRODUCT_IDS.forEach { id ->
+                if (!productDetails.containsKey(id)) {
+                    Log.w(TAG, "No product found for id $id - check it's configured in Play Console")
+                }
             }
         }
     }
@@ -118,15 +131,15 @@ class BillingManager(context: Context) {
 
     private var purchaseInFlight = false
 
-    // Mirrors IAPManager.swift's purchaseRemoveAds(), which re-fetches product
+    // Mirrors IAPManager.swift's purchase(productID:), which re-fetches product
     // details fresh on every tap rather than trusting a one-time preload -- if
     // the initial queryProductDetails() in start() hasn't finished yet (slow
     // network, or tapping right after cold launch), the cached details would
-    // be null and the button would silently do nothing. purchaseInFlight guards
-    // against a double-tap launching two overlapping fetch-then-purchase
+    // be missing and the button would silently do nothing. purchaseInFlight
+    // guards against a double-tap launching two overlapping fetch-then-purchase
     // sequences while the cache is still empty.
-    fun purchaseRemoveAds(activity: Activity) {
-        val cached = removeAdsDetails
+    fun purchase(productId: String, activity: Activity) {
+        val cached = productDetails[productId]
         if (cached != null) {
             launchPurchaseFlow(activity, cached)
             return
@@ -142,9 +155,9 @@ class BillingManager(context: Context) {
                 // silently no-ops for the rest of the process's lifetime.
                 purchaseInFlight = false
             }
-            val details = removeAdsDetails
+            val details = productDetails[productId]
             if (details == null) {
-                Log.w(TAG, "purchaseRemoveAds: no product found for id $REMOVE_ADS_PRODUCT_ID")
+                Log.w(TAG, "purchase: no product found for id $productId")
                 return@launch
             }
             launchPurchaseFlow(activity, details)
@@ -168,9 +181,9 @@ class BillingManager(context: Context) {
     }
 
     private suspend fun handlePurchase(purchase: Purchase) {
-        if (!purchase.products.contains(REMOVE_ADS_PRODUCT_ID)) return
+        val matched = purchase.products.firstOrNull { ALL_PRODUCT_IDS.contains(it) } ?: return
         if (purchase.purchaseState != Purchase.PurchaseState.PURCHASED) return
-        setOwned(true)
+        setOwned(ownedProductIds + matched)
         if (!purchase.isAcknowledged) {
             val ackParams = AcknowledgePurchaseParams.newBuilder()
                 .setPurchaseToken(purchase.purchaseToken)
@@ -179,9 +192,9 @@ class BillingManager(context: Context) {
         }
     }
 
-    private fun setOwned(owned: Boolean) {
-        if (owned == removeAdsOwned) return
-        removeAdsOwned = owned
+    private fun setOwned(owned: Set<String>) {
+        if (owned == ownedProductIds) return
+        ownedProductIds = owned
         onUpdate?.invoke(owned)
     }
 }

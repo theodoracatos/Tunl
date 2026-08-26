@@ -64,7 +64,11 @@ function onDown(e) {
         }
         if (showShop) {
             if (_removeAdsBtnRect && inRect(cx, cy, _removeAdsBtnRect)) {
-                window.webkit?.messageHandlers?.iap?.postMessage({ action: 'purchase' });
+                window.webkit?.messageHandlers?.iap?.postMessage({ action: 'purchase', product: 'remove_ads' });
+                return;
+            }
+            if (_unlockAllShipsBtnRect && inRect(cx, cy, _unlockAllShipsBtnRect)) {
+                window.webkit?.messageHandlers?.iap?.postMessage({ action: 'purchase', product: 'unlock_all_ships' });
                 return;
             }
             if (_restoreBtnRect && inRect(cx, cy, _restoreBtnRect)) {

@@ -25,7 +25,7 @@ function titleScreen() {
     gapBonus = 0; slowTime = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
     bullets = []; bulletAmmo = 0; bulletFireTimer = 0;
     ghostTrack = []; ghostY = null; ghostPitch = 0; ghostPassed = false;
-    onFire = false;
+    onFire = false; onFireFlash = 0;
     mines = []; nextMineWx = 99999;
     cannons = []; nextCannonWx = 99999; cannonShots = [];
     // Coins never spawn on the title screen (nextCoinWx = 99999 above), so these are
@@ -45,6 +45,7 @@ function titleScreen() {
 
 function startPlay() {
     thrustOff();
+    onFireLoopOff();
     _fadeTitleMusic();
     phase = 'play'; py = H + PR * 4; vy = 0; holding = false; hasHeldThisRun = false; idleHoldTimer = 0; scrollX = 0; startRamp = 0;
     score = 0; newBest = false; newDailyBest = false;
@@ -64,12 +65,12 @@ function startPlay() {
     // Ghost: fresh recording buffer for this run; ghostPlay itself (today's best, from
     // state.js / die()) is untouched here so it survives across runs within the day.
     ghostTrack = []; ghostY = null; ghostPitch = 0; ghostPassed = false;
-    onFire = false;
+    onFire = false; onFireFlash = 0;
     mines = []; nextMineWx = 1800;
     // Cannons start much later than mines (score ~100) and are spaced far apart -- a
     // rare hazard, not a constant one (see world.js cannonSpacing()).
     cannons = []; nextCannonWx = 6000; cannonShots = [];
-    bonusScore = 0; milestoneNext = 25; nearMissTimer = 0; coinCombo = 0; coinComboTimer = 0;
+    bonusScore = 0; milestoneNext = 50; nearMissTimer = 0; coinCombo = 0; coinComboTimer = 0;
     runCoins = 0; runNearMisses = 0; runMaxCombo = 0; skinUnlockIdx = -1;
     skinMasteryUpIdx = -1;
     runStartMasteryLevel = masteryLevel(activeSkin);
@@ -83,6 +84,12 @@ function startPlay() {
     if (_lastDay !== _todayInt) {
         streak = _lastDay === _yesterdayInt ? streak + 1 : 1;
         localStorage.setItem('tunnel_streak', streak);
+        // Stardust: flat per-day grant, decoupled from skill or run count (constants.js
+        // STARDUST_PER_DAY doc comment) -- the SOLARIS-only currency that makes coming
+        // back tomorrow the only lever, not how well or how much is played today.
+        stardust += STARDUST_PER_DAY;
+        if (streak % STARDUST_STREAK_BONUS_DAY === 0) stardust += 1;
+        localStorage.setItem('tunnel_stardust', stardust);
         localStorage.setItem('tunnel_lastday', _todayInt);
         dailyBest = 0; dailyRuns = 0; dailyShardsEarned = 0;
         localStorage.setItem('tunnel_daily_best', '0');

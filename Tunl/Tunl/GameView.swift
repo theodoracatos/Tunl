@@ -100,7 +100,7 @@ struct GameView: UIViewRepresentable {
         override init() {
             super.init()
             iap.onUpdate = { [weak self] owned in
-                let json = "{\"removeAdsOwned\":\(owned)}"
+                let json = "{\"removeAdsOwned\":\(owned.contains(IAPManager.removeAdsProductID)),\"allShipsOwned\":\(owned.contains(IAPManager.unlockAllShipsProductID))}"
                 DispatchQueue.main.async {
                     self?.webView?.evaluateJavaScript("window._tunlNativeUpdate && window._tunlNativeUpdate(\(json))")
                 }
@@ -334,7 +334,10 @@ struct GameView: UIViewRepresentable {
                 print("IAP message received: \(action)")
                 switch action {
                 case "purchase":
-                    Task { await iap.purchaseRemoveAds() }
+                    // product defaults to remove_ads for backward compatibility with
+                    // any cached/older JS bundle that doesn't send it yet.
+                    let product = body["product"] as? String ?? IAPManager.removeAdsProductID
+                    Task { await iap.purchase(productID: product) }
                 case "restore":
                     Task { await iap.restore() }
                 default: break

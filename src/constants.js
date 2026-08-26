@@ -102,9 +102,7 @@ const GHOST_MAX_SAMPLES = 4000;
 // player has closed to within this gap of the ghost's final score; further out, draw.js
 // falls back to the plain "GHOST -N" readout it already uses for GHOST OFF. Early in a
 // run the player is still reading the corridor, not racing -- a second ship on screen
-// then is clutter, not tension. Matches the 25-point step milestoneStep() (world.js)
-// already uses below score 100, so it reads as one consistent "small stretch" across
-// the game rather than a bespoke number.
+// then is clutter, not tension.
 const GHOST_LATE_JOIN_GAP = 25;
 
 function ghostEncode(track) {
@@ -212,27 +210,79 @@ const HOLD_GATE_MAX_SEC = 3.0;
 // Shards banked per calendar day are capped so unlocks track *days played*, not just
 // *coins collected* -- without this a single long grind session could bank enough shards
 // to unlock everything at once, which defeats the point of the shard system (see
-// lifecycle.js day-boundary reset + update.js die() banking). Total cost of every tier is
-// 60+220+550+1200+3000+8000 = 13030.
+// lifecycle.js day-boundary reset + update.js die() banking). Total cost of all 7
+// shard-priced tiers, SOLARIS included, is 240+880+2200+4800+12000+32000+50000 = 102120
+// (if a tier is added or re-costed, update this sum).
 //
-// Raised from the original 350 after simulating real coin income against coinSpacing()
+// Raised from an original 350 after simulating real coin income against coinSpacing()
 // at 3 skill tiers (~100/300/1000 score, ~65/75/85% coin-collection rate): at 350, a
 // "good" run (~score 300, ~355 shards/day uncapped over 10 runs) and a "great" run
 // (~score 1000, ~1760 shards/day uncapped) both just hit the cap and banked the
 // *identical* 350/day -- skill above "decent" stopped affecting unlock speed at all.
 //
-// Deliberately set at ~10 runs/day worth of a "great" player's income (not lower):
-// user wants a genuinely excellent player to *need* something like 10 runs in one day
-// to hit their daily max, as a real daily-engagement hook, not a cap they blow past in
-// 3-4 runs. A "good" run's ~355/day natural rate stays comfortably under this cap
-// either way (~37 days to unlock everything, unaffected by where exactly the cap
-// sits), while a maxed-out "great" player now clears the full 13030-shard roster in
-// roughly a week of sustained daily play -- fast enough to feel like real, satisfying
-// progress for the most engaged players, without a single day ever buying it outright
-// (1800 << 13030). A "bad" run (~score 100, ~82 shards/day) never sniffs any cap in
-// this range, so this tuning doesn't touch that end of the curve -- see the per-tier
-// cost comment on SKINS below if that slow end ever needs its own pass.
+// Every paid tier now ALSO carries a `stardustGate` (see below) on top of its shard
+// cost -- both raised together on the explicit call that a hardcore player clearing
+// nearly the whole roster in about a week (the old 13030-total/1800-cap math) was too
+// fast, and undermined a later "buy all ships" IAP having any real value to sell. With
+// both in place, a hardcore player (1800-1920 shards/day) blows through the shard side
+// of every tier well inside a day each -- including SOLARIS's 50000, banked many times
+// over by day 180 at this cap -- so `stardustGate` alone paces them: they land almost
+// exactly on each tier's gate day (see that comment for the day numbers) all the way to
+// SOLARIS at day 180. A "good" player (~355/day, not hitting this cap) stays shard-bound
+// for the top two tiers instead: NOVA lands around day ~147 (vs. a hardcore player's
+// gate-bound day 110), and SOLARIS's added 50000 shard cost pushes them to day ~288 even
+// though their stardustGate (180) was already satisfied by then -- so skill differentiation
+// now survives all the way to the last ship for non-hardcore players, not just the tiers
+// below it. A "bad" run (~score 100, ~82 shards/day) never sniffs this cap and stays
+// shard-bound throughout -- SOLARIS's 50000 alone pushes them past day 1200 on top of an
+// already-slow ladder, effectively out of reach without real skill improvement, not just
+// patience. See the per-tier cost comment on SKINS below if that slow end needs revisiting.
 const DAILY_SHARD_CAP = 1800;
+
+// ── Stardust (calendar-day gate, every paid tier) ────────────────────
+// Every paid ship, SOLARIS included, requires a minimum `stardustGate` (SKINS[i]) on top
+// of its shard cost. Unlike shards, stardust is NEVER spent -- it's a monotonically
+// increasing lifetime "days played" counter, and a tier's gate is just a `>=` threshold
+// check against it (update.js's unlock loop), not a purchase. That's deliberate: if
+// gates were consumed like a currency, SOLARIS's 180 would sit on top of whatever the 6
+// lower tiers already used, pushing the actual last-ship date well past a year for no
+// reason -- a pure non-consumed gate keeps "reach SOLARIS at day 180" exactly true
+// regardless of how the lower tiers' gates were spent.
+//
+// Any shard price alone can't hold this job: raise DAILY_SHARD_CAP and a
+// skilled/persistent player buys through any price in days, lower the price and the
+// same happens on the cheap -- there's no shard number that stays a genuine months-long
+// chase for a great player *and* fair for everyone else (see the
+// DAILY_SHARD_CAP-vs-SOLARIS-price dead end in git history). Stardust sidesteps it by
+// being earned ONLY by opening the app on a new calendar day (lifecycle.js's existing
+// day-boundary block, the same `_lastDay !== _todayInt` check that already drives the
+// `streak` day-counter -- see state.js `streak`), completely decoupled from skill or how
+// much is played *within* that day. A great player and a first-time player earn the
+// identical STARDUST_PER_DAY on any given day -- the only lever that moves the needle is
+// coming back tomorrow. That also makes a future "buy all ships" IAP an honest sale
+// (skip N months of returning daily) instead of undercutting a grind that was buyable
+// with enough skill.
+//
+// +1 base per day, +1 bonus on every 7-day unbroken streak milestone (day 7, 14, 21...,
+// via the streak counter above) -- rewards genuinely consecutive return a little without
+// being required for it, so a player who comes back most days but not every single one
+// still reaches every tier, just a bit slower. A missed day never wipes banked stardust,
+// only resets the streak's bonus cadence -- same "tax, never zero out" philosophy as
+// poison's %-based loss (see POISON_LOSS_PCT above), avoiding the streak-anxiety
+// backlash that hard-reset daily systems (Duolingo et al.) are known for.
+//
+// Gate schedule (SKINS below), chosen as a smooth day-1-to-day-180 curve rather than a
+// cliff concentrated only at the end: AMBER 1, CRIMSON 5, ELECTRIC 15, TOXIC 35, VOID 65,
+// NOVA 110, SOLARIS 180 (exactly half a year at the 1/day floor, somewhat faster with
+// real weekly streaks). AMBER's gate of 1 is satisfied on a brand-new install's very
+// first run (STARDUST_PER_DAY is granted before the first tier's shard cost is even
+// checked, see lifecycle.js), so this doesn't cost a new player their fast first unlock.
+// Day 180 is a floor, not a guarantee, for SOLARIS specifically -- it also carries a
+// 50000 shard cost (DAILY_SHARD_CAP comment above), so only a hardcore player who's
+// banking near the daily cap actually lands on day 180; anyone slower stays shard-bound
+// past it, same as every other dual-gated tier.
+const STARDUST_PER_DAY          = 1;
+const STARDUST_STREAK_BONUS_DAY = 7; // every Nth unbroken streak day grants +1 extra
 
 // ── Daily missions ────────────────────────────────────────────────────
 // Three short daily challenges, picked deterministically from the calendar day (see
@@ -271,8 +321,10 @@ function pickDailyMissionIndices(dayInt) {
 
 // Perk (buff) and drawback (nerf) descriptions live in i18n.js (LANGS[*].skinPerks /
 // skinDrawbacks, same index order) so they stay live if the player switches language
-// without reloading. Unlock cost is in shards (persistent currency banked from collected
-// coins across all runs, see state.js `shards` + update.js die() banking).
+// without reloading. Unlock needs `cost` shards (persistent currency banked from
+// collected coins across all runs, see state.js `shards` + update.js die() banking) AND
+// `stardustGate` days played (see the Stardust block above) -- every paid tier, SOLARIS
+// included, carries both.
 //
 // Every non-PEARL ship pairs one buff with one nerf -- a build choice, not a strict
 // upgrade ladder. All players were reset to PEARL-only when the shard system shipped
@@ -289,12 +341,12 @@ function pickDailyMissionIndices(dayInt) {
 // level-3 endpoint of every stat.
 //   SOLARIS  (update.js near-miss, update.js cPR)           +100% near-miss range / +20% hitbox
 const SKINS = [
-    { color: '#e8eeff', shadow: [210,220,255],  name: 'PEARL'                       },
-    { color: '#ffaa00', shadow: [255,155,0],    name: 'AMBER',   cost: 60           },
-    { color: '#ff1a33', shadow: [255,30,55],    name: 'CRIMSON', cost: 220          },
-    { color: '#00ccff', shadow: [0,190,255],    name: 'ELECTRIC',cost: 550          },
-    { color: '#99ff00', shadow: [140,255,0],    name: 'TOXIC',   cost: 1200         },
-    { color: '#c080ff', shadow: [180,90,255],   name: 'VOID',    cost: 3000         },
-    { color: '#ffffff', shadow: [255,255,255],  name: 'NOVA',    cost: 8000         },
-    { color: '#ff6600', shadow: [255,100,0],    name: 'SOLARIS', cost: 15000        },
+    { color: '#e8eeff', shadow: [210,220,255],  name: 'PEARL'                                                },
+    { color: '#ffaa00', shadow: [255,155,0],    name: 'AMBER',   cost: 240,   stardustGate: 1                },
+    { color: '#ff1a33', shadow: [255,30,55],    name: 'CRIMSON', cost: 880,   stardustGate: 5                },
+    { color: '#00ccff', shadow: [0,190,255],    name: 'ELECTRIC',cost: 2200,  stardustGate: 15               },
+    { color: '#99ff00', shadow: [140,255,0],    name: 'TOXIC',   cost: 4800,  stardustGate: 35               },
+    { color: '#c080ff', shadow: [180,90,255],   name: 'VOID',    cost: 12000, stardustGate: 65               },
+    { color: '#ffffff', shadow: [255,255,255],  name: 'NOVA',    cost: 32000, stardustGate: 110              },
+    { color: '#ff6600', shadow: [255,100,0],    name: 'SOLARIS', cost: 50000, stardustGate: 180              },
 ];

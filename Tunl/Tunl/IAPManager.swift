@@ -1,14 +1,25 @@
 import StoreKit
 
-// Non-consumable "Remove Ads" purchase via StoreKit 2. Entitlement state is
-// the source of truth (re-derived from Transaction.currentEntitlements), not
-// just cached locally, so a fresh install on the same Apple ID stays unlocked.
+// Non-consumable purchases via StoreKit 2. Entitlement state is the source of
+// truth (re-derived from Transaction.currentEntitlements), not just cached
+// locally, so a fresh install on the same Apple ID stays unlocked.
+//
+// Two products share this one manager (generalized from a single-product
+// "Remove Ads" design when unlockAllShipsProductID was added): ownedProductIDs
+// is a Set rather than a single Bool, and every function takes/reports a
+// productID instead of assuming which one. removeAdsOwned/allShipsOwned below
+// are just readable views onto that set, kept so call sites elsewhere (e.g.
+// GameView's ads.requestInterstitial(removeAdsOwned:)) didn't need to change.
 final class IAPManager {
 
-    static let removeAdsProductID = "remove_ads"
+    static let removeAdsProductID     = "remove_ads"
+    static let unlockAllShipsProductID = "unlock_all_ships"
+    static let allProductIDs = [removeAdsProductID, unlockAllShipsProductID]
 
-    private(set) var removeAdsOwned = false
-    var onUpdate: ((Bool) -> Void)?
+    private(set) var ownedProductIDs: Set<String> = []
+    var removeAdsOwned: Bool  { ownedProductIDs.contains(Self.removeAdsProductID) }
+    var allShipsOwned: Bool  { ownedProductIDs.contains(Self.unlockAllShipsProductID) }
+    var onUpdate: ((Set<String>) -> Void)?
 
     private var updatesTask: Task<Void, Never>?
     private var intentsTask: Task<Void, Never>?
@@ -21,7 +32,7 @@ final class IAPManager {
         }
         // Handles taps on IAPs promoted on the App Store product page / search
         // results (App Store-Werbeaktion), which can arrive while the app is
-        // launching rather than through purchaseRemoveAds().
+        // launching rather than through purchase(productID:).
         intentsTask = Task { [weak self] in
             for await intent in PurchaseIntent.intents {
                 await self?.purchase(intent.product)
@@ -38,14 +49,14 @@ final class IAPManager {
         for await result in Transaction.currentEntitlements {
             await handle(result)
         }
-        onUpdate?(removeAdsOwned)
+        onUpdate?(ownedProductIDs)
     }
 
-    func purchaseRemoveAds() async {
+    func purchase(productID: String) async {
         do {
-            let products = try await Product.products(for: [Self.removeAdsProductID])
+            let products = try await Product.products(for: [productID])
             guard let product = products.first else {
-                print("IAP purchase: no product found for id \(Self.removeAdsProductID) - check StoreKit Configuration is set on the scheme")
+                print("IAP purchase: no product found for id \(productID) - check StoreKit Configuration is set on the scheme")
                 return
             }
             await purchase(product)
@@ -79,10 +90,9 @@ final class IAPManager {
 
     private func handle(_ result: VerificationResult<Transaction>) async {
         guard case .verified(let transaction) = result else { return }
-        if transaction.productID == Self.removeAdsProductID {
-            removeAdsOwned = true
-            await transaction.finish()
-            onUpdate?(removeAdsOwned)
-        }
+        guard Self.allProductIDs.contains(transaction.productID) else { return }
+        ownedProductIDs.insert(transaction.productID)
+        await transaction.finish()
+        onUpdate?(ownedProductIDs)
     }
 }

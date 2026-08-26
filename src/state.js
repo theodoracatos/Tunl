@@ -61,6 +61,33 @@ if (localStorage.getItem('tunnel_shards') === null) {
     unlockedSkins = parseInt(localStorage.getItem('tunnel_skins') || '1');
     shards = parseInt(localStorage.getItem('tunnel_shards') || '0');
 }
+// Stardust-gate migration: every paid tier now ALSO needs `stardustGate` days played
+// (constants.js Stardust block) on top of its shard cost, and no existing player has
+// banked any stardust yet -- it didn't exist before this system shipped. Without this,
+// anyone who'd already unlocked ships under the old shard-only rules would keep them for
+// free, which defeats the entire point of adding the gate (a hardcore player clearing
+// nearly the whole roster in about a week was the problem it was built to fix -- see
+// DAILY_SHARD_CAP's doc comment). So on first load under this system, ship unlocks reset
+// back to PEARL-only for everyone -- same one-time-reset precedent as when the shard
+// system itself first replaced the old score-gate (see the tunnel_shards null-check
+// above). Shards themselves are NOT touched here -- they were legitimately earned and
+// nothing about how they're earned changed, so a returning player's existing balance
+// still counts immediately toward whichever tier's `cost` they're re-approaching; only
+// stardustGate was missing, and that starts at 0 for every player either way.
+if (localStorage.getItem('tunnel_stardustgate_v1') === null) {
+    unlockedSkins = 1;
+    localStorage.setItem('tunnel_skins', unlockedSkins);
+    localStorage.setItem('tunnel_stardustgate_v1', '1');
+}
+// Unlock All Ships IAP (non-consumable, see IAPManager.swift/BillingManager.kt): a
+// persistent entitlement flag, not a one-time bitmask snapshot, so it stays future-proof
+// if a 9th ship is ever added -- every load, force every current SKINS bit on rather than
+// remembering which bits existed at purchase time (see update.js's die() unlock loop,
+// which would otherwise need its own separate "was this bought outright" special case
+// per tier). Placed after the stardustgate migration above so a purchase always wins
+// regardless of load order.
+let allShipsOwned = localStorage.getItem('tunnel_all_ships') === '1';
+if (allShipsOwned) unlockedSkins = (1 << SKINS.length) - 1;
 // How many shards have already been banked today (DAILY_SHARD_CAP in constants.js), reset
 // on the same UTC day boundary as dailyBest/dailyRuns above (see lifecycle.js startPlay()).
 let dailyShardsEarned = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tunnel_daily_shards') || '0') : 0;
@@ -94,6 +121,12 @@ let dailyMissionIdx = pickDailyMissionIndices(_initToday);
 let runCoinsByType = { gold: 0, blue: 0, red: 0, green: 0, orange: 0 }; // this run's per-type coin counts
 let _skinBtnRects = [];
 let streak = parseInt(localStorage.getItem('tunnel_streak') || '0');
+// SOLARIS-only currency (constants.js STARDUST_PER_DAY): +1 on every new calendar day
+// opened (lifecycle.js's day-boundary block, alongside the streak update above), +1
+// bonus every STARDUST_STREAK_BONUS_DAY-th unbroken streak day. Deliberately earned
+// nowhere else -- see the Stardust doc comment in constants.js for why SOLARIS is priced
+// in this instead of shards.
+let stardust = parseInt(localStorage.getItem('tunnel_stardust') || '0');
 // Lifetime run count (never reset at the day boundary, unlike dailyRuns). Sole consumer
 // is the obstacle-free runway on a player's very first run (lifecycle.js
 // FIRST_RUN_RUNWAY_WX). There was briefly also a title-screen control hint gated on this
@@ -126,6 +159,7 @@ let _btnRowBottom = null;
 let _missionsBottom = null;
 let _langBtnRects = [];
 let _removeAdsBtnRect = null;
+let _unlockAllShipsBtnRect = null;
 let _restoreBtnRect = null;
 let _privacyChoicesBtnRect = null;
 // ── Ghost run (constants.js GHOST_STEP / ghostEncode) ─────────────────
@@ -158,6 +192,12 @@ let ghostPassed;  // one-shot: has the player already outlasted the ghost this r
 // player's ambient trail and thruster particles fire-hot; update.js fires a one-shot
 // notif+sfx the frame it flips, same pattern as ghostPassed above.
 let onFire;
+// One-shot ignition pop at the instant onFire flips true, decayed by update.js the same
+// way milestoneFlash decays -- separate from onFire itself because onFire stays true for
+// the rest of the run (recoloring the trail continuously) while this is just the single
+// punchy beat at the moment of catching fire. draw.js reads it to flash a radial burst
+// around the ship.
+let onFireFlash;
 
 let parts, thrustParts, deadT, titleT, flashA, shake, trailY;
 let stalactites, nextStalWx;

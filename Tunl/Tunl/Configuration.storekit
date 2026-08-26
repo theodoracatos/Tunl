@@ -28,6 +28,21 @@
       "productID" : "remove_ads",
       "referenceName" : "Removes ads from TUNL",
       "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "9.99",
+      "familyShareable" : false,
+      "internalID" : "9A3C7E41",
+      "localizations" : [
+        {
+          "description" : "Instantly unlocks every ship in TUNL, including future ones",
+          "displayName" : "Unlock All Ships",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "unlock_all_ships",
+      "referenceName" : "Unlock All Ships",
+      "type" : "NonConsumable"
     }
   ],
   "settings" : {

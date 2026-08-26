@@ -826,6 +826,25 @@ function draw() {
         if (onFire) ctx.shadowBlur = 0;
     }
 
+    // On-fire ignition pop - one quick expanding ring at the instant onFire flips true
+    // (onFireFlash, set alongside onFire in update.js). Decays fast and independently of
+    // onFire itself, which stays true for the rest of the run and keeps recoloring the
+    // trail above -- this is just the single punchy beat at the moment of catching fire,
+    // same relationship milestoneFlash has to the milestone banner it accompanies.
+    if (onFireFlash > 0 && phase === 'play') {
+        const ofa   = onFireFlash;
+        const ringR = PR * (1.6 + (1 - ofa) * 9);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(PX, py, ringR, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255,140,30,${ofa * 0.8})`;
+        ctx.lineWidth   = Math.max(1, PR * 0.35 * ofa);
+        ctx.shadowColor = 'rgba(255,130,30,0.9)';
+        ctx.shadowBlur  = 20 * ofa;
+        ctx.stroke();
+        ctx.restore();
+    }
+
     // Shield bubble (one nested translucent bubble per charge)
     if (shieldCount > 0 && phase === 'play') {
         const sp = 1 + 0.10 * Math.sin(gtime * 6);
@@ -1197,9 +1216,13 @@ function draw() {
     }
 
     // Next skin nudge - faint pulsing hint when this run's banked-so-far shards would
-    // cross the next unlock (shards + runCoins, since the actual bank happens at death)
+    // cross the next unlock (shards + runCoins, since the actual bank happens at death).
+    // Only for a tier whose stardustGate (constants.js) is already met -- otherwise
+    // "3 TO VOID" would read as imminent when the calendar, not shards, is still the
+    // actual blocker.
     if (phase === 'play') {
-        const nextSkin = SKINS.find((sk, i) => sk.cost && !(unlockedSkins & (1 << i)));
+        const nextSkin = SKINS.find((sk, i) => sk.cost && !(unlockedSkins & (1 << i))
+            && (!sk.stardustGate || stardust >= sk.stardustGate));
         if (nextSkin) {
             const projected = shards + runCoins;
             const remaining = nextSkin.cost - projected;
@@ -1962,6 +1985,16 @@ function draw() {
                 const flame = streak >= 7 ? ' \u{1F525}\u{1F525}' : streak >= 3 ? ' \u{1F525}' : '';
                 subParts.push({ text: `${streak}${flame} ${T.day}`, hot: true });
             }
+            // Stardust readout: the only place a player's running total is visible without
+            // opening the shop (the locked-skin grid only shows it clamped per-tile, see
+            // that draw call). Lives right beside the streak it's earned from -- same
+            // "you got this just by showing up today" beat as the flame, on the screen
+            // players already pause at. Icon-only, no translated label (like the shard
+            // ⧫ readout below), so this needed no i18n work. Hidden once SOLARIS is
+            // owned (constants.js Stardust block) -- nothing left for it to count toward.
+            if (stardust > 0 && !(unlockedSkins & (1 << (SKINS.length - 1)))) {
+                subParts.push({ text: `${stardust} ✦`, hot: false });
+            }
             if (subParts.length) {
                 rightColY += lineStep;
                 ctx.font = `bold ${FS*0.025}px 'Courier New',monospace`;
@@ -2061,11 +2094,24 @@ function draw() {
                     ctx.strokeStyle = 'rgba(90,95,130,0.50)';
                     ctx.lineWidth   = 1.5;
                     ctx.stroke();
-                    ctx.font        = `bold ${FS*0.018}px 'Courier New',monospace`;
                     ctx.fillStyle   = 'rgba(150,160,205,0.85)';
                     ctx.shadowColor = 'rgba(0,0,0,0.85)';
                     ctx.shadowBlur  = 3;
-                    ctx.fillText(`${SKINS[i].cost}\u200A⧫`, cx, cy + dotR2 * 1.7);
+                    // Every tier needs shards AND days-played (constants.js Stardust
+                    // block) except SOLARIS, which is stardustGate-only. Two stacked
+                    // lines when both apply -- a flat cost alone would read as
+                    // buyable-with-enough-shards, which none of these tiers are anymore.
+                    // Stardust line shows live progress ("5/15"), not just the goal, since
+                    // it's the one number that moves on its own without playing this run.
+                    if (SKINS[i].cost) {
+                        ctx.font = `bold ${FS*0.018}px 'Courier New',monospace`;
+                        ctx.fillText(`${SKINS[i].cost}\u200A⧫`, cx, cy + dotR2 * 1.7);
+                    }
+                    if (SKINS[i].stardustGate) {
+                        ctx.font = `bold ${FS*0.015}px 'Courier New',monospace`;
+                        const gateY = SKINS[i].cost ? cy + dotR2 * 2.5 : cy + dotR2 * 1.7;
+                        ctx.fillText(`${Math.min(stardust, SKINS[i].stardustGate)}/${SKINS[i].stardustGate}\u200A\u2726`, cx, gateY);
+                    }
                     ctx.shadowBlur  = 0;
                     continue;
                 }
@@ -2398,10 +2444,10 @@ function draw() {
             }
         }
 
-        // Shop panel - Remove Ads + Restore Purchase, split out of the settings panel
-        // above so that panel isn't stretched by IAP UI most players never touch.
-        // Same nominal-height-then-scale-down pattern as the settings panel, just for
-        // a single IAP section instead of the whole settings stack.
+        // Shop panel - Remove Ads + Unlock All Ships + Restore Purchase, split out of
+        // the settings panel above so that panel isn't stretched by IAP UI most players
+        // never touch. Same nominal-height-then-scale-down pattern as the settings panel,
+        // just for the IAP section instead of the whole settings stack.
         if (showShop) {
             ctx.fillStyle = 'rgba(0,0,12,0.88)';
             ctx.fillRect(0, 0, W, H);
@@ -2413,6 +2459,7 @@ function draw() {
             const nPadBottom = H * 0.040;
             const nTitleH    = H * 0.070;
             const nIapBtnH   = H * 0.085;
+            const nShipsGap   = H * 0.022;   // gap above the Unlock All Ships row
             const nRestoreGap = H * 0.022;
             const nRestoreH   = H * 0.062;   // matched to nPrivacyBtnH in the settings panel -- 0.032 read as a squashed sliver
             // Empty-state row shown instead of the buttons when there's no native IAP
@@ -2421,8 +2468,11 @@ function draw() {
             // hidden button.
             const nEmptyH     = H * 0.090;
 
+            // Restore Purchase stays hidden only once there's nothing left either
+            // product could restore -- unlike the old remove-ads-only check, "owns one"
+            // isn't enough to hide it anymore.
             const nBodyH = hasIAP
-                ? (nIapBtnH + (removeAdsOwned ? 0 : nRestoreGap + nRestoreH))
+                ? (nIapBtnH + nShipsGap + nIapBtnH + ((removeAdsOwned && allShipsOwned) ? 0 : nRestoreGap + nRestoreH))
                 : nEmptyH;
             const nPanH = nPadTop + nTitleH + nBodyH + nPadBottom;
 
@@ -2432,6 +2482,7 @@ function draw() {
             const padTop    = nPadTop    * shopScale;
             const titleH    = nTitleH    * shopScale;
             const iapBtnH   = nIapBtnH   * shopScale;
+            const shipsGap   = nShipsGap   * shopScale;
             const restoreGap = nRestoreGap * shopScale;
             const restoreH   = nRestoreH   * shopScale;
             const emptyH     = nEmptyH     * shopScale;
@@ -2463,6 +2514,7 @@ function draw() {
             y += titleH;
 
             _removeAdsBtnRect = null;
+            _unlockAllShipsBtnRect = null;
             _restoreBtnRect = null;
             if (hasIAP) {
                 if (removeAdsOwned) {
@@ -2483,7 +2535,46 @@ function draw() {
                     ctx.fillText(T.removeAds, W / 2, aby + iapBtnH / 2);
                     _removeAdsBtnRect = { x: abx, y: aby, w: abw, h: iapBtnH };
                     y += iapBtnH;
+                }
 
+                // Unlock All Ships: the real-money shortcut past the shard+stardust
+                // grind (constants.js Stardust block) -- same button treatment as
+                // Remove Ads, gold-tinted instead of blue so it reads as the "ships"
+                // product at a glance, matching the shard/skin-grid gold accent used
+                // everywhere else ship-unlock-related.
+                y += shipsGap;
+                if (allShipsOwned) {
+                    ctx.font      = `${FS * 0.020}px 'Courier New',monospace`;
+                    ctx.fillStyle = 'rgba(220,190,120,0.80)';
+                    ctx.fillText(T.allShipsOwned, W / 2, y + iapBtnH / 2);
+                    y += iapBtnH;
+                } else {
+                    const sbw = panW * 0.78, sby = y;
+                    const sbx = W / 2 - sbw / 2;
+                    ctx.fillStyle = 'rgba(15,18,40,0.72)';
+                    ctx.beginPath(); ctx.roundRect(sbx, sby, sbw, iapBtnH, 7); ctx.fill();
+                    ctx.strokeStyle = 'rgba(255,200,90,0.55)';
+                    ctx.lineWidth   = 1;
+                    ctx.beginPath(); ctx.roundRect(sbx, sby, sbw, iapBtnH, 7); ctx.stroke();
+                    // Shrink-to-fit, same pattern as the death screen's drawFitLine --
+                    // the longest translation (French, "DEBLOQUER TOUS LES VAISSEAUX")
+                    // is longer than Remove Ads' longest (German, 18 chars vs. 28), so a
+                    // flat font size here either clips French or leaves English cramped.
+                    let shipsFsz = FS * 0.023;
+                    ctx.font = `${shipsFsz}px 'Courier New',monospace`;
+                    const shipsTextW = ctx.measureText(T.unlockAllShips).width;
+                    const shipsAvailW = sbw * 0.88; // small margin inside the button's own border
+                    if (shipsTextW > shipsAvailW) {
+                        shipsFsz = Math.max(shipsFsz * shipsAvailW / shipsTextW, FS * 0.014);
+                        ctx.font = `${shipsFsz}px 'Courier New',monospace`;
+                    }
+                    ctx.fillStyle = 'rgba(255,220,140,0.92)';
+                    ctx.fillText(T.unlockAllShips, W / 2, sby + iapBtnH / 2);
+                    _unlockAllShipsBtnRect = { x: sbx, y: sby, w: sbw, h: iapBtnH };
+                    y += iapBtnH;
+                }
+
+                if (!(removeAdsOwned && allShipsOwned)) {
                     y += restoreGap;
                     const rbw = panW * 0.78, rby = y;
                     const rbx = W / 2 - rbw / 2;

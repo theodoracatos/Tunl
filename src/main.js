@@ -7,6 +7,17 @@ window._tunlNativeUpdate = function (state) {
         removeAdsOwned = state.removeAdsOwned;
         localStorage.setItem('tunnel_remove_ads', removeAdsOwned ? '1' : '0');
     }
+    // Unlock All Ships IAP (state.js's allShipsOwned doc comment). Force-unlocking every
+    // current SKINS bit here, not just remembering the flag, means a purchase takes
+    // effect immediately without waiting for the next die()/unlock-loop pass or a reload.
+    if (typeof state.allShipsOwned === 'boolean') {
+        allShipsOwned = state.allShipsOwned;
+        localStorage.setItem('tunnel_all_ships', allShipsOwned ? '1' : '0');
+        if (allShipsOwned) {
+            unlockedSkins = (1 << SKINS.length) - 1;
+            localStorage.setItem('tunnel_skins', unlockedSkins);
+        }
+    }
     // Pushed once per launch after AdsManager's consent-info update resolves
     // (see AdsManager.kt/.swift) - not persisted, see state.js's declaration.
     if (typeof state.privacyOptionsRequired === 'boolean') {

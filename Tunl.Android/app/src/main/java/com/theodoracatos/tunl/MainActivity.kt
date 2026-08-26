@@ -97,7 +97,12 @@ class MainActivity : ComponentActivity() {
                         "show" -> showLeaderboard()
                     }
                     "iap" -> when (body.optString("action")) {
-                        "purchase" -> billing.purchaseRemoveAds(this@MainActivity)
+                        // productId defaults to remove_ads for backward compatibility
+                        // with any cached/older JS bundle that doesn't send it yet.
+                        "purchase" -> billing.purchase(
+                            body.optString("product", BillingManager.REMOVE_ADS_PRODUCT_ID),
+                            this@MainActivity
+                        )
                         "restore" -> billing.restore()
                     }
                     "share" -> shareRun(
@@ -160,7 +165,8 @@ class MainActivity : ComponentActivity() {
         // Mirrors the iOS Coordinator's iap.onUpdate closure, which pushes
         // ownership changes into the page via window._tunlNativeUpdate.
         billing.onUpdate = { owned ->
-            val json = "{\"removeAdsOwned\":$owned}"
+            val json = "{\"removeAdsOwned\":${owned.contains(BillingManager.REMOVE_ADS_PRODUCT_ID)}," +
+                "\"allShipsOwned\":${owned.contains(BillingManager.UNLOCK_ALL_SHIPS_PRODUCT_ID)}}"
             runJs("window._tunlNativeUpdate && window._tunlNativeUpdate($json)")
         }
         billing.start()

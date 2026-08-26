@@ -84,7 +84,7 @@ function mineSpacing() { return Math.max(lerp(lerp(900, 340, _prog), 200, _prog2
 // ambush, not a recurring hazard type.
 function cannonSpacing() { return Math.max(lerp(lerp(4200, 2400, _prog), 1500, _prog2), 1200); }
 
-// Milestone spacing (25/50/100/etc. step added to milestoneNext each time one fires --
+// Milestone spacing (50/100/etc. step added to milestoneNext each time one fires --
 // see update.js). Widens in stages so milestones stay a frequent early-game reward but
 // thin out for strong players who blow past 200-1000 in well under a minute: at the old
 // flat +50 step, a great run hit a milestone every ~50 points all the way up, and every
@@ -93,8 +93,10 @@ function cannonSpacing() { return Math.max(lerp(lerp(4200, 2400, _prog), 1500, _
 // last band (keeps growing by the same +1000 forever) rather than settling into a fixed
 // step, matching this file's existing philosophy that nothing here should feel like
 // flat-pace endurance once a run goes long (see CLAUDE.md's scrollSpd() doc).
+// Used to have a 25-point band below score 100 (25/50/75) but that fired 3 milestones
+// before a weak run even reaches 100 -- dropped in favor of one flat 50-point band from
+// the start; still fast enough to reward a rough first run without the extra popups.
 function milestoneStep(n) {
-    if (n < 100)   return 25;
     if (n < 300)   return 50;
     if (n < 1000)  return 100;
     if (n < 3000)  return 250;

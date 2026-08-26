@@ -193,13 +193,15 @@ See `triggerBombExplosion` in `src/systems.js`, called from `checkCoinCollection
 **Score formula**: `score = Math.floor(scrollX / 60) + bonusScore`
 `bonusScore` accumulates from coin collection and near-miss bonuses; resets each run.
 
-**Milestone moments**: Triggers at 25, 50, 75, 100, 150, 200, 250, 300, 400, 500, 600...
-Step size widens with score via `milestoneStep()` (`world.js`): 25 below 100, 50 up to
-300, 100 up to 1000, 250 up to 3000, 500 up to 10000, 1000 beyond - uncapped, keeps
-growing forever rather than settling into a fixed step (same "never just endurance at a
-fixed pace" philosophy as `scrollSpd()`, see its own doc comment). Originally a flat +50
-step past 100, which meant a strong player blowing past 200-1000 in under a minute hit a
-milestone every ~50 points, every one of them already-maxed-out `!!!` (see below) -
+**Milestone moments**: Triggers at 50, 100, 150, 200, 250, 300, 400, 500, 600...
+Step size widens with score via `milestoneStep()` (`world.js`): 50 up to 300, 100 up to
+1000, 250 up to 3000, 500 up to 10000, 1000 beyond - uncapped, keeps growing forever
+rather than settling into a fixed step (same "never just endurance at a fixed pace"
+philosophy as `scrollSpd()`, see its own doc comment). Used to have a 25-point band
+below score 100 (25/50/75) but that fired 3 milestones before a weak run even reaches
+100, so it was dropped in favor of one flat 50-point band from the start. Originally a
+flat +50 step past 100, which meant a strong player blowing past 200-1000 in under a
+minute hit a milestone every ~50 points, every one of them already-maxed-out `!!!` (see below) -
 noisy repetition, not a reward; widened after that feedback. Shows big floating text +
 gold particle burst + ascending chord. `milestoneFlash` decays over ~0.6s.
 Text/sfx escalate in 4 tiers (`triggerMilestone` in `input.js`, `sfxMilestone` in
@@ -323,6 +325,39 @@ rolled back one so the two rules don't compound into a much longer gap than inte
   in JS comments, but it is illegal inside an XML comment. `AndroidManifest.xml` and
   `res/xml/*.xml` use single hyphens or a colon instead.
 - **`scrollSpd()` never plateaus**: every other difficulty knob (`stalSpacing`, `stalLenFrac`, `coinSpacing`, `mineSpacing`, wave amplitude/frequency) caps once `_prog2` saturates, because those define corridor *geometry* and pushing them further would make the tunnel unnavigable. Scroll speed has no such ceiling - it only shrinks reaction time - so past `_prog2 > 1` (score ~900) it keeps climbing forever via a sqrt-eased tail (`base + sqrt(_prog2-1)*90`), intentionally so a long enough run is never merely "endurance at a fixed pace." Don't re-add a hard cap here.
+
+## Ship unlock economy
+
+Every paid ship (`SKINS` in `src/constants.js`) needs two things at once: `cost` shards
+(earned from collected coins, `runCoins`, banked at death, capped daily by
+`DAILY_SHARD_CAP`) and `stardustGate` days played (`stardust` in `state.js`, +1 per
+calendar day opened regardless of skill or how much is played that day, +1 bonus per
+7-day unbroken streak - see the Stardust doc block in `constants.js`). Stardust is never
+spent, only checked as a `>=` threshold, so a tier's gate doesn't stack on top of the
+next tier's. SOLARIS (the 8th/last ship) needs 50000 shards and 180 stardust (~half a
+year at the daily floor) - see that same doc block for why shards alone or stardust alone
+can't do this job, and the worked timelines for hardcore/good/bad player tiers.
+
+**Unlock All Ships IAP**: a real-money non-consumable (`unlock_all_ships`, alongside the
+existing `remove_ads`) that instantly force-unlocks every ship, current and future
+(`allShipsOwned` in `state.js`, re-applied on every load rather than snapshotting which
+ships existed at purchase time). $9.99, versus `remove_ads` at $2.99 - priced higher to
+match a much bigger value proposition (skip up to a year of daily return, not just an
+ad-free screen), landing on the standard "unlock everything" tier common across
+App Store/Play Store IAPs rather than a steeper "whale" price, since these ships also
+carry real gameplay perks (see the buff/nerf table above `SKINS`), not just cosmetics.
+Shop UI in `draw.js`'s `showShop` panel, purchase/restore bridge generalized from a
+single-product design to a product-ID-keyed one in `IAPManager.swift` and
+`BillingManager.kt` (both mirror each other exactly, see their doc comments). Shards and
+stardust are untouched by this purchase - it's a separate entitlement flag, not a
+currency grant, so it stays meaningful even for a player who already owns everything.
+
+Shipped in 6.0: the real `unlock_all_ships` product exists in both App Store Connect and
+Play Console at the $9.99 tier (alongside `Configuration.storekit`'s copy, which stays
+for local testing only), and both stores' content-rating questionnaires were redone
+accounting for it - still a flat one-time digital-goods purchase, not gambling/loot-box/
+cash-back, so the "never purchasable with real money" answer from the prior audit (see
+project memory) held after re-checking.
 
 ## Possible future features
 

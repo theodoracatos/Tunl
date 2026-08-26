@@ -1,6 +1,7 @@
 // ── Audio ─────────────────────────────────────────────────────────────
 
 let _ac = null, _tNode = null, _tGain = null;
+let _fNode = null, _fGain = null;
 let _bgmBuf = null, _bgmNode = null, _bgmGain = null;
 let _bgmLoading = false, _titleBgmLoading = false; // in-flight guards for the lazy loaders
 let _bgmActive = false, _bgmPending = false;
@@ -486,6 +487,39 @@ function sfxCombo(level) {
     o.start(t); o.stop(t + 0.20);
 }
 
+function sfxOnFire() {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    const dur = 0.45;
+    // Ignition whoosh: broadband noise brightening as a bandpass filter sweeps up --
+    // the mirror of sfxMineExplode's downward lowpass sweep (muffling = damage, here
+    // brightening = catching alight). Bandpass rather than lowpass so it has a "whoosh"
+    // center to it instead of just rising hiss.
+    const src = _ac.createBufferSource();
+    src.buffer = _noiseBuf(dur);
+    const flt = _ac.createBiquadFilter();
+    flt.type = 'bandpass'; flt.Q.value = 0.9;
+    flt.frequency.setValueAtTime(300, t);
+    flt.frequency.exponentialRampToValueAtTime(2600, t + dur);
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(0.001, t);
+    g.gain.linearRampToValueAtTime(0.42, t + 0.06);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    src.connect(flt); flt.connect(g); g.connect(_ac.destination);
+    src.start(t); src.stop(t + dur + 0.05);
+    // Bright ascending ping riding on top so the moment reads as a reward, not a hazard --
+    // the noise layer alone sits too close to sfxMineExplode's damage texture.
+    [880, 1320].forEach((freq, i) => {
+        const o = _ac.createOscillator(), og = _ac.createGain();
+        o.connect(og); og.connect(_ac.destination);
+        o.type = 'triangle'; o.frequency.value = freq;
+        const t0 = t + 0.08 + i * 0.07;
+        og.gain.setValueAtTime(0.16, t0);
+        og.gain.exponentialRampToValueAtTime(0.001, t0 + 0.22);
+        o.start(t0); o.stop(t0 + 0.24);
+    });
+}
+
 function sfxMineExplode() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
@@ -597,4 +631,39 @@ function thrustOff() {
     _tGain.gain.linearRampToValueAtTime(0.001, t + 0.10);
     const n = _tNode; _tNode = null; _tGain = null;
     setTimeout(() => { try { n.stop(); } catch(e){} }, 200);
+}
+
+// Ambient burning-thruster loop -- starts the instant onFire flips true (update.js,
+// alongside sfxOnFire's one-shot ignition pop) and runs for the rest of the run, same
+// "has to read during BOTH hold and release" reasoning as the ember-trickle particles it
+// accompanies (see the onFire ember spawn in update.js): a sound gated by `holding` would
+// vanish the moment the player releases, even though the ship is still visibly on fire.
+// Deliberately the *same* bandpass-noise engine texture as thrustOn (115Hz, Q 0.9) rather
+// than a different invented timbre -- the player already knows what that sound means
+// (thruster running), so reusing it here reads as "the thruster is now always lit," not
+// as an unrelated ambience layered on top. Quieter than thrustOn's active-hold gain since
+// this has to sit underneath bgm and every one-shot sfx for however long the run lasts (a
+// great run is 54-97s, see world.js/constants.js); when the player is also holding, the
+// two stack for a louder, hotter engine, which is the intended feel.
+function onFireLoopOn() {
+    if (!_ac || _fNode || !fxOn) return;
+    const src = _ac.createBufferSource();
+    src.buffer = _noiseBuf(0.5); src.loop = true;
+    const flt = _ac.createBiquadFilter();
+    flt.type = 'bandpass'; flt.frequency.value = 115; flt.Q.value = 0.9;
+    _fGain = _ac.createGain();
+    _fGain.gain.setValueAtTime(0.001, _ac.currentTime);
+    _fGain.gain.linearRampToValueAtTime(0.14, _ac.currentTime + 0.15);
+    src.connect(flt); flt.connect(_fGain); _fGain.connect(_ac.destination);
+    src.start(); _fNode = src;
+}
+
+function onFireLoopOff() {
+    if (!_fNode) return;
+    const t = _ac.currentTime;
+    _fGain.gain.cancelScheduledValues(t);
+    _fGain.gain.setValueAtTime(_fGain.gain.value, t);
+    _fGain.gain.linearRampToValueAtTime(0.001, t + 0.15);
+    const n = _fNode; _fNode = null; _fGain = null;
+    setTimeout(() => { try { n.stop(); } catch(e){} }, 250);
 }
