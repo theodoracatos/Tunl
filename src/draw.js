@@ -1331,9 +1331,18 @@ function draw() {
         const LAND   = W > H * 1.15;
         // Was 0.28 -- direct feedback that there's still a lot of unused space toward the
         // top-left of the title screen. Shifted left by the same amount (0.05W) the death
-        // screen's left column moved for the same reason.
-        const titleX = LAND ? W * 0.23 : W / 2;
-        const infoX  = LAND ? W * 0.71 : W / 2;
+        // screen's left column moved for the same reason. 0.23 -> 0.25: nudged back
+        // toward centre a little, symmetrically with infoX below -- 0.23 left the empty
+        // centre gap between the two columns reading as slightly too wide/dead relative
+        // to the panels themselves.
+        const titleX = LAND ? W * 0.25 : W / 2;
+        // Mirrors titleX around the screen's own centre (1 - titleX's fraction) rather
+        // than a separately-picked fraction -- was 0.71, pulling the right column 6% of
+        // W toward centre with nothing to its own edge pulling back, so the two columns
+        // read as one composition shifted left, not a centred pair (more empty margin on
+        // the right than the left). Safe against the ship-grid clamp (cx1 in the LAND
+        // block below) down to W ~ 690px, well under LAND mode's own H*1.15 floor.
+        const infoX  = LAND ? W * 0.75 : W / 2;
         const a      = Math.min(1, titleT * 4);
         const sh     = (blur, col = 'rgba(0,0,0,0.90)') => { ctx.shadowColor = col; ctx.shadowBlur = blur; };
 
@@ -1371,7 +1380,7 @@ function draw() {
         // so code paths stay intact.
         const dotR1   = LAND ? UI_H * 0.044 : H * 0.035;
         const dotGap1 = Math.max(dotR1 * 2.8, LAND ? UI_H * 0.130 : W * 0.180);
-        const dotR2   = UI_H * 0.031;   // locked-ship render size within its cell
+        const dotR2   = UI_H * 0.035;   // locked-ship render size within its cell
         const dotGap2 = dotGap1;
         // Portrait single-row aliases
         const dotR    = LAND ? dotR1 : H * 0.035;
@@ -1388,14 +1397,25 @@ function draw() {
         // needed so the perk description has somewhere to go when it has to sit below
         // the 2nd row instead of in the gap between rows (see the perk-position logic
         // near the ship grid render loop).
-        const dotY1  = LAND ? H * 0.560 - 11 : H - dotR * 2.4;
+        // 0.560 -> 0.540 and 0.830 -> 0.810 below: shifted up together with rightColY
+        // (all three by 0.02H) so the whole right column -- REKORD/SHIP down through
+        // both ship rows -- moves as one block and stays vertically aligned with the
+        // left column instead of hanging lower than it. First pass moved this by
+        // 0.05H based on a desktop Chrome test, which over-corrected -- letterboxing
+        // in that test window (H capped at 600 inside a taller browser viewport, vs
+        // the real device's full-bleed canvas since its H never hits the 600 cap)
+        // exaggerated the apparent gap. Re-measured against real iPhone 17 Pro Max
+        // simulator screenshots (both the original unpatched title screen and this
+        // patch applied) instead of the desktop test -- 0.02H matches what the
+        // original screenshot actually needed.
+        const dotY1  = LAND ? H * 0.540 - 11 : H - dotR * 2.4;
         // 0.780 -> 0.830: widens the gap to row 1, which is what the perk description's
         // available "band" (see the perk-position logic near the ship grid render loop)
         // is measured against -- too narrow a gap meant row 1's description shrank well
         // below row 2's (row 2's own description sits below the whole grid, unclamped by
         // this band, so the two could end up visibly different sizes for the same string
         // length depending only on which row was selected).
-        const dotY2  = H * 0.830 - 11;   // 2nd grid row, landscape only
+        const dotY2  = H * 0.810 - 11;   // 2nd grid row, landscape only
         const startX1 = cx1 - rowHalfW1;
         const startX2 = cx2 - rowHalfW2;
         // Aliases used by the divider calculation and portrait path
@@ -1690,8 +1710,10 @@ function draw() {
         if (LAND) {
             // Fixed just under the level line above (which itself sits just under the
             // logo's underline bar) rather than cascading off anything, since this block
-            // is now the first thing below the logo/level header.
-            let missionY = H * 0.49 - 6;
+            // is now the first thing below the logo/level header. 0.49 -> 0.51: nudged
+            // down a touch per feedback, taking the button row(s) below it down by the
+            // same amount (see tBtnY's own floor, moved in step).
+            let missionY = H * 0.51 - 6;
 
             // Laid out as a real three-column table (progress right-aligned, label
             // left-aligned, reward right-aligned) rather than centring each row's whole
@@ -1761,7 +1783,7 @@ function draw() {
                 const val   = Math.min(dailyMissionStats[def.stat] || 0, def.target);
                 ctx.font        = `${mFsz}px 'Courier New',monospace`;
                 ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 2;
-                ctx.fillStyle   = done ? `rgba(120,255,150,${a * 0.90})` : `rgba(175,190,225,${a * 0.72})`;
+                ctx.fillStyle   = done ? `rgba(120,255,150,${a * 0.90})` : `rgba(175,190,225,${a * 0.80})`;
                 ctx.textAlign   = 'right';
                 ctx.fillText(done ? '✓' : `${val}/${def.target}`, progRX, missionY);
                 ctx.textAlign   = 'left';
@@ -1792,7 +1814,10 @@ function draw() {
         // a floor near the bottom of the screen, rather than a fixed H fraction on its
         // own -- mirrors how missions used to cascade off the button cluster before the
         // two were swapped, just in the other direction now that buttons render last.
-        const tBtnY = (LAND ? Math.max(H * 0.80 - 11, _missionsBottom + H * 0.09) : H/2 + H*0.140) - (LAND ? 2 : 0);
+        // Floor moved 0.80 -> 0.82 in step with missionY's own nudge above, so both
+        // button rows follow the missions block down by the same amount instead of
+        // the Math.max floor swallowing the change.
+        const tBtnY = (LAND ? Math.max(H * 0.82 - 11, _missionsBottom + H * 0.09) : H/2 + H*0.140) - (LAND ? 2 : 0);
         const btnFontSz = FS * 0.024 - 1;
         ctx.font = `${btnFontSz}px 'Courier New',monospace`;
         // Hoisted above drawBtn (rather than declared alongside rowGap below) so
@@ -1954,8 +1979,12 @@ function draw() {
         // rightColY tracks how far down the right-column stack (TODAY/ALL TIME/
         // STREAK/TOP 5) reaches in landscape, so each line uses the same step
         // and the skin picker below never overlaps regardless of which lines
-        // end up shown.
-        let rightColY  = H * 0.22 - 11;
+        // end up shown. 0.22 -> 0.20: nudged up so the right column stays aligned
+        // with the left column instead of hanging lower (dotY1/dotY2 below move the
+        // same 0.02H so the ship rows follow). First pass tried 0.17 based on a
+        // desktop Chrome test, which over-corrected -- see dotY1's comment for why
+        // that test read the gap as bigger than it really is on a real device.
+        let rightColY  = H * 0.20 - 11;
         // Tightened from 0.105 -- TODAY/streak reads as a secondary line on ALL TIME,
         // not a peer of the SHIP block below it, so it should sit noticeably closer to
         // ALL TIME than to SHIP (the gap down to SHIP is set separately, see
@@ -2138,14 +2167,25 @@ function draw() {
                 if (selected) selectedCx = cx;
 
                 if (!unlocked) {
-                    // Locked -- dimmed ring + cost, no ship icon or name (LAND only,
-                    // matching the old locked-row treatment).
+                    // Locked -- dimmed ring + faint ship silhouette + cost, no name
+                    // (LAND only, matching the old locked-row treatment).
                     _skinBtnRects.push({ cx, cy, r: dotR2 * 1.5 });
                     if (!LAND) continue;
                     ctx.beginPath();
                     ctx.arc(cx, cy, dotR2, 0, Math.PI * 2);
                     ctx.strokeStyle = 'rgba(90,95,130,0.50)';
                     ctx.lineWidth   = 1.5;
+                    ctx.stroke();
+                    // Faint silhouette, same shipPath() geometry every unlocked ship
+                    // uses (scaled down, no glow/colour) -- an empty ring read as an
+                    // inert placeholder rather than "a ship you don't have yet". Sized
+                    // and dimmed well below the unlocked row so it never competes with
+                    // an actual owned ship for attention.
+                    shipPath(cx, cy, dotR2 * 0.62);
+                    ctx.fillStyle   = 'rgba(150,160,205,0.28)';
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(170,180,220,0.35)';
+                    ctx.lineWidth   = 1;
                     ctx.stroke();
                     ctx.shadowColor = 'rgba(0,0,0,0.85)';
                     ctx.shadowBlur  = 3;
