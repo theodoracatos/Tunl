@@ -1625,8 +1625,16 @@ function draw() {
         ctx.fillStyle = ulGrd;
         ctx.fillRect(titleX - logoW*0.5, ulY, logoW, 1.5);
 
-        ctx.shadowColor = 'rgba(0,0,0,0.90)'; ctx.shadowBlur = 3;
-        ctx.fillStyle = `rgba(175,205,255,${a * 0.95})`;
+        // Slow hue-cycling glow instead of a flat colour -- this line changes every
+        // day anyway (LEVEL_NUM/WORLD_NAME), so a shifting glow reads as "today's level
+        // is its own little event" rather than static label text. gtime is the same
+        // free-running animation clock every other ambient pulse in this file already
+        // keys off (coin flicker, mine bob, etc.), so it needs no state of its own.
+        // Slow enough (full hue cycle every 15s) to read as ambient, not distracting.
+        const levelHue = (gtime * 24) % 360;
+        ctx.shadowColor = `hsla(${levelHue}, 90%, 60%, ${a * 0.6})`;
+        ctx.shadowBlur  = 8 + 4 * Math.sin(gtime * 2.2);
+        ctx.fillStyle   = `hsla(${levelHue}, 85%, 72%, ${a * 0.95})`;
         // Prefixed with "LEVEL <day-of-year>:" so the world name reads like a level
         // index -- same LEVEL_NUM/T.level pair already used in the run-start banner
         // (see above), just surfaced here too per user request. This line is centered
@@ -1634,13 +1642,10 @@ function draw() {
         // edge on narrow devices, so the divider side is the binding constraint -- shrink
         // the font to fit rather than let long language/level combos cross the divider.
         const levelLine = `${T.level} ${LEVEL_NUM}: ${WORLD_NAME.toUpperCase()}`;
-        // Matches TAGESMISSIONEN's header size below (FS*0.023) -- was FS*0.022, ~4.3%
-        // smaller at every width (shrink-to-fit never triggers for either at any
-        // realistic device size, so it was a flat, consistent mismatch, not day-to-day
-        // noise from long world names). The two headers sit one screen apart and read
-        // as a matched pair, so a barely-perceptible size drift between them read as an
-        // inconsistency rather than a deliberate choice.
-        let levelFsz = FS * 0.023;
+        // Bumped two points above TAGESMISSIONEN's header size (FS*0.023) per explicit
+        // request -- the two used to match exactly (see git history), but this line
+        // now deliberately reads larger than that one, not as an inconsistency.
+        let levelFsz = FS * 0.025;
         ctx.font = `bold ${levelFsz}px 'Courier New',monospace`;
         if (LAND) {
             // Clamped against the screen edges, not the divider: the divider is a
@@ -1663,6 +1668,7 @@ function draw() {
         // the extreme case) the old position sat only a few px under the logo's
         // underline bar, close enough to visually collide with it.
         ctx.fillText(levelLine, titleX, LAND ? H * 0.395 - 11 : H/2 - H*0.038);
+        ctx.shadowBlur = 0;
 
         // Tapping the title screen still starts a run (input.js) even with no visible
         // "HOLD TO FLY" CTA here anymore -- that instruction used to live only on this
@@ -1950,7 +1956,11 @@ function draw() {
         // and the skin picker below never overlaps regardless of which lines
         // end up shown.
         let rightColY  = H * 0.22 - 11;
-        const lineStep = H * 0.105;
+        // Tightened from 0.105 -- TODAY/streak reads as a secondary line on ALL TIME,
+        // not a peer of the SHIP block below it, so it should sit noticeably closer to
+        // ALL TIME than to SHIP (the gap down to SHIP is set separately, see
+        // shipHeaderY below).
+        const lineStep = H * 0.065;
 
         // BEST (all-time record) is the single headline stat -- it rarely changes, so
         // it reads as "your record" rather than a volatile daily figure. TODAY and the
@@ -1969,7 +1979,9 @@ function draw() {
             ctx.shadowColor = 'rgba(0,0,0,0.90)'; ctx.shadowBlur = 3;
             ctx.font        = `bold ${FS*0.036}px 'Courier New',monospace`;
             ctx.fillStyle   = `rgba(190,212,255,${a * 0.98})`;
-            ctx.fillText(`${T.allTime}  ${best}`, infoX, LAND ? rightColY : H/2 + H*0.280);
+            const allTimeText = `${T.allTime}  ${best}`;
+            const allTimeY    = LAND ? rightColY : H/2 + H*0.280;
+            ctx.fillText(allTimeText, infoX, allTimeY);
             ctx.shadowBlur  = 0;
 
             // Two visually distinct segments instead of one flat string: TODAY stays
@@ -1985,16 +1997,10 @@ function draw() {
                 const flame = streak >= 7 ? ' \u{1F525}\u{1F525}' : streak >= 3 ? ' \u{1F525}' : '';
                 subParts.push({ text: `${streak}${flame} ${T.day}`, hot: true });
             }
-            // Stardust readout: the only place a player's running total is visible without
-            // opening the shop (the locked-skin grid only shows it clamped per-tile, see
-            // that draw call). Lives right beside the streak it's earned from -- same
-            // "you got this just by showing up today" beat as the flame, on the screen
-            // players already pause at. Icon-only, no translated label (like the shard
-            // ⧫ readout below), so this needed no i18n work. Hidden once SOLARIS is
-            // owned (constants.js Stardust block) -- nothing left for it to count toward.
-            if (stardust > 0 && !(unlockedSkins & (1 << (SKINS.length - 1)))) {
-                subParts.push({ text: `${stardust} ✦`, hot: false });
-            }
+            // Stardust readout used to live here (beside the streak), moved down onto
+            // the SHIP/shard line instead -- see shardWalletText below. Both currencies
+            // a ship costs now read together in one place rather than one sitting next
+            // to the streak that earns it and the other a whole line away.
             if (subParts.length) {
                 rightColY += lineStep;
                 ctx.font = `bold ${FS*0.025}px 'Courier New',monospace`;
@@ -2059,14 +2065,61 @@ function draw() {
             // that looked fine on a tall device collided with HEUTE/TAGESSERIE on a
             // shorter or wider-aspect real device. This keeps a proportional gap instead.
             const shipHeaderY = Math.max(dotY1 - dotR1 * 2.6, rightColY + H * 0.075) - 4;
+
+            // "?" button opening a one-screen explainer for shards/stardust/coins
+            // (showCurrencyInfo, state.js). Shards and stardust are the one pair of
+            // numbers on this whole screen that mean nothing without context -- unlike
+            // coins, which teach themselves during a run by look and effect. Opt-in
+            // (tap to open), not a forced hint, so it doesn't repeat the removed
+            // title-screen control hint (CLAUDE.md Onboarding). Left of SHIP/NAVE, gold
+            // like the shard figure it sits next to rather than this line's pale label
+            // white.
+            {
+                const infoR = FS * 0.016;
+                const infoCx = heuteLeftX - infoR * 2.4;
+                const infoCy = shipHeaderY;
+                _currencyInfoBtnRect = { cx: infoCx, cy: infoCy, r: infoR * 2.0 };
+                ctx.shadowColor = 'rgba(255,205,80,0.65)';
+                ctx.shadowBlur  = 6;
+                ctx.beginPath();
+                ctx.arc(infoCx, infoCy, infoR, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255,225,110,0.90)';
+                ctx.lineWidth   = 1.6;
+                ctx.stroke();
+                ctx.font        = `bold ${infoR * 1.4}px 'Courier New',monospace`;
+                ctx.fillStyle   = 'rgba(255,225,110,0.98)';
+                ctx.textAlign   = 'center';
+                ctx.fillText('?', infoCx, infoCy);
+                ctx.shadowBlur  = 0;
+            }
+
             ctx.font        = `bold ${FS*0.025}px 'Courier New',monospace`;
             ctx.fillStyle   = 'rgba(255,225,110,0.95)';
             ctx.shadowColor = 'rgba(0,0,0,0.85)';
             ctx.shadowBlur  = 3;
             ctx.textAlign   = 'left';
-            ctx.fillText(`${T.ship} ${shards}\u200A⧫`, heuteLeftX, shipHeaderY);
-            ctx.textAlign   = 'center';
+            const shardWalletText = `${T.ship} ${shards}\u200A⧫`;
+            ctx.fillText(shardWalletText, heuteLeftX, shipHeaderY);
+
+            // Stardust joins the shard figure on this same line instead of sitting a
+            // whole line up next to the streak -- both currencies a ship actually costs
+            // now read together in one place. Kept in its own fillText/colour (not
+            // folded into shardWalletText's gold) since gold is reserved for shard
+            // figures elsewhere in the game; a hot streak's own comment above says the
+            // same thing. Hidden once SOLARIS is owned (constants.js Stardust block) --
+            // nothing left for it to count toward.
+            if (stardust > 0 && !(unlockedSkins & (1 << (SKINS.length - 1)))) {
+                const shardWalletW = ctx.measureText(shardWalletText).width;
+                // Bright cyan, not the old pale blue-white -- a currency figure players
+                // check daily deserves to actually pop, and cyan reads as clearly its
+                // own thing next to shard-gold rather than a washed-out afterthought.
+                ctx.shadowColor = 'rgba(80,210,255,0.55)';
+                ctx.shadowBlur  = 5;
+                ctx.fillStyle   = `rgba(120,225,255,${a * 0.95})`;
+                ctx.fillText(`   ${stardust}\u200A✦`, heuteLeftX + shardWalletW, shipHeaderY);
+            }
             ctx.shadowBlur  = 0;
+            ctx.textAlign   = 'center';   // restore -- ship grid below expects centred text
 
             // -- Ship grid: fixed 4 per row (GRID_COLS above), every ship rendered
             // according to its own unlock state rather than which row that state used
@@ -2094,7 +2147,6 @@ function draw() {
                     ctx.strokeStyle = 'rgba(90,95,130,0.50)';
                     ctx.lineWidth   = 1.5;
                     ctx.stroke();
-                    ctx.fillStyle   = 'rgba(150,160,205,0.85)';
                     ctx.shadowColor = 'rgba(0,0,0,0.85)';
                     ctx.shadowBlur  = 3;
                     // Every tier needs shards AND days-played (constants.js Stardust
@@ -2103,12 +2155,20 @@ function draw() {
                     // buyable-with-enough-shards, which none of these tiers are anymore.
                     // Stardust line shows live progress ("5/15"), not just the goal, since
                     // it's the one number that moves on its own without playing this run.
+                    // Cost line in the same shard-gold used everywhere else shards are
+                    // shown (SHIP wallet, mission rewards) -- was the same neutral grey
+                    // as the ring around it, reading as inert label text rather than a
+                    // currency figure. Stardust gate gets its own bright cyan (matching
+                    // the SHIP-line stardust readout above) so the two currencies stay
+                    // visually distinct even stacked on top of each other.
                     if (SKINS[i].cost) {
-                        ctx.font = `bold ${FS*0.018}px 'Courier New',monospace`;
+                        ctx.font      = `bold ${FS*0.018}px 'Courier New',monospace`;
+                        ctx.fillStyle = 'rgba(255,225,110,0.95)';
                         ctx.fillText(`${SKINS[i].cost}\u200A⧫`, cx, cy + dotR2 * 1.7);
                     }
                     if (SKINS[i].stardustGate) {
-                        ctx.font = `bold ${FS*0.015}px 'Courier New',monospace`;
+                        ctx.font      = `bold ${FS*0.015}px 'Courier New',monospace`;
+                        ctx.fillStyle = 'rgba(120,225,255,0.95)';
                         const gateY = SKINS[i].cost ? cy + dotR2 * 2.5 : cy + dotR2 * 1.7;
                         ctx.fillText(`${Math.min(stardust, SKINS[i].stardustGate)}/${SKINS[i].stardustGate}\u200A\u2726`, cx, gateY);
                     }
@@ -2596,6 +2656,147 @@ function draw() {
                 y += emptyH;
             }
         }
+
+        // Shard/stardust/coin explainer, opened via the small "i" button left of
+        // SHIP/NAVE (_currencyInfoBtnRect, drawn above). One static
+        // panel rather than four separate tooltips -- shards, stardust and the coin
+        // legend are the one screen's worth of numbers that don't teach themselves by
+        // playing (unlike coin effects, which read from look and result during a run),
+        // so bundling them beats making a new player hunt down five tiny "i"s one at a
+        // time. Opt-in (tap to open, tap outside to close, same as Shop/Settings) rather
+        // than a forced hint -- see CLAUDE.md Onboarding for why an unprompted hint was
+        // rejected here before.
+        if (showCurrencyInfo) {
+            ctx.fillStyle = 'rgba(0,0,12,0.88)';
+            ctx.fillRect(0, 0, W, H);
+
+            const panW = Math.min(W * 0.72, 460);
+            // Bullet colour matches each item's own in-game colour (gold wallet, pale
+            // stardust glint, the gold coin's own colour for the coin legend line, the
+            // bomb coin's purple for the hazard line) so the dot itself is a second,
+            // wordless cue.
+            const rows = [
+                { dot: 'rgba(255,225,110,1)', text: T.shardsInfo },
+                { dot: 'rgba(200,210,255,1)', text: T.stardustInfo },
+                { dot: 'rgba(255,224,64,1)',  text: T.coinsInfo },
+                { dot: 'rgba(184,51,255,1)',  text: T.hazardsInfo },
+            ];
+
+            // Greedy wrap at whatever font is currently set on ctx. Tokenises CJK/
+            // fullwidth characters one at a time (they carry no spaces to break on --
+            // a plain split(' ') treated a whole ja/ko/zh sentence as a single
+            // unbreakable "word" and let it run straight off the edge of the panel,
+            // unclipped, over whatever sat behind it) while keeping Latin/Cyrillic/etc.
+            // words whole and breaking only at spaces, same as before for those.
+            const wrapTokenRe = /[　-鿿가-힣＀-￯]|[^\s　-鿿가-힣＀-￯]+|\s+/gu;
+            const wrap = (text, maxW) => {
+                const tokens = text.match(wrapTokenRe) || [text];
+                const lines = [];
+                let line = '';
+                for (const tok of tokens) {
+                    if (/^\s+$/.test(tok)) {
+                        if (line) line += tok;
+                        continue;
+                    }
+                    const test = line + tok;
+                    if (line.trim() && ctx.measureText(test).width > maxW) {
+                        lines.push(line.trimEnd());
+                        line = tok;
+                    } else {
+                        line = test;
+                    }
+                }
+                if (line.trim()) lines.push(line.trimEnd());
+                return lines;
+            };
+
+            // Unlike the Shop panel above (fixed line count, so one linear shopScale
+            // covers it), this panel wraps translated paragraphs -- line count per row
+            // depends on the locale's string length, and shrinking the font reflows
+            // wrapping too (smaller font = fewer, shorter-looking lines), so a single
+            // linear scale can't be computed up front. Iterate the font scale down
+            // instead, re-wrapping each try, until the nominal panel height clears the
+            // screen-height cap or the shrink hits its floor (0.6x) -- short EN/DE text
+            // fits at scale 1 in one pass; long locale strings settle a few steps down.
+            let scale = 1, bodyFontSz, dotR2, padSide, textIndent, rowGap2, lineH, titleH, padTop, padBottom, wrappedRows, panH;
+            for (let iter = 0; iter < 14; iter++) {
+                bodyFontSz = FS * 0.020 * scale;
+                ctx.font   = `${bodyFontSz}px 'Courier New',monospace`;
+                dotR2      = bodyFontSz * 0.28;
+                // Real side margin from the panel border to the dot -- previously the
+                // dot sat almost flush against the left edge with no breathing room at
+                // all. Mirrored on the right so the text column reads as centred inset,
+                // not lopsided.
+                padSide    = bodyFontSz * 1.1;
+                // 4.4x dotR2 gap from dot to text, not 3.4x -- the dot sits at
+                // padSide + dotR2 with its own radius eating into the gap, so the old
+                // value left barely a hairline of space before the text (dot visibly
+                // touching the first letter).
+                textIndent = padSide + dotR2 * 4.4;
+                rowGap2    = bodyFontSz * 0.9;
+                lineH      = bodyFontSz * 1.35;
+                const wrapWidth = panW - textIndent - padSide;
+                wrappedRows = rows.map(r => wrap(r.text, wrapWidth));
+                titleH    = FS * 0.045 * scale;
+                padTop    = H * 0.065 * scale;
+                padBottom = H * 0.05  * scale;
+                let bodyH = 0;
+                wrappedRows.forEach(lines => { bodyH += lines.length * lineH + rowGap2; });
+                panH = padTop + titleH + bodyH + padBottom;
+                if (panH <= H * 0.92 || scale <= 0.6) break;
+                scale *= 0.92;
+            }
+
+            const panX = W / 2 - panW / 2, panY = H / 2 - panH / 2;
+            _currencyInfoPanelRect = { x: panX, y: panY, w: panW, h: panH };
+
+            ctx.fillStyle = 'rgba(12,14,30,0.95)';
+            ctx.beginPath(); ctx.roundRect(panX, panY, panW, panH, 14); ctx.fill();
+            ctx.strokeStyle = 'rgba(120,140,200,0.35)';
+            ctx.lineWidth   = 1.5;
+            ctx.beginPath(); ctx.roundRect(panX, panY, panW, panH, 14); ctx.stroke();
+
+            ctx.textAlign   = 'center';
+            ctx.font        = `bold ${titleH}px 'Courier New',monospace`;
+            // Shrink to fit -- same reasoning as the death screen's SHARE/HOME/PLAY
+            // AGAIN buttons: some locales run long enough to touch the panel's rounded
+            // corners edge to edge with zero margin (Hindi measured 455px of 460px
+            // available). Capped to the same side margin as the body text (padSide*2)
+            // so title and paragraphs share one consistent inset.
+            let titleFsz = titleH;
+            const titleMaxW = panW - padSide * 2;
+            const titleW = ctx.measureText(T.howItWorks).width;
+            if (titleW > titleMaxW) {
+                titleFsz = Math.max(titleFsz * titleMaxW / titleW, FS * 0.02);
+                ctx.font = `bold ${titleFsz}px 'Courier New',monospace`;
+            }
+            ctx.fillStyle   = 'rgba(255,225,110,0.95)';
+            ctx.fillText(T.howItWorks, W / 2, panY + padTop);
+
+            ctx.textAlign = 'left';
+            ctx.font      = `${bodyFontSz}px 'Courier New',monospace`;
+            let ry        = panY + padTop + titleH + rowGap2 * 0.6;
+            const textX   = panX + textIndent;
+            wrappedRows.forEach((lines, i) => {
+                // Dot centred on the first line's own vertical centre -- textBaseline is
+                // 'middle' here (set once for the whole title-phase block above), so
+                // ry already *is* line 1's centre. The old `- lineH * 0.32` assumed an
+                // alphabetic baseline and floated every dot above-left of its text
+                // instead of level with it (same class of bug the info button's "i" had).
+                ctx.beginPath();
+                ctx.arc(panX + padSide + dotR2, ry, dotR2, 0, Math.PI * 2);
+                ctx.fillStyle = rows[i].dot;
+                ctx.fill();
+
+                ctx.fillStyle = 'rgba(220,225,245,0.92)';
+                lines.forEach(line => {
+                    ctx.fillText(line, textX, ry);
+                    ry += lineH;
+                });
+                ry += rowGap2;
+            });
+            ctx.textAlign = 'center';
+        }
     }
 
     if (phase === 'dead') {
@@ -2665,41 +2866,61 @@ function draw() {
         // the narrow reference device used elsewhere in this file (iPhone 12 mini
         // landscape, 812x375) measured ~352px against ~345px available -- a real
         // overflow, not a hypothetical one. 0.115 brings that to ~289px.
-        const scorePulse = newDailyBest ? 18 + 5 * Math.sin(deadT * 3.5) : 4;
-        sh(scorePulse, newDailyBest ? `rgba(255,190,0,${a*0.75})` : 'rgba(0,0,0,0.90)');
+        // Any new record -- daily or all-time -- gets the same hue-cycling rainbow
+        // glow as the title screen's LEVEL line (same gtime clock, same formula)
+        // instead of a flat gold, and the label right under it shares the exact same
+        // hue each frame so the two read as one glowing unit, not a coloured number
+        // over a separately-coloured caption.
+        const isRecord = (newBest || newDailyBest) && score > 0;
+        const recordHue = (gtime * 24) % 360;
+        const scorePulse = isRecord ? 18 + 5 * Math.sin(deadT * 3.5) : 4;
+        let scoreGlow, scoreFill;
+        if (isRecord) {
+            scoreGlow = `hsla(${recordHue}, 90%, 60%, ${a * 0.75})`;
+            scoreFill = `hsla(${recordHue}, 85%, 72%, ${a})`;
+        } else {
+            scoreGlow = 'rgba(0,0,0,0.90)';
+            scoreFill = `rgba(225,240,255,${a})`;
+        }
+        sh(scorePulse, scoreGlow);
         ctx.font      = `bold ${FS*0.115}px 'Courier New',monospace`;
-        ctx.fillStyle = newDailyBest ? `rgba(255,225,65,${a})` : `rgba(225,240,255,${a})`;
+        ctx.fillStyle = scoreFill;
         ctx.fillText(score, LC, H * 0.395);
 
-        sh(4, `rgba(60,90,180,${a * 0.45})`);
-        ctx.font      = `bold ${FS*0.026}px 'Courier New',monospace`;
-        ctx.fillStyle = `rgba(175,205,255,${a * 0.95})`;
-        ctx.fillText(`${T.runs} ${dailyRuns}`, LC, H * 0.545);
-
+        // Label sits directly under the score now (closer than before -- 0.495, not
+        // 0.545, per explicit request), with RUNS moved below it instead of wedged in
+        // between -- score and "what just happened" read as one beat, RUNS is a
+        // separate, cooler stat.
         if (newBest && score > 0) {
-            sh(6, `rgba(255,200,40,${a*0.7})`);
+            sh(6, `hsla(${recordHue}, 90%, 60%, ${a * 0.7})`);
             ctx.font      = `bold ${FS*0.036}px 'Courier New',monospace`;
-            ctx.fillStyle = `rgba(255,240,120,${a})`;
-            ctx.fillText(T.newBest, LC, H * 0.613);
+            ctx.fillStyle = `hsla(${recordHue}, 90%, 78%, ${a})`;
+            ctx.fillText(T.newBest, LC, H * 0.495);
         } else if (newDailyBest && score > 0) {
-            sh(6, `rgba(255,200,40,${a*0.7})`);
+            sh(6, `hsla(${recordHue}, 90%, 60%, ${a * 0.7})`);
             ctx.font      = `bold ${FS*0.036}px 'Courier New',monospace`;
-            ctx.fillStyle = `rgba(255,240,120,${a})`;
-            ctx.fillText(T.newDailyBest, LC, H * 0.613);
+            ctx.fillStyle = `hsla(${recordHue}, 90%, 78%, ${a})`;
+            ctx.fillText(T.newDailyBest, LC, H * 0.495 + 5);
             // No "previous best" sub-line here (there used to be one): "new daily best!"
-            // already implies it beat the old number, and the H*0.78 slot right below is
-            // shared with the skin-unlock/mastery/shards line -- whichever of those draws
-            // there, the sub-line kept colliding with it on short landscape phones (H well
-            // under 600, where FS = sqrt(W*H) still stays large), first with the mastery
-            // banner ("PEARL LV UP 1"), then with the shards line -- a new report each time
-            // the slot below happened to hold something else. Dropping the redundant line
-            // removes the whole collision class instead of chasing it banner by banner.
+            // already implies it beat the old number, and the H*0.78 slot further below
+            // is shared with the skin-unlock/mastery/shards line -- whichever of those
+            // draws there, the sub-line kept colliding with it on short landscape phones
+            // (H well under 600, where FS = sqrt(W*H) still stays large), first with the
+            // mastery banner ("PEARL LV UP 1"), then with the shards line -- a new report
+            // each time the slot below happened to hold something else. Dropping the
+            // redundant line removes the whole collision class instead of chasing it
+            // banner by banner.
         } else if (best > 0) {
             sh(4, `rgba(60,90,180,${a * 0.45})`);
             ctx.font      = `bold ${FS*0.026}px 'Courier New',monospace`;
             ctx.fillStyle = `rgba(175,205,255,${a * 0.95})`;
-            ctx.fillText(`${T.best}  ${best}`, LC, H * 0.613);
+            ctx.fillText(`${T.best}  ${best}`, LC, H * 0.545);
         }
+
+        sh(4, `rgba(60,90,180,${a * 0.45})`);
+        ctx.font      = `bold ${FS*0.026}px 'Courier New',monospace`;
+        ctx.fillStyle = `rgba(175,205,255,${a * 0.95})`;
+        ctx.fillText(`${T.runs} ${dailyRuns}`, LC, H * 0.613);
 
         // Skin-unlock banner (+ shards line below/beside it) sits in the left column's
         // empty space below the best/streak line; the right column is already packed
@@ -2986,6 +3207,15 @@ function draw() {
             ctx.strokeStyle = `rgba(80,105,180,${b * 0.70})`;
             ctx.lineWidth   = 1;
             ctx.beginPath(); ctx.roundRect(homeX, homeY, btnW, btnH, 8); ctx.stroke();
+            // Shrink to fit: same reasoning as SHARE below -- some locales run much
+            // longer than English ("JOGAR DE NOVO" for PLAY AGAIN, "AJUSTES"-style
+            // words for HOME) and this row's buttons never had SHARE's headroom check.
+            let homeFsz = FS * 0.028;
+            const homeW = ctx.measureText(T.home).width;
+            if (homeW > btnW * 0.86) {
+                homeFsz = Math.max(homeFsz * (btnW * 0.86) / homeW, FS * 0.015);
+                ctx.font = `bold ${homeFsz}px 'Courier New',monospace`;
+            }
             sh(2); ctx.fillStyle = `rgba(130,155,230,${b * 0.90})`;
             ctx.fillText(T.home, homeCX, botY);
 
@@ -3028,6 +3258,14 @@ function draw() {
             ctx.strokeStyle = `rgba(110,150,255,${b * 0.85})`;
             ctx.lineWidth   = 1.5;
             ctx.beginPath(); ctx.roundRect(playX, playY, btnW, btnH, 8); ctx.stroke();
+            // Shrink to fit -- PLAY AGAIN's translations run long in several locales
+            // (JOGAR DE NOVO, TEKRAR OYNA, فيها مجدداً), same fix as SHARE/HOME above.
+            let playFsz = FS * 0.028;
+            const playW = ctx.measureText(T.playAgain).width;
+            if (playW > btnW * 0.86) {
+                playFsz = Math.max(playFsz * (btnW * 0.86) / playW, FS * 0.015);
+                ctx.font = `bold ${playFsz}px 'Courier New',monospace`;
+            }
             sh(6, `rgba(100,150,255,${b * 0.60})`);
             ctx.fillStyle   = `rgba(180,210,255,${b * 0.95})`;
             ctx.fillText(T.playAgain, playCX, botY);

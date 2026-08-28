@@ -62,6 +62,12 @@ function onDown(e) {
             if (!_settingsPanelRect || !inRect(cx, cy, _settingsPanelRect)) showSettings = false;
             return;
         }
+        if (showCurrencyInfo) {
+            // Tap anywhere outside the panel closes it; a tap inside on the body text does
+            // nothing (no buttons live inside this panel, unlike Shop/Settings).
+            if (!_currencyInfoPanelRect || !inRect(cx, cy, _currencyInfoPanelRect)) showCurrencyInfo = false;
+            return;
+        }
         if (showShop) {
             if (_removeAdsBtnRect && inRect(cx, cy, _removeAdsBtnRect)) {
                 window.webkit?.messageHandlers?.iap?.postMessage({ action: 'purchase', product: 'remove_ads' });
@@ -96,6 +102,10 @@ function onDown(e) {
             window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'challenge' });
             return;
         }
+        if (_currencyInfoBtnRect) {
+            const b = _currencyInfoBtnRect, dx = cx - b.cx, dy = cy - b.cy;
+            if (dx*dx + dy*dy < b.r*b.r) { showCurrencyInfo = true; return; }
+        }
         for (let i = 0; i < _skinBtnRects.length; i++) {
             const b = _skinBtnRects[i], dx = cx - b.cx, dy = cy - b.cy;
             if (dx*dx + dy*dy < b.r*b.r && (unlockedSkins & (1 << i))) {
@@ -113,6 +123,7 @@ function onDown(e) {
     if (phase === 'title') {
         if (showSettings) { showSettings = false; return; }
         if (showShop) { showShop = false; return; }
+        if (showCurrencyInfo) { showCurrencyInfo = false; return; }
         startPlay(); return;   // reached only for keyboard/synthetic triggers (no e)
     }
     if (phase === 'dead' && deadT > 0.9) {

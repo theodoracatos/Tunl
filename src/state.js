@@ -145,6 +145,14 @@ let _challengeBtnRect = null;
 let showShop = false;
 let _shopBtnRect = null;
 let _shopPanelRect = null;
+// Small "i" button next to the shard wallet on the ship panel, opening a one-screen
+// explainer for shards/stardust/coins -- the one place new players hit numbers
+// (⧫/✦) that mean nothing without context, unlike coins which are self-explanatory
+// by look and effect during a run. See CLAUDE.md Onboarding: this is opt-in (tap to
+// open) rather than a forced hint, so it doesn't repeat the removed title-screen hint.
+let showCurrencyInfo = false;
+let _currencyInfoBtnRect = null;
+let _currencyInfoPanelRect = null;
 // Bottom Y of the title-screen settings/leaderboard/challenge button cluster, set each
 // draw() call. No longer read by anything else in draw() (the missions block used to
 // cascade off it when buttons sat above missions; the two were swapped per feedback --

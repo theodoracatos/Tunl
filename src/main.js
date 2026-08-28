@@ -43,6 +43,7 @@ window._tunlNativeUpdate = function (state) {
 window._tunlCloseSettingsIfOpen = function () {
     if (showSettings) { showSettings = false; return true; }
     if (showShop) { showShop = false; return true; }
+    if (showCurrencyInfo) { showCurrencyInfo = false; return true; }
     return false;
 };
 
