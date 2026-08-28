@@ -11,11 +11,12 @@
 // game can draw, because only this game's world is reproducible from a date.
 
 // Where a recipient goes to get the game, printed on every shared card. Confirmed by the
-// user 2026-08-21 as the site root, not a /tunl subpath -- the store listing pages are
-// served from the Schedly repo's wwwroot/tunl (see the release command and the
-// reference_store_listing_urls memory), but the public entry point is the bare domain.
+// user 2026-08-21 as the site root, not a /tunl subpath. Switched from schedly.ch to
+// flytunl.ch 2026-08-29 as part of the cutover to the new dedicated domain (see the
+// project_flytunl_site memory) -- schedly.ch's own wwwroot/tunl pages (see the release
+// command and the reference_store_listing_urls memory) are unaffected by this change.
 // This is the only place the public URL is written down in this repo.
-const SHARE_URL = 'https://schedly.ch';
+const SHARE_URL = 'https://flytunl.ch';
 
 const SHARE_W = 1200, SHARE_H = 630; // link-preview proportions; reads well in chats
 
