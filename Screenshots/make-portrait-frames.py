@@ -301,13 +301,13 @@ def run(group, src_dir, out_dir):
         if stamp not in files:
             print("!! missing", stamp, "in", src_dir)
             continue
-        build(files[stamp], os.path.join(out_dir, "%02d_portrait.png" % idx),
+        build(files[stamp], os.path.join(out_dir, "%02d.png" % idx),
               lines, accent, sub, seed=idx * 3 + 1)
 
 
 if __name__ == "__main__":
     desktop = os.path.expanduser("~/Desktop")
     run(EN, os.path.join(desktop, "iOS_7.0"),
-        os.path.join(REPO, "Screenshots/iOS_7.0/AppStore_portrait_en"))
+        os.path.join(REPO, "Screenshots/iOS_7.0/en/portrait"))
     run(BR, os.path.join(desktop, "iOS_7.0_br"),
-        os.path.join(REPO, "Screenshots/iOS_7.0/AppStore_portrait_pt-BR"))
+        os.path.join(REPO, "Screenshots/iOS_7.0/pt-BR/portrait"))
