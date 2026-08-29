@@ -52,21 +52,29 @@ function _fadeBgMusic() {
     }
 }
 
-// Blue coin slows the scroll to 60% for its duration (update.js); pull the background
-// music down with it so the slow-time window reads as real time-dilation, not just a
-// slower tunnel. Rides _bgmNode.playbackRate, so the track drops in pitch too - that
-// pitch sag IS the effect. No-op when music is off or the buffer hasn't started
-// playing yet; slow-time simply won't touch audio then, exactly as before. Driven on
-// from systems.js (blue-coin pickup) and off from update.js the frame slowTime hits 0,
-// with belt-and-braces off-calls in startPlay/die.
-function bgmSetSlow(on) {
+// Blue coin slows the scroll to 60% for its duration (systems.js). The music follows
+// with a *glide*, not a step: it sags to 0.6x on pickup, then eases continuously back
+// up to normal speed across the whole slow-time window, landing on 1.0x right as the
+// effect runs out. A second blue coin mid-effect just restarts the glide from whatever
+// the rate currently is, over the new (topped-up) `duration`. Rides
+// _bgmNode.playbackRate, so pitch sags and recovers with it - that ramp IS the effect.
+// No-op when music is off or the buffer hasn't started playing yet. `on=false` (the
+// belt-and-braces calls in update.js on slowTime hitting 0, plus startPlay/die) just
+// snaps the rate home in case the glide and the gameplay timer ever drift apart.
+function bgmSetSlow(on, duration) {
     if (!_ac || !_bgmNode) return;
-    const t = _ac.currentTime;
+    const t    = _ac.currentTime;
+    const rate = _bgmNode.playbackRate;
     try {
-        _bgmNode.playbackRate.cancelScheduledValues(t);
-        _bgmNode.playbackRate.setValueAtTime(_bgmNode.playbackRate.value, t);
-        // Snappy drop into slow-mo (the pickup should feel instant), gentler glide back.
-        _bgmNode.playbackRate.linearRampToValueAtTime(on ? 0.6 : 1.0, t + (on ? 0.10 : 0.28));
+        rate.cancelScheduledValues(t);
+        rate.setValueAtTime(rate.value, t);
+        if (on) {
+            const dur = Math.max(duration || 0, 0.6);
+            rate.linearRampToValueAtTime(0.6, t + 0.22);   // gentle sag on pickup
+            rate.linearRampToValueAtTime(1.0, t + dur);    // then ease back up over the effect
+        } else {
+            rate.linearRampToValueAtTime(1.0, t + 0.15);
+        }
     } catch (e) {}
 }
 

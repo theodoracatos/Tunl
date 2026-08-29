@@ -136,13 +136,17 @@ Mines (bombs) first spawn at wx=1800 (score ~30); shield coins unlock at score ~
 gold and blue (slow) sit at their base level; red (shield), green (magnet) and bomb are
 rare, run-defining grabs and sit ~2 dB hotter with a touch more tail (shield also gets a
 low body layer). Two effects are *states*, not one-shots, so they stay audible for their
-whole duration: blue sags the background music to 0.6x playback rate for the slow-time
-window (`bgmSetSlow`, riding `_bgmNode.playbackRate` so it drops in pitch too - reads as
-real time-dilation), and green runs a faint ambient shimmer loop while the magnet is
-live (`magnetLoopOn`/`magnetLoopOff`, same at-most-once guard pattern as the thruster /
-onFire loops). Both are driven ON from the pickup branch in `systems.js` and OFF from
-`update.js` on the falling edge of `slowTime`/`magnetTime` (never on a mid-effect
-top-up), with belt-and-braces OFF calls in `startPlay`/`die`.
+whole duration: blue sags the background music to 0.6x playback rate then *glides* it
+continuously back up to 1.0x across the whole slow-time window, landing on normal speed
+as the effect runs out (`bgmSetSlow(true, slowTime)`, riding `_bgmNode.playbackRate` so
+pitch sags and recovers with it - that ramp is the effect); a second blue coin restarts
+the glide from the current rate over the new topped-up duration. Green runs a faint
+ambient shimmer loop while the magnet is live (`magnetLoopOn`/`magnetLoopOff`, same
+at-most-once guard pattern as the thruster / onFire loops). Both are driven ON from the
+pickup branch in `systems.js`; the magnet loop is turned OFF from `update.js` on the
+falling edge of `magnetTime`, and `bgmSetSlow(false)` fires there too (plus
+`startPlay`/`die`) purely as a belt-and-braces snap-home in case the glide and the
+gameplay timer drift.
 
 **Poison/bomb rarity**: both unlock at score ~34+ (`_prog >= 0.38`, same gate as
 red/orange) and are driven by a real-time clock, not a per-coin-candidate percentage

@@ -191,7 +191,7 @@ function checkCoinCollection() {
                 shake += 3;
                 pushNotif(sx, coin.y - 34, 1.1, T.notifSlow, [60,210,255]);
                 sfxSlow();
-                bgmSetSlow(true);  // sag the music to match the slowed scroll (audio.js)
+                bgmSetSlow(true, slowTime);  // music sags, then glides back up over the effect (audio.js)
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             } else if (coin.type === 'red') {
                 // CRIMSON trades shield capacity away for its slim-hitbox buff below;
