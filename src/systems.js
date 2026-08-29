@@ -354,7 +354,23 @@ function drawBullets() {
 }
 
 // ── Mine system ───────────────────────────────────────────────────────
-
+//
+// Placement deliberately uses boundsBase() (the un-bonused corridor), never boundsAt() --
+// this is the one obstacle type that ISN'T wall-anchored, so it's also the one thing a
+// maxed gapBonus can't neutralize. Stalactites/chicanes are absolute-length and
+// wall-rooted (world.js/constants.js caps: stalLenFrac hard-capped, wave amplitude caps
+// at _prog2=2), so once those geometry knobs saturate (~score 1567), a player holding a
+// maxed coin bonus can park near the corridor's vertical center and never be threatened
+// by a wall or stalactite again, no matter how far scrollSpd() (uncapped, see world.js)
+// keeps climbing -- speed alone doesn't make a stationary target unsafe. Mines are what
+// closes that gap: because they're placed anywhere across the full un-bonused corridor
+// width, not just jutting from a wall, "hover at center" doesn't defend against them, and
+// dodging an unpredictable mine still needs a real, MAX_VY-bounded reaction every
+// mineSpacing() world-px -- which keeps shrinking in real time as scrollSpd rises without
+// limit. That's what actually guarantees no run survives forever, however skilled. Don't
+// change this to boundsAt()/gapBonus-aware placement -- it would remove the only hazard
+// type that can't be trivialized by parking, and nothing else in the difficulty system
+// would still guarantee an eventual death.
 function makeMine(wx) {
     // Never place a mine inside a chicane (shrinks at high density so mines don't disappear)
     const chicaneExclude = lerp(120, 50, _prog2);

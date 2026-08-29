@@ -53,14 +53,28 @@ function rgb(c, a) {
 // pink) rather than picked freely -- an earlier draft repeated hues twice
 // (two blue-greys, two teal-greens) and read as only 5 distinct days.
 // Index 0 = Monday ... 6 = Sunday, matching weekdayIndex() below.
+//
+// `planet` is a one-word world name shown under the run-start LEVEL banner
+// (draw.js), chosen to match each day's rock/color rather than the classical
+// Monday=Moon/Tuesday=Mars weekday-planet etymology (that mapping would put
+// Luna on Monday, but Monday's own rock here is the neutral grey reference
+// day -- Mondasche's literal moon-ash color is the one that actually reads as
+// the Moon, so it sits on Wednesday instead). Mostly real bodies so the tie
+// reads as intentional, not a random label generator:
+// Ceres (dwarf planet, grey) / Mars (iron-oxide red) / Luna (the Moon, ash-grey)
+// / Io (solar system's volcanic moon, for the volcanic-glass obsidian) /
+// Ianthe (a real Uranian moon -- Greek for "violet flower") / Pallas (real
+// asteroid sharing its name with the Pallasite meteorite type this rock is
+// already named after) / Rhodia (invented, from "rhodo-" = rose, mirroring
+// Rhodonit's own pink manganese vein).
 const WEEKDAY_PALETTES = [
-    { name: 'Asteroid-Grau',      wall: [43, 45, 52],  stal: [35, 36, 41],  stalEdge: [170, 196, 222], wallBase: [150, 178, 210] },
-    { name: 'Rostgestein',        wall: [60, 36, 22],  stal: [51, 32, 15],  stalEdge: [255, 162, 92],  wallBase: [255, 148, 72] },
-    { name: 'Mondasche',          wall: [41, 40, 44],  stal: [35, 34, 38],  stalEdge: [230, 230, 240], wallBase: [222, 222, 234] },
-    { name: 'Obsidian',           wall: [15, 15, 21],  stal: [12, 12, 17],  stalEdge: [122, 255, 210], wallBase: [112, 255, 206] },
-    { name: 'Amethyst-Geode',     wall: [36, 26, 58],  stal: [31, 22, 51],  stalEdge: [196, 140, 255], wallBase: [182, 122, 255] },
-    { name: 'Peridot-Pallasit',   wall: [38, 36, 26],  stal: [33, 31, 22],  stalEdge: [208, 236, 112], wallBase: [196, 228, 96] },
-    { name: 'Rhodonit-Gestein',   wall: [48, 22, 34],  stal: [40, 18, 28],  stalEdge: [255, 140, 190], wallBase: [255, 122, 176] },
+    { name: 'Asteroid-Grau',      planet: 'Ceres',  wall: [43, 45, 52],  stal: [35, 36, 41],  stalEdge: [170, 196, 222], wallBase: [150, 178, 210] },
+    { name: 'Rostgestein',        planet: 'Mars',   wall: [60, 36, 22],  stal: [51, 32, 15],  stalEdge: [255, 162, 92],  wallBase: [255, 148, 72] },
+    { name: 'Mondasche',          planet: 'Luna',   wall: [41, 40, 44],  stal: [35, 34, 38],  stalEdge: [230, 230, 240], wallBase: [222, 222, 234] },
+    { name: 'Obsidian',           planet: 'Io',     wall: [15, 15, 21],  stal: [12, 12, 17],  stalEdge: [122, 255, 210], wallBase: [112, 255, 206] },
+    { name: 'Amethyst-Geode',     planet: 'Ianthe', wall: [36, 26, 58],  stal: [31, 22, 51],  stalEdge: [196, 140, 255], wallBase: [182, 122, 255] },
+    { name: 'Peridot-Pallasit',   planet: 'Pallas', wall: [38, 36, 26],  stal: [33, 31, 22],  stalEdge: [208, 236, 112], wallBase: [196, 228, 96] },
+    { name: 'Rhodonit-Gestein',   planet: 'Rhodia', wall: [48, 22, 34],  stal: [40, 18, 28],  stalEdge: [255, 140, 190], wallBase: [255, 122, 176] },
 ];
 // Same bg for every day -- the walls carry the day's identity, not the void
 // behind them.
@@ -218,9 +232,11 @@ const BOMB_INTERVAL_SEC   = 16; // avg real seconds between bomb coins
 const POISON_LOSS_PCT_MIN = 0.12;
 const POISON_LOSS_PCT_MAX = 0.15;
 
-// Run-start "LEVEL n: Name" banner timing
-const LEVEL_INTRO_DUR  = 1.6; // total seconds visible
-const LEVEL_INTRO_FADE = 0.5; // seconds of that spent fading out at the end
+// Run-start "LEVEL n: Name" banner timing. Was 1.6/0.5 -- bumped on explicit
+// request to give the new planet subtitle line (draw.js) enough time to
+// actually be read, not just glimpsed before it fades.
+const LEVEL_INTRO_DUR  = 2.4; // total seconds visible
+const LEVEL_INTRO_FADE = 0.6; // seconds of that spent fading out at the end
 
 // Idle-hold gravity gate (update.js): a run that starts with holding already false (the
 // title-screen tap-to-confirm path, see input.js onUp) withholds gravity entirely until
