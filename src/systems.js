@@ -461,9 +461,11 @@ function updateCannonShots(dt) {
 // Triggered by collecting a bomb coin (see checkCoinCollection). A small blast
 // centered on the pickup point (cx/cy in screen space) that clears every nearby
 // hazard: fades out stalactites the same way a bullet-destroyed one does, pops
-// mines and in-flight cannon shots, and disables (but doesn't remove) any cannon
-// that hasn't fired yet, same as a bullet/shield destroying one of those. Purely
-// logic + particles -- the sfx lives with the pickup itself (systems.js
+// mines and in-flight cannon shots, and disables (but doesn't remove -- it's
+// still a solid wall fixture, see draw.js) any cannon that hasn't fired yet,
+// same as a bullet/shield destroying one of those, now with its own burst so
+// it reads as caught in the explosion rather than just quietly switched off.
+// Purely logic + particles -- the sfx lives with the pickup itself (systems.js
 // checkCoinCollection) so this can't double up if ever called from elsewhere.
 
 function triggerBombExplosion(cx, cy) {
@@ -504,7 +506,10 @@ function triggerBombExplosion(cx, cy) {
         const b  = boundsAt(c.wx);
         const wallY = c.isTop ? b.top : b.bot;
         const dx = sx - cx, dy = wallY - cy;
-        if (dx*dx + dy*dy < r2) c.fired = true; // disabled, same dimmed look as spent
+        if (dx*dx + dy*dy < r2) {
+            c.fired = true; // disabled, same dimmed look as spent
+            burst(sx, wallY); // reads as destroyed, not just quietly switched off
+        }
     }
     burst(cx, cy, 60, 265, 300);
     shake += 14;
