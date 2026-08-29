@@ -29,21 +29,34 @@ function _rockNoise(x) {
     const i0 = Math.floor(x), t = x - i0;
     return _rockHash(i0) + t * (_rockHash(i0 + 1) - _rockHash(i0));
 }
-// Shared intensity dial for the rock-noise treatment below (walls and
+// Shared intensity CAP for the rock-noise treatment below (walls and
 // stalactites both read this) -- dosed down from 1.0 after review found the
 // initial full-strength version "sehr rugged", then down again from 0.5 to
 // 0.3: still reads as broken rock (the big-facet octave dominates at this
 // point, fine grain mostly recedes), calmer again and easier to read at
 // speed. Tune here rather than the octave amplitudes directly if it ever
 // needs revisiting.
-const ROCK_ROUGHNESS = 0.3;
+const ROCK_ROUGHNESS_MAX = 0.3;
+
+// Ramps the roughness from smooth (0) at the start of a run up to the full
+// ROCK_ROUGHNESS_MAX cap by score ~1000 -- distance-based (scrollX / 60000,
+// score's own scrollX/60 conversion) rather than reading live `score`
+// directly, since score includes bonusScore (coins, near-misses, poison
+// losses) which can wobble non-monotonically; the rock surface should only
+// ever get rougher as you go deeper, never flicker with combo swings. Plain
+// linear ramp, not eased like _prog's sqrt -- "smooth", the ask here, just
+// means no jump/step, which any continuous function of scrollX already
+// gives; a fancier curve wasn't asked for.
+function _rockRoughness() {
+    return Math.min(scrollX / 60000, 1) * ROCK_ROUGHNESS_MAX;
+}
 
 function _wallJagged(wx, seedOffset) {
     const x = wx + seedOffset;
     return (_rockNoise(x * 0.033) * 4.5   // big facets, ~30px feature scale
           + _rockNoise(x * 0.11)  * 2.2   // medium chips
           + _rockNoise(x * 0.30)  * 1.0)  // fine grain
-         * ROCK_ROUGHNESS;
+         * _rockRoughness();
 }
 
 // Same rough-rock treatment as the walls, applied to a stalactite's own
@@ -58,7 +71,7 @@ function _wallJagged(wx, seedOffset) {
 // screen-x, so the jag doesn't reshape as the stalactite scrolls by.
 function _stalOutline(sx, hw, hw_base, len, dir, tipY, bLwall, bRwall, seed) {
     const STEPS = 6;
-    const jAmp = hw * 0.22 * ROCK_ROUGHNESS;
+    const jAmp = hw * 0.22 * _rockRoughness();
     const bez = (p0, p1, p2, p3, t) => {
         const u = 1 - t;
         return u*u*u*p0 + 3*u*u*t*p1 + 3*u*t*t*p2 + t*t*t*p3;
