@@ -138,6 +138,34 @@ function draw() {
     ctx.fillStyle = bgStr;
     ctx.fillRect(-20, -20, W+40, H+40);
 
+    // Background horizon - a second, dimmer tunnel silhouette sitting further back.
+    // Sampled from boundsBase() (no gapBonus reactivity -- purely a depth cue, not a
+    // gameplay readout) at scrollX * BG_PARALLAX so it drifts slower than the real
+    // corridor (constants.js). Coarser step than the real wall trace and no fill, just
+    // a soft dim stroke -- drawn before stalactites/walls so both naturally mask it
+    // wherever the real geometry overlaps, and it never affects collision.
+    {
+        const bgStep = RSTEP * 6;
+        const bgClr  = lerpClr(theme.wallBase, [0,0,0], 0.78);
+        ctx.beginPath();
+        for (let sx = -bgStep; sx <= W + bgStep*2; sx += bgStep) {
+            const b = boundsBase(scrollX * BG_PARALLAX + sx);
+            if (sx === -bgStep) ctx.moveTo(sx, b.top); else ctx.lineTo(sx, b.top);
+        }
+        ctx.strokeStyle = rgb(bgClr, 0.10);
+        ctx.lineWidth   = 1.5;
+        ctx.shadowColor = rgb(bgClr, 0.20);
+        ctx.shadowBlur  = 4;
+        ctx.stroke();
+        ctx.beginPath();
+        for (let sx = -bgStep; sx <= W + bgStep*2; sx += bgStep) {
+            const b = boundsBase(scrollX * BG_PARALLAX + sx);
+            if (sx === -bgStep) ctx.moveTo(sx, b.bot); else ctx.lineTo(sx, b.bot);
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+
     // Wall arrays
     const topArr = [], botArr = [], xs = [];
     for (let sx = -RSTEP; sx <= W + RSTEP*2; sx += RSTEP) {
@@ -1193,26 +1221,6 @@ function draw() {
         ctx.fillText(`${T.best}  ${best}`, W/2, hudY);
         ctx.shadowBlur  = 0;
         hudY += bestFsz * 0.85 + H * 0.01;
-    }
-
-    // Ghost gap readout - GHOST ON only, standing in for the ship while it's still
-    // outside GHOST_LATE_JOIN_GAP (ship hasn't joined yet, see above). GHOST OFF means
-    // off: no ship, no readout, nothing racing on screen. Points remaining until scrollX
-    // reaches the ghost run's length, in the same units as the score above so it reads
-    // at a glance. ghostY !== null is the same "still racing" condition update.js uses
-    // to keep the ghost ship eligible, so this and that stay in sync and both stop
-    // together the moment ghostPassed fires its own notif+sound.
-    if (ghostOn && phase === 'play' && ghostScore > 0 && ghostY !== null && ghostY !== undefined
-        && _ghostGap > GHOST_LATE_JOIN_GAP) {
-        const remaining = _ghostGap;
-        const gapFsz = FS * 0.022;
-        ctx.font        = `${gapFsz}px 'Courier New',monospace`;
-        ctx.fillStyle   = 'rgba(143,180,236,0.85)'; // matches the ghost ship's blue (#8fb4ec)
-        ctx.shadowColor = 'rgba(0,0,0,0.85)';
-        ctx.shadowBlur  = 4;
-        ctx.fillText(`${T.ghost} -${remaining}`, W/2, hudY);
-        ctx.shadowBlur  = 0;
-        hudY += gapFsz * 0.85 + H * 0.01;
     }
 
     // Next skin nudge - faint pulsing hint when this run's banked-so-far shards would

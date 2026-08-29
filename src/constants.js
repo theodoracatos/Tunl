@@ -25,6 +25,13 @@ const GRAVITY = 1150;
 const THRUST  = 2400;
 const MAX_VY  = 820;
 const RSTEP   = 3;
+// Background horizon layer (draw.js): a second, dimmer tunnel silhouette sampled from
+// boundsBase() at scrollX * BG_PARALLAX instead of the live scrollX. Since boundsBase()
+// is a pure function of world-x, scaling scrollX by a constant factor is all it takes to
+// make that curve advance slower than the real corridor at every instant (same ratio
+// whether the run is at normal speed or under a blue-coin slowdown) -- no extra state
+// needed. Purely cosmetic depth cue, never touches collision.
+const BG_PARALLAX = 0.4;
 
 const DEV_INVINCIBLE = false; // set true to disable all deaths (testing only)
 
