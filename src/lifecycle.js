@@ -14,30 +14,6 @@ function initAmbParts() {
     }));
 }
 
-// Farther-back star layer - fewer points with a lower parallax factor than
-// ambParts above, so they drift noticeably slower. Drawn behind ambParts, with
-// its own brighter/whiter color (draw.js) rather than ambParts' theme tint --
-// two rounds of low-alpha/theme-tinted tuning proved invisible on a real
-// device screen (dark-tone gamma crushes anything near-black well past what
-// a desktop browser preview shows). The following round overcorrected the
-// other way (flat, oversized discs read as blotches, not stars) -- pulled
-// the radius/alpha back down once draw.js started giving each point a small
-// glow instead of relying on raw disc size/alpha to survive gamma. Once the
-// glow fix landed, brightness/motion both came back up on request: alpha up
-// (glow now carries the "is it a blotch" risk, not the core size), and par
-// doubled -- still capped under ambParts' 0.12-0.30 range so this layer
-// reads as the slower, farther-back one.
-function initBgParts() {
-    bgParts = Array.from({ length: 20 }, () => ({
-        x:   Math.random() * W,
-        y:   Math.random() * H,
-        vy:  (Math.random() - 0.5) * 6,
-        par: 0.08 + Math.random() * 0.10,
-        r:   0.6 + Math.random() * 0.6,
-        a:   0.45 + Math.random() * 0.35,
-    }));
-}
-
 function titleScreen() {
     phase = 'title'; py = H / 2; vy = 0; holding = false; scrollX = 0;
     score = 0; newBest = false; newDailyBest = false;
@@ -61,7 +37,6 @@ function titleScreen() {
     runCoinsByType = { gold: 0, blue: 0, red: 0, green: 0, orange: 0 };
     levelIntroT = 0;
     initAmbParts();
-    initBgParts();
     const _dt = new Date();
     seedDailyVariety(_dt.getUTCFullYear() * 10000 + (_dt.getUTCMonth() + 1) * 100 + _dt.getUTCDate());
     refreshWave();

@@ -102,13 +102,6 @@ function update(dt) {
             if (p.y < 0)  p.y = H;
             if (p.y > H)  p.y = 0;
         }
-        for (const p of bgParts) {
-            p.x -= aTSpd * p.par * dt;
-            p.y += p.vy * dt;
-            if (p.x < -4) p.x += W + 8;
-            if (p.y < 0)  p.y = H;
-            if (p.y > H)  p.y = 0;
-        }
         return;
     }
 
@@ -456,15 +449,6 @@ function update(dt) {
     // Ambient motes drift at ~18% of play scroll speed (parallax)
     const aSpd = spd * 0.18;
     for (const p of ambParts) {
-        p.x -= aSpd * p.par * dt;
-        p.y += p.vy * dt;
-        if (p.x < -4) p.x += W + 8;
-        if (p.y < 0)  p.y = H;
-        if (p.y > H)  p.y = 0;
-    }
-    // Farther-back star layer - same drift formula, but its own (lower) par range
-    // (lifecycle.js initBgParts) keeps it noticeably slower than ambParts above.
-    for (const p of bgParts) {
         p.x -= aSpd * p.par * dt;
         p.y += p.vy * dt;
         if (p.x < -4) p.x += W + 8;
