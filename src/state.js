@@ -204,7 +204,6 @@ let gapBonus;
 let slowTime, shieldCount, shieldFlash, magnetTime;
 let bullets, bulletAmmo, bulletFireTimer;
 let mines, nextMineWx;
-let islands, nextIslandWx;
 let cannons, nextCannonWx;
 let cannonShots;
 // Poison/bomb: real-time clocks (see constants.js POISON_INTERVAL_SEC doc), not

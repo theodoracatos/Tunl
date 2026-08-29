@@ -175,32 +175,6 @@ const CANNON_SHOT_TRAVEL = 1.15;
 // not the whole visible screen.
 const BOMB_RADIUS = W * 0.30;
 
-// ── Mid-tunnel island (EXPERIMENTAL, branch experiment-mid-obstacle) ───
-// A stone ledge floating in the middle of the corridor, touching neither
-// wall -- long along the flight direction and thin vertically (a horizontal
-// slab, not a vertical pole), so clearing it means committing to a top lane
-// or a bottom lane and holding it for its length, rather than threading one
-// instantaneous gap. Distinct from a stalactite (always rooted to a wall,
-// and the "squeeze" is the whole obstacle) and from a paired chicane (which
-// narrows one shared line rather than forking it in two). Never destructible
-// (no bullet/bomb interaction) -- it's meant to read as a fixed navigation
-// choice, not a hazard to shoot away like a mine or stalactite.
-// ISLAND_MIN_PASSAGE is the safety floor each side (top gap AND bottom gap)
-// must clear for a candidate to spawn at all -- see world.js
-// islandLenWx()/islandSpacing() and systems.js makeIsland()/islandBlocksAt().
-// PR*1.5, not a bigger multiple: the raw collision minimum is just cPR (the wall/
-// stalactite check is boundsAt() vs. py +/- cPR, no added buffer), and the existing
-// "safe" convention elsewhere in this file for a single clearance is coinBlockedByStal's
-// `PR + COIN_R` (systems.js), which is ~1.5*PR since COIN_R is about half of PR. An
-// island needs TWO such clearances at once (top passage AND bottom), so it was tempting
-// to pad this further for comfort, but that compounds fast: fullGap scales with H
-// (capped at 600) while PR (and this floor) scales with W, and this game is landscape-
-// only with W often well above H -- a floor of PR*2.6 measured out to silently
-// eliminate every island past roughly score ~120 on a real target aspect ratio (fullGap
-// shrinks below 2x that floor well before max difficulty), which defeats the whole
-// feature for exactly the hardest, most rewarding stretch of a run.
-const ISLAND_MIN_PASSAGE = PR * 1.5;
-
 // ── Poison / bomb rarity ─────────────────────────────────────────────
 // Both are driven by a real-time clock (state.js poisonClock/bombClock, incremented
 // every play-frame in update.js), not a per-candidate percentage. An earlier version

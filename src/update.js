@@ -127,7 +127,7 @@ function update(dt) {
         scrollX += scrollSpd() * lf * lf * dt;
         refreshWave();
         score = Math.floor(scrollX / 60) + bonusScore;
-        maintainStalactites(); maintainIslands(); maintainCoins(); maintainMines(); maintainCannons();
+        maintainStalactites(); maintainCoins(); maintainMines(); maintainCannons();
         return;
     }
 
@@ -333,7 +333,6 @@ function update(dt) {
 
     // Maintain lists
     maintainStalactites();
-    maintainIslands();
     maintainCoins();
     maintainMines();
     maintainCannons();
@@ -369,13 +368,6 @@ function update(dt) {
     for (const s of stalactites) {
         if (s.dying) continue;
         if (stalHit(s, cPR)) { if (die()) return; break; }
-    }
-    // Island collision (EXPERIMENTAL): a plain die() like the wall/stalactite checks
-    // above -- shield still absorbs it via die()'s own shieldCount branch -- and no
-    // splice-on-hit afterward, since an island isn't destructible (see systems.js
-    // makeIsland's doc comment).
-    for (const isl of islands) {
-        if (islandHit(isl, cPR)) { if (die()) return; break; }
     }
 
     // Mine collision (same trade-off hitbox as walls/stalactites above)

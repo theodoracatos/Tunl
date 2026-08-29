@@ -551,63 +551,6 @@ function draw() {
         ctx.fill();
     }
 
-    // Mid-tunnel island (EXPERIMENTAL, branch experiment-mid-obstacle) -- a freestanding
-    // stone ledge sharing the wall/stalactite rock palette and speckle texture, so it
-    // reads as "more of the same rock" rather than a new obstacle family, just floating
-    // clear of both walls instead of rooted to one. Long and thin (horizontal), not
-    // tall and thin -- clearing it means picking a lane and holding it for the ledge's
-    // length, not threading one instantaneous gap. A soft warning glow (unlike the
-    // stalactite's plain rock edge) is the one deliberate departure -- it doesn't touch a
-    // wall to visually announce itself the way a stalactite's root does, so it needs its
-    // own cue that it's solid.
-    for (const isl of islands) {
-        const sx = isl.wx - scrollX;
-        if (sx + isl.halfLen < -60 || sx - isl.halfLen > W + 60) continue;
-        const ht = isl.halfThick;
-        const loX = sx - isl.halfLen, hiX = sx + isl.halfLen;
-        const topY = isl.cy - ht, botY = isl.cy + ht;
-        const traceIsland = () => {
-            ctx.beginPath();
-            ctx.moveTo(loX + ht, topY);
-            ctx.arcTo(hiX, topY, hiX, botY, ht);
-            ctx.arcTo(hiX, botY, loX, botY, ht);
-            ctx.arcTo(loX, botY, loX, topY, ht);
-            ctx.arcTo(loX, topY, hiX, topY, ht);
-            ctx.closePath();
-        };
-
-        // Warning glow, drawn wider than the body itself so it reads before the ship
-        // is close enough to need the sharp edge below.
-        traceIsland();
-        ctx.save();
-        ctx.shadowColor = rgb(theme.stalEdge, 0.55);
-        ctx.shadowBlur  = 16;
-        ctx.fillStyle   = rgb(theme.stal);
-        ctx.fill();
-        ctx.restore();
-
-        // Same stone-speckle texture as walls/stalactites -- same rock, not a
-        // differently-treated obstacle.
-        ctx.save();
-        traceIsland();
-        ctx.clip();
-        _paintStonePattern(scrollX);
-        // Top-lit vertical shading so the slab reads as round (a ledge), not flat.
-        const shadeGrd = ctx.createLinearGradient(0, topY, 0, botY);
-        shadeGrd.addColorStop(0,   rgb(lerpClr(theme.stalEdge, [255,255,255], 0.20), 0.32));
-        shadeGrd.addColorStop(0.5, 'rgba(0,0,0,0)');
-        shadeGrd.addColorStop(1,   'rgba(0,0,0,0.30)');
-        ctx.fillStyle = shadeGrd;
-        ctx.fillRect(loX - 2, topY - 2, hiX - loX + 4, botY - topY + 4);
-        ctx.restore();
-
-        // Crisp edge stroke
-        traceIsland();
-        ctx.strokeStyle = rgb(theme.stalEdge, 0.65);
-        ctx.lineWidth   = 1.6;
-        ctx.stroke();
-    }
-
     // Cannons - military artillery bolted to the wall: gunmetal carriage + barrel,
     // dimmed once spent (fired) so a glance tells whether one still has its shot
     // coming. Fires the exact same projectile sprite as the player's own bullets
