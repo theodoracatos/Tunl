@@ -47,11 +47,6 @@ function onDown(e) {
                 localStorage.setItem('tunnel_fx', fxOn ? '1' : '0');
                 return;
             }
-            if (_btnGhostRect && inRect(cx, cy, _btnGhostRect)) {
-                ghostOn = !ghostOn;
-                localStorage.setItem('tunnel_ghost_visible', ghostOn ? '1' : '0');
-                return;
-            }
             for (const b of _langBtnRects) {
                 if (inRect(cx, cy, b)) {
                     setLang(b.code);

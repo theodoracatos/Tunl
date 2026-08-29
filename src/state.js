@@ -26,18 +26,7 @@ let dailyBest = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tu
 let dailyRuns = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tunnel_daily_runs') || '0') : 0;
 let musicOn = localStorage.getItem('tunnel_music') !== '0';
 let fxOn    = localStorage.getItem('tunnel_fx')    !== '0';
-// Ghost RENDERING only, not recording -- today's best keeps banking to
-// tunnel_ghost either way (state.js's ghostPlay load, update.js's death-time save)
-// so re-enabling this mid-day still has something to race. Separate localStorage
-// key from tunnel_ghost itself, which holds the actual recorded track.
-// Off means off: neither the translucent ship nor its "GHOST -N" points-remaining
-// stand-in (draw.js, GHOST_LATE_JOIN_GAP) render, so nothing about today's best shows
-// on screen during the run. The comparison itself keeps running unconditionally though
-// (update.js's ghostPassed check isn't gated by this flag), so outlasting it still fires
-// its one-shot notif+sound -- the single moment that's the point of the feature survives
-// even with the ambient racing pressure turned off.
-let ghostOn = localStorage.getItem('tunnel_ghost_visible') !== '0';
-let _btnMusicRect = null, _btnFxRect = null, _btnGhostRect = null;
+let _btnMusicRect = null, _btnFxRect = null;
 // ── World rank ────────────────────────────────────────────────────────
 // Pushed in by the native layer after each score submit resolves (GameView.swift's
 // fetchWorldRank / MainActivity.kt's fetchWorldRank) -- see main.js _tunlNativeUpdate.
