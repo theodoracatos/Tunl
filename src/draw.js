@@ -146,16 +146,16 @@ function draw() {
     // wherever the real geometry overlaps, and it never affects collision.
     {
         const bgStep = RSTEP * 6;
-        const bgClr  = lerpClr(theme.wallBase, [0,0,0], 0.78);
+        const bgClr  = lerpClr(theme.wallBase, [0,0,0], 0.62);
         ctx.beginPath();
         for (let sx = -bgStep; sx <= W + bgStep*2; sx += bgStep) {
             const b = boundsBase(scrollX * BG_PARALLAX + sx);
             if (sx === -bgStep) ctx.moveTo(sx, b.top); else ctx.lineTo(sx, b.top);
         }
-        ctx.strokeStyle = rgb(bgClr, 0.10);
+        ctx.strokeStyle = rgb(bgClr, 0.22);
         ctx.lineWidth   = 1.5;
-        ctx.shadowColor = rgb(bgClr, 0.20);
-        ctx.shadowBlur  = 4;
+        ctx.shadowColor = rgb(bgClr, 0.28);
+        ctx.shadowBlur  = 5;
         ctx.stroke();
         ctx.beginPath();
         for (let sx = -bgStep; sx <= W + bgStep*2; sx += bgStep) {
@@ -510,8 +510,18 @@ function draw() {
         drawProjectile(sx, s.y, Math.atan2(s.vy, s.vx));
     }
 
-    // Ambient motes - subtle dust drifting through the tunnel
+    // Farther-back star layer - smaller, dimmer, drawn (and drifting, update.js)
+    // behind the ambParts dust layer below for the same depth cue as the
+    // background horizon line above.
     const [mr, mg, mb] = theme.wallBase;
+    for (const p of bgParts) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${mr},${mg},${mb},${p.a})`;
+        ctx.fill();
+    }
+
+    // Ambient motes - subtle dust drifting through the tunnel
     for (const p of ambParts) {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);

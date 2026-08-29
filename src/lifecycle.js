@@ -14,6 +14,20 @@ function initAmbParts() {
     }));
 }
 
+// Farther-back star layer - fewer, smaller, dimmer points with a lower parallax
+// factor than ambParts above, so they drift noticeably slower (same depth cue as
+// the background horizon line in draw.js). Drawn behind ambParts.
+function initBgParts() {
+    bgParts = Array.from({ length: 16 }, () => ({
+        x:   Math.random() * W,
+        y:   Math.random() * H,
+        vy:  (Math.random() - 0.5) * 6,
+        par: 0.04 + Math.random() * 0.06,
+        r:   0.3  + Math.random() * 0.5,
+        a:   0.03 + Math.random() * 0.05,
+    }));
+}
+
 function titleScreen() {
     phase = 'title'; py = H / 2; vy = 0; holding = false; scrollX = 0;
     score = 0; newBest = false; newDailyBest = false;
@@ -37,6 +51,7 @@ function titleScreen() {
     runCoinsByType = { gold: 0, blue: 0, red: 0, green: 0, orange: 0 };
     levelIntroT = 0;
     initAmbParts();
+    initBgParts();
     const _dt = new Date();
     seedDailyVariety(_dt.getUTCFullYear() * 10000 + (_dt.getUTCMonth() + 1) * 100 + _dt.getUTCDate());
     refreshWave();

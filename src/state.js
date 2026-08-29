@@ -238,6 +238,10 @@ let gtime = 0;
 let skinFx = [], skinFxT = 0;
 let shipPitch = 0;
 let ambParts = [];
+// Second, farther-back mote layer (lifecycle.js initBgParts, draw.js) - smaller,
+// dimmer, drifts slower than ambParts for the same parallax depth cue as the
+// background horizon line above.
+let bgParts  = [];
 let deathMarkers = [];   // persists across runs: { wx, wallY }
 const MAX_DEATH_MARKERS = 25;
 let bestMarker = null;   // { wx, wallY } of all-time best run's death spot
