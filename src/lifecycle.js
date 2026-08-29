@@ -21,16 +21,20 @@ function initAmbParts() {
 // device screen (dark-tone gamma crushes anything near-black well past what
 // a desktop browser preview shows). The following round overcorrected the
 // other way (flat, oversized discs read as blotches, not stars) -- pulled
-// the radius/alpha back down now that draw.js gives each point a small glow
-// instead of relying on raw disc size/alpha to survive gamma.
+// the radius/alpha back down once draw.js started giving each point a small
+// glow instead of relying on raw disc size/alpha to survive gamma. Once the
+// glow fix landed, brightness/motion both came back up on request: alpha up
+// (glow now carries the "is it a blotch" risk, not the core size), and par
+// doubled -- still capped under ambParts' 0.12-0.30 range so this layer
+// reads as the slower, farther-back one.
 function initBgParts() {
     bgParts = Array.from({ length: 20 }, () => ({
         x:   Math.random() * W,
         y:   Math.random() * H,
         vy:  (Math.random() - 0.5) * 6,
-        par: 0.04 + Math.random() * 0.06,
-        r:   0.5 + Math.random() * 0.5,
-        a:   0.30 + Math.random() * 0.30,
+        par: 0.08 + Math.random() * 0.10,
+        r:   0.6 + Math.random() * 0.6,
+        a:   0.45 + Math.random() * 0.35,
     }));
 }
 

@@ -506,7 +506,7 @@ function draw() {
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fillStyle   = `rgba(${sr},${sg},${sb},${p.a})`;
         ctx.shadowColor = `rgba(${sr},${sg},${sb},${p.a * 0.7})`;
-        ctx.shadowBlur  = p.r * 2.2;
+        ctx.shadowBlur  = p.r * 3;
         ctx.fill();
         ctx.shadowBlur  = 0;
     }
