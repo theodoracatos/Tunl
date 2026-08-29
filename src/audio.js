@@ -65,7 +65,8 @@ function bgmSetSlow(on) {
     try {
         _bgmNode.playbackRate.cancelScheduledValues(t);
         _bgmNode.playbackRate.setValueAtTime(_bgmNode.playbackRate.value, t);
-        _bgmNode.playbackRate.linearRampToValueAtTime(on ? 0.6 : 1.0, t + 0.30);
+        // Snappy drop into slow-mo (the pickup should feel instant), gentler glide back.
+        _bgmNode.playbackRate.linearRampToValueAtTime(on ? 0.6 : 1.0, t + (on ? 0.10 : 0.28));
     } catch (e) {}
 }
 
