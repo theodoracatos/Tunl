@@ -30,15 +30,14 @@ function _rockNoise(x) {
     return _rockHash(i0) + t * (_rockHash(i0 + 1) - _rockHash(i0));
 }
 // Shared intensity CAP for the rock-noise treatment below (walls and
-// stalactites both read this) -- the full-strength octave amplitudes as
-// originally written (1.0) are only ever reached at the top of the ramp
-// below (score ~1000, a genuinely deep run), not from the first stalactite.
-// The static 0.3 an earlier review tuned down to was a fixed intensity for
-// the whole run; once the ramp made "how rugged right now" a function of
-// distance instead, the top of that ramp went back to the full 1.0 -- most
-// runs (typically ending well under score 1000, see CLAUDE.md) never get
-// there, so "sehr rugged" becomes a deep-run payoff, not the default.
-const ROCK_ROUGHNESS_MAX = 1.0;
+// stalactites both read this) -- set to 0 on request, so the ramp still
+// runs (harmless: _rockRoughness() always returns 0) but every wall/
+// stalactite edge is the plain smooth boundsAt() curve again. The noise
+// functions and the ramp itself are left in place rather than ripped out,
+// since this was a deliberate "turn it off", not "this approach was
+// wrong" -- flip this one constant back up (0.3 was the last hand-tuned
+// flat value, 1.0 the top of the score-1000 ramp) if it comes back.
+const ROCK_ROUGHNESS_MAX = 0;
 
 // Ramps the roughness from smooth (0) at the start of a run up to the full
 // ROCK_ROUGHNESS_MAX cap at score 1000, reading `score` directly -- an
