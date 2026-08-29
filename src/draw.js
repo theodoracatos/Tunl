@@ -31,10 +31,12 @@ function _rockNoise(x) {
 }
 // Shared intensity dial for the rock-noise treatment below (walls and
 // stalactites both read this) -- dosed down from 1.0 after review found the
-// initial full-strength version "sehr rugged": facets still read clearly as
-// broken rock at 0.5, but calmer overall and easier to read at speed. Tune
-// here rather than the octave amplitudes directly if it ever needs revisiting.
-const ROCK_ROUGHNESS = 0.5;
+// initial full-strength version "sehr rugged", then down again from 0.5 to
+// 0.3: still reads as broken rock (the big-facet octave dominates at this
+// point, fine grain mostly recedes), calmer again and easier to read at
+// speed. Tune here rather than the octave amplitudes directly if it ever
+// needs revisiting.
+const ROCK_ROUGHNESS = 0.3;
 
 function _wallJagged(wx, seedOffset) {
     const x = wx + seedOffset;
