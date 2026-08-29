@@ -916,7 +916,7 @@ function drawWorld() {
     // Speed lines - horizontal streaks driven by vertical velocity OR scroll speed
     if (phase === 'play') {
         const vyFrac    = Math.max(0, (Math.abs(vy) - 300) / (MAX_VY - 300));
-        const actualSpd = scrollSpd() * (slowTime > 0 ? 0.60 : 1.0);
+        const actualSpd = scrollSpd() * slowScrollFactor();
         const normSpd   = actualSpd * 600 / W;
         const spdFrac   = Math.max(0, (normSpd - 380) / (560 - 380));
         const speedFrac = Math.max(vyFrac, spdFrac);
@@ -1373,7 +1373,7 @@ function drawHUD() {
 
     // Slow-time bar (bottom, cyan, just above gap bar)
     if (phase === 'play' && slowTime > 0) {
-        const ratio = Math.min(slowTime / 4.0, 1.0);
+        const ratio = slowTimeMax > 0 ? Math.min(slowTime / slowTimeMax, 1.0) : Math.min(slowTime / 4.0, 1.0);
         const barW  = W * 0.55 * ratio;
         const barY  = H * 0.940;
         const barH  = 4;

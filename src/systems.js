@@ -187,6 +187,7 @@ function checkCoinCollection() {
             if (coinCombo > runMaxCombo) runMaxCombo = coinCombo;
             if (coin.type === 'blue') {
                 slowTime = Math.min(slowTime + (activeSkin === 3 ? masteryLerp(3, 6.0, 7.5) : 4.0), activeSkin === 3 ? masteryLerp(3, 12.0, 15.0) : 8.0);
+                slowTimeMax = slowTime;  // capture the window the scroll + music glide ramps over (world.js slowScrollFactor)
                 burstCoin(sx, coin.y, 195, 26);
                 shake += 3;
                 pushNotif(sx, coin.y - 34, 1.1, T.notifSlow, [60,210,255]);

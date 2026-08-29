@@ -201,7 +201,7 @@ let stalactites, nextStalWx;
 let coins, nextCoinWx;
 let chicaneCoins;
 let gapBonus;
-let slowTime, shieldCount, shieldFlash, magnetTime;
+let slowTime, slowTimeMax, shieldCount, shieldFlash, magnetTime;
 let bullets, bulletAmmo, bulletFireTimer;
 let mines, nextMineWx;
 let cannons, nextCannonWx;

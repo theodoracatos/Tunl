@@ -126,7 +126,7 @@ maxed bonus nearly doubles the corridor - coins are essential at high difficulty
 
 Coins are staged by `_prog` so power-ups introduce gradually:
 - score 0-11 (_prog < 0.22): gold only (gap bonus)
-- score 11-33 (_prog 0.22-0.38): + blue (slow time, 4s half-speed)
+- score 11-33 (_prog 0.22-0.38): + blue (slow time: scroll sags to 0.6x on pickup then ramps back to full over ~4s - see slowScrollFactor)
 - score 34-70 (_prog 0.38-0.55): + red (shield, absorbs 1 hit) + orange (bullet ammo)
 - score 71+ (_prog >= 0.55): + green (magnet, pulls coins)
 
@@ -140,7 +140,12 @@ whole duration: blue sags the background music to 0.6x playback rate then *glide
 continuously back up to 1.0x across the whole slow-time window, landing on normal speed
 as the effect runs out (`bgmSetSlow(true, slowTime)`, riding `_bgmNode.playbackRate` so
 pitch sags and recovers with it - that ramp is the effect); a second blue coin restarts
-the glide from the current rate over the new topped-up duration. Green runs a faint
+the glide from the current rate over the new topped-up duration. **The gameplay scroll
+speed follows the identical curve** (`slowScrollFactor()` in `world.js`, multiplied into
+`scrollSpd()` in `update.js` and into the speed-line intensity in `draw.js`) - the blue
+coin is a decelerate-then-recover swoop, not a flat half-speed plateau, and tunnel and
+soundtrack speed back up together. `slowTimeMax` (state.js, captured at each pickup in
+`systems.js`) is the window the ramp lerps over. Green runs a faint
 ambient shimmer loop while the magnet is live (`magnetLoopOn`/`magnetLoopOff`, same
 at-most-once guard pattern as the thruster / onFire loops). Both are driven ON from the
 pickup branch in `systems.js`; the magnet loop is turned OFF from `update.js` on the
@@ -298,8 +303,9 @@ with no ghost, and the day's first good run creates the thing you chase for the 
 it. Outlasting the ghost fires a one-shot notif and sound; that moment is the whole point
 of the feature.
 
-Recording and playback are indexed by `scrollX`, never elapsed time - a blue coin halves
-scroll speed for 4 seconds, which would desync a time-indexed ghost from the tunnel.
+Recording and playback are indexed by `scrollX`, never elapsed time - a blue coin drops
+scroll speed and ramps it back over ~4s (`slowScrollFactor`), which would desync a
+time-indexed ghost from the tunnel; scrollX indexing is immune to it.
 
 The ghost is drawn *before* the Player block in `draw.js`, not inside it: that block
 applies a `rotate()` pivoted on the player's position, which would swing the ghost around

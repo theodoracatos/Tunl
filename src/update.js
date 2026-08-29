@@ -162,7 +162,7 @@ function update(dt) {
     if (_magWas  && magnetTime <= 0) magnetLoopOff();
 
     // Scroll + score
-    const spd = scrollSpd() * (slowTime > 0 ? 0.60 : 1.0);
+    const spd = scrollSpd() * slowScrollFactor();
     scrollX += spd * dt;
     refreshWave();
     score = Math.floor(scrollX / 60) + bonusScore;

@@ -63,6 +63,19 @@ function scrollSpd() {
     const beyond = Math.max(_prog2 - 1, 0);
     return (base + Math.sqrt(beyond) * 90) * W / 600;
 }
+
+// Blue coin: multiplied into the scroll speed (update.js) and the speed-line
+// intensity (draw.js). It is NOT a flat 0.6x-while-active plateau - the coin sags
+// the scroll to 0.6x on pickup, then this factor ramps linearly back to full over
+// the slow-time window, so the effect is a decelerate-then-recover swoop that ends
+// exactly as slowTime runs out. The background music glides on the identical curve
+// (audio.js bgmSetSlow), so tunnel and soundtrack speed up together. slowTimeMax is
+// the duration captured at the last pickup (systems.js); a mid-effect second blue
+// coin recaptures it so the ramp restarts from the new, longer window.
+function slowScrollFactor() {
+    if (!(slowTime > 0) || !(slowTimeMax > 0)) return 1.0;
+    return lerp(0.60, 1.0, 1 - slowTime / slowTimeMax);
+}
 // Nudges stal/coin/mine density and chicane odds per day, on top of the
 // existing _prog/_prog2 curves - see seedDailyVariety. Classic is the
 // no-op baseline; the other three each push one knob further and pull
