@@ -18,13 +18,13 @@ function initAmbParts() {
 // factor than ambParts above, so they drift noticeably slower (same depth cue as
 // the background horizon line in draw.js). Drawn behind ambParts.
 function initBgParts() {
-    bgParts = Array.from({ length: 16 }, () => ({
+    bgParts = Array.from({ length: 20 }, () => ({
         x:   Math.random() * W,
         y:   Math.random() * H,
         vy:  (Math.random() - 0.5) * 6,
         par: 0.04 + Math.random() * 0.06,
-        r:   0.3  + Math.random() * 0.5,
-        a:   0.03 + Math.random() * 0.05,
+        r:   0.65 + Math.random() * 0.55,
+        a:   0.08 + Math.random() * 0.12,
     }));
 }
 

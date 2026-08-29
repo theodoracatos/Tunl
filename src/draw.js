@@ -141,29 +141,34 @@ function draw() {
     // Background horizon - a second, dimmer tunnel silhouette sitting further back.
     // Sampled from boundsBase() (no gapBonus reactivity -- purely a depth cue, not a
     // gameplay readout) at scrollX * BG_PARALLAX so it drifts slower than the real
-    // corridor (constants.js). Coarser step than the real wall trace and no fill, just
-    // a soft dim stroke -- drawn before stalactites/walls so both naturally mask it
-    // wherever the real geometry overlaps, and it never affects collision.
+    // corridor (constants.js). A filled silhouette anchored to the canvas edge, not a
+    // stroked outline -- a stroke floating in the open corridor with nothing behind it
+    // read as a stray glitch line, not a wall further back. Drawn before
+    // stalactites/walls so the real (opaque) wall fill masks it wherever the two
+    // curves coincide, leaving only the sliver where they diverge -- exactly the
+    // glimpsed-second-wall look, never touches collision.
     {
-        const bgStep = RSTEP * 6;
-        const bgClr  = lerpClr(theme.wallBase, [0,0,0], 0.62);
+        const bgStep = RSTEP * 2;
+        const bgClr  = lerpClr(theme.wallBase, [0,0,0], 0.72);
+        ctx.fillStyle = rgb(bgClr, 0.16);
         ctx.beginPath();
+        ctx.moveTo(-bgStep, -4);
         for (let sx = -bgStep; sx <= W + bgStep*2; sx += bgStep) {
             const b = boundsBase(scrollX * BG_PARALLAX + sx);
-            if (sx === -bgStep) ctx.moveTo(sx, b.top); else ctx.lineTo(sx, b.top);
+            ctx.lineTo(sx, b.top);
         }
-        ctx.strokeStyle = rgb(bgClr, 0.22);
-        ctx.lineWidth   = 1.5;
-        ctx.shadowColor = rgb(bgClr, 0.28);
-        ctx.shadowBlur  = 5;
-        ctx.stroke();
+        ctx.lineTo(W + bgStep*2, -4);
+        ctx.closePath();
+        ctx.fill();
         ctx.beginPath();
+        ctx.moveTo(-bgStep, H+4);
         for (let sx = -bgStep; sx <= W + bgStep*2; sx += bgStep) {
             const b = boundsBase(scrollX * BG_PARALLAX + sx);
-            if (sx === -bgStep) ctx.moveTo(sx, b.bot); else ctx.lineTo(sx, b.bot);
+            ctx.lineTo(sx, b.bot);
         }
-        ctx.stroke();
-        ctx.shadowBlur = 0;
+        ctx.lineTo(W + bgStep*2, H+4);
+        ctx.closePath();
+        ctx.fill();
     }
 
     // Wall arrays
