@@ -29,11 +29,19 @@ function _rockNoise(x) {
     const i0 = Math.floor(x), t = x - i0;
     return _rockHash(i0) + t * (_rockHash(i0 + 1) - _rockHash(i0));
 }
+// Shared intensity dial for the rock-noise treatment below (walls and
+// stalactites both read this) -- dosed down from 1.0 after review found the
+// initial full-strength version "sehr rugged": facets still read clearly as
+// broken rock at 0.5, but calmer overall and easier to read at speed. Tune
+// here rather than the octave amplitudes directly if it ever needs revisiting.
+const ROCK_ROUGHNESS = 0.5;
+
 function _wallJagged(wx, seedOffset) {
     const x = wx + seedOffset;
-    return _rockNoise(x * 0.033) * 4.5   // big facets, ~30px feature scale
-         + _rockNoise(x * 0.11)  * 2.2   // medium chips
-         + _rockNoise(x * 0.30)  * 1.0;  // fine grain
+    return (_rockNoise(x * 0.033) * 4.5   // big facets, ~30px feature scale
+          + _rockNoise(x * 0.11)  * 2.2   // medium chips
+          + _rockNoise(x * 0.30)  * 1.0)  // fine grain
+         * ROCK_ROUGHNESS;
 }
 
 // Same rough-rock treatment as the walls, applied to a stalactite's own
@@ -48,7 +56,7 @@ function _wallJagged(wx, seedOffset) {
 // screen-x, so the jag doesn't reshape as the stalactite scrolls by.
 function _stalOutline(sx, hw, hw_base, len, dir, tipY, bLwall, bRwall, seed) {
     const STEPS = 6;
-    const jAmp = hw * 0.22;
+    const jAmp = hw * 0.22 * ROCK_ROUGHNESS;
     const bez = (p0, p1, p2, p3, t) => {
         const u = 1 - t;
         return u*u*u*p0 + 3*u*u*t*p1 + 3*u*t*t*p2 + t*t*t*p3;
