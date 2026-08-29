@@ -335,28 +335,46 @@ const STARDUST_STREAK_BONUS_DAY = 7; // every Nth unbroken streak day grants +1 
 // shards immediately, exempt from DAILY_SHARD_CAP: a bounded, once-per-mission-per-day
 // reward isn't the unlimited-grind problem that cap guards against.
 const MISSION_REWARD = 40;
+// `tier` (0 easy / 1 medium / 2 hard) is the pick stratifier: pickDailyMissionIndices
+// draws exactly one mission from each tier, so every day is one gimme + one session-grind
+// + one skill/deep-run chase -- and the flat MISSION_REWARD stays fair because the three
+// slots are structurally different, not three random draws that might all be trivial or
+// all be brutal. Targets are tuned so each tier is ~a few / ~5-10 / ~10-15 min of
+// focused play for a mid-skill player; green/red were cut hard from an earlier pass where
+// their coin-type spawn weight (3% / ~6%, see makeCoin in systems.js) plus their score
+// gate made them near-impossible for the casual players who need the shards most.
 const MISSION_DEFS = [
-    { id: 'gold',     stat: 'gold',       target: 15  },
-    { id: 'blue',     stat: 'blue',       target: 8   },
-    { id: 'red',      stat: 'red',        target: 6   },
-    { id: 'green',    stat: 'green',      target: 5   },
-    { id: 'orange',   stat: 'orange',     target: 6   },
-    { id: 'nearMiss', stat: 'nearMisses', target: 10  },
-    { id: 'combo',    stat: 'bestCombo',  target: 5   },
-    { id: 'score',    stat: 'bestScore',  target: 150 },
-    { id: 'runs',     stat: 'runs',       target: 3   },
+    { id: 'gold',     stat: 'gold',       target: 15,  tier: 0 },
+    { id: 'blue',     stat: 'blue',       target: 8,   tier: 0 },
+    { id: 'runs',     stat: 'runs',       target: 4,   tier: 0 },
+    { id: 'orange',   stat: 'orange',     target: 5,   tier: 1 },
+    { id: 'nearMiss', stat: 'nearMisses', target: 10,  tier: 1 },
+    { id: 'combo',    stat: 'bestCombo',  target: 5,   tier: 1 },
+    { id: 'dist',     stat: 'dist',       target: 800, tier: 1 },
+    { id: 'red',      stat: 'red',        target: 4,   tier: 2 },
+    { id: 'green',    stat: 'green',      target: 2,   tier: 2 },
+    { id: 'score',    stat: 'bestScore',  target: 175, tier: 2 },
+    { id: 'bomb',     stat: 'bomb',       target: 3,   tier: 2 },
 ];
 function pickDailyMissionIndices(dayInt) {
     // Self-contained LCG, deliberately independent of the shared seedRng()/rng() used
     // for wave generation -- drawing from that shared stream here would shift its call
     // order and desync the tunnel shape from that same day's WORLD_NAME elsewhere.
-    const n = MISSION_DEFS.length;
+    // Stratified: one mission per tier, in tier order (easy row first), so the returned
+    // triple is both a fair spread of difficulty and a sensible top-to-bottom reading
+    // order in the title-screen block.
+    const byTier = [[], [], []];
+    for (let i = 0; i < MISSION_DEFS.length; i++) byTier[MISSION_DEFS[i].tier].push(i);
     const picked = [];
-    let seed = dayInt >>> 0;
-    while (picked.length < 3) {
-        seed = (Math.imul(seed, 1103515245) + 12345) >>> 0;
-        const idx = seed % n;
-        if (!picked.includes(idx)) picked.push(idx);
+    for (let t = 0; t < 3; t++) {
+        // Independent murmur-style hash per (day, tier) rather than one chained LCG:
+        // chaining made the buckets advance in lockstep, so "hard mission" cycled
+        // red->green->score->bomb on consecutive days, which reads as a pattern.
+        let h = Math.imul(((dayInt >>> 0) + 0x9e3779b9 * (t + 1)) | 0, 0x85ebca6b) >>> 0;
+        h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0;
+        h = (h ^ (h >>> 16)) >>> 0;
+        const bucket = byTier[t];
+        picked.push(bucket[h % bucket.length]);
     }
     return picked;
 }

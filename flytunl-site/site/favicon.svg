@@ -1,250 +1,86 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- ============================================================
+       TUNL app-icon master - "S1 / Solo": the ship IS the mark.
+       Just the player sprite (shipPath()/drawShip() geometry from
+       src/draw.js, r=130, unchanged), centred, in a ~30-deg climb
+       because the game verb is "hold = climb". No coin, no tunnel
+       arcs, no particle field - one form, so the silhouette
+       survives down to a 16px favicon. A single cool white-blue
+       thrust cone trails behind (deliberately not the warm-gold
+       in-game exhaust, so the mark stays inside the purple/cyan
+       brand palette). Soft blue aura instead of the old bright
+       vanishing-point core.
+       Everything else (adaptive foreground, favicons, iOS/Android
+       PNGs, feature graphic) is exported/derived from this.
+       ============================================================ -->
   <defs>
-    <radialGradient id="bgGrd" cx="50%" cy="44%" r="72%">
-      <stop offset="0%"  stop-color="#141c44"/>
-      <stop offset="55%" stop-color="#080b22"/>
+    <radialGradient id="bgGrd" cx="50%" cy="46%" r="75%">
+      <stop offset="0%"   stop-color="#141c44"/>
+      <stop offset="55%"  stop-color="#080b22"/>
       <stop offset="100%" stop-color="#04040e"/>
     </radialGradient>
-    <linearGradient id="purpleGrd" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%"   stop-color="#7a3ce0"/>
-      <stop offset="50%"  stop-color="#a75bff"/>
-      <stop offset="100%" stop-color="#7a3ce0"/>
-    </linearGradient>
-    <linearGradient id="cyanGrd" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%"   stop-color="#1aa8d6"/>
-      <stop offset="50%"  stop-color="#3fe0ff"/>
-      <stop offset="100%" stop-color="#1aa8d6"/>
-    </linearGradient>
-    <radialGradient id="coreGrd" cx="50%" cy="50%" r="50%">
-      <stop offset="0%"   stop-color="#ffffff"/>
-      <stop offset="35%"  stop-color="#d7e8ff"/>
-      <stop offset="100%" stop-color="#6f9cff" stop-opacity="0"/>
+    <radialGradient id="aura" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#a9c4ff" stop-opacity="0.42"/>
+      <stop offset="55%"  stop-color="#6f8dff" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#5a4fe0" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="coreHalo" cx="50%" cy="50%" r="50%">
-      <stop offset="0%"  stop-color="#bcd4ff" stop-opacity="0.9"/>
-      <stop offset="100%" stop-color="#5b7fff" stop-opacity="0"/>
-    </radialGradient>
+    <!-- objectBoundingBox gradients: they ride the ship's own bbox,
+         so they run nose-to-tail no matter how the group is rotated. -->
     <linearGradient id="shipGrd" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%"   stop-color="#c9d8ff"/>
+      <stop offset="0%"   stop-color="#c9d5f2"/>
+      <stop offset="55%"  stop-color="#f2f5ff"/>
       <stop offset="100%" stop-color="#ffffff"/>
     </linearGradient>
-    <radialGradient id="coinAura" cx="50%" cy="50%" r="50%">
-      <stop offset="0%"   stop-color="#ffe040" stop-opacity="0.35"/>
-      <stop offset="35%"  stop-color="#ffe040" stop-opacity="0.12"/>
-      <stop offset="100%" stop-color="#ffe040" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="coinBodyGrd" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.95"/>
-      <stop offset="13%"  stop-color="#ffe040"/>
-      <stop offset="50%"  stop-color="#ffe040"/>
-      <stop offset="80%"  stop-color="#7a5410"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0.55"/>
+    <linearGradient id="shipShade" x1="1" y1="0" x2="0" y2="0">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.12"/>
+      <stop offset="50%"  stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#1a1f3a" stop-opacity="0.20"/>
     </linearGradient>
-    <filter id="blur0" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="22"/></filter>
-    <filter id="blur1" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>
-    <filter id="coreBlur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="26"/></filter>
-    <filter id="coreBlurTight" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="6"/></filter>
-    <filter id="trailBlur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="9"/></filter>
-    <filter id="shipGlow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="14"/></filter>
-    <filter id="flameBlur" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4"/></filter>
-    <filter id="abGlow" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="11"/></filter>
-    <filter id="coinGlow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4"/></filter>
+    <linearGradient id="jetGrd" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#6cc4ff" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#c2e6ff" stop-opacity="0.85"/>
+    </linearGradient>
+    <filter id="shipGlow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="19"/></filter>
+    <filter id="jetBlur"  x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter>
   </defs>
 
   <rect width="1024" height="1024" fill="url(#bgGrd)"/>
 
-  <!-- vanishing-point halo: the light the ship is flying toward -->
-  <circle cx="560" cy="512" r="190" fill="url(#coreHalo)" filter="url(#coreBlur)"/>
+  <!-- soft glow the ship sits in, centred on the canvas -->
+  <circle cx="512" cy="512" r="360" fill="url(#aura)"/>
 
-  <!-- tunnel walls, purple top / cyan bottom -->
-  <path d="M 60 512 A 452 452 0 0 1 964 512" fill="none" stroke="url(#purpleGrd)" stroke-width="6" stroke-linecap="round" opacity="0.28" filter="url(#blur0)"/>
-  <path d="M 964 512 A 452 452 0 0 1 60 512" fill="none" stroke="url(#cyanGrd)" stroke-width="6" stroke-linecap="round" opacity="0.28" filter="url(#blur0)"/>
-  <path d="M 168 512 A 344 344 0 0 1 856 512" fill="none" stroke="url(#purpleGrd)" stroke-width="8" stroke-linecap="round" opacity="0.4" filter="url(#blur1)"/>
-  <path d="M 856 512 A 344 344 0 0 1 168 512" fill="none" stroke="url(#cyanGrd)" stroke-width="8" stroke-linecap="round" opacity="0.4" filter="url(#blur1)"/>
+  <!-- Ship: shipPath() r=130 + drawShip() detailing. The visual centre
+       of the sprite's bounding box is x=32.5 (nose reaches +223.6,
+       tail -158.6), so the inner translate(-32.5,0) drops that centre
+       onto the rotate pivot; the pivot itself is the canvas centre. -->
+  <g transform="translate(508,514) rotate(-30) scale(1.4) translate(-32.5,0)">
+    <!-- cool thrust cone, drawn first so it reads as trailing behind -->
+    <path d="M -150 -34 Q -235 -11 -300 0 Q -235 11 -150 34 Z" fill="url(#jetGrd)" filter="url(#jetBlur)"/>
+    <path d="M -150 -16 Q -220 -5 -262 0 Q -220 5 -150 16 Z" fill="#eef6ff" opacity="0.92"/>
 
-  <!-- wingtip speed trails, echoing the wall colors -->
-  <path d="M 236 372 C 340 372 420 430 480 470" fill="none" stroke="url(#purpleGrd)" stroke-width="14" stroke-linecap="round" opacity="0.55" filter="url(#trailBlur)"/>
-  <path d="M 236 652 C 340 652 420 594 480 554" fill="none" stroke="url(#cyanGrd)" stroke-width="14" stroke-linecap="round" opacity="0.55" filter="url(#trailBlur)"/>
-
-  <!-- bright core -->
-  <circle cx="560" cy="512" r="60" fill="url(#coreGrd)" filter="url(#coreBlurTight)"/>
-  <circle cx="560" cy="512" r="28" fill="#ffffff"/>
-
-  <!-- Thrust: particle-spray exhaust matching the in-game thrusterParts renderer
-       (src/draw.js), small round embers scattered backward from the engines,
-       not a solid flame shape. Origins match update.js's actual spawn point,
-       x = PX - PR*0.74, y = py ± PR*0.50 (ship-local (-96.2, ±65) at r=130).
-       Warm gold/pale-yellow dominant with occasional cool blue-violet flecks,
-       matching the game's hsla(h,...) split (h 15-60 warm ~85%, h 215-250 cool
-       ~15%), denser and brighter near the nozzle, thinning and fading with
-       distance, straight back horizontal (matching update.js's vx-only spawn
-       velocity), drawn before the ship so it reads as trailing behind it. -->
-  <g filter="url(#flameBlur)">
-    <circle cx="94.1" cy="454.9" r="8.2" fill="#ffcf7a" opacity="0.01"/>
-    <circle cx="100.6" cy="442.2" r="9.7" fill="#ffb347" opacity="0.01"/>
-    <circle cx="100.9" cy="460.6" r="13.9" fill="#ffcf7a" opacity="0.01"/>
-    <circle cx="102.4" cy="402.5" r="15.3" fill="#ffcf7a" opacity="0.01"/>
-    <circle cx="103.9" cy="402.9" r="10.9" fill="#ffcf7a" opacity="0.01"/>
-    <circle cx="110.7" cy="398.9" r="13.6" fill="#ffb347" opacity="0.02"/>
-    <circle cx="102.8" cy="424.9" r="11.0" fill="#ffb347" opacity="0.02"/>
-    <circle cx="115.6" cy="428.8" r="16.5" fill="#ffcf7a" opacity="0.02"/>
-    <circle cx="127.6" cy="483.0" r="16.0" fill="#ffcf7a" opacity="0.02"/>
-    <circle cx="138.2" cy="478.0" r="20.4" fill="#ffcf7a" opacity="0.02"/>
-    <circle cx="138.9" cy="448.4" r="20.6" fill="#ffb347" opacity="0.03"/>
-    <circle cx="143.9" cy="404.1" r="24.0" fill="#8fb8ff" opacity="0.03"/>
-    <circle cx="173.5" cy="434.8" r="29.6" fill="#ffb347" opacity="0.04"/>
-    <circle cx="187.1" cy="450.2" r="29.6" fill="#ffb347" opacity="0.05"/>
-    <circle cx="204.8" cy="433.7" r="34.0" fill="#8fb8ff" opacity="0.05"/>
-    <circle cx="208.3" cy="440.6" r="29.4" fill="#ffe9a8" opacity="0.05"/>
-    <circle cx="210.0" cy="433.1" r="32.6" fill="#ffcf7a" opacity="0.05"/>
-    <circle cx="215.4" cy="464.3" r="31.3" fill="#8fb8ff" opacity="0.06"/>
-    <circle cx="248.4" cy="438.1" r="45.7" fill="#ffcf7a" opacity="0.06"/>
-    <circle cx="272.8" cy="437.6" r="57.6" fill="#ffcf7a" opacity="0.08"/>
-    <circle cx="291.4" cy="450.4" r="46.8" fill="#ffedb0" opacity="0.10"/>
-    <circle cx="300.4" cy="434.6" r="59.2" fill="#ffedb0" opacity="0.12"/>
-    <circle cx="319.1" cy="441.4" r="52.0" fill="#ffedb0" opacity="0.10"/>
-    <circle cx="84.4" cy="558.9" r="13.3" fill="#ffcf7a" opacity="0.01"/>
-    <circle cx="89.9" cy="574.4" r="11.2" fill="#a8c8ff" opacity="0.01"/>
-    <circle cx="87.4" cy="562.2" r="12.4" fill="#ffcf7a" opacity="0.01"/>
-    <circle cx="92.1" cy="535.9" r="11.6" fill="#ffcf7a" opacity="0.01"/>
-    <circle cx="103.1" cy="538.6" r="13.1" fill="#ffcf7a" opacity="0.01"/>
-    <circle cx="99.8" cy="543.5" r="14.6" fill="#ffb347" opacity="0.02"/>
-    <circle cx="100.8" cy="561.0" r="14.8" fill="#ffb347" opacity="0.02"/>
-    <circle cx="103.3" cy="534.4" r="15.3" fill="#ffcf7a" opacity="0.02"/>
-    <circle cx="103.6" cy="605.4" r="15.8" fill="#ffcf7a" opacity="0.01"/>
-    <circle cx="139.6" cy="599.5" r="19.6" fill="#ffcf7a" opacity="0.03"/>
-    <circle cx="134.2" cy="557.4" r="23.6" fill="#ffb347" opacity="0.02"/>
-    <circle cx="149.4" cy="547.3" r="24.5" fill="#ffcf7a" opacity="0.04"/>
-    <circle cx="154.2" cy="544.6" r="31.6" fill="#a8c8ff" opacity="0.04"/>
-    <circle cx="158.5" cy="568.5" r="21.6" fill="#ffb347" opacity="0.05"/>
-    <circle cx="180.7" cy="601.2" r="33.5" fill="#ffcf7a" opacity="0.05"/>
-    <circle cx="181.4" cy="563.1" r="32.0" fill="#ffcf7a" opacity="0.05"/>
-    <circle cx="196.3" cy="602.1" r="35.4" fill="#ffcf7a" opacity="0.05"/>
-    <circle cx="220.8" cy="590.8" r="32.0" fill="#ffe9a8" opacity="0.07"/>
-    <circle cx="218.1" cy="581.8" r="38.6" fill="#ffcf7a" opacity="0.07"/>
-    <circle cx="237.5" cy="567.7" r="53.2" fill="#ffcf7a" opacity="0.06"/>
-    <circle cx="250.8" cy="578.0" r="46.8" fill="#ffcf7a" opacity="0.08"/>
-    <circle cx="249.8" cy="573.2" r="55.6" fill="#ffcf7a" opacity="0.06"/>
-    <circle cx="255.6" cy="592.3" r="51.2" fill="#a8c8ff" opacity="0.09"/>
-    <circle cx="270.0" cy="570.0" r="43.0" fill="#ffedb0" opacity="0.11"/>
-    <circle cx="301.5" cy="576.4" r="62.4" fill="#ffedb0" opacity="0.11"/>
-    <circle cx="316.1" cy="579.6" r="49.3" fill="#ffedb0" opacity="0.09"/>
-    <circle cx="327.0" cy="584.0" r="55.1" fill="#ffedb0" opacity="0.10"/>
-  </g>
-  <circle cx="94.1" cy="454.9" r="4.8" fill="#ffcf7a" opacity="0.02"/>
-  <circle cx="100.6" cy="442.2" r="5.7" fill="#ffb347" opacity="0.03"/>
-  <circle cx="100.9" cy="460.6" r="8.2" fill="#ffcf7a" opacity="0.03"/>
-  <circle cx="102.4" cy="402.5" r="9.0" fill="#ffcf7a" opacity="0.03"/>
-  <circle cx="103.9" cy="402.9" r="6.4" fill="#ffcf7a" opacity="0.03"/>
-  <circle cx="110.7" cy="398.9" r="8.0" fill="#ffb347" opacity="0.04"/>
-  <circle cx="102.8" cy="424.9" r="6.5" fill="#ffb347" opacity="0.05"/>
-  <circle cx="115.6" cy="428.8" r="9.7" fill="#ffcf7a" opacity="0.04"/>
-  <circle cx="127.6" cy="483.0" r="9.4" fill="#ffcf7a" opacity="0.05"/>
-  <circle cx="138.2" cy="478.0" r="12.0" fill="#ffcf7a" opacity="0.06"/>
-  <circle cx="138.9" cy="448.4" r="12.1" fill="#ffb347" opacity="0.08"/>
-  <circle cx="143.9" cy="404.1" r="14.1" fill="#8fb8ff" opacity="0.08"/>
-  <circle cx="173.5" cy="434.8" r="17.4" fill="#ffb347" opacity="0.09"/>
-  <circle cx="187.1" cy="450.2" r="17.4" fill="#ffb347" opacity="0.12"/>
-  <circle cx="204.8" cy="433.7" r="20.0" fill="#8fb8ff" opacity="0.13"/>
-  <circle cx="208.3" cy="440.6" r="17.3" fill="#ffe9a8" opacity="0.12"/>
-  <circle cx="210.0" cy="433.1" r="19.2" fill="#ffcf7a" opacity="0.13"/>
-  <circle cx="215.4" cy="464.3" r="18.4" fill="#8fb8ff" opacity="0.14"/>
-  <circle cx="248.4" cy="438.1" r="26.9" fill="#ffcf7a" opacity="0.16"/>
-  <circle cx="272.8" cy="437.6" r="33.9" fill="#ffcf7a" opacity="0.21"/>
-  <circle cx="291.4" cy="450.4" r="27.5" fill="#ffedb0" opacity="0.24"/>
-  <circle cx="300.4" cy="434.6" r="34.8" fill="#ffedb0" opacity="0.29"/>
-  <circle cx="319.1" cy="441.4" r="30.6" fill="#ffedb0" opacity="0.25"/>
-  <circle cx="84.4" cy="558.9" r="7.8" fill="#ffcf7a" opacity="0.02"/>
-  <circle cx="89.9" cy="574.4" r="6.6" fill="#a8c8ff" opacity="0.03"/>
-  <circle cx="87.4" cy="562.2" r="7.3" fill="#ffcf7a" opacity="0.03"/>
-  <circle cx="92.1" cy="535.9" r="6.8" fill="#ffcf7a" opacity="0.03"/>
-  <circle cx="103.1" cy="538.6" r="7.7" fill="#ffcf7a" opacity="0.03"/>
-  <circle cx="99.8" cy="543.5" r="8.6" fill="#ffb347" opacity="0.05"/>
-  <circle cx="100.8" cy="561.0" r="8.7" fill="#ffb347" opacity="0.04"/>
-  <circle cx="103.3" cy="534.4" r="9.0" fill="#ffcf7a" opacity="0.04"/>
-  <circle cx="103.6" cy="605.4" r="9.3" fill="#ffcf7a" opacity="0.03"/>
-  <circle cx="139.6" cy="599.5" r="11.5" fill="#ffcf7a" opacity="0.08"/>
-  <circle cx="134.2" cy="557.4" r="13.9" fill="#ffb347" opacity="0.06"/>
-  <circle cx="149.4" cy="547.3" r="14.4" fill="#ffcf7a" opacity="0.09"/>
-  <circle cx="154.2" cy="544.6" r="18.6" fill="#a8c8ff" opacity="0.10"/>
-  <circle cx="158.5" cy="568.5" r="12.7" fill="#ffb347" opacity="0.12"/>
-  <circle cx="180.7" cy="601.2" r="19.7" fill="#ffcf7a" opacity="0.12"/>
-  <circle cx="181.4" cy="563.1" r="18.8" fill="#ffcf7a" opacity="0.13"/>
-  <circle cx="196.3" cy="602.1" r="20.8" fill="#ffcf7a" opacity="0.12"/>
-  <circle cx="220.8" cy="590.8" r="18.8" fill="#ffe9a8" opacity="0.18"/>
-  <circle cx="218.1" cy="581.8" r="22.7" fill="#ffcf7a" opacity="0.17"/>
-  <circle cx="237.5" cy="567.7" r="31.3" fill="#ffcf7a" opacity="0.16"/>
-  <circle cx="250.8" cy="578.0" r="27.5" fill="#ffcf7a" opacity="0.21"/>
-  <circle cx="249.8" cy="573.2" r="32.7" fill="#ffcf7a" opacity="0.16"/>
-  <circle cx="255.6" cy="592.3" r="30.1" fill="#a8c8ff" opacity="0.22"/>
-  <circle cx="270.0" cy="570.0" r="25.3" fill="#ffedb0" opacity="0.28"/>
-  <circle cx="301.5" cy="576.4" r="36.7" fill="#ffedb0" opacity="0.27"/>
-  <circle cx="316.1" cy="579.6" r="29.0" fill="#ffedb0" opacity="0.23"/>
-  <circle cx="327.0" cy="584.0" r="32.4" fill="#ffedb0" opacity="0.24"/>
-      <!-- Afterburner: a lit-afterburner jet core, not just the diffuse ember spray
-       above. Layered tapered lance (amber haze -> warm mid -> icy-white hot core
-       -> bright white sliver) running back through the particle cloud, plus
-       shrinking bright "shock diamond" flecks along its centerline, the classic
-       signature of a supersonic afterburner plume. Centered at x=300, just past
-       the ship's wing trailing edge (the wing at this y spans local x -118..-4,
-       i.e. absolute ~312-426) so the bright core clears the silhouette instead of
-       being swallowed by it, offset from the particle spawn point (x=333.8, which
-       sits under the wing) for that reason. -->
-  <path d="M 300.0 419.0 Q 240.5 423.2 130.0 447.0 Q 240.5 470.8 300.0 475.0 Z" fill="#ffb347" opacity="0.30" filter="url(#abGlow)"/>
-  <path d="M 300.0 431.0 Q 256.2 433.4 175.0 447.0 Q 256.2 460.6 300.0 463.0 Z" fill="#ffdf9e" opacity="0.55" filter="url(#flameBlur)"/>
-  <path d="M 300.0 440.0 Q 272.0 441.1 220.0 447.0 Q 272.0 452.9 300.0 454.0 Z" fill="#eaf6ff" opacity="0.85" filter="url(#flameBlur)"/>
-  <path d="M 300.0 444.0 Q 284.2 444.4 255.0 447.0 Q 284.2 449.6 300.0 450.0 Z" fill="#ffffff" opacity="0.95"/>
-  <ellipse cx="282.0" cy="447.0" rx="6" ry="2.8" fill="#ffffff" opacity="0.90"/>
-  <ellipse cx="260.0" cy="447.0" rx="4.6" ry="2.1" fill="#cfe6ff" opacity="0.70"/>
-  <ellipse cx="236.0" cy="447.0" rx="3.4" ry="1.6" fill="#ffffff" opacity="0.55"/>
-  <ellipse cx="210.0" cy="447.0" rx="2.4" ry="1.1" fill="#cfe6ff" opacity="0.40"/>
-  <circle cx="300.0" cy="447.0" r="6" fill="#ffffff" opacity="0.95"/>
-  <path d="M 300.0 549.0 Q 240.5 553.2 130.0 577.0 Q 240.5 600.8 300.0 605.0 Z" fill="#ffb347" opacity="0.30" filter="url(#abGlow)"/>
-  <path d="M 300.0 561.0 Q 256.2 563.4 175.0 577.0 Q 256.2 590.6 300.0 593.0 Z" fill="#ffdf9e" opacity="0.55" filter="url(#flameBlur)"/>
-  <path d="M 300.0 570.0 Q 272.0 571.0 220.0 577.0 Q 272.0 583.0 300.0 584.0 Z" fill="#eaf6ff" opacity="0.85" filter="url(#flameBlur)"/>
-  <path d="M 300.0 574.0 Q 284.2 574.5 255.0 577.0 Q 284.2 579.5 300.0 580.0 Z" fill="#ffffff" opacity="0.95"/>
-  <ellipse cx="282.0" cy="577.0" rx="6" ry="2.8" fill="#ffffff" opacity="0.90"/>
-  <ellipse cx="260.0" cy="577.0" rx="4.6" ry="2.1" fill="#cfe6ff" opacity="0.70"/>
-  <ellipse cx="236.0" cy="577.0" rx="3.4" ry="1.6" fill="#ffffff" opacity="0.55"/>
-  <ellipse cx="210.0" cy="577.0" rx="2.4" ry="1.1" fill="#cfe6ff" opacity="0.40"/>
-  <circle cx="300.0" cy="577.0" r="6" fill="#ffffff" opacity="0.95"/>
-
-  <!-- Gold coin: a static rendition of the real in-game gem (checkCoinCollection's
-       coin loop in src/draw.js), faceted diamond body, 4-facet shading, 8 sparkle
-       rays (4 long + 4 short), 2 specular glints, placed ahead of the ship, clear
-       of the halo and both walls, to tie the mark to the game's actual hook (coins),
-       not just "spaceship in glowing tunnel." Glow is a separate blurred duplicate
-       behind the crisp fill (same trick as the ship's shipGlow layer) since filtering
-       the crisp shape directly would blur the facets away, not just add a halo. -->
-  <g transform="translate(760,300) rotate(14)">
-    <circle r="134.4" fill="url(#coinAura)"/>
-    <path d="M 0.0 -63.0 L 0.0 -115.5 M 63.0 -0.0 L 115.5 -0.0 M 0.0 63.0 L 0.0 115.5 M -63.0 0.0 L -115.5 0.0" fill="none" stroke="#ffe040" stroke-width="2.4" opacity="0.85" filter="url(#coinGlow)"/>
-    <path d="M 44.5 -44.5 L 56.4 -56.4 M 44.5 44.5 L 56.4 56.4 M -44.5 44.5 L -56.4 56.4 M -44.5 -44.5 L -56.4 -56.4" fill="none" stroke="#ffe040" stroke-width="1.3" opacity="0.4" filter="url(#coinGlow)"/>
-    <path d="M 0 -56.7 L 37.8 0 L 0 56.7 L -37.8 0 Z" fill="#ffe040" opacity="0.55" filter="url(#coinGlow)"/>
-    <path d="M 0 -56.7 L 37.8 0 L 0 56.7 L -37.8 0 Z" fill="url(#coinBodyGrd)"/>
-    <path d="M 0 -56.7 L 37.8 0 L 0 0 Z" fill="#ffffff" opacity="0.28"/>
-    <path d="M 0 -56.7 L -37.8 0 L 0 0 Z" fill="#ffffff" opacity="0.10"/>
-    <path d="M 37.8 0 L 0 56.7 L 0 0 Z" fill="#000000" opacity="0.18"/>
-    <path d="M -37.8 0 L 0 56.7 L 0 0 Z" fill="#000000" opacity="0.30"/>
-    <path d="M 0 -56.7 L 37.8 0 M 37.8 0 L 0 56.7" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.20"/>
-    <path d="M 0 -56.7 L -37.8 0 M -37.8 0 L 0 56.7" fill="none" stroke="#000000" stroke-width="1.5" opacity="0.14"/>
-    <path d="M -37.8 0 L 37.8 0" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.24"/>
-    <path d="M 0 -56.7 L 37.8 0 L 0 56.7 L -37.8 0 Z" fill="none" stroke="#ffe040" stroke-width="3" opacity="0.75" filter="url(#coinGlow)"/>
-    <circle cx="-6.8" cy="-22.7" r="12.6" fill="#ffffff" opacity="0.95"/>
-    <circle cx="13.6" cy="-9.1" r="5.5" fill="#ffffff" opacity="0.6"/>
-  </g>
-
-  <!-- Ship: shipPath() from src/draw.js, r=130, unchanged, the actual player
-       sprite (SR-71-style needle nose + delta), PEARL skin colors, nose toward
-       the light. -->
-  <g transform="translate(430,512)">
+    <!-- glow halo of the hull -->
     <path d="M 223.6 0 L 145.6 -22.1 L 49.4 -28.6 L -84.5 -119.6 L -140.4 -28.6 L -158.6 -41.6 L -136.5 -10.4 L -119.6 0 L -136.5 10.4 L -158.6 41.6 L -140.4 28.6 L -84.5 119.6 L 49.4 28.6 L 145.6 22.1 Z"
-          fill="#e8eeff" filter="url(#shipGlow)" opacity="0.55"/>
+          fill="#e8eeff" opacity="0.5" filter="url(#shipGlow)"/>
+
+    <!-- hull -->
     <path d="M 223.6 0 L 145.6 -22.1 L 49.4 -28.6 L -84.5 -119.6 L -140.4 -28.6 L -158.6 -41.6 L -136.5 -10.4 L -119.6 0 L -136.5 10.4 L -158.6 41.6 L -140.4 28.6 L -84.5 119.6 L 49.4 28.6 L 145.6 22.1 Z"
           fill="url(#shipGrd)"/>
-    <path d="M 223.6 0 L 145.6 -22.1 L 49.4 -28.6 L -84.5 -119.6" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
-    <ellipse cx="-41.6" cy="-65" rx="54.6" ry="14.95" fill="rgba(0,0,0,0.3)"/>
-    <ellipse cx="-41.6" cy="65" rx="54.6" ry="14.95" fill="rgba(0,0,0,0.3)"/>
-    <ellipse cx="143" cy="-6.5" rx="28.6" ry="11.05" transform="rotate(-6 143 -6.5)" fill="rgba(200,235,255,0.55)"/>
+    <path d="M 223.6 0 L 145.6 -22.1 L 49.4 -28.6 L -84.5 -119.6 L -140.4 -28.6 L -158.6 -41.6 L -136.5 -10.4 L -119.6 0 L -136.5 10.4 L -158.6 41.6 L -140.4 28.6 L -84.5 119.6 L 49.4 28.6 L 145.6 22.1 Z"
+          fill="url(#shipShade)"/>
+
+    <!-- leading-edge highlight: needle nose along the chine to the wing tip -->
+    <path d="M 223.6 0 L 145.6 -22.1 L 49.4 -28.6 L -84.5 -119.6"
+          fill="none" stroke="#ffffff" stroke-opacity="0.34" stroke-width="12"
+          stroke-linejoin="round" stroke-linecap="round"/>
+
+    <!-- engine nacelle pods + inlet cones (kept light so they read as
+         panel detail on the white hull, not holes) -->
+    <ellipse cx="-41.6" cy="-65" rx="54.6" ry="13" fill="#20264a" fill-opacity="0.16"/>
+    <ellipse cx="-41.6" cy="65"  rx="54.6" ry="13" fill="#20264a" fill-opacity="0.16"/>
+    <circle  cx="-2.6"  cy="-65" r="9" fill="#ffffff" fill-opacity="0.28"/>
+    <circle  cx="-2.6"  cy="65"  r="9" fill="#ffffff" fill-opacity="0.28"/>
+
+    <!-- cockpit canopy -->
+    <ellipse cx="143" cy="-6.5" rx="28.6" ry="11.05" transform="rotate(-6 143 -6.5)" fill="#cdebff" fill-opacity="0.6"/>
   </g>
 </svg>

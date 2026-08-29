@@ -35,6 +35,7 @@ function titleScreen() {
     prevRunScore = 0; lastRunScore = 0; milestoneFlash = 0; milestoneText = '';
     runCoins = 0; runNearMisses = 0; runMaxCombo = 0; skinUnlockIdx = -1;
     runCoinsByType = { gold: 0, blue: 0, red: 0, green: 0, orange: 0 };
+    missionRewardWon = 0;
     levelIntroT = 0;
     initAmbParts();
     const _dt = new Date();
@@ -74,7 +75,7 @@ function startPlay() {
     cannons = []; nextCannonWx = 6000; cannonShots = [];
     bonusScore = 0; milestoneNext = 50; nearMissTimer = 0; coinCombo = 0; coinComboTimer = 0;
     runCoins = 0; runNearMisses = 0; runMaxCombo = 0; skinUnlockIdx = -1;
-    skinMasteryUpIdx = -1;
+    skinMasteryUpIdx = -1; missionRewardWon = 0;
     runStartMasteryLevel = masteryLevel(activeSkin);
     runCoinsByType = { gold: 0, blue: 0, red: 0, green: 0, orange: 0 };
     // Day streak update
@@ -103,7 +104,7 @@ function startPlay() {
         // state rather than let it replay against the wrong tunnel.
         ghostPlay = null; ghostScore = 0;
         localStorage.removeItem('tunnel_ghost');
-        dailyMissionStats = { gold: 0, blue: 0, red: 0, green: 0, orange: 0, nearMisses: 0, bestCombo: 0, bestScore: 0, runs: 0 };
+        dailyMissionStats = { gold: 0, blue: 0, red: 0, green: 0, orange: 0, bomb: 0, dist: 0, nearMisses: 0, bestCombo: 0, bestScore: 0, runs: 0 };
         dailyMissionsClaimed = [false, false, false];
         dailyMissionIdx = pickDailyMissionIndices(_todayInt);
         localStorage.setItem('tunnel_daily_mission_stats', JSON.stringify(dailyMissionStats));

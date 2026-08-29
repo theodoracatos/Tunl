@@ -100,13 +100,17 @@ let skinUnlockIdx = -1;
 // a pure function of the day, so it's recomputed here and on every day-boundary reset
 // (lifecycle.js) rather than persisted itself.
 let dailyMissionStats = Object.assign(
-    { gold: 0, blue: 0, red: 0, green: 0, orange: 0, nearMisses: 0, bestCombo: 0, bestScore: 0, runs: 0 },
+    { gold: 0, blue: 0, red: 0, green: 0, orange: 0, bomb: 0, dist: 0, nearMisses: 0, bestCombo: 0, bestScore: 0, runs: 0 },
     _savedLastDay === _initToday ? JSON.parse(localStorage.getItem('tunnel_daily_mission_stats') || '{}') : {}
 );
 let dailyMissionsClaimed = _savedLastDay === _initToday
     ? JSON.parse(localStorage.getItem('tunnel_daily_missions_claimed') || '[false,false,false]')
     : [false, false, false];
 let dailyMissionIdx = pickDailyMissionIndices(_initToday);
+// Total shards won from daily missions that completed *this run*, set in update.js die()
+// and consumed by the death-screen banner + a one-shot chime. Reset at startPlay so the
+// banner only shows the run it belongs to. 0 = no mission finished this run.
+let missionRewardWon = 0;
 let runCoinsByType = { gold: 0, blue: 0, red: 0, green: 0, orange: 0 }; // this run's per-type coin counts
 let _skinBtnRects = [];
 let streak = parseInt(localStorage.getItem('tunnel_streak') || '0');

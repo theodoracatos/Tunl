@@ -38,6 +38,11 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var webView: WebView
 
+    // True between ads.onWillPresent and ads.onDidDismiss. While set, the app
+    // stays out of immersive mode so a full-screen interstitial's close button
+    // is not obscured by the cutout / nav bar (see the ads.onWillPresent wiring).
+    private var adShowing = false
+
     private val leaderboardLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { }
 
@@ -173,8 +178,22 @@ class MainActivity : ComponentActivity() {
 
         // Mirrors the iOS Coordinator's ads.onWillPresent/onDidDismiss closures,
         // which pause/resume the page's Web Audio graph under the interstitial.
-        ads.onWillPresent = { runJs("window._pauseAudioForAd && window._pauseAudioForAd()") }
-        ads.onDidDismiss = { runJs("window._resumeAudioAfterAd && window._resumeAudioAfterAd()") }
+        // Also drops immersive mode for the life of the ad: the interstitial's
+        // AdActivity is translucent and renders inside this window, so while the
+        // system bars are hidden its close "X" can land under the cutout / nav
+        // bar and be untappable (forcing a process kill). Showing the bars gives
+        // the ad a real inset to sit below; onWindowFocusChanged is guarded so it
+        // does not immediately re-hide them. See AdsManager.setImmersiveMode.
+        ads.onWillPresent = {
+            adShowing = true
+            showSystemBars()
+            runJs("window._pauseAudioForAd && window._pauseAudioForAd()")
+        }
+        ads.onDidDismiss = {
+            adShowing = false
+            hideSystemBars()
+            runJs("window._resumeAudioAfterAd && window._resumeAudioAfterAd()")
+        }
         ads.onPrivacyOptionsRequiredChange = { required ->
             runJs("window._tunlNativeUpdate && window._tunlNativeUpdate({\"privacyOptionsRequired\":$required})")
         }
@@ -435,7 +454,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) hideSystemBars()
+        // Don't re-hide the bars while an interstitial is up -- that is what
+        // keeps its close button reachable (see ads.onWillPresent).
+        if (hasFocus && !adShowing) hideSystemBars()
     }
 
     private fun hideSystemBars() {
@@ -443,5 +464,10 @@ class MainActivity : ComponentActivity() {
         controller.hide(WindowInsetsCompat.Type.systemBars())
         controller.systemBarsBehavior =
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+    }
+
+    private fun showSystemBars() {
+        WindowInsetsControllerCompat(window, window.decorView)
+            .show(WindowInsetsCompat.Type.systemBars())
     }
 }

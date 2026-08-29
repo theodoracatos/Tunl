@@ -569,18 +569,25 @@ function die(bypassShield = false) {
     dailyMissionStats.red        += runCoinsByType.red;
     dailyMissionStats.green      += runCoinsByType.green;
     dailyMissionStats.orange     += runCoinsByType.orange;
+    dailyMissionStats.bomb       += runCoinsByType.bomb || 0;
+    dailyMissionStats.dist       += score;
     dailyMissionStats.nearMisses += runNearMisses;
     dailyMissionStats.bestCombo   = Math.max(dailyMissionStats.bestCombo, runMaxCombo);
     dailyMissionStats.bestScore   = Math.max(dailyMissionStats.bestScore, score);
     dailyMissionStats.runs        = dailyRuns;
+    missionRewardWon = 0;
     for (let m = 0; m < dailyMissionIdx.length; m++) {
         if (dailyMissionsClaimed[m]) continue;
         const def = MISSION_DEFS[dailyMissionIdx[m]];
         if (dailyMissionStats[def.stat] >= def.target) {
             dailyMissionsClaimed[m] = true;
             shards += MISSION_REWARD;
+            missionRewardWon += MISSION_REWARD;
         }
     }
+    // A completed mission is the whole reason to care about the block, so it gets its
+    // own death-screen banner (draw.js) + chime rather than silently topping up shards.
+    if (missionRewardWon > 0) sfxMissionDone();
     localStorage.setItem('tunnel_daily_mission_stats', JSON.stringify(dailyMissionStats));
     localStorage.setItem('tunnel_daily_missions_claimed', JSON.stringify(dailyMissionsClaimed));
     localStorage.setItem('tunnel_shards', shards);

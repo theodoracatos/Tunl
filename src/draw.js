@@ -2135,20 +2135,16 @@ function drawTitleScreen() {
     // a HUD (direct feedback: "wirkt ein bisschen überladen"). Skipped entirely
     // before the player's first real run -- an empty title screen doesn't need a
     // "BEST 0" placeholder.
-    // Left edge of the HEUTE/streak line below, so the SHIP header (drawn later,
-    // above the ship row) can left-align to it instead of centring on the ship
-    // row's own axis. Falls back to infoX if that line never renders (no runs
-    // played yet today) -- showShipPanel already implies best > 0 in practice, so
-    // this is set for real by the time it's read.
+    // REKORD, the HEUTE/streak line below it and the SHIP header below that all
+    // share one left edge (heuteLeftX) so the left column reads as a flush-left
+    // stat stack aligned with the ship, not three separately-centred labels
+    // (direct feedback). The edge is derived from whichever of REKORD / HEUTE is
+    // wider, so the block as a whole still sits centred on infoX.
+    // Falls back to infoX if the block never renders (no run played yet) --
+    // showShipPanel already implies best > 0 in practice.
     let heuteLeftX = infoX;
     if (best > 0) {
-        ctx.shadowColor = 'rgba(0,0,0,0.90)'; ctx.shadowBlur = 3;
-        ctx.font        = `bold ${FS*0.036}px 'Courier New',monospace`;
-        ctx.fillStyle   = `rgba(190,212,255,${a * 0.98})`;
         const allTimeText = `${T.allTime}  ${best}`;
-        const allTimeY    = LAND ? rightColY : H/2 + H*0.280;
-        ctx.fillText(allTimeText, infoX, allTimeY);
-        ctx.shadowBlur  = 0;
 
         // Two visually distinct segments instead of one flat string: TODAY stays
         // the calm secondary-stat colour, while the streak segment gets its own
@@ -2167,16 +2163,31 @@ function drawTitleScreen() {
         // the SHIP/shard line instead -- see shardWalletText below. Both currencies
         // a ship costs now read together in one place rather than one sitting next
         // to the streak that earns it and the other a whole line away.
+
+        // Measure both lines (each in its own font) before drawing either, so the
+        // shared left edge can be the centre-anchored max of the two widths.
+        ctx.font = `bold ${FS*0.036}px 'Courier New',monospace`;
+        const allTimeW  = ctx.measureText(allTimeText).width;
+        ctx.font = `bold ${FS*0.025}px 'Courier New',monospace`;
+        const subGap    = ctx.measureText('    ').width;
+        const subWidths = subParts.map(p => ctx.measureText(p.text).width);
+        const subTotalW = subWidths.reduce((s, w) => s + w, 0) + subGap * Math.max(0, subParts.length - 1);
+        heuteLeftX = infoX - Math.max(allTimeW, subTotalW) / 2;
+
+        // REKORD line -- left-aligned to the shared edge, not centred on infoX.
+        ctx.textAlign   = 'left';
+        ctx.font        = `bold ${FS*0.036}px 'Courier New',monospace`;
+        ctx.fillStyle   = `rgba(190,212,255,${a * 0.98})`;
+        ctx.shadowColor = 'rgba(0,0,0,0.90)'; ctx.shadowBlur = 3;
+        const allTimeY  = LAND ? rightColY : H/2 + H*0.280;
+        ctx.fillText(allTimeText, heuteLeftX, allTimeY);
+        ctx.shadowBlur  = 0;
+
         if (subParts.length) {
             rightColY += lineStep;
             ctx.font = `bold ${FS*0.025}px 'Courier New',monospace`;
-            const gap    = ctx.measureText('    ').width;
-            const widths = subParts.map(p => ctx.measureText(p.text).width);
-            const totalW = widths.reduce((s, w) => s + w, 0) + gap * (subParts.length - 1);
-            const ly     = LAND ? rightColY : H/2 + H*0.316;
-            ctx.textAlign = 'left';
-            let x = infoX - totalW / 2;
-            heuteLeftX = x; // SCHIFF header below left-aligns to this same edge
+            const ly = LAND ? rightColY : H/2 + H*0.316;
+            let x = heuteLeftX;
             subParts.forEach((p, i) => {
                 if (p.hot) {
                     // Below the "on fire" threshold this is just a day count, not a
@@ -2192,11 +2203,11 @@ function drawTitleScreen() {
                     ctx.shadowBlur  = 3;
                 }
                 ctx.fillText(p.text, x, ly);
-                x += widths[i] + gap;
+                x += subWidths[i] + subGap;
             });
             ctx.shadowBlur = 0;
-            ctx.textAlign  = 'center';
         }
+        ctx.textAlign = 'center';   // restore -- everything below expects centred text
     }
 
     // Ship wallet + picker shows once the player has actually played --
@@ -2237,23 +2248,28 @@ function drawTitleScreen() {
         // numbers on this whole screen that mean nothing without context -- unlike
         // coins, which teach themselves during a run by look and effect. Opt-in
         // (tap to open), not a forced hint, so it doesn't repeat the removed
-        // title-screen control hint (CLAUDE.md Onboarding). Left of SHIP/NAVE, gold
-        // like the shard figure it sits next to rather than this line's pale label
-        // white.
+        // title-screen control hint (CLAUDE.md Onboarding). Sits at the right end
+        // of the SHIP/shards/stardust line (was left of SHIP), drawn white --
+        // neutral, since it belongs to neither currency's colour. Clamped inside
+        // the canvas edge for narrow (portrait) widths.
         {
-            const infoR = FS * 0.016;
-            const infoCx = heuteLeftX - infoR * 2.4;
+            ctx.font = `bold ${FS*0.025}px 'Courier New',monospace`;
+            const shardW = ctx.measureText(`${T.ship} ${shards} ⧫`).width;
+            const starW  = (stardust > 0 && !(unlockedSkins & (1 << (SKINS.length - 1))))
+                ? ctx.measureText(`   ${stardust} ✦`).width : 0;
+            const infoR  = FS * 0.016;
+            const infoCx = Math.min(heuteLeftX + shardW + starW + infoR * 2.4, W - edgeMargin - infoR);
             const infoCy = shipHeaderY;
             _currencyInfoBtnRect = { cx: infoCx, cy: infoCy, r: infoR * 2.0 };
-            ctx.shadowColor = 'rgba(255,205,80,0.65)';
+            ctx.shadowColor = 'rgba(255,255,255,0.55)';
             ctx.shadowBlur  = 6;
             ctx.beginPath();
             ctx.arc(infoCx, infoCy, infoR, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(255,225,110,0.90)';
+            ctx.strokeStyle = `rgba(255,255,255,${a * 0.90})`;
             ctx.lineWidth   = 1.6;
             ctx.stroke();
             ctx.font        = `bold ${infoR * 1.4}px 'Courier New',monospace`;
-            ctx.fillStyle   = 'rgba(255,225,110,0.98)';
+            ctx.fillStyle   = `rgba(255,255,255,${a * 0.98})`;
             ctx.textAlign   = 'center';
             ctx.fillText('?', infoCx, infoCy);
             ctx.shadowBlur  = 0;
@@ -2440,30 +2456,37 @@ function drawTitleScreen() {
             const nameGap = 2; // per feedback (was 2px, then 1px, 0.5px, 0.4px, 0.3px)
             let perkFsz = FS * 0.019;
             ctx.font = `${perkFsz}px 'Courier New',monospace`;
+            // perkTopY: where the perk text's ink starts. Below the selected ship's
+            // name at minimum; on a row that also carries locked-ship cost / "x/y"
+            // gate labels (baseline cy + dotR2*2.5) it drops clear of those too, so
+            // a wide perk string centred under the ship doesn't run into a
+            // neighbour's stardust readout (direct feedback re: AMBER).
+            let perkTopY;
             if (nGridRows > 1 && selectedRow < nGridRows - 1) {
-                // Row 1 of a multi-row grid: shrink to fit above row 2's ships.
+                // Row 1 of a multi-row grid: clear this row's locked labels, then
+                // shrink to fit what's left above row 2's ships.
+                perkTopY = Math.max(selectedNameBottomY + nameGap,
+                                    dotY1 + dotR2 * 2.5 + FS * 0.022);
                 const bandBottom = dotY2 - dotR2 * 1.35;
-                const bandH      = Math.max(bandBottom - selectedNameBottomY, 0);
+                const bandH      = Math.max(bandBottom - perkTopY, 0);
                 perkFsz = Math.max(Math.min(perkFsz, bandH * 0.92), FS * 0.011);
             } else {
-                // Last row: shrink to fit above the bottom safety margin instead of
-                // clamping the Y position directly -- clamping perkY on its own left
-                // the gap correct on a tall device but shrank it (down to overlapping
-                // the name label, on a short enough one) wherever the unclamped
-                // position would have landed past the margin, which is exactly the
-                // "row 2's gap is smaller than row 1's" report this fixes.
+                // Last row: clear this row's locked labels too (same collision as
+                // AMBER's, just against the bottom-row ships), then shrink to fit
+                // above the bottom safety margin -- shrinking rather than clamping
+                // perkY keeps the gap correct on a tall device without letting it
+                // overlap the name label on a short one.
+                perkTopY = Math.max(selectedNameBottomY + nameGap,
+                                    dotY2 + dotR2 * 2.5 + FS * 0.022);
                 const ascentRatio = ctx.measureText(activePerk).actualBoundingBoxAscent / perkFsz;
-                const maxFszForBottom = (H - 10 - nameGap - selectedNameBottomY) / ascentRatio;
+                const maxFszForBottom = (H - 10 - perkTopY) / ascentRatio;
                 perkFsz = Math.max(Math.min(perkFsz, maxFszForBottom), FS * 0.011);
             }
             ctx.font = `${perkFsz}px 'Courier New',monospace`;
-            // Exact nameGap-px gap under the selected ship's own name label, using
-            // this specific string's real rendered ink (actualBoundingBoxAscent) --
-            // fontBoundingBoxAscent (the whole font box's ascent, tried first) is
-            // generous enough to swallow several px of nameGap adjustment in
-            // invisible padding no amount of shrinking it could touch.
+            // perkTopY measured in the FS*0.019 font above; re-measure ascent in the
+            // (possibly shrunk) final font for the baseline.
             const perkAscent = ctx.measureText(activePerk).actualBoundingBoxAscent;
-            const perkY = selectedNameBottomY + nameGap + perkAscent;
+            const perkY = perkTopY + perkAscent;
             // Centred under the selected ship's name -- but clamped so a wide string
             // (e.g. "NEAR-MISS RANGE +100%") doesn't run off-screen when the selected
             // ship sits at either end of a row (column 0 leftmost, column 3 rightmost).
@@ -3099,6 +3122,13 @@ function drawDeathScreen() {
             const sk = SKINS[skinUnlockIdx];
             bannerLine = `${sk.name} ${T.unlocked}`;
             bannerClr = sk.shadow;
+        } else if (missionRewardWon > 0) {
+            // Ranks below a ship unlock (rarest/biggest moment, and two ship-coloured
+            // banners at once reads as a glitch) but above a mastery level-up -- a
+            // finished mission is a concrete shard payout, a mastery tick already shows
+            // on the XP bar. Green to match the mission block's own completed-row colour.
+            bannerLine = `${T.missionDone}  +${missionRewardWon} ⧫`;
+            bannerClr = [120, 255, 150];
         } else if (skinMasteryUpIdx >= 0) {
             const sk = SKINS[skinMasteryUpIdx];
             bannerLine = `${sk.name} ${T.masteryUp} ${masteryLevel(skinMasteryUpIdx)}`;

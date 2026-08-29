@@ -524,6 +524,28 @@ function sfxMilestone(n) {
     });
 }
 
+// Daily-mission completion chime (update.js die()). A bright five-note major-pentatonic
+// run with a soft bell tail -- distinct from sfxMilestone's four-note triad-stack so a
+// finished mission doesn't read as "just another milestone", and hotter/longer than a
+// coin pickup because it's a shard payout, not a +3. Fires right after sfxDie; the high
+// register cuts through that low thud cleanly.
+function sfxMissionDone() {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    const notes = [523.25, 587.33, 698.46, 783.99, 1046.5]; // C5 D5 F5 G5 C6
+    notes.forEach((freq, i) => {
+        const o = _ac.createOscillator(), g = _ac.createGain();
+        o.connect(g); g.connect(_ac.destination);
+        o.type = 'triangle'; o.frequency.value = freq;
+        const t0 = t + i * 0.07;
+        const peak = i === notes.length - 1 ? 0.16 : 0.12;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(peak, t0 + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + (i === notes.length - 1 ? 0.75 : 0.28));
+        o.start(t0); o.stop(t0 + 0.8);
+    });
+}
+
 function sfxNearMiss() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;

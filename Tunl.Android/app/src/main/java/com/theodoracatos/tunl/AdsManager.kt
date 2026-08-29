@@ -110,9 +110,12 @@ class AdsManager(private val activity: Activity) {
                             ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
                     )
                     if (consentInformation.canRequestAds()) {
-                        // TUNL carries a 4+/Everyone content rating - without this, the
-                        // Mobile Ads SDK applies no content restriction of its own and
-                        // ad networks can serve creative aimed at an adult audience.
+                        // TUNL carries a 9+ / PEGI 7 / USK 6 content rating and is
+                        // sold as a kid-appropriate game - without this, the Mobile
+                        // Ads SDK applies no content restriction of its own and ad
+                        // networks can serve creative aimed at an adult audience.
+                        // MAX_AD_CONTENT_RATING_G is the strictest tier (family/all
+                        // ages); PG, T and MA creative are all filtered out.
                         MobileAds.setRequestConfiguration(
                             RequestConfiguration.Builder()
                                 .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G)
@@ -169,6 +172,18 @@ class AdsManager(private val activity: Activity) {
         }
         prefs.edit().putLong(LAST_AD_TIME_KEY, now).apply()
         ad.fullScreenContentCallback = fullScreenContentCallback
+        // MainActivity runs edge-to-edge with the system bars hidden (see its
+        // setDecorFitsSystemWindows(false) + hideSystemBars()). The GMA SDK's
+        // interstitial AdActivity is translucent, so it renders inside that same
+        // immersive window instead of insetting itself -- on targetSdk 35+ that
+        // pushes the ad's own close "X" under the display cutout or the landscape
+        // 3-button nav bar, leaving it untappable and forcing a process kill to
+        // escape (a known unresolved GMA issue on Android 15/16 edge-to-edge).
+        // setImmersiveMode tells the SDK the host is immersive so it lays the ad
+        // chrome out accordingly; MainActivity also drops immersive for the
+        // duration of the ad (onWillPresent/onDidDismiss) as a belt-and-braces.
+        // iOS is unaffected -- its interstitial respects the safe area natively.
+        ad.setImmersiveMode(true)
         ad.show(activity)
     }
 
