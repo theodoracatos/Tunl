@@ -1035,11 +1035,10 @@ function draw() {
     // look like a second live ship.
     //
     // Late join (GHOST_LATE_JOIN_GAP, constants.js): the ship itself only renders once
-    // the player has closed to within that many points of the ghost's score. Further out
-    // it's the HUD's plain "GHOST -N" readout doing the work instead (below, next to the
-    // score) -- see that block's comment for why.
+    // the player has closed to within that many points of the ghost's score, so it
+    // doesn't pop in the instant a run starts, arbitrarily far behind.
     const _ghostGap = ghostScore - score;
-    if (ghostOn && phase === 'play' && ghostY !== null && ghostY !== undefined && _ghostGap <= GHOST_LATE_JOIN_GAP) {
+    if (phase === 'play' && ghostY !== null && ghostY !== undefined && _ghostGap <= GHOST_LATE_JOIN_GAP) {
         ctx.save();
         ctx.globalAlpha = 0.17;
         ctx.translate(PX, ghostY);
@@ -2491,7 +2490,6 @@ function draw() {
             const nPadBottom  = H * 0.040;
             const nTitleH     = H * 0.070;
             const nAudioRowH  = H * 0.075;
-            const nGhostRowH  = H * 0.075;
             const nLangLabelH = H * 0.045;
             const nLbh        = H * 0.080;
             const nLbGap      = H * 0.018;
@@ -2507,12 +2505,7 @@ function draw() {
             const langCols   = LANG_ORDER.length > 10 ? 3 : 2;
             const langRows   = Math.ceil(LANG_ORDER.length / langCols);
             const nLangListH = langRows * nLbh + Math.max(0, langRows - 1) * nLbGap;
-            // Row1->row2 uses the tighter nLbGap rather than nSectionGap: the audio row
-            // and ghost row are the same control group (toggles), so they sit close to
-            // each other the way the language grid's own rows do; nSectionGap is saved
-            // for the gap into the next *labelled* section (SPRACHE) so that transition
-            // still reads as a break.
-            const nPanH = nPadTop + nTitleH + nAudioRowH + nLbGap + nGhostRowH + nSectionGap + nLangLabelH + nLangListH + nPrivacySectionH + nPadBottom;
+            const nPanH = nPadTop + nTitleH + nAudioRowH + nSectionGap + nLangLabelH + nLangListH + nPrivacySectionH + nPadBottom;
 
             // Leave a hair of margin inside the 0.02..0.98 clamp band below rather than
             // filling it exactly, so this never comes down to a single rounding error.
@@ -2523,7 +2516,6 @@ function draw() {
             const padBottom  = nPadBottom  * settingsScale;
             const titleH     = nTitleH     * settingsScale;
             const audioRowH  = nAudioRowH  * settingsScale;
-            const ghostRowH  = nGhostRowH  * settingsScale;
             const langLabelH = nLangLabelH * settingsScale;
             const lbh        = nLbh        * settingsScale;
             const lbGap      = nLbGap      * settingsScale;
@@ -2560,8 +2552,8 @@ function draw() {
             y += titleH;
 
             // Audio toggle row (Music/FX) - each button takes exactly half of rowW, split
-            // by audioGap, so the pair spans the same edges as the ghost row and the
-            // language grid below rather than sizing itself to its own label.
+            // by audioGap, so the pair spans the same edges as the language grid below
+            // rather than sizing itself to its own label.
             {
                 const audioBY    = y + audioRowH / 2;
                 const audioGap   = W * 0.02;
@@ -2575,23 +2567,7 @@ function draw() {
                 ctx.font = `${FS*0.022}px 'Courier New',monospace`;   // drawBtn may have shrunk it for musicLabel
                 _btnFxRect    = drawBtn(fxCX,    audioBY, fxLabel,    fxOn,    false, halfW);
             }
-            y += audioRowH + lbGap;
-
-            // Ghost toggle - separate row, not folded into the audio row above, since a
-            // 3rd button there risks overflowing panW on longer localized labels (e.g.
-            // Turkish "HAYALET AÇIK"). Own row here instead of hiding the ghost's own
-            // colour or opacity, because the readability complaint was device-specific
-            // (some skins read close to the ghost's fixed blue) rather than universal -
-            // a toggle lets the player who's affected turn it off without changing the
-            // ghost's look for everyone else. Spans the full rowW, same edges as the
-            // audio row's pair and the language grid.
-            {
-                const ghostBY    = y + ghostRowH / 2;
-                const ghostLabel = ghostOn ? T.ghostOn : T.ghostOff;
-                ctx.font = `${FS*0.022}px 'Courier New',monospace`;
-                _btnGhostRect    = drawBtn(W / 2, ghostBY, ghostLabel, ghostOn, false, rowW);
-            }
-            y += ghostRowH + sectionGap;
+            y += audioRowH + sectionGap;
 
             // Language section label
             ctx.font        = `bold ${FS * 0.021}px 'Courier New',monospace`;
