@@ -41,16 +41,18 @@ function _rockNoise(x) {
 const ROCK_ROUGHNESS_MAX = 1.0;
 
 // Ramps the roughness from smooth (0) at the start of a run up to the full
-// ROCK_ROUGHNESS_MAX cap by score ~1000 -- distance-based (scrollX / 60000,
-// score's own scrollX/60 conversion) rather than reading live `score`
-// directly, since score includes bonusScore (coins, near-misses, poison
-// losses) which can wobble non-monotonically; the rock surface should only
-// ever get rougher as you go deeper, never flicker with combo swings. Plain
-// linear ramp, not eased like _prog's sqrt -- "smooth", the ask here, just
-// means no jump/step, which any continuous function of scrollX already
-// gives; a fancier curve wasn't asked for.
+// ROCK_ROUGHNESS_MAX cap at score 1000, reading `score` directly -- an
+// earlier version used scrollX/60000 instead (score's own distance term)
+// on the assumption that score could wobble non-monotonically via poison
+// coins, but that's wrong: poison only debits runCoins (the shard pool,
+// update.js/systems.js), never bonusScore, and bonusScore only ever
+// increments (near-miss, coin combo) -- score is strictly non-decreasing
+// through a run, so reading it directly is both safe and exact ("score
+// 1000" now means literally 100%, not an approximation). Plain linear
+// ramp, not eased like _prog's sqrt -- "smooth", the ask here, just means
+// no jump/step, which any continuous function already gives.
 function _rockRoughness() {
-    return Math.min(scrollX / 60000, 1) * ROCK_ROUGHNESS_MAX;
+    return Math.min(score / 1000, 1) * ROCK_ROUGHNESS_MAX;
 }
 
 function _wallJagged(wx, seedOffset) {
