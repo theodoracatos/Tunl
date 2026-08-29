@@ -1,8 +1,16 @@
 # Release Command
 
 Prepares a new TUNL version for submission to the App Store and Google Play, and checks
-whether schedly.ch needs updating to match. This recurs every version bump -- run it
-instead of re-deriving the process from scratch each time.
+whether the marketing site needs updating to match. This recurs every version bump -- run
+it instead of re-deriving the process from scratch each time.
+
+**Marketing site is flytunl.ch only now (`flytunl-site/site/` in this repo).** Since
+2026-08-29 the user's standing instruction is: never touch the Schedly repo
+(`Schedly/Schedly/wwwroot/tunl/`) for TUNL again -- schedly.ch is frozen, not
+decommissioned, just not maintained. All step-4 site edits below go to
+`flytunl-site/site/index.html` / `support/index.html` / `privacy/index.html` and are
+deployed via `flytunl-site/deploy.sh`. Ignore every `Schedly/...` path in the older
+wording still present in this file.
 
 Scope: this command gets everything *ready* for submission. It never runs an actual
 Xcode archive/build, never touches App Store Connect / Play Console, and never commits
