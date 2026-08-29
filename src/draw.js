@@ -138,39 +138,6 @@ function draw() {
     ctx.fillStyle = bgStr;
     ctx.fillRect(-20, -20, W+40, H+40);
 
-    // Background horizon - a second, dimmer tunnel silhouette sitting further back.
-    // Sampled from boundsBase() (no gapBonus reactivity -- purely a depth cue, not a
-    // gameplay readout) at scrollX * BG_PARALLAX so it drifts slower than the real
-    // corridor (constants.js). A filled silhouette anchored to the canvas edge, not a
-    // stroked outline -- a stroke floating in the open corridor with nothing behind it
-    // read as a stray glitch line, not a wall further back. Drawn before
-    // stalactites/walls so the real (opaque) wall fill masks it wherever the two
-    // curves coincide, leaving only the sliver where they diverge -- exactly the
-    // glimpsed-second-wall look, never touches collision.
-    {
-        const bgStep = RSTEP * 2;
-        const bgClr  = lerpClr(theme.wallBase, [0,0,0], 0.72);
-        ctx.fillStyle = rgb(bgClr, 0.16);
-        ctx.beginPath();
-        ctx.moveTo(-bgStep, -4);
-        for (let sx = -bgStep; sx <= W + bgStep*2; sx += bgStep) {
-            const b = boundsBase(scrollX * BG_PARALLAX + sx);
-            ctx.lineTo(sx, b.top);
-        }
-        ctx.lineTo(W + bgStep*2, -4);
-        ctx.closePath();
-        ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(-bgStep, H+4);
-        for (let sx = -bgStep; sx <= W + bgStep*2; sx += bgStep) {
-            const b = boundsBase(scrollX * BG_PARALLAX + sx);
-            ctx.lineTo(sx, b.bot);
-        }
-        ctx.lineTo(W + bgStep*2, H+4);
-        ctx.closePath();
-        ctx.fill();
-    }
-
     // Wall arrays
     const topArr = [], botArr = [], xs = [];
     for (let sx = -RSTEP; sx <= W + RSTEP*2; sx += RSTEP) {
