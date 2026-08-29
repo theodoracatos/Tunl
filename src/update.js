@@ -152,8 +152,14 @@ function update(dt) {
     // has to keep collecting to hold the wider corridor, not just bank it once. Mastery
     // eases the decay rate back down (never fully to baseline -- see masteryLerp doc).
     gapBonus   = Math.max(0, gapBonus   - GAP_DECAY * (activeSkin === 4 ? masteryLerp(4, 1.6, 1.2) : 1.0) * dt);
+    const _slowWas = slowTime > 0, _magWas = magnetTime > 0;
     slowTime   = Math.max(0, slowTime   - dt);
     magnetTime = Math.max(0, magnetTime - dt);
+    // Falling-edge only: the pickups turn these audio states ON from systems.js (so a
+    // top-up mid-effect can't retrigger the ramp-in), and the frame the timer runs out
+    // turns them back OFF here.
+    if (_slowWas && slowTime <= 0)   bgmSetSlow(false);
+    if (_magWas  && magnetTime <= 0) magnetLoopOff();
 
     // Scroll + score
     const spd = scrollSpd() * (slowTime > 0 ? 0.60 : 1.0);
@@ -473,6 +479,8 @@ function die(bypassShield = false) {
     }
     thrustOff();
     onFireLoopOff();
+    magnetLoopOff();
+    bgmSetSlow(false);
     phase = 'dead'; deadT = 0; flashA = 1.0; shake = 14; holding = false;
     _homeBtnRect = null; _playBtnRect = null; _shareBtnRect = null;
     prevRunScore = lastRunScore;

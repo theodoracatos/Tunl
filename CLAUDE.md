@@ -132,6 +132,18 @@ Coins are staged by `_prog` so power-ups introduce gradually:
 
 Mines (bombs) first spawn at wx=1800 (score ~30); shield coins unlock at score ~34 so the player faces mines briefly without protection - intentional.
 
+**Coin/power-up audio** (`audio.js`): the pickup sounds carry a loudness hierarchy -
+gold and blue (slow) sit at their base level; red (shield), green (magnet) and bomb are
+rare, run-defining grabs and sit ~2 dB hotter with a touch more tail (shield also gets a
+low body layer). Two effects are *states*, not one-shots, so they stay audible for their
+whole duration: blue sags the background music to 0.6x playback rate for the slow-time
+window (`bgmSetSlow`, riding `_bgmNode.playbackRate` so it drops in pitch too - reads as
+real time-dilation), and green runs a faint ambient shimmer loop while the magnet is
+live (`magnetLoopOn`/`magnetLoopOff`, same at-most-once guard pattern as the thruster /
+onFire loops). Both are driven ON from the pickup branch in `systems.js` and OFF from
+`update.js` on the falling edge of `slowTime`/`magnetTime` (never on a mid-effect
+top-up), with belt-and-braces OFF calls in `startPlay`/`die`.
+
 **Poison/bomb rarity**: both unlock at score ~34+ (`_prog >= 0.38`, same gate as
 red/orange) and are driven by a real-time clock, not a per-coin-candidate percentage
 (`poisonClock`/`bombClock`, `state.js`, incremented every play-frame in `update.js`).
@@ -217,6 +229,10 @@ Score pts = `coinCombo * 3` (so x1=+3, x2=+6, x3=+9...). Shows "x2", "x3" notif 
 Blue/red/bomb coins join the streak but their notif doesn't change (power-up is the
 reward). Poison breaks the streak outright (`coinCombo` reset to 0) rather than joining
 it - see Poison coin above.
+The gold pickup sound itself climbs a major-pentatonic step per combo level
+(`sfxCoin(coinCombo)`, `audio.js`), plateauing a major-tenth up - the streak is audible
+in the coin, not just the separate `sfxCombo` ping (which only fires from x2). Same
+"widen the step, never cap flat" shape as `milestoneStep()`.
 
 **Death screen context**: Shows "+X vs last" / "-X vs last" after the second run. Uses `prevRunScore` (run before the current one). Score number glows gold when within 5 of personal best.
 

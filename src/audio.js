@@ -2,6 +2,7 @@
 
 let _ac = null, _tNode = null, _tGain = null;
 let _fNode = null, _fGain = null;
+let _mNode = null, _mGain = null, _mOsc = null;
 let _bgmBuf = null, _bgmNode = null, _bgmGain = null;
 let _bgmLoading = false, _titleBgmLoading = false; // in-flight guards for the lazy loaders
 let _bgmActive = false, _bgmPending = false;
@@ -49,6 +50,23 @@ function _fadeBgMusic() {
         n.onended = null;  // prevent ghost restart from stopped node
         setTimeout(() => { try { n.stop(); } catch(e){} }, 80);
     }
+}
+
+// Blue coin slows the scroll to 60% for its duration (update.js); pull the background
+// music down with it so the slow-time window reads as real time-dilation, not just a
+// slower tunnel. Rides _bgmNode.playbackRate, so the track drops in pitch too - that
+// pitch sag IS the effect. No-op when music is off or the buffer hasn't started
+// playing yet; slow-time simply won't touch audio then, exactly as before. Driven on
+// from systems.js (blue-coin pickup) and off from update.js the frame slowTime hits 0,
+// with belt-and-braces off-calls in startPlay/die.
+function bgmSetSlow(on) {
+    if (!_ac || !_bgmNode) return;
+    const t = _ac.currentTime;
+    try {
+        _bgmNode.playbackRate.cancelScheduledValues(t);
+        _bgmNode.playbackRate.setValueAtTime(_bgmNode.playbackRate.value, t);
+        _bgmNode.playbackRate.linearRampToValueAtTime(on ? 0.6 : 1.0, t + 0.30);
+    } catch (e) {}
 }
 
 function _startTitleMusic() {
@@ -189,6 +207,7 @@ function _reviveAudioContext() {
     // Any decode still in flight belongs to the context just closed and will drop itself
     // on the _ac !== ctx check; clear the guards so the fresh context can load again.
     _bgmLoading = false; _titleBgmLoading = false;
+    _mNode = null; _mGain = null; _mOsc = null;  // magnet shimmer belonged to the closed context
     _initAC();
 }
 // visibilitychange is the fallback path - WKWebView doesn't always fire it
@@ -223,10 +242,20 @@ function _distortionCurve(amount) {
     return curve;
 }
 
-function sfxCoin() {
+// The base pickup pitch climbs a major-pentatonic step per combo level, so a building
+// streak is audible in the coin itself - the separate sfxCombo ping only fires from x2
+// and never changes the coin sound. `combo` is 1-indexed (systems.js increments
+// coinCombo before calling); the climb plateaus a major-tenth up so a long streak keeps
+// brightening without shrieking, same "widen the step, never cap flat" idea as
+// milestoneStep(). Called with no arg (combo -> NaN -> index 0) it falls back to the
+// original 600/900 Hz two-blip.
+function sfxCoin(combo) {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
-    [600, 900].forEach((freq, i) => {
+    const STEPS = [0, 2, 4, 7, 9, 12, 14, 16];  // major pentatonic, semitones
+    const semis = STEPS[Math.min(Math.max(((combo | 0) - 1), 0), STEPS.length - 1)];
+    const mul   = Math.pow(2, semis / 12);
+    [600 * mul, 900 * mul].forEach((freq, i) => {
         const o = _ac.createOscillator(), g = _ac.createGain();
         o.connect(g); g.connect(_ac.destination);
         o.type = 'sine'; o.frequency.value = freq;
@@ -341,6 +370,10 @@ function sfxSlow() {
     });
 }
 
+// Loudness hierarchy (P6b): shield/magnet/bomb are rare, run-defining pickups, so they
+// sit ~2 dB hotter and with a touch more tail than the common gold/slow grabs, and
+// shield gets a low body layer for heft. Gold and slow are deliberately left where
+// they were - a routine pickup should not land as hard as a save.
 function sfxShield() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
@@ -349,10 +382,16 @@ function sfxShield() {
         o.connect(g); g.connect(_ac.destination);
         o.type = 'triangle'; o.frequency.value = freq;
         const t0 = t + i * 0.07;
-        g.gain.setValueAtTime(0.12, t0);
-        g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.18);
-        o.start(t0); o.stop(t0 + 0.19);
+        g.gain.setValueAtTime(0.15, t0);
+        g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.24);
+        o.start(t0); o.stop(t0 + 0.25);
     });
+    const lo = _ac.createOscillator(), lg = _ac.createGain();
+    lo.connect(lg); lg.connect(_ac.destination);
+    lo.type = 'sine'; lo.frequency.value = 165;
+    lg.gain.setValueAtTime(0.10, t);
+    lg.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+    lo.start(t); lo.stop(t + 0.47);
 }
 
 function sfxMagnet() {
@@ -365,9 +404,9 @@ function sfxMagnet() {
         const t0 = t + i * 0.07;
         o.frequency.setValueAtTime(freq, t0);
         o.frequency.exponentialRampToValueAtTime(freq * 1.8, t0 + 0.28);
-        g.gain.setValueAtTime(0.11, t0);
-        g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.32);
-        o.start(t0); o.stop(t0 + 0.33);
+        g.gain.setValueAtTime(0.14, t0);   // P6b: rare pickup, sits hotter than gold/slow
+        g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.38);
+        o.start(t0); o.stop(t0 + 0.39);
     });
 }
 
@@ -387,6 +426,20 @@ function sfxPoison() {
         g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.26);
         o.start(t0); o.stop(t0 + 0.27);
     });
+    // Low-passed noise squelch under the saws (P6d): poison now claws back a
+    // compounding 12-15% of the pending shard bank, a genuinely punishing hit, so the
+    // sound needs real body under it rather than a thin blip.
+    const sq = _ac.createBufferSource();
+    sq.buffer = _noiseBuf(0.35);
+    const sqFlt = _ac.createBiquadFilter();
+    sqFlt.type = 'lowpass';
+    sqFlt.frequency.setValueAtTime(600, t);
+    sqFlt.frequency.exponentialRampToValueAtTime(90, t + 0.30);
+    const sqG = _ac.createGain();
+    sqG.gain.setValueAtTime(0.26, t + 0.02);
+    sqG.gain.exponentialRampToValueAtTime(0.001, t + 0.34);
+    sq.connect(sqFlt); sqFlt.connect(sqG); sqG.connect(_ac.destination);
+    sq.start(t); sq.stop(t + 0.36);
 }
 
 function sfxBomb() {
@@ -399,22 +452,22 @@ function sfxBomb() {
         o.connect(g); g.connect(_ac.destination);
         o.type = 'triangle'; o.frequency.value = freq;
         const t0 = t + i * 0.045;
-        g.gain.setValueAtTime(0.13, t0);
+        g.gain.setValueAtTime(0.16, t0);   // P6b: rare, run-defining pickup
         g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.14);
         o.start(t0); o.stop(t0 + 0.15);
     });
     const tBoom = t + 0.16;
     const src = _ac.createBufferSource();
-    src.buffer = _noiseBuf(0.4);
+    src.buffer = _noiseBuf(0.5);
     const flt = _ac.createBiquadFilter();
     flt.type = 'lowpass';
     flt.frequency.setValueAtTime(750, tBoom);
-    flt.frequency.exponentialRampToValueAtTime(50, tBoom + 0.34);
+    flt.frequency.exponentialRampToValueAtTime(50, tBoom + 0.40);
     const g2 = _ac.createGain();
-    g2.gain.setValueAtTime(0.40, tBoom);
-    g2.gain.exponentialRampToValueAtTime(0.001, tBoom + 0.38);
+    g2.gain.setValueAtTime(0.44, tBoom);
+    g2.gain.exponentialRampToValueAtTime(0.001, tBoom + 0.44);
     src.connect(flt); flt.connect(g2); g2.connect(_ac.destination);
-    src.start(tBoom); src.stop(tBoom + 0.40);
+    src.start(tBoom); src.stop(tBoom + 0.46);
 }
 
 function sfxCannonFire() {
@@ -666,4 +719,50 @@ function onFireLoopOff() {
     _fGain.gain.linearRampToValueAtTime(0.001, t + 0.15);
     const n = _fNode; _fNode = null; _fGain = null;
     setTimeout(() => { try { n.stop(); } catch(e){} }, 250);
+}
+
+// Ambient magnet shimmer (P6c) -- runs for the whole time magnetTime > 0, not just as
+// the one-shot sfxMagnet pickup. A power *state* (like slow-time reshaping the whole
+// soundscape) should be audible for its duration, and the moment it cuts out becomes a
+// felt "buff gone" cue the way it can't be when the only sound is the pickup itself.
+// Started from systems.js on the green-coin grab, stopped from update.js the frame
+// magnetTime hits 0, with belt-and-braces stops in startPlay/die. Deliberately faint:
+// a high bandpass-noise shimmer bed plus two barely-detuned sines, well under bgm and
+// every one-shot sfx. Same at-most-once guard pattern as thrustOn / onFireLoopOn.
+function magnetLoopOn() {
+    if (!_ac || _mNode || !fxOn) return;
+    _mGain = _ac.createGain();
+    _mGain.gain.setValueAtTime(0.0001, _ac.currentTime);
+    _mGain.gain.linearRampToValueAtTime(0.05, _ac.currentTime + 0.25);
+    _mGain.connect(_ac.destination);
+
+    const src = _ac.createBufferSource();
+    src.buffer = _noiseBuf(0.5); src.loop = true;
+    const flt = _ac.createBiquadFilter();
+    flt.type = 'bandpass'; flt.frequency.value = 5200; flt.Q.value = 6;
+    src.connect(flt); flt.connect(_mGain);
+    src.start(); _mNode = src;
+
+    _mOsc = [329.6, 494].map((f, i) => {
+        const o = _ac.createOscillator(), og = _ac.createGain();
+        o.type = 'sine'; o.frequency.value = f * (1 + i * 0.004);
+        og.gain.value = 0.02;
+        o.connect(og); og.connect(_mGain);
+        o.start();
+        return o;
+    });
+}
+
+function magnetLoopOff() {
+    if (!_mNode) return;
+    const t = _ac.currentTime;
+    _mGain.gain.cancelScheduledValues(t);
+    _mGain.gain.setValueAtTime(_mGain.gain.value, t);
+    _mGain.gain.linearRampToValueAtTime(0.0001, t + 0.20);
+    const n = _mNode, oscs = _mOsc || [];
+    _mNode = null; _mGain = null; _mOsc = null;
+    setTimeout(() => {
+        try { n.stop(); } catch(e){}
+        oscs.forEach(o => { try { o.stop(); } catch(e){} });
+    }, 260);
 }

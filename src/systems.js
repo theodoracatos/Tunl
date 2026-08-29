@@ -191,6 +191,7 @@ function checkCoinCollection() {
                 shake += 3;
                 pushNotif(sx, coin.y - 34, 1.1, T.notifSlow, [60,210,255]);
                 sfxSlow();
+                bgmSetSlow(true);  // sag the music to match the slowed scroll (audio.js)
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             } else if (coin.type === 'red') {
                 // CRIMSON trades shield capacity away for its slim-hitbox buff below;
@@ -210,6 +211,7 @@ function checkCoinCollection() {
                 shake += 3;
                 pushNotif(sx, coin.y - 34, 1.1, T.notifMagnet, [80,255,130]);
                 sfxMagnet();
+                magnetLoopOn();  // ambient shimmer for as long as the magnet is live (audio.js)
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             } else if (coin.type === 'orange') {
                 // NOVA trades ammo capacity away for its magnet-duration buff below; mastery
@@ -245,7 +247,7 @@ function checkCoinCollection() {
                     notifs.push({ x: sx, y: stackY - 32, life: 1.3, text: `x${coinCombo}`, color: [255,255,80] });
                     sfxCombo(coinCombo);
                 }
-                sfxCoin();
+                sfxCoin(coinCombo);  // pitch climbs with the combo (audio.js)
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             }
         }

@@ -46,6 +46,8 @@ function titleScreen() {
 function startPlay() {
     thrustOff();
     onFireLoopOff();
+    magnetLoopOff();
+    bgmSetSlow(false);
     _fadeTitleMusic();
     phase = 'play'; py = H + PR * 4; vy = 0; holding = false; hasHeldThisRun = false; idleHoldTimer = 0; scrollX = 0; startRamp = 0;
     score = 0; newBest = false; newDailyBest = false;
