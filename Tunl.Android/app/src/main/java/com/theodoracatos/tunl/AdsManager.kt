@@ -114,11 +114,12 @@ class AdsManager(private val activity: Activity) {
                         // sold as a kid-appropriate game - without this, the Mobile
                         // Ads SDK applies no content restriction of its own and ad
                         // networks can serve creative aimed at an adult audience.
-                        // MAX_AD_CONTENT_RATING_G is the strictest tier (family/all
-                        // ages); PG, T and MA creative are all filtered out.
+                        // MAX_AD_CONTENT_RATING_PG allows G and PG creative
+                        // ("suitable for most audiences with parental guidance");
+                        // T and MA creative are filtered out.
                         MobileAds.setRequestConfiguration(
                             RequestConfiguration.Builder()
-                                .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G)
+                                .setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_PG)
                                 .build()
                         )
                         MobileAds.initialize(activity) {

@@ -15,5 +15,7 @@ DerivedData/
 *.dSYM.zip
 *.dSYM
 /build/
+Tunl/build/
+*.xcarchive
 
 flytunl-site/.env

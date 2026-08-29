@@ -93,10 +93,11 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
             // TUNL carries a 9+ / PEGI 7 content rating and is sold as a
             // kid-appropriate game - without this, the Mobile Ads SDK applies no
             // content restriction of its own and ad networks can serve creative
-            // aimed at an adult audience. .general is the strictest tier
-            // (family/all ages); PG, teen and mature creative are filtered out.
+            // aimed at an adult audience. .parentalGuidance allows G and PG
+            // creative (roughly "suitable for most audiences with parental
+            // guidance"); teen and mature creative are filtered out.
             // Must be set before start().
-            MobileAds.shared.requestConfiguration.maxAdContentRating = GADMaxAdContentRating.general
+            MobileAds.shared.requestConfiguration.maxAdContentRating = GADMaxAdContentRating.parentalGuidance
             _ = await MobileAds.shared.start()
             await self.loadInterstitial()
         }
