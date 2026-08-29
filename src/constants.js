@@ -43,6 +43,32 @@ function rgb(c, a) {
     return a === undefined ? `rgb(${c[0]},${c[1]},${c[2]})` : `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 }
 
+// ── Weekday wall palette ──────────────────────────────────────────────
+// Replaces the old within-a-run difficulty color ramp (violet -> lava ->
+// neon green by _prog) with a fixed color for the whole calendar day,
+// chosen the same way the tunnel shape and daily missions already are: from
+// the UTC date, so every player sees the same rock on the same day. Seven
+// real space-rock/mineral references, deliberately spread across distinct
+// hue families (blue / orange / neutral / teal / violet / yellow-green /
+// pink) rather than picked freely -- an earlier draft repeated hues twice
+// (two blue-greys, two teal-greens) and read as only 5 distinct days.
+// Index 0 = Monday ... 6 = Sunday, matching weekdayIndex() below.
+const WEEKDAY_PALETTES = [
+    { name: 'Asteroid-Grau',      wall: [43, 45, 52],  stal: [35, 36, 41],  stalEdge: [170, 196, 222], wallBase: [150, 178, 210] },
+    { name: 'Rostgestein',        wall: [60, 36, 22],  stal: [51, 32, 15],  stalEdge: [255, 162, 92],  wallBase: [255, 148, 72] },
+    { name: 'Mondasche',          wall: [41, 40, 44],  stal: [35, 34, 38],  stalEdge: [230, 230, 240], wallBase: [222, 222, 234] },
+    { name: 'Obsidian',           wall: [15, 15, 21],  stal: [12, 12, 17],  stalEdge: [122, 255, 210], wallBase: [112, 255, 206] },
+    { name: 'Amethyst-Geode',     wall: [36, 26, 58],  stal: [31, 22, 51],  stalEdge: [196, 140, 255], wallBase: [182, 122, 255] },
+    { name: 'Peridot-Pallasit',   wall: [38, 36, 26],  stal: [33, 31, 22],  stalEdge: [208, 236, 112], wallBase: [196, 228, 96] },
+    { name: 'Rhodonit-Gestein',   wall: [48, 22, 34],  stal: [40, 18, 28],  stalEdge: [255, 140, 190], wallBase: [255, 122, 176] },
+];
+// Same bg for every day -- the walls carry the day's identity, not the void
+// behind them.
+const WEEKDAY_BG = [8, 7, 13];
+
+// Monday = 0 ... Sunday = 6 (JS's own getUTCDay() is Sunday = 0).
+function weekdayIndex(date) { return (date.getUTCDay() + 6) % 7; }
+
 // ── Ship mastery ──────────────────────────────────────────────────────
 // Per-ship XP (state.js `skinXP`, one coin collected while that ship is active
 // = 1 XP) unlocks up to 3 mastery levels. Each level eases that ship's buff a

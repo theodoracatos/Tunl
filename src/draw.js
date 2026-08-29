@@ -1,27 +1,133 @@
 // ── Theme ─────────────────────────────────────────────────────────────
-// Three colour zones interpolated smoothly via _prog (0->1):
-// blue/purple (0) -> lava/orange (0.5) -> neon green (1)
-
+// One fixed rock palette for the whole calendar day (WEEKDAY_PALETTES,
+// constants.js), not a within-run gradient by difficulty anymore -- see that
+// array's doc comment. Recomputed from the real clock rather than cached at
+// load, so a session left open across a UTC day boundary picks up the new
+// day's rock the same way top5/dailyBest already roll over elsewhere.
 function getTheme() {
-    const t = _prog;
-    const u = t < 0.5 ? t * 2 : (t - 0.5) * 2;
-    if (t < 0.5) {
-        return {
-            bg:       lerpClr([4,4,10],     [10,5,2],     u),
-            wall:     lerpClr([23,16,42],   [30,12,6],    u),
-            stal:     lerpClr([29,19,53],   [40,15,8],    u),
-            stalEdge: lerpClr([185,95,255], [255,120,30], u),
-            wallBase: lerpClr([155,75,255], [255,100,30], u),
-        };
-    } else {
-        return {
-            bg:       lerpClr([10,5,2],     [2,10,6],     u),
-            wall:     lerpClr([30,12,6],    [6,22,14],    u),
-            stal:     lerpClr([40,15,8],    [8,30,18],    u),
-            stalEdge: lerpClr([255,120,30], [30,255,120], u),
-            wallBase: lerpClr([255,100,30], [30,255,120], u),
-        };
+    const p = WEEKDAY_PALETTES[weekdayIndex(new Date())];
+    return { bg: WEEKDAY_BG, wall: p.wall, stal: p.stal, stalEdge: p.stalEdge, wallBase: p.wallBase };
+}
+
+// Rough-rock silhouette noise for the wall's rendered edge (draw()'s "Wall
+// arrays" block). A first version summed a few sine waves -- smooth by
+// construction, so it only ever read as small ripples, never as an actual
+// fractured edge. Real value noise instead: each octave's lattice points are
+// connected with a straight LINE (_rockNoise), not smoothed, so the result
+// has genuine corners rather than another curve -- stacked at three scales
+// (big facets, medium chips, fine grain) the way a meteorite's broken
+// surface actually reads. Deterministic hash of world-x (scrolls naturally,
+// never writhes in place) plus a seed offset so the top and bottom edges use
+// independent noise fields instead of mirroring the same bumps. Purely
+// cosmetic: applied only to the rendered topArr/botArr, never to
+// boundsAt()/boundsBase(), so collision is untouched.
+function _rockHash(i) {
+    const x = Math.sin(i * 127.1) * 43758.5453;
+    return 2 * (x - Math.floor(x)) - 1;
+}
+function _rockNoise(x) {
+    const i0 = Math.floor(x), t = x - i0;
+    return _rockHash(i0) + t * (_rockHash(i0 + 1) - _rockHash(i0));
+}
+// Shared intensity CAP for the rock-noise treatment below (walls and
+// stalactites both read this) -- set to 0 on request, so the ramp still
+// runs (harmless: _rockRoughness() always returns 0) but every wall/
+// stalactite edge is the plain smooth boundsAt() curve again. The noise
+// functions and the ramp itself are left in place rather than ripped out,
+// since this was a deliberate "turn it off", not "this approach was
+// wrong" -- flip this one constant back up (0.3 was the last hand-tuned
+// flat value, 1.0 the top of the score-1000 ramp) if it comes back.
+const ROCK_ROUGHNESS_MAX = 0;
+
+// Ramps the roughness from smooth (0) at the start of a run up to the full
+// ROCK_ROUGHNESS_MAX cap at score 1000, reading `score` directly -- an
+// earlier version used scrollX/60000 instead (score's own distance term)
+// on the assumption that score could wobble non-monotonically via poison
+// coins, but that's wrong: poison only debits runCoins (the shard pool,
+// update.js/systems.js), never bonusScore, and bonusScore only ever
+// increments (near-miss, coin combo) -- score is strictly non-decreasing
+// through a run, so reading it directly is both safe and exact ("score
+// 1000" now means literally 100%, not an approximation). Plain linear
+// ramp, not eased like _prog's sqrt -- "smooth", the ask here, just means
+// no jump/step, which any continuous function already gives.
+function _rockRoughness() {
+    return Math.min(score / 1000, 1) * ROCK_ROUGHNESS_MAX;
+}
+
+function _wallJagged(wx, seedOffset) {
+    const x = wx + seedOffset;
+    return (_rockNoise(x * 0.033) * 4.5   // big facets, ~30px feature scale
+          + _rockNoise(x * 0.11)  * 2.2   // medium chips
+          + _rockNoise(x * 0.30)  * 1.0)  // fine grain
+         * _rockRoughness();
+}
+
+// Same rough-rock treatment as the walls, applied to a stalactite's own
+// silhouette (draw()'s stalactite loop). Walks the same two cubic beziers
+// the smooth silhouette used, but as a jagged polyline instead of a single
+// curve, tapered to exactly zero jag at the base and tip (Math.sin(t*PI))
+// so those two points stay sharp/flush rather than blunted. Returns one
+// ordered point list, base_R -> tip -> base_L, exact at both ends -- the
+// fill silhouette traces it forward, the edge-glow stroke below reuses the
+// same array reversed, so the glow can never drift off the fill it's
+// supposed to trace. Seeded on s.wx (fixed per stalactite) rather than
+// screen-x, so the jag doesn't reshape as the stalactite scrolls by.
+function _stalOutline(sx, hw, hw_base, len, dir, tipY, bLwall, bRwall, seed) {
+    const STEPS = 6;
+    const jAmp = hw * 0.22 * _rockRoughness();
+    const bez = (p0, p1, p2, p3, t) => {
+        const u = 1 - t;
+        return u*u*u*p0 + 3*u*u*t*p1 + 3*u*t*t*p2 + t*t*t*p3;
+    };
+    const pts = [{ x: sx + hw_base, y: bRwall }]; // base_R, exact
+    for (let i = 1; i <= STEPS; i++) {
+        const t = i / STEPS, taper = Math.sin(t * Math.PI);
+        const bx = bez(sx + hw_base, sx + hw*0.70, sx + hw*0.12, sx, t);
+        const by = bez(bRwall, bRwall + dir*len*0.38, tipY - dir*len*0.18, tipY, t);
+        pts.push({ x: bx + _rockNoise(seed + t * 9) * jAmp * taper, y: by });
     }
+    for (let i = 1; i <= STEPS; i++) {
+        const t = i / STEPS, taper = Math.sin(t * Math.PI);
+        const bx = bez(sx, sx - hw*0.12, sx - hw*0.70, sx - hw_base, t);
+        const by = bez(tipY, tipY - dir*len*0.18, bLwall + dir*len*0.38, bLwall, t);
+        pts.push({ x: bx + _rockNoise(seed + 100 + t * 9) * jAmp * taper, y: by });
+    }
+    return pts; // [base_R, ...jagged, tip (exact), ...jagged, base_L (exact)]
+}
+
+// Small tileable rock-speckle pattern, built once at load and reused every
+// frame by _paintStonePattern below -- filling with an already-rasterized
+// CanvasPattern is one native fill call, far cheaper than any per-pixel noise
+// computed in JS every frame.
+const STONE_TILE = 72;
+function _buildStonePattern() {
+    const pc = document.createElement('canvas');
+    pc.width = STONE_TILE; pc.height = STONE_TILE;
+    const pctx = pc.getContext('2d');
+    let seed = 42;
+    const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+    for (let i = 0; i < 90; i++) {
+        const x = rnd() * STONE_TILE, y = rnd() * STONE_TILE, r = 0.5 + rnd() * 1.6;
+        pctx.beginPath();
+        pctx.arc(x, y, r, 0, Math.PI * 2);
+        pctx.fillStyle = rnd() < 0.5 ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.10)';
+        pctx.fill();
+    }
+    return pc;
+}
+const _stonePatternCanvas = _buildStonePattern();
+
+// Paints the tiled stone pattern into the current clip region, scrolling in
+// sync with scrollX. Caller is responsible for clipping to the wall shape
+// first (ctx.save()/clip()) and restoring afterward.
+function _paintStonePattern(scrollX) {
+    const pat = ctx.createPattern(_stonePatternCanvas, 'repeat');
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.translate(-(scrollX % STONE_TILE), 0);
+    ctx.fillStyle = pat;
+    ctx.fillRect(scrollX % STONE_TILE - 4, -8, W + 8, H + 16);
+    ctx.restore();
 }
 
 function drawCoinIcon(cx, cy, type, r) {
@@ -138,11 +244,18 @@ function draw() {
     ctx.fillStyle = bgStr;
     ctx.fillRect(-20, -20, W+40, H+40);
 
-    // Wall arrays
+    // Wall arrays. topArr/botArr get a small cosmetic jag added on top of the
+    // real boundsAt() curve (_wallJagged, below) so the rendered edge reads as
+    // broken rock instead of a smooth mathematical wave -- collision uses
+    // boundsAt()/boundsBase() directly (update.js/systems.js), never these
+    // arrays, so the jag is purely visual.
     const topArr = [], botArr = [], xs = [];
     for (let sx = -RSTEP; sx <= W + RSTEP*2; sx += RSTEP) {
-        const b = boundsAt(scrollX + sx);
-        xs.push(sx); topArr.push(b.top); botArr.push(b.bot);
+        const wx = scrollX + sx;
+        const b = boundsAt(wx);
+        xs.push(sx);
+        topArr.push(b.top + _wallJagged(wx, 0));
+        botArr.push(b.bot + _wallJagged(wx, 5000));
     }
     const n = xs.length;
 
@@ -186,13 +299,13 @@ function draw() {
             stalGrd.addColorStop(1,    rgb(theme.stal));
         }
 
-        // Shared path helper (reused for fill clip and doesn't need redrawing)
+        // Jagged silhouette, shared by the fill and the edge-glow stroke below
+        // so they can't drift apart (see _stalOutline's doc comment).
+        const outline = _stalOutline(sx, hw, hw_base, len, dir, tipY, bLwall, bRwall, s.wx);
         const traceStal = () => {
             ctx.moveTo(sx - hw_base, canvasBase);
             ctx.lineTo(sx + hw_base, canvasBase);
-            ctx.lineTo(sx + hw_base, bRwall);
-            ctx.bezierCurveTo(sx + hw*0.70, bRwall + dir*len*0.38, sx + hw*0.12, tipY - dir*len*0.18, sx, tipY);
-            ctx.bezierCurveTo(sx - hw*0.12, tipY - dir*len*0.18, sx - hw*0.70, bLwall + dir*len*0.38, sx - hw_base, bLwall);
+            for (const p of outline) ctx.lineTo(p.x, p.y);
             ctx.lineTo(sx - hw_base, canvasBase);
             ctx.closePath();
         };
@@ -202,8 +315,17 @@ function draw() {
         ctx.fillStyle = stalGrd;
         ctx.fill();
 
+        // Same stone-speckle texture as the walls -- reads as the same rock,
+        // not a differently-treated obstacle.
+        ctx.save();
+        ctx.beginPath(); traceStal();
+        ctx.clip();
+        _paintStonePattern(scrollX);
+        ctx.restore();
+
         // Inner glow: clip to shape, paint radial spot for mineral depth/luminescence
         ctx.save();
+        ctx.beginPath(); traceStal();
         ctx.clip();
         const igCY = gradY0 + dir * len * 0.40;
         const igGrd = ctx.createRadialGradient(sx - hw*0.10, igCY, 0, sx, gradY0 + dir*len*0.12, hw * 1.15);
@@ -215,13 +337,14 @@ function draw() {
         ctx.fillRect(sx - hw*1.3, gy0, hw*2.6, gy1 - gy0);
         ctx.restore();
 
-        // Edge glow with soft shadow halo
+        // Edge glow with soft shadow halo - same outline array, reversed
+        // (base_L -> tip -> base_R instead of base_R -> tip -> base_L)
         ctx.shadowBlur  = 11;
         ctx.shadowColor = rgb(theme.stalEdge, 0.48);
         ctx.beginPath();
-        ctx.moveTo(sx - hw_base, bLwall);
-        ctx.bezierCurveTo(sx - hw*0.70, bLwall + dir*len*0.38, sx - hw*0.12, tipY - dir*len*0.18, sx, tipY);
-        ctx.bezierCurveTo(sx + hw*0.12, tipY - dir*len*0.18, sx + hw*0.70, bRwall + dir*len*0.38, sx + hw_base, bRwall);
+        const rev = outline.slice().reverse();
+        ctx.moveTo(rev[0].x, rev[0].y);
+        for (let i = 1; i < rev.length; i++) ctx.lineTo(rev[i].x, rev[i].y);
         ctx.strokeStyle = rgb(theme.stalEdge, 0.78);
         ctx.lineWidth   = 1.5;
         ctx.lineCap = 'butt';
@@ -249,30 +372,46 @@ function draw() {
     }
 
     // Top wall - dark at canvas top, accent-tinted at corridor edge
-    ctx.beginPath();
-    ctx.moveTo(xs[0], -2);
-    for (let i = 0; i < n; i++) ctx.lineTo(xs[i], topArr[i]);
-    ctx.lineTo(xs[n-1], -2);
-    ctx.closePath();
+    const traceTopWall = () => {
+        ctx.beginPath();
+        ctx.moveTo(xs[0], -2);
+        for (let i = 0; i < n; i++) ctx.lineTo(xs[i], topArr[i]);
+        ctx.lineTo(xs[n-1], -2);
+        ctx.closePath();
+    };
+    traceTopWall();
     const topGrd = ctx.createLinearGradient(0, -2, 0, topMax);
     topGrd.addColorStop(0,    rgb(theme.wall));
     topGrd.addColorStop(0.72, rgb(theme.wall));
     topGrd.addColorStop(1,    rgb(edgeClrInner));
     ctx.fillStyle = topGrd;
     ctx.fill();
+    ctx.save();
+    traceTopWall();
+    ctx.clip();
+    _paintStonePattern(scrollX);
+    ctx.restore();
 
     // Bottom wall - accent-tinted at corridor edge, dark at canvas bottom
-    ctx.beginPath();
-    ctx.moveTo(xs[0], H+2);
-    for (let i = 0; i < n; i++) ctx.lineTo(xs[i], botArr[i]);
-    ctx.lineTo(xs[n-1], H+2);
-    ctx.closePath();
+    const traceBotWall = () => {
+        ctx.beginPath();
+        ctx.moveTo(xs[0], H+2);
+        for (let i = 0; i < n; i++) ctx.lineTo(xs[i], botArr[i]);
+        ctx.lineTo(xs[n-1], H+2);
+        ctx.closePath();
+    };
+    traceBotWall();
     const botGrd = ctx.createLinearGradient(0, botMin, 0, H+2);
     botGrd.addColorStop(0,    rgb(edgeClrInner));
     botGrd.addColorStop(0.28, rgb(theme.wall));
     botGrd.addColorStop(1,    rgb(theme.wall));
     ctx.fillStyle = botGrd;
     ctx.fill();
+    ctx.save();
+    traceBotWall();
+    ctx.clip();
+    _paintStonePattern(scrollX);
+    ctx.restore();
 
     // Bullets
     drawBullets();
@@ -1193,26 +1332,6 @@ function draw() {
         ctx.fillText(`${T.best}  ${best}`, W/2, hudY);
         ctx.shadowBlur  = 0;
         hudY += bestFsz * 0.85 + H * 0.01;
-    }
-
-    // Ghost gap readout - GHOST ON only, standing in for the ship while it's still
-    // outside GHOST_LATE_JOIN_GAP (ship hasn't joined yet, see above). GHOST OFF means
-    // off: no ship, no readout, nothing racing on screen. Points remaining until scrollX
-    // reaches the ghost run's length, in the same units as the score above so it reads
-    // at a glance. ghostY !== null is the same "still racing" condition update.js uses
-    // to keep the ghost ship eligible, so this and that stay in sync and both stop
-    // together the moment ghostPassed fires its own notif+sound.
-    if (ghostOn && phase === 'play' && ghostScore > 0 && ghostY !== null && ghostY !== undefined
-        && _ghostGap > GHOST_LATE_JOIN_GAP) {
-        const remaining = _ghostGap;
-        const gapFsz = FS * 0.022;
-        ctx.font        = `${gapFsz}px 'Courier New',monospace`;
-        ctx.fillStyle   = 'rgba(143,180,236,0.85)'; // matches the ghost ship's blue (#8fb4ec)
-        ctx.shadowColor = 'rgba(0,0,0,0.85)';
-        ctx.shadowBlur  = 4;
-        ctx.fillText(`${T.ghost} -${remaining}`, W/2, hudY);
-        ctx.shadowBlur  = 0;
-        hudY += gapFsz * 0.85 + H * 0.01;
     }
 
     // Next skin nudge - faint pulsing hint when this run's banked-so-far shards would
