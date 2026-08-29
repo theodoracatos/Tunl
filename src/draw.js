@@ -1,27 +1,58 @@
 // ── Theme ─────────────────────────────────────────────────────────────
-// Three colour zones interpolated smoothly via _prog (0->1):
-// blue/purple (0) -> lava/orange (0.5) -> neon green (1)
-
+// One fixed rock palette for the whole calendar day (WEEKDAY_PALETTES,
+// constants.js), not a within-run gradient by difficulty anymore -- see that
+// array's doc comment. Recomputed from the real clock rather than cached at
+// load, so a session left open across a UTC day boundary picks up the new
+// day's rock the same way top5/dailyBest already roll over elsewhere.
 function getTheme() {
-    const t = _prog;
-    const u = t < 0.5 ? t * 2 : (t - 0.5) * 2;
-    if (t < 0.5) {
-        return {
-            bg:       lerpClr([4,4,10],     [10,5,2],     u),
-            wall:     lerpClr([23,16,42],   [30,12,6],    u),
-            stal:     lerpClr([29,19,53],   [40,15,8],    u),
-            stalEdge: lerpClr([185,95,255], [255,120,30], u),
-            wallBase: lerpClr([155,75,255], [255,100,30], u),
-        };
-    } else {
-        return {
-            bg:       lerpClr([10,5,2],     [2,10,6],     u),
-            wall:     lerpClr([30,12,6],    [6,22,14],    u),
-            stal:     lerpClr([40,15,8],    [8,30,18],    u),
-            stalEdge: lerpClr([255,120,30], [30,255,120], u),
-            wallBase: lerpClr([255,100,30], [30,255,120], u),
-        };
+    const p = WEEKDAY_PALETTES[weekdayIndex(new Date())];
+    return { bg: WEEKDAY_BG, wall: p.wall, stal: p.stal, stalEdge: p.stalEdge, wallBase: p.wallBase };
+}
+
+// Deterministic pseudo-noise for the wall's rendered edge (draw()'s "Wall
+// arrays" block) -- several mismatched high-frequency sines summed together,
+// a function of world-x so it scrolls naturally with the wall instead of
+// writhing in place. Purely cosmetic: applied only to the rendered topArr/
+// botArr, never to boundsAt()/boundsBase(), so collision is untouched.
+function _wallJagged(wx) {
+    return Math.sin(wx * 0.35) * 1.3
+         + Math.sin(wx * 0.83 + 1.7) * 0.85
+         + Math.sin(wx * 2.05 + 0.4) * 0.5;
+}
+
+// Small tileable rock-speckle pattern, built once at load and reused every
+// frame by _paintStonePattern below -- filling with an already-rasterized
+// CanvasPattern is one native fill call, far cheaper than any per-pixel noise
+// computed in JS every frame.
+const STONE_TILE = 72;
+function _buildStonePattern() {
+    const pc = document.createElement('canvas');
+    pc.width = STONE_TILE; pc.height = STONE_TILE;
+    const pctx = pc.getContext('2d');
+    let seed = 42;
+    const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+    for (let i = 0; i < 90; i++) {
+        const x = rnd() * STONE_TILE, y = rnd() * STONE_TILE, r = 0.5 + rnd() * 1.6;
+        pctx.beginPath();
+        pctx.arc(x, y, r, 0, Math.PI * 2);
+        pctx.fillStyle = rnd() < 0.5 ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.10)';
+        pctx.fill();
     }
+    return pc;
+}
+const _stonePatternCanvas = _buildStonePattern();
+
+// Paints the tiled stone pattern into the current clip region, scrolling in
+// sync with scrollX. Caller is responsible for clipping to the wall shape
+// first (ctx.save()/clip()) and restoring afterward.
+function _paintStonePattern(scrollX) {
+    const pat = ctx.createPattern(_stonePatternCanvas, 'repeat');
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.translate(-(scrollX % STONE_TILE), 0);
+    ctx.fillStyle = pat;
+    ctx.fillRect(scrollX % STONE_TILE - 4, -8, W + 8, H + 16);
+    ctx.restore();
 }
 
 function drawCoinIcon(cx, cy, type, r) {
@@ -138,11 +169,16 @@ function draw() {
     ctx.fillStyle = bgStr;
     ctx.fillRect(-20, -20, W+40, H+40);
 
-    // Wall arrays
+    // Wall arrays. topArr/botArr get a small cosmetic jag added on top of the
+    // real boundsAt() curve (_wallJagged, below) so the rendered edge reads as
+    // broken rock instead of a smooth mathematical wave -- collision uses
+    // boundsAt()/boundsBase() directly (update.js/systems.js), never these
+    // arrays, so the jag is purely visual.
     const topArr = [], botArr = [], xs = [];
     for (let sx = -RSTEP; sx <= W + RSTEP*2; sx += RSTEP) {
         const b = boundsAt(scrollX + sx);
-        xs.push(sx); topArr.push(b.top); botArr.push(b.bot);
+        const j = _wallJagged(scrollX + sx);
+        xs.push(sx); topArr.push(b.top + j); botArr.push(b.bot - j);
     }
     const n = xs.length;
 
@@ -249,30 +285,46 @@ function draw() {
     }
 
     // Top wall - dark at canvas top, accent-tinted at corridor edge
-    ctx.beginPath();
-    ctx.moveTo(xs[0], -2);
-    for (let i = 0; i < n; i++) ctx.lineTo(xs[i], topArr[i]);
-    ctx.lineTo(xs[n-1], -2);
-    ctx.closePath();
+    const traceTopWall = () => {
+        ctx.beginPath();
+        ctx.moveTo(xs[0], -2);
+        for (let i = 0; i < n; i++) ctx.lineTo(xs[i], topArr[i]);
+        ctx.lineTo(xs[n-1], -2);
+        ctx.closePath();
+    };
+    traceTopWall();
     const topGrd = ctx.createLinearGradient(0, -2, 0, topMax);
     topGrd.addColorStop(0,    rgb(theme.wall));
     topGrd.addColorStop(0.72, rgb(theme.wall));
     topGrd.addColorStop(1,    rgb(edgeClrInner));
     ctx.fillStyle = topGrd;
     ctx.fill();
+    ctx.save();
+    traceTopWall();
+    ctx.clip();
+    _paintStonePattern(scrollX);
+    ctx.restore();
 
     // Bottom wall - accent-tinted at corridor edge, dark at canvas bottom
-    ctx.beginPath();
-    ctx.moveTo(xs[0], H+2);
-    for (let i = 0; i < n; i++) ctx.lineTo(xs[i], botArr[i]);
-    ctx.lineTo(xs[n-1], H+2);
-    ctx.closePath();
+    const traceBotWall = () => {
+        ctx.beginPath();
+        ctx.moveTo(xs[0], H+2);
+        for (let i = 0; i < n; i++) ctx.lineTo(xs[i], botArr[i]);
+        ctx.lineTo(xs[n-1], H+2);
+        ctx.closePath();
+    };
+    traceBotWall();
     const botGrd = ctx.createLinearGradient(0, botMin, 0, H+2);
     botGrd.addColorStop(0,    rgb(edgeClrInner));
     botGrd.addColorStop(0.28, rgb(theme.wall));
     botGrd.addColorStop(1,    rgb(theme.wall));
     ctx.fillStyle = botGrd;
     ctx.fill();
+    ctx.save();
+    traceBotWall();
+    ctx.clip();
+    _paintStonePattern(scrollX);
+    ctx.restore();
 
     // Bullets
     drawBullets();
