@@ -104,6 +104,7 @@ function makeCoin(wx) {
     }
     // score 0-12: gold only
     if (coinBlockedByStal(wx, coinY)) return null;
+    if (islandBlocksAt(wx, coinY, COIN_R)) return null;
     // Poison/bomb: rare events layered on top of the ladder above once there's some
     // shard economy to matter (score ~40+, same gate as red/orange). Deliberately
     // checked here, AFTER the placement rejection above, not before it: an earlier
@@ -385,6 +386,9 @@ function makeMine(wx) {
 
     if (hi - lo < MINE_R * 2) return null;
     const baseY = lo + rng() * (hi - lo);
+    // Skip rather than reroll if that lands inside an island's body -- same
+    // "skip this candidate" approach as every other rejection above.
+    if (islandBlocksAt(wx, baseY, MINE_R)) return null;
     return { wx, baseY, phase: rng() * Math.PI * 2, bobAmp };
 }
 
@@ -395,6 +399,102 @@ function maintainMines() {
         nextMineWx += mineSpacing() * (0.70 + rng() * 0.60);
     }
     while (mines.length && mines[0].wx < scrollX - 150) mines.shift();
+}
+
+// ── Mid-tunnel island (EXPERIMENTAL, branch experiment-mid-obstacle) ──
+// A stone ledge floating in the middle of the corridor, rooted to neither wall:
+// long along the flight direction, thin vertically -- a horizontal slab, so
+// clearing it means picking a top lane or bottom lane and holding it for the
+// island's length, not threading one instantaneous gap the way a stalactite
+// or a chicane does. Colliding with it is a normal die() like a wall or
+// stalactite (shield still absorbs it) -- it's not destructible by bullet or
+// bomb, unlike mines/stalactites/cannon shots, since it's meant to read as a
+// fixed lane choice rather than a threat to shoot away.
+
+function makeIsland(wx) {
+    const b = boundsBase(wx);
+    const fullGap = b.bot - b.top;
+    // Vertical thickness, same inline-lerp style as a stalactite's own width
+    // (makeStal above) -- the "how much room does each lane actually have"
+    // lever, separate from islandLenWx's "how long must you hold that lane".
+    const thickness = 2 * lerp(H * 0.045, H * 0.075, _prog) * (0.85 + rng() * 0.30);
+    // Both passages need ISLAND_MIN_PASSAGE clearance no matter what, so the slab can
+    // only ever claim whatever's left after reserving that floor on each side. Rejecting
+    // outright (rather than ever shrinking thickness post-hoc) mirrors makeMine's
+    // nearTop && nearBot check -- "skip this candidate", never "compromise the safety
+    // margin". ISLAND_MIN_PASSAGE scales with PR (i.e. with W); fullGap scales with H
+    // (capped at 600, CLAUDE.md) -- on a wide landscape window/phone (W well above H)
+    // those two diverge a lot, so this has to be checked against the real corridor here,
+    // not assumed safe from thickness alone.
+    const maxPassageTotal = fullGap - thickness;
+    if (maxPassageTotal < ISLAND_MIN_PASSAGE * 2) return null;   // corridor itself too tight here
+    // Remaining slack beyond the guaranteed floor on both sides, split randomly between
+    // top/bottom so the island isn't dead-center every time while both passages stay
+    // >= ISLAND_MIN_PASSAGE by construction.
+    const slack  = (maxPassageTotal - ISLAND_MIN_PASSAGE * 2) / 2;
+    const offset = (rng() - 0.5) * 2 * slack;
+    const cy = (b.top + b.bot) / 2 + offset;
+    const halfLen = islandLenWx() / 2 * (0.85 + rng() * 0.30);
+    return { wx, cy, halfThick: thickness / 2, halfLen, fade: 1.0 };
+}
+
+// Shared rect-vs-point test (used by coin/mine placement below, and by
+// islandHit for player collision): closest-point-on-rectangle, same primitive
+// as any AABB-vs-circle check. (wx, y) and the island's own wx are both
+// world-space here -- callers in screen space (islandHit) convert first.
+function islandBlocksAt(wx, y, r) {
+    for (const isl of islands) {
+        if (Math.abs(wx - isl.wx) > isl.halfLen + r + 4) continue;
+        const closestX = Math.max(isl.wx - isl.halfLen, Math.min(wx, isl.wx + isl.halfLen));
+        const closestY = Math.max(isl.cy - isl.halfThick, Math.min(y, isl.cy + isl.halfThick));
+        const dx = wx - closestX, dy = y - closestY;
+        if (dx * dx + dy * dy < r * r) return true;
+    }
+    return false;
+}
+
+function maintainIslands() {
+    while (nextIslandWx < scrollX + W + 600) {
+        // Nudge forward and retry on rejection instead of giving up the whole spacing
+        // interval on one miss -- islandSpacing() (900-2200) is far bigger than the
+        // stalactite-overlap window below (90) or a single makeIsland() rejection, so a
+        // retry-less "one candidate per interval" design would silently make islands
+        // much rarer than islandSpacing() implies (measured: only ~1 in 9 candidates
+        // even reached makeIsland over a full simulated run before this retry loop
+        // existed -- same trap the poison/bomb clock model, constants.js
+        // POISON_INTERVAL_SEC doc, was written to avoid for exactly this reason).
+        // Bounded to a handful of tries so a genuinely hazard-dense stretch still
+        // eventually falls through to the next full interval rather than searching
+        // forever.
+        let wx = nextIslandWx, isl = null;
+        for (let tries = 0; tries < 8 && !isl; tries++) {
+            // Skip candidates that would directly overlap a stalactite -- keeps each
+            // hazard reading as its own distinct beat instead of two obstacle types
+            // fused into one illegible cluster (same reasoning as makeCannon's stal
+            // check). Kept tight (90, not e.g. makeCannon's 140) on purpose:
+            // stalSpacing() bottoms out at 50 and averages well under 180 through most
+            // of a run, so a wider window here would reject nearly every candidate by
+            // coincidence rather than only true overlaps.
+            let blocked = false;
+            for (const s of stalactites) { if (Math.abs(s.wx - wx) < 90) { blocked = true; break; } }
+            if (!blocked) isl = makeIsland(wx);
+            if (!isl) wx += 110 + rng() * 60;
+        }
+        if (isl) islands.push(isl);
+        nextIslandWx = Math.max(wx, nextIslandWx) + islandSpacing() * (0.75 + rng() * 0.50);
+    }
+    while (islands.length && islands[0].wx + islands[0].halfLen < scrollX - 150) islands.shift();
+}
+
+// Player collision: same closest-point rect test as islandBlocksAt, in screen
+// space, with the player's own (possibly skin-adjusted) hitbox radius.
+function islandHit(isl, r) {
+    const sx = isl.wx - scrollX;
+    if (sx + isl.halfLen < -80 || sx - isl.halfLen > W + 80) return false;
+    const closestX = Math.max(sx - isl.halfLen, Math.min(PX, sx + isl.halfLen));
+    const closestY = Math.max(isl.cy - isl.halfThick, Math.min(py, isl.cy + isl.halfThick));
+    const dx = PX - closestX, dy = py - closestY;
+    return dx * dx + dy * dy < r * r;
 }
 
 // ── Cannon system ─────────────────────────────────────────────────────
@@ -409,6 +509,12 @@ function makeCannon(wx) {
     // (and the fair-warning read) clean rather than layering two hazards at once.
     for (const s of stalactites) {
         if (Math.abs(s.wx - wx) < 140) return null;
+    }
+    // An island sitting between a cannon and the player would flatten its shot
+    // against a mid-air wall the shot itself doesn't know how to stop at
+    // cleanly -- simplest fix is to just not stack the two here.
+    for (const isl of islands) {
+        if (Math.abs(isl.wx - wx) < 300) return null;
     }
     return { wx, isTop: rng() < 0.5, fireAtWx: wx - CANNON_FIRE_LEAD, fired: false };
 }

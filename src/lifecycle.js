@@ -27,6 +27,7 @@ function titleScreen() {
     ghostTrack = []; ghostY = null; ghostPitch = 0; ghostPassed = false;
     onFire = false; onFireFlash = 0;
     mines = []; nextMineWx = 99999;
+    islands = []; nextIslandWx = 99999;
     cannons = []; nextCannonWx = 99999; cannonShots = [];
     // Coins never spawn on the title screen (nextCoinWx = 99999 above), so these are
     // never actually consulted here -- just kept defined to avoid stray undefineds.
@@ -67,6 +68,10 @@ function startPlay() {
     ghostTrack = []; ghostY = null; ghostPitch = 0; ghostPassed = false;
     onFire = false; onFireFlash = 0;
     mines = []; nextMineWx = 1800;
+    // Islands start a bit after mines (score ~30) so the player has already met a basic
+    // hazard before meeting one that forks the flyable line in two -- see world.js
+    // islandSpacing()/islandLenWx() and systems.js makeIsland().
+    islands = []; nextIslandWx = 2600;
     // Cannons start much later than mines (score ~100) and are spaced far apart -- a
     // rare hazard, not a constant one (see world.js cannonSpacing()).
     cannons = []; nextCannonWx = 6000; cannonShots = [];

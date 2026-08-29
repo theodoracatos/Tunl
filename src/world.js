@@ -78,6 +78,18 @@ function stalSpacing() { return Math.max(lerp(lerp(260,  145, _prog),  70,  _pro
 function stalLenFrac() { return Math.min(lerp(lerp(0.46, 0.64, _prog), 0.76, _prog2), 0.80); }
 function coinSpacing() { return Math.max(lerp(lerp(600,  320, _prog), 230,  _prog2) * DAY_ARCHETYPES[_dayArchetype].coin, 175); }
 function mineSpacing() { return Math.max(lerp(lerp(900, 340, _prog), 200, _prog2) * DAY_ARCHETYPES[_dayArchetype].mine, 200); }
+// Mid-tunnel island (EXPERIMENTAL, see constants.js ISLAND_MIN_PASSAGE doc): rarer than
+// stalactites/mines on purpose -- it's a deliberate "commit to a lane" beat, not a
+// constant hazard, so its spacing floor sits well above stalSpacing/mineSpacing the same
+// way cannonSpacing does, and comfortably clears its own length so consecutive islands
+// can't overlap. islandLenWx is the island's full extent along the flight direction (the
+// "how long must you hold your lane" lever) -- it shortens with difficulty, same
+// direction as every other spacing knob, so there's less warning/commit time later in a
+// run. Vertical thickness (the "how much room does each lane actually have" lever) is
+// computed inline in systems.js makeIsland, same pattern as a stalactite's width vs. its
+// own stalLenFrac above.
+function islandSpacing() { return Math.max(lerp(lerp(2200, 1400, _prog), 900, _prog2), 700); }
+function islandLenWx()   { return Math.max(lerp(lerp(460,  260,  _prog), 160, _prog2), 140); }
 // Cannons: rare on purpose, so the spacing floor stays far above every other
 // obstacle's (stalSpacing/coinSpacing/mineSpacing all bottom out well under
 // 1000) even at max difficulty -- this should read as an occasional set-piece
