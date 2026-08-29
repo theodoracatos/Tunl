@@ -19,16 +19,18 @@ function initAmbParts() {
 // its own brighter/whiter color (draw.js) rather than ambParts' theme tint --
 // two rounds of low-alpha/theme-tinted tuning proved invisible on a real
 // device screen (dark-tone gamma crushes anything near-black well past what
-// a desktop browser preview shows), so this errs toward too-visible rather
-// than too-subtle again.
+// a desktop browser preview shows). The following round overcorrected the
+// other way (flat, oversized discs read as blotches, not stars) -- pulled
+// the radius/alpha back down now that draw.js gives each point a small glow
+// instead of relying on raw disc size/alpha to survive gamma.
 function initBgParts() {
     bgParts = Array.from({ length: 20 }, () => ({
         x:   Math.random() * W,
         y:   Math.random() * H,
         vy:  (Math.random() - 0.5) * 6,
         par: 0.04 + Math.random() * 0.06,
-        r:   0.9 + Math.random() * 0.9,
-        a:   0.35 + Math.random() * 0.35,
+        r:   0.5 + Math.random() * 0.5,
+        a:   0.30 + Math.random() * 0.30,
     }));
 }
 

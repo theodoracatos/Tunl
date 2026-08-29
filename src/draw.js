@@ -487,12 +487,28 @@ function draw() {
     // ambParts: a color this close to the near-black backdrop only differs by
     // hue, and hue alone doesn't survive real-device dark-tone gamma the way a
     // straight luminance jump does.
+    //
+    // Sky, not tunnel interior -- skip any point the real corridor doesn't
+    // have open at its x (this layer is drawn after the opaque wall fill
+    // above, so an unfiltered point would sit visibly on top of the wall
+    // texture instead of reading as background). ambParts below is genuinely
+    // "dust drifting through the tunnel" so it's fine floating anywhere in
+    // it; this layer is meant to be glimpsed sky, so it isn't.
+    //
+    // A small bright core plus a soft shadowBlur halo, not a single flat
+    // disc -- a plain filled circle at the size/alpha needed to survive
+    // real-device gamma read as a dull blotch rather than a twinkle.
     const [sr, sg, sb] = [200, 215, 255];
     for (const p of bgParts) {
+        const b = boundsAt(scrollX + p.x);
+        if (p.y <= b.top || p.y >= b.bot) continue;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${sr},${sg},${sb},${p.a})`;
+        ctx.fillStyle   = `rgba(${sr},${sg},${sb},${p.a})`;
+        ctx.shadowColor = `rgba(${sr},${sg},${sb},${p.a * 0.7})`;
+        ctx.shadowBlur  = p.r * 2.2;
         ctx.fill();
+        ctx.shadowBlur  = 0;
     }
 
     // Ambient motes - subtle dust drifting through the tunnel
