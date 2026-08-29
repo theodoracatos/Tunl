@@ -482,18 +482,21 @@ function draw() {
         drawProjectile(sx, s.y, Math.atan2(s.vy, s.vx));
     }
 
-    // Farther-back star layer - smaller, dimmer, drawn (and drifting, update.js)
-    // behind the ambParts dust layer below for the same depth cue as the
-    // background horizon line above.
-    const [mr, mg, mb] = theme.wallBase;
+    // Farther-back star layer - pale white/blue, drawn (and drifting, update.js)
+    // behind the ambParts dust layer below. Deliberately NOT theme-tinted like
+    // ambParts: a color this close to the near-black backdrop only differs by
+    // hue, and hue alone doesn't survive real-device dark-tone gamma the way a
+    // straight luminance jump does.
+    const [sr, sg, sb] = [200, 215, 255];
     for (const p of bgParts) {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${mr},${mg},${mb},${p.a})`;
+        ctx.fillStyle = `rgba(${sr},${sg},${sb},${p.a})`;
         ctx.fill();
     }
 
     // Ambient motes - subtle dust drifting through the tunnel
+    const [mr, mg, mb] = theme.wallBase;
     for (const p of ambParts) {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);

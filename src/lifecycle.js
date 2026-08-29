@@ -14,17 +14,21 @@ function initAmbParts() {
     }));
 }
 
-// Farther-back star layer - fewer, smaller, dimmer points with a lower parallax
-// factor than ambParts above, so they drift noticeably slower (same depth cue as
-// the background horizon line in draw.js). Drawn behind ambParts.
+// Farther-back star layer - fewer points with a lower parallax factor than
+// ambParts above, so they drift noticeably slower. Drawn behind ambParts, with
+// its own brighter/whiter color (draw.js) rather than ambParts' theme tint --
+// two rounds of low-alpha/theme-tinted tuning proved invisible on a real
+// device screen (dark-tone gamma crushes anything near-black well past what
+// a desktop browser preview shows), so this errs toward too-visible rather
+// than too-subtle again.
 function initBgParts() {
     bgParts = Array.from({ length: 20 }, () => ({
         x:   Math.random() * W,
         y:   Math.random() * H,
         vy:  (Math.random() - 0.5) * 6,
         par: 0.04 + Math.random() * 0.06,
-        r:   0.65 + Math.random() * 0.55,
-        a:   0.08 + Math.random() * 0.12,
+        r:   0.9 + Math.random() * 0.9,
+        a:   0.35 + Math.random() * 0.35,
     }));
 }
 
