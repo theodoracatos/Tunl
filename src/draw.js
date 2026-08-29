@@ -9,15 +9,64 @@ function getTheme() {
     return { bg: WEEKDAY_BG, wall: p.wall, stal: p.stal, stalEdge: p.stalEdge, wallBase: p.wallBase };
 }
 
-// Deterministic pseudo-noise for the wall's rendered edge (draw()'s "Wall
-// arrays" block) -- several mismatched high-frequency sines summed together,
-// a function of world-x so it scrolls naturally with the wall instead of
-// writhing in place. Purely cosmetic: applied only to the rendered topArr/
-// botArr, never to boundsAt()/boundsBase(), so collision is untouched.
-function _wallJagged(wx) {
-    return Math.sin(wx * 0.35) * 1.3
-         + Math.sin(wx * 0.83 + 1.7) * 0.85
-         + Math.sin(wx * 2.05 + 0.4) * 0.5;
+// Rough-rock silhouette noise for the wall's rendered edge (draw()'s "Wall
+// arrays" block). A first version summed a few sine waves -- smooth by
+// construction, so it only ever read as small ripples, never as an actual
+// fractured edge. Real value noise instead: each octave's lattice points are
+// connected with a straight LINE (_rockNoise), not smoothed, so the result
+// has genuine corners rather than another curve -- stacked at three scales
+// (big facets, medium chips, fine grain) the way a meteorite's broken
+// surface actually reads. Deterministic hash of world-x (scrolls naturally,
+// never writhes in place) plus a seed offset so the top and bottom edges use
+// independent noise fields instead of mirroring the same bumps. Purely
+// cosmetic: applied only to the rendered topArr/botArr, never to
+// boundsAt()/boundsBase(), so collision is untouched.
+function _rockHash(i) {
+    const x = Math.sin(i * 127.1) * 43758.5453;
+    return 2 * (x - Math.floor(x)) - 1;
+}
+function _rockNoise(x) {
+    const i0 = Math.floor(x), t = x - i0;
+    return _rockHash(i0) + t * (_rockHash(i0 + 1) - _rockHash(i0));
+}
+function _wallJagged(wx, seedOffset) {
+    const x = wx + seedOffset;
+    return _rockNoise(x * 0.033) * 4.5   // big facets, ~30px feature scale
+         + _rockNoise(x * 0.11)  * 2.2   // medium chips
+         + _rockNoise(x * 0.30)  * 1.0;  // fine grain
+}
+
+// Same rough-rock treatment as the walls, applied to a stalactite's own
+// silhouette (draw()'s stalactite loop). Walks the same two cubic beziers
+// the smooth silhouette used, but as a jagged polyline instead of a single
+// curve, tapered to exactly zero jag at the base and tip (Math.sin(t*PI))
+// so those two points stay sharp/flush rather than blunted. Returns one
+// ordered point list, base_R -> tip -> base_L, exact at both ends -- the
+// fill silhouette traces it forward, the edge-glow stroke below reuses the
+// same array reversed, so the glow can never drift off the fill it's
+// supposed to trace. Seeded on s.wx (fixed per stalactite) rather than
+// screen-x, so the jag doesn't reshape as the stalactite scrolls by.
+function _stalOutline(sx, hw, hw_base, len, dir, tipY, bLwall, bRwall, seed) {
+    const STEPS = 6;
+    const jAmp = hw * 0.22;
+    const bez = (p0, p1, p2, p3, t) => {
+        const u = 1 - t;
+        return u*u*u*p0 + 3*u*u*t*p1 + 3*u*t*t*p2 + t*t*t*p3;
+    };
+    const pts = [{ x: sx + hw_base, y: bRwall }]; // base_R, exact
+    for (let i = 1; i <= STEPS; i++) {
+        const t = i / STEPS, taper = Math.sin(t * Math.PI);
+        const bx = bez(sx + hw_base, sx + hw*0.70, sx + hw*0.12, sx, t);
+        const by = bez(bRwall, bRwall + dir*len*0.38, tipY - dir*len*0.18, tipY, t);
+        pts.push({ x: bx + _rockNoise(seed + t * 9) * jAmp * taper, y: by });
+    }
+    for (let i = 1; i <= STEPS; i++) {
+        const t = i / STEPS, taper = Math.sin(t * Math.PI);
+        const bx = bez(sx, sx - hw*0.12, sx - hw*0.70, sx - hw_base, t);
+        const by = bez(tipY, tipY - dir*len*0.18, bLwall + dir*len*0.38, bLwall, t);
+        pts.push({ x: bx + _rockNoise(seed + 100 + t * 9) * jAmp * taper, y: by });
+    }
+    return pts; // [base_R, ...jagged, tip (exact), ...jagged, base_L (exact)]
 }
 
 // Small tileable rock-speckle pattern, built once at load and reused every
@@ -176,9 +225,11 @@ function draw() {
     // arrays, so the jag is purely visual.
     const topArr = [], botArr = [], xs = [];
     for (let sx = -RSTEP; sx <= W + RSTEP*2; sx += RSTEP) {
-        const b = boundsAt(scrollX + sx);
-        const j = _wallJagged(scrollX + sx);
-        xs.push(sx); topArr.push(b.top + j); botArr.push(b.bot - j);
+        const wx = scrollX + sx;
+        const b = boundsAt(wx);
+        xs.push(sx);
+        topArr.push(b.top + _wallJagged(wx, 0));
+        botArr.push(b.bot + _wallJagged(wx, 5000));
     }
     const n = xs.length;
 
@@ -222,13 +273,13 @@ function draw() {
             stalGrd.addColorStop(1,    rgb(theme.stal));
         }
 
-        // Shared path helper (reused for fill clip and doesn't need redrawing)
+        // Jagged silhouette, shared by the fill and the edge-glow stroke below
+        // so they can't drift apart (see _stalOutline's doc comment).
+        const outline = _stalOutline(sx, hw, hw_base, len, dir, tipY, bLwall, bRwall, s.wx);
         const traceStal = () => {
             ctx.moveTo(sx - hw_base, canvasBase);
             ctx.lineTo(sx + hw_base, canvasBase);
-            ctx.lineTo(sx + hw_base, bRwall);
-            ctx.bezierCurveTo(sx + hw*0.70, bRwall + dir*len*0.38, sx + hw*0.12, tipY - dir*len*0.18, sx, tipY);
-            ctx.bezierCurveTo(sx - hw*0.12, tipY - dir*len*0.18, sx - hw*0.70, bLwall + dir*len*0.38, sx - hw_base, bLwall);
+            for (const p of outline) ctx.lineTo(p.x, p.y);
             ctx.lineTo(sx - hw_base, canvasBase);
             ctx.closePath();
         };
@@ -238,8 +289,17 @@ function draw() {
         ctx.fillStyle = stalGrd;
         ctx.fill();
 
+        // Same stone-speckle texture as the walls -- reads as the same rock,
+        // not a differently-treated obstacle.
+        ctx.save();
+        ctx.beginPath(); traceStal();
+        ctx.clip();
+        _paintStonePattern(scrollX);
+        ctx.restore();
+
         // Inner glow: clip to shape, paint radial spot for mineral depth/luminescence
         ctx.save();
+        ctx.beginPath(); traceStal();
         ctx.clip();
         const igCY = gradY0 + dir * len * 0.40;
         const igGrd = ctx.createRadialGradient(sx - hw*0.10, igCY, 0, sx, gradY0 + dir*len*0.12, hw * 1.15);
@@ -251,13 +311,14 @@ function draw() {
         ctx.fillRect(sx - hw*1.3, gy0, hw*2.6, gy1 - gy0);
         ctx.restore();
 
-        // Edge glow with soft shadow halo
+        // Edge glow with soft shadow halo - same outline array, reversed
+        // (base_L -> tip -> base_R instead of base_R -> tip -> base_L)
         ctx.shadowBlur  = 11;
         ctx.shadowColor = rgb(theme.stalEdge, 0.48);
         ctx.beginPath();
-        ctx.moveTo(sx - hw_base, bLwall);
-        ctx.bezierCurveTo(sx - hw*0.70, bLwall + dir*len*0.38, sx - hw*0.12, tipY - dir*len*0.18, sx, tipY);
-        ctx.bezierCurveTo(sx + hw*0.12, tipY - dir*len*0.18, sx + hw*0.70, bRwall + dir*len*0.38, sx + hw_base, bRwall);
+        const rev = outline.slice().reverse();
+        ctx.moveTo(rev[0].x, rev[0].y);
+        for (let i = 1; i < rev.length; i++) ctx.lineTo(rev[i].x, rev[i].y);
         ctx.strokeStyle = rgb(theme.stalEdge, 0.78);
         ctx.lineWidth   = 1.5;
         ctx.lineCap = 'butt';
