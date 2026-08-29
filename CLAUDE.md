@@ -142,10 +142,13 @@ as the effect runs out (`bgmSetSlow(true, slowTime)`, riding `_bgmNode.playbackR
 pitch sags and recovers with it - that ramp is the effect); a second blue coin restarts
 the glide from the current rate over the new topped-up duration. **The gameplay scroll
 speed follows the identical curve** (`slowScrollFactor()` in `world.js`, multiplied into
-`scrollSpd()` in `update.js` and into the speed-line intensity in `draw.js`) - the blue
-coin is a decelerate-then-recover swoop, not a flat half-speed plateau, and tunnel and
-soundtrack speed back up together. `slowTimeMax` (state.js, captured at each pickup in
-`systems.js`) is the window the ramp lerps over. Green runs a faint
+`scrollSpd()` in `update.js`, into the speed-line intensity in `draw.js`, and into both
+projectile integrations in `systems.js` - the player's own bullets in `updateBullets`
+and the cannon shots in `updateCannonShots`, so during bullet-time nothing streaks
+through a slowed tunnel at full speed) - the blue coin is a decelerate-then-recover
+swoop, not a flat half-speed plateau, and tunnel, projectiles and soundtrack speed back
+up together. `slowTimeMax` (state.js, captured at each pickup in `systems.js`) is the
+window the ramp lerps over. Green runs a faint
 ambient shimmer loop while the magnet is live (`magnetLoopOn`/`magnetLoopOff`, same
 at-most-once guard pattern as the thruster / onFire loops). Both are driven ON from the
 pickup branch in `systems.js`; the magnet loop is turned OFF from `update.js` on the

@@ -267,7 +267,10 @@ function updateBullets(dt) {
             sfxBulletFire();
         }
     }
-    const bulletSpd = scrollSpd() + 480;
+    // slowScrollFactor() folds the blue-coin slow (and its glide back to full) into
+    // the bullet's travel too, so during bullet-time the player's own fire crawls with
+    // the rest of the world instead of streaking through a slowed tunnel.
+    const bulletSpd = (scrollSpd() + 480) * slowScrollFactor();
     for (let i = bullets.length - 1; i >= 0; i--) {
         const b = bullets[i];
         b.wx += bulletSpd * dt;
@@ -460,10 +463,14 @@ function updateCannonShots(dt) {
         burst(c.wx - scrollX, muzzleY, 10);
         sfxCannonFire();
     }
+    // Same slowScrollFactor() scaling as the player's bullets and the scroll itself:
+    // an enemy shot fired just before (or during) a blue-coin slow decelerates with
+    // everything else, then speeds back up along the glide as the effect wears off.
+    const shotSlowF = slowScrollFactor();
     for (let i = cannonShots.length - 1; i >= 0; i--) {
         const s = cannonShots[i];
-        s.wx += s.vx * dt;
-        s.y  += s.vy * dt;
+        s.wx += s.vx * shotSlowF * dt;
+        s.y  += s.vy * shotSlowF * dt;
         const bsx = s.wx - scrollX;
         if (bsx < -100) { cannonShots.splice(i, 1); continue; }
         // Flew into a wall before reaching the player -- spark and remove rather than
