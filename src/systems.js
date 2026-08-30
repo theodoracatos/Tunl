@@ -301,7 +301,9 @@ function checkCoinCollection() {
 
 function updateBullets(dt) {
     if (bulletAmmo > 0) {
-        bulletFireTimer = Math.max(0, bulletFireTimer - dt);
+        // Same slowScrollFactor() clock as bullet travel/scroll/music below, so the
+        // fire rate itself sags and recovers with bullet-time instead of staying real-time.
+        bulletFireTimer = Math.max(0, bulletFireTimer - dt * slowScrollFactor());
         if (bulletFireTimer <= 0) {
             bulletAmmo--;
             bulletFireTimer = 0.32;

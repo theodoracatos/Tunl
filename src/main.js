@@ -38,6 +38,13 @@ window._tunlNativeUpdate = function (state) {
     if (typeof state.worldRankTotal === 'number' && state.worldRankTotal > 0) {
         worldRankTotal = state.worldRankTotal;
     }
+    // Outstanding Game Center Challenges for this player, pushed from
+    // GameView.swift (fetchActiveChallenges) at auth, after each score submit, and
+    // when one arrives or is completed live. Drives the CHALLENGE icon badge on the
+    // title screen. iOS 26+ only -- Android never sends this key.
+    if (typeof state.activeChallenges === 'number') {
+        activeChallenges = state.activeChallenges;
+    }
     // Dynamic Island/notch clearance (constants.js SAFE_L/SAFE_R), pushed from
     // GameView.swift's TunlWebView.onSafeAreaChange -- on launch and again on
     // every safe-area change (rotation between LandscapeLeft/LandscapeRight

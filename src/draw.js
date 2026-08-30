@@ -1669,17 +1669,36 @@ function drawRailIcon(key, cx, cy, r, color, lineW) {
             break;
         }
         case 'challenge': {
-            // Crossed blades.
-            const L = r * 1.15;
-            ctx.beginPath();
-            ctx.moveTo(cx - L * 0.5, cy - L * 0.5);
-            ctx.lineTo(cx + L * 0.5, cy + L * 0.5);
-            ctx.moveTo(cx + L * 0.5, cy - L * 0.5);
-            ctx.lineTo(cx - L * 0.5, cy + L * 0.5);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.arc(cx, cy, r * 0.11, 0, Math.PI * 2);
-            ctx.fill();
+            // Crossed swords -- a bare X read as a close/cancel button rather
+            // than a duel (direct feedback). Each blade now gets a crossguard
+            // tick near the middle and a pommel dot at its hilt end (the two
+            // bottom-outer corners), tips pointing to the two top-outer
+            // corners, so the shape reads as swords rather than an X.
+            const L = r * 1.1;
+            const blades = [
+                [cx - L * 0.55, cy - L * 0.55, cx + L * 0.55, cy + L * 0.55],
+                [cx + L * 0.55, cy - L * 0.55, cx - L * 0.55, cy + L * 0.55],
+            ];
+            for (const [tx, ty, hx, hy] of blades) {
+                ctx.beginPath();
+                ctx.moveTo(tx, ty);
+                ctx.lineTo(hx, hy);
+                ctx.stroke();
+                // Crossguard: a short perpendicular tick partway from tip to hilt.
+                const t = 0.60;
+                const gx = tx + (hx - tx) * t, gy = ty + (hy - ty) * t;
+                const dx = hx - tx, dy = hy - ty, len = Math.hypot(dx, dy);
+                const nx = -dy / len, ny = dx / len;
+                const gw = r * 0.30;
+                ctx.beginPath();
+                ctx.moveTo(gx - nx * gw, gy - ny * gw);
+                ctx.lineTo(gx + nx * gw, gy + ny * gw);
+                ctx.stroke();
+                // Pommel.
+                ctx.beginPath();
+                ctx.arc(hx, hy, r * 0.09, 0, Math.PI * 2);
+                ctx.fill();
+            }
             break;
         }
         case 'shop': {
@@ -2016,6 +2035,9 @@ function drawTitleScreen() {
     // in-run flash. Same shrink-to-fit against the screen edges the level line
     // above uses, and the same wallBase accent color the wall glow uses
     // elsewhere, so the name itself visually IS the day's rock.
+    // Kept in an outer var so the REKORD line below can anchor its gap to this
+    // line's actual baseline rather than a hard H fraction.
+    let planetBaselineY = LAND ? H * 0.395 - 11 : H / 2 - H * 0.038;
     {
         const planetLine = `${T.planet} ${WEEKDAY_PALETTES[weekdayIndex(new Date())].planet.toUpperCase()}`;
         let planetFsz = FS * 0.020;
@@ -2033,7 +2055,8 @@ function drawTitleScreen() {
         ctx.shadowColor = rgb(dayTheme.wallBase, a * 0.85);
         ctx.shadowBlur  = 8;
         ctx.fillStyle   = rgb(dayTheme.wallBase, a * 0.95);
-        ctx.fillText(planetLine, titleX, (LAND ? H * 0.395 - 11 : H / 2 - H * 0.038) + planetFsz * 1.5);
+        planetBaselineY += planetFsz * 1.5;
+        ctx.fillText(planetLine, titleX, planetBaselineY);
         ctx.shadowBlur  = 0;
     }
 
@@ -2057,16 +2080,18 @@ function drawTitleScreen() {
     // (inside the ALL SHIPS sheet below) instead of competing with the logo for
     // the same screen (Cockpit-Kritik observations 2 and 5).
     if (best > 0) {
-        // 0.70H, not something closer to the level/planet lines above -- the
-        // in-scene idle ship (PX/py, restored per feedback above) rests right
-        // around 0.55H at this same titleX-ish x range, so anything between
-        // roughly 0.49H and 0.62H runs straight through it. Below the ship
-        // instead of just under the header block.
+        // Sat at a flat 0.70H (below the in-scene idle ship at PX/py ~ 0.5H),
+        // but that pulled it so far from the planet line above that the two no
+        // longer read as one stat group -- direct feedback, twice. Anchor to
+        // the planet line's real baseline and drop only ~1/3 of the way toward
+        // the old 0.70H slot so it tucks up close under the planet line. Lands
+        // around 0.51H, overlapping the idle ship's glow -- accepted per the
+        // repeated "still a little up" feedback.
         ctx.font        = `bold ${FS * 0.038}px 'Courier New',monospace`;
         ctx.fillStyle   = `rgba(190,212,255,${a * 0.98})`;
         ctx.shadowColor = 'rgba(0,0,0,0.90)';
         ctx.shadowBlur  = 3;
-        ctx.fillText(`${T.allTime}  ${best}`, titleX, LAND ? H * 0.70 : H / 2 - H * 0.038);
+        ctx.fillText(`${T.allTime}  ${best}`, titleX, LAND ? planetBaselineY + (H * 0.70 - planetBaselineY) * 0.33 : H / 2 - H * 0.038);
         ctx.shadowBlur  = 0;
     }
 
@@ -2193,10 +2218,16 @@ function drawTitleScreen() {
         const hasChallenge  = hasGameCenter && !!window._tunlChallengeSupported;
         const doneCount     = dailyMissionsClaimed.filter(Boolean).length;
 
+        // Today's world rank (state.js, populated after Game Center auth + the
+        // first score submit resolves -- see main.js/GameView.swift's
+        // fetchWorldRank). Same hasRank gate the death screen's rank column
+        // uses; stays hidden rather than showing a placeholder until then.
+        const hasRank = worldRank !== null && worldRank > 0;
+
         const items = [];
         items.push({ key: 'missions', badge: `${doneCount}/${dailyMissionIdx.length}`, showBadge: doneCount < dailyMissionIdx.length });
-        if (hasGameCenter) items.push({ key: 'leaderboard' });
-        if (hasChallenge)  items.push({ key: 'challenge' });
+        if (hasGameCenter) items.push({ key: 'leaderboard', badge: hasRank ? (worldRankTotal > 0 ? `${worldRank}/${worldRankTotal}` : `${worldRank}`) : null, showBadge: hasRank });
+        if (hasChallenge)  items.push({ key: 'challenge', badge: activeChallenges > 0 ? `${activeChallenges}` : null, showBadge: activeChallenges > 0 });
         items.push({ key: 'shop' });
         items.push({ key: 'settings' });
 
@@ -2291,7 +2322,11 @@ function drawTitleScreen() {
         ctx.fillStyle   = 'rgba(165,190,255,0.95)';
         ctx.shadowColor = 'rgba(0,0,0,0.90)';
         ctx.shadowBlur  = 5;
-        ctx.fillText(T.missions, W / 2, panY + padTop + titleH / 2);
+        // Every submenu title (Missions/Ships/Settings/Shop/currency info) is
+        // nudged up by this same FS-relative amount so it sits a touch clear of
+        // its own title band's bottom edge -- opens a little breathing room
+        // between the heading and the content below without moving the content.
+        ctx.fillText(T.missions, W / 2, panY + padTop + titleH / 2 - FS * 0.013);
         ctx.shadowBlur  = 0;
 
         const blockX  = W / 2 - mc.total / 2;
@@ -2355,7 +2390,7 @@ function drawTitleScreen() {
         ctx.fillStyle   = 'rgba(255,225,110,0.95)';
         ctx.shadowColor = 'rgba(0,0,0,0.9)';
         ctx.shadowBlur  = 5;
-        ctx.fillText(T.ships, W / 2, H * 0.09);
+        ctx.fillText(T.ships, W / 2, H * 0.09 - FS * 0.013); // see T.missions title note
         ctx.shadowBlur  = 0;
 
         // Shard/stardust wallet -- the numbers that matter when choosing a
@@ -2677,7 +2712,7 @@ function drawTitleScreen() {
         ctx.fillStyle   = 'rgba(165,190,255,0.95)';
         ctx.shadowColor = 'rgba(0,0,0,0.90)';
         ctx.shadowBlur  = 5;
-        ctx.fillText(T.settings, W / 2, y + titleH / 2);
+        ctx.fillText(T.settings, W / 2, y + titleH / 2 - FS * 0.013); // see T.missions title note
         ctx.shadowBlur  = 0;
         y += titleH;
 
@@ -2834,7 +2869,7 @@ function drawTitleScreen() {
         ctx.fillStyle   = 'rgba(165,190,255,0.95)';
         ctx.shadowColor = 'rgba(0,0,0,0.90)';
         ctx.shadowBlur  = 5;
-        ctx.fillText(T.shop, W / 2, y + titleH / 2);
+        ctx.fillText(T.shop, W / 2, y + titleH / 2 - FS * 0.013); // see T.missions title note
         ctx.shadowBlur  = 0;
         y += titleH;
 
@@ -3036,7 +3071,7 @@ function drawTitleScreen() {
             ctx.font = `bold ${titleFsz}px 'Courier New',monospace`;
         }
         ctx.fillStyle   = 'rgba(255,225,110,0.95)';
-        ctx.fillText(T.howItWorks, W / 2, panY + padTop);
+        ctx.fillText(T.howItWorks, W / 2, panY + padTop - FS * 0.013); // see T.missions title note
 
         ctx.textAlign = 'left';
         ctx.font      = `${bodyFontSz}px 'Courier New',monospace`;

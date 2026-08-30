@@ -35,6 +35,12 @@ let _btnMusicRect = null, _btnFxRect = null;
 // submit hasn't come back yet), and the death screen falls back to the local list.
 // worldRankDelta is positive when the player climbed, since a smaller rank is better.
 let worldRank = null, worldRankTotal = 0, worldRankDelta = 0;
+// Count of Game Center Challenges currently issued to this player and not yet met,
+// pushed in by GameView.swift's fetchActiveChallenges (iOS 26+ only -- Android has
+// no challenge system). Drives the small badge under the title screen's CHALLENGE
+// icon so an open challenge is visible without opening Game Center. Not persisted,
+// same reasoning as worldRank above.
+let activeChallenges = 0;
 // Shards: persistent currency banked from collected coins across all runs, spent on ship
 // unlocks (see SKINS[].cost in constants.js). Replaces the old single-run-score gate.
 // First launch under this system (no tunnel_shards key yet) resets ship unlocks to just

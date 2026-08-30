@@ -171,6 +171,7 @@ struct GameView: UIViewRepresentable {
                     // session already has a standing to show and a baseline to compute
                     // the first delta against, instead of one blank run.
                     self.fetchWorldRank()
+                    self.fetchActiveChallenges()
                 } else if let error {
                     print("Game Center auth failed: \(error.localizedDescription)")
                 }
@@ -204,6 +205,8 @@ struct GameView: UIViewRepresentable {
                 // Only after the submit lands, so the rank reflects the run that just
                 // ended rather than the previous one.
                 self?.fetchWorldRank()
+                // A score submit is also how a challenge gets beaten, so re-check.
+                self?.fetchActiveChallenges()
             }
         }
 
@@ -243,6 +246,26 @@ struct GameView: UIViewRepresentable {
                                       range: NSRange(location: 1, length: 1)) { _, _, totalPlayers, allTimeError in
                         sendUpdate(allTimeError == nil ? totalPlayers : 0)
                     }
+                }
+            }
+        }
+
+        // How many Game Center Challenges are currently issued to this player and
+        // still unmet. Surfaced as a small badge under the title screen's CHALLENGE
+        // icon (src/draw.js) so an open challenge is visible without opening Game
+        // Center. TUNL's challenges are linked to the *daily* leaderboard (see the
+        // project memory / doc comments above), so a still-pending challenge is by
+        // construction one from today -- no extra expiry filtering needed here.
+        // loadReceivedChallenges predates the iOS 26 challenge redesign but still
+        // returns the same objects for it; on pre-26 devices there simply are none.
+        private func fetchActiveChallenges() {
+            guard GKLocalPlayer.local.isAuthenticated else { return }
+            GKChallenge.loadReceivedChallenges { [weak self] challenges, error in
+                guard error == nil else { return }
+                let count = (challenges ?? []).filter { $0.state == .pending }.count
+                let json = "{\"activeChallenges\":\(count)}"
+                DispatchQueue.main.async {
+                    self?.webView?.evaluateJavaScript("window._tunlNativeUpdate && window._tunlNativeUpdate(\(json))")
                 }
             }
         }
@@ -312,6 +335,16 @@ struct GameView: UIViewRepresentable {
         // was based on.
         func player(_ player: GKPlayer, wantsToPlay challenge: GKChallenge) {
             showLeaderboard()
+        }
+
+        // Keep the title screen's CHALLENGE badge live: refresh the outstanding
+        // count whenever one arrives or the player clears one a friend sent.
+        func player(_ player: GKPlayer, didReceive challenge: GKChallenge) {
+            fetchActiveChallenges()
+        }
+
+        func player(_ player: GKPlayer, didComplete challenge: GKChallenge, issuedByFriend friendPlayer: GKPlayer) {
+            fetchActiveChallenges()
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
