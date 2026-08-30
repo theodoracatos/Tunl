@@ -2516,7 +2516,7 @@ function drawTitleScreen() {
                 if (SKINS[i].stardustGate) {
                     ctx.font      = `bold ${FS*0.015}px 'Courier New',monospace`;
                     ctx.fillStyle = 'rgba(120,225,255,0.95)';
-                    const gateY = SKINS[i].cost ? cy + dotR2 * 2.5 : cy + dotR2 * 1.7;
+                    const gateY = SKINS[i].cost ? cy + dotR2 * 2.2 : cy + dotR2 * 1.7;
                     ctx.fillText(`${Math.min(stardust, SKINS[i].stardustGate)}/${SKINS[i].stardustGate}\u200A\u2726`, cx, gateY);
                 }
                 ctx.shadowBlur  = 0;
@@ -2612,15 +2612,17 @@ function drawTitleScreen() {
             ctx.font = `${perkFsz}px 'Courier New',monospace`;
             // perkTopY: where the perk text's ink starts. Below the selected ship's
             // name at minimum; on a row that also carries locked-ship cost / "x/y"
-            // gate labels (baseline cy + dotR2*2.5) it drops clear of those too, so
-            // a wide perk string centred under the ship doesn't run into a
-            // neighbour's stardust readout (direct feedback re: AMBER).
+            // gate labels (baseline cy + dotR2*2.2, matching the gateY multiplier
+            // above) it drops clear of those too, so a wide perk string centred under
+            // the ship doesn't run into a neighbour's stardust readout (direct
+            // feedback re: AMBER; the 2.5->2.2 tightening is a later feedback pass
+            // freeing a bit more room for the description below).
             let perkTopY;
             if (nGridRows > 1 && selectedRow < nGridRows - 1) {
                 // Row 1 of a multi-row grid: clear this row's locked labels, then
                 // shrink to fit what's left above row 2's ships.
                 perkTopY = Math.max(selectedNameBottomY + nameGap,
-                                    dotY1 + dotR2 * 2.5 + FS * 0.022);
+                                    dotY1 + dotR2 * 2.2 + FS * 0.010);
                 const bandBottom = dotY2 - dotR2 * 1.35;
                 const bandH      = Math.max(bandBottom - perkTopY, 0);
                 perkFsz = Math.max(Math.min(perkFsz, bandH * 0.92), FS * 0.011);
@@ -2631,7 +2633,7 @@ function drawTitleScreen() {
                 // perkY keeps the gap correct on a tall device without letting it
                 // overlap the name label on a short one.
                 perkTopY = Math.max(selectedNameBottomY + nameGap,
-                                    dotY2 + dotR2 * 2.5 + FS * 0.022);
+                                    dotY2 + dotR2 * 2.2 + FS * 0.022);
                 const ascentRatio = ctx.measureText(activePerk).actualBoundingBoxAscent / perkFsz;
                 const maxFszForBottom = (H - 10 - perkTopY) / ascentRatio;
                 perkFsz = Math.max(Math.min(perkFsz, maxFszForBottom), FS * 0.011);
