@@ -2075,8 +2075,8 @@ function drawTitleScreen() {
         // real hardware (only ever visible on an actual device/Simulator, a
         // desktop browser has no island to hide it).
         const railCX  = LAND ? W - Math.max(W * 0.06, 46) - SAFE_R : W / 2;
-        const iconR   = LAND ? Math.min(UI_H * 0.032, 22) : Math.min(H * 0.032, 20);
-        const iconGap = iconR * 3.0;
+        const iconR   = LAND ? Math.min(UI_H * 0.040, 27) : Math.min(H * 0.036, 22);
+        const iconGap = iconR * 3.5;
         const railY0  = LAND ? H / 2 - ((items.length - 1) * iconGap) / 2 : H - iconR * 2.4;
 
         _missionsBtnRect    = null;
@@ -2203,15 +2203,31 @@ function drawTitleScreen() {
     // its own full-bleed screen with room to breathe instead of squeezed
     // between a stat block and a perk-text gap (Cockpit-Kritik observation 4).
     if (showShipPicker) {
-        ctx.fillStyle = 'rgba(3,4,12,0.94)';
+        ctx.fillStyle = 'rgba(0,0,12,0.88)';
         ctx.fillRect(0, 0, W, H);
+
+        // Same dark rounded card every other submenu (Missions/Shop/Settings/
+        // currency info) uses -- this one used to be a bare full-bleed dim with
+        // no card at all, reading as inconsistent with the rest of the UI. Wider
+        // than those panels' own caps since a 4-wide ship grid needs the room,
+        // but drawn with real margin on all sides so dimmed background still
+        // shows around it like every other panel.
+        const shipPanX = W * 0.15, shipPanY = H * 0.03;
+        const shipPanW = W * 0.70, shipPanH = H * 0.94;
+        ctx.fillStyle = 'rgba(7,10,28,0.97)';
+        ctx.beginPath();
+        ctx.roundRect(shipPanX, shipPanY, shipPanW, shipPanH, 14);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(65,88,155,0.55)';
+        ctx.lineWidth   = 1;
+        ctx.stroke();
 
         ctx.textAlign   = 'center';
         ctx.font        = `bold ${FS * 0.032}px 'Courier New',monospace`;
         ctx.fillStyle   = 'rgba(255,225,110,0.95)';
         ctx.shadowColor = 'rgba(0,0,0,0.9)';
         ctx.shadowBlur  = 5;
-        ctx.fillText(T.ship, W / 2, H * 0.09);
+        ctx.fillText(T.ships, W / 2, H * 0.09);
         ctx.shadowBlur  = 0;
 
         // Shard/stardust wallet -- the numbers that matter when choosing a
