@@ -2009,6 +2009,34 @@ function drawTitleScreen() {
     ctx.fillText(levelLine, titleX, LAND ? H * 0.395 - 11 : H/2 - H*0.038);
     ctx.shadowBlur = 0;
 
+    // Planet line -- today's WEEKDAY_PALETTES entry (constants.js), the same
+    // one already shown in the run-start banner (see the doc comment there for
+    // the planet/rock-color pairing) -- surfaced here too so "which world is
+    // this" reads before the player even starts a run, not just in that brief
+    // in-run flash. Same shrink-to-fit against the screen edges the level line
+    // above uses, and the same wallBase accent color the wall glow uses
+    // elsewhere, so the name itself visually IS the day's rock.
+    {
+        const planetLine = `${T.planet} ${WEEKDAY_PALETTES[weekdayIndex(new Date())].planet.toUpperCase()}`;
+        let planetFsz = FS * 0.020;
+        ctx.font = `${planetFsz}px 'Courier New',monospace`;
+        if (LAND) {
+            const planetAvailHalfW = Math.min(titleX - 24, W - titleX - 24);
+            const planetW = ctx.measureText(planetLine).width;
+            if (planetW / 2 > planetAvailHalfW) {
+                planetFsz *= (planetAvailHalfW * 2) / planetW;
+                planetFsz = Math.max(planetFsz, FS * 0.012);
+                ctx.font = `${planetFsz}px 'Courier New',monospace`;
+            }
+        }
+        const dayTheme = getTheme();
+        ctx.shadowColor = rgb(dayTheme.wallBase, a * 0.85);
+        ctx.shadowBlur  = 8;
+        ctx.fillStyle   = rgb(dayTheme.wallBase, a * 0.95);
+        ctx.fillText(planetLine, titleX, (LAND ? H * 0.395 - 11 : H / 2 - H * 0.038) + planetFsz * 1.5);
+        ctx.shadowBlur  = 0;
+    }
+
     // Tapping the title screen still starts a run (input.js) even with no visible
     // "HOLD TO FLY" CTA here -- that instruction plays out live on the first run's
     // runway instead (lifecycle.js's FIRST_RUN_RUNWAY_WX, update.js's onboarding
@@ -2033,7 +2061,7 @@ function drawTitleScreen() {
         ctx.fillStyle   = `rgba(190,212,255,${a * 0.98})`;
         ctx.shadowColor = 'rgba(0,0,0,0.90)';
         ctx.shadowBlur  = 3;
-        ctx.fillText(`${T.allTime}  ${best}`, titleX, LAND ? H * 0.44 : H / 2 - H * 0.038);
+        ctx.fillText(`${T.allTime}  ${best}`, titleX, LAND ? H * 0.47 : H / 2 - H * 0.038);
         ctx.shadowBlur  = 0;
     }
 
