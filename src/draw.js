@@ -2095,7 +2095,19 @@ function drawTitleScreen() {
             ctx.stroke();
             ctx.font      = `${iconR * 1.15}px 'Courier New',monospace`;
             ctx.fillStyle = `rgba(225,232,250,${a * 0.92})`;
-            ctx.fillText(it.glyph, cx, cy);
+            // True visual centring, not just metric/baseline centring -- these
+            // glyphs mix a plain Unicode symbol (checkbox/gear/sword) with color
+            // emoji (trophy/cart), and each sits at a different height/offset
+            // within its own font's em box, so a flat fillText(cx,cy) under
+            // textBaseline 'middle' left several icons visibly off-centre in
+            // their bubble. Measuring each glyph's own ink bounds and shifting
+            // the draw point centers the INK, not the font metrics.
+            {
+                const m = ctx.measureText(it.glyph);
+                const xOff = (m.actualBoundingBoxLeft - m.actualBoundingBoxRight) / 2;
+                const yOff = (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2;
+                ctx.fillText(it.glyph, cx + xOff, cy + yOff);
+            }
             if (it.badge && it.showBadge) {
                 ctx.font        = `bold ${iconR * 0.55}px 'Courier New',monospace`;
                 ctx.fillStyle   = 'rgba(255,225,110,0.95)';
@@ -2213,7 +2225,7 @@ function drawTitleScreen() {
         // but drawn with real margin on all sides so dimmed background still
         // shows around it like every other panel.
         const shipPanX = W * 0.15, shipPanY = H * 0.03;
-        const shipPanW = W * 0.70, shipPanH = H * 0.94;
+        const shipPanW = W * 0.70, shipPanH = H * 0.88;
         ctx.fillStyle = 'rgba(7,10,28,0.97)';
         ctx.beginPath();
         ctx.roundRect(shipPanX, shipPanY, shipPanW, shipPanH, 14);
@@ -2252,8 +2264,13 @@ function drawTitleScreen() {
         }
 
         const gridCX    = W / 2;
-        const rowY1     = H * 0.40;
-        const rowY2     = H * 0.78;
+        // rowY2 sat close enough to the panel's own bottom edge that row 2's
+        // name/cost/perk text nearly touched it (direct feedback) -- moved up
+        // together with the panel height shrinking above it, rather than just
+        // padding the panel taller, so row 1 and row 2 both get a fair share
+        // of the card instead of row 2 alone eating the leftover space.
+        const rowY1     = H * 0.36;
+        const rowY2     = H * 0.66;
         // Bigger than the base screen's old inline grid ever could afford --
         // this sheet has nothing else competing for the space, so the ships
         // themselves carry the screen instead of the (already-generous) text
