@@ -57,6 +57,12 @@ class BillingManager(context: Context) {
     private val purchasesUpdatedListener = PurchasesUpdatedListener { billingResult, purchases ->
         if (billingResult.responseCode == BillingResponseCode.OK && purchases != null) {
             scope.launch { purchases.forEach { handlePurchase(it) } }
+        } else if (billingResult.responseCode == BillingResponseCode.ITEM_ALREADY_OWNED) {
+            // Can happen if the purchase was already granted (e.g. this install's
+            // initial refreshEntitlements() hadn't finished yet when the user tapped
+            // Buy) -- re-sync from queryPurchasesAsync so the button/local flag
+            // catches up instead of the tap just silently failing.
+            scope.launch { refreshEntitlements() }
         } else if (billingResult.responseCode != BillingResponseCode.USER_CANCELED) {
             Log.w(TAG, "Purchase update failed: ${billingResult.debugMessage}")
         }
