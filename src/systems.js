@@ -213,8 +213,9 @@ function checkCoinCollection() {
             }
             if (coinComboTimer > 0) coinCombo++; else coinCombo = 1;
             // ELECTRIC trades a shorter combo window for its slow-time buff below; mastery
-            // eases it back toward the 2.0s baseline (see constants.js masteryLerp).
-            coinComboTimer = activeSkin === 3 ? masteryLerp(3, 1.5, 2.0) : 2.0;
+            // eases it toward, but deliberately never all the way to, the 2.0s baseline --
+            // see the "never fully erase the drawback" doc above SKINS in constants.js.
+            coinComboTimer = activeSkin === 3 ? masteryLerp(3, 1.5, 1.8) : 2.0;
             const pts = coinCombo * 3;
             bonusScore += pts;
             runCoins++;
@@ -232,9 +233,12 @@ function checkCoinCollection() {
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             } else if (coin.type === 'red') {
                 // CRIMSON trades shield capacity away for its slim-hitbox buff below;
-                // VOID's buff IS extra shield capacity. Mastery grows/heals each toward 5/3.
+                // VOID's buff IS extra shield capacity. VOID's cap grows to 5. CRIMSON's
+                // stays capped at 2 (2.4 rounds down, never up to the 3 baseline) --
+                // mastery is CRIMSON's hitbox buff getting sharper, not this drawback
+                // healing away, see the "never fully erase the drawback" doc above SKINS.
                 const shieldCap = activeSkin === 5 ? Math.round(masteryLerp(5, 4, 5))
-                                 : activeSkin === 2 ? Math.round(masteryLerp(2, 2, 3))
+                                 : activeSkin === 2 ? Math.round(masteryLerp(2, 2, 2.4))
                                  : 3;
                 shieldCount = Math.min(shieldCount + 1, shieldCap);
                 burstCoin(sx, coin.y, 0, 26);
@@ -252,9 +256,11 @@ function checkCoinCollection() {
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             } else if (coin.type === 'orange') {
                 // NOVA trades ammo capacity away for its magnet-duration buff below; mastery
-                // heals both the pickup amount and the cap back toward the 5/10 baseline.
+                // heals the pickup amount fully to the 5 baseline, but the cap only as far
+                // as 9 -- never the full 10 -- so the drawback never fully erases (see the
+                // "never fully erase the drawback" doc above SKINS in constants.js).
                 bulletAmmo = Math.min(bulletAmmo + (activeSkin === 6 ? Math.round(masteryLerp(6, 3, 5)) : 5),
-                                       activeSkin === 6 ? Math.round(masteryLerp(6, 6, 10)) : 10);
+                                       activeSkin === 6 ? Math.round(masteryLerp(6, 6, 9)) : 10);
                 bulletFireTimer = 0;
                 burstCoin(sx, coin.y, 28, 26);
                 shake += 3;

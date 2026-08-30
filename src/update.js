@@ -244,8 +244,10 @@ function update(dt) {
         const nmC = Math.min(py - PR - nmB.top, nmB.bot - (py + PR));
         // VOID trades a smaller near-miss window for its extra shield capacity
         // (systems.js) -- it tanks hits instead of skimming past them for bonus.
-        // Mastery eases the window back toward the 2.0x baseline.
-        if (nmC >= 0 && nmC < PR * (activeSkin === 5 ? masteryLerp(5, 1.5, 2.0)
+        // Mastery eases the window toward, but deliberately never all the way to,
+        // the 2.0x baseline (see the "never fully erase the drawback" doc above
+        // SKINS in constants.js).
+        if (nmC >= 0 && nmC < PR * (activeSkin === 5 ? masteryLerp(5, 1.5, 1.8)
                                   : activeSkin === 7 ? masteryLerp(7, 4.0, 5.0)
                                   : 2.0)) {
             bonusScore++;
