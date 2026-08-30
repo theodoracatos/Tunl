@@ -146,18 +146,16 @@ let _shopPanelRect = null;
 let showCurrencyInfo = false;
 let _currencyInfoBtnRect = null;
 let _currencyInfoPanelRect = null;
-// Bottom Y of the title-screen settings/leaderboard/challenge button cluster, set each
-// draw() call. No longer read by anything else in draw() (the missions block used to
-// cascade off it when buttons sat above missions; the two were swapped per feedback --
-// see _missionsBottom below), kept for any future layout that wants the buttons' real
-// bottom edge.
-let _btnRowBottom = null;
-// Bottom Y of the daily-missions block, set each draw() call -- the title-screen
-// settings/leaderboard/challenge button cluster (now positioned below missions, buttons
-// at the bottom of the screen rather than missions) cascades off this instead of an
-// independent fixed H fraction, so it can't collide when the button cluster grows a
-// 2nd row above a mission list that shifted position.
-let _missionsBottom = null;
+// CONCEPT A (Dock & Drawer) title-screen prototype -- Missions drawer and ALL
+// SHIPS sheet, opened from the icon rail / hero ship link in drawTitleScreen().
+// Same tap-outside-to-close pattern as showShop/showSettings above.
+let showMissions = false;
+let _missionsBtnRect = null;
+let _missionsPanelRect = null;
+let showShipPicker = false;
+let _shipPickerBtnRect = null;
+let _shipPrevBtnRect = null;
+let _shipNextBtnRect = null;
 let _langBtnRects = [];
 let _removeAdsBtnRect = null;
 let _unlockAllShipsBtnRect = null;

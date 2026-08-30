@@ -1,6 +1,7 @@
 // ── Input ─────────────────────────────────────────────────────────────
 
 function inRect(cx, cy, r) { return cx >= r.x && cx <= r.x+r.w && cy >= r.y && cy <= r.y+r.h; }
+function inCircle(cx, cy, c) { const dx = cx - c.cx, dy = cy - c.cy; return dx*dx + dy*dy < c.r*c.r; }
 
 // Backgrounding/closing the app (task switcher swipe, tab hide, etc.) can fire
 // a spurious pointerdown/up right as the transition happens. Suppress input
@@ -87,47 +88,86 @@ function onDown(e) {
             if (!_shopPanelRect || !inRect(cx, cy, _shopPanelRect)) { showShop = false; sfxUiClose(); }
             return;
         }
+        // CONCEPT A: Missions drawer. No buttons inside (missions complete
+        // themselves), so any tap inside just does nothing, same as the
+        // currency-info panel above.
+        if (showMissions) {
+            if (!_missionsPanelRect || !inRect(cx, cy, _missionsPanelRect)) { showMissions = false; sfxUiClose(); }
+            return;
+        }
+        // CONCEPT A: ALL SHIPS sheet. Hit-test the grid first (selecting a ship
+        // keeps the sheet open, same as picking a language keeps Settings
+        // open); anything else -- background, header, wallet line -- closes it.
+        if (showShipPicker) {
+            for (let i = 0; i < _skinBtnRects.length; i++) {
+                const b = _skinBtnRects[i];
+                if (inCircle(cx, cy, b)) {
+                    if (unlockedSkins & (1 << i)) {
+                        activeSkin = i;
+                        localStorage.setItem('tunnel_skin', activeSkin);
+                        sfxUiSelect(i);
+                    } else {
+                        sfxUiDenied();
+                    }
+                    return;
+                }
+            }
+            showShipPicker = false;
+            sfxUiClose();
+            return;
+        }
 
-        if (_settingsBtnRect && inRect(cx, cy, _settingsBtnRect)) {
+        if (_settingsBtnRect && inCircle(cx, cy, _settingsBtnRect)) {
             showSettings = true;
             sfxUiTap();
             return;
         }
-        if (_shopBtnRect && inRect(cx, cy, _shopBtnRect)) {
+        if (_shopBtnRect && inCircle(cx, cy, _shopBtnRect)) {
             showShop = true;
             sfxUiTap();
             return;
         }
-        if (_leaderboardBtnRect && inRect(cx, cy, _leaderboardBtnRect)) {
+        if (_missionsBtnRect && inCircle(cx, cy, _missionsBtnRect)) {
+            showMissions = true;
+            sfxUiTap();
+            return;
+        }
+        if (_leaderboardBtnRect && inCircle(cx, cy, _leaderboardBtnRect)) {
             sfxUiTap();
             window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'show' });
             return;
         }
-        if (_challengeBtnRect && inRect(cx, cy, _challengeBtnRect)) {
+        if (_challengeBtnRect && inCircle(cx, cy, _challengeBtnRect)) {
             sfxUiTap();
             window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'challenge' });
+            return;
+        }
+        if (_shipPickerBtnRect && inRect(cx, cy, _shipPickerBtnRect)) {
+            showShipPicker = true;
+            sfxUiTap();
+            return;
+        }
+        if (_shipPrevBtnRect && inCircle(cx, cy, _shipPrevBtnRect)) {
+            const list = [];
+            for (let i = 0; i < SKINS.length; i++) if (unlockedSkins & (1 << i)) list.push(i);
+            const idx = Math.max(0, list.indexOf(activeSkin));
+            activeSkin = list[(idx - 1 + list.length) % list.length];
+            localStorage.setItem('tunnel_skin', activeSkin);
+            sfxUiSelect(activeSkin);
+            return;
+        }
+        if (_shipNextBtnRect && inCircle(cx, cy, _shipNextBtnRect)) {
+            const list = [];
+            for (let i = 0; i < SKINS.length; i++) if (unlockedSkins & (1 << i)) list.push(i);
+            const idx = Math.max(0, list.indexOf(activeSkin));
+            activeSkin = list[(idx + 1) % list.length];
+            localStorage.setItem('tunnel_skin', activeSkin);
+            sfxUiSelect(activeSkin);
             return;
         }
         if (_currencyInfoBtnRect) {
             const b = _currencyInfoBtnRect, dx = cx - b.cx, dy = cy - b.cy;
             if (dx*dx + dy*dy < b.r*b.r) { showCurrencyInfo = true; sfxUiTap(); return; }
-        }
-        for (let i = 0; i < _skinBtnRects.length; i++) {
-            const b = _skinBtnRects[i], dx = cx - b.cx, dy = cy - b.cy;
-            // Hit-test first, THEN branch on locked/unlocked -- a locked skin must still
-            // consume the tap (sfxUiDenied + return) rather than fall through to the
-            // "nothing hit" branch below, which used to misread a locked-skin tap as an
-            // empty-area press and arm it to start a run on release.
-            if (dx*dx + dy*dy < b.r*b.r) {
-                if (unlockedSkins & (1 << i)) {
-                    activeSkin = i;
-                    localStorage.setItem('tunnel_skin', activeSkin);
-                    sfxUiSelect(i);
-                } else {
-                    sfxUiDenied();
-                }
-                return;
-            }
         }
 
         // Nothing hit: wait for a confirmed release before starting a run (see note above).
@@ -139,6 +179,8 @@ function onDown(e) {
         if (showSettings) { showSettings = false; return; }
         if (showShop) { showShop = false; return; }
         if (showCurrencyInfo) { showCurrencyInfo = false; return; }
+        if (showMissions) { showMissions = false; return; }
+        if (showShipPicker) { showShipPicker = false; return; }
         startPlay(); return;   // reached only for keyboard/synthetic triggers (no e)
     }
     if (phase === 'dead' && deadT > 0.9) {

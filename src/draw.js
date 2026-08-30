@@ -1213,7 +1213,13 @@ function drawWorld() {
         ctx.rotate(pitchAngle);
         ctx.translate(-PX, -py);
 
-        if ((holding || startRamp < 1) && (phase === 'play' || phase === 'title')) {
+        // CONCEPT A: this cone used to sit hidden behind the always-on missions
+        // list at this exact PX position during a brief post-title startRamp<1
+        // window; with the ship body itself also now skipped on 'title' below,
+        // rendering just the flame with no ship behind it would read as a
+        // stray glitch, so 'title' is dropped here too (holding is never true
+        // on title anyway -- input.js always returns early before reaching it).
+        if ((holding || startRamp < 1) && phase === 'play') {
             const pulse = 0.75 + 0.25 * Math.sin(gtime * 22);
             for (const ns of [-1, 1]) {
                 const nx = PX - PR * 0.74, ny = py + ns * PR * 0.50;
@@ -1273,7 +1279,15 @@ function drawWorld() {
             }
         }
 
-        drawShip(PX, py, PR, phase === 'dead' ? '#ff4040' : sk.color, sr, sg, sb, 20);
+        // CONCEPT A: skip the in-scene idle ship on the title screen -- it used
+        // to sit hidden behind the always-on missions list at this same PX
+        // position; with that list gone it read as a confusing second, dimmer
+        // ship next to the hero render in drawTitleScreen(). The thrust-cone
+        // effects above stay untouched (they still cover the tap-to-start
+        // transition moment), only the ship body itself is skipped here.
+        if (phase !== 'title') {
+            drawShip(PX, py, PR, phase === 'dead' ? '#ff4040' : sk.color, sr, sg, sb, 20);
+        }
         ctx.restore();
     }
 
@@ -1649,93 +1663,17 @@ function drawTitleScreen() {
     // the logo, which would otherwise crowd into the subtitle beneath it.
     const logoY = LAND ? H * 0.24 - 11 : H/2 - H*0.12;
 
-    // Ship-picker layout is computed here (hoisted above its actual drawing further
-    // below) purely so the divider immediately after can be positioned against
-    // PEARL's real on-screen left edge instead of a fixed W-fraction. A fixed
-    // fraction (tried W*0.49, then W*0.44) looked fine on one device/aspect-ratio
-    // and put the divider ON TOP of the ship icon on another -- same root cause as
-    // the skinCX overflow bug: fixed fractions don't track how the dynamically-
-    // clamped ship row actually shifts across device widths. See measureShipLabelHalfW.
+    // CONCEPT A (Dock & Drawer) layout. Only two pieces of the old ship-panel
+    // geometry survive into this rewrite: whether there's anything ship-related
+    // worth showing yet, and the grid's column count (still used inside the
+    // ALL SHIPS picker sheet below). Every other measurement the old two-column
+    // layout needed (dotR1/dotGap1/dotY1/dotY2/cx1/cx2/dividerX/...) existed only
+    // to keep the missions list, the stat block and the ship grid from colliding
+    // while sharing one screen -- since all three now live behind a tap instead
+    // of competing for the same space, that geometry has nothing left to solve.
     const showShipPanel = best > 0 || unlockedSkins > 1;
-    // Fixed 4-per-row grid, independent of unlock status (was two variable-length
-    // rows split by ownership -- unlocked ships alone stretched into one increasingly
-    // cramped/overflowing row as more got bought, worst case all 7-8 squeezed into a
-    // single line while the locked row shrank to almost nothing). Every ship still
-    // renders according to its OWN lock state (see the render loop below), just at a
-    // grid position fixed by its index rather than a row determined by ownership.
     const GRID_COLS = 4;
     const nGridRows = Math.ceil(SKINS.length / GRID_COLS);
-    // dotR1/dotGap1 size the grid itself (both rows share one spacing so columns
-    // line up); dotR2/dotGap2 are kept as the smaller size locked ships still render
-    // at within their grid cell. App is landscape-only, but portrait aliases are kept
-    // so code paths stay intact.
-    const dotR1   = LAND ? UI_H * 0.044 : H * 0.035;
-    const dotGap1 = Math.max(dotR1 * 2.8, LAND ? UI_H * 0.130 : W * 0.180);
-    const dotR2   = UI_H * 0.035;   // locked-ship render size within its cell
-    const dotGap2 = dotGap1;
-    // Portrait single-row aliases
-    const dotR    = LAND ? dotR1 : H * 0.035;
-    const dotGap  = LAND ? dotGap1 : Math.max(dotR * 2.8, W * 0.180);
-    const rowHalfW1  = (GRID_COLS - 1) * dotGap1 / 2;
-    const rowHalfW2  = rowHalfW1;
-    const edgeMargin = 8;
-    let cx1 = infoX, cx2 = infoX;
-    if (LAND) {
-        cx1 = Math.min(Math.max(cx1, edgeMargin + rowHalfW1), W - edgeMargin - rowHalfW1);
-        cx2 = cx1;
-    }
-    // Both rows nudged up from 0.600/0.825 to free room at the bottom of the panel --
-    // needed so the perk description has somewhere to go when it has to sit below
-    // the 2nd row instead of in the gap between rows (see the perk-position logic
-    // near the ship grid render loop).
-    // 0.560 -> 0.540 and 0.830 -> 0.810 below: shifted up together with rightColY
-    // (all three by 0.02H) so the whole right column -- REKORD/SHIP down through
-    // both ship rows -- moves as one block and stays vertically aligned with the
-    // left column instead of hanging lower than it. First pass moved this by
-    // 0.05H based on a desktop Chrome test, which over-corrected -- letterboxing
-    // in that test window (H capped at 600 inside a taller browser viewport, vs
-    // the real device's full-bleed canvas since its H never hits the 600 cap)
-    // exaggerated the apparent gap. Re-measured against real iPhone 17 Pro Max
-    // simulator screenshots (both the original unpatched title screen and this
-    // patch applied) instead of the desktop test -- 0.02H matches what the
-    // original screenshot actually needed.
-    const dotY1  = LAND ? H * 0.540 - 11 : H - dotR * 2.4;
-    // 0.780 -> 0.830: widens the gap to row 1, which is what the perk description's
-    // available "band" (see the perk-position logic near the ship grid render loop)
-    // is measured against -- too narrow a gap meant row 1's description shrank well
-    // below row 2's (row 2's own description sits below the whole grid, unclamped by
-    // this band, so the two could end up visibly different sizes for the same string
-    // length depending only on which row was selected).
-    const dotY2  = H * 0.810 - 11;   // 2nd grid row, landscape only
-    const startX1 = cx1 - rowHalfW1;
-    const startX2 = cx2 - rowHalfW2;
-    // Aliases used by the divider calculation and portrait path
-    const skinCX = cx1;
-    const dotY   = dotY1;
-    // Divider is pegged to the grid's fixed 4-column span, which no longer changes
-    // as ships get unlocked (the old span tracked the unlocked-row's length, which
-    // grew over time and could shift the divider).
-    const fullRowHalfW = rowHalfW1;
-    const startX       = Math.max(infoX - fullRowHalfW, edgeMargin);
-
-    // Gradient separator between columns (landscape only). When the ship panel is
-    // showing, sit just left of PEARL's actual icon (not its text label -- the
-    // triangle graphic itself extends further left, see dotR*1.6 below); before any
-    // ship is unlocked/played there's nothing to clear yet, so fall back to a fixed
-    // fraction close to the old constant.
-    // Hoisted out of the `if (LAND)` block below so the level/world-name subtitle
-    // further down can also fit itself against the divider's real position, not
-    // just the gradient line drawn here.
-    // dividerX itself is kept (used below as a layout bound for the button row and
-    // missions block widths) even though the gradient line that used to visualize it
-    // is gone -- removed per feedback that it wasn't doing anything visually.
-    let dividerX = W * 0.44;
-    if (LAND) {
-        const dividerMargin = 12;
-        dividerX = showShipPanel ? (startX - dotR1 * 1.6 - dividerMargin) : W * 0.44;
-        // Don't let the divider crash into the left column's own content either.
-        dividerX = Math.max(dividerX, W * 0.34);
-    }
 
     // Radial halo behind TUNL logo
     const haloR  = FS * 0.14;
@@ -1982,513 +1920,350 @@ function drawTitleScreen() {
     ctx.shadowBlur = 0;
 
     // Tapping the title screen still starts a run (input.js) even with no visible
-    // "HOLD TO FLY" CTA here anymore -- that instruction used to live only on this
-    // screen, but now plays out live on the first run's runway (see lifecycle.js's
-    // FIRST_RUN_RUNWAY_WX and update.js's onboarding hint), which teaches the actual
-    // feel of thrust-vs-gravity instead of just naming it. Keeping both was pure
-    // repetition, so this screen dropped its copy of the line, and the button
-    // cluster below moved up to take the freed vertical space.
+    // "HOLD TO FLY" CTA here -- that instruction plays out live on the first run's
+    // runway instead (lifecycle.js's FIRST_RUN_RUNWAY_WX, update.js's onboarding
+    // hint). See CLAUDE.md Onboarding for why a text hint doesn't come back here.
     //
-    // Daily missions -- left column, in the middle of the screen (above the
-    // settings/leaderboard row, which now anchors to the bottom -- swapped per
-    // feedback that a block the player checks once per day shouldn't sit below a
-    // button row they use every session). Landscape only: this column is centered
-    // and already tight in portrait (same call the pre-unlock TOP 5 block below
-    // makes for the right column). Progress is cumulative across today's runs
-    // (state.js dailyMissionStats, folded in by update.js die()), and the 3 active
-    // missions are the same for every player on a given day (constants.js
-    // pickDailyMissionIndices), not per-player randomized.
-    if (LAND) {
-        // Fixed just under the level line above (which itself sits just under the
-        // logo's underline bar) rather than cascading off anything, since this block
-        // is now the first thing below the logo/level header. 0.49 -> 0.51: nudged
-        // down a touch per feedback, taking the button row(s) below it down by the
-        // same amount (see tBtnY's own floor, moved in step).
-        let missionY = H * 0.51 - 6;
+    // CONCEPT A -- "Dock & Drawer" (see the Cockpit-Kritik audit this replaces).
+    // Only three things stay on screen at once: the logo, one headline stat
+    // (REKORD), and the equipped ship, large, in the middle of the canvas the
+    // old missions list / stat block / ship grid used to fight over. Missions,
+    // the full ship roster, Rangliste/Herausforderung/Shop/Einstellungen all
+    // move behind a slim icon rail on the right edge -- each one still just
+    // flips one of the existing showX booleans and opens the same dim-overlay
+    // panel language Shop/Einstellungen already established, so this reuses an
+    // existing interaction pattern instead of inventing a new one.
 
-        // Laid out as a real three-column table (progress right-aligned, label
-        // left-aligned, reward right-aligned) rather than centring each row's whole
-        // string on titleX. Centring meant every row started at a different x --
-        // "9/150" is far wider than "0/6" -- so the labels never lined up and the
-        // block had a ragged left edge. The header shares the block's left edge too,
-        // so the whole thing reads as one column.
-        const rewStr = `+${MISSION_REWARD} \u29eb`;
-        let mFsz = FS * 0.021;
-        // The reward is drawn bold and a touch larger than the row text, so it has to
-        // be measured in its own font or the column lands short of where it renders.
+    // REKORD -- the one stat kept on-screen by default. HEUTE, the day streak,
+    // shards and stardust all still exist, they just live one tap away now
+    // (inside the ALL SHIPS sheet below) instead of competing with the logo for
+    // the same screen (Cockpit-Kritik observations 2 and 5).
+    if (best > 0) {
+        ctx.font        = `bold ${FS * 0.032}px 'Courier New',monospace`;
+        ctx.fillStyle   = `rgba(190,212,255,${a * 0.98})`;
+        ctx.shadowColor = 'rgba(0,0,0,0.90)';
+        ctx.shadowBlur  = 3;
+        ctx.fillText(`${T.allTime}  ${best}`, titleX, LAND ? H * 0.44 : H / 2 - H * 0.038);
+        ctx.shadowBlur  = 0;
+    }
+
+    // ── Hero ship stage ─────────────────────────────────────────────────
+    // Centred in the gap between the logo column and the icon rail -- freed up
+    // entirely now that neither the stat block nor the ship grid live here by
+    // default (Cockpit-Kritik observation 6: that gap used to sit empty on wide
+    // devices while the right column was crammed; it's the whole stage now).
+    const shipStageX = LAND ? W * 0.60 : W / 2;
+    const shipStageY = LAND ? H * 0.58 : H * 0.50;
+    const heroR       = LAND ? Math.min(H * 0.16, UI_H * 0.15) : H * 0.12;
+    const [hr, hg, hb] = SKINS[activeSkin].shadow;
+
+    // Soft pulsing ring around the equipped ship -- a wordless "this is yours"
+    // cue in place of a re-added text hint (CLAUDE.md: no title-screen control
+    // hint). Tapping the ship itself still just starts a run, same as tapping
+    // any other empty area -- it's already the selected ship, there's nothing
+    // for a tap on it to change.
+    const ringPulse = 0.6 + 0.4 * Math.sin(gtime * 1.6);
+    ctx.beginPath();
+    ctx.arc(shipStageX, shipStageY, heroR * 1.7, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${hr},${hg},${hb},${a * 0.30 * ringPulse})`;
+    ctx.lineWidth   = 2;
+    ctx.shadowColor = `rgba(${hr},${hg},${hb},${a * 0.35})`;
+    ctx.shadowBlur  = 14;
+    ctx.stroke();
+    ctx.shadowBlur  = 0;
+
+    drawShip(shipStageX, shipStageY, heroR, SKINS[activeSkin].color, hr, hg, hb, 22);
+
+    // Mastery pips above the hero ship (constants.js masteryLevel/masteryLerp).
+    // PEARL has no perk to master.
+    if (activeSkin > 0) {
+        const lvl    = masteryLevel(activeSkin);
+        const pipR   = heroR * 0.09, pipGap = heroR * 0.30;
+        const pipsW  = (MASTERY_XP_THRESHOLDS.length - 2) * pipGap;
+        for (let p = 0; p < MASTERY_XP_THRESHOLDS.length - 1; p++) {
+            const px = shipStageX - pipsW / 2 + p * pipGap;
+            const py = shipStageY - heroR * 1.9;
+            ctx.beginPath();
+            ctx.arc(px, py, pipR, 0, Math.PI * 2);
+            if (p < lvl) {
+                ctx.fillStyle   = `rgba(${hr},${hg},${hb},0.90)`;
+                ctx.shadowColor = `rgba(${hr},${hg},${hb},0.70)`;
+                ctx.shadowBlur  = 5;
+                ctx.fill();
+                ctx.shadowBlur  = 0;
+            } else {
+                ctx.strokeStyle = `rgba(${hr},${hg},${hb},0.40)`;
+                ctx.lineWidth   = 1;
+                ctx.stroke();
+            }
+        }
+    }
+
+    ctx.font        = `bold ${FS * 0.026}px 'Courier New',monospace`;
+    ctx.fillStyle   = `rgba(${hr},${hg},${hb},0.95)`;
+    ctx.shadowColor = 'rgba(0,0,0,0.85)';
+    ctx.shadowBlur  = 6;
+    const heroNameY = shipStageY + heroR * 1.75;
+    ctx.fillText(SKINS[activeSkin].name, shipStageX, heroNameY);
+    ctx.shadowBlur  = 0;
+
+    // Chevrons cycle through UNLOCKED ships only -- a quick "try the other one
+    // I already own" gesture. Browsing locked ships (cost, stardust gate, full
+    // roster) is what the ALL SHIPS sheet below is for.
+    let _unlockedSkinList = [];
+    for (let i = 0; i < SKINS.length; i++) if (unlockedSkins & (1 << i)) _unlockedSkinList.push(i);
+
+    _shipPrevBtnRect = null;
+    _shipNextBtnRect = null;
+    if (_unlockedSkinList.length > 1) {
+        const chevR   = heroR * 0.55;
+        const chevGap = heroR * 2.3;
+        const chevY   = shipStageY;
+        ctx.strokeStyle = `rgba(200,210,240,${a * 0.75})`;
+        ctx.lineWidth   = 2.4;
+        ctx.lineJoin    = 'round';
+        ctx.lineCap     = 'round';
+
+        const leftCx = shipStageX - chevGap;
+        ctx.beginPath();
+        ctx.moveTo(leftCx + chevR * 0.4, chevY - chevR * 0.7);
+        ctx.lineTo(leftCx - chevR * 0.5, chevY);
+        ctx.lineTo(leftCx + chevR * 0.4, chevY + chevR * 0.7);
+        ctx.stroke();
+
+        const rightCx = shipStageX + chevGap;
+        ctx.beginPath();
+        ctx.moveTo(rightCx - chevR * 0.4, chevY - chevR * 0.7);
+        ctx.lineTo(rightCx + chevR * 0.5, chevY);
+        ctx.lineTo(rightCx - chevR * 0.4, chevY + chevR * 0.7);
+        ctx.stroke();
+
+        _shipPrevBtnRect = { cx: leftCx,  cy: chevY, r: chevR * 1.8 };
+        _shipNextBtnRect = { cx: rightCx, cy: chevY, r: chevR * 1.8 };
+    }
+
+    // ALL SHIPS -- opens the full roster as a dedicated sheet (drawn further
+    // below, `if (showShipPicker)`) instead of an always-on grid. Only shown
+    // once there's anything worth browsing (played at least once, or already
+    // owns more than the starter ship) -- same gate the old inline grid used.
+    _shipPickerBtnRect = null;
+    if (showShipPanel) {
+        ctx.font        = `${FS * 0.020}px 'Courier New',monospace`;
+        ctx.fillStyle   = `rgba(190,205,240,${a * 0.85})`;
+        ctx.shadowColor = 'rgba(0,0,0,0.85)';
+        ctx.shadowBlur  = 3;
+        const linkY    = heroNameY + FS * 0.038;
+        const linkText = `${T.allShips} ›`;
+        ctx.fillText(linkText, shipStageX, linkY);
+        ctx.shadowBlur = 0;
+        const linkW = ctx.measureText(linkText).width;
+        _shipPickerBtnRect = { x: shipStageX - linkW / 2 - 12, y: linkY - FS * 0.024, w: linkW + 24, h: FS * 0.048 };
+    }
+
+    // ── Icon rail ────────────────────────────────────────────────────────
+    // Same destinations the old two button rows opened, plus Missions (newly
+    // given its own icon + progress badge instead of a permanently-visible
+    // list) -- each one still just flips one of the existing showX booleans,
+    // the overlay panels themselves are untouched.
+    {
+        const hasGameCenter = !!window.webkit?.messageHandlers?.gameCenter;
+        const hasChallenge  = hasGameCenter && !!window._tunlChallengeSupported;
+        const doneCount     = dailyMissionsClaimed.filter(Boolean).length;
+
+        const items = [];
+        items.push({ key: 'missions', glyph: '☑', badge: `${doneCount}/${dailyMissionIdx.length}`, showBadge: doneCount < dailyMissionIdx.length });
+        if (hasGameCenter) items.push({ key: 'leaderboard', glyph: '\u{1F3C6}' });
+        if (hasChallenge)  items.push({ key: 'challenge',   glyph: '⚔' });
+        items.push({ key: 'shop',     glyph: '\u{1F6D2}' });
+        items.push({ key: 'settings', glyph: '⚙' });
+
+        const railCX  = LAND ? W - Math.max(W * 0.06, 46) : W / 2;
+        const iconR   = LAND ? Math.min(UI_H * 0.032, 22) : Math.min(H * 0.032, 20);
+        const iconGap = iconR * 3.0;
+        const railY0  = LAND ? H / 2 - ((items.length - 1) * iconGap) / 2 : H - iconR * 2.4;
+
+        _missionsBtnRect    = null;
+        _leaderboardBtnRect = null;
+        _challengeBtnRect   = null;
+
+        items.forEach((it, i) => {
+            const cy = LAND ? railY0 + i * iconGap : railY0;
+            const cx = LAND ? railCX : (W / 2 - ((items.length - 1) * iconGap) / 2 + i * iconGap);
+            ctx.beginPath();
+            ctx.arc(cx, cy, iconR, 0, Math.PI * 2);
+            ctx.fillStyle   = 'rgba(255,255,255,0.06)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+            ctx.lineWidth   = 1;
+            ctx.stroke();
+            ctx.font      = `${iconR * 1.15}px 'Courier New',monospace`;
+            ctx.fillStyle = `rgba(225,232,250,${a * 0.92})`;
+            ctx.fillText(it.glyph, cx, cy);
+            if (it.badge && it.showBadge) {
+                ctx.font        = `bold ${iconR * 0.55}px 'Courier New',monospace`;
+                ctx.fillStyle   = 'rgba(255,225,110,0.95)';
+                ctx.shadowColor = 'rgba(0,0,0,0.85)';
+                ctx.shadowBlur  = 3;
+                ctx.fillText(it.badge, cx, cy + iconR * 1.55);
+                ctx.shadowBlur  = 0;
+            }
+            const rect = { cx, cy, r: iconR * 1.6 };
+            if (it.key === 'missions')    _missionsBtnRect    = rect;
+            if (it.key === 'leaderboard') _leaderboardBtnRect = rect;
+            if (it.key === 'challenge')   _challengeBtnRect   = rect;
+            if (it.key === 'shop')        _shopBtnRect        = rect;
+            if (it.key === 'settings')    _settingsBtnRect    = rect;
+        });
+    }
+
+    // ── Missions drawer ──────────────────────────────────────────────────
+    // Opened from the rail's Missions icon. Same 3-column progress/label/
+    // reward rows the old always-visible list used, just inside a panel now.
+    if (showMissions) {
+        ctx.fillStyle = 'rgba(0,0,12,0.88)';
+        ctx.fillRect(0, 0, W, H);
+
+        const panW   = Math.min(W * 0.62, 380);
+        const rewStr = `+${MISSION_REWARD} ⧫`;
+        let mFsz = FS * 0.024;
         const rewFont = () => `bold ${mFsz * 1.12}px 'Courier New',monospace`;
         const measureCols = () => {
             ctx.font = `${mFsz}px 'Courier New',monospace`;
             let pw = 0, lw = 0;
             for (let m = 0; m < dailyMissionIdx.length; m++) {
-                const d = MISSION_DEFS[dailyMissionIdx[m]];
+                const d  = MISSION_DEFS[dailyMissionIdx[m]];
                 const lb = (T.missionDesc && T.missionDesc[d.id]) || d.id;
                 const v  = Math.min(dailyMissionStats[d.stat] || 0, d.target);
-                // Measure what each row actually renders, not what it could render.
-                // A claimed row draws a tick but was being measured as "150/150", so
-                // once the day's missions were all done the progress column reserved
-                // the width of a number nothing was drawing and shoved every label
-                // right by a phantom column.
                 const shown = dailyMissionsClaimed[m] ? '✓' : `${v}/${d.target}`;
                 pw = Math.max(pw, ctx.measureText(shown).width);
                 lw = Math.max(lw, ctx.measureText(lb).width);
             }
             ctx.font = rewFont();
             const rw = ctx.measureText(rewStr).width;
-            // Two different gaps, not one: the progress figure and its label are the
-            // same thought ("2 of 6 orange coins") and want to sit close, while the
-            // reward is a separate column and wants real separation. A single shared
-            // gap pushed the labels needlessly far right, which is the dominant text
-            // in the block and reads best hard against the left edge.
-            const gapPL = mFsz * 0.55;
-            const gapLR = mFsz * 2.0;
+            const gapPL = mFsz * 0.55, gapLR = mFsz * 1.6;
             return { pw, lw, rw, gapPL, gapLR, total: pw + gapPL + lw + gapLR + rw };
         };
         let mc = measureCols();
-        // Shrink to fit rather than cross the divider. The reward column makes this
-        // block meaningfully wider than it was, and titleX sits much closer to the
-        // divider than to the left screen edge -- same constraint the level line
-        // above already deals with.
-        const mAvailHalf = Math.min(titleX - 8, dividerX - titleX - 8);
-        if (mc.total / 2 > mAvailHalf) {
-            mFsz = Math.max(mFsz * (mAvailHalf * 2) / mc.total, FS * 0.010);
+        const availW = panW * 0.84;
+        if (mc.total > availW) {
+            mFsz = Math.max(mFsz * availW / mc.total, FS * 0.013);
             mc = measureCols();
         }
-        const blockX  = titleX - mc.total / 2;
-        const progRX  = blockX + mc.pw;              // right edge of progress column
-        const labelLX = progRX + mc.gapPL;           // left edge of label column
-        const rewRX   = blockX + mc.total;           // right edge of reward column
 
-        ctx.textAlign   = 'left';
-        ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 3;
-        ctx.font        = `bold ${FS*0.023}px 'Courier New',monospace`;
-        ctx.fillStyle   = `rgba(180,198,235,${a * 0.80})`;
-        ctx.fillText(T.missions, blockX, missionY);
+        const padTop = H * 0.070, padBottom = H * 0.050, titleH = H * 0.075, rowH = H * 0.062;
+        const panH = padTop + titleH + rowH * dailyMissionIdx.length + padBottom;
+        const panX = W / 2 - panW / 2, panY = H / 2 - panH / 2;
+        _missionsPanelRect = { x: panX, y: panY, w: panW, h: panH };
+
+        ctx.fillStyle = 'rgba(7,10,28,0.97)';
+        ctx.beginPath(); ctx.roundRect(panX, panY, panW, panH, 12); ctx.fill();
+        ctx.strokeStyle = 'rgba(65,88,155,0.55)';
+        ctx.lineWidth   = 1;
+        ctx.stroke();
+
+        ctx.textAlign   = 'center';
+        ctx.font        = `bold ${FS * 0.030}px 'Courier New',monospace`;
+        ctx.fillStyle   = 'rgba(165,190,255,0.95)';
+        ctx.shadowColor = 'rgba(0,0,0,0.90)';
+        ctx.shadowBlur  = 5;
+        ctx.fillText(T.missions, W / 2, panY + padTop + titleH / 2);
         ctx.shadowBlur  = 0;
-        missionY += H * 0.050;
 
+        const blockX  = W / 2 - mc.total / 2;
+        const progRX  = blockX + mc.pw;
+        const labelLX = progRX + mc.gapPL;
+        const rewRX   = blockX + mc.total;
+        let rowY = panY + padTop + titleH + rowH / 2;
         for (let m = 0; m < dailyMissionIdx.length; m++) {
             const def   = MISSION_DEFS[dailyMissionIdx[m]];
             const label = (T.missionDesc && T.missionDesc[def.id]) || def.id;
             const done  = dailyMissionsClaimed[m];
             const val   = Math.min(dailyMissionStats[def.stat] || 0, def.target);
             ctx.font        = `${mFsz}px 'Courier New',monospace`;
-            ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 2;
-            ctx.fillStyle   = done ? `rgba(120,255,150,${a * 0.90})` : `rgba(175,190,225,${a * 0.80})`;
+            ctx.shadowColor = 'rgba(0,0,0,0.85)';
+            ctx.shadowBlur  = 2;
+            ctx.fillStyle   = done ? `rgba(120,255,150,0.90)` : `rgba(175,190,225,0.80)`;
             ctx.textAlign   = 'right';
-            ctx.fillText(done ? '✓' : `${val}/${def.target}`, progRX, missionY);
+            ctx.fillText(done ? '✓' : `${val}/${def.target}`, progRX, rowY);
             ctx.textAlign   = 'left';
-            ctx.fillText(label, labelLX, missionY);
-            // What the mission is actually worth. MISSION_REWARD shards, granted the
-            // moment the target is met and exempt from DAILY_SHARD_CAP (constants.js).
-            // Bold, slightly larger and glowing rather than plain small text: at row
-            // weight and 78% alpha this read as near-invisible, exactly the way the
-            // death screen's shard line did before it got the same treatment. It is
-            // the reason to care about the mission, so it should carry the weight of
-            // one. Dimmed once claimed -- already banked, so it stops being an offer.
+            ctx.fillText(label, labelLX, rowY);
             ctx.textAlign   = 'right';
             ctx.font        = rewFont();
-            ctx.fillStyle   = `rgba(255,228,125,${a * (done ? 0.62 : 1.0)})`;
-            ctx.shadowColor = `rgba(255,205,60,${a * (done ? 0.35 : 0.60)})`;
+            ctx.fillStyle   = `rgba(255,228,125,${done ? 0.62 : 1.0})`;
+            ctx.shadowColor = `rgba(255,205,60,${done ? 0.35 : 0.60})`;
             ctx.shadowBlur  = 7;
-            ctx.fillText(rewStr, rewRX, missionY);
+            ctx.fillText(rewStr, rewRX, rowY);
             ctx.shadowBlur  = 0;
-            missionY += H * 0.046;
+            rowY += rowH;
         }
-        ctx.textAlign = 'center';   // restore -- everything below expects centred text
-        _missionsBottom = missionY;
+        ctx.textAlign = 'center';
     }
 
-    // Settings/leaderboard row + shared button-drawing helper
-    // (also reused inside the settings panel for the audio toggles). Anchored off
-    // the daily-missions block's actual bottom edge (_missionsBottom, set above) with
-    // a floor near the bottom of the screen, rather than a fixed H fraction on its
-    // own -- mirrors how missions used to cascade off the button cluster before the
-    // two were swapped, just in the other direction now that buttons render last.
-    // Floor moved 0.80 -> 0.82 in step with missionY's own nudge above, so both
-    // button rows follow the missions block down by the same amount instead of
-    // the Math.max floor swallowing the change.
-    const tBtnY = (LAND ? Math.max(H * 0.82 - 11, _missionsBottom + H * 0.09) : H/2 + H*0.140) - (LAND ? 2 : 0);
-    const btnFontSz = FS * 0.024 - 1;
-    ctx.font = `${btnFontSz}px 'Courier New',monospace`;
-    // Hoisted above drawBtn (rather than declared alongside rowGap below) so
-    // drawBtn's own auto-width fallback can use the same value the row-centering
-    // math assumes -- they used to be two separate constants that happened to
-    // match by coincidence, and drifted apart (silently widening the *gap*
-    // instead of the buttons) the moment one of them was tuned without the other.
-    // FS-based, not W-based: FS scales as sqrt(W*UI_H) while a straight W-fraction
-    // grows linearly with screen width, so on a wide real device (much wider than
-    // the desktop window this was tuned on) a W-based pad overshoots badly relative
-    // to the (much more slowly growing) button text -- this read as "way too wide"
-    // on an actual phone despite looking fine narrower.
-    const pad = FS * 0.011;
-    // fixedW: grid-style buttons (settings panel's audio/ghost rows) pass an exact
-    // width so a row of buttons lines up edge-to-edge instead of sizing itself to
-    // its own label. Text can still overflow a fixed box on a long localized label
-    // (German "GEIST AUS" vs a narrow half-row slot), so shrink the font to fit
-    // rather than let it run past the button's edge -- same shrink-to-fit pattern
-    // the language grid buttons already use for the same reason.
-    const drawBtn = (bCx, bCy, label, active, blue, fixedW, fixedH) => {
-        let bw = fixedW, bh = fixedH || H*0.055;
-        if (bw == null) {
-            bw = ctx.measureText(label).width + pad;
-        } else {
-            const maxTextW = bw * 0.86;
-            const textW = ctx.measureText(label).width;
-            if (textW > maxTextW) {
-                const sizeMatch = ctx.font.match(/([\d.]+)px/);
-                if (sizeMatch) {
-                    const shrunk = parseFloat(sizeMatch[1]) * maxTextW / textW;
-                    ctx.font = ctx.font.replace(/[\d.]+px/, `${shrunk}px`);
-                }
-            }
-        }
-        const bx = bCx - bw/2, by = bCy - bh/2;
-        const bgA = active ? a*0.82 : a*0.55;
-        const bg  = active
-            ? (blue ? `rgba(14,26,62,${bgA})` : `rgba(12,44,24,${bgA})`)
-            : `rgba(10,12,26,${bgA})`;
-        ctx.shadowColor = active
-            ? (blue ? `rgba(80,130,255,${a*0.45})` : `rgba(60,200,100,${a*0.45})`)
-            : 'transparent';
-        ctx.shadowBlur = active ? 8 : 0;
-        ctx.fillStyle = bg;
-        ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 5); ctx.fill();
-        ctx.strokeStyle = active
-            ? (blue ? `rgba(90,140,255,${a*0.65})` : `rgba(70,215,110,${a*0.65})`)
-            : `rgba(50,55,90,${a*0.40})`;
-        ctx.lineWidth = 1; ctx.shadowBlur = 0; ctx.stroke();
-        ctx.fillStyle = active
-            ? (blue ? `rgba(140,175,255,${a})` : `rgba(90,230,125,${a})`)
-            : `rgba(95,100,145,${a*0.70})`;
-        ctx.fillText(label, bCx, bCy);
-        return { x: bx, y: by, w: bw, h: bh };
-    };
-    // Shop + Settings buttons -- Shop always sits immediately left of Settings,
-    // paired the same way Leaderboard pairs with Challenge. Paired with the Game
-    // Center leaderboard button when that native bridge exists, and with a
-    // challenge button too on devices new enough to actually use Game Center
-    // Challenges (GKChallengeDefinition needs iOS 26+ - see GameView.swift, which
-    // sets window._tunlChallengeSupported before this ever runs). Widths are
-    // measured first so long localized labels never overlap, and each row is
-    // centered as a whole around titleX.
-    {
-        const settingsBY = tBtnY;
-        const hasGameCenter = !!window.webkit?.messageHandlers?.gameCenter;
-        const hasChallenge  = hasGameCenter && !!window._tunlChallengeSupported;
-        _challengeBtnRect = null;
-        const rowGap = W * 0.02;   // matches audioGap, the settings panel's green-pair gap
-        const bh     = H * 0.062;
-        // Row is centered on titleX, which sits much closer to the left screen edge
-        // than to the divider on narrow devices (titleX = W*0.23) -- so on a device
-        // that's both narrow (e.g. iPhone 12 mini, 812pt wide landscape) and running
-        // a verbose language (German labels especially, e.g. "HERAUSFORDERUNG"), a
-        // single 3-button row's left edge can land off-screen, clipping text at the
-        // edge. Kept the shrink-to-fit guard below as a safety net, but the real fix
-        // (per user suggestion) is two rows instead of one: Rangliste + Herausforderung
-        // (the two "compete" buttons) on top, Shop + Einstellungen below -- reads
-        // better than shrunk text even on devices where one row would technically
-        // have fit.
-        const rowMarginL = W * 0.02, rowMarginR = W * 0.02;
-        const maxRowW = 2 * Math.max(Math.min(titleX - rowMarginL, dividerX - titleX - rowMarginR), W * 0.10);
-        // Bottom Y of whatever got drawn (not currently read elsewhere -- see its
-        // state.js comment).
-        _btnRowBottom = settingsBY + bh / 2;
+    // ── ALL SHIPS sheet ──────────────────────────────────────────────────
+    // Opened from the "ALL SHIPS" link under the hero ship. The full roster
+    // (locked cost/stardust gate, mastery pips, active perk) that used to live
+    // permanently on the base screen -- same per-ship rendering rules, just on
+    // its own full-bleed screen with room to breathe instead of squeezed
+    // between a stat block and a perk-text gap (Cockpit-Kritik observation 4).
+    if (showShipPicker) {
+        ctx.fillStyle = 'rgba(3,4,12,0.94)';
+        ctx.fillRect(0, 0, W, H);
 
-        // Natural (unshrunk) width a side-by-side pair would want, capped at
-        // maxRowW -- used only to pick a common span for both rows (see finalW
-        // below), never to actually draw at.
-        const measurePairW = (labelL, labelR) => {
-            ctx.font = `${btnFontSz}px 'Courier New',monospace`;
-            const textSum = ctx.measureText(labelL).width + ctx.measureText(labelR).width;
-            return Math.min(textSum + pad * 2 + rowGap, maxRowW);
-        };
-        // Draws two buttons side by side, each taking exactly half of totalW (minus
-        // rowGap), centered on titleX -- same fixedW-splits-evenly pattern the
-        // language grid and the settings panel's audio row already use, so a label
-        // too long for its half shrinks itself via drawBtn's own shrink-to-fit
-        // rather than pushing the row wider.
-        const drawPair = (labelL, labelR, cy, totalW, blue) => {
-            const slotW = (totalW - rowGap) / 2;
-            const bx = titleX - totalW / 2;
-            ctx.font = `${btnFontSz}px 'Courier New',monospace`;
-            const rectL = drawBtn(bx + slotW / 2, cy, labelL, true, blue, slotW, bh);
-            ctx.font = `${btnFontSz}px 'Courier New',monospace`;   // drawBtn may have shrunk it for labelL
-            const rectR = drawBtn(bx + slotW + rowGap + slotW / 2, cy, labelR, true, blue, slotW, bh);
-            return { rectL, rectR };
-        };
-
-        if (hasChallenge) {
-            // Both rows are stretched to the wider pair's natural width so their
-            // edges line up into one aligned block instead of two independently
-            // sized rows that happen to be stacked.
-            const finalW = Math.max(
-                measurePairW(T.leaderboard, T.challenge),
-                measurePairW(T.shop, T.settings),
-            );
-            const top = drawPair(T.leaderboard, T.challenge, settingsBY, finalW, false);
-            _leaderboardBtnRect = top.rectL;
-            _challengeBtnRect   = top.rectR;
-
-            // Shop + Settings on the row below. Vertical gap was H*0.02 -- read as
-            // cramped on a real device screenshot, the two rows nearly touching.
-            // Widened to H*0.035 so the pair reads as one consistent rhythm rather
-            // than two rows that happen to be stacked. This whole cluster is
-            // positioned off the missions block's bottom edge (see tBtnY above),
-            // not the other way around, so it can't collide just because it grew a
-            // 2nd row here.
-            const settingsBY2 = settingsBY + bh + H * 0.035;
-            const bottom = drawPair(T.shop, T.settings, settingsBY2, finalW, true);
-            _shopBtnRect     = bottom.rectL;
-            _settingsBtnRect = bottom.rectR;
-            _btnRowBottom = settingsBY2 + bh / 2;
-        } else if (hasGameCenter) {
-            // Leaderboard alone on its own row above -- Shop+Settings always pair
-            // together below it now, so Leaderboard can no longer share a row with
-            // Settings the way it used to when nothing sat to Settings' left.
-            // Stretched to match the pair's width below it (same "single button
-            // matches the row's width" pattern GEIST AN uses under MUSIK AN/TON AN
-            // in the settings panel), rather than the pair matching Leaderboard's
-            // own width, since the pair is the row more likely to need the room.
-            ctx.font = `${btnFontSz}px 'Courier New',monospace`;
-            const finalW = Math.max(measurePairW(T.shop, T.settings), ctx.measureText(T.leaderboard).width + pad);
-            _leaderboardBtnRect = drawBtn(titleX, settingsBY, T.leaderboard, true, false, finalW, bh);
-
-            const settingsBY2 = settingsBY + bh + H * 0.035;
-            const bottom = drawPair(T.shop, T.settings, settingsBY2, finalW, true);
-            _shopBtnRect     = bottom.rectL;
-            _settingsBtnRect = bottom.rectR;
-            _btnRowBottom = settingsBY2 + bh / 2;
-        } else {
-            const finalW = measurePairW(T.shop, T.settings);
-            const solo = drawPair(T.shop, T.settings, settingsBY, finalW, true);
-            _shopBtnRect     = solo.rectL;
-            _settingsBtnRect = solo.rectR;
-        }
-    }
-
-    // rightColY tracks how far down the right-column stack (TODAY/ALL TIME/
-    // STREAK/TOP 5) reaches in landscape, so each line uses the same step
-    // and the skin picker below never overlaps regardless of which lines
-    // end up shown. 0.22 -> 0.20: nudged up so the right column stays aligned
-    // with the left column instead of hanging lower (dotY1/dotY2 below move the
-    // same 0.02H so the ship rows follow). First pass tried 0.17 based on a
-    // desktop Chrome test, which over-corrected -- see dotY1's comment for why
-    // that test read the gap as bigger than it really is on a real device.
-    let rightColY  = H * 0.20 - 11;
-    // Tightened from 0.105 -- TODAY/streak reads as a secondary line on ALL TIME,
-    // not a peer of the SHIP block below it, so it should sit noticeably closer to
-    // ALL TIME than to SHIP (the gap down to SHIP is set separately, see
-    // shipHeaderY below).
-    const lineStep = H * 0.065;
-
-    // BEST (all-time record) is the single headline stat -- it rarely changes, so
-    // it reads as "your record" rather than a volatile daily figure. TODAY and the
-    // day streak fold into one small secondary line instead of each getting their
-    // own full row: was 3 stacked LABEL/value rows that read as a data table, not
-    // a HUD (direct feedback: "wirkt ein bisschen überladen"). Skipped entirely
-    // before the player's first real run -- an empty title screen doesn't need a
-    // "BEST 0" placeholder.
-    // REKORD, the HEUTE/streak line below it and the SHIP header below that all
-    // share one left edge (heuteLeftX) so the left column reads as a flush-left
-    // stat stack aligned with the ship, not three separately-centred labels
-    // (direct feedback). The edge is derived from whichever of REKORD / HEUTE is
-    // wider, so the block as a whole still sits centred on infoX.
-    // Falls back to infoX if the block never renders (no run played yet) --
-    // showShipPanel already implies best > 0 in practice.
-    let heuteLeftX = infoX;
-    if (best > 0) {
-        const allTimeText = `${T.allTime}  ${best}`;
-
-        // Two visually distinct segments instead of one flat string: TODAY stays
-        // the calm secondary-stat colour, while the streak segment gets its own
-        // warmer glow and a real flame glyph (was a bare '*'/'**' placeholder) so
-        // a hot streak actually pops instead of reading as plain text with extra
-        // punctuation. No separator glyph between them (a middle-dot used to sit
-        // here but did nothing visually beyond the whitespace already doing the
-        // separating job) -- just a plain gap.
-        const subParts = [];
-        if (dailyRuns > 0) subParts.push({ text: `${T.today} ${dailyBest}`, hot: false });
-        if (streak > 0) {
-            const flame = streak >= 7 ? ' \u{1F525}\u{1F525}' : streak >= 3 ? ' \u{1F525}' : '';
-            subParts.push({ text: `${streak}${flame} ${T.day}`, hot: true });
-        }
-        // Stardust readout used to live here (beside the streak), moved down onto
-        // the SHIP/shard line instead -- see shardWalletText below. Both currencies
-        // a ship costs now read together in one place rather than one sitting next
-        // to the streak that earns it and the other a whole line away.
-
-        // Measure both lines (each in its own font) before drawing either, so the
-        // shared left edge can be the centre-anchored max of the two widths.
-        ctx.font = `bold ${FS*0.036}px 'Courier New',monospace`;
-        const allTimeW  = ctx.measureText(allTimeText).width;
-        ctx.font = `bold ${FS*0.025}px 'Courier New',monospace`;
-        const subGap    = ctx.measureText('    ').width;
-        const subWidths = subParts.map(p => ctx.measureText(p.text).width);
-        const subTotalW = subWidths.reduce((s, w) => s + w, 0) + subGap * Math.max(0, subParts.length - 1);
-        heuteLeftX = infoX - Math.max(allTimeW, subTotalW) / 2;
-
-        // REKORD line -- left-aligned to the shared edge, not centred on infoX.
-        ctx.textAlign   = 'left';
-        ctx.font        = `bold ${FS*0.036}px 'Courier New',monospace`;
-        ctx.fillStyle   = `rgba(190,212,255,${a * 0.98})`;
-        ctx.shadowColor = 'rgba(0,0,0,0.90)'; ctx.shadowBlur = 3;
-        const allTimeY  = LAND ? rightColY : H/2 + H*0.280;
-        ctx.fillText(allTimeText, heuteLeftX, allTimeY);
+        ctx.textAlign   = 'center';
+        ctx.font        = `bold ${FS * 0.032}px 'Courier New',monospace`;
+        ctx.fillStyle   = 'rgba(255,225,110,0.95)';
+        ctx.shadowColor = 'rgba(0,0,0,0.9)';
+        ctx.shadowBlur  = 5;
+        ctx.fillText(T.ship, W / 2, H * 0.09);
         ctx.shadowBlur  = 0;
 
-        if (subParts.length) {
-            rightColY += lineStep;
-            ctx.font = `bold ${FS*0.025}px 'Courier New',monospace`;
-            const ly = LAND ? rightColY : H/2 + H*0.316;
-            let x = heuteLeftX;
-            subParts.forEach((p, i) => {
-                if (p.hot) {
-                    // Below the "on fire" threshold this is just a day count, not a
-                    // reward -- yellow/gold is reserved for shard figures elsewhere
-                    // in the game, so a cold streak uses the same neutral colour as
-                    // the HEUTE segment instead.
-                    ctx.fillStyle   = streak >= 3 ? `rgba(255,180,70,${a * 0.95})` : `rgba(160,185,230,${a * 0.85})`;
-                    ctx.shadowColor = streak >= 3 ? `rgba(255,140,20,${a * 0.55})` : 'rgba(0,0,0,0.90)';
-                    ctx.shadowBlur  = streak >= 3 ? 7 : 3;
-                } else {
-                    ctx.fillStyle   = `rgba(160,185,230,${a * 0.85})`;
-                    ctx.shadowColor = 'rgba(0,0,0,0.90)';
-                    ctx.shadowBlur  = 3;
-                }
-                ctx.fillText(p.text, x, ly);
-                x += subWidths[i] + subGap;
-            });
-            ctx.shadowBlur = 0;
+        // Shard/stardust wallet -- the numbers that matter when choosing a
+        // ship, now read here instead of a permanent HUD line.
+        {
+            ctx.font = `bold ${FS * 0.024}px 'Courier New',monospace`;
+            const shardTxt = `${shards} ⧫`;
+            const showStar = stardust > 0 && !(unlockedSkins & (1 << (SKINS.length - 1)));
+            const starTxt  = showStar ? `    ${stardust} ✦` : '';
+            const shardW = ctx.measureText(shardTxt).width;
+            const starW  = starTxt ? ctx.measureText(starTxt).width : 0;
+            const walletY = H * 0.09 + FS * 0.040;
+            ctx.textAlign = 'left';
+            const startXw = W / 2 - (shardW + starW) / 2;
+            ctx.fillStyle = 'rgba(255,225,110,0.95)';
+            ctx.fillText(shardTxt, startXw, walletY);
+            if (starTxt) {
+                ctx.fillStyle = 'rgba(120,225,255,0.95)';
+                ctx.fillText(starTxt, startXw + shardW, walletY);
+            }
+            ctx.textAlign = 'center';
         }
-        ctx.textAlign = 'center';   // restore -- everything below expects centred text
-    }
 
-    // Ship wallet + picker shows once the player has actually played --
-    // `best > 0` covers the "still on PEARL only" case, since with the shard
-    // economy that can last several sessions and the wallet/next-unlock-cost
-    // roadmap needs to stay visible that whole time, unlike the old score-gate
-    // system where reaching a 2nd ship happened almost immediately. The right
-    // column used to also host a "today's top 5 runs" filler here before this
-    // panel unlocked, competing for the same space; removed as redundant once
-    // Game Center covers competitive leaderboards (where available -- Android's
-    // own leaderboard setup is still pending, per project notes) and this panel
-    // is now visible from the first run on anyway, not just after a 2nd unlock.
-    // (showShipPanel and the two-row layout geometry are computed above, before
-    // the divider, so the divider can be positioned against the full ship span --
-    // reused here rather than recomputed.)
+        const gridCX    = W / 2;
+        const rowY1     = H * 0.42;
+        const rowY2     = H * 0.72;
+        const cellR     = Math.min(UI_H * 0.050, H * 0.11);
+        const cellGap   = Math.max(cellR * 3.0, (W * 0.72) / GRID_COLS);
+        const rowHalfW  = (GRID_COLS - 1) * cellGap / 2;
+        const startXg   = gridCX - rowHalfW;
 
-    // Skin picker - two rows: unlocked (larger) above, locked (smaller) below.
-    if (showShipPanel) {
         _skinBtnRects = [];
 
-        // SHIP header + shard wallet, above the unlocked row. Left-aligned to the
-        // HEUTE line's left edge (heuteLeftX, set above) rather than centred on the
-        // ship row's own axis, so it reads as part of the same stats column instead
-        // of a separately-centred label. Whole line in the same gold every other
-        // shard figure in the game uses (mission rewards, the shard banner, etc.) --
-        // this was the one place still drawing it in the neutral label colour instead.
-        //
-        // Y position is clamped against rightColY (the actual bottom edge of the
-        // REKORD/HEUTE stack above), not just a fixed dotY1-minus-constant offset --
-        // dotR1 is UI_H-based and stays a fixed pixel size on a short device, while
-        // rightColY's H-based position shrinks with it, so a fixed offset from dotY1
-        // that looked fine on a tall device collided with HEUTE/TAGESSERIE on a
-        // shorter or wider-aspect real device. This keeps a proportional gap instead.
-        const shipHeaderY = Math.max(dotY1 - dotR1 * 2.6, rightColY + H * 0.075) - 4;
-
-        // "?" button opening a one-screen explainer for shards/stardust/coins
-        // (showCurrencyInfo, state.js). Shards and stardust are the one pair of
-        // numbers on this whole screen that mean nothing without context -- unlike
-        // coins, which teach themselves during a run by look and effect. Opt-in
-        // (tap to open), not a forced hint, so it doesn't repeat the removed
-        // title-screen control hint (CLAUDE.md Onboarding). Sits at the right end
-        // of the SHIP/shards/stardust line (was left of SHIP), drawn white --
-        // neutral, since it belongs to neither currency's colour. Clamped inside
-        // the canvas edge for narrow (portrait) widths.
-        {
-            ctx.font = `bold ${FS*0.025}px 'Courier New',monospace`;
-            const shardW = ctx.measureText(`${T.ship} ${shards} ⧫`).width;
-            const starW  = (stardust > 0 && !(unlockedSkins & (1 << (SKINS.length - 1))))
-                ? ctx.measureText(`   ${stardust} ✦`).width : 0;
-            const infoR  = FS * 0.016;
-            const infoCx = Math.min(heuteLeftX + shardW + starW + infoR * 2.4, W - edgeMargin - infoR);
-            const infoCy = shipHeaderY;
-            _currencyInfoBtnRect = { cx: infoCx, cy: infoCy, r: infoR * 2.0 };
-            ctx.shadowColor = 'rgba(255,255,255,0.55)';
-            ctx.shadowBlur  = 6;
-            ctx.beginPath();
-            ctx.arc(infoCx, infoCy, infoR, 0, Math.PI * 2);
-            ctx.strokeStyle = `rgba(255,255,255,${a * 0.90})`;
-            ctx.lineWidth   = 1.6;
-            ctx.stroke();
-            ctx.font        = `bold ${infoR * 1.4}px 'Courier New',monospace`;
-            ctx.fillStyle   = `rgba(255,255,255,${a * 0.98})`;
-            ctx.textAlign   = 'center';
-            ctx.fillText('?', infoCx, infoCy);
-            ctx.shadowBlur  = 0;
-        }
-
-        ctx.font        = `bold ${FS*0.025}px 'Courier New',monospace`;
-        ctx.fillStyle   = 'rgba(255,225,110,0.95)';
-        ctx.shadowColor = 'rgba(0,0,0,0.85)';
-        ctx.shadowBlur  = 3;
-        ctx.textAlign   = 'left';
-        const shardWalletText = `${T.ship} ${shards}\u200A⧫`;
-        ctx.fillText(shardWalletText, heuteLeftX, shipHeaderY);
-
-        // Stardust joins the shard figure on this same line instead of sitting a
-        // whole line up next to the streak -- both currencies a ship actually costs
-        // now read together in one place. Kept in its own fillText/colour (not
-        // folded into shardWalletText's gold) since gold is reserved for shard
-        // figures elsewhere in the game; a hot streak's own comment above says the
-        // same thing. Hidden once SOLARIS is owned (constants.js Stardust block) --
-        // nothing left for it to count toward.
-        if (stardust > 0 && !(unlockedSkins & (1 << (SKINS.length - 1)))) {
-            const shardWalletW = ctx.measureText(shardWalletText).width;
-            // Bright cyan, not the old pale blue-white -- a currency figure players
-            // check daily deserves to actually pop, and cyan reads as clearly its
-            // own thing next to shard-gold rather than a washed-out afterthought.
-            ctx.shadowColor = 'rgba(80,210,255,0.55)';
-            ctx.shadowBlur  = 5;
-            ctx.fillStyle   = `rgba(120,225,255,${a * 0.95})`;
-            ctx.fillText(`   ${stardust}\u200A✦`, heuteLeftX + shardWalletW, shipHeaderY);
-        }
-        ctx.shadowBlur  = 0;
-        ctx.textAlign   = 'center';   // restore -- ship grid below expects centred text
-
-        // -- Ship grid: fixed 4 per row (GRID_COLS above), every ship rendered
-        // according to its own unlock state rather than which row that state used
-        // to put it in. Locked ships (dimmed ring + cost, no name/icon) and unlocked
-        // ships (full ship render, name, mastery pips when selected) can now land in
-        // either row depending on index alone.
-        let selectedCx = cx1; // fallback: grid centre, overwritten below once the active ship is found
-        let selectedNameBottomY = dotY1 + dotR1 * 1.7; // fallback, overwritten below
         for (let i = 0; i < SKINS.length; i++) {
-            const row      = Math.floor(i / GRID_COLS);
-            const col      = i % GRID_COLS;
-            const cx       = (row === 0 ? startX1 : startX2) + col * dotGap1;
-            const cy       = row === 0 ? dotY1 : dotY2;
+            const row = Math.floor(i / GRID_COLS);
+            const col = i % GRID_COLS;
+            const cx  = startXg + col * cellGap;
+            const cy  = row === 0 ? rowY1 : rowY2;
             const unlocked = !!(unlockedSkins & (1 << i));
             const selected = activeSkin === i;
-            if (selected) selectedCx = cx;
 
             if (!unlocked) {
-                // Locked -- dimmed ring + faint ship silhouette + cost, no name
-                // (LAND only, matching the old locked-row treatment).
-                _skinBtnRects.push({ cx, cy, r: dotR2 * 1.5 });
-                if (!LAND) continue;
+                _skinBtnRects.push({ cx, cy, r: cellR * 1.5 });
                 ctx.beginPath();
-                ctx.arc(cx, cy, dotR2, 0, Math.PI * 2);
+                ctx.arc(cx, cy, cellR * 0.78, 0, Math.PI * 2);
                 ctx.strokeStyle = 'rgba(90,95,130,0.50)';
                 ctx.lineWidth   = 1.5;
                 ctx.stroke();
-                // Faint silhouette, same shipPath() geometry every unlocked ship
-                // uses (scaled down, no glow/colour) -- an empty ring read as an
-                // inert placeholder rather than "a ship you don't have yet". Sized
-                // and dimmed well below the unlocked row so it never competes with
-                // an actual owned ship for attention.
-                shipPath(cx, cy, dotR2 * 0.62);
+                shipPath(cx, cy, cellR * 0.48);
                 ctx.fillStyle   = 'rgba(150,160,205,0.28)';
                 ctx.fill();
                 ctx.strokeStyle = 'rgba(170,180,220,0.35)';
@@ -2496,38 +2271,26 @@ function drawTitleScreen() {
                 ctx.stroke();
                 ctx.shadowColor = 'rgba(0,0,0,0.85)';
                 ctx.shadowBlur  = 3;
-                // Every tier needs shards AND days-played (constants.js Stardust
-                // block) except SOLARIS, which is stardustGate-only. Two stacked
-                // lines when both apply -- a flat cost alone would read as
-                // buyable-with-enough-shards, which none of these tiers are anymore.
-                // Stardust line shows live progress ("5/15"), not just the goal, since
-                // it's the one number that moves on its own without playing this run.
-                // Cost line in the same shard-gold used everywhere else shards are
-                // shown (SHIP wallet, mission rewards) -- was the same neutral grey
-                // as the ring around it, reading as inert label text rather than a
-                // currency figure. Stardust gate gets its own bright cyan (matching
-                // the SHIP-line stardust readout above) so the two currencies stay
-                // visually distinct even stacked on top of each other.
                 if (SKINS[i].cost) {
-                    ctx.font      = `bold ${FS*0.018}px 'Courier New',monospace`;
+                    ctx.font      = `bold ${FS * 0.018}px 'Courier New',monospace`;
                     ctx.fillStyle = 'rgba(255,225,110,0.95)';
-                    ctx.fillText(`${SKINS[i].cost}\u200A⧫`, cx, cy + dotR2 * 1.7);
+                    ctx.fillText(`${SKINS[i].cost} ⧫`, cx, cy + cellR * 1.35);
                 }
                 if (SKINS[i].stardustGate) {
-                    ctx.font      = `bold ${FS*0.015}px 'Courier New',monospace`;
+                    ctx.font      = `bold ${FS * 0.015}px 'Courier New',monospace`;
                     ctx.fillStyle = 'rgba(120,225,255,0.95)';
-                    const gateY = SKINS[i].cost ? cy + dotR2 * 2.2 : cy + dotR2 * 1.7;
-                    ctx.fillText(`${Math.min(stardust, SKINS[i].stardustGate)}/${SKINS[i].stardustGate}\u200A\u2726`, cx, gateY);
+                    const gateY = SKINS[i].cost ? cy + cellR * 1.75 : cy + cellR * 1.35;
+                    ctx.fillText(`${Math.min(stardust, SKINS[i].stardustGate)}/${SKINS[i].stardustGate} ✦`, cx, gateY);
                 }
-                ctx.shadowBlur  = 0;
+                ctx.shadowBlur = 0;
                 continue;
             }
 
-            _skinBtnRects.push({ cx, cy, r: dotR1 * 1.5 });
+            _skinBtnRects.push({ cx, cy, r: cellR * 1.5 });
             const [sr, sg, sb] = SKINS[i].shadow;
             if (selected) {
                 ctx.save();
-                shipPath(cx, cy, dotR1 * 1.6);
+                shipPath(cx, cy, cellR * 1.15);
                 ctx.strokeStyle = `rgba(${sr},${sg},${sb},0.50)`;
                 ctx.lineWidth   = 2.5;
                 ctx.shadowColor = `rgba(${sr},${sg},${sb},0.60)`;
@@ -2536,18 +2299,16 @@ function drawTitleScreen() {
                 ctx.shadowBlur  = 0;
                 ctx.restore();
             }
-            drawShip(cx, cy, dotR1, SKINS[i].color, sr, sg, sb, selected ? 22 : 8);
-            // Mastery pips above the selected ship (constants.js masteryLevel/masteryLerp).
-            // PEARL has no perk to master.
+            drawShip(cx, cy, cellR * 0.70, SKINS[i].color, sr, sg, sb, selected ? 22 : 8);
             if (selected && i > 0) {
-                const lvl = masteryLevel(i);
-                const pipR = dotR1 * 0.09, pipGap = dotR1 * 0.30;
+                const lvl   = masteryLevel(i);
+                const pipR  = cellR * 0.065, pipGap = cellR * 0.22;
                 const pipsW = (MASTERY_XP_THRESHOLDS.length - 2) * pipGap;
                 for (let p = 0; p < MASTERY_XP_THRESHOLDS.length - 1; p++) {
-                    const px  = cx - pipsW/2 + p * pipGap;
-                    const py2 = cy - dotR1 * 1.35;
+                    const px = cx - pipsW / 2 + p * pipGap;
+                    const py = cy - cellR * 0.95;
                     ctx.beginPath();
-                    ctx.arc(px, py2, pipR, 0, Math.PI*2);
+                    ctx.arc(px, py, pipR, 0, Math.PI * 2);
                     if (p < lvl) {
                         ctx.fillStyle   = `rgba(${sr},${sg},${sb},0.90)`;
                         ctx.shadowColor = `rgba(${sr},${sg},${sb},0.70)`;
@@ -2561,100 +2322,82 @@ function drawTitleScreen() {
                     }
                 }
             }
-            ctx.font        = `${FS*0.021}px 'Courier New',monospace`;
-            ctx.fillStyle   = selected
-                ? `rgba(${sr},${sg},${sb},0.95)`
-                : 'rgba(160,175,220,0.65)';
+            ctx.font        = `${FS * 0.020}px 'Courier New',monospace`;
+            ctx.fillStyle   = selected ? `rgba(${sr},${sg},${sb},0.95)` : 'rgba(160,175,220,0.65)';
             ctx.shadowColor = 'rgba(0,0,0,0.85)';
             ctx.shadowBlur  = selected ? 8 : 3;
-            const nameY = cy + dotR1 * 1.7;
-            ctx.fillText(SKINS[i].name, cx, nameY);
+            ctx.fillText(SKINS[i].name, cx, cy + cellR * 1.35);
             ctx.shadowBlur  = 0;
-            // Real ink-bottom of this label (not the neighbouring dotR1*1.7 offset,
-            // which is a hand-tuned icon-clearance number, not a text-metric one, and
-            // not fontBoundingBoxDescent either -- that's the whole font box's
-            // descent, generous enough to leave room for a 'g' or 'y' this text may
-            // not even contain, so it was swallowing the nameGap adjustment below in
-            // several px of invisible padding no amount of shrinking nameGap could
-            // touch). actualBoundingBoxDescent is this specific string's real
-            // rendered extent, so nameGap now measures the whole visible gap.
-            if (selected) {
-                selectedNameBottomY = nameY + ctx.measureText(SKINS[i].name).actualBoundingBoxDescent;
-            }
         }
 
-        // Active perk - shown in the gap between the two grid rows when the selected
-        // ship is in row 1, or below the 2nd row entirely when the selected ship is
-        // in row 2 (showing it in the gap ABOVE that ship, between the rows, read as
-        // detached from the ship it actually describes). Drawback is omitted here;
-        // it reads as noise sharing this limited vertical band.
-        //
-        // dotY1/dotY2 (the row centres) are H-based and shrink on a short device
-        // (iPhone 12 mini etc.), but dotR1/dotR2 and this text's font are UI_H-based
-        // (constants.js pins UI_H at a 600px floor) and DON'T shrink with them - so
-        // the fixed-pixel padding that used to reserve the gap (dotR1*2.1, dotR2*1.8)
-        // could eat almost the entire band on a short device, leaving the perk text
-        // squeezed against the ship name above or the row below. Fixing that by
-        // moving dotY1 up or dotY2 down would fight the layout above/below them, both
-        // already tuned close to their own edges - instead this measures the real
-        // leftover band each frame and sizes the text to it, so it always has clear
-        // air on both sides regardless of device height.
-        // '{v}' is filled with the ship's CURRENT mastery-scaled value (constants.js
-        // skinPerkValue), not the frozen level-0 number the string used to hardcode --
-        // it now tracks the same mastery pips drawn above the ship (see masteryLevel).
+        // Active perk, below the whole grid -- a simple fixed slot now that it
+        // no longer has to squeeze into the gap between two rows on the base
+        // screen (Cockpit-Kritik observation 4).
         const activePerkTpl = T.skinPerks && T.skinPerks[activeSkin];
         const activePerk = activePerkTpl && activePerkTpl.replace('{v}', skinPerkValue(activeSkin));
         if (activePerk) {
             const [sr, sg, sb] = SKINS[activeSkin].shadow;
-            const selectedRow = Math.floor(activeSkin / GRID_COLS);
-            const nameGap = 2; // per feedback (was 2px, then 1px, 0.5px, 0.4px, 0.3px)
-            let perkFsz = FS * 0.019;
+            let perkFsz = FS * 0.020;
             ctx.font = `${perkFsz}px 'Courier New',monospace`;
-            // perkTopY: where the perk text's ink starts. Below the selected ship's
-            // name at minimum; on a row that also carries locked-ship cost / "x/y"
-            // gate labels (baseline cy + dotR2*2.2, matching the gateY multiplier
-            // above) it drops clear of those too, so a wide perk string centred under
-            // the ship doesn't run into a neighbour's stardust readout (direct
-            // feedback re: AMBER; the 2.5->2.2 tightening is a later feedback pass
-            // freeing a bit more room for the description below).
-            let perkTopY;
-            if (nGridRows > 1 && selectedRow < nGridRows - 1) {
-                // Row 1 of a multi-row grid: clear this row's locked labels, then
-                // shrink to fit what's left above row 2's ships.
-                perkTopY = Math.max(selectedNameBottomY + nameGap,
-                                    dotY1 + dotR2 * 2.2 + FS * 0.010);
-                const bandBottom = dotY2 - dotR2 * 1.35;
-                const bandH      = Math.max(bandBottom - perkTopY, 0);
-                perkFsz = Math.max(Math.min(perkFsz, bandH * 0.92), FS * 0.011);
-            } else {
-                // Last row: clear this row's locked labels too (same collision as
-                // AMBER's, just against the bottom-row ships), then shrink to fit
-                // above the bottom safety margin -- shrinking rather than clamping
-                // perkY keeps the gap correct on a tall device without letting it
-                // overlap the name label on a short one.
-                perkTopY = Math.max(selectedNameBottomY + nameGap,
-                                    dotY2 + dotR2 * 2.2 + FS * 0.022);
-                const ascentRatio = ctx.measureText(activePerk).actualBoundingBoxAscent / perkFsz;
-                const maxFszForBottom = (H - 10 - perkTopY) / ascentRatio;
-                perkFsz = Math.max(Math.min(perkFsz, maxFszForBottom), FS * 0.011);
+            const maxW = Math.min(W * 0.9, 820) - 40;
+            const textW = ctx.measureText(activePerk).width;
+            if (textW > maxW) {
+                perkFsz = Math.max(perkFsz * maxW / textW, FS * 0.012);
+                ctx.font = `${perkFsz}px 'Courier New',monospace`;
             }
-            ctx.font = `${perkFsz}px 'Courier New',monospace`;
-            // perkTopY measured in the FS*0.019 font above; re-measure ascent in the
-            // (possibly shrunk) final font for the baseline.
-            const perkAscent = ctx.measureText(activePerk).actualBoundingBoxAscent;
-            const perkY = perkTopY + perkAscent;
-            // Centred under the selected ship's name -- but clamped so a wide string
-            // (e.g. "NEAR-MISS RANGE +100%") doesn't run off-screen when the selected
-            // ship sits at either end of a row (column 0 leftmost, column 3 rightmost).
-            const perkHalfW = ctx.measureText(activePerk).width / 2;
-            const perkX     = Math.min(Math.max(selectedCx, edgeMargin + perkHalfW), W - edgeMargin - perkHalfW);
-            ctx.fillStyle   = `rgba(${sr},${sg},${sb},0.82)`;
+            ctx.fillStyle   = `rgba(${sr},${sg},${sb},0.85)`;
             ctx.shadowColor = 'rgba(0,0,0,0.90)';
             ctx.shadowBlur  = 4;
-            ctx.fillText(activePerk, perkX, perkY);
+            ctx.fillText(activePerk, gridCX, rowY2 + cellR * 2.3);
             ctx.shadowBlur  = 0;
         }
+
+        ctx.textAlign = 'center';
     }
+
+    // Shared pill-button helper, used by the Settings panel's Music/FX toggle
+    // row below. Used to also draw the base screen's own button rows before
+    // CONCEPT A moved those into the icon rail; kept here since the panel
+    // still wants the same pill look for its own toggles.
+    const btnFontSz = FS * 0.024 - 1;
+    ctx.font = `${btnFontSz}px 'Courier New',monospace`;
+    const pad = FS * 0.011;
+    const drawBtn = (bCx, bCy, label, active, blue, fixedW, fixedH) => {
+        let bw = fixedW, bh = fixedH || H * 0.055;
+        if (bw == null) {
+            bw = ctx.measureText(label).width + pad;
+        } else {
+            const maxTextW = bw * 0.86;
+            const textW = ctx.measureText(label).width;
+            if (textW > maxTextW) {
+                const sizeMatch = ctx.font.match(/([\d.]+)px/);
+                if (sizeMatch) {
+                    const shrunk = parseFloat(sizeMatch[1]) * maxTextW / textW;
+                    ctx.font = ctx.font.replace(/[\d.]+px/, `${shrunk}px`);
+                }
+            }
+        }
+        const bx = bCx - bw / 2, by = bCy - bh / 2;
+        const bgA = active ? a * 0.82 : a * 0.55;
+        const bg  = active
+            ? (blue ? `rgba(14,26,62,${bgA})` : `rgba(12,44,24,${bgA})`)
+            : `rgba(10,12,26,${bgA})`;
+        ctx.shadowColor = active
+            ? (blue ? `rgba(80,130,255,${a * 0.45})` : `rgba(60,200,100,${a * 0.45})`)
+            : 'transparent';
+        ctx.shadowBlur = active ? 8 : 0;
+        ctx.fillStyle = bg;
+        ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 5); ctx.fill();
+        ctx.strokeStyle = active
+            ? (blue ? `rgba(90,140,255,${a * 0.65})` : `rgba(70,215,110,${a * 0.65})`)
+            : `rgba(50,55,90,${a * 0.40})`;
+        ctx.lineWidth = 1; ctx.shadowBlur = 0; ctx.stroke();
+        ctx.fillStyle = active
+            ? (blue ? `rgba(140,175,255,${a})` : `rgba(90,230,125,${a})`)
+            : `rgba(95,100,145,${a * 0.70})`;
+        ctx.fillText(label, bCx, bCy);
+        return { x: bx, y: by, w: bw, h: bh };
+    };
 
     // Settings panel - drawn last so it overlays everything.
     // Layout flows top-down from a fixed set of section heights/gaps rather
