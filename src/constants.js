@@ -19,6 +19,20 @@ const UI_H = Math.max(H, 600);
 const FS = Math.sqrt(W * UI_H);   // font scale: ~603 in landscape, matches old 600x600 sizes
 cv.width = W; cv.height = H;
 
+// Dynamic Island / notch clearance, in canvas px (1:1 with CSS px -- W/H above are
+// already window.innerWidth/innerHeight, not scaled by devicePixelRatio). Pushed
+// from native (GameView.swift's TunlWebView.onSafeAreaChange, via the existing
+// _tunlNativeUpdate bridge in main.js) rather than read from CSS env(safe-area-
+// inset-*) here -- confirmed by an on-screen debug readout that env() always
+// resolves to 0 in this app's WKWebView (TunlApp.swift's .ignoresSafeArea() plus
+// its manual window-transform rotation trick for LandscapeLeft/Right leave WebKit's
+// own safe-area plumbing with nothing to report), while UIKit's safeAreaInsets on
+// the webview itself stays correct across both. Both left AND right are tracked,
+// not just whichever edge the island happens to sit on at load -- rotating 180°
+// mid-session swaps which edge is unsafe without changing W/H at all (same
+// dimensions either way). Stay 0 with no native bridge (browser testing).
+let SAFE_L = 0, SAFE_R = 0;
+
 const PX      = W  * 0.22;
 const PR      = W  * 0.018;
 const GRAVITY = 1150;

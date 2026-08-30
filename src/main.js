@@ -38,6 +38,20 @@ window._tunlNativeUpdate = function (state) {
     if (typeof state.worldRankTotal === 'number' && state.worldRankTotal > 0) {
         worldRankTotal = state.worldRankTotal;
     }
+    // Outstanding Game Center Challenges for this player, pushed from
+    // GameView.swift (fetchActiveChallenges) at auth, after each score submit, and
+    // when one arrives or is completed live. Drives the CHALLENGE icon badge on the
+    // title screen. iOS 26+ only -- Android never sends this key.
+    if (typeof state.activeChallenges === 'number') {
+        activeChallenges = state.activeChallenges;
+    }
+    // Dynamic Island/notch clearance (constants.js SAFE_L/SAFE_R), pushed from
+    // GameView.swift's TunlWebView.onSafeAreaChange -- on launch and again on
+    // every safe-area change (rotation between LandscapeLeft/LandscapeRight
+    // included), not just once, since which edge is unsafe can flip without W/H
+    // changing at all.
+    if (typeof state.safeInsetLeft === 'number') SAFE_L = state.safeInsetLeft;
+    if (typeof state.safeInsetRight === 'number') SAFE_R = state.safeInsetRight;
 };
 
 // Android's system/gesture back button has no iOS equivalent, so there's no
@@ -48,6 +62,8 @@ window._tunlCloseSettingsIfOpen = function () {
     if (showSettings) { showSettings = false; return true; }
     if (showShop) { showShop = false; return true; }
     if (showCurrencyInfo) { showCurrencyInfo = false; return true; }
+    if (showMissions) { showMissions = false; return true; }
+    if (showShipPicker) { showShipPicker = false; return true; }
     return false;
 };
 

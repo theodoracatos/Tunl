@@ -223,9 +223,12 @@ def build(shot_path, out_path, headline_lines, accent_idx, subhead, seed):
         col = CYAN if i == accent_idx else INK
         center_text(d, W / 2, y, line, hf, col)
         y += lh
-    head_bottom = y
 
-    # Screenshot card, sitting in the corridor a touch above centre.
+    # Screenshot card, sitting in the corridor a touch above centre. Anchored
+    # off the *unshrunk* headline block height (not the actual, possibly
+    # smaller, `y` above) so a headline that needed auto-shrinking doesn't
+    # pull the card up relative to the other screenshots in the set.
+    head_bottom = 210 + len(headline_lines) * int(100 * 1.22)
     card = rounded_card(Image.open(shot_path).convert("RGB"), 1236)
     cx = (W - card.width) // 2
     cy = int(head_bottom + 150)

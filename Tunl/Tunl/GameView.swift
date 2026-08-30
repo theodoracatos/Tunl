@@ -3,6 +3,22 @@ import WebKit
 import GameKit
 import AVFoundation
 
+// Dynamic Island/notch clearance for the title screen's icon rail (CLAUDE.md
+// Concept A). TunlApp.swift's .ignoresSafeArea() (plus its manual window-transform
+// rotation trick for LandscapeLeft/Right, rather than a real interface-orientation
+// change) leaves WebKit's own CSS env(safe-area-inset-*) with nothing to report --
+// confirmed via an on-screen debug readout, always 0 even with viewport-fit=cover
+// set. UIKit's safeAreaInsets on the webview itself stays correct across both, so
+// that's what gets pushed into JS instead, through safeAreaInsetsDidChange (fires
+// on rotation too, not just initial layout).
+final class TunlWebView: WKWebView {
+    var onSafeAreaChange: ((UIEdgeInsets) -> Void)?
+    override func safeAreaInsetsDidChange() {
+        super.safeAreaInsetsDidChange()
+        onSafeAreaChange?(safeAreaInsets)
+    }
+}
+
 struct GameView: UIViewRepresentable {
 
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -44,8 +60,11 @@ struct GameView: UIViewRepresentable {
 
         context.coordinator.authenticateGameCenter()
 
-        let webView = WKWebView(frame: .zero, configuration: config)
+        let webView = TunlWebView(frame: .zero, configuration: config)
         context.coordinator.webView = webView
+        webView.onSafeAreaChange = { [weak coordinator = context.coordinator] insets in
+            coordinator?.pushSafeAreaInsets(insets)
+        }
         webView.uiDelegate = context.coordinator
         webView.navigationDelegate = context.coordinator
         webView.scrollView.isScrollEnabled = false
@@ -152,10 +171,18 @@ struct GameView: UIViewRepresentable {
                     // session already has a standing to show and a baseline to compute
                     // the first delta against, instead of one blank run.
                     self.fetchWorldRank()
+                    self.fetchActiveChallenges()
                 } else if let error {
                     print("Game Center auth failed: \(error.localizedDescription)")
                 }
             }
+        }
+
+        // See TunlWebView's doc comment (above GameView) for why this goes through
+        // UIKit's safeAreaInsets instead of CSS env(safe-area-inset-*).
+        func pushSafeAreaInsets(_ insets: UIEdgeInsets) {
+            let json = "{\"safeInsetLeft\":\(insets.left),\"safeInsetRight\":\(insets.right)}"
+            webView?.evaluateJavaScript("window._tunlNativeUpdate && window._tunlNativeUpdate(\(json))")
         }
 
         private func rootViewController() -> UIViewController? {
@@ -178,6 +205,8 @@ struct GameView: UIViewRepresentable {
                 // Only after the submit lands, so the rank reflects the run that just
                 // ended rather than the previous one.
                 self?.fetchWorldRank()
+                // A score submit is also how a challenge gets beaten, so re-check.
+                self?.fetchActiveChallenges()
             }
         }
 
@@ -217,6 +246,26 @@ struct GameView: UIViewRepresentable {
                                       range: NSRange(location: 1, length: 1)) { _, _, totalPlayers, allTimeError in
                         sendUpdate(allTimeError == nil ? totalPlayers : 0)
                     }
+                }
+            }
+        }
+
+        // How many Game Center Challenges are currently issued to this player and
+        // still unmet. Surfaced as a small badge under the title screen's CHALLENGE
+        // icon (src/draw.js) so an open challenge is visible without opening Game
+        // Center. TUNL's challenges are linked to the *daily* leaderboard (see the
+        // project memory / doc comments above), so a still-pending challenge is by
+        // construction one from today -- no extra expiry filtering needed here.
+        // loadReceivedChallenges predates the iOS 26 challenge redesign but still
+        // returns the same objects for it; on pre-26 devices there simply are none.
+        private func fetchActiveChallenges() {
+            guard GKLocalPlayer.local.isAuthenticated else { return }
+            GKChallenge.loadReceivedChallenges { [weak self] challenges, error in
+                guard error == nil else { return }
+                let count = (challenges ?? []).filter { $0.state == .pending }.count
+                let json = "{\"activeChallenges\":\(count)}"
+                DispatchQueue.main.async {
+                    self?.webView?.evaluateJavaScript("window._tunlNativeUpdate && window._tunlNativeUpdate(\(json))")
                 }
             }
         }
@@ -288,10 +337,25 @@ struct GameView: UIViewRepresentable {
             showLeaderboard()
         }
 
+        // Keep the title screen's CHALLENGE badge live: refresh the outstanding
+        // count whenever one arrives or the player clears one a friend sent.
+        func player(_ player: GKPlayer, didReceive challenge: GKChallenge) {
+            fetchActiveChallenges()
+        }
+
+        func player(_ player: GKPlayer, didComplete challenge: GKChallenge, issuedByFriend friendPlayer: GKPlayer) {
+            fetchActiveChallenges()
+        }
+
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             GameView.killPressInteractions(in: webView)
             Task { await self.iap.refreshEntitlements() }
             ads.start()
+            // Belt-and-braces alongside TunlWebView.onSafeAreaChange: that fires on
+            // every layout pass including the first, but pushing here too costs
+            // nothing and guarantees the icon rail has real insets by the time the
+            // title screen's very first frame draws, not just by its second.
+            pushSafeAreaInsets(webView.safeAreaInsets)
         }
 
         func webView(_ webView: WKWebView,
