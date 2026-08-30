@@ -99,6 +99,10 @@ function onDown(e) {
         // keeps the sheet open, same as picking a language keeps Settings
         // open); anything else -- background, header, wallet line -- closes it.
         if (showShipPicker) {
+            if (_currencyInfoBtnRect) {
+                const b = _currencyInfoBtnRect, dx = cx - b.cx, dy = cy - b.cy;
+                if (dx*dx + dy*dy < b.r*b.r) { showCurrencyInfo = true; sfxUiTap(); return; }
+            }
             for (let i = 0; i < _skinBtnRects.length; i++) {
                 const b = _skinBtnRects[i];
                 if (inCircle(cx, cy, b)) {

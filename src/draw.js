@@ -1623,6 +1623,103 @@ function drawHUD() {
     }
 }
 
+// CONCEPT A icon rail glyphs, hand-drawn as vector paths instead of Unicode/
+// emoji characters. A mix of plain-text symbols (checkbox/gear/sword) and
+// colour emoji (trophy/cart) rendered at visibly different sizes and weights
+// even at the same font-size -- the emoji ignore fillStyle entirely (their own
+// fixed palette), so only the trophy and cart ever showed any colour while
+// the rest were flat outline glyphs. Drawing all five as simple strokes in
+// one shared colour/line-width (the same treatment shipPath()/drawShip() give
+// every ship, rather than leaning on a font) guarantees they read as one
+// consistent icon family regardless of platform font/emoji rendering.
+function drawRailIcon(key, cx, cy, r, color, lineW) {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.fillStyle   = color;
+    ctx.lineWidth   = lineW;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+    switch (key) {
+        case 'missions': {
+            // Checklist: rounded-square outline + checkmark.
+            const s = r * 1.3;
+            ctx.beginPath();
+            ctx.roundRect(cx - s / 2, cy - s / 2, s, s, s * 0.22);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(cx - s * 0.28, cy + s * 0.02);
+            ctx.lineTo(cx - s * 0.06, cy + s * 0.24);
+            ctx.lineTo(cx + s * 0.32, cy - s * 0.22);
+            ctx.stroke();
+            break;
+        }
+        case 'leaderboard': {
+            // Ascending bars -- a small podium/ranking chart.
+            const bw = r * 0.40, gap = r * 0.16;
+            const baseY = cy + r * 0.60;
+            const heights = [r * 0.58, r * 1.05, r * 0.80];
+            const totalW = bw * 3 + gap * 2;
+            let x = cx - totalW / 2;
+            for (const h of heights) {
+                ctx.beginPath();
+                ctx.roundRect(x, baseY - h, bw, h, bw * 0.25);
+                ctx.fill();
+                x += bw + gap;
+            }
+            break;
+        }
+        case 'challenge': {
+            // Crossed blades.
+            const L = r * 1.15;
+            ctx.beginPath();
+            ctx.moveTo(cx - L * 0.5, cy - L * 0.5);
+            ctx.lineTo(cx + L * 0.5, cy + L * 0.5);
+            ctx.moveTo(cx + L * 0.5, cy - L * 0.5);
+            ctx.lineTo(cx - L * 0.5, cy + L * 0.5);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(cx, cy, r * 0.11, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+        }
+        case 'shop': {
+            // Shopping bag: trapezoid body + arc handle.
+            const w0 = r * 0.85, w1 = r * 1.15, h = r * 1.05;
+            const top = cy - h * 0.35, bot = cy + h * 0.65;
+            ctx.beginPath();
+            ctx.moveTo(cx - w0 / 2, top);
+            ctx.lineTo(cx - w1 / 2, bot);
+            ctx.lineTo(cx + w1 / 2, bot);
+            ctx.lineTo(cx + w0 / 2, top);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(cx, top - r * 0.06, w0 * 0.34, Math.PI * 1.15, Math.PI * 1.85);
+            ctx.stroke();
+            break;
+        }
+        case 'settings': {
+            // Gear: circle + teeth.
+            const rr = r * 0.52, toothLen = r * 0.30, teeth = 8;
+            for (let t = 0; t < teeth; t++) {
+                const ang = (t / teeth) * Math.PI * 2;
+                ctx.beginPath();
+                ctx.moveTo(cx + Math.cos(ang) * rr, cy + Math.sin(ang) * rr);
+                ctx.lineTo(cx + Math.cos(ang) * (rr + toothLen), cy + Math.sin(ang) * (rr + toothLen));
+                ctx.stroke();
+            }
+            ctx.beginPath();
+            ctx.arc(cx, cy, rr, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(cx, cy, rr * 0.40, 0, Math.PI * 2);
+            ctx.stroke();
+            break;
+        }
+    }
+    ctx.restore();
+}
+
 function drawTitleScreen() {
     // In landscape (W > H*1.15) use a two-column layout to avoid vertical crowding.
     // In portrait keep a centered stack but anchor the skin picker to the bottom.
@@ -2064,11 +2161,11 @@ function drawTitleScreen() {
         const doneCount     = dailyMissionsClaimed.filter(Boolean).length;
 
         const items = [];
-        items.push({ key: 'missions', glyph: '☑', badge: `${doneCount}/${dailyMissionIdx.length}`, showBadge: doneCount < dailyMissionIdx.length });
-        if (hasGameCenter) items.push({ key: 'leaderboard', glyph: '\u{1F3C6}' });
-        if (hasChallenge)  items.push({ key: 'challenge',   glyph: '⚔' });
-        items.push({ key: 'shop',     glyph: '\u{1F6D2}' });
-        items.push({ key: 'settings', glyph: '⚙' });
+        items.push({ key: 'missions', badge: `${doneCount}/${dailyMissionIdx.length}`, showBadge: doneCount < dailyMissionIdx.length });
+        if (hasGameCenter) items.push({ key: 'leaderboard' });
+        if (hasChallenge)  items.push({ key: 'challenge' });
+        items.push({ key: 'shop' });
+        items.push({ key: 'settings' });
 
         // SAFE_R (constants.js) clears the Dynamic Island/notch in landscape --
         // without it this rail sat far enough right to land under the island on
@@ -2093,21 +2190,7 @@ function drawTitleScreen() {
             ctx.strokeStyle = 'rgba(255,255,255,0.18)';
             ctx.lineWidth   = 1;
             ctx.stroke();
-            ctx.font      = `${iconR * 1.15}px 'Courier New',monospace`;
-            ctx.fillStyle = `rgba(225,232,250,${a * 0.92})`;
-            // True visual centring, not just metric/baseline centring -- these
-            // glyphs mix a plain Unicode symbol (checkbox/gear/sword) with color
-            // emoji (trophy/cart), and each sits at a different height/offset
-            // within its own font's em box, so a flat fillText(cx,cy) under
-            // textBaseline 'middle' left several icons visibly off-centre in
-            // their bubble. Measuring each glyph's own ink bounds and shifting
-            // the draw point centers the INK, not the font metrics.
-            {
-                const m = ctx.measureText(it.glyph);
-                const xOff = (m.actualBoundingBoxLeft - m.actualBoundingBoxRight) / 2;
-                const yOff = (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2;
-                ctx.fillText(it.glyph, cx + xOff, cy + yOff);
-            }
+            drawRailIcon(it.key, cx, cy, iconR * 0.62, `rgba(225,232,250,${a * 0.92})`, Math.max(1.3, iconR * 0.11));
             if (it.badge && it.showBadge) {
                 ctx.font        = `bold ${iconR * 0.55}px 'Courier New',monospace`;
                 ctx.fillStyle   = 'rgba(255,225,110,0.95)';
@@ -2261,6 +2344,26 @@ function drawTitleScreen() {
                 ctx.fillText(starTxt, startXw + shardW, walletY);
             }
             ctx.textAlign = 'center';
+
+            // "?" button opening the shards/stardust/coins explainer
+            // (showCurrencyInfo) -- lives right beside the numbers it explains,
+            // same as it did on the old base screen's wallet line, just moved
+            // here with the wallet itself.
+            const infoR  = FS * 0.016;
+            const infoCx = Math.min(startXw + shardW + starW + infoR * 2.4, shipPanX + shipPanW - infoR * 2);
+            const infoCy = walletY;
+            _currencyInfoBtnRect = { cx: infoCx, cy: infoCy, r: infoR * 2.0 };
+            ctx.shadowColor = 'rgba(255,255,255,0.55)';
+            ctx.shadowBlur  = 6;
+            ctx.beginPath();
+            ctx.arc(infoCx, infoCy, infoR, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255,255,255,0.90)';
+            ctx.lineWidth   = 1.6;
+            ctx.stroke();
+            ctx.font        = `bold ${infoR * 1.4}px 'Courier New',monospace`;
+            ctx.fillStyle   = 'rgba(255,255,255,0.98)';
+            ctx.fillText('?', infoCx, infoCy);
+            ctx.shadowBlur  = 0;
         }
 
         const gridCX    = W / 2;
@@ -2401,6 +2504,11 @@ function drawTitleScreen() {
         }
 
         ctx.textAlign = 'center';
+    } else {
+        // Stops a stale rect from a previous time the sheet was open from
+        // being tappable on the base screen once it's closed again -- this
+        // button only exists while the sheet itself is drawn.
+        _currencyInfoBtnRect = null;
     }
 
     // Shared pill-button helper, used by the Settings panel's Music/FX toggle
