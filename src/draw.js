@@ -663,6 +663,157 @@ function drawWorld() {
         }
     }
 
+    // Rune body: hexagon silhouette + a small dark pictogram, shared by the four
+    // state/power-up coin types (blue/red/orange/green) so they read as one family
+    // distinct from gold's diamond and bomb's burst -- shape carries "this is a
+    // buff", the pictogram carries which one, independent of hue (same trick
+    // poison's X already used). Unlike every other coin this body does NOT take the
+    // full per-frame spin: a spinning pictogram stops being readable, so only a
+    // small breathing wobble is applied instead. Assumes ctx is already translated
+    // to the coin's center.
+    function drawRuneCoin(type, bodyClr, gr, gg, gb, darkR, darkG, darkB, r, wx) {
+        const hh = r * 1.30, hw = r * 1.12;
+        const wobble = Math.sin(gtime * 1.3 + wx * 0.01) * 0.10;
+        ctx.save();
+        ctx.rotate(wobble);
+
+        const hex = () => {
+            ctx.beginPath();
+            ctx.moveTo(0, -hh); ctx.lineTo(hw, -hh*0.5); ctx.lineTo(hw, hh*0.5);
+            ctx.lineTo(0, hh);  ctx.lineTo(-hw, hh*0.5);  ctx.lineTo(-hw, -hh*0.5);
+            ctx.closePath();
+        };
+
+        hex();
+        const bGrd = ctx.createLinearGradient(0, -hh, 0, hh);
+        bGrd.addColorStop(0,    'rgba(255,255,255,0.90)');
+        bGrd.addColorStop(0.16, bodyClr);
+        bGrd.addColorStop(0.55, bodyClr);
+        bGrd.addColorStop(0.82, `rgb(${darkR},${darkG},${darkB})`);
+        bGrd.addColorStop(1,    'rgba(0,0,0,0.55)');
+        ctx.fillStyle   = bGrd;
+        ctx.shadowColor = `rgba(${gr},${gg},${gb},0.90)`;
+        ctx.shadowBlur  = 11;
+        ctx.fill();
+        ctx.shadowBlur  = 0;
+
+        // Top/bottom-half sheen -- same two-tone read as the diamond's facets,
+        // simplified to the hex's six sides.
+        ctx.beginPath(); ctx.moveTo(-hw,-hh*0.5); ctx.lineTo(hw,-hh*0.5); ctx.lineTo(0,-hh); ctx.closePath();
+        ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fill();
+        ctx.beginPath(); ctx.moveTo(-hw,hh*0.5); ctx.lineTo(hw,hh*0.5); ctx.lineTo(0,hh); ctx.closePath();
+        ctx.fillStyle = 'rgba(0,0,0,0.24)'; ctx.fill();
+
+        hex();
+        ctx.strokeStyle = `rgba(${gr},${gg},${gb},0.72)`;
+        ctx.lineWidth   = 1.5;
+        ctx.shadowColor = `rgba(${gr},${gg},${gb},0.85)`;
+        ctx.shadowBlur  = 6;
+        ctx.stroke();
+        ctx.shadowBlur  = 0;
+
+        // Pictogram: one bold dark glyph per type, deliberately simple so it still
+        // reads as a distinct silhouette at COIN_R's real on-device size (a few px).
+        ctx.fillStyle   = 'rgba(8,10,16,0.78)';
+        ctx.strokeStyle = 'rgba(8,10,16,0.78)';
+        ctx.lineCap     = 'round';
+        ctx.lineJoin    = 'round';
+        const s = r * 0.62;
+        if (type === 'blue') {
+            // droplet
+            ctx.beginPath();
+            ctx.moveTo(0, -s*0.75);
+            ctx.lineTo(s*0.55, s*0.05);
+            ctx.arc(0, s*0.05, s*0.55, 0, Math.PI, false);
+            ctx.closePath();
+            ctx.fill();
+        } else if (type === 'red') {
+            // pointed shield badge
+            ctx.beginPath();
+            ctx.moveTo(0, -s*0.85); ctx.lineTo(s*0.78, -s*0.35); ctx.lineTo(s*0.6, s*0.35);
+            ctx.lineTo(0, s*0.9);   ctx.lineTo(-s*0.6, s*0.35);  ctx.lineTo(-s*0.78, -s*0.35);
+            ctx.closePath();
+            ctx.fill();
+        } else if (type === 'orange') {
+            // single bold arrowhead
+            ctx.beginPath();
+            ctx.moveTo(-s*0.55, -s*0.65); ctx.lineTo(s*0.75, 0); ctx.lineTo(-s*0.55, s*0.65);
+            ctx.lineTo(-s*0.20, 0);
+            ctx.closePath();
+            ctx.fill();
+        } else {
+            // magnet: four short strokes converging toward the center
+            ctx.lineWidth = Math.max(s*0.22, 1.4);
+            for (let k = 0; k < 4; k++) {
+                const ang = k * Math.PI / 2 + Math.PI / 4;
+                const cxk = Math.cos(ang), syk = Math.sin(ang);
+                ctx.beginPath();
+                ctx.moveTo(cxk*s*0.85, syk*s*0.85);
+                ctx.lineTo(cxk*s*0.35, syk*s*0.35);
+                ctx.stroke();
+            }
+        }
+        ctx.lineCap = 'butt'; ctx.lineJoin = 'miter';
+
+        ctx.beginPath();
+        ctx.arc(-hw * 0.20, -hh * 0.42, r * 0.26, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    // Bomb body: a 12-point burst silhouette, replacing the old diamond-plus-spark
+    // overlay -- the rarest positive event in the game gets its own outline instead
+    // of sharing gold's shape. Spins with the caller's `spin` (same phase as the
+    // sparkle rays) since a symmetric burst reads fine while rotating, unlike a
+    // pictogram. Assumes ctx is already translated to the coin's center.
+    function drawBurstCoin(bodyClr, gr, gg, gb, darkR, darkG, darkB, r, spin) {
+        ctx.save();
+        ctx.rotate(spin);
+
+        const N = 12;
+        const pts = [];
+        for (let i = 0; i < N; i++) {
+            const ang = -Math.PI/2 + i * (Math.PI * 2 / N);
+            const rad = r * (i % 2 === 0 ? 1.35 : 0.68);
+            pts.push([Math.sin(ang) * rad, -Math.cos(ang) * rad]);
+        }
+        const burst = () => {
+            ctx.beginPath();
+            ctx.moveTo(pts[0][0], pts[0][1]);
+            for (let i = 1; i < N; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+            ctx.closePath();
+        };
+
+        burst();
+        const bGrd = ctx.createRadialGradient(0, -r*0.3, 0, 0, 0, r*1.4);
+        bGrd.addColorStop(0,    'rgba(255,255,255,0.95)');
+        bGrd.addColorStop(0.30, bodyClr);
+        bGrd.addColorStop(0.75, bodyClr);
+        bGrd.addColorStop(1,    `rgb(${darkR},${darkG},${darkB})`);
+        ctx.fillStyle   = bGrd;
+        ctx.shadowColor = `rgba(${gr},${gg},${gb},0.95)`;
+        ctx.shadowBlur  = 13;
+        ctx.fill();
+        ctx.shadowBlur  = 0;
+
+        burst();
+        ctx.strokeStyle = `rgba(${gr},${gg},${gb},0.80)`;
+        ctx.lineWidth   = 1.4;
+        ctx.shadowColor = `rgba(${gr},${gg},${gb},0.90)`;
+        ctx.shadowBlur  = 7;
+        ctx.stroke();
+        ctx.shadowBlur  = 0;
+
+        ctx.beginPath();
+        ctx.arc(-r*0.16, -r*0.30, r * 0.30, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.95)';
+        ctx.fill();
+
+        ctx.restore();
+    }
+
     // Coins (regular + chicane guaranteed)
     for (const arr of [coins, chicaneCoins]) for (const coin of arr) {
         if (coin.collected || coin.fade <= 0) continue;
@@ -755,7 +906,7 @@ function drawWorld() {
             ctx.restore();
         } else {
         const pulse = 1 + 0.18 * Math.sin(gtime * 5.5 + coin.wx * 0.013);
-        const r  = COIN_R * pulse;
+        const r  = COIN_R * (COIN_SIZE_MULT[coin.type] || 1.0) * pulse;
         const dh = r * 1.35, dw = r * 0.90;
 
         // Glow aura
@@ -769,7 +920,6 @@ function drawWorld() {
         ctx.save();
         ctx.translate(sx, coin.y);
         const spin = gtime * 0.9 + coin.wx * 0.008;
-        ctx.rotate(spin);
 
         // 8 sparkle rays: 4 long + 4 short, each pulsing independently.
         // Style is identical within each group (only direction + pulsing
@@ -777,7 +927,11 @@ function drawWorld() {
         // stroke() instead of 8 separate save/rotate/stroke cycles. Ray
         // endpoints are rotated by hand (equivalent to the old per-ray
         // ctx.rotate(i*45deg) applied to a point at (0,-d)) since they no
-        // longer get their own transform.
+        // longer get their own transform. Kept in its own save/rotate scope,
+        // separate from the body below -- thin glint lines read fine while
+        // spinning, but a rune's pictogram wouldn't (see drawRuneCoin).
+        ctx.save();
+        ctx.rotate(spin);
         ctx.shadowColor = `rgba(${gr},${gg},${gb},0.65)`;
         for (const long of [true, false]) {
             ctx.beginPath();
@@ -794,89 +948,89 @@ function drawWorld() {
             ctx.stroke();
         }
         ctx.shadowBlur  = 0;
+        ctx.restore();
 
-        // Diamond outline helper
-        const gem = () => {
-            ctx.beginPath();
-            ctx.moveTo(0, -dh); ctx.lineTo(dw, 0);
-            ctx.lineTo(0,  dh); ctx.lineTo(-dw, 0);
-            ctx.closePath();
-        };
+        // Body: three silhouette families by function, not just by color --
+        // gold keeps its diamond, blue/red/orange/green share a rune hexagon with a
+        // per-type pictogram, bomb gets its own burst outline. See drawRuneCoin /
+        // drawBurstCoin above for why each has its own rotation treatment.
+        if (isBlu || isRed || isGrn || isOrng) {
+            drawRuneCoin(coin.type, bodyClr, gr, gg, gb, darkR, darkG, darkB, r, coin.wx);
+        } else if (isBmb) {
+            drawBurstCoin(bodyClr, gr, gg, gb, darkR, darkG, darkB, r, spin);
+        } else {
+            ctx.save();
+            ctx.rotate(spin);
 
-        // Body: top-to-bottom gradient for 3-D depth
-        gem();
-        const bGrd = ctx.createLinearGradient(0, -dh, 0, dh);
-        bGrd.addColorStop(0,    'rgba(255,255,255,0.95)');
-        bGrd.addColorStop(0.13, bodyClr);
-        bGrd.addColorStop(0.50, bodyClr);
-        bGrd.addColorStop(0.80, `rgb(${darkR},${darkG},${darkB})`);
-        bGrd.addColorStop(1,    'rgba(0,0,0,0.55)');
-        ctx.fillStyle   = bGrd;
-        ctx.shadowColor = `rgba(${gr},${gg},${gb},0.90)`;
-        ctx.shadowBlur  = 11;
-        ctx.fill();
-        ctx.shadowBlur  = 0;
+            // Diamond outline helper
+            const gem = () => {
+                ctx.beginPath();
+                ctx.moveTo(0, -dh); ctx.lineTo(dw, 0);
+                ctx.lineTo(0,  dh); ctx.lineTo(-dw, 0);
+                ctx.closePath();
+            };
 
-        // 4-facet shading overlays
-        ctx.beginPath(); ctx.moveTo(0,-dh); ctx.lineTo(dw,0);  ctx.lineTo(0,0); ctx.closePath();
-        ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.fill();  // top-right: brightest
-        ctx.beginPath(); ctx.moveTo(0,-dh); ctx.lineTo(-dw,0); ctx.lineTo(0,0); ctx.closePath();
-        ctx.fillStyle = 'rgba(255,255,255,0.10)'; ctx.fill();  // top-left: lighter
-        ctx.beginPath(); ctx.moveTo(dw,0);  ctx.lineTo(0,dh);  ctx.lineTo(0,0); ctx.closePath();
-        ctx.fillStyle = 'rgba(0,0,0,0.18)';       ctx.fill();  // bottom-right: shadow
-        ctx.beginPath(); ctx.moveTo(-dw,0); ctx.lineTo(0,dh);  ctx.lineTo(0,0); ctx.closePath();
-        ctx.fillStyle = 'rgba(0,0,0,0.30)';       ctx.fill();  // bottom-left: darkest
+            // Body: top-to-bottom gradient for 3-D depth
+            gem();
+            const bGrd = ctx.createLinearGradient(0, -dh, 0, dh);
+            bGrd.addColorStop(0,    'rgba(255,255,255,0.95)');
+            bGrd.addColorStop(0.13, bodyClr);
+            bGrd.addColorStop(0.50, bodyClr);
+            bGrd.addColorStop(0.80, `rgb(${darkR},${darkG},${darkB})`);
+            bGrd.addColorStop(1,    'rgba(0,0,0,0.55)');
+            ctx.fillStyle   = bGrd;
+            ctx.shadowColor = `rgba(${gr},${gg},${gb},0.90)`;
+            ctx.shadowBlur  = 11;
+            ctx.fill();
+            ctx.shadowBlur  = 0;
 
-        // Facet edge lines (structure lines cut through the gem)
-        ctx.lineWidth = 0.7; ctx.lineCap = 'round';
-        [[0,-dh,dw,0],[dw,0,0,dh]].forEach(([x0,y0,x1,y1]) => {
-            ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1);
-            ctx.strokeStyle = 'rgba(255,255,255,0.20)'; ctx.stroke();
-        });
-        [[0,-dh,-dw,0],[-dw,0,0,dh]].forEach(([x0,y0,x1,y1]) => {
-            ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1);
-            ctx.strokeStyle = 'rgba(0,0,0,0.14)'; ctx.stroke();
-        });
-        ctx.beginPath(); ctx.moveTo(-dw,0); ctx.lineTo(dw,0);
-        ctx.strokeStyle = 'rgba(255,255,255,0.24)'; ctx.stroke();
-        ctx.lineCap = 'butt';
+            // 4-facet shading overlays
+            ctx.beginPath(); ctx.moveTo(0,-dh); ctx.lineTo(dw,0);  ctx.lineTo(0,0); ctx.closePath();
+            ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.fill();  // top-right: brightest
+            ctx.beginPath(); ctx.moveTo(0,-dh); ctx.lineTo(-dw,0); ctx.lineTo(0,0); ctx.closePath();
+            ctx.fillStyle = 'rgba(255,255,255,0.10)'; ctx.fill();  // top-left: lighter
+            ctx.beginPath(); ctx.moveTo(dw,0);  ctx.lineTo(0,dh);  ctx.lineTo(0,0); ctx.closePath();
+            ctx.fillStyle = 'rgba(0,0,0,0.18)';       ctx.fill();  // bottom-right: shadow
+            ctx.beginPath(); ctx.moveTo(-dw,0); ctx.lineTo(0,dh);  ctx.lineTo(0,0); ctx.closePath();
+            ctx.fillStyle = 'rgba(0,0,0,0.30)';       ctx.fill();  // bottom-left: darkest
 
-        // Glowing outer edge
-        gem();
-        ctx.strokeStyle = `rgba(${gr},${gg},${gb},0.72)`;
-        ctx.lineWidth   = 1.5;
-        ctx.shadowColor = `rgba(${gr},${gg},${gb},0.85)`;
-        ctx.shadowBlur  = 6;
-        ctx.stroke();
-        ctx.shadowBlur  = 0;
-
-        // Specular glints: main + secondary
-        ctx.beginPath();
-        ctx.arc(-dw * 0.18, -dh * 0.40, r * 0.30, 0, Math.PI * 2);
-        ctx.fillStyle   = 'rgba(255,255,255,0.95)';
-        ctx.shadowColor = 'rgba(255,255,255,0.85)';
-        ctx.shadowBlur  = 4;
-        ctx.fill();
-        ctx.shadowBlur  = 0;
-        ctx.beginPath();
-        ctx.arc(dw * 0.36, -dh * 0.16, r * 0.13, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255,255,255,0.60)';
-        ctx.fill();
-
-        // Bomb spark mark: a small 8-point burst so it reads as "trigger me"
-        if (isBmb) {
-            ctx.beginPath();
-            for (let k = 0; k < 8; k++) {
-                const ang = k * Math.PI / 4;
-                const c = Math.cos(ang), s = Math.sin(ang);
-                ctx.moveTo(c*dw*0.16, s*dh*0.16);
-                ctx.lineTo(c*dw*0.52, s*dh*0.52);
-            }
-            ctx.strokeStyle = 'rgba(255,255,255,0.90)';
-            ctx.lineWidth   = Math.max(r * 0.13, 1.1);
-            ctx.lineCap     = 'round';
-            ctx.stroke();
+            // Facet edge lines (structure lines cut through the gem)
+            ctx.lineWidth = 0.7; ctx.lineCap = 'round';
+            [[0,-dh,dw,0],[dw,0,0,dh]].forEach(([x0,y0,x1,y1]) => {
+                ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1);
+                ctx.strokeStyle = 'rgba(255,255,255,0.20)'; ctx.stroke();
+            });
+            [[0,-dh,-dw,0],[-dw,0,0,dh]].forEach(([x0,y0,x1,y1]) => {
+                ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1);
+                ctx.strokeStyle = 'rgba(0,0,0,0.14)'; ctx.stroke();
+            });
+            ctx.beginPath(); ctx.moveTo(-dw,0); ctx.lineTo(dw,0);
+            ctx.strokeStyle = 'rgba(255,255,255,0.24)'; ctx.stroke();
             ctx.lineCap = 'butt';
+
+            // Glowing outer edge
+            gem();
+            ctx.strokeStyle = `rgba(${gr},${gg},${gb},0.72)`;
+            ctx.lineWidth   = 1.5;
+            ctx.shadowColor = `rgba(${gr},${gg},${gb},0.85)`;
+            ctx.shadowBlur  = 6;
+            ctx.stroke();
+            ctx.shadowBlur  = 0;
+
+            // Specular glints: main + secondary
+            ctx.beginPath();
+            ctx.arc(-dw * 0.18, -dh * 0.40, r * 0.30, 0, Math.PI * 2);
+            ctx.fillStyle   = 'rgba(255,255,255,0.95)';
+            ctx.shadowColor = 'rgba(255,255,255,0.85)';
+            ctx.shadowBlur  = 4;
+            ctx.fill();
+            ctx.shadowBlur  = 0;
+            ctx.beginPath();
+            ctx.arc(dw * 0.36, -dh * 0.16, r * 0.13, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.60)';
+            ctx.fill();
+
+            ctx.restore();
         }
 
         ctx.restore();

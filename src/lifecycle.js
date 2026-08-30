@@ -32,6 +32,7 @@ function titleScreen() {
     // never actually consulted here -- just kept defined to avoid stray undefineds.
     poisonClock = 0; nextPoisonAt = POISON_INTERVAL_SEC;
     bombClock   = 0; nextBombAt   = BOMB_INTERVAL_SEC;
+    greenClock  = 0;
     prevRunScore = 0; lastRunScore = 0; milestoneFlash = 0; milestoneText = '';
     runCoins = 0; runNearMisses = 0; runMaxCombo = 0; skinUnlockIdx = -1;
     runCoinsByType = { gold: 0, blue: 0, red: 0, green: 0, orange: 0 };
@@ -129,6 +130,7 @@ function startPlay() {
     // tunnel shape and every other obstacle's placement.
     poisonClock = 0; nextPoisonAt = POISON_INTERVAL_SEC * (0.7 + rng() * 0.6);
     bombClock   = 0; nextBombAt   = BOMB_INTERVAL_SEC   * (0.7 + rng() * 0.6);
+    greenClock  = 0;
     refreshWave();
     _startBgMusic();
     sfxEngineSpoolUp();

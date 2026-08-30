@@ -216,6 +216,11 @@ let cannonShots;
 // actually clears placement (makeCoin, systems.js) becomes that type.
 let poisonClock, nextPoisonAt;
 let bombClock, nextBombAt;
+// Magnet soft-pity clock (constants.js GREEN_DROUGHT_SOFT_SEC doc): real play
+// seconds since a green coin last actually cleared placement in makeCoin(). Unlike
+// poisonClock/bombClock this never forces a type -- it only nudges the weighted
+// roll's green share upward, and is reset there, not on collection.
+let greenClock;
 let notifs;
 let bonusScore, milestoneNext, nearMissTimer, coinCombo, coinComboTimer;
 let runCoins, runNearMisses, runMaxCombo;

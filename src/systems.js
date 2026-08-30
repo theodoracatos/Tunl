@@ -79,7 +79,11 @@ function makeCoin(wx) {
     const visCy  = centerAt(wx);
     const visTop = visCy - _halfGap;
     const visBot = visCy + _halfGap;
-    const buf = COIN_R * 2;
+    // Type isn't rolled until after coinY is picked below, so the clearance buffer
+    // has to reserve room for the largest possible size (constants.js
+    // COIN_SIZE_MAX_MULT), not the average -- otherwise a rare magnet/bomb coin
+    // could land close enough to a wall to visually clip it.
+    const buf = COIN_R * COIN_SIZE_MAX_MULT * 2;
     const lo  = Math.max(bBase.top, visTop) + buf;
     const hi  = Math.min(bBase.bot, visBot) - buf;
     if (hi <= lo) return null;
@@ -88,22 +92,50 @@ function makeCoin(wx) {
     const coinY  = Math.max(lo, Math.min(hi, cy + (rng() - 0.5) * 2 * margin));
     const r = rng();
     let type = 'gold';
-    if (_prog >= 0.55) {
-        // score ~77+: all types including magnet
-        const blueEnd = lerp(0.60, 0.44, _prog);
-        const redEnd  = lerp(0.77, 0.61, _prog);
-        type = r < blueEnd ? 'gold' : r < redEnd ? 'blue' : r < 0.82 ? 'red' : r < 0.85 ? 'green' : 'orange';
-    } else if (_prog >= 0.38) {
-        // score ~40-77: gold, slow, shield, bullets
-        const blueEnd = lerp(0.64, 0.56, _prog);
-        const redEnd  = lerp(0.82, 0.72, _prog);
-        type = r < blueEnd ? 'gold' : r < redEnd ? 'blue' : r < 0.80 ? 'red' : 'orange';
+    if (_prog >= 0.38) {
+        // score 34+: weighted shares that sum to 1, normalized against whatever's
+        // left, rather than the old chain of sequential thresholds. That older shape
+        // is what let shield's real share crater to ~2-3.5% for its first third
+        // (score 34-71) -- right as mines start appearing -- purely because it was
+        // computed as "whatever's left after blue" instead of being given an
+        // explicit floor (UX audit, Befund 3 / Konzept 07). wBlue/wOrange stay flat
+        // at their old approximate values (continuity with the previous curve);
+        // wRed now has a real floor at introduction and grows to the same ceiling
+        // (21%) the old curve reached at max difficulty.
+        const t     = Math.min((_prog - 0.38) / 0.62, 1); // 0 at score ~34, 1 at score ~233
+        const wBlue   = 0.17;
+        const wRed    = lerp(0.09, 0.21, t);
+        const wOrange = 0.14;
+        // Magnet unlocks at score 71 same as before. Its base share now grows with
+        // _prog2 (3% -> 6% from score ~233 to ~900) instead of being pinned at a flat
+        // 3% forever -- a long marathon run is exactly where a magnet is most
+        // "run-defining" for chaining combos, so it shouldn't stay as rare there as
+        // it is early on. greenDroughtBias layers a soft, uncapped-frequency (but
+        // capped-strength) pity nudge on top -- see constants.js GREEN_DROUGHT_*
+        // doc and the greenClock reset below.
+        let wGreen = 0;
+        if (_prog >= 0.55) {
+            const greenBase   = lerp(0.03, 0.06, _prog2);
+            const droughtBias = Math.min(1 + greenClock / GREEN_DROUGHT_SOFT_SEC, GREEN_DROUGHT_CAP);
+            wGreen = greenBase * droughtBias;
+        }
+        const wGold = Math.max(0, 1 - wBlue - wRed - wOrange - wGreen);
+        const cumGold   = wGold;
+        const cumBlue   = cumGold + wBlue;
+        const cumRed    = cumBlue + wRed;
+        const cumOrange = cumRed + wOrange;
+        type = r < cumGold ? 'gold' : r < cumBlue ? 'blue' : r < cumRed ? 'red' : r < cumOrange ? 'orange' : 'green';
     } else if (_prog >= 0.22) {
         // score ~12-40: gold and slow time only
         type = r < 0.72 ? 'gold' : 'blue';
     }
     // score 0-12: gold only
     if (coinBlockedByStal(wx, coinY)) return null;
+    // Magnet soft-pity reset: only once a green roll actually clears placement, same
+    // reasoning as the poison/bomb clocks below -- resetting on the roll itself
+    // (before this check) would mean the ~90%-rejected candidates keep quietly
+    // eating the drought counter without a magnet ever actually appearing.
+    if (type === 'green') greenClock = 0;
     // Poison/bomb: rare events layered on top of the ladder above once there's some
     // shard economy to matter (score ~40+, same gate as red/orange). Deliberately
     // checked here, AFTER the placement rejection above, not before it: an earlier
@@ -144,12 +176,16 @@ function maintainCoins() {
 }
 
 function checkCoinCollection() {
-    const hitR = activeSkin === 1 ? COIN_HIT_R * masteryLerp(1, 1.5, 1.7) : COIN_HIT_R;
-    const r2 = (PR + hitR) * (PR + hitR);
+    const baseHitR = activeSkin === 1 ? COIN_HIT_R * masteryLerp(1, 1.5, 1.7) : COIN_HIT_R;
     for (const arr of [coins, chicaneCoins]) for (const coin of arr) {
         if (coin.collected) continue;
         const sx = coin.wx - scrollX;
         if (sx < -60 || sx > W + 60) continue;
+        // Hitbox scales with the same per-type size multiplier as the drawn coin
+        // (constants.js COIN_SIZE_MULT) -- a visually bigger rare pickup shouldn't
+        // have a smaller effective reach than a common one right next to it.
+        const hitR = baseHitR * (COIN_SIZE_MULT[coin.type] || 1.0);
+        const r2 = (PR + hitR) * (PR + hitR);
         const dx = PX - sx, dy = py - coin.y;
         if (dx*dx + dy*dy < r2) {
             coin.collected = true;

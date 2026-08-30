@@ -189,6 +189,7 @@ function update(dt) {
     // makeCoin() in systems.js for where these get consumed.
     poisonClock += dt;
     bombClock   += dt;
+    greenClock  += dt;
 
     // ── Ghost (constants.js GHOST_STEP) ──────────────────────────────
     // Record this run, and replay today's best alongside it. Both are indexed by

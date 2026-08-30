@@ -31,6 +31,21 @@ const DEV_INVINCIBLE = false; // set true to disable all deaths (testing only)
 // Coin constants
 const COIN_R          = W  * 0.009;   // visual radius
 const COIN_HIT_R      = W  * 0.032;   // collection radius (generous)
+
+// Size-coded rarity (UX audit, Konzept 06): a second signal channel independent of
+// color/shape -- common types (gold, blue) stay at the base COIN_R, the two
+// "occasional" state coins (shield, ammo) step up, and the two rarest positive
+// events (magnet, bomb) step up again, so a glance at size alone hints at how much
+// a pickup should matter. Poison is deliberately excluded: it already reads as
+// distinct via its own silhouette + drip motion (see draw.js), not size -- making a
+// hazard bigger would read as "more valuable," the opposite of the intent. Applied
+// to both the drawn radius (draw.js) and the collection hitbox (systems.js
+// checkCoinCollection), so the hitbox never outgrows what the player can see.
+// COIN_SIZE_MAX_MULT is the placement code's (systems.js makeCoin) worst-case
+// clearance buffer -- type isn't known yet when a coin's corridor position is
+// picked, so it has to reserve room for the largest possible coin, not the average.
+const COIN_SIZE_MULT     = { gold: 1.0, blue: 1.0, red: 1.15, orange: 1.15, green: 1.35, bomb: 1.35 };
+const COIN_SIZE_MAX_MULT = 1.35;
 const GAP_PER_COIN    = H  * 0.06;    // bonus halfGap added per coin
 const GAP_BONUS_MAX   = H  * 0.15;    // cap: max halfGap bonus
 const GAP_DECAY       = H  * 0.015;   // bonus lost per second
@@ -214,6 +229,19 @@ const BOMB_RADIUS = W * 0.30;
 // good run has real odds of at least one.
 const POISON_INTERVAL_SEC = 20; // avg real seconds between poison coins
 const BOMB_INTERVAL_SEC   = 16; // avg real seconds between bomb coins
+
+// ── Magnet (green) soft pity ─────────────────────────────────────────
+// UX audit, Konzept 07: unlike poison/bomb, magnet is not force-overridden onto the
+// next coin once a clock elapses -- that would make it feel scheduled instead of
+// rare. Instead greenClock (state.js, incremented every play-frame like poisonClock/
+// bombClock) only *biases the weighted roll* in makeCoin() upward the longer it's
+// been since a magnet coin actually cleared placement, capped at
+// GREEN_DROUGHT_CAP so a long drought shortens the odds without ever guaranteeing
+// the next coin. GREEN_DROUGHT_SOFT_SEC is the real-seconds reference the bias
+// ramps over -- reaching full GREEN_DROUGHT_CAP strength around this many seconds
+// without one.
+const GREEN_DROUGHT_SOFT_SEC = 40;
+const GREEN_DROUGHT_CAP      = 2.0;
 
 // Poison's runCoins penalty (this run's pending shard bank -- see update.js die()) is a
 // percentage of the current pool, not a flat amount -- deliberately, on the explicit
