@@ -3,6 +3,22 @@ import WebKit
 import GameKit
 import AVFoundation
 
+// Dynamic Island/notch clearance for the title screen's icon rail (CLAUDE.md
+// Concept A). TunlApp.swift's .ignoresSafeArea() (plus its manual window-transform
+// rotation trick for LandscapeLeft/Right, rather than a real interface-orientation
+// change) leaves WebKit's own CSS env(safe-area-inset-*) with nothing to report --
+// confirmed via an on-screen debug readout, always 0 even with viewport-fit=cover
+// set. UIKit's safeAreaInsets on the webview itself stays correct across both, so
+// that's what gets pushed into JS instead, through safeAreaInsetsDidChange (fires
+// on rotation too, not just initial layout).
+final class TunlWebView: WKWebView {
+    var onSafeAreaChange: ((UIEdgeInsets) -> Void)?
+    override func safeAreaInsetsDidChange() {
+        super.safeAreaInsetsDidChange()
+        onSafeAreaChange?(safeAreaInsets)
+    }
+}
+
 struct GameView: UIViewRepresentable {
 
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -44,8 +60,11 @@ struct GameView: UIViewRepresentable {
 
         context.coordinator.authenticateGameCenter()
 
-        let webView = WKWebView(frame: .zero, configuration: config)
+        let webView = TunlWebView(frame: .zero, configuration: config)
         context.coordinator.webView = webView
+        webView.onSafeAreaChange = { [weak coordinator = context.coordinator] insets in
+            coordinator?.pushSafeAreaInsets(insets)
+        }
         webView.uiDelegate = context.coordinator
         webView.navigationDelegate = context.coordinator
         webView.scrollView.isScrollEnabled = false
@@ -156,6 +175,13 @@ struct GameView: UIViewRepresentable {
                     print("Game Center auth failed: \(error.localizedDescription)")
                 }
             }
+        }
+
+        // See TunlWebView's doc comment (above GameView) for why this goes through
+        // UIKit's safeAreaInsets instead of CSS env(safe-area-inset-*).
+        func pushSafeAreaInsets(_ insets: UIEdgeInsets) {
+            let json = "{\"safeInsetLeft\":\(insets.left),\"safeInsetRight\":\(insets.right)}"
+            webView?.evaluateJavaScript("window._tunlNativeUpdate && window._tunlNativeUpdate(\(json))")
         }
 
         private func rootViewController() -> UIViewController? {
@@ -292,6 +318,11 @@ struct GameView: UIViewRepresentable {
             GameView.killPressInteractions(in: webView)
             Task { await self.iap.refreshEntitlements() }
             ads.start()
+            // Belt-and-braces alongside TunlWebView.onSafeAreaChange: that fires on
+            // every layout pass including the first, but pushing here too costs
+            // nothing and guarantees the icon rail has real insets by the time the
+            // title screen's very first frame draws, not just by its second.
+            pushSafeAreaInsets(webView.safeAreaInsets)
         }
 
         func webView(_ webView: WKWebView,

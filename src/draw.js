@@ -1213,13 +1213,7 @@ function drawWorld() {
         ctx.rotate(pitchAngle);
         ctx.translate(-PX, -py);
 
-        // CONCEPT A: this cone used to sit hidden behind the always-on missions
-        // list at this exact PX position during a brief post-title startRamp<1
-        // window; with the ship body itself also now skipped on 'title' below,
-        // rendering just the flame with no ship behind it would read as a
-        // stray glitch, so 'title' is dropped here too (holding is never true
-        // on title anyway -- input.js always returns early before reaching it).
-        if ((holding || startRamp < 1) && phase === 'play') {
+        if ((holding || startRamp < 1) && (phase === 'play' || phase === 'title')) {
             const pulse = 0.75 + 0.25 * Math.sin(gtime * 22);
             for (const ns of [-1, 1]) {
                 const nx = PX - PR * 0.74, ny = py + ns * PR * 0.50;
@@ -1279,15 +1273,14 @@ function drawWorld() {
             }
         }
 
-        // CONCEPT A: skip the in-scene idle ship on the title screen -- it used
-        // to sit hidden behind the always-on missions list at this same PX
-        // position; with that list gone it read as a confusing second, dimmer
-        // ship next to the hero render in drawTitleScreen(). The thrust-cone
-        // effects above stay untouched (they still cover the tap-to-start
-        // transition moment), only the ship body itself is skipped here.
-        if (phase !== 'title') {
-            drawShip(PX, py, PR, phase === 'dead' ? '#ff4040' : sk.color, sr, sg, sb, 20);
-        }
+        // CONCEPT A: the in-scene ship at PX (this same idle render used to sit
+        // hidden behind the always-on missions list at this exact spot) stays
+        // visible on the title screen too -- direct feedback that the tunnel
+        // read as lifeless/ship-less without it once that list was removed.
+        // It reads as a distinct thing from the big hero render in
+        // drawTitleScreen() (dim, in the tunnel, part of the "world"; the hero
+        // is a bright foreground portrait), not a confusing duplicate.
+        drawShip(PX, py, PR, phase === 'dead' ? '#ff4040' : sk.color, sr, sg, sb, 20);
         ctx.restore();
     }
 
@@ -2077,7 +2070,11 @@ function drawTitleScreen() {
         items.push({ key: 'shop',     glyph: '\u{1F6D2}' });
         items.push({ key: 'settings', glyph: '⚙' });
 
-        const railCX  = LAND ? W - Math.max(W * 0.06, 46) : W / 2;
+        // SAFE_R (constants.js) clears the Dynamic Island/notch in landscape --
+        // without it this rail sat far enough right to land under the island on
+        // real hardware (only ever visible on an actual device/Simulator, a
+        // desktop browser has no island to hide it).
+        const railCX  = LAND ? W - Math.max(W * 0.06, 46) - SAFE_R : W / 2;
         const iconR   = LAND ? Math.min(UI_H * 0.032, 22) : Math.min(H * 0.032, 20);
         const iconGap = iconR * 3.0;
         const railY0  = LAND ? H / 2 - ((items.length - 1) * iconGap) / 2 : H - iconR * 2.4;
@@ -2239,14 +2236,24 @@ function drawTitleScreen() {
         }
 
         const gridCX    = W / 2;
-        const rowY1     = H * 0.42;
-        const rowY2     = H * 0.72;
-        const cellR     = Math.min(UI_H * 0.050, H * 0.11);
+        const rowY1     = H * 0.40;
+        const rowY2     = H * 0.78;
+        // Bigger than the base screen's old inline grid ever could afford --
+        // this sheet has nothing else competing for the space, so the ships
+        // themselves carry the screen instead of the (already-generous) text
+        // around them.
+        const cellR     = Math.min(UI_H * 0.075, H * 0.16);
         const cellGap   = Math.max(cellR * 3.0, (W * 0.72) / GRID_COLS);
         const rowHalfW  = (GRID_COLS - 1) * cellGap / 2;
         const startXg   = gridCX - rowHalfW;
 
         _skinBtnRects = [];
+        // Tracks the selected ship's own position so the active-perk line below
+        // can sit directly under IT, not at some fixed spot that only lines up
+        // when the selection happens to be centred (Cockpit-Kritik follow-up:
+        // the perk used to float under the grid's centre regardless of which
+        // ship, in either row, was actually selected).
+        let selectedCx = gridCX, selectedCy = rowY1;
 
         for (let i = 0; i < SKINS.length; i++) {
             const row = Math.floor(i / GRID_COLS);
@@ -2289,6 +2296,8 @@ function drawTitleScreen() {
             _skinBtnRects.push({ cx, cy, r: cellR * 1.5 });
             const [sr, sg, sb] = SKINS[i].shadow;
             if (selected) {
+                selectedCx = cx;
+                selectedCy = cy;
                 ctx.save();
                 shipPath(cx, cy, cellR * 1.15);
                 ctx.strokeStyle = `rgba(${sr},${sg},${sb},0.50)`;
@@ -2330,9 +2339,12 @@ function drawTitleScreen() {
             ctx.shadowBlur  = 0;
         }
 
-        // Active perk, below the whole grid -- a simple fixed slot now that it
-        // no longer has to squeeze into the gap between two rows on the base
-        // screen (Cockpit-Kritik observation 4).
+        // Active perk, directly under the SELECTED ship's own name (selectedCx/
+        // selectedCy, tracked in the loop above) -- not a fixed spot under the
+        // grid's centre, which only ever lined up by coincidence. The row gap
+        // (rowY2-rowY1 above) is sized generously enough that this always
+        // clears row 2 even when row 1's ship is selected; clamped horizontally
+        // so a wide string doesn't run off-screen for an edge-column ship.
         const activePerkTpl = T.skinPerks && T.skinPerks[activeSkin];
         const activePerk = activePerkTpl && activePerkTpl.replace('{v}', skinPerkValue(activeSkin));
         if (activePerk) {
@@ -2345,10 +2357,13 @@ function drawTitleScreen() {
                 perkFsz = Math.max(perkFsz * maxW / textW, FS * 0.012);
                 ctx.font = `${perkFsz}px 'Courier New',monospace`;
             }
+            const perkHalfW = ctx.measureText(activePerk).width / 2;
+            const perkX = Math.min(Math.max(selectedCx, 20 + perkHalfW), W - 20 - perkHalfW);
+            const perkY = selectedCy + cellR * 1.75;
             ctx.fillStyle   = `rgba(${sr},${sg},${sb},0.85)`;
             ctx.shadowColor = 'rgba(0,0,0,0.90)';
             ctx.shadowBlur  = 4;
-            ctx.fillText(activePerk, gridCX, rowY2 + cellR * 2.3);
+            ctx.fillText(activePerk, perkX, perkY);
             ctx.shadowBlur  = 0;
         }
 
