@@ -2057,11 +2057,16 @@ function drawTitleScreen() {
     // (inside the ALL SHIPS sheet below) instead of competing with the logo for
     // the same screen (Cockpit-Kritik observations 2 and 5).
     if (best > 0) {
-        ctx.font        = `bold ${FS * 0.032}px 'Courier New',monospace`;
+        // 0.70H, not something closer to the level/planet lines above -- the
+        // in-scene idle ship (PX/py, restored per feedback above) rests right
+        // around 0.55H at this same titleX-ish x range, so anything between
+        // roughly 0.49H and 0.62H runs straight through it. Below the ship
+        // instead of just under the header block.
+        ctx.font        = `bold ${FS * 0.038}px 'Courier New',monospace`;
         ctx.fillStyle   = `rgba(190,212,255,${a * 0.98})`;
         ctx.shadowColor = 'rgba(0,0,0,0.90)';
         ctx.shadowBlur  = 3;
-        ctx.fillText(`${T.allTime}  ${best}`, titleX, LAND ? H * 0.47 : H / 2 - H * 0.038);
+        ctx.fillText(`${T.allTime}  ${best}`, titleX, LAND ? H * 0.70 : H / 2 - H * 0.038);
         ctx.shadowBlur  = 0;
     }
 
