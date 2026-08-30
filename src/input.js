@@ -33,6 +33,7 @@ function onDown(e) {
         // Language panel intercepts all taps when open
         if (showSettings) {
             if (_privacyChoicesBtnRect && inRect(cx, cy, _privacyChoicesBtnRect)) {
+                sfxUiTap();
                 window.webkit?.messageHandlers?.ads?.postMessage({ action: 'privacyOptions' });
                 return;
             }
@@ -40,72 +41,91 @@ function onDown(e) {
                 musicOn = !musicOn;
                 localStorage.setItem('tunnel_music', musicOn ? '1' : '0');
                 if (musicOn) _startTitleMusic(); else _fadeTitleMusic();
+                sfxUiToggle(musicOn);
                 return;
             }
             if (_btnFxRect && inRect(cx, cy, _btnFxRect)) {
                 fxOn = !fxOn;
                 localStorage.setItem('tunnel_fx', fxOn ? '1' : '0');
+                sfxUiToggle(fxOn);
                 return;
             }
             for (const b of _langBtnRects) {
                 if (inRect(cx, cy, b)) {
                     setLang(b.code);
+                    sfxUiSelect();
                     return;
                 }
             }
             // Tap outside the panel closes it; a tap inside on empty space does nothing.
-            if (!_settingsPanelRect || !inRect(cx, cy, _settingsPanelRect)) showSettings = false;
+            if (!_settingsPanelRect || !inRect(cx, cy, _settingsPanelRect)) { showSettings = false; sfxUiClose(); }
             return;
         }
         if (showCurrencyInfo) {
             // Tap anywhere outside the panel closes it; a tap inside on the body text does
             // nothing (no buttons live inside this panel, unlike Shop/Settings).
-            if (!_currencyInfoPanelRect || !inRect(cx, cy, _currencyInfoPanelRect)) showCurrencyInfo = false;
+            if (!_currencyInfoPanelRect || !inRect(cx, cy, _currencyInfoPanelRect)) { showCurrencyInfo = false; sfxUiClose(); }
             return;
         }
         if (showShop) {
             if (_removeAdsBtnRect && inRect(cx, cy, _removeAdsBtnRect)) {
+                sfxUiTap();
                 window.webkit?.messageHandlers?.iap?.postMessage({ action: 'purchase', product: 'remove_ads' });
                 return;
             }
             if (_unlockAllShipsBtnRect && inRect(cx, cy, _unlockAllShipsBtnRect)) {
+                sfxUiTap();
                 window.webkit?.messageHandlers?.iap?.postMessage({ action: 'purchase', product: 'unlock_all_ships' });
                 return;
             }
             if (_restoreBtnRect && inRect(cx, cy, _restoreBtnRect)) {
+                sfxUiTap();
                 window.webkit?.messageHandlers?.iap?.postMessage({ action: 'restore' });
                 return;
             }
             // Tap outside the panel closes it; a tap inside on empty space does nothing.
-            if (!_shopPanelRect || !inRect(cx, cy, _shopPanelRect)) showShop = false;
+            if (!_shopPanelRect || !inRect(cx, cy, _shopPanelRect)) { showShop = false; sfxUiClose(); }
             return;
         }
 
         if (_settingsBtnRect && inRect(cx, cy, _settingsBtnRect)) {
             showSettings = true;
+            sfxUiTap();
             return;
         }
         if (_shopBtnRect && inRect(cx, cy, _shopBtnRect)) {
             showShop = true;
+            sfxUiTap();
             return;
         }
         if (_leaderboardBtnRect && inRect(cx, cy, _leaderboardBtnRect)) {
+            sfxUiTap();
             window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'show' });
             return;
         }
         if (_challengeBtnRect && inRect(cx, cy, _challengeBtnRect)) {
+            sfxUiTap();
             window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'challenge' });
             return;
         }
         if (_currencyInfoBtnRect) {
             const b = _currencyInfoBtnRect, dx = cx - b.cx, dy = cy - b.cy;
-            if (dx*dx + dy*dy < b.r*b.r) { showCurrencyInfo = true; return; }
+            if (dx*dx + dy*dy < b.r*b.r) { showCurrencyInfo = true; sfxUiTap(); return; }
         }
         for (let i = 0; i < _skinBtnRects.length; i++) {
             const b = _skinBtnRects[i], dx = cx - b.cx, dy = cy - b.cy;
-            if (dx*dx + dy*dy < b.r*b.r && (unlockedSkins & (1 << i))) {
-                activeSkin = i;
-                localStorage.setItem('tunnel_skin', activeSkin);
+            // Hit-test first, THEN branch on locked/unlocked -- a locked skin must still
+            // consume the tap (sfxUiDenied + return) rather than fall through to the
+            // "nothing hit" branch below, which used to misread a locked-skin tap as an
+            // empty-area press and arm it to start a run on release.
+            if (dx*dx + dy*dy < b.r*b.r) {
+                if (unlockedSkins & (1 << i)) {
+                    activeSkin = i;
+                    localStorage.setItem('tunnel_skin', activeSkin);
+                    sfxUiSelect(i);
+                } else {
+                    sfxUiDenied();
+                }
                 return;
             }
         }
@@ -130,6 +150,7 @@ function onDown(e) {
         const cx = (e.clientX - rect.left) * (W / rect.width);
         const cy = (e.clientY - rect.top)  * (H / rect.height);
         if (_homeBtnRect && inRect(cx, cy, _homeBtnRect)) {
+            sfxUiTap();
             window.webkit?.messageHandlers?.ads?.postMessage({ action: 'interstitialRequest', score });
             titleScreen(); return;
         }
@@ -137,6 +158,7 @@ function onDown(e) {
         // card to the OS share sheet and leaves the death screen up, so the player
         // comes back to the same screen afterwards and can still hit PLAY AGAIN.
         if (_shareBtnRect && inRect(cx, cy, _shareBtnRect)) {
+            sfxUiTap();
             shareRun();
             window.webkit?.messageHandlers?.haptic?.postMessage('light');
             return;

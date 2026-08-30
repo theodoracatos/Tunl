@@ -4,6 +4,9 @@ document.addEventListener('contextmenu', e => e.preventDefault());
 // (see GameView.swift's IAPManager) so JS state stays in sync with StoreKit.
 window._tunlNativeUpdate = function (state) {
     if (typeof state.removeAdsOwned === 'boolean') {
+        // Fires the purchase-success chime only on the false->true transition, never on
+        // the entitlement-sync call every launch makes for a player who already owns it.
+        if (state.removeAdsOwned && !removeAdsOwned) sfxUiPurchaseSuccess();
         removeAdsOwned = state.removeAdsOwned;
         localStorage.setItem('tunnel_remove_ads', removeAdsOwned ? '1' : '0');
     }
@@ -11,6 +14,7 @@ window._tunlNativeUpdate = function (state) {
     // current SKINS bit here, not just remembering the flag, means a purchase takes
     // effect immediately without waiting for the next die()/unlock-loop pass or a reload.
     if (typeof state.allShipsOwned === 'boolean') {
+        if (state.allShipsOwned && !allShipsOwned) sfxUiPurchaseSuccess();
         allShipsOwned = state.allShipsOwned;
         localStorage.setItem('tunnel_all_ships', allShipsOwned ? '1' : '0');
         if (allShipsOwned) {

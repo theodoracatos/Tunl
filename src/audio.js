@@ -784,6 +784,146 @@ function magnetLoopOn() {
     });
 }
 
+// ── UI sfx ───────────────────────────────────────────────────────────
+// Everything below is menu/HUD feedback, not gameplay feedback -- deliberately smaller
+// and drier than any pickup/hazard sfx above so the menu doesn't compete with the run.
+
+// Generic navigation tap: opens a panel (Settings/Shop/Leaderboard/Challenge/Privacy
+// Options) or fires a plain forward action (Home, Share) with no selection semantics of
+// its own. One shared sound for all of those rather than one each -- they're all the
+// same gesture ("acknowledge the tap"), and a menu that plays a different blip per
+// button reads as busier, not more polished.
+function sfxUiTap() {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    const o = _ac.createOscillator(), g = _ac.createGain();
+    o.connect(g); g.connect(_ac.destination);
+    o.type = 'triangle'; o.frequency.value = 720;
+    g.gain.setValueAtTime(0.07, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+    o.start(t); o.stop(t + 0.06);
+}
+
+// Panel dismiss (tap outside Settings/Shop/Currency-Info). The mirror of sfxUiTap --
+// lower and a hair quieter so "close" reads as the reverse gesture of "open" without
+// inventing a third UI timbre.
+function sfxUiClose() {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    const o = _ac.createOscillator(), g = _ac.createGain();
+    o.connect(g); g.connect(_ac.destination);
+    o.type = 'sine'; o.frequency.value = 480;
+    g.gain.setValueAtTime(0.05, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
+    o.start(t); o.stop(t + 0.05);
+}
+
+// Music/FX toggle. Deliberately does NOT gate on fxOn -- this is the control that turns
+// fxOn itself on and off, so it has to stay audible on the exact tap that mutes it, or
+// there is no confirmation that the mute even registered. Two mirrored two-note runs
+// (rising for on, falling for off) rather than one tone, so the direction is audible
+// even with the screen not in view (e.g. reaching for the phone).
+function sfxUiToggle(on) {
+    if (!_ac) return;
+    const t = _ac.currentTime;
+    const freqs = on ? [500, 700] : [700, 500];
+    freqs.forEach((freq, i) => {
+        const o = _ac.createOscillator(), g = _ac.createGain();
+        o.connect(g); g.connect(_ac.destination);
+        o.type = 'triangle'; o.frequency.value = freq;
+        const t0 = t + i * 0.05;
+        g.gain.setValueAtTime(0.06, t0);
+        g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.06);
+        o.start(t0); o.stop(t0 + 0.07);
+    });
+}
+
+// Confirmed choice: skin select, language select. A real decision (not just navigating),
+// so it gets a friendlier two-note lift instead of the flat sfxUiTap -- same idea as
+// sfxCoin's climb. `skinIdx` (0-7, SKINS order in constants.js) is optional: pass it from
+// the skin picker so each ship rings its own step of a major-pentatonic run (PEARL lowest,
+// SOLARIS highest), turning "click through all 8 ships" into a small instrument rather
+// than one identical blip eight times; omitted (language picker, or any future caller
+// with no per-item identity) falls back to the plain two-note lift.
+function sfxUiSelect(skinIdx) {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    const STEPS = [0, 2, 4, 5, 7, 9, 11, 12];  // major scale, one step per ship, low->high
+    const mul = Number.isInteger(skinIdx)
+        ? Math.pow(2, STEPS[Math.min(Math.max(skinIdx, 0), STEPS.length - 1)] / 12)
+        : 1;
+    [660 * mul, 880 * mul].forEach((freq, i) => {
+        const o = _ac.createOscillator(), g = _ac.createGain();
+        o.connect(g); g.connect(_ac.destination);
+        o.type = 'triangle'; o.frequency.value = freq;
+        const t0 = t + i * 0.055;
+        g.gain.setValueAtTime(0.08, t0);
+        g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.09);
+        o.start(t0); o.stop(t0 + 0.10);
+    });
+}
+
+// "Can't do that" -- tapping a locked skin. Deliberately flat and dull (a square wave
+// with no pitch movement) rather than anything from the poison/hazard family: this is a
+// neutral no, not a punishment, so it shouldn't borrow a "you got hurt" timbre.
+function sfxUiDenied() {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    const o = _ac.createOscillator(), g = _ac.createGain();
+    o.connect(g); g.connect(_ac.destination);
+    o.type = 'square'; o.frequency.value = 220;
+    g.gain.setValueAtTime(0.05, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+    o.start(t); o.stop(t + 0.08);
+}
+
+// Purchase/restore actually completed (main.js's _tunlNativeUpdate, on the
+// removeAdsOwned/allShipsOwned false->true transition only -- never on every launch's
+// entitlement sync). The one moment JS knows real money changed hands, so it earns a
+// small fanfare rather than another sfxUiTap: a warm major-triad climb, no boom layer
+// (this is a reward, not sfxBomb's charge-then-detonate).
+function sfxUiPurchaseSuccess() {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+        const o = _ac.createOscillator(), g = _ac.createGain();
+        o.connect(g); g.connect(_ac.destination);
+        o.type = 'triangle'; o.frequency.value = freq;
+        const t0 = t + i * 0.08;
+        const peak = i === 3 ? 0.16 : 0.12;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(peak, t0 + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + (i === 3 ? 0.55 : 0.22));
+        o.start(t0); o.stop(t0 + 0.6);
+    });
+}
+
+// One-time "power on" stinger for the title screen, standing in for the splash screen
+// itself: the native launch screen (black, pre-JS) can't play anything JS-driven no
+// matter how it's optimized, so this fires instead on the very first titleScreen() call
+// of the app's lifetime (see _bootChimePlayed below, set from lifecycle.js). Purely
+// synthesized -- no fetch, no decode -- so it's audible the instant the title screen
+// first draws, not gated behind the_mountain_documentary.mp3's network load like the
+// title music is. Deliberately NOT replayed on every return-to-title after a death;
+// a good run is 20-36 real seconds (see world.js), so a sound played every time would
+// wear out inside the first few runs of a single sitting.
+let _bootChimePlayed = false;
+function sfxBoot() {
+    if (_bootChimePlayed) return;
+    _bootChimePlayed = true;
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    const o = _ac.createOscillator(), g = _ac.createGain();
+    o.connect(g); g.connect(_ac.destination);
+    o.type = 'sine';
+    o.frequency.setValueAtTime(180, t);
+    o.frequency.exponentialRampToValueAtTime(900, t + 0.26);
+    g.gain.setValueAtTime(0.001, t);
+    g.gain.linearRampToValueAtTime(0.10, t + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+    o.start(t); o.stop(t + 0.3);
+}
+
 function magnetLoopOff() {
     if (!_mNode) return;
     const t = _ac.currentTime;

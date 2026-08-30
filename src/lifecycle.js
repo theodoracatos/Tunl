@@ -43,6 +43,7 @@ function titleScreen() {
     seedDailyVariety(_dt.getUTCFullYear() * 10000 + (_dt.getUTCMonth() + 1) * 100 + _dt.getUTCDate());
     refreshWave();
     _startTitleMusic();
+    sfxBoot();
 }
 
 function startPlay() {
