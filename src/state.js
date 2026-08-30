@@ -2,12 +2,12 @@
 
 let phase, py, vy, holding, scrollX, score, newBest, newDailyBest, startRamp;
 // True once the player has pressed hold at least once during the current run. Gates
-// gravity in update.js's physics step (see comment there) -- without it, a run that
-// begins with holding already false (the title-screen tap-to-confirm path releases
-// the player's finger the instant startPlay() fires, see input.js onUp) free-falls
-// from a centered launch into the tunnel wall in well under a second, before a
-// first-time player has any chance to realize they need to press again. Reset false
-// in startPlay(), flipped true wherever input.js sets holding = true.
+// gravity in update.js's physics step (see comment there) -- without it, a run (which
+// always begins with holding false now, title start and PLAY AGAIN alike) free-falls
+// from a centered launch into the tunnel wall in well under a second, before the player
+// has any chance to realize they need to press again. Reset false in startPlay(),
+// flipped true wherever input.js sets holding = true, or by the HOLD_GATE_MAX_SEC
+// timeout in update.js.
 let hasHeldThisRun;
 // Real seconds elapsed in-flight while hasHeldThisRun is still false. Once this passes
 // IDLE_HINT_DELAY (draw.js), a "HOLD TO FLY" nudge fades in above the parked ship --
@@ -126,15 +126,6 @@ let streak = parseInt(localStorage.getItem('tunnel_streak') || '0');
 // nowhere else -- see the Stardust doc comment in constants.js for why SOLARIS is priced
 // in this instead of shards.
 let stardust = parseInt(localStorage.getItem('tunnel_stardust') || '0');
-// Lifetime run count (never reset at the day boundary, unlike dailyRuns). Sole consumer
-// is the obstacle-free runway on a player's very first run (lifecycle.js
-// FIRST_RUN_RUNWAY_WX). There was briefly also a title-screen control hint gated on this
-// -- removed, see the Onboarding section in CLAUDE.md for why.
-//
-// Note this key doesn't exist for players upgrading from 4.x, so they all read 0 on
-// first launch and get the first-run runway once. Harmless (one slightly emptier run),
-// and not worth a migration.
-let runsTotal = parseInt(localStorage.getItem('tunnel_runs_total') || '0');
 let _homeBtnRect = null, _playBtnRect = null, _shareBtnRect = null;
 let showSettings = false;
 let _settingsBtnRect = null;
@@ -189,6 +180,15 @@ let ghostTrack;   // this run's recording, one byte per GHOST_STEP of scrollX
 let ghostY;       // interpolated ghost screen y this frame, or null once it's behind
 let ghostPitch;   // ghost's nose angle, derived from the track's local slope (update.js)
 let ghostPassed;  // one-shot: has the player already outlasted the ghost this run
+
+// One-shot: has the player already flown past the all-time best death point this run
+// (bestSX, the dashed "PB" line in draw.js). Fires a notif + sfx + a gold ring pop the
+// frame it flips, same pattern as ghostPassed / onFire. pbFlash is the decaying pop,
+// decayed by update.js exactly like onFireFlash. Distinct from onFire (daily best):
+// onFire has usually already fired earlier in the run, but on the day's first run it is
+// suppressed entirely, so crossing the all-time line is the only in-flight marker there.
+let pbPassed;
+let pbFlash;
 
 // On fire: live, this-run signal that score has overtaken today's daily best (distinct
 // from newDailyBest, which is only computed once at death -- see update.js). Monotonic

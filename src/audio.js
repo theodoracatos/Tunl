@@ -604,6 +604,35 @@ function sfxOnFire() {
     });
 }
 
+// Furthest-ever stinger (update.js, the frame the ship passes the all-time best point).
+// A short bright rising arpeggio capped by a shimmering high ring -- grander than the
+// ghost-passed ping (sfxCombo(4)) because this is the deeper record, but shorter than
+// sfxMilestone / sfxMissionDone so it doesn't clutter a mid-flight moment. Triangle
+// body for punch, a sine tail on top for the "ring".
+function sfxPbPassed() {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    [659.25, 987.77, 1318.5].forEach((freq, i) => { // E5 B5 E6
+        const o = _ac.createOscillator(), g = _ac.createGain();
+        o.connect(g); g.connect(_ac.destination);
+        o.type = 'triangle'; o.frequency.value = freq;
+        const t0 = t + i * 0.06;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.15, t0 + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.26);
+        o.start(t0); o.stop(t0 + 0.30);
+    });
+    // High sine ring that outlasts the arpeggio by a beat -- the "gold" shimmer.
+    const r = _ac.createOscillator(), rg = _ac.createGain();
+    r.connect(rg); rg.connect(_ac.destination);
+    r.type = 'sine'; r.frequency.value = 1975.5; // B6
+    const rt = t + 0.14;
+    rg.gain.setValueAtTime(0.0001, rt);
+    rg.gain.exponentialRampToValueAtTime(0.09, rt + 0.02);
+    rg.gain.exponentialRampToValueAtTime(0.0001, rt + 0.55);
+    r.start(rt); r.stop(rt + 0.6);
+}
+
 function sfxMineExplode() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;

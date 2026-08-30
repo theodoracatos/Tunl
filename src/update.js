@@ -167,20 +167,40 @@ function update(dt) {
     refreshWave();
     score = Math.floor(scrollX / 60) + bonusScore;
 
-    // On fire: fires once, the frame live score first overtakes today's daily best.
-    // dailyBest > 0 gates the day's first run, where dailyBest is still 0 and score > 0
-    // would otherwise light this up at score 1 -- there's no record to beat yet on that
-    // run, just an empty one. (dailyRuns > 0 looks like the same gate but isn't: it's
-    // incremented in startPlay() before the run's first frame, so it's already >=1 by
-    // the time this code runs at all and never actually blocks anything.) Monotonic
-    // within a run (score only grows), so no un-set path needed -- draw.js and the ember
-    // spawn below just read the flag for the rest of the run.
-    if (!onFire && dailyBest > 0 && score > dailyBest) {
+    // On fire: fires once, the frame live score first overtakes the bar it has to beat.
+    // That bar is today's daily best, EXCEPT on the day's first run where dailyBest is
+    // still 0 -- there it falls back to the all-time best so a strong first run of the
+    // day still catches fire when it passes into record territory (the alternative,
+    // `dailyBest > 0` alone, left the day's first run unable to ignite at all no matter
+    // how far it flew). `_fireBar > 0` still guards the very first run a new player ever
+    // starts, where both are 0 and `score > 0` would otherwise light this up at score 1.
+    // (dailyRuns > 0 looks like the same gate but isn't: it's incremented in startPlay()
+    // before the run's first frame, so it's already >=1 by the time this code runs at
+    // all and never actually blocks anything.) Monotonic within a run (score only grows),
+    // so no un-set path needed -- draw.js and the ember spawn below just read the flag
+    // for the rest of the run.
+    const _fireBar = dailyBest || best;
+    if (!onFire && _fireBar > 0 && score > _fireBar) {
         onFire = true;
         onFireFlash = 1.0;
         pushNotif(PX + PR * 3, py - H * 0.07, 1.4, T.onFire, [255, 140, 30]);
         sfxOnFire();
         onFireLoopOn();
+        window.webkit?.messageHandlers?.haptic?.postMessage('light');
+    }
+
+    // Furthest ever: fires once, the frame the ship physically passes the all-time best
+    // death point (bestSX -- the same value draw.js draws the dashed "PB" line at). From
+    // here on every pixel is a new record, which is its own beat even though onFire (the
+    // daily bar above) has usually already fired earlier this run. bestSX > 0 mirrors the
+    // draw.js guard -- no line, no crossing. Not gated on score vs. best: the payoff is
+    // "past the line you can see", and bestSX is a distance so crossing it always means a
+    // deeper run than the one that set it.
+    if (!pbPassed && bestSX > 0 && scrollX + PX >= bestSX) {
+        pbPassed = true;
+        pbFlash = 1.0;
+        pushNotif(PX + PR * 3, py - H * 0.12, 1.4, T.pbPassed, [255, 210, 50]);
+        sfxPbPassed();
         window.webkit?.messageHandlers?.haptic?.postMessage('light');
     }
 
@@ -268,6 +288,9 @@ function update(dt) {
     // On-fire ignition pop decay -- faster than milestoneFlash, a single quick punch
     // rather than a lingering banner (onFire itself, not this, carries the rest of the run).
     onFireFlash = Math.max(0, onFireFlash - dt * 3.0);
+
+    // PB-crossing pop decay -- same shape as onFireFlash, a single quick gold ring.
+    pbFlash = Math.max(0, pbFlash - dt * 3.0);
 
     // Per-skin effects - only spawn while holding, clear timer when released
     if (phase === 'play') {

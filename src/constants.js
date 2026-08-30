@@ -280,16 +280,17 @@ const POISON_LOSS_PCT_MAX = 0.15;
 const LEVEL_INTRO_DUR  = 2.4; // total seconds visible
 const LEVEL_INTRO_FADE = 0.6; // seconds of that spent fading out at the end
 
-// Idle-hold gravity gate (update.js): a run that starts with holding already false (the
-// title-screen tap-to-confirm path, see input.js onUp) withholds gravity entirely until
-// the player's first press, so an unprepared first-time player isn't killed by a fall
-// they had no chance to react to. But that gate can't stay open forever -- a player who
-// never presses at all rides it as a straight, risk-free glide through the early corridor
-// (which is wide and roughly centered at this difficulty) and, if the daily seed is
-// forgiving, can drift to a surprisingly high score doing nothing at all. This caps the
-// grace at a few seconds -- past it, gravity engages exactly as if the gate had never
-// existed, so an unattended run still ends up falling like every other unheld ship.
-const HOLD_GATE_MAX_SEC = 3.0;
+// Idle-hold gravity gate (update.js): every run opens with holding false (both the
+// title-screen tap-to-confirm path and PLAY AGAIN, see input.js onDown/onUp) and
+// withholds gravity entirely until the player's first press, so the ship flies dead
+// level and an unprepared player isn't killed by a fall they had no chance to react to.
+// But that gate can't stay open forever -- a player who never presses at all rides it as
+// a straight, risk-free glide through the early corridor (which is wide and roughly
+// centered at this difficulty) and, if the daily seed is forgiving, can drift to a
+// surprisingly high score doing nothing at all. This caps the grace -- past it, gravity
+// engages exactly as if the gate had never existed, so an unattended run still ends up
+// falling like every other unheld ship.
+const HOLD_GATE_MAX_SEC = 2.25;
 
 // Shards banked per calendar day are capped so unlocks track *days played*, not just
 // *coins collected* -- without this a single long grind session could bank enough shards

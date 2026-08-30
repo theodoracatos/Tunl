@@ -7,6 +7,10 @@ function makeStal(wx, isTop) {
 }
 
 function maintainStalactites() {
+    // First stalactite is at STAL_START_WX (score ~25, set in startPlay) -- the opening
+    // stretch is a clean, obstacle-free intro on every run. It is a fixed world position,
+    // so the spawn horizon below always creates it off the right edge and it scrolls into
+    // view; it never pops in mid-screen.
     while (nextStalWx < scrollX + W + 600) {
         const spacing = stalSpacing() * (0.65 + rng() * 0.70);
         if (_prog > 0.40 && rng() < Math.min(lerp(0.24, 0.42, _prog2) * DAY_ARCHETYPES[_dayArchetype].chic, 0.62)) {

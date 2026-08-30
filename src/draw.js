@@ -640,11 +640,16 @@ function drawWorld() {
             const lineA  = Math.min(ahead > 0 ? ahead : 1, behind) * 0.75;
             if (lineA > 0.01) {
                 const lb = boundsAt(bestSX);
+                // pbFlash briefly whitens and thickens the line as the ship crosses it,
+                // so the moment lands on the line itself, not only on the ship's ring pop.
+                const fla = pbFlash || 0;
                 ctx.save();
-                ctx.strokeStyle = `rgba(255,210,50,${lineA})`;
-                ctx.lineWidth   = 1.5;
-                ctx.shadowColor = `rgba(255,200,40,${lineA * 0.8})`;
-                ctx.shadowBlur  = 8;
+                ctx.strokeStyle = fla > 0
+                    ? `rgba(${255},${Math.round(210 + 45 * fla)},${Math.round(50 + 150 * fla)},${Math.min(1, lineA + fla * 0.4)})`
+                    : `rgba(255,210,50,${lineA})`;
+                ctx.lineWidth   = 1.5 + fla * 2.5;
+                ctx.shadowColor = `rgba(255,200,40,${Math.min(1, lineA * 0.8 + fla * 0.6)})`;
+                ctx.shadowBlur  = 8 + fla * 14;
                 ctx.setLineDash([5, 4]);
                 ctx.beginPath();
                 ctx.moveTo(lx, lb.top - 4);
@@ -1135,6 +1140,24 @@ function drawWorld() {
         ctx.lineWidth   = Math.max(1, PR * 0.35 * ofa);
         ctx.shadowColor = 'rgba(255,130,30,0.9)';
         ctx.shadowBlur  = 20 * ofa;
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    // PB-crossing pop - one quick gold expanding ring the frame the ship passes the
+    // all-time best death point (pbFlash, set alongside pbPassed in update.js). Same
+    // shape as the on-fire pop above, gold instead of orange, so "new record" and
+    // "on fire" read as related beats without being the same colour.
+    if (pbFlash > 0 && phase === 'play') {
+        const pfa   = pbFlash;
+        const ringR = PR * (1.6 + (1 - pfa) * 9);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(PX, py, ringR, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255,210,50,${pfa * 0.85})`;
+        ctx.lineWidth   = Math.max(1, PR * 0.35 * pfa);
+        ctx.shadowColor = 'rgba(255,200,40,0.9)';
+        ctx.shadowBlur  = 20 * pfa;
         ctx.stroke();
         ctx.restore();
     }
@@ -2061,9 +2084,10 @@ function drawTitleScreen() {
     }
 
     // Tapping the title screen still starts a run (input.js) even with no visible
-    // "HOLD TO FLY" CTA here -- that instruction plays out live on the first run's
-    // runway instead (lifecycle.js's FIRST_RUN_RUNWAY_WX, update.js's onboarding
-    // hint). See CLAUDE.md Onboarding for why a text hint doesn't come back here.
+    // "HOLD TO FLY" CTA here -- that instruction plays out live on the run's
+    // obstacle-free opening stretch instead (lifecycle.js's STAL_START_WX, update.js's
+    // onboarding hint). See CLAUDE.md Onboarding for why a text hint doesn't come
+    // back here.
     //
     // CONCEPT A -- "Dock & Drawer" (see the Cockpit-Kritik audit this replaces).
     // Only three things stay on screen at once: the logo, one headline stat

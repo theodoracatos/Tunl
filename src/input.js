@@ -190,7 +190,10 @@ function onDown(e) {
     if (phase === 'dead' && deadT > 0.9) {
         if (!e) {
             window.webkit?.messageHandlers?.ads?.postMessage({ action: 'interstitialRequest', score });
-            startPlay(); holding = true; hasHeldThisRun = true; thrustOn(); return;
+            // No holding/hasHeldThisRun here -- every run, restart included, opens with the
+            // level glide (gravity gate, update.js) so the ship never drops before the
+            // player's first real press. See HOLD_GATE_MAX_SEC.
+            startPlay(); return;
         }
         const rect = cv.getBoundingClientRect();
         const cx = (e.clientX - rect.left) * (W / rect.width);
@@ -211,7 +214,8 @@ function onDown(e) {
         }
         if (_playBtnRect && inRect(cx, cy, _playBtnRect)) {
             window.webkit?.messageHandlers?.ads?.postMessage({ action: 'interstitialRequest', score });
-            startPlay(); holding = true; hasHeldThisRun = true; thrustOn(); return;
+            // See the note above -- restart opens with the level glide too, not mid-thrust.
+            startPlay(); return;
         }
         return;
     }

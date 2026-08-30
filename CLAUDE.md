@@ -248,6 +248,21 @@ in the coin, not just the separate `sfxCombo` ping (which only fires from x2). S
 
 **Death screen context**: Shows "+X vs last" / "-X vs last" after the second run. Uses `prevRunScore` (run before the current one). Score number glows gold when within 5 of personal best.
 
+**Two records, two different beats** - deliberately distinct, don't merge them:
+- **ON FIRE** (`onFire`, `update.js`): fires the frame live score overtakes the bar it
+  has to beat - normally today's `dailyBest`, but on the day's *first* run (where
+  `dailyBest` is still 0) it falls back to the all-time `best` so a strong opening run
+  still ignites (`_fireBar = dailyBest || best`; `_fireBar > 0` still guards a brand-new
+  player's very first run). Recolors the thruster trail fire-hot for the rest of the run,
+  plus a one-shot notif/`sfxOnFire`/orange ring pop (`onFireFlash`).
+- **PB line** (`bestSX`, the dashed gold "PB" line in `draw.js`): a pure *position*
+  marker at the all-time best run's death distance, NOT reset at the day boundary.
+  Crossing it fires its own one-shot - `pbPassed` in `update.js`, gold ring pop
+  (`pbFlash`), `T.pbPassed` notif, `sfxPbPassed`, and the line itself whitens/thickens as
+  the ship passes through it. Separate from ON FIRE because ON FIRE has usually already
+  fired earlier in the run (daily best <= all-time best), so the all-time crossing needs
+  its own marker to register.
+
 ### Daily run card (share)
 
 `src/share.js`. TUNL seeds every run from the UTC date (`lifecycle.js`), so every player
@@ -316,10 +331,20 @@ the live ship on every pitch change.
 
 ### Onboarding
 
-`runsTotal` (`state.js`) is a lifetime run counter, never reset at the day boundary. Its
-only consumer is `FIRST_RUN_RUNWAY_WX` (`lifecycle.js`), a clear stretch before the first
-stalactite on the very first run a player ever starts, so their first lesson is the feel
-of thrust-vs-gravity rather than the death screen.
+Every run has **no stalactites or stalagmites before score ~25**: `startPlay` sets
+`nextStalWx = STAL_START_WX` (`lifecycle.js`, world-x 1500 = ~4-9s of clean tunnel
+depending on screen width), and `maintainStalactites()` (`systems.js`) does nothing until
+the scroll reaches it. Because it is a fixed world position the first one is always born
+off the right edge and scrolls into view - it never pops in mid-screen. The opening
+stretch is where a new player's first lesson is the feel of thrust-vs-gravity rather than
+the death screen. (Coins still start at their normal distance - they teach collection and
+can't kill anyone. Mines start at world-x 1800, just after the first stalactite.)
+
+On top of that, **every run opens with a level glide**: gravity is withheld until the
+player's first hold press or `HOLD_GATE_MAX_SEC` (`constants.js`, 2.25s), so the ship
+flies dead level and never drops before the player acts. This applies to PLAY AGAIN
+restarts too - `input.js` no longer pre-sets `holding`/`hasHeldThisRun` on the restart
+tap, so a restart opens exactly like a fresh title-screen start rather than mid-thrust.
 
 **Do not re-add a title-screen control hint.** A "HOLD to climb / RELEASE to fall" line
 under HOLD TO FLY was added in 5.0 and removed the same day after seeing it on a real

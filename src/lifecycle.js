@@ -1,7 +1,10 @@
-// World-x of the first stalactite on a player's first-ever run (see startPlay). The
-// player sits at PX, so they reach it at scrollX ~= this minus PX -- roughly 2.5-3
-// seconds of clear tunnel at the starting scroll speed, on top of the 1.3s launch ramp.
-const FIRST_RUN_RUNWAY_WX = 1100;
+// World-x of the first stalactite on every run (see maintainStalactites). No stalactites
+// or stalagmites at all before this -- the opening ~4-9s (score 0-25) is a clean stretch
+// so a new player's first lesson is the feel of thrust-vs-gravity, not the death screen.
+// The player sits at PX so they actually reach it a hair before score 25 (scrollX/60).
+// It is a fixed world position, so the first one is always born off the right edge and
+// scrolls in -- it never pops into view mid-screen.
+const STAL_START_WX = 1500;
 
 function initAmbParts() {
     ambParts = Array.from({ length: 30 }, () => ({
@@ -26,6 +29,7 @@ function titleScreen() {
     bullets = []; bulletAmmo = 0; bulletFireTimer = 0;
     ghostTrack = []; ghostY = null; ghostPitch = 0; ghostPassed = false;
     onFire = false; onFireFlash = 0;
+    pbPassed = false; pbFlash = 0;
     mines = []; nextMineWx = 99999;
     cannons = []; nextCannonWx = 99999; cannonShots = [];
     // Coins never spawn on the title screen (nextCoinWx = 99999 above), so these are
@@ -56,13 +60,11 @@ function startPlay() {
     score = 0; newBest = false; newDailyBest = false;
     parts = []; thrustParts = []; deadT = 0; flashA = 0; shake = 0; trailY = [];
     skinFx = []; skinFxT = 0; shipPitch = -Math.PI / 2;
-    // The very first run a player ever starts gets a clear runway before the first
-    // stalactite, so the first thing they learn is the feel of thrust-vs-gravity rather
-    // than the death screen. At the default 420 the first obstacle reaches the player
-    // ~0.7s after the tunnel starts scrolling, which is not enough time to work out that
-    // releasing is a control. Coins are deliberately left at their normal start distance
-    // -- they teach collection and can't kill anyone.
-    stalactites = []; nextStalWx = runsTotal === 0 ? FIRST_RUN_RUNWAY_WX : 420;
+    // No stalactites/stalagmites before score ~25 (STAL_START_WX) on any run -- a clean
+    // opening stretch so a new player's first lesson is the feel of thrust-vs-gravity,
+    // not the death screen. Coins are deliberately left at their normal start distance --
+    // they teach collection and can't kill anyone.
+    stalactites = []; nextStalWx = STAL_START_WX;
     coins = [];     nextCoinWx = 500;
     chicaneCoins = [];
     gapBonus = 0; slowTime = 0; slowTimeMax = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
@@ -71,6 +73,7 @@ function startPlay() {
     // state.js / die()) is untouched here so it survives across runs within the day.
     ghostTrack = []; ghostY = null; ghostPitch = 0; ghostPassed = false;
     onFire = false; onFireFlash = 0;
+    pbPassed = false; pbFlash = 0;
     mines = []; nextMineWx = 1800;
     // Cannons start much later than mines (score ~100) and are spaced far apart -- a
     // rare hazard, not a constant one (see world.js cannonSpacing()).
@@ -114,11 +117,6 @@ function startPlay() {
     }
     dailyRuns++;
     localStorage.setItem('tunnel_daily_runs', dailyRuns);
-    // Incremented after the runway check above, so run #1 gets the runway and run #2
-    // onward doesn't. Never reset at the day boundary -- onboarding is a lifetime
-    // state, not a daily one.
-    runsTotal++;
-    localStorage.setItem('tunnel_runs_total', runsTotal);
     milestoneFlash = 0; milestoneText = '';
     levelIntroT = LEVEL_INTRO_DUR;
     const _d = new Date();
