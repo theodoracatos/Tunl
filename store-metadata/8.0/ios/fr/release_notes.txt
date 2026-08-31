@@ -1,0 +1,5 @@
+- Pièces redessinées : bouclier, munitions et aimant ont chacun leur forme et leur taille, lisibles d'un coup d'oeil, même daltonien
+- Nouveau moment "+RECORD" quand tu dépasses ton meilleur score, avec son propre son
+- Départ plus doux : aucun obstacle avant le score 25, pour apprendre d'abord à voler
+- Écran titre reconstruit, accès rapide aux rangs, défis et vaisseaux
+- Carte de partage enrichie, plus des correctifs d'achats sur certains appareils

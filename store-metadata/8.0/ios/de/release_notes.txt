@@ -1,0 +1,5 @@
+- Münzen neu gezeichnet: Schild-, Munitions- und Magnet-Münze haben jetzt eigene Form und Größe, auf einen Blick erkennbar, auch farbenblind
+- Neuer "+REKORD"-Moment, wenn du deine Bestmarke überholst, mit eigenem Sound
+- Sanfterer Start: keine Hindernisse vor Punktzahl 25, damit du zuerst das Fliegen lernst
+- Neu gebauter Titelscreen mit schnellem Zugriff auf Ränge, Challenges und Schiffe
+- Reichere Share-Karte, dazu Fixes für Käufe auf manchen Geräten

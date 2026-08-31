@@ -1,0 +1,6 @@
+- Pièces redessinées : bouclier, munitions et aimant ont chacun leur forme et leur taille - reconnaissables d'un coup d'oeil, même daltonien
+- Nouveau moment "+RECORD" à l'instant où tu dépasses ton meilleur score, avec son propre son
+- Départ plus doux : aucun obstacle avant le score 25
+- Écran titre reconstruit : accès plus rapide aux rangs, défis et vaisseaux
+- Carte de partage enrichie
+- Correctifs d'achats sur certains appareils

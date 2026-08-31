@@ -1,0 +1,6 @@
+- Moedas redesenhadas: escudo, munições e íman têm agora forma e tamanho próprios - distinguem-se num relance, também para daltónicos
+- Novo momento "+RECORDE" no instante em que passas a tua melhor marca de sempre, com som próprio
+- Arranque mais suave: sem obstáculos antes da pontuação 25
+- Ecrã inicial reconstruído: acesso mais rápido a categorias, desafios e naves
+- Cartão de partilha mais rico
+- Correções nas compras em alguns dispositivos

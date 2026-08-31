@@ -1,0 +1,5 @@
+- Moedas redesenhadas: escudo, munições e íman têm agora forma e tamanho próprios, legíveis num relance, também para daltónicos
+- Novo momento "+RECORDE" quando passas a tua melhor marca de sempre, com som próprio
+- Arranque mais suave: sem obstáculos antes da pontuação 25, para aprenderes primeiro a voar
+- Ecrã inicial reconstruído, acesso rápido a categorias, desafios e naves
+- Cartão de partilha mais rico, mais correções nas compras em alguns dispositivos

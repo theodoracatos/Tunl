@@ -1,0 +1,5 @@
+- Monedas redibujadas: escudo, munición e imán ahora tienen forma y tamaño propios, legibles de un vistazo, también para daltónicos
+- Nuevo momento "+RÉCORD" cuando superas tu mejor marca histórica, con su propio sonido
+- Arranque más suave: sin obstáculos antes de la puntuación 25, para aprender primero a volar
+- Pantalla de inicio reconstruida, acceso rápido a rangos, retos y naves
+- Tarjeta para compartir más rica, y arreglos en las compras en algunos dispositivos

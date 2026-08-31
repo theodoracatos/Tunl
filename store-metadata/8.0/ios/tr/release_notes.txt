@@ -1,0 +1,5 @@
+- Paralar yeniden çizildi: kalkan, cephane ve mıknatıs paralarının artık kendi şekli ve boyutu var, bir bakışta okunuyor, renk körlüğünde bile
+- En iyi skorunu geçtiğin anda yeni "+RECORD" anı, kendine ait sesle
+- Daha yumuşak başlangıç: 25 puana kadar engel yok, önce uçmayı öğrenesin diye
+- Yeniden yapılan başlık ekranı, sıralamalara, mücadelelere ve gemilere hızlı erişim
+- Daha zengin paylaşım kartı, ayrıca bazı cihazlarda satın alma düzeltmeleri

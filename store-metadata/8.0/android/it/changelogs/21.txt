@@ -1,0 +1,6 @@
+- Monete ridisegnate: scudo, munizioni e calamita ora hanno forma e dimensione proprie - riconoscibili a colpo d'occhio, anche per i daltonici
+- Nuovo momento "+RECORD" nell'istante in cui superi il tuo primato assoluto, con un suono dedicato
+- Avvio più morbido: nessun ostacolo prima del punteggio 25
+- Schermata iniziale ricostruita: accesso più rapido a classifiche, sfide e navicelle
+- Card di condivisione più ricca
+- Correzioni agli acquisti su alcuni dispositivi

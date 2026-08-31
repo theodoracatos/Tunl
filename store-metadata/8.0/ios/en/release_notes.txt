@@ -1,0 +1,5 @@
+- Coins redrawn: shield, ammo and magnet coins now have their own shape and size, readable at a glance and colorblind-safe
+- New "+RECORD" moment when you pass your all-time best, with its own sound
+- Gentler start: no obstacles before score 25, so your first lesson is the flying
+- Rebuilt title screen with quick access to ranks, challenges and ships
+- Richer share card, plus fixes to purchases on some devices

@@ -1,0 +1,6 @@
+- Koin digambar ulang: koin perisai, amunisi, dan magnet kini punya bentuk dan ukuran sendiri - mudah dibedakan sekilas, juga untuk buta warna
+- Momen "+RECORD" baru begitu kamu melewati rekor terbaikmu sepanjang masa, dengan suara sendiri
+- Awal lebih halus: tanpa rintangan sebelum skor 25
+- Layar judul dibangun ulang: akses lebih cepat ke peringkat, tantangan, dan pesawat
+- Kartu berbagi lebih kaya
+- Perbaikan pembelian di sebagian perangkat

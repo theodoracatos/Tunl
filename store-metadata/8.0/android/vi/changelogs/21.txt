@@ -1,0 +1,6 @@
+- Vẽ lại xu: xu khiên, đạn và nam châm giờ có hình dạng và kích thước riêng - nhìn một cái là phân biệt được, kể cả người mù màu
+- Khoảnh khắc "+RECORD" mới ngay khi bạn vượt kỷ lục cao nhất mọi thời đại, có âm thanh riêng
+- Khởi đầu nhẹ nhàng hơn: không chướng ngại vật trước điểm 25
+- Xây lại màn hình tiêu đề: truy cập nhanh hơn vào hạng, thử thách và phi thuyền
+- Thẻ chia sẻ phong phú hơn
+- Sửa lỗi mua hàng trên một số thiết bị

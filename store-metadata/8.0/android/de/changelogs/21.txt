@@ -1,0 +1,6 @@
+- Münzen neu gezeichnet: Schild-, Munitions- und Magnet-Münze haben jetzt eigene Form und Größe - auf einen Blick zu unterscheiden, auch farbenblind
+- Neuer "+REKORD"-Moment in der Sekunde, in der du deine Bestmarke überholst, mit eigenem Sound
+- Sanfterer Start: keine Hindernisse vor Punktzahl 25
+- Neu gebauter Titelscreen: schnellerer Zugriff auf Ränge, Challenges und Schiffe
+- Reichere Share-Karte
+- Fixes für Käufe auf manchen Geräten

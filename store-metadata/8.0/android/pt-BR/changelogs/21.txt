@@ -1,0 +1,6 @@
+- Moedas redesenhadas: escudo, munição e ímã agora têm forma e tamanho próprios, dá pra bater o olho e saber qual é, mesmo pra daltônicos
+- Novo momento "+RECORDE" na hora que você passa seu melhor de todos os tempos, com som próprio
+- Começo mais tranquilo: nada de obstáculo antes dos 25 pontos
+- Tela inicial reconstruída: acesso mais rápido a ranking, desafios e naves
+- Cartão de compartilhar mais caprichado
+- Correções de compra em alguns aparelhos
