@@ -187,7 +187,23 @@ function onDown(e) {
         if (showShipPicker) { showShipPicker = false; return; }
         startPlay(); return;   // reached only for keyboard/synthetic triggers (no e)
     }
-    if (phase === 'dead' && deadT > 0.9) {
+    // Continue offer: its own tap gate, independent of (and open for longer than)
+    // the deadT > DEATH_INTERACTIVE_SEC one below -- see constants.js
+    // CONTINUE_OFFER_SEC doc. Swallows every tap while it's up rather than falling
+    // through, since _homeBtnRect etc. are still null at this point anyway
+    // (drawDeathScreen hasn't run yet).
+    if (phase === 'dead' && continueOfferPending && !continueAdPending && e) {
+        const rect = cv.getBoundingClientRect();
+        const cx = (e.clientX - rect.left) * (W / rect.width);
+        const cy = (e.clientY - rect.top)  * (H / rect.height);
+        if (_continueBtnRect && inCircle(cx, cy, _continueBtnRect)) {
+            sfxUiTap();
+            continueAdPending = true;
+            window.webkit?.messageHandlers?.ads?.postMessage({ action: 'reviveRequest', score });
+        }
+        return;
+    }
+    if (phase === 'dead' && deadT > DEATH_INTERACTIVE_SEC) {
         if (!e) {
             window.webkit?.messageHandlers?.ads?.postMessage({ action: 'interstitialRequest', score });
             // No holding/hasHeldThisRun here -- every run, restart included, opens with the

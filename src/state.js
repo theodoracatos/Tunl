@@ -94,6 +94,11 @@ let removeAdsOwned = localStorage.getItem('tunnel_remove_ads') === '1';
 // GDPR, or an opted-in US state) - not persisted, since it's a live SDK query
 // result, not a player preference.
 let privacyOptionsRequired = false;
+// Whether native currently has a rewarded ad loaded and ready to present, pushed via
+// _tunlNativeUpdate exactly like removeAdsOwned/worldRank above. Gates the continue
+// offer (update.js die()) so the icon is never shown with nothing behind it -- no
+// native bridge (browser testing) means this simply stays false forever.
+let rewardedAdReady = false;
 let activeSkin    = parseInt(localStorage.getItem('tunnel_skin')  || '0');
 if (!(unlockedSkins & (1 << activeSkin))) activeSkin = 0;
 // Per-ship mastery XP (constants.js masteryLevel/masteryLerp), index-aligned with SKINS.
@@ -127,6 +132,7 @@ let streak = parseInt(localStorage.getItem('tunnel_streak') || '0');
 // in this instead of shards.
 let stardust = parseInt(localStorage.getItem('tunnel_stardust') || '0');
 let _homeBtnRect = null, _playBtnRect = null, _shareBtnRect = null;
+let _continueBtnRect = null;
 let showSettings = false;
 let _settingsBtnRect = null;
 let _settingsPanelRect = null;
@@ -210,6 +216,17 @@ let coins, nextCoinWx;
 let chicaneCoins;
 let gapBonus;
 let slowTime, slowTimeMax, shieldCount, shieldFlash, magnetTime;
+// Grace/invulnerability window after an absorbed hit (constants.js HIT_INVULN_SEC doc).
+let invulnT;
+// Rewarded continue, run-scoped (constants.js CONTINUE_MIN_SCORE doc). continueOfferPending
+// is true while the offer icon is up and death's real bookkeeping (commitDeath) is on
+// hold; continueAdPending is true only while native has a rewarded ad on screen, and
+// freezes deadT so a slow-loading/long-watched ad can't let the auto-commit fire out
+// from under a decision the player already made.
+let continuesUsedThisRun, continueOfferPending, continueAdPending;
+// Revive countdown after a granted continue (constants.js REVIVE_COUNTDOWN_SEC doc),
+// counted down while phase === 'revive'. Reaching 0 flips phase back to 'play'.
+let reviveCountdownT;
 let bullets, bulletAmmo, bulletFireTimer;
 let mines, nextMineWx;
 let cannons, nextCannonWx;
@@ -240,6 +257,16 @@ let gtime = 0;
 let skinFx = [], skinFxT = 0;
 let shipPitch = 0;
 let ambParts = [];
-let deathMarkers = [];   // persists across runs: { wx, wallY }
+// persists across runs: { wx, side } where side is 'top' | 'bot' | 'mid'. The y is NOT
+// stored -- draw.js recomputes it every frame from boundsAt(wx) so the ring rides the
+// live corridor edge as it waves and as gapBonus decays (a stored y would detach from
+// the wall the moment the corridor width changed). 'mid' (mine / cannon death) tracks
+// the corridor centre instead.
+let deathMarkers = [];
 const MAX_DEATH_MARKERS = 25;
-let bestMarker = null;   // { wx, wallY } of all-time best run's death spot
+// What landed the fatal hit, set at the collision site just before die() and read by
+// commitDeath() to pick the marker's side: 'wallTop'/'wallBot' (or a stalactite rooted
+// in that wall) -> the ring hangs on that wall; 'open' (mine / cannon shot) -> corridor
+// centre. null -> fall back to whichever wall py was nearer.
+let deathCause = null;
+let bestMarker = null;   // { wx, side } of all-time best run's death spot

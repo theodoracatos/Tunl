@@ -75,9 +75,38 @@ function update(dt) {
     }
 
     if (phase === 'dead') {
-        deadT      += dt;
+        // Frozen while native has a rewarded ad on screen (continueAdPending) so a
+        // slow load or a long watch can't let the timeout below fire out from under
+        // a decision the player already made by tapping the offer.
+        if (!continueAdPending) deadT += dt;
         flashA      = Math.max(0, flashA  - dt * 2.5);
         shake       = Math.max(0, shake   - dt * 30);
+        // Continue offer timed out with no tap (constants.js CONTINUE_OFFER_SEC doc --
+        // longer than DEATH_INTERACTIVE_SEC on purpose, 0.9s wasn't enough to land a
+        // tap on a real device).
+        if (continueOfferPending && !continueAdPending && deadT >= CONTINUE_OFFER_SEC) {
+            continueOfferPending = false;
+            commitDeath();
+        }
+        return;
+    }
+
+    // Revive countdown (constants.js REVIVE_COUNTDOWN_SEC doc, grantRevive() above):
+    // world stays frozen -- returning early here means scrollX, physics, and
+    // collision are all untouched for the duration, same as the launch-ramp branch
+    // below does for a fresh run. Once it runs out, play actually resumes and only
+    // then does the post-revive grace window start.
+    if (phase === 'revive') {
+        reviveCountdownT = Math.max(0, reviveCountdownT - dt);
+        if (reviveCountdownT <= 0) {
+            phase = 'play';
+            invulnT = HIT_INVULN_SEC;
+            // input.js only starts the thrust engine loop from an onDown while
+            // phase === 'play' -- if the player is already holding through the
+            // countdown (nothing to do but wait), sync it here so thrust force
+            // doesn't silently start applying with no engine sound behind it.
+            if (holding) thrustOn();
+        }
         return;
     }
 
@@ -394,12 +423,23 @@ function update(dt) {
               : PR;
     for (const dx of [-cPR * 0.7, 0, cPR * 0.7]) {
         const b = boundsAt(scrollX + PX + dx);
-        if (py - cPR < b.top || py + cPR > b.bot) { if (die()) return; break; }
+        if (py - cPR < b.top || py + cPR > b.bot) {
+            // Mid-grace-window: the wall is solid geometry, not a hazard, so simply
+            // skipping the check (like stalactites/mines below) would let the ship drift
+            // into the rock for the rest of the window. Clamp back inside instead.
+            if (invulnT > 0) { py = Math.max(b.top + cPR, Math.min(b.bot - cPR, py)); break; }
+            deathCause = (py - cPR < b.top) ? 'wallTop' : 'wallBot';
+            if (die()) return;
+            break;
+        }
     }
-    if (py - cPR < 0 || py + cPR > H) { if (die()) return; }
+    if (py - cPR < 0 || py + cPR > H) {
+        if (invulnT > 0) { py = Math.max(cPR, Math.min(H - cPR, py)); }
+        else { deathCause = (py - cPR < 0) ? 'wallTop' : 'wallBot'; if (die()) return; }
+    }
     for (const s of stalactites) {
         if (s.dying) continue;
-        if (stalHit(s, cPR)) { if (die()) return; break; }
+        if (stalHit(s, cPR)) { deathCause = s.isTop ? 'wallTop' : 'wallBot'; if (die()) return; break; }
     }
 
     // Mine collision (same trade-off hitbox as walls/stalactites above)
@@ -411,6 +451,7 @@ function update(dt) {
         const my = m.baseY + m.bobAmp * Math.sin(gtime * 1.8 + m.phase);
         const dx = PX - sx, dy = py - my;
         if (dx*dx + dy*dy < mineHitR2) {
+            deathCause = 'open';
             if (die()) return;
             // Shield absorbed - destroy the mine so it can't immediately re-hit
             mines.splice(mi, 1);
@@ -432,6 +473,7 @@ function update(dt) {
         if (sx < -100 || sx > W + 100) continue;
         const dx = PX - sx, dy = py - s.y;
         if (dx*dx + dy*dy < cannonHitR2) {
+            deathCause = 'open';
             if (die()) return;
             // Shield absorbed - destroy the shot so it can't immediately re-hit
             cannonShots.splice(ci, 1);
@@ -477,6 +519,7 @@ function update(dt) {
     shake         = Math.max(0, shake         - dt * 30);
     shieldFlash   = Math.max(0, shieldFlash   - dt * 5);
     flashA        = Math.max(0, flashA        - dt * 5);
+    invulnT       = Math.max(0, invulnT       - dt);
 
     // Ambient motes drift at ~18% of play scroll speed (parallax)
     const aSpd = spd * 0.18;
@@ -491,6 +534,10 @@ function update(dt) {
 
 function die(bypassShield = false) {
     if (DEV_INVINCIBLE) return false;
+    // Mid-grace-window: absorb silently, no reposition/clear -- that already happened
+    // once, at the hit that started the window (see the shield branch below). A second
+    // shield charge is never spent on a hit that lands inside someone else's window.
+    if (invulnT > 0) return false;
     if (!bypassShield && shieldCount > 0) {
         shieldCount--;
         shieldFlash = 1.0; shake = 10;
@@ -499,6 +546,13 @@ function die(bypassShield = false) {
         const b = boundsAt(scrollX + PX);
         py = (b.top + b.bot) / 2;
         vy = 0;
+        // Grace window (constants.js HIT_INVULN_SEC doc): a bare reposition only fixes
+        // the instant of this hit -- without a timed follow-up, a stalactite or mine
+        // sitting near the recentered spot could kill on literally the next frame.
+        invulnT = HIT_INVULN_SEC;
+        // Clear anything sitting at the recenter point itself, same radius-clear the
+        // bomb pickup uses, so the reposition doesn't just trade one collision for another.
+        triggerBombExplosion(PX, py);
         sfxShieldBreak();
         window.webkit?.messageHandlers?.haptic?.postMessage('medium');
         return false;
@@ -508,7 +562,34 @@ function die(bypassShield = false) {
     magnetLoopOff();
     bgmSetSlow(false);
     phase = 'dead'; deadT = 0; flashA = 1.0; shake = 14; holding = false;
-    _homeBtnRect = null; _playBtnRect = null; _shareBtnRect = null;
+    _homeBtnRect = null; _playBtnRect = null; _shareBtnRect = null; _continueBtnRect = null;
+    // Impact feedback fires now, unconditionally -- a hit should always feel like a
+    // hit, whether or not a rewarded continue ends up saving the run a moment later
+    // (same principle the shield-absorb branch above already follows).
+    burst(PX, py, 46);
+    sfxDie();
+    _fadeBgMusic();
+    window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
+
+    // Rewarded continue (constants.js CONTINUE_MIN_SCORE doc): offered at most once
+    // per run, only when native already has a rewarded ad loaded (rewardedAdReady --
+    // never show a button that leads nowhere) and the run cleared the same score
+    // floor the interstitial uses. When offered, the real bookkeeping below is held
+    // until either the offer resolves to a decline (update.js's phase==='dead'
+    // branch, at CONTINUE_OFFER_SEC) or grantRevive() undoes this hit entirely.
+    if (continuesUsedThisRun < MAX_CONTINUES_PER_RUN && score >= CONTINUE_MIN_SCORE && rewardedAdReady) {
+        continueOfferPending = true;
+        return true;
+    }
+    commitDeath();
+    return true;
+}
+
+// The actual bookkeeping half of a death: score submit, shard banking, ship
+// unlocks, missions, ghost save, death markers. Split out of die() so a rewarded
+// continue can hold this off entirely rather than having to undo it -- see the
+// continue-offer branch above and update.js's phase==='dead' handling.
+function commitDeath() {
     prevRunScore = lastRunScore;
     lastRunScore = score;
     newBest = score > best;
@@ -607,8 +688,9 @@ function die(bypassShield = false) {
         const def = MISSION_DEFS[dailyMissionIdx[m]];
         if (dailyMissionStats[def.stat] >= def.target) {
             dailyMissionsClaimed[m] = true;
-            shards += MISSION_REWARD;
-            missionRewardWon += MISSION_REWARD;
+            const rew = MISSION_REWARD_BY_TIER[def.tier];
+            shards += rew;
+            missionRewardWon += rew;
         }
     }
     // A completed mission is the whole reason to care about the block, so it gets its
@@ -617,24 +699,65 @@ function die(bypassShield = false) {
     localStorage.setItem('tunnel_daily_mission_stats', JSON.stringify(dailyMissionStats));
     localStorage.setItem('tunnel_daily_missions_claimed', JSON.stringify(dailyMissionsClaimed));
     localStorage.setItem('tunnel_shards', shards);
-    // Record a death marker on the nearest wall
+    // Record a death marker. Only wx + which side it hangs on is stored -- draw.js
+    // recomputes the y from the live corridor every frame so the ring rides the wave
+    // and stays glued to the wall as gapBonus decays (see deathMarkers in state.js).
     const _dmWx = scrollX + PX;
     // Exact death point for the share card's run profile (share.js), kept separate from
     // the wall-snapped marker below.
     lastRunWx = _dmWx; lastRunY = py;
-    const _dmB  = boundsAt(_dmWx);
-    const _dmWY = py < (_dmB.top + _dmB.bot) / 2 ? _dmB.top : _dmB.bot;
-    deathMarkers.push({ wx: _dmWx, wallY: _dmWY });
+    const _dmB = boundsAt(_dmWx);
+    const _dmSide = deathCause === 'open'    ? 'mid'
+                  : deathCause === 'wallTop' ? 'top'
+                  : deathCause === 'wallBot' ? 'bot'
+                  : py < (_dmB.top + _dmB.bot) / 2 ? 'top' : 'bot';
+    deathMarkers.push({ wx: _dmWx, side: _dmSide });
     if (deathMarkers.length > MAX_DEATH_MARKERS) deathMarkers.shift();
     if (newBest) {
-        bestMarker = { wx: _dmWx, wallY: _dmWY };
+        bestMarker = { wx: _dmWx, side: _dmSide };
         bestSX = _dmWx;
         localStorage.setItem('tunnel_best_sx', bestSX);
     }
-    burst(PX, py, 46);
-    sfxDie();
-    _fadeBgMusic();
     _startTitleMusic();
-    window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
-    return true;
+}
+
+// Rewarded continue succeeded (native's userDidEarnReward callback, see main.js
+// window._tunlReviveGranted). Undoes the fatal hit outright rather than reversing
+// commitDeath()'s bookkeeping, because commitDeath() never ran for this hit --
+// die() held it behind continueOfferPending instead of committing then undoing.
+function grantRevive() {
+    continueOfferPending = false;
+    continueAdPending = false;
+    continuesUsedThisRun++;
+    const b = boundsAt(scrollX + PX);
+    py = (b.top + b.bot) / 2;
+    vy = 0;
+    triggerBombExplosion(PX, py);
+    // Not straight back into 'play' -- phase='revive' freezes the world (scrollX
+    // untouched, no physics/collision) with the ship parked here for
+    // REVIVE_COUNTDOWN_SEC while a localized "READY" flashes (see the phase==='revive'
+    // branch below and drawReviveCountdown), then invulnT starts fresh once play
+    // actually resumes. See constants.js's doc comment for why the invuln window
+    // doesn't start ticking during this freeze.
+    phase = 'revive';
+    reviveCountdownT = REVIVE_COUNTDOWN_SEC;
+    _startBgMusic();
+    sfxShieldBreak(); // reuses the "you were saved" cue; a dedicated revive jingle can replace this later
+    // Same "engine warming back up" cue startPlay() opens every run with (~1.3s,
+    // fits inside the 2s countdown) -- the ship visibly sat dead a second ago, so
+    // it reads as literally spooling back up to fly again, not just a generic sfx.
+    sfxEngineSpoolUp();
+    window.webkit?.messageHandlers?.haptic?.postMessage('success');
+}
+
+// Native reports the rewarded ad couldn't be shown/rewarded after the player already
+// tapped the offer (see main.js window._tunlReviveDeclined) -- e.g. a stale
+// rewardedAdReady flag, or the ad failed mid-presentation. Falls through to the same
+// commitDeath() the CONTINUE_OFFER_SEC timeout would have run anyway; there's no
+// separate "declined" bookkeeping path.
+function declineRevive() {
+    if (!continueOfferPending) return; // already resolved (timeout or a second callback)
+    continueOfferPending = false;
+    continueAdPending = false;
+    commitDeath();
 }

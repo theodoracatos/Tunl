@@ -117,6 +117,7 @@ class MainActivity : ComponentActivity() {
                     "ads" -> when (body.optString("action")) {
                         "interstitialRequest" ->
                             ads.requestInterstitial(billing.removeAdsOwned, body.optInt("score"))
+                        "reviveRequest" -> ads.requestRevive(body.optInt("score"))
                         "privacyOptions" -> ads.showPrivacyOptionsForm(this@MainActivity)
                     }
                 }
@@ -196,6 +197,17 @@ class MainActivity : ComponentActivity() {
         }
         ads.onPrivacyOptionsRequiredChange = { required ->
             runJs("window._tunlNativeUpdate && window._tunlNativeUpdate({\"privacyOptionsRequired\":$required})")
+        }
+        // Rewarded continue (TUNL 8.1, see AdsManager.kt's doc comment above these
+        // three closures and update.js's die()/grantRevive()/declineRevive()).
+        ads.onRewardedAdReadyChange = { ready ->
+            runJs("window._tunlNativeUpdate && window._tunlNativeUpdate({\"rewardedAdReady\":$ready})")
+        }
+        ads.onRewardEarned = {
+            runJs("window._tunlReviveGranted && window._tunlReviveGranted()")
+        }
+        ads.onReviveDeclined = {
+            runJs("window._tunlReviveDeclined && window._tunlReviveDeclined()")
         }
 
         webView = WebView(this).apply {

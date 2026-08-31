@@ -52,6 +52,23 @@ window._tunlNativeUpdate = function (state) {
     // changing at all.
     if (typeof state.safeInsetLeft === 'number') SAFE_L = state.safeInsetLeft;
     if (typeof state.safeInsetRight === 'number') SAFE_R = state.safeInsetRight;
+    // Rewarded-ad load state (see AdsManager.swift/.kt's rewarded manager), pushed
+    // whenever it changes -- load success, consumption, a failed reload. Gates the
+    // continue offer (update.js die()) so it's never shown with nothing behind it.
+    if (typeof state.rewardedAdReady === 'boolean') {
+        rewardedAdReady = state.rewardedAdReady;
+    }
+};
+
+// Rewarded continue result (see AdsManager.swift/.kt requestRevive + the "ads"
+// message-handler wiring in GameView.swift/MainActivity.kt). Only meaningful while
+// state.js's continueAdPending is true; both functions are no-ops otherwise (already
+// resolved by a timeout, or a stray second callback).
+window._tunlReviveGranted = function () {
+    grantRevive();
+};
+window._tunlReviveDeclined = function () {
+    declineRevive();
 };
 
 // Android's system/gesture back button has no iOS equivalent, so there's no

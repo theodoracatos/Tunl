@@ -26,6 +26,9 @@ function titleScreen() {
     coins = [];     nextCoinWx = 99999;
     chicaneCoins = [];
     gapBonus = 0; slowTime = 0; slowTimeMax = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
+    invulnT = 0; deathCause = null;
+    continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;
+    reviveCountdownT = 0;
     bullets = []; bulletAmmo = 0; bulletFireTimer = 0;
     ghostTrack = []; ghostY = null; ghostPitch = 0; ghostPassed = false;
     onFire = false; onFireFlash = 0;
@@ -68,6 +71,9 @@ function startPlay() {
     coins = [];     nextCoinWx = 500;
     chicaneCoins = [];
     gapBonus = 0; slowTime = 0; slowTimeMax = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
+    invulnT = 0; deathCause = null;
+    continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;
+    reviveCountdownT = 0;
     bullets = []; bulletAmmo = 0; bulletFireTimer = 0;
     // Ghost: fresh recording buffer for this run; ghostPlay itself (today's best, from
     // state.js / die()) is untouched here so it survives across runs within the day.

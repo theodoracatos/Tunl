@@ -218,6 +218,51 @@ const CANNON_SHOT_TRAVEL = 1.15;
 // not the whole visible screen.
 const BOMB_RADIUS = W * 0.30;
 
+// Grace window after an absorbed hit (state.js invulnT, decremented in update.js). While
+// active, die() returns false unconditionally -- no shield charge is spent on a second
+// hit inside the window -- and the wall-bounds checks in update.js clamp py back inside
+// the corridor instead of killing, so the ship can't drift into the solid wall geometry
+// for the rest of the window the way it would if collision were simply skipped. Hazards
+// (stalactites/mines/cannon shots) aren't wall-anchored geometry, so they're just passed
+// through harmlessly, same convention as classic arcade invincibility (solid terrain still
+// blocks you, hazards don't hurt you). Currently only granted on a shield-absorbed hit
+// (see die()'s bypassShield branch); a future rewarded "continue" reuses the same timer.
+const HIT_INVULN_SEC = 1.4;
+
+// ── Rewarded continue ────────────────────────────────────────────────
+// Offered at most once per run, only past this score -- same floor as the
+// interstitial's MIN_SCORE_FOR_AD (AdsManager.swift/.kt), for the same reason:
+// runs below it are instant faceplants, not worth a 15-30s video either way.
+const CONTINUE_MIN_SCORE   = 25;
+const MAX_CONTINUES_PER_RUN = 1;
+// The existing gap between a fatal hit and the death screen becoming tappable
+// (input.js's onDown gate, draw.js's button fade-in). Reused, not extended, as
+// the continue offer's own window (update.js's phase==='dead' branch, draw.js
+// drawContinueOffer) -- see CLAUDE.md's Rewarded Continue notes: declining the
+// offer must cost zero extra wait or tap versus today, so the offer has to fit
+// inside time that's already unskippable, not add its own.
+const DEATH_INTERACTIVE_SEC = 0.9;
+// The continue offer's own timeout -- deliberately NOT reusing DEATH_INTERACTIVE_SEC
+// above. First real-device pass found 0.9s (matched to that *existing* pre-interactive
+// beat, so declining would cost zero extra wait) too short to actually use: a player
+// has to notice the icon, understand it, and land a tap on a small on-screen target
+// right after the hit's own shake/flash, all inside under a second. Declining is still
+// free either way (do nothing), but *using* the offer needs enough time to be usable at
+// all -- so an eligible death now waits a few extra seconds before falling through to
+// the normal death screen if the offer goes untapped, in exchange for the offer being
+// something a player can actually land. See drawContinueOffer's countdown ring, which
+// makes that budget visible rather than a silent cliff.
+const CONTINUE_OFFER_SEC = 3.0;
+// Revive countdown (update.js grantRevive()/phase==='revive' branch): once the
+// reward lands, the world freezes with the ship parked at the recentered spot for
+// this long, showing a localized "READY" flash (T.ready, draw.js
+// drawReviveCountdown), before play actually resumes. Not just a beat for the
+// player to reorient after tapping through an ad -- HIT_INVULN_SEC only starts
+// counting down once play resumes (not during this freeze, where nothing can hit
+// the player anyway since scrollX isn't advancing), so this freeze is free grace
+// time, not time subtracted from the invulnerability window after it.
+const REVIVE_COUNTDOWN_SEC = 1.0;
+
 // ── Poison / bomb rarity ─────────────────────────────────────────────
 // Both are driven by a real-time clock (state.js poisonClock/bombClock, incremented
 // every play-frame in update.js), not a per-candidate percentage. An earlier version
@@ -299,30 +344,20 @@ const HOLD_GATE_MAX_SEC = 2.25;
 // shard-priced tiers, SOLARIS included, is 240+880+2200+4800+12000+32000+50000 = 102120
 // (if a tier is added or re-costed, update this sum).
 //
-// Raised from an original 350 after simulating real coin income against coinSpacing()
-// at 3 skill tiers (~100/300/1000 score, ~65/75/85% coin-collection rate): at 350, a
-// "good" run (~score 300, ~355 shards/day uncapped over 10 runs) and a "great" run
-// (~score 1000, ~1760 shards/day uncapped) both just hit the cap and banked the
-// *identical* 350/day -- skill above "decent" stopped affecting unlock speed at all.
+// Set deliberately tight (180) so unlock speed is paced almost entirely by *days
+// returned*, not by a grind session: even a great run banks only a fraction of a day's
+// coin income before hitting the cap, and skill past "decent" just means reaching the
+// 180 in fewer runs, not banking more. Every paid tier also carries a `stardustGate`
+// (see below), but at this cap the shard side is the binding constraint for everyone --
+// with the full 300/day ceiling (cap + missions) the whole roster is ~102120/300 ≈ 340
+// days, and SOLARIS's 50000 alone is ~170 days, roughly level with its 180-day stardust
+// gate. History: this cap was 1800 (hardcore ~1800-1920/day, so `stardustGate` did the
+// pacing), then 350, 200, 160; set to 180 on explicit request for a 300 shards/day
+// ceiling (180 coins + 120 missions).
 //
-// Every paid tier now ALSO carries a `stardustGate` (see below) on top of its shard
-// cost -- both raised together on the explicit call that a hardcore player clearing
-// nearly the whole roster in about a week (the old 13030-total/1800-cap math) was too
-// fast, and undermined a later "buy all ships" IAP having any real value to sell. With
-// both in place, a hardcore player (1800-1920 shards/day) blows through the shard side
-// of every tier well inside a day each -- including SOLARIS's 50000, banked many times
-// over by day 180 at this cap -- so `stardustGate` alone paces them: they land almost
-// exactly on each tier's gate day (see that comment for the day numbers) all the way to
-// SOLARIS at day 180. A "good" player (~355/day, not hitting this cap) stays shard-bound
-// for the top two tiers instead: NOVA lands around day ~147 (vs. a hardcore player's
-// gate-bound day 110), and SOLARIS's added 50000 shard cost pushes them to day ~288 even
-// though their stardustGate (180) was already satisfied by then -- so skill differentiation
-// now survives all the way to the last ship for non-hardcore players, not just the tiers
-// below it. A "bad" run (~score 100, ~82 shards/day) never sniffs this cap and stays
-// shard-bound throughout -- SOLARIS's 50000 alone pushes them past day 1200 on top of an
-// already-slow ladder, effectively out of reach without real skill improvement, not just
-// patience. See the per-tier cost comment on SKINS below if that slow end needs revisiting.
-const DAILY_SHARD_CAP = 1800;
+// Daily missions still grant a per-tier reward each (MISSION_REWARD_BY_TIER below) and
+// are exempt from this cap, so the real per-day ceiling is 180 + 30 + 40 + 50 = 300.
+const DAILY_SHARD_CAP = 180;
 
 // ── Stardust (calendar-day gate, every paid tier) ────────────────────
 // Every paid ship, SOLARIS included, requires a minimum `stardustGate` (SKINS[i]) on top
@@ -374,18 +409,21 @@ const STARDUST_STREAK_BONUS_DAY = 7; // every Nth unbroken streak day grants +1 
 // pickDailyMissionIndices) so every player sees the same 3 on a given day. Progress is
 // cumulative across all of today's runs (state.js `dailyMissionStats`, folded in by
 // update.js die()), not a single-run target -- keeps them reachable across casual
-// multi-session play, not just one long grind run. Completing one grants MISSION_REWARD
-// shards immediately, exempt from DAILY_SHARD_CAP: a bounded, once-per-mission-per-day
-// reward isn't the unlimited-grind problem that cap guards against.
-const MISSION_REWARD = 40;
-// `tier` (0 easy / 1 medium / 2 hard) is the pick stratifier: pickDailyMissionIndices
-// draws exactly one mission from each tier, so every day is one gimme + one session-grind
-// + one skill/deep-run chase -- and the flat MISSION_REWARD stays fair because the three
-// slots are structurally different, not three random draws that might all be trivial or
-// all be brutal. Targets are tuned so each tier is ~a few / ~5-10 / ~10-15 min of
+// multi-session play, not just one long grind run. Completing one grants a per-tier
+// reward (MISSION_REWARD_BY_TIER, indexed by the mission's `tier`) immediately, exempt
+// from DAILY_SHARD_CAP: a bounded, once-per-mission-per-day reward isn't the
+// unlimited-grind problem that cap guards against.
+//
+// `tier` (0 easy / 1 medium / 2 hard) is both the pick stratifier and the payout tier:
+// pickDailyMissionIndices draws exactly one mission from each tier, so every day is one
+// gimme + one session-grind + one skill/deep-run chase, and the reward scales with the
+// slot -- 30 for the easy gimme, 40 for the medium grind, 50 for the hard chase. The
+// three slots are structurally different, not three random draws that might all be
+// trivial or all be brutal. Targets are tuned so each tier is ~a few / ~5-10 / ~10-15 min of
 // focused play for a mid-skill player; green/red were cut hard from an earlier pass where
 // their coin-type spawn weight (3% / ~6%, see makeCoin in systems.js) plus their score
 // gate made them near-impossible for the casual players who need the shards most.
+const MISSION_REWARD_BY_TIER = [30, 40, 50]; // shards per completed mission, by `tier`
 const MISSION_DEFS = [
     { id: 'gold',     stat: 'gold',       target: 15,  tier: 0 },
     { id: 'blue',     stat: 'blue',       target: 8,   tier: 0 },

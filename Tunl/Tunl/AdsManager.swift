@@ -23,6 +23,8 @@ import GoogleMobileAds
 final class AdsManager: NSObject, FullScreenContentDelegate {
 
     static let interstitialAdUnitID = "ca-app-pub-4882203470005029/5351137825"
+    // AdMob console -> Apps -> TUNL - Cave Flyer (iOS) -> Ad units -> "Continue Rewarded".
+    static let rewardedAdUnitID = "ca-app-pub-4882203470005029/6198883271"
     private static let deathCountKey = "tunnel_death_count"
     private static let lastAdTimeKey = "tunnel_last_ad_time"
     private static let deathsPerAd = 3
@@ -35,6 +37,13 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
     private static let minScoreForAd = 25
 
     private var interstitial: InterstitialAd?
+    private var rewarded: RewardedAd?
+    // Set by the userDidEarnRewardHandler passed to rewarded.present(from:), which
+    // (per the SDK's own design) only ever fires on an actually-completed watch --
+    // never on a skip/close. Read back in adDidDismissFullScreenContent below to
+    // decide which of onRewardEarned/onReviveDeclined to call, since dismissal is
+    // the one callback that always fires, reward or not.
+    private var rewardEarned = false
     private var started = false
 
     // Wired up by GameView.Coordinator to pause/resume the WKWebView's Web
@@ -47,6 +56,16 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
     // the Settings panel's PRIVACY CHOICES row only renders where Google's
     // policy requires it.
     var onPrivacyOptionsRequiredChange: ((Bool) -> Void)?
+
+    // Rewarded continue (TUNL 8.1). Wired up by GameView.Coordinator to push
+    // state.js's rewardedAdReady flag (onRewardedAdReadyChange) and to resolve
+    // the JS-side offer once a requestRevive() presentation settles
+    // (onRewardEarned -> window._tunlReviveGranted, onReviveDeclined ->
+    // window._tunlReviveDeclined). See update.js's die()/commitDeath()/
+    // grantRevive()/declineRevive() for what each side of that does.
+    var onRewardedAdReadyChange: ((Bool) -> Void)?
+    var onRewardEarned: (() -> Void)?
+    var onReviveDeclined: (() -> Void)?
 
     // Called once the WKWebView content is visible (see GameView.swift's
     // webView(_:didFinish:)) so both the UMP consent form and Apple's ATT
@@ -100,6 +119,7 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
             MobileAds.shared.requestConfiguration.maxAdContentRating = GADMaxAdContentRating.parentalGuidance
             _ = await MobileAds.shared.start()
             await self.loadInterstitial()
+            await self.loadRewarded()
         }
     }
 
@@ -156,6 +176,37 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
         }
     }
 
+    // Called from GameView.Coordinator's "ads" message handler on {action:
+    // "reviveRequest"} (src/input.js), which only ever fires from a tap on the
+    // continue-offer icon (src/draw.js drawContinueOffer) -- itself only ever
+    // shown while onRewardedAdReadyChange last reported true. still, present
+    // defensively rather than assuming that held: a stale flag just means an
+    // immediate decline instead of a dangling JS-side wait.
+    func requestRevive(score: Int) {
+        guard let rewarded, let root = rootViewController() else {
+            onReviveDeclined?()
+            return
+        }
+        rewardEarned = false
+        rewarded.present(from: root) { [weak self] in
+            // Only ever called on an actually-completed watch (SDK guarantee) --
+            // adDidDismissFullScreenContent below still fires right after this and
+            // is what actually resolves the JS side, this just flags which way.
+            self?.rewardEarned = true
+        }
+    }
+
+    private func loadRewarded() async {
+        do {
+            rewarded = try await RewardedAd.load(with: Self.rewardedAdUnitID, request: Request())
+            rewarded?.fullScreenContentDelegate = self
+            onRewardedAdReadyChange?(true)
+        } catch {
+            print("AdsManager: failed to load rewarded ad: \(error.localizedDescription)")
+            onRewardedAdReadyChange?(false)
+        }
+    }
+
     private func rootViewController() -> UIViewController? {
         UIApplication.shared.connectedScenes
             .compactMap { ($0 as? UIWindowScene)?.keyWindow }
@@ -168,13 +219,31 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
 
     func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) {
         onDidDismiss?()
+        if ad is RewardedAd {
+            rewarded = nil
+            Task { await loadRewarded() }
+            // The one callback guaranteed to fire either way (watched fully, closed
+            // early, or the daily impression cap silently declined to show anything)
+            // -- rewardEarned was only ever set true by the userDidEarnRewardHandler
+            // in requestRevive above, so this is the single point that resolves the
+            // JS side no matter which of those actually happened.
+            if rewardEarned { onRewardEarned?() } else { onReviveDeclined?() }
+            return
+        }
         interstitial = nil
         Task { await loadInterstitial() }
     }
 
     func ad(_ ad: FullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) {
-        print("AdsManager: failed to present interstitial: \(error.localizedDescription)")
         onDidDismiss?()
+        if ad is RewardedAd {
+            print("AdsManager: failed to present rewarded ad: \(error.localizedDescription)")
+            rewarded = nil
+            Task { await loadRewarded() }
+            onReviveDeclined?()
+            return
+        }
+        print("AdsManager: failed to present interstitial: \(error.localizedDescription)")
         interstitial = nil
         Task { await loadInterstitial() }
     }

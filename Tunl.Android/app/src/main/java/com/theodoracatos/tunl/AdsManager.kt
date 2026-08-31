@@ -8,9 +8,12 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.OnUserEarnedRewardListener
 import com.google.android.gms.ads.RequestConfiguration
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+import com.google.android.gms.ads.rewarded.RewardedAd
+import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import com.google.android.ump.ConsentDebugSettings
 import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
@@ -51,7 +54,25 @@ class AdsManager(private val activity: Activity) {
     // panel's PRIVACY CHOICES row only renders where Google's policy requires it.
     var onPrivacyOptionsRequiredChange: ((Boolean) -> Unit)? = null
 
+    // Rewarded continue (TUNL 8.1). Wired up by MainActivity to push state.js's
+    // rewardedAdReady flag (onRewardedAdReadyChange) and to resolve the JS-side
+    // offer once a requestRevive() presentation settles (onRewardEarned ->
+    // window._tunlReviveGranted, onReviveDeclined -> window._tunlReviveDeclined).
+    // See AdsManager.swift for the iOS mirror and update.js's
+    // die()/grantRevive()/declineRevive() for what each side of that does.
+    var onRewardedAdReadyChange: ((Boolean) -> Unit)? = null
+    var onRewardEarned: (() -> Unit)? = null
+    var onReviveDeclined: (() -> Unit)? = null
+
     private var interstitialAd: InterstitialAd? = null
+    private var rewardedAd: RewardedAd? = null
+    // Set by the OnUserEarnedRewardListener passed to rewardedAd.show(), which (per
+    // the SDK's own design) only ever fires on an actually-completed watch -- never
+    // on a skip/close. Read back in the rewarded FullScreenContentCallback's
+    // onAdDismissedFullScreenContent below to decide which of
+    // onRewardEarned/onReviveDeclined to call, since dismissal is the one callback
+    // that always fires, reward or not.
+    private var rewardEarned = false
     private var started = false
     private lateinit var consentInformation: ConsentInformation
 
@@ -75,6 +96,32 @@ class AdsManager(private val activity: Activity) {
             onDidDismiss?.invoke()
             interstitialAd = null
             loadInterstitial()
+        }
+    }
+
+    private val rewardedFullScreenContentCallback = object : FullScreenContentCallback() {
+        override fun onAdShowedFullScreenContent() {
+            onWillPresent?.invoke()
+        }
+
+        // The one callback guaranteed to fire either way (watched fully, closed
+        // early, or the daily impression cap silently declined to show anything)
+        // -- rewardEarned was only ever set true by the OnUserEarnedRewardListener
+        // in requestRevive below, so this is the single point that resolves the JS
+        // side no matter which of those actually happened.
+        override fun onAdDismissedFullScreenContent() {
+            onDidDismiss?.invoke()
+            rewardedAd = null
+            loadRewarded()
+            if (rewardEarned) onRewardEarned?.invoke() else onReviveDeclined?.invoke()
+        }
+
+        override fun onAdFailedToShowFullScreenContent(adError: AdError) {
+            Log.w(TAG, "Failed to present rewarded ad: ${adError.message}")
+            onDidDismiss?.invoke()
+            rewardedAd = null
+            loadRewarded()
+            onReviveDeclined?.invoke()
         }
     }
 
@@ -124,6 +171,7 @@ class AdsManager(private val activity: Activity) {
                         )
                         MobileAds.initialize(activity) {
                             loadInterstitial()
+                            loadRewarded()
                         }
                     }
                 }
@@ -202,6 +250,52 @@ class AdsManager(private val activity: Activity) {
                 override fun onAdFailedToLoad(adError: LoadAdError) {
                     Log.w(TAG, "Failed to load interstitial: ${adError.message}")
                     interstitialAd = null
+                }
+            }
+        )
+    }
+
+    // Called from MainActivity's NativeBridge on {action: "reviveRequest"}
+    // (src/input.js), which only ever fires from a tap on the continue-offer icon
+    // (src/draw.js drawContinueOffer) -- itself only ever shown while
+    // onRewardedAdReadyChange last reported true. Still presents defensively rather
+    // than assuming that held: a stale flag just means an immediate decline instead
+    // of a dangling JS-side wait.
+    fun requestRevive(score: Int) {
+        val ad = rewardedAd
+        if (ad == null) {
+            onReviveDeclined?.invoke()
+            return
+        }
+        rewardEarned = false
+        ad.fullScreenContentCallback = rewardedFullScreenContentCallback
+        // Same edge-to-edge AdActivity fix as the interstitial above -- the
+        // full-screen-ad immersive-mode issue isn't specific to one ad format.
+        ad.setImmersiveMode(true)
+        ad.show(activity, OnUserEarnedRewardListener {
+            // Only ever called on an actually-completed watch (SDK guarantee) --
+            // onAdDismissedFullScreenContent above still fires right after this and
+            // is what actually resolves the JS side, this just flags which way.
+            rewardEarned = true
+        })
+    }
+
+    private fun loadRewarded() {
+        val adUnitId = activity.getString(R.string.admob_rewarded_ad_unit_id)
+        RewardedAd.load(
+            activity,
+            adUnitId,
+            AdRequest.Builder().build(),
+            object : RewardedAdLoadCallback() {
+                override fun onAdLoaded(ad: RewardedAd) {
+                    rewardedAd = ad
+                    onRewardedAdReadyChange?.invoke(true)
+                }
+
+                override fun onAdFailedToLoad(adError: LoadAdError) {
+                    Log.w(TAG, "Failed to load rewarded ad: ${adError.message}")
+                    rewardedAd = null
+                    onRewardedAdReadyChange?.invoke(false)
                 }
             }
         )

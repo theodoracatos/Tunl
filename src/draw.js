@@ -460,13 +460,18 @@ function drawWorld() {
     }
     ctx.stroke();
 
-    // Death markers - rings etched into wall at each death spot
+    // Death markers - rings etched into the wall at each death spot. y is resolved
+    // live from the current corridor so the ring swings with the wave and stays stuck
+    // to the wall edge as gapBonus widens/narrows it (see deathMarkers in state.js).
     for (const m of deathMarkers) {
         const sx = m.wx - scrollX;
         if (sx < -80 || sx > W + 80) continue;
+        const mb = boundsAt(m.wx);
+        const my = m.side === 'mid' ? (mb.top + mb.bot) / 2
+                 : m.side === 'top' ? mb.top : mb.bot;
         const mr = PR * 1.55;
         ctx.beginPath();
-        ctx.arc(sx, m.wallY, mr, 0, Math.PI * 2);
+        ctx.arc(sx, my, mr, 0, Math.PI * 2);
         ctx.strokeStyle = 'rgba(255,55,55,0.48)';
         ctx.lineWidth   = 1.8;
         ctx.shadowColor = 'rgba(255,30,30,0.55)';
@@ -474,7 +479,7 @@ function drawWorld() {
         ctx.stroke();
         ctx.shadowBlur  = 0;
         ctx.beginPath();
-        ctx.arc(sx, m.wallY, 1.8, 0, Math.PI * 2);
+        ctx.arc(sx, my, 1.8, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(255,80,80,0.50)';
         ctx.fill();
     }
@@ -483,10 +488,13 @@ function drawWorld() {
     if (bestMarker) {
         const sx = bestMarker.wx - scrollX;
         if (sx >= -80 && sx <= W + 80) {
+            const bmb = boundsAt(bestMarker.wx);
+            const by  = bestMarker.side === 'mid' ? (bmb.top + bmb.bot) / 2
+                      : bestMarker.side === 'top' ? bmb.top : bmb.bot;
             const pulse = 0.7 + 0.3 * Math.sin(gtime * 3.5);
             const mr    = PR * 1.9;
             ctx.beginPath();
-            ctx.arc(sx, bestMarker.wallY, mr, 0, Math.PI * 2);
+            ctx.arc(sx, by, mr, 0, Math.PI * 2);
             ctx.strokeStyle = `rgba(255,215,0,${0.75 * pulse})`;
             ctx.lineWidth   = 2.2;
             ctx.shadowColor = `rgba(255,190,0,${0.85 * pulse})`;
@@ -495,7 +503,7 @@ function drawWorld() {
             ctx.shadowBlur  = 0;
             // Star center
             ctx.beginPath();
-            ctx.arc(sx, bestMarker.wallY, 2.4, 0, Math.PI * 2);
+            ctx.arc(sx, by, 2.4, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(255,230,80,${0.90 * pulse})`;
             ctx.fill();
         }
@@ -1296,6 +1304,24 @@ function drawWorld() {
             }
         }
 
+        // Grace-window flicker (constants.js HIT_INVULN_SEC doc): classic i-frame
+        // blink so "why did that stalactite not kill me" reads as a visible, timed
+        // state rather than a bug -- plus a soft ring, since alpha flicker alone can
+        // be easy to miss against the ship's own thrust cone glow.
+        let invulnAlpha = 1;
+        if (invulnT > 0 && phase === 'play') {
+            invulnAlpha = Math.floor(invulnT * 10) % 2 === 0 ? 1 : 0.35;
+            const ringA = 0.4 + 0.3 * Math.sin(gtime * 14);
+            ctx.beginPath();
+            ctx.arc(PX, py, PR * 1.8, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(120,220,255,${ringA})`;
+            ctx.lineWidth   = 2;
+            ctx.shadowColor = `rgba(120,220,255,${ringA * 0.8})`;
+            ctx.shadowBlur  = 10;
+            ctx.stroke();
+            ctx.shadowBlur  = 0;
+        }
+
         // CONCEPT A: the in-scene ship at PX (this same idle render used to sit
         // hidden behind the always-on missions list at this exact spot) stays
         // visible on the title screen too -- direct feedback that the tunnel
@@ -1303,7 +1329,9 @@ function drawWorld() {
         // It reads as a distinct thing from the big hero render in
         // drawTitleScreen() (dim, in the tunnel, part of the "world"; the hero
         // is a bright foreground portrait), not a confusing duplicate.
+        ctx.globalAlpha = invulnAlpha;
         drawShip(PX, py, PR, phase === 'dead' ? '#ff4040' : sk.color, sr, sg, sb, 20);
+        ctx.globalAlpha = 1;
         ctx.restore();
     }
 
@@ -1622,9 +1650,11 @@ function drawHUD() {
         // than the level line above and fades on the same `lia` clock, so it still
         // reads as a subtitle, not a second headline.
         ctx.font        = `${FS*0.024}px 'Courier New',monospace`;
-        ctx.shadowColor = rgb(theme.wallBase, lia * 0.85);
+        // Lightened toward white (matches the title screen's planet line) so the
+        // name reads clearly even on the darker-accent days, not just a dim caption.
+        ctx.shadowColor = rgb(theme.wallBase, lia * 0.9);
         ctx.shadowBlur  = 12;
-        ctx.fillStyle   = rgb(theme.wallBase, lia);
+        ctx.fillStyle   = rgb(lerpClr(theme.wallBase, [255, 255, 255], 0.4), lia);
         ctx.fillText(`${T.planet} ${WEEKDAY_PALETTES[weekdayIndex(new Date())].planet.toUpperCase()}`, W/2, H * 0.30 + FS * 0.05);
         ctx.shadowBlur   = 0;
         ctx.restore();
@@ -2075,9 +2105,13 @@ function drawTitleScreen() {
             }
         }
         const dayTheme = getTheme();
-        ctx.shadowColor = rgb(dayTheme.wallBase, a * 0.85);
+        // Lightened toward white so the name stays clearly legible even on the
+        // darker-accent days (Ceres grey, Io teal) -- the raw wallBase alone read
+        // as too dim next to the level line above it.
+        const planetClr = lerpClr(dayTheme.wallBase, [255, 255, 255], 0.4);
+        ctx.shadowColor = rgb(dayTheme.wallBase, a * 0.9);
         ctx.shadowBlur  = 8;
-        ctx.fillStyle   = rgb(dayTheme.wallBase, a * 0.95);
+        ctx.fillStyle   = rgb(planetClr, a);
         planetBaselineY += planetFsz * 1.5;
         ctx.fillText(planetLine, titleX, planetBaselineY);
         ctx.shadowBlur  = 0;
@@ -2171,11 +2205,11 @@ function drawTitleScreen() {
         }
     }
 
-    ctx.font        = `bold ${FS * 0.026}px 'Courier New',monospace`;
+    ctx.font        = `bold ${FS * 0.029}px 'Courier New',monospace`;
     ctx.fillStyle   = `rgba(${hr},${hg},${hb},0.95)`;
     ctx.shadowColor = 'rgba(0,0,0,0.85)';
     ctx.shadowBlur  = 6;
-    const heroNameY = shipStageY + heroR * 1.75;
+    const heroNameY = shipStageY + heroR * 1.98;
     ctx.fillText(SKINS[activeSkin].name, shipStageX, heroNameY);
     ctx.shadowBlur  = 0;
 
@@ -2220,16 +2254,45 @@ function drawTitleScreen() {
     // owns more than the starter ship) -- same gate the old inline grid used.
     _shipPickerBtnRect = null;
     if (showShipPanel) {
-        ctx.font        = `${FS * 0.020}px 'Courier New',monospace`;
-        ctx.fillStyle   = `rgba(190,205,240,${a * 0.85})`;
+        // Framed pill, not bare dim text: the caption-style version (faint blue-grey
+        // "ALL SHIPS ›" with no border) tested as easy to miss as a tap target, so it
+        // now gets an outline + faint fill + brighter text to read as a button.
+        const fsz      = FS * 0.019;
+        ctx.font       = `bold ${fsz}px 'Courier New',monospace`;
+        const linkText = `${T.allShips} ›`;
+        const linkW    = ctx.measureText(linkText).width;
+        const padX     = fsz * 0.85, padY = fsz * 0.62;
+        const pillW    = linkW + padX * 2, pillH = fsz + padY * 2;
+        // In landscape, sit the pill above the ship, lined up with the first rail icon
+        // (Missions) so it reads as part of that control row -- specifically so the
+        // pill's BOTTOM edge matches that icon's bottom edge. This mirrors the rail
+        // layout math in the "Icon rail" block below -- keep the two in sync.
+        let linkY;
+        if (LAND) {
+            const _hasGC   = !!window.webkit?.messageHandlers?.gameCenter;
+            const _hasChal = _hasGC && !!window._tunlChallengeSupported;
+            const _railN   = 3 + (_hasGC ? 1 : 0) + (_hasChal ? 1 : 0); // missions [+lb][+chal] + shop + settings
+            const _iconR   = Math.min(UI_H * 0.040, 27);
+            const _iconGap = _iconR * 3.5;
+            const _icon0Cy = H / 2 - ((_railN - 1) * _iconGap) / 2; // first rail icon cy
+            linkY = _icon0Cy + _iconR - pillH / 2; // align pill bottom to icon bottom
+        } else {
+            linkY = heroNameY + FS * 0.030 + pillH / 2 - fsz / 2;
+        }
+        const pillX    = shipStageX - pillW / 2, pillY = linkY - pillH / 2;
+        ctx.beginPath();
+        ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
+        ctx.fillStyle   = `rgba(120,150,235,${a * 0.16})`;
+        ctx.fill();
+        ctx.strokeStyle = `rgba(150,175,255,${a * 0.55})`;
+        ctx.lineWidth   = 1.4;
+        ctx.stroke();
+        ctx.fillStyle   = `rgba(212,224,255,${a * 0.95})`;
         ctx.shadowColor = 'rgba(0,0,0,0.85)';
         ctx.shadowBlur  = 3;
-        const linkY    = heroNameY + FS * 0.038;
-        const linkText = `${T.allShips} ›`;
         ctx.fillText(linkText, shipStageX, linkY);
-        ctx.shadowBlur = 0;
-        const linkW = ctx.measureText(linkText).width;
-        _shipPickerBtnRect = { x: shipStageX - linkW / 2 - 12, y: linkY - FS * 0.024, w: linkW + 24, h: FS * 0.048 };
+        ctx.shadowBlur  = 0;
+        _shipPickerBtnRect = { x: pillX - 8, y: pillY - 8, w: pillW + 16, h: pillH + 16 };
     }
 
     // ── Icon rail ────────────────────────────────────────────────────────
@@ -2249,7 +2312,10 @@ function drawTitleScreen() {
         const hasRank = worldRank !== null && worldRank > 0;
 
         const items = [];
-        items.push({ key: 'missions', badge: `${doneCount}/${dailyMissionIdx.length}`, showBadge: doneCount < dailyMissionIdx.length });
+        // Badge stays visible even at 3/3 (it used to hide on completion, which read as
+        // "missions gone" rather than "all done") -- it just turns green to mark the day cleared.
+        const allMissionsDone = doneCount >= dailyMissionIdx.length;
+        items.push({ key: 'missions', badge: `${doneCount}/${dailyMissionIdx.length}`, showBadge: true, badgeDone: allMissionsDone });
         if (hasGameCenter) items.push({ key: 'leaderboard', badge: hasRank ? (worldRankTotal > 0 ? `${worldRank}/${worldRankTotal}` : `${worldRank}`) : null, showBadge: hasRank });
         if (hasChallenge)  items.push({ key: 'challenge', badge: activeChallenges > 0 ? `${activeChallenges}` : null, showBadge: activeChallenges > 0 });
         items.push({ key: 'shop' });
@@ -2262,6 +2328,8 @@ function drawTitleScreen() {
         const railCX  = LAND ? W - Math.max(W * 0.06, 46) - SAFE_R : W / 2;
         const iconR   = LAND ? Math.min(UI_H * 0.040, 27) : Math.min(H * 0.036, 22);
         const iconGap = iconR * 3.5;
+        // LAND: first icon cy == railY0. The ALL SHIPS pill above re-derives this same
+        // value to line up with it -- keep both in sync if the rail layout changes.
         const railY0  = LAND ? H / 2 - ((items.length - 1) * iconGap) / 2 : H - iconR * 2.4;
 
         _missionsBtnRect    = null;
@@ -2281,7 +2349,7 @@ function drawTitleScreen() {
             drawRailIcon(it.key, cx, cy, iconR * 0.62, `rgba(225,232,250,${a * 0.92})`, Math.max(1.3, iconR * 0.11));
             if (it.badge && it.showBadge) {
                 ctx.font        = `bold ${iconR * 0.55}px 'Courier New',monospace`;
-                ctx.fillStyle   = 'rgba(255,225,110,0.95)';
+                ctx.fillStyle   = it.badgeDone ? 'rgba(120,255,150,0.95)' : 'rgba(255,225,110,0.95)';
                 ctx.shadowColor = 'rgba(0,0,0,0.85)';
                 ctx.shadowBlur  = 3;
                 ctx.fillText(it.badge, cx, cy + iconR * 1.55);
@@ -2304,7 +2372,7 @@ function drawTitleScreen() {
         ctx.fillRect(0, 0, W, H);
 
         const panW   = Math.min(W * 0.62, 380);
-        const rewStr = `+${MISSION_REWARD} ⧫`;
+        const rewStrFor = m => `+${MISSION_REWARD_BY_TIER[MISSION_DEFS[dailyMissionIdx[m]].tier]} ⧫`;
         let mFsz = FS * 0.024;
         const rewFont = () => `bold ${mFsz * 1.12}px 'Courier New',monospace`;
         const measureCols = () => {
@@ -2319,7 +2387,8 @@ function drawTitleScreen() {
                 lw = Math.max(lw, ctx.measureText(lb).width);
             }
             ctx.font = rewFont();
-            const rw = ctx.measureText(rewStr).width;
+            let rw = 0;
+            for (let m = 0; m < dailyMissionIdx.length; m++) rw = Math.max(rw, ctx.measureText(rewStrFor(m)).width);
             const gapPL = mFsz * 0.55, gapLR = mFsz * 1.6;
             return { pw, lw, rw, gapPL, gapLR, total: pw + gapPL + lw + gapLR + rw };
         };
@@ -2376,7 +2445,7 @@ function drawTitleScreen() {
             ctx.fillStyle   = `rgba(255,228,125,${done ? 0.62 : 1.0})`;
             ctx.shadowColor = `rgba(255,205,60,${done ? 0.35 : 0.60})`;
             ctx.shadowBlur  = 7;
-            ctx.fillText(rewStr, rewRX, rowY);
+            ctx.fillText(rewStrFor(m), rewRX, rowY);
             ctx.shadowBlur  = 0;
             rowY += rowH;
         }
@@ -3607,5 +3676,125 @@ function draw() {
     drawWorld();
     drawHUD();
     if (phase === 'title') drawTitleScreen();
-    if (phase === 'dead')  drawDeathScreen();
+    // continueOfferPending gates which one shows, never both -- see update.js's
+    // die()/commitDeath() split and constants.js's CONTINUE_OFFER_SEC doc.
+    if (phase === 'dead')  { if (continueOfferPending) drawContinueOffer(); else drawDeathScreen(); }
+    if (phase === 'revive') drawReviveCountdown();
+}
+
+// Revive countdown (state.js reviveCountdownT, update.js's phase==='revive' branch).
+// The ship is already drawn at its recentered position by the normal Player block
+// above (drawWorld) -- this only adds a T.ready flash over it. A numeric 2-1
+// count was the first version of this; replaced with a single localized word
+// (src/i18n.js, all 15 languages) since the freeze is short enough now
+// (REVIVE_COUNTDOWN_SEC) that counting down through more than one number never
+// actually happens.
+function drawReviveCountdown() {
+    const elapsed = REVIVE_COUNTDOWN_SEC - reviveCountdownT;
+    const fadeIn  = Math.min(1, elapsed * 10);
+    const fadeOut = Math.min(1, reviveCountdownT * 6);
+    const a = Math.min(fadeIn, fadeOut);
+    if (a <= 0) return;
+    const pulse = 1 + 0.12 * Math.sin(elapsed * 14);
+    ctx.save();
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font         = `bold ${FS * 0.075 * pulse}px 'Courier New',monospace`;
+    ctx.fillStyle    = `rgba(160,230,255,${a})`;
+    ctx.shadowColor  = `rgba(120,220,255,${a * 0.75})`;
+    ctx.shadowBlur   = 20;
+    ctx.fillText(T.ready, PX, py - PR * 3.2);
+    ctx.shadowBlur   = 0;
+    ctx.restore();
+}
+
+// Rewarded continue offer (state.js continueOfferPending). Its own minimal screen
+// rather than a button squeezed into drawDeathScreen()'s already-dense, hand-tuned
+// layout -- see the "Kritischer Punkt" section of the 8.1 Rewarded Continue concept
+// for why declining costs zero extra *tap* versus a run that was never
+// continue-eligible. It does cost a few extra seconds of *wait* though
+// (constants.js CONTINUE_OFFER_SEC) -- an earlier version matched this window to
+// the death screen's own DEATH_INTERACTIVE_SEC beat specifically to avoid that,
+// but that made the offer nearly untappable on a real device (confirmed live: not
+// enough time to notice the icon, aim, and land a tap right after the hit's own
+// shake/flash). The depleting ring below exists so that trade is visible, not a
+// silent cliff.
+function drawContinueOffer() {
+    ctx.save();
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    const a = Math.min(1, deadT * 8);
+
+    ctx.fillStyle = `rgba(4,4,14,${a * 0.80})`;
+    ctx.fillRect(0, 0, W, H);
+
+    const cx = W * 0.5, cy = H * 0.46;
+    const r  = Math.min(W, H) * 0.11;
+    // Slightly generous vs. the drawn ring -- an easy target matters more here than
+    // pixel-precise hit-testing, this is the one tap in the whole flow that's worth
+    // real money if it lands.
+    _continueBtnRect = { cx, cy, r: r * 1.15 };
+
+    // Countdown ring: dim full-circle track plus a bright arc that sweeps away
+    // clockwise from noon as CONTINUE_OFFER_SEC runs out, so "how long do I have"
+    // reads at a glance instead of being a silent timeout.
+    const remain = Math.max(0, 1 - deadT / CONTINUE_OFFER_SEC);
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 1.18, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(120,220,255,${a * 0.18})`;
+    ctx.lineWidth   = 4;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 1.18, -Math.PI / 2, -Math.PI / 2 + remain * Math.PI * 2);
+    ctx.strokeStyle = `rgba(120,220,255,${a * 0.85})`;
+    ctx.lineWidth   = 4;
+    ctx.lineCap     = 'round';
+    ctx.shadowColor = `rgba(120,220,255,${a * 0.6})`;
+    ctx.shadowBlur  = 14;
+    ctx.stroke();
+    ctx.shadowBlur  = 0;
+    ctx.lineCap     = 'butt';
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.82, 0, Math.PI * 2);
+    ctx.fillStyle   = `rgba(20,40,60,${a * 0.85})`;
+    ctx.fill();
+    ctx.strokeStyle = `rgba(160,230,255,${a * 0.85})`;
+    ctx.lineWidth   = 2;
+    ctx.stroke();
+
+    // Play triangle -- wordless on purpose, see the doc comment above drawContinueOffer
+    const triR = r * 0.34;
+    ctx.beginPath();
+    ctx.moveTo(cx - triR * 0.55, cy - triR);
+    ctx.lineTo(cx - triR * 0.55, cy + triR);
+    ctx.lineTo(cx + triR * 1.05, cy);
+    ctx.closePath();
+    ctx.fillStyle   = `rgba(220,245,255,${a})`;
+    ctx.shadowColor = `rgba(160,230,255,${a * 0.7})`;
+    ctx.shadowBlur  = 10;
+    ctx.fill();
+    ctx.shadowBlur  = 0;
+
+    // Caption (src/i18n.js T.watchAdContinue, all 15 languages) -- an earlier
+    // version left this as a bare untranslated "AD" badge (the ad industry's own
+    // de-facto universal marking), but that only labels the icon as an ad, not what
+    // tapping it actually does. Shrink-to-fit since translations range from
+    // Chinese's 6 characters to Russian's/German's much wider strings.
+    let capFsz = FS * 0.020;
+    ctx.font = `bold ${capFsz}px 'Courier New',monospace`;
+    const capAvailW = W * 0.86;
+    const capW = ctx.measureText(T.watchAdContinue).width;
+    if (capW > capAvailW) {
+        capFsz = Math.max(capFsz * capAvailW / capW, FS * 0.012);
+        ctx.font = `bold ${capFsz}px 'Courier New',monospace`;
+    }
+    ctx.fillStyle   = `rgba(255,210,90,${a})`;
+    ctx.shadowColor = `rgba(255,180,40,${a * 0.5})`;
+    ctx.shadowBlur  = 6;
+    ctx.fillText(T.watchAdContinue, cx, cy + r * 1.6);
+    ctx.shadowBlur  = 0;
+
+    ctx.restore();
 }
