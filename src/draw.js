@@ -2273,7 +2273,7 @@ function drawTitleScreen() {
             const _hasChal = _hasGC && !!window._tunlChallengeSupported;
             const _railN   = 3 + (_hasGC ? 1 : 0) + (_hasChal ? 1 : 0); // missions [+lb][+chal] + shop + settings
             const _iconR   = Math.min(UI_H * 0.040, 27);
-            const _iconGap = _iconR * 3.5;
+            const _iconGap = _iconR * 3.3;
             const _icon0Cy = H / 2 - ((_railN - 1) * _iconGap) / 2; // first rail icon cy
             linkY = _icon0Cy + _iconR - pillH / 2; // align pill bottom to icon bottom
         } else {
@@ -2327,7 +2327,7 @@ function drawTitleScreen() {
         // desktop browser has no island to hide it).
         const railCX  = LAND ? W - Math.max(W * 0.06, 46) - SAFE_R : W / 2;
         const iconR   = LAND ? Math.min(UI_H * 0.040, 27) : Math.min(H * 0.036, 22);
-        const iconGap = iconR * 3.5;
+        const iconGap = iconR * 3.3;
         // LAND: first icon cy == railY0. The ALL SHIPS pill above re-derives this same
         // value to line up with it -- keep both in sync if the rail layout changes.
         const railY0  = LAND ? H / 2 - ((items.length - 1) * iconGap) / 2 : H - iconR * 2.4;
@@ -2539,7 +2539,7 @@ function drawTitleScreen() {
         // this sheet has nothing else competing for the space, so the ships
         // themselves carry the screen instead of the (already-generous) text
         // around them.
-        const cellR     = Math.min(UI_H * 0.075, H * 0.16);
+        const cellR     = Math.min(UI_H * 0.070, H * 0.15);
         const cellGap   = Math.max(cellR * 3.0, (W * 0.72) / GRID_COLS);
         const rowHalfW  = (GRID_COLS - 1) * cellGap / 2;
         const startXg   = gridCX - rowHalfW;
