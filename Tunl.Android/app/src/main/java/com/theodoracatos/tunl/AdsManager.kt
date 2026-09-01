@@ -64,8 +64,18 @@ class AdsManager(private val activity: Activity) {
     var onRewardEarned: (() -> Unit)? = null
     var onReviveDeclined: (() -> Unit)? = null
 
+    // Shards rewarded ad (Missions-drawer daily bonus, src/constants.js SHARDS_AD_REWARD).
+    // Its own dedicated unit (admob_shards_rewarded_ad_unit_id), separate from the
+    // continue unit above, so fill/eCPM report independently. Mirrors AdsManager.swift.
+    // onShardsAdReadyChange -> state.js shardsAdReady, onShardsRewardEarned ->
+    // window._tunlShardsRewardGranted, onShardsAdDeclined -> window._tunlShardsRewardDeclined.
+    var onShardsAdReadyChange: ((Boolean) -> Unit)? = null
+    var onShardsRewardEarned: (() -> Unit)? = null
+    var onShardsAdDeclined: (() -> Unit)? = null
+
     private var interstitialAd: InterstitialAd? = null
     private var rewardedAd: RewardedAd? = null
+    private var shardsRewardedAd: RewardedAd? = null
     // Set by the OnUserEarnedRewardListener passed to rewardedAd.show(), which (per
     // the SDK's own design) only ever fires on an actually-completed watch -- never
     // on a skip/close. Read back in the rewarded FullScreenContentCallback's
@@ -73,6 +83,7 @@ class AdsManager(private val activity: Activity) {
     // onRewardEarned/onReviveDeclined to call, since dismissal is the one callback
     // that always fires, reward or not.
     private var rewardEarned = false
+    private var shardsRewardEarned = false
     private var started = false
     private lateinit var consentInformation: ConsentInformation
 
@@ -125,6 +136,30 @@ class AdsManager(private val activity: Activity) {
         }
     }
 
+    private val shardsRewardedFullScreenContentCallback = object : FullScreenContentCallback() {
+        override fun onAdShowedFullScreenContent() {
+            onWillPresent?.invoke()
+        }
+
+        // Same guaranteed-either-way dismiss callback as the continue rewarded above --
+        // rewardEarned is only set true by the OnUserEarnedRewardListener in
+        // requestShardsAd, so this is the single point that resolves the JS side.
+        override fun onAdDismissedFullScreenContent() {
+            onDidDismiss?.invoke()
+            shardsRewardedAd = null
+            loadShardsRewarded()
+            if (shardsRewardEarned) onShardsRewardEarned?.invoke() else onShardsAdDeclined?.invoke()
+        }
+
+        override fun onAdFailedToShowFullScreenContent(adError: AdError) {
+            Log.w(TAG, "Failed to present shards rewarded ad: ${adError.message}")
+            onDidDismiss?.invoke()
+            shardsRewardedAd = null
+            loadShardsRewarded()
+            onShardsAdDeclined?.invoke()
+        }
+    }
+
     // Called once the WebView content is visible (see MainActivity's
     // onPageFinished) so the UMP consent form fires while the window is
     // focused, not during construction.
@@ -172,6 +207,7 @@ class AdsManager(private val activity: Activity) {
                         MobileAds.initialize(activity) {
                             loadInterstitial()
                             loadRewarded()
+                            loadShardsRewarded()
                         }
                     }
                 }
@@ -296,6 +332,44 @@ class AdsManager(private val activity: Activity) {
                     Log.w(TAG, "Failed to load rewarded ad: ${adError.message}")
                     rewardedAd = null
                     onRewardedAdReadyChange?.invoke(false)
+                }
+            }
+        )
+    }
+
+    // Called from MainActivity's NativeBridge on {action: "shardsAdRequest"}
+    // (src/input.js's Missions-drawer bonus row), only ever fired while
+    // onShardsAdReadyChange last reported true. Presents defensively anyway.
+    fun requestShardsAd() {
+        val ad = shardsRewardedAd
+        if (ad == null) {
+            onShardsAdDeclined?.invoke()
+            return
+        }
+        shardsRewardEarned = false
+        ad.fullScreenContentCallback = shardsRewardedFullScreenContentCallback
+        ad.setImmersiveMode(true)
+        ad.show(activity, OnUserEarnedRewardListener {
+            shardsRewardEarned = true
+        })
+    }
+
+    private fun loadShardsRewarded() {
+        val adUnitId = activity.getString(R.string.admob_shards_rewarded_ad_unit_id)
+        RewardedAd.load(
+            activity,
+            adUnitId,
+            AdRequest.Builder().build(),
+            object : RewardedAdLoadCallback() {
+                override fun onAdLoaded(ad: RewardedAd) {
+                    shardsRewardedAd = ad
+                    onShardsAdReadyChange?.invoke(true)
+                }
+
+                override fun onAdFailedToLoad(adError: LoadAdError) {
+                    Log.w(TAG, "Failed to load shards rewarded ad: ${adError.message}")
+                    shardsRewardedAd = null
+                    onShardsAdReadyChange?.invoke(false)
                 }
             }
         )

@@ -109,6 +109,9 @@ function startPlay() {
         localStorage.setItem('tunnel_daily_best', '0');
         localStorage.setItem('tunnel_daily_runs', '0');
         localStorage.setItem('tunnel_daily_shards', '0');
+        // Today's rewarded-ad shard bonus is available again (constants.js SHARDS_AD_REWARD).
+        shardsAdClaimedToday = false;
+        localStorage.setItem('tunnel_shards_ad_claimed', '0');
         top5 = []; localStorage.setItem('tunnel_top5', '[]');
         // The new day's corridor is a different shape, so yesterday's ghost is racing
         // through a cave that no longer exists -- drop it along with the other daily

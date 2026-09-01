@@ -344,20 +344,34 @@ const HOLD_GATE_MAX_SEC = 2.25;
 // shard-priced tiers, SOLARIS included, is 240+880+2200+4800+12000+32000+50000 = 102120
 // (if a tier is added or re-costed, update this sum).
 //
-// Set deliberately tight (180) so unlock speed is paced almost entirely by *days
+// Set deliberately tight (160) so unlock speed is paced almost entirely by *days
 // returned*, not by a grind session: even a great run banks only a fraction of a day's
 // coin income before hitting the cap, and skill past "decent" just means reaching the
-// 180 in fewer runs, not banking more. Every paid tier also carries a `stardustGate`
+// 160 in fewer runs, not banking more. Every paid tier also carries a `stardustGate`
 // (see below), but at this cap the shard side is the binding constraint for everyone --
-// with the full 300/day ceiling (cap + missions) the whole roster is ~102120/300 ≈ 340
-// days, and SOLARIS's 50000 alone is ~170 days, roughly level with its 180-day stardust
-// gate. History: this cap was 1800 (hardcore ~1800-1920/day, so `stardustGate` did the
-// pacing), then 350, 200, 160; set to 180 on explicit request for a 300 shards/day
-// ceiling (180 coins + 120 missions).
+// with the full 300/day ceiling (cap + ad bonus + missions) the whole roster is
+// ~102120/300 ≈ 340 days, and SOLARIS's 50000 alone is ~170 days, roughly level with its
+// 180-day stardust gate. History: this cap was 1800 (hardcore ~1800-1920/day, so
+// `stardustGate` did the pacing), then 350, 200, 160, then 180 for a 300 shards/day
+// ceiling (180 coins + 120 missions); set back to 160 when the daily rewarded-ad bonus
+// (SHARDS_AD_REWARD below) took over the missing 20, keeping the ceiling at 300 but
+// re-sourcing part of it as an opt-in ad.
 //
-// Daily missions still grant a per-tier reward each (MISSION_REWARD_BY_TIER below) and
-// are exempt from this cap, so the real per-day ceiling is 180 + 30 + 40 + 50 = 300.
-const DAILY_SHARD_CAP = 180;
+// Two other shard sources are exempt from this cap: the 3 daily missions
+// (MISSION_REWARD_BY_TIER below, 30+40+50) and the once-per-day rewarded-ad bonus
+// (SHARDS_AD_REWARD), so the real per-day ceiling is 160 + 20 + 30 + 40 + 50 = 300.
+const DAILY_SHARD_CAP = 160;
+
+// Once-per-UTC-day opt-in bonus: the player taps a row in the Missions drawer, watches a
+// rewarded video, and gets a flat shard grant. Exempt from DAILY_SHARD_CAP (like a
+// mission reward) -- it's a bounded once-a-day top-up, not the unlimited-grind vector the
+// cap guards against. Gated on `shardsAdClaimedToday` (state.js, reset at the day
+// boundary in lifecycle.js) and on native reporting a loaded rewarded ad
+// (`shardsAdReady`); with no native bridge (browser) it simply never becomes claimable.
+// Uses its own dedicated AdMob "Shards Rewarded" unit, separate from the rewarded
+// continue's unit, so their eCPM/fill report independently. See src/main.js's
+// _tunlShardsRewardGranted and AdsManager.swift/.kt's shards-rewarded manager.
+const SHARDS_AD_REWARD = 20;
 
 // ── Stardust (calendar-day gate, every paid tier) ────────────────────
 // Every paid ship, SOLARIS included, requires a minimum `stardustGate` (SKINS[i]) on top

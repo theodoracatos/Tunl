@@ -88,10 +88,20 @@ function onDown(e) {
             if (!_shopPanelRect || !inRect(cx, cy, _shopPanelRect)) { showShop = false; sfxUiClose(); }
             return;
         }
-        // CONCEPT A: Missions drawer. No buttons inside (missions complete
-        // themselves), so any tap inside just does nothing, same as the
-        // currency-info panel above.
+        // CONCEPT A: Missions drawer. The 3 mission rows complete themselves, but the
+        // bonus row at the bottom is a real button (watch a rewarded ad for a
+        // once-per-day shard grant, constants.js SHARDS_AD_REWARD).
         if (showMissions) {
+            if (_shardsAdBtnRect && inRect(cx, cy, _shardsAdBtnRect)) {
+                if (shardsAdReady && !shardsAdClaimedToday) {
+                    sfxUiTap();
+                    shardsAdPending = true;
+                    window.webkit?.messageHandlers?.ads?.postMessage({ action: 'shardsAdRequest' });
+                } else {
+                    sfxUiDenied();
+                }
+                return;
+            }
             if (!_missionsPanelRect || !inRect(cx, cy, _missionsPanelRect)) { showMissions = false; sfxUiClose(); }
             return;
         }

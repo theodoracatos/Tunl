@@ -25,6 +25,10 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
     static let interstitialAdUnitID = "ca-app-pub-4882203470005029/5351137825"
     // AdMob console -> Apps -> TUNL - Cave Flyer (iOS) -> Ad units -> "Continue Rewarded".
     static let rewardedAdUnitID = "ca-app-pub-4882203470005029/6198883271"
+    // AdMob console -> Apps -> TUNL - Cave Flyer (iOS) -> Ad units -> "Shards Rewarded".
+    // A second, dedicated rewarded unit (separate from "Continue Rewarded" above) so the
+    // Missions-drawer daily shard bonus reports its own fill/eCPM.
+    static let shardsRewardedAdUnitID = "ca-app-pub-4882203470005029/4182133565"
     private static let deathCountKey = "tunnel_death_count"
     private static let lastAdTimeKey = "tunnel_last_ad_time"
     private static let deathsPerAd = 3
@@ -38,6 +42,12 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
 
     private var interstitial: InterstitialAd?
     private var rewarded: RewardedAd?
+    // The Missions-drawer daily shard bonus (src/constants.js SHARDS_AD_REWARD). Its own
+    // RewardedAd instance + unit, resolved independently of `rewarded` above by object
+    // identity in the delegate callbacks below (both are RewardedAd, so `is` can't tell
+    // them apart).
+    private var shardsRewarded: RewardedAd?
+    private var shardsRewardEarned = false
     // Set by the userDidEarnRewardHandler passed to rewarded.present(from:), which
     // (per the SDK's own design) only ever fires on an actually-completed watch --
     // never on a skip/close. Read back in adDidDismissFullScreenContent below to
@@ -66,6 +76,13 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
     var onRewardedAdReadyChange: ((Bool) -> Void)?
     var onRewardEarned: (() -> Void)?
     var onReviveDeclined: (() -> Void)?
+
+    // Shards rewarded ad (Missions-drawer daily bonus). Mirrors the continue trio above:
+    // onShardsAdReadyChange -> state.js shardsAdReady, onShardsRewardEarned ->
+    // window._tunlShardsRewardGranted, onShardsAdDeclined -> window._tunlShardsRewardDeclined.
+    var onShardsAdReadyChange: ((Bool) -> Void)?
+    var onShardsRewardEarned: (() -> Void)?
+    var onShardsAdDeclined: (() -> Void)?
 
     // Called once the WKWebView content is visible (see GameView.swift's
     // webView(_:didFinish:)) so both the UMP consent form and Apple's ATT
@@ -120,6 +137,7 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
             _ = await MobileAds.shared.start()
             await self.loadInterstitial()
             await self.loadRewarded()
+            await self.loadShardsRewarded()
         }
     }
 
@@ -207,6 +225,32 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
         }
     }
 
+    // Called from GameView.Coordinator's "ads" handler on {action: "shardsAdRequest"}
+    // (src/input.js's Missions-drawer bonus row), only ever fired while
+    // onShardsAdReadyChange last reported true. Presents defensively anyway -- a stale
+    // flag just means an immediate decline, not a dangling JS wait.
+    func requestShardsAd() {
+        guard let shardsRewarded, let root = rootViewController() else {
+            onShardsAdDeclined?()
+            return
+        }
+        shardsRewardEarned = false
+        shardsRewarded.present(from: root) { [weak self] in
+            self?.shardsRewardEarned = true
+        }
+    }
+
+    private func loadShardsRewarded() async {
+        do {
+            shardsRewarded = try await RewardedAd.load(with: Self.shardsRewardedAdUnitID, request: Request())
+            shardsRewarded?.fullScreenContentDelegate = self
+            onShardsAdReadyChange?(true)
+        } catch {
+            print("AdsManager: failed to load shards rewarded ad: \(error.localizedDescription)")
+            onShardsAdReadyChange?(false)
+        }
+    }
+
     private func rootViewController() -> UIViewController? {
         UIApplication.shared.connectedScenes
             .compactMap { ($0 as? UIWindowScene)?.keyWindow }
@@ -219,14 +263,21 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
 
     func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) {
         onDidDismiss?()
-        if ad is RewardedAd {
+        // Both rewarded formats are RewardedAd, so resolve by object identity rather
+        // than `is`. The dismiss callback is the one guaranteed to fire either way
+        // (watched fully, closed early, or the daily cap silently declined to show
+        // anything) -- *RewardEarned was only ever set true by the userDidEarnReward
+        // handler in the matching request*, so this is the single point that resolves
+        // the JS side no matter which of those happened.
+        if ad === shardsRewarded {
+            shardsRewarded = nil
+            Task { await loadShardsRewarded() }
+            if shardsRewardEarned { onShardsRewardEarned?() } else { onShardsAdDeclined?() }
+            return
+        }
+        if ad === rewarded {
             rewarded = nil
             Task { await loadRewarded() }
-            // The one callback guaranteed to fire either way (watched fully, closed
-            // early, or the daily impression cap silently declined to show anything)
-            // -- rewardEarned was only ever set true by the userDidEarnRewardHandler
-            // in requestRevive above, so this is the single point that resolves the
-            // JS side no matter which of those actually happened.
             if rewardEarned { onRewardEarned?() } else { onReviveDeclined?() }
             return
         }
@@ -236,7 +287,14 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
 
     func ad(_ ad: FullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) {
         onDidDismiss?()
-        if ad is RewardedAd {
+        if ad === shardsRewarded {
+            print("AdsManager: failed to present shards rewarded ad: \(error.localizedDescription)")
+            shardsRewarded = nil
+            Task { await loadShardsRewarded() }
+            onShardsAdDeclined?()
+            return
+        }
+        if ad === rewarded {
             print("AdsManager: failed to present rewarded ad: \(error.localizedDescription)")
             rewarded = nil
             Task { await loadRewarded() }

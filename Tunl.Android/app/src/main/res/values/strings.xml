@@ -12,4 +12,8 @@
     <string name="admob_interstitial_ad_unit_id" translatable="false">ca-app-pub-4882203470005029/7542095007</string>
     <!-- AdMob console -> Apps -> TUNL: Tägliche Höhle (Android) -> Ad units -> "Continue Rewarded". -->
     <string name="admob_rewarded_ad_unit_id" translatable="false">ca-app-pub-4882203470005029/4222245171</string>
+    <!-- AdMob console -> Apps -> TUNL: Tägliche Höhle (Android) -> Ad units -> "Shards Rewarded".
+         Dedicated unit for the Missions-drawer daily shard bonus, separate from "Continue
+         Rewarded" above so fill/eCPM report independently. -->
+    <string name="admob_shards_rewarded_ad_unit_id" translatable="false">ca-app-pub-4882203470005029/1448159018</string>
 </resources>

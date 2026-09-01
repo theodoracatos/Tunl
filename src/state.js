@@ -87,6 +87,10 @@ if (allShipsOwned) unlockedSkins = (1 << SKINS.length) - 1;
 // on the same UTC day boundary as dailyBest/dailyRuns above (see lifecycle.js startPlay()).
 let dailyShardsEarned = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tunnel_daily_shards') || '0') : 0;
 let runShardsBanked = 0; // this run's actual post-cap shard gain, shown on the death screen
+// Whether today's once-per-day rewarded-ad shard bonus (constants.js SHARDS_AD_REWARD)
+// has already been claimed. Persisted, reset on the same UTC day boundary as
+// dailyShardsEarned (see lifecycle.js startPlay()).
+let shardsAdClaimedToday = _savedLastDay === _initToday ? localStorage.getItem('tunnel_shards_ad_claimed') === '1' : false;
 let removeAdsOwned = localStorage.getItem('tunnel_remove_ads') === '1';
 // Set by the native layer (see main.js's _tunlNativeUpdate) once the UMP SDK's
 // consent-info update resolves. Only true for players in a region where Google's
@@ -99,6 +103,15 @@ let privacyOptionsRequired = false;
 // offer (update.js die()) so the icon is never shown with nothing behind it -- no
 // native bridge (browser testing) means this simply stays false forever.
 let rewardedAdReady = false;
+// Whether native has a *shards* rewarded ad loaded (its own dedicated unit, separate
+// from rewardedAdReady's continue unit), pushed via _tunlNativeUpdate the same way.
+// Gates the Missions-drawer bonus row (draw.js) so it's only tappable with an ad behind
+// it -- no native bridge (browser) means it stays false forever and the row is inert.
+let shardsAdReady = false;
+// True only while the shards rewarded ad is on screen (set in input.js on request,
+// cleared by _tunlShardsRewardGranted/_tunlShardsRewardDeclined in main.js) -- guards
+// the grant callback against a stray second fire.
+let shardsAdPending = false;
 let activeSkin    = parseInt(localStorage.getItem('tunnel_skin')  || '0');
 if (!(unlockedSkins & (1 << activeSkin))) activeSkin = 0;
 // Per-ship mastery XP (constants.js masteryLevel/masteryLerp), index-aligned with SKINS.
@@ -155,6 +168,9 @@ let _currencyInfoPanelRect = null;
 let showMissions = false;
 let _missionsBtnRect = null;
 let _missionsPanelRect = null;
+// The rewarded-ad shard-bonus row at the bottom of the Missions drawer (draw.js /
+// constants.js SHARDS_AD_REWARD). Hit-tested in input.js while showMissions is open.
+let _shardsAdBtnRect = null;
 let showShipPicker = false;
 let _shipPickerBtnRect = null;
 let _shipPrevBtnRect = null;

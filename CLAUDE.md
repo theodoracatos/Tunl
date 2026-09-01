@@ -364,6 +364,18 @@ Remove Ads. The wall-clock floor is the rule that actually matters: a good run l
 engaged players roughly every 90 seconds. When the floor blocks, the death counter is
 rolled back one so the two rules don't compound into a much longer gap than intended.
 
+That is the only *forced* ad. There are also two **opt-in rewarded videos**, each on its
+own dedicated AdMob unit and each still shown to Remove Ads owners (Remove Ads buys out
+the forced interstitial, not a video the player actively taps):
+- **Rewarded continue** (8.1) - offered once per run past score 25 on death, revives the
+  run. See the Rewarded continue notes in `constants.js`.
+- **Rewarded shard bonus** (8.2) - a row at the bottom of the Missions drawer: watch an
+  ad once per UTC day for a flat `SHARDS_AD_REWARD` (20) shards, exempt from
+  `DAILY_SHARD_CAP` like a mission reward. Native plumbing
+  (`shardsAdRequest` / `_tunlShardsRewardGranted` / `_tunlShardsRewardDeclined` /
+  `shardsAdReady`) mirrors the continue's 1:1. With no native bridge (browser) the row
+  stays inert.
+
 ## Key design decisions (do not revert)
 
 - **Coin bonus is a real difficulty lever, not a marginal aid**: `GAP_PER_COIN` = H*0.06, `GAP_BONUS_MAX` = H*0.15 (see Coin system above) - at max difficulty (196px full corridor at H=600) one coin adds ~37% to the halfGap, a maxed bonus nearly doubles it. Coins are essential at high difficulty by design, not a small nudge - don't shrink these constants back down to make the bonus merely "helpful."
@@ -385,7 +397,9 @@ rolled back one so the two rules don't compound into a much longer gap than inte
 
 Every paid ship (`SKINS` in `src/constants.js`) needs two things at once: `cost` shards
 (earned from collected coins, `runCoins`, banked at death, capped daily by
-`DAILY_SHARD_CAP`) and `stardustGate` days played (`stardust` in `state.js`, +1 per
+`DAILY_SHARD_CAP` = 160; the 3 daily missions and the once-per-day rewarded-ad bonus
+`SHARDS_AD_REWARD` = 20 are exempt, so the real ceiling is 160+20+30+40+50 = 300/day)
+and `stardustGate` days played (`stardust` in `state.js`, +1 per
 calendar day opened regardless of skill or how much is played that day, +1 bonus per
 7-day unbroken streak - see the Stardust doc block in `constants.js`). Stardust is never
 spent, only checked as a `>=` threshold, so a tier's gate doesn't stack on top of the

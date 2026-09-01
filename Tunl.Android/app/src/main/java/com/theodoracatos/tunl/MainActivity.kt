@@ -118,6 +118,7 @@ class MainActivity : ComponentActivity() {
                         "interstitialRequest" ->
                             ads.requestInterstitial(billing.removeAdsOwned, body.optInt("score"))
                         "reviveRequest" -> ads.requestRevive(body.optInt("score"))
+                        "shardsAdRequest" -> ads.requestShardsAd()
                         "privacyOptions" -> ads.showPrivacyOptionsForm(this@MainActivity)
                     }
                 }
@@ -208,6 +209,16 @@ class MainActivity : ComponentActivity() {
         }
         ads.onReviveDeclined = {
             runJs("window._tunlReviveDeclined && window._tunlReviveDeclined()")
+        }
+        // Shards rewarded ad (Missions-drawer daily bonus, src/constants.js SHARDS_AD_REWARD).
+        ads.onShardsAdReadyChange = { ready ->
+            runJs("window._tunlNativeUpdate && window._tunlNativeUpdate({\"shardsAdReady\":$ready})")
+        }
+        ads.onShardsRewardEarned = {
+            runJs("window._tunlShardsRewardGranted && window._tunlShardsRewardGranted()")
+        }
+        ads.onShardsAdDeclined = {
+            runJs("window._tunlShardsRewardDeclined && window._tunlShardsRewardDeclined()")
         }
 
         webView = WebView(this).apply {
@@ -381,16 +392,12 @@ class MainActivity : ComponentActivity() {
 
     // Mirrors GameView.swift's fetchWorldRank: pulls the player's standing on the daily
     // board and hands it to the page along with a player-base size for the death screen
-    // (src/draw.js right column, via main.js _tunlNativeUpdate). The total comes from
-    // the ALL_TIME variant, not the daily one: the daily board recurs and only counts
-    // today's players, so its total read as a tiny, confusing denominator ("#3 / 6")
-    // next to a rank number clearly drawn from a much bigger population -- the all-time
-    // variant's total is what a player actually expects "out of how many" to mean.
-    //
-    // loadLeaderboardMetadata with forceReload=true is one round trip for both variants:
-    // a Leaderboard carries a LeaderboardVariant per (time span, collection) pair, and
-    // both the daily and all-time variants come back in the same `variants` list, so no
-    // second network call is needed for the all-time total.
+    // (src/draw.js right column, via main.js _tunlNativeUpdate). Both the rank and the
+    // total come from the DAILY variant: the death screen's rank line is explicitly
+    // "how I'm doing among the people who also played today", so the denominator has to
+    // be today's player count, not the all-time population - "1 / 51" when only 12
+    // people played today reads as wrong. The daily variant's numScores is exactly
+    // that count, and it comes back in the same metadata call as the rank.
     private fun fetchWorldRank() {
         PlayGames.getLeaderboardsClient(this)
             .loadLeaderboardMetadata(getString(R.string.leaderboard_id), true)
@@ -405,11 +412,7 @@ class MainActivity : ComponentActivity() {
                 if (!dailyVariant.hasPlayerInfo()) return@addOnSuccessListener
                 val rank = dailyVariant.playerRank
                 if (rank <= 0L) return@addOnSuccessListener
-                val allTimeVariant = variants.firstOrNull {
-                    it.timeSpan == LeaderboardVariant.TIME_SPAN_ALL_TIME &&
-                        it.collection == LeaderboardVariant.COLLECTION_PUBLIC
-                }
-                val total = allTimeVariant?.numScores ?: 0L
+                val total = dailyVariant.numScores
                 runJs(
                     "window._tunlNativeUpdate && window._tunlNativeUpdate(" +
                         "{\"worldRank\":$rank,\"worldRankTotal\":$total})"

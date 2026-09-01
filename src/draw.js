@@ -2303,7 +2303,11 @@ function drawTitleScreen() {
     {
         const hasGameCenter = !!window.webkit?.messageHandlers?.gameCenter;
         const hasChallenge  = hasGameCenter && !!window._tunlChallengeSupported;
-        const doneCount     = dailyMissionsClaimed.filter(Boolean).length;
+        // The rewarded-ad shard bonus row counts as a 4th daily task in the badge
+        // (constants.js SHARDS_AD_REWARD) -- "watch an ad" is itself one of the day's
+        // things to do, so the badge reads N/4, not N/3.
+        const missionSlots  = dailyMissionIdx.length + 1;
+        const doneCount     = dailyMissionsClaimed.filter(Boolean).length + (shardsAdClaimedToday ? 1 : 0);
 
         // Today's world rank (state.js, populated after Game Center auth + the
         // first score submit resolves -- see main.js/GameView.swift's
@@ -2312,10 +2316,10 @@ function drawTitleScreen() {
         const hasRank = worldRank !== null && worldRank > 0;
 
         const items = [];
-        // Badge stays visible even at 3/3 (it used to hide on completion, which read as
+        // Badge stays visible even at 4/4 (it used to hide on completion, which read as
         // "missions gone" rather than "all done") -- it just turns green to mark the day cleared.
-        const allMissionsDone = doneCount >= dailyMissionIdx.length;
-        items.push({ key: 'missions', badge: `${doneCount}/${dailyMissionIdx.length}`, showBadge: true, badgeDone: allMissionsDone });
+        const allMissionsDone = doneCount >= missionSlots;
+        items.push({ key: 'missions', badge: `${doneCount}/${missionSlots}`, showBadge: true, badgeDone: allMissionsDone });
         if (hasGameCenter) items.push({ key: 'leaderboard', badge: hasRank ? (worldRankTotal > 0 ? `${worldRank}/${worldRankTotal}` : `${worldRank}`) : null, showBadge: hasRank });
         if (hasChallenge)  items.push({ key: 'challenge', badge: activeChallenges > 0 ? `${activeChallenges}` : null, showBadge: activeChallenges > 0 });
         items.push({ key: 'shop' });
@@ -2373,6 +2377,12 @@ function drawTitleScreen() {
 
         const panW   = Math.min(W * 0.62, 380);
         const rewStrFor = m => `+${MISSION_REWARD_BY_TIER[MISSION_DEFS[dailyMissionIdx[m]].tier]} ⧫`;
+        // Bottom row: the once-per-day rewarded-ad shard bonus (constants.js
+        // SHARDS_AD_REWARD). Unlike the 3 mission rows above it, this one is a button.
+        const adRewStr  = `+${SHARDS_AD_REWARD} ⧫`;
+        const adLabel   = T.watchAdShards;
+        const adClaimed = shardsAdClaimedToday;
+        const adReady   = shardsAdReady && !adClaimed;
         let mFsz = FS * 0.024;
         const rewFont = () => `bold ${mFsz * 1.12}px 'Courier New',monospace`;
         const measureCols = () => {
@@ -2386,8 +2396,9 @@ function drawTitleScreen() {
                 pw = Math.max(pw, ctx.measureText(shown).width);
                 lw = Math.max(lw, ctx.measureText(lb).width);
             }
+            lw = Math.max(lw, ctx.measureText(adLabel).width);
             ctx.font = rewFont();
-            let rw = 0;
+            let rw = ctx.measureText(adRewStr).width;
             for (let m = 0; m < dailyMissionIdx.length; m++) rw = Math.max(rw, ctx.measureText(rewStrFor(m)).width);
             const gapPL = mFsz * 0.55, gapLR = mFsz * 1.6;
             return { pw, lw, rw, gapPL, gapLR, total: pw + gapPL + lw + gapLR + rw };
@@ -2400,7 +2411,9 @@ function drawTitleScreen() {
         }
 
         const padTop = H * 0.070, padBottom = H * 0.050, titleH = H * 0.075, rowH = H * 0.062;
-        const panH = padTop + titleH + rowH * dailyMissionIdx.length + padBottom;
+        // + a divider gap + one more row for the rewarded-ad bonus at the bottom.
+        const dividerGap = rowH * 0.45;
+        const panH = padTop + titleH + rowH * dailyMissionIdx.length + dividerGap + rowH + padBottom;
         const panX = W / 2 - panW / 2, panY = H / 2 - panH / 2;
         _missionsPanelRect = { x: panX, y: panY, w: panW, h: panH };
 
@@ -2449,6 +2462,37 @@ function drawTitleScreen() {
             ctx.shadowBlur  = 0;
             rowY += rowH;
         }
+
+        // ── Rewarded-ad shard bonus row ──────────────────────────────────
+        // A button, not a passive tracker: tapped in input.js -> shardsAdRequest.
+        // Dimmed when already claimed today or when native has no ad loaded
+        // (browser: shardsAdReady never flips true, so this stays inert).
+        rowY += dividerGap;
+        ctx.strokeStyle = 'rgba(65,88,155,0.35)';
+        ctx.lineWidth   = 1;
+        ctx.beginPath();
+        ctx.moveTo(blockX, rowY - rowH * 0.62);
+        ctx.lineTo(rewRX,  rowY - rowH * 0.62);
+        ctx.stroke();
+
+        _shardsAdBtnRect = { x: panX + panW * 0.05, y: rowY - rowH * 0.80, w: panW * 0.90, h: rowH * 1.35 };
+
+        ctx.font        = `${mFsz}px 'Courier New',monospace`;
+        ctx.shadowColor = 'rgba(0,0,0,0.85)';
+        ctx.shadowBlur  = 2;
+        ctx.fillStyle   = adClaimed ? `rgba(120,255,150,0.90)` : `rgba(175,190,225,${adReady ? 0.92 : 0.38})`;
+        ctx.textAlign   = 'right';
+        ctx.fillText(adClaimed ? '✓' : '▶', progRX, rowY);
+        ctx.textAlign   = 'left';
+        ctx.fillText(adLabel, labelLX, rowY);
+        ctx.textAlign   = 'right';
+        ctx.font        = rewFont();
+        ctx.fillStyle   = `rgba(255,228,125,${adClaimed ? 0.62 : adReady ? 1.0 : 0.45})`;
+        ctx.shadowColor = `rgba(255,205,60,${adClaimed ? 0.35 : adReady ? 0.60 : 0.25})`;
+        ctx.shadowBlur  = 7;
+        ctx.fillText(adRewStr, rewRX, rowY);
+        ctx.shadowBlur  = 0;
+
         ctx.textAlign = 'center';
     }
 

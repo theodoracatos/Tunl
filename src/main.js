@@ -58,6 +58,28 @@ window._tunlNativeUpdate = function (state) {
     if (typeof state.rewardedAdReady === 'boolean') {
         rewardedAdReady = state.rewardedAdReady;
     }
+    // Same, for the separate "Shards Rewarded" unit behind the Missions-drawer bonus row
+    // (constants.js SHARDS_AD_REWARD). Gates that row's tappable state in draw.js/input.js.
+    if (typeof state.shardsAdReady === 'boolean') {
+        shardsAdReady = state.shardsAdReady;
+    }
+};
+
+// Shards rewarded-ad result (see AdsManager.swift/.kt's shards-rewarded manager + the
+// "ads" handler's {action:'shardsAdRequest'} wiring). Only meaningful while
+// state.js's shardsAdPending is true.
+window._tunlShardsRewardGranted = function () {
+    if (!shardsAdPending) return;
+    shardsAdPending = false;
+    if (shardsAdClaimedToday) return;   // belt-and-braces against a double fire
+    shards += SHARDS_AD_REWARD;
+    shardsAdClaimedToday = true;
+    localStorage.setItem('tunnel_shards', shards);
+    localStorage.setItem('tunnel_shards_ad_claimed', '1');
+    sfxMissionDone();   // already the "you earned shards" chime
+};
+window._tunlShardsRewardDeclined = function () {
+    shardsAdPending = false;
 };
 
 // Rewarded continue result (see AdsManager.swift/.kt requestRevive + the "ads"
