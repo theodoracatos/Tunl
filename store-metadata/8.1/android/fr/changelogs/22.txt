@@ -1,0 +1,1 @@
+Continuer avec pub : si tu t'écrases en pleine partie, tu peux regarder une courte pub et repartir là où tu es mort, une fois par partie, à partir de 25 points. Nouvelle fenêtre de répit : un coup encaissé par le bouclier n'enchaîne plus sur une mort immédiate, et tu es brièvement invincible pour te dégager. Écran-titre aussi plus net.

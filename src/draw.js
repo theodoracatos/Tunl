@@ -2483,7 +2483,7 @@ function drawTitleScreen() {
         ctx.fillStyle   = 'rgba(255,225,110,0.95)';
         ctx.shadowColor = 'rgba(0,0,0,0.9)';
         ctx.shadowBlur  = 5;
-        ctx.fillText(T.ships, W / 2, H * 0.09 - FS * 0.013); // see T.missions title note
+        ctx.fillText(T.ships, W / 2, H * 0.09 + FS * 0.005); // nudged down a touch instead of up like the other submenu titles; see T.missions title note
         ctx.shadowBlur  = 0;
 
         // Shard/stardust wallet -- the numbers that matter when choosing a
@@ -2539,7 +2539,7 @@ function drawTitleScreen() {
         // this sheet has nothing else competing for the space, so the ships
         // themselves carry the screen instead of the (already-generous) text
         // around them.
-        const cellR     = Math.min(UI_H * 0.070, H * 0.15);
+        const cellR     = Math.min(UI_H * 0.065, H * 0.14);
         const cellGap   = Math.max(cellR * 3.0, (W * 0.72) / GRID_COLS);
         const rowHalfW  = (GRID_COLS - 1) * cellGap / 2;
         const startXg   = gridCX - rowHalfW;
@@ -3164,7 +3164,7 @@ function drawTitleScreen() {
             ctx.font = `bold ${titleFsz}px 'Courier New',monospace`;
         }
         ctx.fillStyle   = 'rgba(255,225,110,0.95)';
-        ctx.fillText(T.howItWorks, W / 2, panY + padTop - FS * 0.013); // see T.missions title note
+        ctx.fillText(T.howItWorks, W / 2, panY + padTop + FS * 0.005); // nudged down a touch instead of up like the other submenu titles; see T.missions title note
 
         ctx.textAlign = 'left';
         ctx.font      = `${bodyFontSz}px 'Courier New',monospace`;

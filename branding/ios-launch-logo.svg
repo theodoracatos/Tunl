@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- ============================================================
+       iOS launch-screen logo - the ship mark from icon-mark.svg
+       ("S1 / Solo") with NO background rect (transparent), so the
+       LaunchScreen storyboard can lay it on the LaunchBackground
+       colour (#04040A) itself, matching the Android 12 system
+       splash (which shows the same ship glyph on the same colour).
+       Keeps the soft blue aura. Exported to the LaunchLogo imageset
+       by branding/export-icons.sh.
+       ============================================================ -->
+  <defs>
+    <radialGradient id="aura" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#a9c4ff" stop-opacity="0.42"/>
+      <stop offset="55%"  stop-color="#6f8dff" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#5a4fe0" stop-opacity="0"/>
+    </radialGradient>
+    <!-- objectBoundingBox gradients: they ride the ship's own bbox,
+         so they run nose-to-tail no matter how the group is rotated. -->
+    <linearGradient id="shipGrd" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#c9d5f2"/>
+      <stop offset="55%"  stop-color="#f2f5ff"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+    <linearGradient id="shipShade" x1="1" y1="0" x2="0" y2="0">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.12"/>
+      <stop offset="50%"  stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#1a1f3a" stop-opacity="0.20"/>
+    </linearGradient>
+    <linearGradient id="jetGrd" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#6cc4ff" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#c2e6ff" stop-opacity="0.85"/>
+    </linearGradient>
+    <filter id="shipGlow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="19"/></filter>
+    <filter id="jetBlur"  x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7"/></filter>
+  </defs>
+
+  <!-- soft glow the ship sits in, centred on the canvas -->
+  <circle cx="512" cy="512" r="360" fill="url(#aura)"/>
+
+  <!-- Ship: shipPath() r=130 + drawShip() detailing. The visual centre
+       of the sprite's bounding box is x=32.5 (nose reaches +223.6,
+       tail -158.6), so the inner translate(-32.5,0) drops that centre
+       onto the rotate pivot; the pivot itself is the canvas centre. -->
+  <g transform="translate(508,514) rotate(-30) scale(1.4) translate(-32.5,0)">
+    <!-- cool thrust cone, drawn first so it reads as trailing behind -->
+    <path d="M -150 -34 Q -235 -11 -300 0 Q -235 11 -150 34 Z" fill="url(#jetGrd)" filter="url(#jetBlur)"/>
+    <path d="M -150 -16 Q -220 -5 -262 0 Q -220 5 -150 16 Z" fill="#eef6ff" opacity="0.92"/>
+
+    <!-- glow halo of the hull -->
+    <path d="M 223.6 0 L 145.6 -22.1 L 49.4 -28.6 L -84.5 -119.6 L -140.4 -28.6 L -158.6 -41.6 L -136.5 -10.4 L -119.6 0 L -136.5 10.4 L -158.6 41.6 L -140.4 28.6 L -84.5 119.6 L 49.4 28.6 L 145.6 22.1 Z"
+          fill="#e8eeff" opacity="0.5" filter="url(#shipGlow)"/>
+
+    <!-- hull -->
+    <path d="M 223.6 0 L 145.6 -22.1 L 49.4 -28.6 L -84.5 -119.6 L -140.4 -28.6 L -158.6 -41.6 L -136.5 -10.4 L -119.6 0 L -136.5 10.4 L -158.6 41.6 L -140.4 28.6 L -84.5 119.6 L 49.4 28.6 L 145.6 22.1 Z"
+          fill="url(#shipGrd)"/>
+    <path d="M 223.6 0 L 145.6 -22.1 L 49.4 -28.6 L -84.5 -119.6 L -140.4 -28.6 L -158.6 -41.6 L -136.5 -10.4 L -119.6 0 L -136.5 10.4 L -158.6 41.6 L -140.4 28.6 L -84.5 119.6 L 49.4 28.6 L 145.6 22.1 Z"
+          fill="url(#shipShade)"/>
+
+    <!-- leading-edge highlight: needle nose along the chine to the wing tip -->
+    <path d="M 223.6 0 L 145.6 -22.1 L 49.4 -28.6 L -84.5 -119.6"
+          fill="none" stroke="#ffffff" stroke-opacity="0.34" stroke-width="12"
+          stroke-linejoin="round" stroke-linecap="round"/>
+
+    <!-- engine nacelle pods + inlet cones (kept light so they read as
+         panel detail on the white hull, not holes) -->
+    <ellipse cx="-41.6" cy="-65" rx="54.6" ry="13" fill="#20264a" fill-opacity="0.16"/>
+    <ellipse cx="-41.6" cy="65"  rx="54.6" ry="13" fill="#20264a" fill-opacity="0.16"/>
+    <circle  cx="-2.6"  cy="-65" r="9" fill="#ffffff" fill-opacity="0.28"/>
+    <circle  cx="-2.6"  cy="65"  r="9" fill="#ffffff" fill-opacity="0.28"/>
+
+    <!-- cockpit canopy -->
+    <ellipse cx="143" cy="-6.5" rx="28.6" ry="11.05" transform="rotate(-6 143 -6.5)" fill="#cdebff" fill-opacity="0.6"/>
+  </g>
+</svg>

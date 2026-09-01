@@ -1,0 +1,1 @@
+Rewarded Continue: crash deep in a run and you can watch a short ad to fly on from where you died, once per run, score 25+. New grace window: a shielded hit no longer lines up an instant second death, and you get a moment of invulnerability to pull clear. Plus a tighter, calmer title screen.

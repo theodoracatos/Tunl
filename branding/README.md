@@ -20,6 +20,10 @@ and unchanged by the icon direction; the two are meant to lock up together
   so the sprite plus its thrust cone sits inside Android's 66dp adaptive-icon
   safe zone. Pairs with the `tunlBackground` color (`#04040A`) as the
   background layer.
+- `ios-launch-logo.svg` — the ship mark with no background rect (transparent),
+  for the iOS `LaunchScreen.storyboard`, which lays it on the
+  `LaunchBackground` color (`#04040A`) itself. Matches the Android 12 system
+  splash, which shows the same ship glyph on the same color.
 - `wordmark.svg` — "TUNL" for dark backgrounds (site header, splash, dark
   listing sections).
 - `wordmark-light.svg` — same wordmark, navy letterforms, for white/light
@@ -42,6 +46,11 @@ script flattens onto `#04040e`; do the same for any manual export.
 
 **iOS** — linked via `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon`:
 - `Tunl/Tunl/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png`
+
+**iOS launch screen** — `Info.plist` `UILaunchStoryboardName = LaunchScreen`
+(`Tunl/Tunl/LaunchScreen.storyboard`), image view uses `@LaunchLogo` on the
+`LaunchBackground` colorset:
+- `Tunl/Tunl/Assets.xcassets/LaunchLogo.imageset/launch-logo@{1,2,3}x.png` (from `ios-launch-logo.svg`)
 
 **Android** — `AndroidManifest.xml` points `android:icon` at `@mipmap/ic_launcher`
 and `android:roundIcon` at `@mipmap/ic_launcher_round`; both `mipmap-anydpi-v26`

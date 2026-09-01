@@ -8,6 +8,7 @@ cd "$(dirname "$0")/.."
 MARK=branding/icon-mark.svg
 FG=branding/icon-adaptive-foreground.svg
 FEAT=branding/feature-graphic.svg
+LOGO=branding/ios-launch-logo.svg
 TMP=$(mktemp -d)
 
 # render MARK at size $1 to $2, flattened to opaque RGB on #04040e (no alpha)
@@ -38,6 +39,13 @@ for d in "mdpi 48" "hdpi 72" "xhdpi 96" "xxhdpi 144" "xxxhdpi 192"; do
   set -- $d
   rgb   "$2" "Tunl.Android/app/src/main/res/mipmap-$1/ic_launcher.png"
   round "$2" "Tunl.Android/app/src/main/res/mipmap-$1/ic_launcher_round.png"
+done
+
+echo "iOS launch-screen logo (RGBA; LaunchScreen.storyboard lays it on the LaunchBackground colour, matching Android's system splash):"
+for s in "1 512" "2 1024" "3 1536"; do
+  set -- $s
+  rsvg-convert -w "$2" -h "$2" "$LOGO" -o "Tunl/Tunl/Assets.xcassets/LaunchLogo.imageset/launch-logo@${1}x.png"
+  echo "  Tunl/Tunl/Assets.xcassets/LaunchLogo.imageset/launch-logo@${1}x.png (${2}x${2})"
 done
 
 echo "Android adaptive-icon foreground (RGBA; ic_launcher.xml + ic_launcher_round.xml reference @drawable/ic_launcher_foreground):"

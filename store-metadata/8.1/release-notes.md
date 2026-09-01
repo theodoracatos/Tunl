@@ -1,0 +1,76 @@
+# TUNL 8.1 - Release notes (15 languages)
+
+iOS `MARKETING_VERSION` 8.1 / build 29. Android `versionName` 8.1 / `versionCode` 22.
+
+Headline changes since 8.0:
+- **Rewarded Continue** - crash on a run past score 25 and you can watch one short ad to
+  resume from where you died. Once per run.
+- **Hit grace window** - a shield-absorbed hit no longer lines up an instant second
+  death; you get ~1.4s of invulnerability and get nudged back inside the corridor.
+- Tighter title screen - rail buttons sit a little closer, ship-picker cells a touch
+  smaller so the perk description has more room.
+
+Each locale is under Google Play's 500-character release-notes limit (see
+`check-lengths.js`). One set of copy covers both stores.
+
+---
+
+## en
+
+Rewarded Continue: crash deep in a run and you can watch a short ad to fly on from where you died, once per run, score 25+. New grace window: a shielded hit no longer lines up an instant second death, and you get a moment of invulnerability to pull clear. Plus a tighter, calmer title screen.
+
+## de
+
+Weiterfliegen gegen Werbung: Wenn du bei einem starken Lauf abstürzt, kannst du eine kurze Werbung schauen und genau dort weiterfliegen, wo du gestorben bist - einmal pro Lauf, ab Punktzahl 25. Neues Schonzeitfenster: Ein geblockter Treffer führt nicht mehr direkt in den zweiten Tod, und du bist kurz unverwundbar, um dich zu fangen. Dazu ein aufgeräumterer Titelscreen.
+
+## fr
+
+Continuer avec pub : si tu t'écrases en pleine partie, tu peux regarder une courte pub et repartir là où tu es mort, une fois par partie, à partir de 25 points. Nouvelle fenêtre de répit : un coup encaissé par le bouclier n'enchaîne plus sur une mort immédiate, et tu es brièvement invincible pour te dégager. Écran-titre aussi plus net.
+
+## it
+
+Continua con pubblicità: se ti schianti durante una bella corsa, puoi guardare un breve annuncio e riprendere da dove sei morto, una volta per corsa, dai 25 punti. Nuova finestra di grazia: un colpo assorbito dallo scudo non porta più a una seconda morte immediata, e sei brevemente invulnerabile per rimetterti in carreggiata. Anche schermata iniziale più ordinata.
+
+## es
+
+Continuar con anuncio: si te estrellas en plena partida, puedes ver un anuncio corto y seguir justo donde moriste, una vez por partida, desde 25 puntos. Nueva ventana de gracia: un golpe absorbido por el escudo ya no encadena una segunda muerte inmediata, y eres invulnerable un instante para recuperarte. Además, una pantalla de título más ordenada.
+
+## pt
+
+Continuar com anúncio: se você bater no meio de uma boa corrida, pode assistir a um anúncio curto e voltar de onde morreu, uma vez por corrida, a partir de 25 pontos. Nova janela de folga: um golpe absorvido pelo escudo não leva mais a uma segunda morte imediata, e você fica invulnerável por um instante para se recuperar. E uma tela de título mais organizada.
+
+## ja
+
+広告を見て続行:好調なランで墜落したとき、短い広告を見れば死んだ地点からそのまま再開できます(1ランに1回、スコア25以上)。新しい猶予時間:シールドで防いだ直後にすぐ二度目の死につながらなくなり、短時間無敵で体勢を立て直せます。タイトル画面も少しすっきりしました。
+
+## ko
+
+광고 보고 계속하기: 좋은 기록 도중에 부딪혀도 짧은 광고를 보면 죽은 지점에서 바로 이어서 날 수 있습니다(런당 1회, 점수 25 이상). 새로운 유예 시간: 실드로 막은 직후 곧바로 두 번째 죽음으로 이어지지 않고, 잠깐 무적 상태로 자세를 가다듬을 수 있습니다. 타이틀 화면도 더 깔끔해졌습니다.
+
+## zh
+
+觀看廣告以繼續:在一場好局中墜毀時,看一段短廣告就能從你死亡的地方繼續飛行(每局一次,分數 25 以上)。新的緩衝時間:被護盾擋下的一擊不再立刻導致第二次死亡,你會短暫無敵以重整姿態。標題畫面也更簡潔了。
+
+## ru
+
+Продолжение за рекламу: если разбился в хорошем забеге, посмотри короткую рекламу и продолжи с того места, где погиб (один раз за забег, от 25 очков). Новое окно передышки: поглощённый щитом удар больше не ведёт сразу ко второй смерти, и ты ненадолго неуязвим, чтобы выровняться. А ещё аккуратнее титульный экран.
+
+## ar
+
+المتابعة مقابل إعلان: إذا اصطدمت في جولة جيدة، يمكنك مشاهدة إعلان قصير والعودة من حيث متّ، مرة واحدة لكل جولة، من 25 نقطة. نافذة مهلة جديدة: الضربة التي يمتصها الدرع لم تعد تؤدي فوراً إلى موت ثانٍ، وتصبح محصناً للحظة كي تستعيد توازنك. كما أصبحت شاشة العنوان أكثر ترتيباً.
+
+## tr
+
+Reklamla devam: iyi giden bir turda çarpışırsan kısa bir reklam izleyip öldüğün yerden uçmaya devam edebilirsin (tur başına bir kez, 25 puan ve üzeri). Yeni tolerans penceresi: kalkanın karşıladığı bir darbe artık hemen ikinci bir ölüme yol açmıyor ve toparlanman için kısa süre dokunulmaz oluyorsun. Ayrıca daha derli toplu bir başlık ekranı.
+
+## id
+
+Lanjut dengan iklan: kalau kamu menabrak di tengah run yang bagus, tonton iklan singkat dan lanjut dari titik kamu mati (sekali per run, skor 25+). Jendela kelonggaran baru: pukulan yang ditahan perisai tidak lagi langsung berujung kematian kedua, dan kamu kebal sesaat untuk memulihkan posisi. Plus layar judul yang lebih rapi.
+
+## vi
+
+Chơi tiếp bằng quảng cáo: nếu bạn đâm giữa một lượt chơi tốt, hãy xem một quảng cáo ngắn và bay tiếp ngay từ chỗ vừa chết (mỗi lượt một lần, từ 25 điểm). Cửa sổ ân hạn mới: một cú va được khiên chặn không còn dẫn ngay đến cái chết thứ hai, và bạn bất tử trong giây lát để lấy lại thăng bằng. Kèm màn hình tựa gọn gàng hơn.
+
+## hi
+
+विज्ञापन देखकर जारी रखें: अच्छी रन के बीच टकराने पर एक छोटा विज्ञापन देखकर आप उसी जगह से आगे उड़ सकते हैं जहाँ आप मरे थे (हर रन में एक बार, स्कोर 25+)। नई रियायत विंडो: शील्ड से रुका हुआ वार अब तुरंत दूसरी मौत तक नहीं ले जाता, और आप कुछ पल के लिए अजेय रहते हैं ताकि संभल सकें। साथ ही, ज़्यादा साफ-सुथरी टाइटल स्क्रीन।

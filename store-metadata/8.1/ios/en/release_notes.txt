@@ -1,0 +1,7 @@
+SECOND CHANCE
+Crashed on a great run? Watch a short video and keep flying from the exact spot you went down. Once per run, and only if you tap for it.
+
+Also new:
+- A brief flash of invincibility right after a shield saves you, so one hit does not instantly become two
+- Rebalanced daily missions and rewards
+- Small fixes and polish
