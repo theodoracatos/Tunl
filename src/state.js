@@ -203,12 +203,14 @@ let ghostY;       // interpolated ghost screen y this frame, or null once it's b
 let ghostPitch;   // ghost's nose angle, derived from the track's local slope (update.js)
 let ghostPassed;  // one-shot: has the player already outlasted the ghost this run
 
-// One-shot: has the player already flown past the all-time best death point this run
-// (bestSX, the dashed "PB" line in draw.js). Fires a notif + sfx + a gold ring pop the
-// frame it flips, same pattern as ghostPassed / onFire. pbFlash is the decaying pop,
-// decayed by update.js exactly like onFireFlash. Distinct from onFire (daily best):
-// onFire has usually already fired earlier in the run, but on the day's first run it is
-// suppressed entirely, so crossing the all-time line is the only in-flight marker there.
+// One-shot: has the player's live score already overtaken the all-time best (`best`)
+// this run. Fires a notif + sfx + a gold ring pop the frame it flips, same pattern as
+// ghostPassed / onFire. pbFlash is the decaying pop, decayed by update.js exactly like
+// onFireFlash. Score-based (not the old distance-vs-bestSX check) so it can never fire
+// "before" onFire in a way that reads as inconsistent -- both compare the same score.
+// Distinct from onFire (daily best): onFire has usually already fired earlier in the
+// run, but on the day's first run it is suppressed entirely, so this is the only
+// in-flight marker there.
 let pbPassed;
 let pbFlash;
 

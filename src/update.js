@@ -218,14 +218,20 @@ function update(dt) {
         window.webkit?.messageHandlers?.haptic?.postMessage('light');
     }
 
-    // Furthest ever: fires once, the frame the ship physically passes the all-time best
-    // death point (bestSX -- the same value draw.js draws the dashed "PB" line at). From
-    // here on every pixel is a new record, which is its own beat even though onFire (the
-    // daily bar above) has usually already fired earlier this run. bestSX > 0 mirrors the
-    // draw.js guard -- no line, no crossing. Not gated on score vs. best: the payoff is
-    // "past the line you can see", and bestSX is a distance so crossing it always means a
-    // deeper run than the one that set it.
-    if (!pbPassed && bestSX > 0 && scrollX + PX >= bestSX) {
+    // New all-time record: fires once, the frame live score first overtakes the true
+    // all-time best (`best`), same score-based comparison as onFire above -- not a
+    // position check. Used to fire on physically passing bestSX (the previous best run's
+    // death point) instead, but score already includes bonusScore (coin combos,
+    // near-misses) on top of pure distance, so a coin-heavy run could overtake the old
+    // best *score* well before reaching the old best's *distance* -- onFire and this beat
+    // disagreeing on which happened "first" read as a bug (score-record reached, still
+    // short of the line) rather than the two distinct signals they are. Merged onto score
+    // per explicit request 2026-09-01: the game already only ever settles records by
+    // score (death screen, daily best, all-time best), so the in-flight beat should too.
+    // Distinct from onFire (daily best): onFire has usually already fired earlier in the
+    // run, but on the day's first run it is suppressed entirely, so this is the only
+    // in-flight marker there.
+    if (!pbPassed && best > 0 && score > best) {
         pbPassed = true;
         pbFlash = 1.0;
         pushNotif(PX + PR * 3, py - H * 0.12, 1.4, T.pbPassed, [255, 210, 50]);

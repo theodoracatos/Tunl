@@ -248,20 +248,32 @@ in the coin, not just the separate `sfxCombo` ping (which only fires from x2). S
 
 **Death screen context**: Shows "+X vs last" / "-X vs last" after the second run. Uses `prevRunScore` (run before the current one). Score number glows gold when within 5 of personal best.
 
-**Two records, two different beats** - deliberately distinct, don't merge them:
+**Two records, two different beats, both score-based** - kept separate, but as of
+2026-09-01 both compare `score`, not distance:
 - **ON FIRE** (`onFire`, `update.js`): fires the frame live score overtakes the bar it
   has to beat - normally today's `dailyBest`, but on the day's *first* run (where
   `dailyBest` is still 0) it falls back to the all-time `best` so a strong opening run
   still ignites (`_fireBar = dailyBest || best`; `_fireBar > 0` still guards a brand-new
   player's very first run). Recolors the thruster trail fire-hot for the rest of the run,
   plus a one-shot notif/`sfxOnFire`/orange ring pop (`onFireFlash`).
-- **PB line** (`bestSX`, the dashed gold "PB" line in `draw.js`): a pure *position*
-  marker at the all-time best run's death distance, NOT reset at the day boundary.
-  Crossing it fires its own one-shot - `pbPassed` in `update.js`, gold ring pop
-  (`pbFlash`), `T.pbPassed` notif, `sfxPbPassed`, and the line itself whitens/thickens as
-  the ship passes through it. Separate from ON FIRE because ON FIRE has usually already
-  fired earlier in the run (daily best <= all-time best), so the all-time crossing needs
-  its own marker to register.
+- **New all-time record** (`pbPassed`, `update.js`): fires the frame live score overtakes
+  the all-time `best`, NOT reset at the day boundary. One-shot gold ring pop (`pbFlash`),
+  `T.pbPassed` notif, `sfxPbPassed`. Separate from ON FIRE because ON FIRE has usually
+  already fired earlier in the run (daily best <= all-time best), so the all-time
+  crossing still deserves its own, bigger beat.
+  Used to be a pure *position* check instead - crossing `bestSX` (the previous best run's
+  death distance), drawn as a dashed gold "PB" line in the tunnel that the ship visibly
+  flew through. Retired because `score` includes `bonusScore` (coin combos, near-misses)
+  on top of raw distance, so a coin-heavy run could overtake the old best *score* well
+  before physically reaching the old best's *distance* - onFire (score-based) and the
+  line (distance-based) would then disagree on which fired first, reading as a bug ("on
+  fire" before the visible PB line) rather than the two distinct signals they were.
+  Merged onto score on request, since the game already only ever settles records by score
+  everywhere else (death screen, daily best, all-time best). `bestSX` itself still exists
+  and is unaffected - it still backs the passive gold ring (`bestMarker` in `draw.js`)
+  showing exactly where the best run died, and the PB marker on the daily share card
+  (`share.js`), both of which are legitimately about physical position, not a score
+  comparison.
 
 ### Daily run card (share)
 

@@ -639,42 +639,16 @@ function drawWorld() {
         ctx.fill();
     }
 
-    // Personal best line
-    if (phase === 'play' && bestSX > 0) {
-        const lx = bestSX - scrollX;
-        if (lx > -60 && lx < W + 80) {
-            const ahead  = Math.max(0, Math.min(1, (lx - PX) / 220));   // fade in as it approaches
-            const behind = Math.max(0, Math.min(1, (lx + 60)  / 80));   // fade out after passing
-            const lineA  = Math.min(ahead > 0 ? ahead : 1, behind) * 0.75;
-            if (lineA > 0.01) {
-                const lb = boundsAt(bestSX);
-                // pbFlash briefly whitens and thickens the line as the ship crosses it,
-                // so the moment lands on the line itself, not only on the ship's ring pop.
-                const fla = pbFlash || 0;
-                ctx.save();
-                ctx.strokeStyle = fla > 0
-                    ? `rgba(${255},${Math.round(210 + 45 * fla)},${Math.round(50 + 150 * fla)},${Math.min(1, lineA + fla * 0.4)})`
-                    : `rgba(255,210,50,${lineA})`;
-                ctx.lineWidth   = 1.5 + fla * 2.5;
-                ctx.shadowColor = `rgba(255,200,40,${Math.min(1, lineA * 0.8 + fla * 0.6)})`;
-                ctx.shadowBlur  = 8 + fla * 14;
-                ctx.setLineDash([5, 4]);
-                ctx.beginPath();
-                ctx.moveTo(lx, lb.top - 4);
-                ctx.lineTo(lx, lb.bot + 4);
-                ctx.stroke();
-                ctx.setLineDash([]);
-                ctx.shadowBlur  = 0;
-                ctx.font        = `bold ${W * 0.018}px 'Courier New',monospace`;
-                ctx.fillStyle   = `rgba(255,215,55,${lineA * 0.95})`;
-                ctx.textAlign   = 'center';
-                ctx.textBaseline = 'bottom';
-                ctx.fillText(T.pb, lx, lb.top - 5);
-                ctx.textBaseline = 'top';
-                ctx.restore();
-            }
-        }
-    }
+    // The dashed in-tunnel "PB" line that used to live here was removed 2026-09-01: it
+    // was drawn at bestSX (the previous best run's death *distance*) and its flash was
+    // timed to the ship reaching that x position, but pbPassed (update.js) now fires on
+    // score overtaking `best`, not on distance -- a coin-heavy run can cross that score
+    // threshold before physically reaching bestSX, which left the line's flash
+    // desynced from the line itself. The all-time-record beat now reads the same way
+    // onFire's daily-best beat always has: notif + sfx + gold ring pop only, no line
+    // (see the "PB-crossing pop" block below). bestMarker (above) still shows the old
+    // best run's exact death spot as a passive ring -- that's a historical fact, not an
+    // event trigger, so it's unaffected.
 
     // Rune body: hexagon silhouette + a small dark pictogram, shared by the four
     // state/power-up coin types (blue/red/orange/green) so they read as one family
@@ -1152,10 +1126,10 @@ function drawWorld() {
         ctx.restore();
     }
 
-    // PB-crossing pop - one quick gold expanding ring the frame the ship passes the
-    // all-time best death point (pbFlash, set alongside pbPassed in update.js). Same
-    // shape as the on-fire pop above, gold instead of orange, so "new record" and
-    // "on fire" read as related beats without being the same colour.
+    // New-record pop - one quick gold expanding ring the frame live score passes the
+    // all-time best (pbFlash, set alongside pbPassed in update.js). Same shape as the
+    // on-fire pop above, gold instead of orange, so "new record" and "on fire" read as
+    // related beats without being the same colour.
     if (pbFlash > 0 && phase === 'play') {
         const pfa   = pbFlash;
         const ringR = PR * (1.6 + (1 - pfa) * 9);
