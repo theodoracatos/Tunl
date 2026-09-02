@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "60214471260",
+    "project_id": "tunl-2030f",
+    "storage_bucket": "tunl-2030f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:60214471260:android:d454d9f53070d7d5431499",
+        "android_client_info": {
+          "package_name": "com.theodoracatos.tunl"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDN92QR8H2O9zmYrbzCWfxP3fJo5QMODYQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

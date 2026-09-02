@@ -171,7 +171,12 @@ class BillingManager(context: Context) {
     }
 
     private fun launchPurchaseFlow(activity: Activity, details: ProductDetails) {
-        val offerToken = details.oneTimePurchaseOfferDetails?.offerToken ?: return
+        // oneTimePurchaseOfferDetailsList (not the deprecated singular
+        // oneTimePurchaseOfferDetails) is required once a product has more than
+        // one purchase option - Play filters this list server-side to the
+        // option(s) eligible for the user's country, so the first entry is
+        // the one to use.
+        val offerToken = details.oneTimePurchaseOfferDetailsList?.firstOrNull()?.offerToken ?: return
         val productParams = BillingFlowParams.ProductDetailsParams.newBuilder()
             .setProductDetails(details)
             .setOfferToken(offerToken)
