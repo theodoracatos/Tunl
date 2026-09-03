@@ -104,6 +104,10 @@ object ReminderScheduler {
     fun bodies(ctx: Context) = prefs(ctx).getString(KEY_BODIES, "")?.split("\n")?.filter { it.isNotEmpty() } ?: emptyList()
 
     private fun nextFireAfter(now: Long, skipToday: Boolean): Long {
+        // TESTING ONLY: debug builds fire 15s out instead of at 19:00 so the flow is
+        // testable on an emulator without waiting or moving the clock. Release builds
+        // ignore this branch.
+        if (BuildConfig.DEBUG) return now + 15_000L
         val cal = Calendar.getInstance().apply {
             timeInMillis = now
             set(Calendar.HOUR_OF_DAY, FIRE_HOUR)

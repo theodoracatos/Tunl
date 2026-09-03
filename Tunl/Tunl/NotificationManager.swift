@@ -69,8 +69,16 @@ final class NotificationManager {
                 content.body  = bodies[v]
                 content.sound = .default
 
+                let trigger: UNNotificationTrigger
+                #if DEBUG
+                // TESTING ONLY: debug builds fire a few seconds out instead of at
+                // 19:00 so the flow is testable in the Simulator without waiting or
+                // moving the clock. Compiled out of release builds entirely.
+                trigger = UNTimeIntervalNotificationTrigger(timeInterval: Double(15 * (i + 1)), repeats: false)
+                #else
                 let comps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
-                let trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
+                trigger = UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)
+                #endif
                 self.center.add(UNNotificationRequest(identifier: Self.idPrefix + "\(i)",
                                                       content: content, trigger: trigger))
             }
