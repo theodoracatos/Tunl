@@ -1,0 +1,45 @@
+<en-US>
+Behind-the-scenes maintenance. Nothing changes in how the game plays.
+</en-US>
+<ar>
+صيانة داخلية. لا تغييرات على طريقة اللعب.
+</ar>
+<de-DE>
+Wartungsarbeiten im Hintergrund. Am Spiel selbst ändert sich nichts.
+</de-DE>
+<es-ES>
+Mantenimiento interno. El juego no cambia en nada.
+</es-ES>
+<fr-FR>
+Maintenance en coulisses. Le jeu ne change pas.
+</fr-FR>
+<hi-IN>
+पर्दे के पीछे रखरखाव। गेम खेलने के तरीके में कोई बदलाव नहीं।
+</hi-IN>
+<id>
+Pemeliharaan di balik layar. Tidak ada perubahan pada cara bermain.
+</id>
+<it-IT>
+Manutenzione dietro le quinte. Il gioco non cambia.
+</it-IT>
+<ja-JP>
+内部的なメンテナンスのみです。ゲーム内容に変更はありません。
+</ja-JP>
+<ko-KR>
+내부 유지보수 작업입니다. 게임 플레이에는 변화가 없습니다.
+</ko-KR>
+<pt-BR>
+Manutenção nos bastidores. O jogo continua igual.
+</pt-BR>
+<ru-RU>
+Технические улучшения. В игре ничего не изменилось.
+</ru-RU>
+<tr-TR>
+Arka planda bakım çalışması. Oyunda hiçbir şey değişmedi.
+</tr-TR>
+<vi>
+Bảo trì phía sau. Không có thay đổi nào về cách chơi.
+</vi>
+<zh-TW>
+幕後維護更新，遊戲玩法沒有任何變動。
+</zh-TW>
