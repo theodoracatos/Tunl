@@ -31,11 +31,31 @@ function onDown(e) {
         const cx = (e.clientX - rect.left) * (W / rect.width);
         const cy = (e.clientY - rect.top)  * (H / rect.height);
 
+        // One-time daily-reminder opt-in card (src/notify.js). Only up on the bare
+        // title screen (no panel open). A tap on either button resolves it; a tap
+        // anywhere else dismisses it as "no" and falls through so the tap still
+        // does its normal thing (open a menu, start a run).
+        if (showNotifPrompt && window._tunlHasNotifBridge && window._tunlHasNotifBridge()
+            && !showSettings && !showShop && !showMissions && !showShipPicker && !showCurrencyInfo) {
+            if (_notifPromptYesRect && inRect(cx, cy, _notifPromptYesRect)) {
+                sfxUiTap(); _notifPromptResolve(true); return;
+            }
+            if (_notifPromptNoRect && inRect(cx, cy, _notifPromptNoRect)) {
+                sfxUiClose(); _notifPromptResolve(false); return;
+            }
+            _notifPromptResolve(false);
+        }
+
         // Language panel intercepts all taps when open
         if (showSettings) {
             if (_privacyChoicesBtnRect && inRect(cx, cy, _privacyChoicesBtnRect)) {
                 sfxUiTap();
                 window.webkit?.messageHandlers?.ads?.postMessage({ action: 'privacyOptions' });
+                return;
+            }
+            if (_notifToggleRect && inRect(cx, cy, _notifToggleRect)) {
+                if (notifEnabled) { window._tunlReminderDisable(); sfxUiToggle(false); }
+                else              { window._tunlReminderEnable();  sfxUiTap(); }
                 return;
             }
             if (_btnMusicRect && inRect(cx, cy, _btnMusicRect)) {
@@ -54,6 +74,9 @@ function onDown(e) {
             for (const b of _langBtnRects) {
                 if (inRect(cx, cy, b)) {
                     setLang(b.code);
+                    // Re-push the schedule so a live reminder switches to the new
+                    // language's text (src/notify.js).
+                    if (notifEnabled && window._tunlReminderReschedule) window._tunlReminderReschedule();
                     sfxUiSelect();
                     return;
                 }
@@ -195,6 +218,7 @@ function onDown(e) {
         if (showCurrencyInfo) { showCurrencyInfo = false; return; }
         if (showMissions) { showMissions = false; return; }
         if (showShipPicker) { showShipPicker = false; return; }
+        if (showNotifPrompt) _notifPromptResolve(false);   // keyboard start also dismisses it
         startPlay(); return;   // reached only for keyboard/synthetic triggers (no e)
     }
     // Continue offer: its own tap gate, independent of (and open for longer than)

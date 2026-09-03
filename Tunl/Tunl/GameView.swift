@@ -45,6 +45,7 @@ struct GameView: UIViewRepresentable {
         config.userContentController.add(context.coordinator, name: "iap")
         config.userContentController.add(context.coordinator, name: "ads")
         config.userContentController.add(context.coordinator, name: "share")
+        config.userContentController.add(context.coordinator, name: "notifications")
 
         // Game Center Challenges (GKChallengeDefinition/GKAccessPoint.trigger...) need
         // iOS 26+ - tell the JS side up front so it only draws the CHALLENGE button on
@@ -115,6 +116,7 @@ struct GameView: UIViewRepresentable {
         weak var webView: WKWebView?
         let iap = IAPManager()
         let ads = AdsManager()
+        let notifications = NotificationManager()
 
         override init() {
             super.init()
@@ -185,6 +187,10 @@ struct GameView: UIViewRepresentable {
             NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification,
                                                     object: nil, queue: .main) { [weak self] _ in
                 self?.webView?.evaluateJavaScript("window._tunlResumeAudio && window._tunlResumeAudio()")
+                // Refresh the daily-reminder schedule (src/notify.js) - WKWebView
+                // doesn't reliably fire visibilitychange when the host app, not the
+                // page, was backgrounded.
+                self?.webView?.evaluateJavaScript("window._tunlReminderReschedule && window._tunlReminderReschedule()")
             }
         }
 
@@ -415,6 +421,26 @@ struct GameView: UIViewRepresentable {
                 guard let body = message.body as? [String: Any] else { return }
                 presentShare(text: body["text"] as? String ?? "",
                              imageDataURL: body["image"] as? String)
+                return
+            }
+            if message.name == "notifications" {
+                guard let body = message.body as? [String: Any],
+                      let action = body["action"] as? String else { return }
+                switch action {
+                case "requestPermission":
+                    notifications.requestPermission { [weak self] granted in
+                        self?.webView?.evaluateJavaScript(
+                            "window._tunlNotifPermission && window._tunlNotifPermission(\(granted))")
+                    }
+                case "reschedule":
+                    notifications.reschedule(
+                        enabled: body["enabled"] as? Bool ?? false,
+                        playedToday: body["playedToday"] as? Bool ?? false,
+                        titles: body["titles"] as? [String] ?? [],
+                        bodies: body["bodies"] as? [String] ?? [])
+                default:
+                    break
+                }
                 return
             }
             if message.name == "iap" {

@@ -16,4 +16,10 @@
          Dedicated unit for the Missions-drawer daily shard bonus, separate from "Continue
          Rewarded" above so fill/eCPM report independently. -->
     <string name="admob_shards_rewarded_ad_unit_id" translatable="false">ca-app-pub-4882203470005029/1448159018</string>
+
+    <!-- Notification channel shown in the Android system Settings > Notifications
+         list. The notification bodies themselves are localized and come from the
+         JS layer (src/i18n.js); only this channel label is a static resource. -->
+    <string name="reminder_channel_name">Daily reminder</string>
+    <string name="reminder_channel_desc">A nudge when a new daily cave is waiting</string>
 </resources>

@@ -47,6 +47,15 @@ class MainActivity : ComponentActivity() {
     private val leaderboardLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { }
 
+    // Android 13+ POST_NOTIFICATIONS runtime permission, requested when the player
+    // opts into the daily reminder (src/notify.js). The result is pushed back to
+    // the page via window._tunlNotifPermission, same 1:1 shape as the ads bridge.
+    private val notifPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) ReminderScheduler.ensureChannel(this)
+            runJs("window._tunlNotifPermission && window._tunlNotifPermission($granted)")
+        }
+
     // Lazy, not constructed inline: field initializers run during Activity
     // construction, before attachBaseContext(), when `this` isn't yet a
     // valid Context -- BillingClient/MobileAds both dereference it immediately.
@@ -79,6 +88,11 @@ class MainActivity : ComponentActivity() {
             window.webkit.messageHandlers.share = {
                 postMessage: function(body) {
                     TunlNative.postMessage('share', JSON.stringify(body));
+                }
+            };
+            window.webkit.messageHandlers.notifications = {
+                postMessage: function(body) {
+                    TunlNative.postMessage('notifications', JSON.stringify(body));
                 }
             };
             window.webkit.messageHandlers.haptic = {
@@ -122,6 +136,16 @@ class MainActivity : ComponentActivity() {
                         "shardsAdRequest" -> ads.requestShardsAd()
                         "privacyOptions" -> ads.showPrivacyOptionsForm(this@MainActivity)
                     }
+                    "notifications" -> when (body.optString("action")) {
+                        "requestPermission" -> requestNotifPermission()
+                        "reschedule" -> ReminderScheduler.reschedule(
+                            this@MainActivity,
+                            body.optBoolean("enabled"),
+                            body.optBoolean("playedToday"),
+                            jsonStrings(body.optJSONArray("titles")),
+                            jsonStrings(body.optJSONArray("bodies")),
+                        )
+                    }
                 }
             }
         }
@@ -129,6 +153,27 @@ class MainActivity : ComponentActivity() {
         @JavascriptInterface
         fun postHaptic(type: String) {
             runOnUiThread { triggerHaptic(type) }
+        }
+    }
+
+    private fun jsonStrings(arr: org.json.JSONArray?): List<String> {
+        if (arr == null) return emptyList()
+        return (0 until arr.length()).map { arr.optString(it) }.filter { it.isNotEmpty() }
+    }
+
+    // Opt-in path for the daily reminder (src/notify.js). Below Android 13 there is
+    // no runtime permission, so resolve immediately; on 13+ resolve now if already
+    // granted, otherwise launch the system dialog (notifPermissionLauncher pushes
+    // the result back to the page).
+    private fun requestNotifPermission() {
+        val need = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        val granted = !need || checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (granted) {
+            ReminderScheduler.ensureChannel(this)
+            runJs("window._tunlNotifPermission && window._tunlNotifPermission(true)")
+        } else {
+            notifPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 
@@ -177,6 +222,12 @@ class MainActivity : ComponentActivity() {
         // GA4/Firebase, which Google Ads imports as its Play install-conversion
         // signal -- no in-game feature depends on it, and TUNL has no account for
         // the data to attach to.
+        //
+        // Collection being enabled is not the same as data leaving the device: as
+        // of 8.3 consent mode gates it. AndroidManifest defaults every consent
+        // signal to denied; AdsManager.start() (run from onPageFinished below)
+        // grants them for users where GDPR does not apply and lets the UMP SDK
+        // forward the consent-form choice for everyone else.
         FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(true)
 
         signIntoPlayGames()
@@ -317,6 +368,10 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         webView.onResume()
         webView.resumeTimers()
+        // Refresh the daily-reminder schedule (src/notify.js) so "played today" and
+        // the language stay current and an active player keeps getting bumped past
+        // tonight's nudge. No-ops until the page has defined the hook.
+        runJs("window._tunlReminderReschedule && window._tunlReminderReschedule()")
     }
 
     // billing/ads callbacks are async SDK calls that can land after the user

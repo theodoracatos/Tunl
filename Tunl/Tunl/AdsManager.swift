@@ -2,6 +2,7 @@ import UIKit
 import AppTrackingTransparency
 import UserMessagingPlatform
 import GoogleMobileAds
+import FirebaseAnalytics
 
 // Interstitial shown every 3rd death AND at most once every minInterval seconds,
 // never when Remove Ads is owned. Cadence state lives in UserDefaults (not JS)
@@ -117,6 +118,23 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
                 }
             } catch {
                 print("AdsManager: consent update failed: \(error.localizedDescription)")
+            }
+
+            // Consent mode (Firebase Analytics, 8.3). Info.plist defaults every
+            // signal to denied (ad_user_data / ad_personalization only within the
+            // EEA). Where GDPR does not apply the UMP SDK never updates consent
+            // state, so grant it back here. EEA / UK / CH users are left to the
+            // UMP SDK, which interprets the consent-form choice and forwards it to
+            // Firebase Analytics directly - provided "consent mode for advertising
+            // purposes" is on in the AdMob UI (Privacy & messaging -> European
+            // regulations). Firebase is configured in TunlApp before start() runs.
+            if ConsentInformation.shared.consentStatus == .notRequired {
+                Analytics.setConsent([
+                    .analyticsStorage: .granted,
+                    .adStorage: .granted,
+                    .adUserData: .granted,
+                    .adPersonalization: .granted,
+                ])
             }
 
             self.onPrivacyOptionsRequiredChange?(

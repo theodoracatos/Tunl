@@ -27,6 +27,20 @@ let dailyRuns = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tu
 let musicOn = localStorage.getItem('tunnel_music') !== '0';
 let fxOn    = localStorage.getItem('tunnel_fx')    !== '0';
 let _btnMusicRect = null, _btnFxRect = null;
+
+// ── Daily reminder (local notification, src/notify.js) ────────────────
+// Native schedules a 19:00-local nudge on days the player hasn't opened the new
+// cave. `tunl_notif_first_day` is stamped on the very first launch so the opt-in
+// card can wait for the first launch of a *later* day (never day one).
+const _notifFirstDay = parseInt(localStorage.getItem('tunl_notif_first_day') || '0');
+if (!_notifFirstDay) localStorage.setItem('tunl_notif_first_day', _initToday);
+let notifEnabled    = localStorage.getItem('tunl_notif_enabled') === '1';
+let notifPromptDone = localStorage.getItem('tunl_notif_prompt_done') === '1';
+// One-time title-screen opt-in card. draw.js additionally gates the render on the
+// native bridge being present (browsers / very old WebViews never see it).
+let showNotifPrompt = !notifPromptDone && !notifEnabled
+    && _notifFirstDay > 0 && _notifFirstDay !== _initToday;
+let _notifPromptYesRect = null, _notifPromptNoRect = null, _notifToggleRect = null;
 // ── World rank ────────────────────────────────────────────────────────
 // Pushed in by the native layer after each score submit resolves (GameView.swift's
 // fetchWorldRank / MainActivity.kt's fetchWorldRank) -- see main.js _tunlNativeUpdate.

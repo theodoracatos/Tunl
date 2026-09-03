@@ -3,6 +3,12 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Daily-reminder local notification (8.3). POST_NOTIFICATIONS is the
+         Android 13+ runtime permission, requested when the player opts in.
+         RECEIVE_BOOT_COMPLETED re-arms the AlarmManager alarm after a reboot.
+         No exact-alarm permission: setAndAllowWhileIdle is inexact by design. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:allowBackup="true"
@@ -21,6 +27,29 @@
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="@string/admob_app_id" />
+
+        <!-- Consent mode defaults (Firebase Analytics, 8.3). Every signal starts
+             denied. analytics_storage and ad_storage only accept true/false, so
+             they deny globally and AdsManager grants them back once the UMP
+             consent request resolves for a user where GDPR does not apply
+             (consentStatus == NOT_REQUIRED). For EEA / UK / CH users the UMP SDK
+             (4.0.0, needs 3.2.0 or newer) interprets the consent form choice and
+             forwards it to Firebase Analytics itself, because Firebase is
+             initialised by FirebaseInitProvider before AdsManager.start() runs
+             the UMP SDK. ad_user_data / ad_personalization can be region scoped,
+             so they deny for EEA only and need no runtime grant elsewhere. -->
+        <meta-data
+            android:name="google_analytics_default_allow_analytics_storage"
+            android:value="false" />
+        <meta-data
+            android:name="google_analytics_default_allow_ad_storage"
+            android:value="false" />
+        <meta-data
+            android:name="google_analytics_default_allow_ad_user_data"
+            android:value="eu_consent_policy" />
+        <meta-data
+            android:name="google_analytics_default_allow_ad_personalization_signals"
+            android:value="eu_consent_policy" />
 
         <!-- Serves the shared run card (a PNG written to cacheDir/share) to whichever
              app the player picks in the share sheet. See MainActivity.shareRun and
@@ -46,5 +75,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Daily-reminder alarm target (ReminderScheduler / ReminderReceiver). Not
+             exported: only this app's own AlarmManager fires it. -->
+        <receiver
+            android:name=".ReminderReceiver"
+            android:exported="false" />
+
+        <!-- Re-arms the reminder alarm after a device reboot. -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

@@ -18,6 +18,7 @@ import com.google.android.ump.ConsentDebugSettings
 import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
+import com.google.firebase.analytics.FirebaseAnalytics
 
 // Mirrors AdsManager.swift: interstitial shown every 3rd death AND at most once
 // every MIN_INTERVAL_MS, never when Remove Ads is owned. Cadence state lives in
@@ -183,6 +184,31 @@ class AdsManager(private val activity: Activity) {
             activity,
             paramsBuilder.build(),
             {
+                // Consent mode (Firebase Analytics, 8.3). AndroidManifest defaults
+                // every signal to denied. Where GDPR does not apply the UMP SDK
+                // never touches consent state, so lift analytics_storage/ad_storage
+                // (and the two ad_* signals, harmless to restate) back to granted
+                // here. EEA / UK / CH users are left alone: the UMP SDK forwards
+                // their consent-form choice to Firebase Analytics directly. Needs
+                // "consent mode for advertising purposes" turned on in the AdMob UI
+                // (Privacy & messaging -> European regulations) for that forwarding
+                // to reach Firebase.
+                if (consentInformation.consentStatus ==
+                    ConsentInformation.ConsentStatus.NOT_REQUIRED
+                ) {
+                    FirebaseAnalytics.getInstance(activity).setConsent(
+                        mapOf(
+                            FirebaseAnalytics.ConsentType.ANALYTICS_STORAGE to
+                                FirebaseAnalytics.ConsentStatus.GRANTED,
+                            FirebaseAnalytics.ConsentType.AD_STORAGE to
+                                FirebaseAnalytics.ConsentStatus.GRANTED,
+                            FirebaseAnalytics.ConsentType.AD_USER_DATA to
+                                FirebaseAnalytics.ConsentStatus.GRANTED,
+                            FirebaseAnalytics.ConsentType.AD_PERSONALIZATION to
+                                FirebaseAnalytics.ConsentStatus.GRANTED,
+                        )
+                    )
+                }
                 UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { formError ->
                     if (formError != null) {
                         Log.w(TAG, "Consent form error: ${formError.message}")

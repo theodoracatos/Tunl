@@ -48,6 +48,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // that flag gates collection at the SDK level regardless of the linked GA4
         // property being active, so first_open would never leave the device without
         // this override. Force it on in code instead of trusting the downloaded plist.
+        //
+        // Collection being enabled is not the same as data leaving the device: as
+        // of 8.3 consent mode gates it. Info.plist defaults every consent signal to
+        // denied; AdsManager.start() grants it for non-EEA users and lets the UMP
+        // SDK forward the EEA consent-form choice.
         Analytics.setAnalyticsCollectionEnabled(true)
 
         UIDevice.current.beginGeneratingDeviceOrientationNotifications()

@@ -2778,10 +2778,16 @@ function drawTitleScreen() {
         const nPrivacyBtnH    = H * 0.062;
         const nPrivacySectionH = hasPrivacyBtn ? nSectionGap + nPrivacyBtnH : 0;
 
+        // Daily-reminder toggle (src/notify.js) - shown wherever the native
+        // notification bridge exists, unlike the privacy row which is EEA-only.
+        const hasNotifBtn    = !!(window._tunlHasNotifBridge && window._tunlHasNotifBridge());
+        const nNotifBtnH     = H * 0.062;
+        const nNotifSectionH = hasNotifBtn ? nSectionGap + nNotifBtnH : 0;
+
         const langCols   = LANG_ORDER.length > 10 ? 3 : 2;
         const langRows   = Math.ceil(LANG_ORDER.length / langCols);
         const nLangListH = langRows * nLbh + Math.max(0, langRows - 1) * nLbGap;
-        const nPanH = nPadTop + nTitleH + nAudioRowH + nSectionGap + nLangLabelH + nLangListH + nPrivacySectionH + nPadBottom;
+        const nPanH = nPadTop + nTitleH + nAudioRowH + nSectionGap + nLangLabelH + nLangListH + nPrivacySectionH + nNotifSectionH + nPadBottom;
 
         // Leave a hair of margin inside the 0.02..0.98 clamp band below rather than
         // filling it exactly, so this never comes down to a single rounding error.
@@ -2797,8 +2803,10 @@ function drawTitleScreen() {
         const lbGap      = nLbGap      * settingsScale;
         const sectionGap = nSectionGap * settingsScale;
         const privacyBtnH = nPrivacyBtnH * settingsScale;
+        const notifBtnH   = nNotifBtnH   * settingsScale;
         const langListH  = nLangListH  * settingsScale;
         const privacySectionH = nPrivacySectionH * settingsScale;
+        const notifSectionH   = nNotifSectionH   * settingsScale;
         const panH = nPanH * settingsScale;
 
         const panX = W / 2 - panW / 2;
@@ -2912,6 +2920,34 @@ function drawTitleScreen() {
             ctx.fillText(T.privacyChoices, W / 2, pby + privacyBtnH / 2);
             _privacyChoicesBtnRect = { x: pbx, y: pby, w: pbw, h: privacyBtnH };
             y += privacyBtnH;
+        }
+
+        // Daily-reminder toggle (src/notify.js). Highlighted green when on, the
+        // same active-state cue the language buttons use, plus a check so it still
+        // reads at a glance. Tap toggles via input.js -> _tunlReminderEnable/Disable.
+        _notifToggleRect = null;
+        if (hasNotifBtn) {
+            y += sectionGap;
+            const nbw = panW * 0.78, nby = y;
+            const nbx = W / 2 - nbw / 2;
+            const on  = notifEnabled;
+            ctx.fillStyle = on ? 'rgba(12,44,24,0.80)' : 'rgba(15,18,40,0.72)';
+            ctx.beginPath(); ctx.roundRect(nbx, nby, nbw, notifBtnH, 7); ctx.fill();
+            ctx.strokeStyle = on ? 'rgba(70,215,110,0.60)' : 'rgba(90,120,160,0.50)';
+            ctx.lineWidth   = 1;
+            ctx.beginPath(); ctx.roundRect(nbx, nby, nbw, notifBtnH, 7); ctx.stroke();
+            const nLabel = T.notifPromptTitle + (on ? '  ✓' : '');
+            let nFs = FS * 0.019;
+            ctx.font = `${nFs}px 'Courier New',monospace`;
+            const nLabelW = ctx.measureText(nLabel).width;
+            if (nLabelW > nbw * 0.88) {
+                nFs = Math.max(nFs * nbw * 0.88 / nLabelW, FS * 0.013);
+                ctx.font = `${nFs}px 'Courier New',monospace`;
+            }
+            ctx.fillStyle = on ? 'rgba(120,235,150,0.92)' : 'rgba(180,195,225,0.85)';
+            ctx.fillText(nLabel, W / 2, nby + notifBtnH / 2);
+            _notifToggleRect = { x: nbx, y: nby, w: nbw, h: notifBtnH };
+            y += notifBtnH;
         }
     }
 
@@ -3207,6 +3243,84 @@ function drawTitleScreen() {
             ry += rowGap2;
         });
         ctx.textAlign = 'center';
+    }
+
+    // ── Daily-reminder opt-in card (src/notify.js) ───────────────────────
+    // One-time, shown on the first title screen of any day after the day the app
+    // was first opened (state.js showNotifPrompt). Modal-style over the title, but
+    // only when nothing else is open and the native bridge is actually there.
+    _notifPromptYesRect = null; _notifPromptNoRect = null;
+    if (showNotifPrompt
+        && window._tunlHasNotifBridge && window._tunlHasNotifBridge()
+        && !showSettings && !showShop && !showMissions && !showShipPicker && !showCurrencyInfo) {
+
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        ctx.fillStyle = `rgba(0,0,12,${a * 0.78})`;
+        ctx.fillRect(0, 0, W, H);
+
+        const cpW = Math.min(W * 0.64, 360);
+        const cpX = W / 2 - cpW / 2;
+
+        // Wrap the body to the card width.
+        const bodyFs = FS * 0.019;
+        ctx.font = `${bodyFs}px 'Courier New',monospace`;
+        const maxLineW = cpW * 0.84;
+        const lines = [];
+        let cur = '';
+        // Space-split for latin/cyrillic; falls back to a per-character break so
+        // CJK bodies (no spaces) still wrap instead of overflowing the card.
+        const tokens = T.notifPromptBody.includes(' ')
+            ? T.notifPromptBody.split(' ')
+            : T.notifPromptBody.split('');
+        const joiner = T.notifPromptBody.includes(' ') ? ' ' : '';
+        for (const w of tokens) {
+            const test = cur ? cur + joiner + w : w;
+            if (ctx.measureText(test).width > maxLineW && cur) { lines.push(cur); cur = w; }
+            else cur = test;
+        }
+        if (cur) lines.push(cur);
+
+        const titleFs = FS * 0.026;
+        const lineH   = bodyFs * 1.5;
+        const btnH    = H * 0.062;
+        const padV    = H * 0.045;
+        const gap     = H * 0.022;
+        const cpH = padV + titleFs * 1.4 + gap + lines.length * lineH + gap * 1.4
+                    + btnH + gap * 0.7 + btnH + padV;
+        const cpY = Math.max(H * 0.06, H / 2 - cpH / 2);
+
+        ctx.fillStyle = 'rgba(7,10,28,0.98)';
+        ctx.beginPath(); ctx.roundRect(cpX, cpY, cpW, cpH, 12); ctx.fill();
+        ctx.strokeStyle = 'rgba(65,88,155,0.55)';
+        ctx.lineWidth = 1; ctx.stroke();
+
+        let cy = cpY + padV + titleFs * 0.7;
+        let cardTitleFs = titleFs;
+        ctx.font = `bold ${cardTitleFs}px 'Courier New',monospace`;
+        const ttlW = ctx.measureText(T.notifPromptTitle).width;
+        if (ttlW > maxLineW) {
+            cardTitleFs = Math.max(cardTitleFs * maxLineW / ttlW, FS * 0.017);
+            ctx.font = `bold ${cardTitleFs}px 'Courier New',monospace`;
+        }
+        ctx.fillStyle = 'rgba(165,190,255,0.96)';
+        ctx.fillText(T.notifPromptTitle, W / 2, cy);
+        cy += titleFs * 0.7 + gap;
+
+        ctx.font = `${bodyFs}px 'Courier New',monospace`;
+        ctx.fillStyle = 'rgba(210,218,240,0.90)';
+        for (const ln of lines) { cy += lineH * 0.5; ctx.fillText(ln, W / 2, cy); cy += lineH * 0.5; }
+        cy += gap * 1.4;
+
+        ctx.font = `${FS * 0.02}px 'Courier New',monospace`;
+        _notifPromptYesRect = drawBtn(W / 2, cy + btnH / 2, T.notifYes, true, false, cpW * 0.82, btnH);
+        cy += btnH + gap * 0.7;
+        ctx.font = `${FS * 0.02}px 'Courier New',monospace`;
+        _notifPromptNoRect = drawBtn(W / 2, cy + btnH / 2, T.notifNo, false, false, cpW * 0.82, btnH);
+
+        ctx.restore();
     }
 }
 
