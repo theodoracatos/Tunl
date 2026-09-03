@@ -24,6 +24,9 @@ No te pierdas ninguna cueva. Ahora TUNL puede avisarte por la tarde los días qu
 ## pt
 Não perca nenhuma caverna. O TUNL agora pode te lembrar à noite nos dias em que você ainda não voou o túnel do dia - opcional, um toque nas Configurações para ligar ou desligar. Mantenha a sequência viva sem pensar nisso. Além disso: uma revisão de privacidade nos bastidores para o consentimento de análise na UE.
 
+## pt-BR
+Não perca nenhuma caverna. O TUNL agora pode te lembrar à noite nos dias em que você ainda não voou o túnel do dia - opcional, um toque nas Configurações para ligar ou desligar. Mantenha a sequência viva sem pensar nisso. Além disso: uma revisão de privacidade nos bastidores para o consentimento de análise na UE.
+
 ## ja
 今日の洞窟を逃さない。TUNLは、まだその日のトンネルを飛んでいない日に、夜に通知できるようになりました。任意で、設定から1タップでオン/オフ。意識しなくても連続記録を保てます。さらに、EUでの分析同意の扱いについて、裏側でのプライバシー見直しも行いました。
 
@@ -31,7 +34,7 @@ Não perca nenhuma caverna. O TUNL agora pode te lembrar à noite nos dias em qu
 오늘의 동굴을 놓치지 마세요. 이제 TUNL이 그날의 터널을 아직 날지 않은 날 저녁에 알려줄 수 있습니다. 선택 사항이며, 설정에서 한 번의 탭으로 켜고 끌 수 있습니다. 신경 쓰지 않아도 연속 기록이 유지됩니다. 또한 EU의 분석 동의 처리 방식에 대한 내부 개인정보 점검도 진행했습니다.
 
 ## zh
-不再错过任何洞窟。现在，在你还没飞当天隧道的日子里，TUNL 可以在晚上提醒你。可自行选择，在设置里一键开关。不用刻意留意，也能让连续天数不中断。此外，我们还在幕后梳理了欧盟的分析同意处理方式。
+不再錯過任何洞窟。現在，在你還沒飛今天隧道的日子裡，TUNL 可以在晚上提醒你。可自行選擇，在設定裡一鍵開關。不用刻意留意，也能讓連續天數不中斷。此外，我們還在幕後梳理了歐盟的分析同意處理方式。
 
 ## ru
 Не пропустите пещеру. Теперь TUNL может напоминать вам вечером в дни, когда вы ещё не пролетели тоннель дня - по желанию, включается и выключается одним касанием в настройках. Держите серию, не думая об этом. Кроме того: закулисная проверка приватности для согласия на аналитику в ЕС.
