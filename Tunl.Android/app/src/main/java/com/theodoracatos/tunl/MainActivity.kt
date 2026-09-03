@@ -30,6 +30,7 @@ import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import com.google.android.gms.games.PlayGames
 import com.google.android.gms.games.leaderboard.LeaderboardVariant
+import com.google.firebase.analytics.FirebaseAnalytics
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
@@ -166,6 +167,18 @@ class MainActivity : ComponentActivity() {
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
         hideSystemBars()
+
+        // Analytics-only: no Firebase Auth/Firestore/Crashlytics, same scope as
+        // iOS (Tunl/Tunl/TunlApp.swift). The google-services plugin + FirebaseInitProvider
+        // auto-initialise the SDK from app/google-services.json before onCreate;
+        // this call just gives the automatic events (first_open, session_start,
+        // user_engagement) somewhere to land and makes collection explicit rather
+        // than relying on the platform default. It exists to feed first_open to
+        // GA4/Firebase, which Google Ads imports as its Play install-conversion
+        // signal -- no in-game feature depends on it, and TUNL has no account for
+        // the data to attach to.
+        FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(true)
+
         signIntoPlayGames()
         requestAudioFocus()
 
