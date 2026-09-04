@@ -2,17 +2,18 @@
 const cv  = document.getElementById('c');
 const ctx = cv.getContext('2d');
 
-// The app runs on a phone in landscape (~700-950pt wide) and every feel constant
-// -- scrollSpd() scales by W/600, PX, PR, FS -- is tuned around that. On the open
-// web a maximised desktop window makes W 1900+, which pushes scrollSpd 3x past the
-// phone baseline while GRAVITY/THRUST stay flat, so the ship gets outpaced by the
-// scroll and the controls feel sluggish. Cap W to a phone-ish width for the web
-// build only (the canvas then centres in the window, CSS handles the letterbox);
-// the app is untouched.
-const W  = (typeof isWeb === 'function' && isWeb())
-    ? Math.min(window.innerWidth, 1024)
-    : window.innerWidth;
-const H  = Math.min(window.innerHeight, 600);
+// Every feel constant is tuned against a phone in landscape (~956x440pt on an
+// iPhone 17 Pro Max). GRAVITY/THRUST/MAX_VY are absolute px/s and px/s^2, and
+// scrollSpd() scales by W/600 -- so on a maximised desktop window (W ~1900,
+// H 600) the ship crosses a 50% bigger playfield at the same accel while the
+// tunnel scrolls 3x faster, which reads as floaty AND outpaced ("träge"). For
+// the web build only, clamp W and H to that phone footprint so the whole game
+// plays at exactly the proportions it was tuned for; the canvas then centres in
+// the window (CSS letterbox). isWeb() is false in both apps (bridge bound before
+// the first script), so the apps keep the raw window size untouched.
+const _WEB = (typeof isWeb === 'function' && isWeb());
+const W  = _WEB ? Math.min(window.innerWidth, 880)  : window.innerWidth;
+const H  = _WEB ? Math.min(window.innerHeight, 440) : Math.min(window.innerHeight, 600);
 // UI_H/FS drive text AND UI element sizing (ship icons, spacing) -- deliberately NOT the
 // real H 1:1: H is capped at 600 for corridor-difficulty reasons (CLAUDE.md) but virtually
 // never gets near that cap on an actual landscape phone (~400-450pt tall, vs. desktop
