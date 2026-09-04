@@ -32,3 +32,6 @@ flytunl-site/site/it/
 flytunl-site/site/es/
 flytunl-site/site/pt/
 flytunl-site/site/ja/
+
+# Cloudflare Worker local state (flytunl-site/worker)
+.wrangler/

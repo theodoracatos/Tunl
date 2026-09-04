@@ -84,3 +84,74 @@ let webParamGhostScore = 0;  // int, or 0 if absent
     const s = q.get('s');
     if (s && /^\d{1,7}$/.test(s)) webParamGhostScore = +s;
 })();
+
+// ── Web daily leaderboard ───────────────────────────────────────────
+// Gives the open web build the same live daily world-rank the app gets from
+// Game Center / Play Games. Backed by the Cloudflare Worker in
+// flytunl-site/worker/ - set its URL here after deploying it (see that README),
+// or leave empty and nothing below does anything (localStorage-only, as before).
+const WEB_LEADERBOARD_API = '';
+
+let _webRunStartMs = 0;   // set in lifecycle.js startPlay(), read at death
+let _webLbTok = null, _webLbTokTs = 0, _webRankFetchTs = 0;
+
+function _webLbOn() {
+    return WEB_LEADERBOARD_API && typeof isWeb === 'function' && isWeb() && typeof fetch === 'function';
+}
+
+function webPlayerId() {
+    try {
+        let v = localStorage.getItem('tunnel_web_id');
+        if (!v) {
+            v = (typeof crypto !== 'undefined' && crypto.randomUUID)
+                ? crypto.randomUUID()
+                : String(Math.random()).slice(2) + '-' + Date.now();
+            localStorage.setItem('tunnel_web_id', v);
+        }
+        return v;
+    } catch (e) { return 'anon-' + Date.now(); }
+}
+
+function _webLbToken() {
+    if (_webLbTok && Date.now() - _webLbTokTs < 600000) return Promise.resolve(_webLbTok);
+    return fetch(WEB_LEADERBOARD_API + '/t')
+        .then(r => r.json())
+        .then(j => { _webLbTok = j && j.t || null; _webLbTokTs = Date.now(); return _webLbTok; })
+        .catch(() => null);
+}
+
+// Feed a leaderboard response into the same state the native world-rank path
+// uses (main.js _tunlNativeUpdate) - the death-screen rank column and the
+// climbed/dropped delta then work on web unchanged.
+function _webApplyRank(j) {
+    if (j && typeof j.rank === 'number' && j.rank > 0 && typeof window._tunlNativeUpdate === 'function') {
+        window._tunlNativeUpdate({ worldRank: j.rank, worldRankTotal: j.total | 0 });
+    }
+}
+
+function webFetchRank() {
+    if (!_webLbOn() || Date.now() - _webRankFetchTs < 20000) return;
+    _webRankFetchTs = Date.now();
+    fetch(WEB_LEADERBOARD_API + '/r?d=' + _tunlActiveDayInt() + '&id=' + encodeURIComponent(webPlayerId()))
+        .then(r => r.json()).then(_webApplyRank).catch(() => {});
+}
+
+function webSubmitScore(score, playSec) {
+    if (!_webLbOn() || !(score > 0)) return;
+    // Only today's real cave counts - a ?d= replay of a past day is not recorded,
+    // same as the app, which only ever submits the current day.
+    const now = new Date();
+    const todayInt = now.getUTCFullYear() * 10000 + (now.getUTCMonth() + 1) * 100 + now.getUTCDate();
+    if (_tunlActiveDayInt() !== todayInt) return;
+    _webLbToken().then(tok => {
+        if (!tok) return;
+        return fetch(WEB_LEADERBOARD_API + '/s', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+                d: todayInt, s: score | 0, p: Math.round(playSec || 0),
+                id: webPlayerId(), tok,
+            }),
+        }).then(r => r.json()).then(_webApplyRank);
+    }).catch(() => {});
+}

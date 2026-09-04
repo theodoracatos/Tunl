@@ -1,0 +1,17 @@
+name = "tunl-scores"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+workers_dev = true
+
+# Fill database_id in after `wrangler d1 create tunl_scores`.
+[[d1_databases]]
+binding = "DB"
+database_name = "tunl_scores"
+database_id = "REPLACE_AFTER_wrangler_d1_create"
+
+# Daily prune of rows older than 45 days (03:17 UTC).
+[triggers]
+crons = ["17 3 * * *"]
+
+# TOKEN_SECRET is a secret, not a var - set it with:
+#   wrangler secret put TOKEN_SECRET

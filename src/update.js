@@ -629,6 +629,12 @@ function commitDeath() {
         top5 = [...top5, score].sort((a, b) => b - a).slice(0, 5);
         localStorage.setItem('tunnel_top5', JSON.stringify(top5));
         window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'submit', score });
+        // Web build: submit to the daily leaderboard worker (no-op without an API
+        // set). Reuses the native world-rank state path (main.js _tunlNativeUpdate).
+        if (typeof webSubmitScore === 'function') {
+            const _nowMs = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+            webSubmitScore(score, (_nowMs - _webRunStartMs) / 1000);
+        }
     }
     // Bank this run's collected coins into the persistent shard balance, capped per day so
     // unlocks track days played, not just a single grind session (DAILY_SHARD_CAP).

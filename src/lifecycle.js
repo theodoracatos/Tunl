@@ -52,6 +52,9 @@ function titleScreen() {
     refreshWave();
     _startTitleMusic();
     sfxBoot();
+    // Web build: refresh today's world rank (no-op without a leaderboard API set,
+    // and self-throttled to once per 20s). The app gets this from Game Center.
+    if (typeof webFetchRank === 'function') webFetchRank();
 }
 
 function startPlay() {
@@ -60,6 +63,9 @@ function startPlay() {
     magnetLoopOff();
     bgmSetSlow(false);
     _fadeTitleMusic();
+    // Web leaderboard: wall-clock start of this run, read at death for the
+    // score/play-time sanity check. Harmless (unused) in the app builds.
+    _webRunStartMs = (typeof performance !== 'undefined' ? performance.now() : Date.now());
     phase = 'play'; py = H + PR * 4; vy = 0; holding = false; hasHeldThisRun = false; idleHoldTimer = 0; scrollX = 0; startRamp = 0;
     score = 0; newBest = false; newDailyBest = false;
     parts = []; thrustParts = []; deadT = 0; flashA = 0; shake = 0; trailY = [];
