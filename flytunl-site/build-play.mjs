@@ -26,6 +26,7 @@
 
 import { readFile, writeFile, mkdir, copyFile, rm, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { minify } from 'terser';
 
@@ -89,12 +90,18 @@ async function build() {
   await mkdir(outDir, { recursive: true });
   await writeFile(path.join(outDir, 'tunl.bundle.js'), min.code, 'utf8');
 
+  // Content hash -> cache-busting query on the <script src>. The host sends no
+  // Cache-Control on the bundle, so without this a returning visitor can keep
+  // running a stale build after a deploy. Same hash on an unchanged deploy, so
+  // the cache still hits when nothing moved.
+  const v = createHash('sha256').update(min.code).digest('hex').slice(0, 10);
+
   // ---- 2. index.html: 12 script tags -> 1 bundle ----------------------
   let html = await readFile(path.join(root, 'tunl.html'), 'utf8');
   const before = html;
   html = html.replace(/[ \t]*<script src="src\/[^"]+"><\/script>\r?\n?/g, '');
   if (html === before) throw new Error('no <script src="src/..."> tags found in tunl.html - load order changed?');
-  html = html.replace('</body>', '<script src="tunl.bundle.js"></script>\n</body>');
+  html = html.replace('</body>', `<script src="tunl.bundle.js?v=${v}"></script>\n</body>`);
   if (!html.includes('</head>')) throw new Error('no </head> in tunl.html');
   html = html.replace('</head>', HEAD_EXTRA + '\n</head>');
   await writeFile(path.join(outDir, 'index.html'), html, 'utf8');
