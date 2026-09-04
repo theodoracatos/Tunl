@@ -79,7 +79,7 @@ const LANGS = {
         settings: 'EINSTELLUNGEN', language: 'SPRACHE',
         leaderboard: 'RANGLISTE',
         challenge: 'HERAUSFORDERUNG',
-        shop: 'SHOP',              shopUnavailable: 'KEINE KAEUFE VERFUEGBAR',
+        shop: 'SHOP',              shopUnavailable: 'KEINE KÄUFE VERFÜGBAR',
         allShips: 'ALLE SCHIFFE',
         toSkin: 'bis',       dailyCap: 'TAGESLIMIT', masteryUp: 'STUFE',
         missions: 'TAGESMISSIONEN', missionDone: 'MISSION GESCHAFFT', missionDesc: { gold:'GOLDMÜNZEN', blue:'BLAUE MÜNZEN', red:'ROTE MÜNZEN', green:'GRÜNE MÜNZEN', orange:'ORANGE MÜNZEN', bomb:'BOMBEN-MÜNZEN', dist:'DISTANZ', nearMiss:'BEINAHE-TREFFER', combo:'BESTE KOMBO', score:'BESTER SCORE', runs:'LÄUFE GESPIELT' },

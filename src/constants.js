@@ -2,7 +2,16 @@
 const cv  = document.getElementById('c');
 const ctx = cv.getContext('2d');
 
-const W  = window.innerWidth;
+// The app runs on a phone in landscape (~700-950pt wide) and every feel constant
+// -- scrollSpd() scales by W/600, PX, PR, FS -- is tuned around that. On the open
+// web a maximised desktop window makes W 1900+, which pushes scrollSpd 3x past the
+// phone baseline while GRAVITY/THRUST stay flat, so the ship gets outpaced by the
+// scroll and the controls feel sluggish. Cap W to a phone-ish width for the web
+// build only (the canvas then centres in the window, CSS handles the letterbox);
+// the app is untouched.
+const W  = (typeof isWeb === 'function' && isWeb())
+    ? Math.min(window.innerWidth, 1024)
+    : window.innerWidth;
 const H  = Math.min(window.innerHeight, 600);
 // UI_H/FS drive text AND UI element sizing (ship icons, spacing) -- deliberately NOT the
 // real H 1:1: H is capped at 600 for corridor-difficulty reasons (CLAUDE.md) but virtually

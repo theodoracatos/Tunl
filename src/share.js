@@ -415,7 +415,9 @@ function _shareCardCanvas() {
 // native share sheet has no ghost to hand off.
 function shareRunUrl() {
     if (typeof isWeb !== 'function' || !isWeb()) return SHARE_URL;
-    let u = SHARE_URL.replace(/\/+$/, '') + '/play?d=' + _tunlActiveDayInt();
+    // Trailing slash: the host 301-redirects /play -> /play/ (query preserved), so
+    // linking straight to /play/ saves every shared link a redirect hop.
+    let u = SHARE_URL.replace(/\/+$/, '') + '/play/?d=' + _tunlActiveDayInt();
     if (score > 0) u += '&s=' + Math.min(score | 0, 9999999);
     try {
         if (typeof ghostTrack !== 'undefined' && ghostTrack && ghostTrack.length > 1) {

@@ -59,12 +59,12 @@ const HEAD_EXTRA = `<meta name="description" content="Fly today's cave. Every pl
 <meta name="author" content="Theodoracatos">
 <meta name="copyright" content="Copyright (c) 2026 Theodoracatos. All rights reserved.">
 <meta name="theme-color" content="#04040a">
-<link rel="canonical" href="https://flytunl.ch/play">
+<link rel="canonical" href="https://flytunl.ch/play/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="TUNL">
 <meta property="og:title" content="TUNL">
 <meta property="og:description" content="A daily hold-to-thrust cave flyer. Same cave for everyone, every day. Beat the run I just sent you.">
-<meta property="og:url" content="https://flytunl.ch/play">
+<meta property="og:url" content="https://flytunl.ch/play/">
 <meta property="og:image" content="https://flytunl.ch/feature-graphic-1024x500.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="TUNL">

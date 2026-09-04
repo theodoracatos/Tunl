@@ -2134,7 +2134,9 @@ function drawTitleScreen() {
     // default (Cockpit-Kritik observation 6: that gap used to sit empty on wide
     // devices while the right column was crammed; it's the whole stage now).
     const shipStageX = LAND ? W * 0.60 : W / 2;
-    const shipStageY = LAND ? H * 0.58 : H * 0.50;
+    // Web build only: nudged up from H*0.58 so the stage sits more centred on a
+    // desktop letterbox. The app keeps H*0.58 (tuned against the phone layout).
+    const shipStageY = LAND ? (isWeb() ? H * 0.53 : H * 0.58) : H * 0.50;
     const heroR       = LAND ? Math.min(H * 0.16, UI_H * 0.15) : H * 0.12;
     const [hr, hg, hb] = SKINS[activeSkin].shadow;
 
