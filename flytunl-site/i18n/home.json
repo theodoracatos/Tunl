@@ -412,6 +412,7 @@
 
   "footer.support": { "en": "Support", "de": "Support", "fr": "Aide", "it": "Assistenza", "es": "Soporte", "pt": "Suporte", "ja": "サポート" },
   "footer.privacy": { "en": "Privacy Policy", "de": "Datenschutz", "fr": "Confidentialité", "it": "Privacy", "es": "Privacidad", "pt": "Privacidade", "ja": "プライバシー" },
+  "footer.press": { "en": "Press", "de": "Presse", "fr": "Presse", "it": "Stampa", "es": "Prensa", "pt": "Imprensa", "ja": "プレス" },
   "footer.rights": {
     "en": "&copy; 2026 Theodoracatos. All rights reserved.",
     "de": "&copy; 2026 Theodoracatos. Alle Rechte vorbehalten.",
