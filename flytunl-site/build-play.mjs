@@ -41,12 +41,12 @@ const SCRIPTS = [
 
 const BANNER = '/*! TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch */';
 
-// Cloudflare Web Analytics beacon token. Get it from dash.cloudflare.com ->
-// Analytics & Logs -> Web Analytics -> Add a site (flytunl.ch) -> copy the token
-// out of the JS snippet it shows (the value of "token"). Paste it here and
-// redeploy. Cloudflare Web Analytics is cookieless and stores nothing on the
-// visitor's device, so it needs no consent banner. Leave empty to ship no beacon.
-const CF_ANALYTICS_TOKEN = '';
+// Cloudflare Web Analytics beacon token for flytunl.ch (dash.cloudflare.com ->
+// Analytics -> Web Analytics -> flytunl.ch). It is a public identifier - it ships
+// in the page source of every page - not a credential. Cloudflare Web Analytics is
+// cookieless and stores nothing on the visitor's device, so no consent banner is
+// needed. Set to '' to ship no beacon.
+const CF_ANALYTICS_TOKEN = '7783839e84374212b7d76f25e1fb8e87';
 
 const CF_BEACON = CF_ANALYTICS_TOKEN
   ? `\n<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "${CF_ANALYTICS_TOKEN}"}'></script>`
