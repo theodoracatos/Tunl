@@ -11,7 +11,7 @@ corridor art everywhere, alpha=0 inside the rounded hole). Compositing the
 actual video into that hole is a separate ffmpeg pass - see the printed
 command at the end, or Screenshots/build-portrait-video.sh.
 
-Run:  python3 Screenshots/make-portrait-video-frame.py
+Run:  TUNL_LOCALE=<loc> python3 Screenshots/make-portrait-video-frame.py
 """
 
 import math
@@ -20,14 +20,31 @@ import random
 import subprocess
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
+try:
+    RAQM = ImageFont.Layout.RAQM
+except AttributeError:                       # very old Pillow
+    RAQM = None
+
 W, H = 1080, 2340   # 9:16 (2340 = 1080 * 16/9), native TikTok/Reels/Shorts canvas
 REPO = "/Users/theodoracatos/Development/Tunl"
 WORDMARK_SVG = os.path.join(REPO, "branding/wordmark.svg")
-OUT_DIR = os.path.join(REPO, "Screenshots/iOS_8.0/en")
+OUT_DIR = os.environ.get("TUNL_FRAME_OUT_DIR", os.path.join(REPO, "Screenshots/iOS_8.0/en"))
 TMP = os.environ.get("TUNL_TMP", "/tmp")
 os.makedirs(TMP, exist_ok=True)
 
 COURIER = "/System/Library/Fonts/Supplemental/Courier New Bold.ttf"
+# locale -> (path, ttc index, needs RAQM layout, direction) - same per-script
+# fonts as make-portrait-frames-8.0.py's screenshot pipeline; Courier New
+# Bold has no CJK/Arabic/Devanagari glyphs so those locales need a system
+# font instead, and ar/hi need RAQM for correct shaping.
+FONT = {
+    "_latin": (COURIER, 0, False, "ltr"),
+    "ja": ("/System/Library/Fonts/ヒラギノ角ゴシック W6.ttc", 0, False, "ltr"),
+    "ko": ("/System/Library/Fonts/AppleSDGothicNeo.ttc", 4, False, "ltr"),
+    "zh": ("/System/Library/Fonts/STHeiti Medium.ttc", 0, False, "ltr"),
+    "ar": ("/System/Library/Fonts/GeezaPro.ttc", 1, True, "rtl"),
+    "hi": ("/System/Library/Fonts/Kohinoor.ttc", 3, True, "ltr"),
+}
 
 INK = (234, 240, 255)
 DIM = (150, 167, 200)
@@ -40,10 +57,18 @@ VOID = (5, 5, 12)
 _FONT_CACHE = {}
 
 
-def font(px):
-    key = px
+def fontspec(loc):
+    return FONT.get(loc, FONT["_latin"])
+
+
+def font(loc, px):
+    path, idx, raqm, _ = fontspec(loc)
+    key = (path, idx, px, raqm)
     if key not in _FONT_CACHE:
-        _FONT_CACHE[key] = ImageFont.truetype(COURIER, px)
+        kw = {"index": idx}
+        if raqm and RAQM is not None:
+            kw["layout_engine"] = RAQM
+        _FONT_CACHE[key] = ImageFont.truetype(path, px, **kw)
     return _FONT_CACHE[key]
 
 
@@ -145,11 +170,41 @@ def vignette(img):
     img.alpha_composite(overlay)
 
 
-def center_text(d, cx, y, text, fnt, fill):
-    bb = d.textbbox((0, 0), text, font=fnt)
-    d.text((cx - (bb[2] - bb[0]) / 2 - bb[0], y), text, fill=fill, font=fnt)
+def center_text(d, cx, y, text, fnt, fill, direction="ltr"):
+    kw = {"font": fnt}
+    if direction == "rtl":
+        kw["direction"] = "rtl"
+    bb = d.textbbox((0, 0), text, **kw)
+    d.text((cx - (bb[2] - bb[0]) / 2 - bb[0], y), text, fill=fill, **kw)
     return bb[3] - bb[1]
 
+
+# Headline/subhead per locale - lines[0:2] and the subhead of CAPS[loc][1] in
+# the screenshot pipeline (make-portrait-frames-8.0.py), the same voice
+# trimmed to 2 lines for the flatter 9:16 canvas. "en" and "pt-BR" have their
+# own gameplay captures (see Locales note there); the other 13 reuse the
+# English capture (TUNL_LOCALE only changes the overlay text) - falls back to
+# "en" if a locale isn't listed here.
+TEXT = {
+    "en": (["Hold to climb.", "Release to fall."], 0, "One button. That is the whole game."),
+    "de": (["Halten steigt.", "Loslassen fällt."], 0, "Ein Knopf. Das ganze Spiel."),
+    "fr": (["Maintiens, ça monte.", "Relâche, ça tombe."], 0, "Un bouton. Tout le jeu."),
+    "it": (["Tieni, sale.", "Lascia, scende."], 0, "Un tasto. Tutto il gioco."),
+    "es": (["Mantén, sube.", "Suelta, cae."], 0, "Un botón. Todo el juego."),
+    "pt": (["Segura, sobe.", "Larga, cai."], 0, "Um botão. O jogo todo."),
+    "pt-BR": (["Segure, sobe.", "Solte, cai."], 0, "Um botão. Isso é o jogo inteiro."),
+    "ru": (["Держишь - вверх.", "Отпустил - вниз."], 0, "Одна кнопка. Вот и вся игра."),
+    "tr": (["Basınca yükselir.", "Bırakınca düşer."], 0, "Tek tuş. Oyunun tamamı."),
+    "id": (["Tahan, naik.", "Lepas, turun."], 0, "Satu tombol. Itu seluruh gimnya."),
+    "vi": (["Giữ thì lên.", "Thả thì xuống."], 0, "Một nút. Cả trò chơi."),
+    "ja": (["押すと上昇。", "離すと落下。"], 0, "ボタン1つ。それだけ。"),
+    "ko": (["누르면 상승.", "놓으면 하강."], 0, "버튼 하나. 그게 전부."),
+    "zh": (["按住上升。", "放開下墜。"], 0, "一個按鍵，就是全部。"),
+    "ar": (["اضغط ترتفع.", "ارفع تسقط."], 0, "زر واحد. اللعبة كلها."),
+    "hi": (["दबाओ, ऊपर।", "छोड़ो, नीचे।"], 0, "एक बटन। पूरा खेल।"),
+}
+LOCALE = os.environ.get("TUNL_LOCALE", "en")
+_, _, _, DIRECTION = fontspec(LOCALE)
 
 # ---------------------------------------------------------------- the frame
 # Source clip: Screenshots/iOS_8.0/en/app-preview-6.9.mp4, 2796x1290. Cropped
@@ -162,10 +217,16 @@ def center_text(d, cx, y, text, fnt, fill):
 # has no room for anyway - and the taller resulting aspect lets the card fill
 # roughly half the frame instead of a fifth of it. See CROP_* below; keep in
 # sync with build-portrait-video.sh's ffmpeg crop filter.
-CROP_W, CROP_H, CROP_X, CROP_Y = 1300, 1290, 460, 0   # out of the source's 2796x1290
-# (a first pass at 1075 wide cut the score/BEST readout at the top-center of
-# the HUD; 1300 wide, shifted right, keeps both the ship and the full HUD
-# text in frame - see the hud-crop check this was tuned against.)
+CROP_W = int(os.environ.get("TUNL_CROP_W", 1300))
+CROP_H = int(os.environ.get("TUNL_CROP_H", 1290))
+CROP_X = int(os.environ.get("TUNL_CROP_X", 460))
+CROP_Y = int(os.environ.get("TUNL_CROP_Y", 0))
+# 8.0 defaults out of that source's 2796x1290 (a first pass at 1075 wide cut
+# the score/BEST readout at the top-center of the HUD; 1300 wide, shifted
+# right, keeps both the ship and the full HUD text in frame - see the
+# hud-crop check this was tuned against). Later versions override all four
+# via env vars, scaled to their own source resolution - see
+# build-portrait-video.sh, which derives them from the same fractions.
 SRC_RATIO = CROP_H / CROP_W
 CARD_PAD = 34
 CARD_RADIUS = 30
@@ -177,24 +238,21 @@ def build():
     vignette(img)
     d = ImageDraw.Draw(img)
 
-    # Headline - reuses the same voice as CAPS["en"][1] in the screenshot
-    # pipeline (the gameplay-frame caption), trimmed to 2 lines for the
-    # flatter 9:16 canvas.
-    lines = ["Hold to climb.", "Release to fall."]
-    accent_idx = 0
+    lines, accent_idx, sub = TEXT.get(LOCALE, TEXT["en"])
+    tlkw = {"direction": "rtl"} if DIRECTION == "rtl" else {}
     size = 92
     while size > 50:
-        hf = font(size)
-        widest = max(d.textlength(l, font=hf) for l in lines)
+        hf = font(LOCALE, size)
+        widest = max(d.textlength(l, font=hf, **tlkw) for l in lines)
         if widest <= W - 100:
             break
         size -= 3
-    hf = font(size)
+    hf = font(LOCALE, size)
     lh = int(size * 1.22)
     y = 96
     for i, line in enumerate(lines):
         col = CYAN if i == accent_idx else INK
-        center_text(d, W / 2, y, line, hf, col)
+        center_text(d, W / 2, y, line, hf, col, DIRECTION)
         y += lh
     head_bottom = y + 14
 
@@ -230,22 +288,33 @@ def build():
     ImageDraw.Draw(img).rounded_rectangle(
         [cx, cy, cx + card_w, cy + card_h], radius=CARD_RADIUS, outline=(*INK, 230), width=2)
 
-    # Subhead under the card.
-    sub = "One button. That is the whole game."
+    # Subhead under the card (from TEXT[LOCALE] above).
     ssize = 46
     while ssize > 26:
-        sf = font(ssize)
-        if d.textlength(sub, font=sf) <= W - 120:
+        sf = font(LOCALE, ssize)
+        if d.textlength(sub, font=sf, **tlkw) <= W - 120:
             break
         ssize -= 2
-    center_text(d, W / 2, cy + card_h + 40, sub, font(ssize), DIM)
+    sub_y = cy + card_h + 40
+    center_text(d, W / 2, sub_y, sub, font(LOCALE, ssize), DIM, DIRECTION)
+    sub_bottom = sub_y + ssize * 1.1
 
-    # Ship + wordmark + URL in the lower third, same proportions as the
-    # screenshot pipeline (ship at ~62%W/73%H, wordmark just above the base).
-    draw_ship(img, W * 0.62, H * 0.85, 1.7, seed=5)
+    # Ship + wordmark + URL below that, at fixed fractions of the space
+    # remaining down to the canvas bottom - not fixed H fractions - so a
+    # card reshaped by SRC_RATIO (wide/short vs. tall/square, see CROP_* env
+    # vars) doesn't leave a giant dead gap or crowd the footer. Fractions
+    # (0.61 / 0.76 / 0.94) are lifted from the original tall-card layout
+    # (ship at H*0.85, wordmark at H-wm.height-90, url at H-58) so this
+    # reduces to that exact composition when SRC_RATIO matches the old crop.
+    rem = H - sub_bottom
+    ship_y = sub_bottom + rem * 0.61
+    wm_top = sub_bottom + rem * 0.76
+    url_y = sub_bottom + rem * 0.94
+
+    draw_ship(img, W * 0.62, ship_y, 1.7, seed=5)
     wm = wordmark_png(320)
-    img.alpha_composite(wm, ((W - wm.width) // 2, H - wm.height - 90))
-    center_text(d, W / 2, H - 58, "flytunl.ch", font(26), (120, 134, 162, 255))
+    img.alpha_composite(wm, ((W - wm.width) // 2, int(wm_top)))
+    center_text(d, W / 2, url_y, "flytunl.ch", font("_latin", 26), (120, 134, 162, 255))
 
     out_path = os.path.join(OUT_DIR, "portrait-video-frame.png")
     img.save(out_path, "PNG")
