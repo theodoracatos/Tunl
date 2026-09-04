@@ -81,6 +81,16 @@ struct GameView: UIViewRepresentable {
             webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
         }
 
+        // A Universal Link that arrived (or arrives later) via DeepLinkRouter
+        // reloads the page with its query string appended -- see
+        // Coordinator.applyDeepLink. This can mean loading tunl.html twice on a
+        // cold launch via a shared-run link (the plain load above, then this one
+        // a moment later): a harmless one-time flicker, traded for not having to
+        // hold the initial load open pending a link that arrives for most launches.
+        DeepLinkRouter.shared.onURL = { [weak coordinator = context.coordinator] url in
+            coordinator?.applyDeepLink(url)
+        }
+
         // Disable long-press recognizers after layout to suppress the selection loupe
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             GameView.killPressInteractions(in: webView)
@@ -227,6 +237,22 @@ struct GameView: UIViewRepresentable {
         func pushSafeAreaInsets(_ insets: UIEdgeInsets) {
             let json = "{\"safeInsetLeft\":\(insets.left),\"safeInsetRight\":\(insets.right)}"
             webView?.evaluateJavaScript("window._tunlNativeUpdate && window._tunlNativeUpdate(\(json))")
+        }
+
+        // Reloads with the incoming Universal Link's query string appended, so the
+        // page's existing ?d=/?g=/?s= parsing (src/web.js _tunlParseWebParams, which
+        // runs on any location.search regardless of platform) picks up a friend's
+        // shared run exactly as the web build would. Scoped to /play, matching the
+        // AASA file's own scope -- the marketing pages under the bare domain have no
+        // in-app equivalent to hand off to. Wired from DeepLinkRouter in makeUIView.
+        func applyDeepLink(_ url: URL) {
+            guard url.path.hasPrefix("/play"),
+                  let bundleURL = Bundle.main.url(forResource: "tunl", withExtension: "html"),
+                  var components = URLComponents(url: bundleURL, resolvingAgainstBaseURL: false)
+            else { return }
+            components.query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.query
+            guard let target = components.url else { return }
+            webView?.loadFileURL(target, allowingReadAccessTo: bundleURL.deletingLastPathComponent())
         }
 
         private func rootViewController() -> UIViewController? {

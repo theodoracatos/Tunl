@@ -1,0 +1,15 @@
+{
+    "applinks": {
+        "details": [
+            {
+                "appIDs": ["4437D23K3P.com.theodoracatos.tunl"],
+                "components": [
+                    {
+                        "/": "/play/*",
+                        "comment": "A friend's shared run (src/share.js shareRunUrl) - flytunl.ch/play/?d=&g=&s=. Everything else on the domain (the marketing homepage, /privacy, /support) has no in-app equivalent and stays in the browser."
+                    }
+                ]
+            }
+        ]
+    }
+}

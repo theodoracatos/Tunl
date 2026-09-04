@@ -23,6 +23,7 @@
 		E4AE65DC300317A20067F8C9 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = E4AE65DB300317A20067F8C9 /* GoogleMobileAds */; };
 		EE0002000000000000000001 /* IAPManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE0001000000000000000001 /* IAPManager.swift */; };
 		NF0002000000000000000001 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = NF0001000000000000000001 /* NotificationManager.swift */; };
+		DE0002000000000000000001 /* DeepLinkRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE0001000000000000000001 /* DeepLinkRouter.swift */; };
 		F0A5B07E540A4C3C5CA97668 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 7EA08C1563E829530C401455 /* FirebaseCore */; };
 		PP0002000000000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = PP0001000000000000000001 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
@@ -45,6 +46,7 @@
 		DD0001000000000000000001 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		EE0001000000000000000001 /* IAPManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IAPManager.swift; sourceTree = "<group>"; };
 		NF0001000000000000000001 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		DE0001000000000000000001 /* DeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouter.swift; sourceTree = "<group>"; };
 		FF0001000000000000000001 /* Configuration.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = Configuration.storekit; sourceTree = "<group>"; };
 		PP0001000000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -91,6 +93,7 @@
 				EE0001000000000000000001 /* IAPManager.swift */,
 				AD0001000000000000000001 /* AdsManager.swift */,
 				NF0001000000000000000001 /* NotificationManager.swift */,
+				DE0001000000000000000001 /* DeepLinkRouter.swift */,
 				FF0001000000000000000001 /* Configuration.storekit */,
 				PP0001000000000000000001 /* PrivacyInfo.xcprivacy */,
 				BB0005000000000000000001 /* Info.plist */,
@@ -207,6 +210,7 @@
 				EE0002000000000000000001 /* IAPManager.swift in Sources */,
 				AD0002000000000000000001 /* AdsManager.swift in Sources */,
 				NF0002000000000000000001 /* NotificationManager.swift in Sources */,
+				DE0002000000000000000001 /* DeepLinkRouter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

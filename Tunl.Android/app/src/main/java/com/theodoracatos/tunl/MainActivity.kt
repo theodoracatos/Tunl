@@ -40,6 +40,38 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var webView: WebView
 
+    private val gameBaseUrl = "https://appassets.androidplatform.net/assets/tunl.html"
+
+    // Extracts a deep-link query string from an App Link intent (AndroidManifest's
+    // autoVerify intent-filter, flytunl.ch/play/... - a friend's shared run, see
+    // src/share.js shareRunUrl). Null for a normal cold launch from the launcher
+    // icon, which has no data URI at all. The query string is handed straight
+    // through unparsed - the page already reads ?d=/?g=/?s= unconditionally
+    // (src/web.js _tunlParseWebParams runs on any location.search, not just the
+    // web build), so no native decoding is needed here, only getting it onto the
+    // URL the WebView actually loads.
+    private fun deepLinkQuery(intent: Intent?): String? {
+        val uri = intent?.data ?: return null
+        if (uri.host != "flytunl.ch" || uri.path?.startsWith("/play") != true) return null
+        return uri.query
+    }
+
+    private fun gameUrl(intent: Intent?): String {
+        val query = deepLinkQuery(intent)
+        return if (query != null) "$gameBaseUrl?$query" else gameBaseUrl
+    }
+
+    // Fires when an App Link is tapped while the app is already running -
+    // launchMode="singleTask" (manifest) routes it here instead of spawning a
+    // second instance. A cold start's own intent is instead picked up by
+    // gameUrl(intent) at the loadUrl call in onCreate.
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val query = deepLinkQuery(intent) ?: return
+        webView.loadUrl("$gameBaseUrl?$query")
+    }
+
     // True between ads.onWillPresent and ads.onDidDismiss. While set, the app
     // stays out of immersive mode so a full-screen interstitial's close button
     // is not obscured by the cutout / nav bar (see the ads.onWillPresent wiring).
@@ -360,7 +392,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        webView.loadUrl("https://appassets.androidplatform.net/assets/tunl.html")
+        webView.loadUrl(gameUrl(intent))
 
         // Android's system/gesture back button has no iOS equivalent (no hardware
         // back button exists there). Without this, back always exits the app

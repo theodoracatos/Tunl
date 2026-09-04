@@ -68,11 +68,32 @@
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|keyboardHidden|uiMode"
             android:exported="true"
+            android:launchMode="singleTask"
             android:screenOrientation="sensorLandscape"
             android:theme="@style/Theme.Tunl">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- App Links (flytunl.ch/play/... - a friend's shared run, see
+                 src/share.js shareRunUrl). autoVerify hands Android the domain
+                 ownership check against /.well-known/assetlinks.json at install
+                 time so a tap opens straight into the app instead of the browser,
+                 no disambiguation sheet. Scoped to /play only, matching the AASA
+                 file's iOS counterpart (GameView.swift/TunlApp.swift) - the
+                 marketing pages under the bare domain have no in-app equivalent
+                 to hand off to. singleTask above (not the default "standard")
+                 is required for a warm/backgrounded app to receive this as
+                 onNewIntent instead of spawning a duplicate instance. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="flytunl.ch"
+                    android:pathPrefix="/play" />
             </intent-filter>
         </activity>
 

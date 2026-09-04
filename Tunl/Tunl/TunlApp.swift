@@ -61,6 +61,23 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         return true
     }
 
+    // Universal Link handoff (flytunl.ch/play/... - a friend's shared run, see
+    // src/share.js shareRunUrl, the Associated Domains entitlement, and the AASA
+    // file at flytunl-site/site/.well-known/apple-app-site-association). Fires
+    // for both a cold launch via the link and a warm/backgrounded app being
+    // brought forward by one -- DeepLinkRouter hands it to GameView's Coordinator,
+    // which reloads the webview with the link's query string appended so the
+    // page's existing ?d=/?g=/?s= parsing (src/web.js) picks the run up exactly
+    // as the web build would.
+    func application(_ application: UIApplication,
+                      continue userActivity: NSUserActivity,
+                      restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
+        guard userActivity.activityType == NSUserActivityTypeBrowsingWeb,
+              let url = userActivity.webpageURL else { return false }
+        DeepLinkRouter.shared.handle(url)
+        return true
+    }
+
     // Without the "audio" background mode, iOS deactivates our AVAudioSession
     // when the app is backgrounded. Nothing reactivates it afterwards, so both
     // bgm and sfx stay silent once the app returns to the foreground - reactivate
