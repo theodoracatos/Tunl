@@ -12,8 +12,22 @@ const ctx = cv.getContext('2d');
 // the window (CSS letterbox). isWeb() is false in both apps (bridge bound before
 // the first script), so the apps keep the raw window size untouched.
 const _WEB = (typeof isWeb === 'function' && isWeb());
+// Android has no TARGETED_DEVICE_FAMILY-style phone-only restriction (unlike
+// iOS, see Info.plist) and Play Store doesn't exclude tablets, so a large
+// Android tablet in landscape can push innerHeight well past the general
+// 600 cap below. GRAVITY/THRUST/MAX_VY are absolute px/s(^2), tuned against a
+// phone (~440pt landscape height, see the comment above them) and don't scale
+// with H at all, so the closer H sits to that tuning target the snappier the
+// ship feels; capping only at 600 still leaves a tablet's ship reading as
+// floaty relative to a phone's. Reuses the web build's already-tuned 520
+// ceiling (W stays uncapped here, deliberately unlike web - see CLAUDE.md
+// "W fills the screen" - this only tightens the vertical physics-feel gap,
+// it doesn't attempt full web-style letterbox parity).
+const _ANDROID_APP = (typeof isAndroidApp === 'function' && isAndroidApp());
 const W  = _WEB ? Math.min(window.innerWidth, 940)  : window.innerWidth;
-const H  = _WEB ? Math.min(window.innerHeight, 520) : Math.min(window.innerHeight, 600);
+const H  = _WEB ? Math.min(window.innerHeight, 520)
+         : _ANDROID_APP ? Math.min(window.innerHeight, 520)
+         : Math.min(window.innerHeight, 600);
 // UI_H/FS drive text AND UI element sizing (ship icons, spacing) -- deliberately NOT the
 // real H 1:1: H is capped at 600 for corridor-difficulty reasons (CLAUDE.md) but virtually
 // never gets near that cap on an actual landscape phone (~400-450pt tall, vs. desktop

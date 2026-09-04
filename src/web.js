@@ -29,6 +29,17 @@ function isWeb() {
     return true;
 }
 
+// isAndroidApp() - unlike isWeb() this needs no latch: MainActivity.kt registers
+// TunlNative via addJavascriptInterface() before webView.loadUrl() runs, which
+// (per Android's WebView API) makes it available in window synchronously before
+// any page <script> executes - it does not depend on document-start support the
+// way the window.webkit.messageHandlers shim does (see _tunlBridgePresent above),
+// so this is safe to read once, synchronously, at constants.js's top-level H
+// calculation.
+function isAndroidApp() {
+    return typeof window.TunlNative !== 'undefined';
+}
+
 // The calendar day whose cave, world name and rock palette we render. Normally
 // today (UTC). The ?d= deep link (webParamDay, YYYYMMDD - parsed below) can point
 // it at a past day so a shared link still flies the same cave after the UTC
