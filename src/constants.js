@@ -12,8 +12,8 @@ const ctx = cv.getContext('2d');
 // the window (CSS letterbox). isWeb() is false in both apps (bridge bound before
 // the first script), so the apps keep the raw window size untouched.
 const _WEB = (typeof isWeb === 'function' && isWeb());
-const W  = _WEB ? Math.min(window.innerWidth, 880)  : window.innerWidth;
-const H  = _WEB ? Math.min(window.innerHeight, 440) : Math.min(window.innerHeight, 600);
+const W  = _WEB ? Math.min(window.innerWidth, 940)  : window.innerWidth;
+const H  = _WEB ? Math.min(window.innerHeight, 520) : Math.min(window.innerHeight, 600);
 // UI_H/FS drive text AND UI element sizing (ship icons, spacing) -- deliberately NOT the
 // real H 1:1: H is capped at 600 for corridor-difficulty reasons (CLAUDE.md) but virtually
 // never gets near that cap on an actual landscape phone (~400-450pt tall, vs. desktop
@@ -46,9 +46,15 @@ let SAFE_L = 0, SAFE_R = 0;
 
 const PX      = W  * 0.22;
 const PR      = W  * 0.018;
-const GRAVITY = 1150;
-const THRUST  = 2400;
-const MAX_VY  = 820;
+// GRAVITY/THRUST/MAX_VY are absolute px/s and px/s^2, tuned for a phone. On desktop
+// web a player still read the ship as "floating too much" after the W/H clamp, so
+// the vertical dynamics get a modest web-only boost. Both terms scale by the SAME
+// factor, so the net-up:net-down ratio (1250:1150) CLAUDE.md guards is preserved
+// exactly. isWeb() is false in the apps, which keep the raw values.
+const _WEB_FEEL = _WEB ? 1.3 : 1;
+const GRAVITY = 1150 * _WEB_FEEL;
+const THRUST  = 2400 * _WEB_FEEL;
+const MAX_VY  = 820  * _WEB_FEEL;
 const RSTEP   = 3;
 
 const DEV_INVINCIBLE = false; // set true to disable all deaths (testing only)

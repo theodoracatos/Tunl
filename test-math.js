@@ -21,7 +21,10 @@ function makeWorld(innerWidth, innerHeight) {
     const fakeCtx = {};
     const fakeCanvas = { getContext: () => fakeCtx, width: 0, height: 0 };
     const sandbox = {
-        window:   { innerWidth, innerHeight },
+        // Stub the iOS message-handler bridge so web.js's isWeb() returns false:
+        // this suite validates the *app's* feel constants (GRAVITY/THRUST, the W/H
+        // caps, scrollSpd), not the web build's isWeb()-gated overrides.
+        window:   { innerWidth, innerHeight, webkit: { messageHandlers: { haptic: {} } } },
         document: { getElementById: () => fakeCanvas },
         localStorage: { getItem: () => null, setItem: () => {} },
         console, Math, Date, JSON, atob, btoa,
