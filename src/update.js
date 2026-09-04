@@ -629,6 +629,17 @@ function commitDeath() {
     const _hadPriorBest = best > 0;
     if (newBest) { best = score; localStorage.setItem('tunnel_best', best); }
     if (newBest) maybeRequestReview(score, _hadPriorBest);
+    // Referral reward (constants.js REFERRAL_REWARD doc block): the inverse of
+    // the review gate just above - fires only on what reads as this player's
+    // own first real run (no prior best going in), which is also the one
+    // point in a player's lifetime this condition can ever be true, so this
+    // naturally never re-submits on a later run. Reuses CONTINUE_MIN_SCORE
+    // rather than a fresh constant, same floor REVIEW_MIN_SCORE reuses it
+    // for - the worker re-checks this independently regardless (never trust
+    // the client on something that grants value).
+    if (!_hadPriorBest && score >= CONTINUE_MIN_SCORE && typeof submitReferral === 'function') {
+        submitReferral(score);
+    }
     runsWithoutPB = newBest ? 0 : runsWithoutPB + 1;
     newDailyBest = score > dailyBest;
     if (newDailyBest) { dailyBest = score; localStorage.setItem('tunnel_daily_best', dailyBest); }

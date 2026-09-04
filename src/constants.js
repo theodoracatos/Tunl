@@ -406,6 +406,19 @@ const DAILY_SHARD_CAP = 160;
 // _tunlShardsRewardGranted and AdsManager.swift/.kt's shards-rewarded manager.
 const SHARDS_AD_REWARD = 20;
 
+// Two-sided referral reward (web.js submitReferral/checkReferralReward): the
+// sharer's payout once someone they invited clears their own first real run.
+// Same amount as SHARDS_AD_REWARD - a real bonus, not enough on its own to
+// bypass the deliberately-scarce late-ship economy above (a maxed-out player
+// sharing constantly still can't out-earn the daily cap this way; a genuine
+// referral is a rare event, not a grindable loop). Exempt from
+// DAILY_SHARD_CAP for the same reason SHARDS_AD_REWARD is: a bounded,
+// opportunistic top-up, not the unlimited-grind vector the cap guards
+// against - and unlike the ad bonus, not even once-a-day capped, since
+// landing more than one referral in a day is already rare enough to be
+// self-limiting.
+const REFERRAL_REWARD = 20;
+
 // ── Stardust (calendar-day gate, every paid tier) ────────────────────
 // Every paid ship, SOLARIS included, requires a minimum `stardustGate` (SKINS[i]) on top
 // of its shard cost. Unlike shards, stardust is NEVER spent -- it's a monotonically

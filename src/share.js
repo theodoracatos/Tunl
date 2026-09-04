@@ -416,13 +416,23 @@ function _shareCardCanvas() {
 
 // ── Share ─────────────────────────────────────────────────────────────
 
-// The link printed on the card. On the open web it deep-links straight back into
-// the run just flown: same cave (?d), the sender's ghost to race (?g), and their
-// score so the recipient's ghost readout is right (?s). Anywhere else (a native
-// app share) it stays the plain marketing URL - the app has no /play route and a
-// native share sheet has no ghost to hand off.
+// The link printed on the card, always carrying a referral tag (?r=, this
+// player's web.js webPlayerId()) so a friend who plays credits them a shard
+// reward the moment that friend clears their own first real run - see web.js
+// submitReferral()/checkReferralReward(). On the open web the link also
+// deep-links straight back into the run just flown: same cave (?d), the
+// sender's ghost to race (?g), and their score so the recipient's ghost
+// readout is right (?s). A native app share instead points at bare /play/
+// with only ?r= attached - the app has no in-app equivalent to hand a ghost
+// off to, but /play/ is a real playable page regardless of platform, and for
+// a recipient who already has the app, the Universal/App Link wiring
+// (GameView.swift / MainActivity.kt) hands them straight back into it rather
+// than the web build.
 function shareRunUrl() {
-    if (typeof isWeb !== 'function' || !isWeb()) return SHARE_URL;
+    const r = 'r=' + encodeURIComponent(webPlayerId());
+    if (typeof isWeb !== 'function' || !isWeb()) {
+        return SHARE_URL.replace(/\/+$/, '') + '/play/?' + r;
+    }
     // Trailing slash: the host 301-redirects /play -> /play/ (query preserved), so
     // linking straight to /play/ saves every shared link a redirect hop.
     let u = SHARE_URL.replace(/\/+$/, '') + '/play/?d=' + _tunlActiveDayInt();
@@ -437,7 +447,7 @@ function shareRunUrl() {
             }
         }
     } catch (e) { /* the ghost is optional in the link; ?d + ?s still challenge */ }
-    return u;
+    return u + '&' + r;
 }
 
 function shareRunText() {

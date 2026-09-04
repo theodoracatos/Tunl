@@ -51,16 +51,26 @@ function _tunlActiveDayInt() {
 }
 
 // ── Deep-link params ────────────────────────────────────────────────
-// Parsed once at load; read later by lifecycle.js (seed) and share.js (link).
+// Parsed once at load; read later by lifecycle.js (seed), share.js (link) and
+// update.js (referral submit, see the "Referral reward" section below).
 //   ?d=YYYYMMDD  replay that day's cave instead of today's. Any past day back to
 //                2025-01-01 is allowed so a shared link does not die at the UTC
 //                boundary; future dates are rejected.
 //   ?g=<base64>  a friend's ghost track to race (decoded via constants.js
 //                ghostDecode at use site).
 //   ?s=<int>     the score that ghost reached, for the "GHOST -N" readout.
+//   ?r=<id>      the webPlayerId() of whoever shared this link (share.js
+//                shareRunUrl) - credits them a referral reward once this
+//                player clears their own first real run. Native app builds
+//                receive this the same way they receive a Universal/App Link
+//                at all: GameView.swift/MainActivity.kt reload the page with
+//                the link's query string appended (see DeepLinkRouter.swift /
+//                MainActivity.kt's deepLinkQuery), so this parses identically
+//                on every platform - no separate native-only path needed.
 let webParamDay = 0;         // int YYYYMMDD, or 0 meaning "today"
 let webParamGhost = null;    // raw base64 string, or null
 let webParamGhostScore = 0;  // int, or 0 if absent
+let webParamReferrer = null; // id string, or null
 
 (function _tunlParseWebParams() {
     if (typeof URLSearchParams === 'undefined' || typeof location === 'undefined') return;
@@ -83,6 +93,9 @@ let webParamGhostScore = 0;  // int, or 0 if absent
 
     const s = q.get('s');
     if (s && /^\d{1,7}$/.test(s)) webParamGhostScore = +s;
+
+    const r = q.get('r');
+    if (r && /^[a-z0-9-]{4,64}$/i.test(r)) webParamReferrer = r;
 })();
 
 // ── Web daily leaderboard ───────────────────────────────────────────
@@ -153,5 +166,60 @@ function webSubmitScore(score, playSec) {
                 id: webPlayerId(), tok,
             }),
         }).then(r => r.json()).then(_webApplyRank);
+    }).catch(() => {});
+}
+
+// ── Referral reward ──────────────────────────────────────────────────
+// The two-sided half of the share loop: share.js's shareRunUrl() already gets
+// a friend playing (the daily-seed hook), this is what rewards the sharer for
+// it. Unlike the leaderboard functions above, deliberately NOT gated on
+// isWeb() - a referral can be sent or received by any of the three build
+// targets, since share.js appends ?r= to the link it hands off regardless of
+// platform, and web.js's own deep-link parsing above reads ?r= the same way
+// everywhere. The worker's ALLOWED_ORIGINS (flytunl-site/worker/src/index.js)
+// accepts requests from the native WebView origins as well as the open web
+// for exactly this reason.
+function _referralOn() {
+    return !!WEB_LEADERBOARD_API && typeof fetch === 'function';
+}
+
+// Called once from update.js commitDeath(), only on this player's own first
+// real run (see the hadPriorBest gate there) - credits whoever's ?r= link
+// they arrived on. Fire-and-forget: a referral is a bonus, not something
+// worth ever blocking or retrying the death flow over, and win-or-lose it
+// only ever gets one shot (hadPriorBest flips permanently once this player
+// has any nonzero best), matching the ghost-save's "nice to have" handling
+// elsewhere in this file.
+function submitReferral(score) {
+    if (!_referralOn() || !webParamReferrer) return;
+    const me = webPlayerId();
+    if (webParamReferrer === me) return; // can't refer yourself
+    fetch(WEB_LEADERBOARD_API + '/referral', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ referrer: webParamReferrer, referred: me, score: score | 0 }),
+    }).catch(() => {});
+}
+
+// Called once at boot (main.js) for every player, referrer or not - the only
+// way to find out whether someone you invited has since played is to ask.
+// Credits shards for however many referrals have landed since the last check
+// (almost always 0 or 1, but not assumed to be - nothing stops a player who
+// shares often from having several land between sessions) and plays the same
+// chime the rewarded-ad shard bonus uses (main.js _tunlShardsRewardGranted) -
+// that's the established shape for "a shard grant that didn't come from
+// commitDeath()" in this codebase, audio-only, no separate banner.
+function checkReferralReward() {
+    if (!_referralOn()) return;
+    fetch(WEB_LEADERBOARD_API + '/referral/claim', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: webPlayerId() }),
+    }).then(r => r.json()).then(j => {
+        const n = j && j.claimed | 0;
+        if (n <= 0) return;
+        shards += n * REFERRAL_REWARD;
+        localStorage.setItem('tunnel_shards', shards);
+        sfxMissionDone();
     }).catch(() => {});
 }

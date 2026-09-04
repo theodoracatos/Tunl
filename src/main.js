@@ -195,6 +195,10 @@ if (isWeb()) {
 // GameView.swift disables WKWebView's "user action required for playback"
 // policy, so audio can start immediately without waiting for the first tap.
 _initAC();
+// Once per app open, on every platform: picks up shard rewards for anyone
+// this player referred who has since played (web.js checkReferralReward).
+// Not gated on isWeb() - see that function's doc comment.
+if (typeof checkReferralReward === 'function') checkReferralReward();
 titleScreen();
 _updatePortraitGate();
 requestAnimationFrame(ts => { prev = ts; requestAnimationFrame(loop); });

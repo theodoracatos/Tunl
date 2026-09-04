@@ -27,3 +27,18 @@ CREATE TABLE IF NOT EXISTS clicks (
 );
 
 CREATE INDEX IF NOT EXISTS idx_clicks_source_campaign ON clicks (source, campaign, day);
+
+-- Two-sided referral reward (POST /referral, /referral/claim, src/index.js).
+-- `referred` is the PRIMARY KEY, not an autoincrement id: it's what makes a
+-- referral count exactly once ever for a given referred player, regardless of
+-- how many times their client retries the submit.
+CREATE TABLE IF NOT EXISTS referrals (
+  referred TEXT    PRIMARY KEY,  -- the new player's id - enforces "counts once"
+  referrer TEXT    NOT NULL,     -- who gets credited
+  score    INTEGER NOT NULL,     -- the qualifying first run's score
+  day      INTEGER NOT NULL,     -- YYYYMMDD (UTC), for pruning
+  ts       INTEGER NOT NULL,     -- epoch ms
+  claimed  INTEGER NOT NULL DEFAULT 0  -- 0/1 - has the referrer's client picked this up yet
+);
+
+CREATE INDEX IF NOT EXISTS idx_referrals_referrer_claimed ON referrals (referrer, claimed);
