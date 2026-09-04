@@ -6,7 +6,16 @@ is plenty (D1: 5 GB, 5 M row reads/day, 100 k writes/day).
 The game only talks to this when `WEB_LEADERBOARD_API` in `src/web.js` is set; leave
 it empty and the web build behaves exactly as before (localStorage only, no rank).
 
-## One-time deploy (needs your Cloudflare login - Claude can't do this)
+## Status: DEPLOYED 2026-09-04
+
+Live at `https://tunl-scores.theodoracatos.workers.dev` (D1 db `tunl_scores`,
+id `2222e48f-acc8-4e66-85f5-3844e9615988`). `src/web.js` `WEB_LEADERBOARD_API`
+points at it. To ship a worker code change: `cd flytunl-site/worker && npx wrangler@4 deploy`.
+
+## One-time deploy (kept for reference / disaster recovery)
+
+`wrangler secret put` is blocked by the Claude Code auto-mode classifier - the
+human runs step 3.
 
 ```sh
 npm i -g wrangler          # or use `npx wrangler ...` below
