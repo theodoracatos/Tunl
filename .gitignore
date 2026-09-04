@@ -24,3 +24,11 @@ flytunl-site/.env
 node_modules/
 # Generated web build; rebuilt by build-play.mjs on every deploy
 flytunl-site/site/play/
+# Generated localized homepage; rebuilt by build-site.mjs (source: home.src.html + i18n/home.json)
+flytunl-site/site/index.html
+flytunl-site/site/de/
+flytunl-site/site/fr/
+flytunl-site/site/it/
+flytunl-site/site/es/
+flytunl-site/site/pt/
+flytunl-site/site/ja/

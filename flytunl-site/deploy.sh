@@ -41,6 +41,11 @@ echo "Building site/play/ ..."
     npm run --silent build:play
 )
 
+# Generate the localized homepage (site/index.html + site/<lang>/) from
+# home.src.html + i18n/home.json. Pure Node stdlib, no deps. See build-site.mjs.
+echo "Building localized homepage ..."
+node build-site.mjs
+
 echo "Uploading site/ to $FTP_HOST$FTP_REMOTE_DIR ..."
 lftp -u "$FTP_USER,$FTP_PASSWORD" "ftp://$FTP_HOST" <<LFTP_UPLOAD
 set ftp:ssl-force true
