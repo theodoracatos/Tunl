@@ -167,6 +167,27 @@ function _updatePortraitGate() {
 window.addEventListener('resize', _updatePortraitGate);
 window.addEventListener('orientationchange', _updatePortraitGate);
 
+// ── Rotation reload (web only) ───────────────────────────────────────
+// W, H, FS and the hundreds of metrics derived from them are frozen at
+// first paint (constants.js), so a device rotation leaves the canvas sized
+// and proportioned for the previous orientation -- soft-scaled and cramped
+// -- until a manual reload. The iOS/Android wrappers lock orientation and
+// never reach this. Reload once when the viewport WIDTH changes: a rotation
+// always changes it, while iOS Safari's toolbar show/hide changes only the
+// height, so a scroll-driven chrome collapse won't trip it.
+if (isWeb()) {
+    let _rotoBootW = window.innerWidth, _rotoT = 0;
+    const _reloadAfterRotate = () => {
+        if (Math.abs(window.innerWidth - _rotoBootW) < 4) return;
+        clearTimeout(_rotoT);
+        _rotoT = setTimeout(() => {
+            if (Math.abs(window.innerWidth - _rotoBootW) >= 4) location.reload();
+        }, 400);
+    };
+    window.addEventListener('resize', _reloadAfterRotate);
+    window.addEventListener('orientationchange', _reloadAfterRotate);
+}
+
 // GameView.swift disables WKWebView's "user action required for playback"
 // policy, so audio can start immediately without waiting for the first tap.
 _initAC();

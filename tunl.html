@@ -13,7 +13,12 @@
 body {
     background:#04040a;
     display:flex; justify-content:center; align-items:center;
-    height:100vh; overflow:hidden; touch-action:none;
+    /* 100dvh tracks the visible area as iOS Safari's toolbars slide; plain
+       100vh is the toolbars-hidden height, so on the open web it made the
+       flex box taller than the viewport and pushed the vertically-centred
+       canvas (and the death-screen buttons at its bottom) under the toolbar.
+       The app wrappers have no dynamic browser chrome, so dvh == vh there. */
+    height:100vh; height:100dvh; overflow:hidden; touch-action:none;
 }
 canvas { display:block; }
 
