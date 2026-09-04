@@ -90,7 +90,7 @@ let webParamGhostScore = 0;  // int, or 0 if absent
 // Game Center / Play Games. Backed by the Cloudflare Worker in
 // flytunl-site/worker/ - set its URL here after deploying it (see that README),
 // or leave empty and nothing below does anything (localStorage-only, as before).
-const WEB_LEADERBOARD_API = '';
+const WEB_LEADERBOARD_API = 'https://tunl-scores.theodoracatos.workers.dev';
 
 let _webRunStartMs = 0;   // set in lifecycle.js startPlay(), read at death
 let _webLbTok = null, _webLbTokTs = 0, _webRankFetchTs = 0;

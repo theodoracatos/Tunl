@@ -7,7 +7,7 @@ workers_dev = true
 [[d1_databases]]
 binding = "DB"
 database_name = "tunl_scores"
-database_id = "REPLACE_AFTER_wrangler_d1_create"
+database_id = "2222e48f-acc8-4e66-85f5-3844e9615988"
 
 # Daily prune of rows older than 45 days (03:17 UTC).
 [triggers]
