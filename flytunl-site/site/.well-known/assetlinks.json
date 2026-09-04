@@ -5,7 +5,7 @@
             "namespace": "android_app",
             "package_name": "com.theodoracatos.tunl",
             "sha256_cert_fingerprints": [
-                "REPLACE_WITH_SHA256_FROM_PLAY_CONSOLE_APP_SIGNING_KEY"
+                "96:2C:46:3A:83:6C:F2:A5:60:6B:8A:EB:1C:60:7E:1F:FA:63:87:B1:6A:81:B7:4F:18:1A:40:62:6B:99:40:4D"
             ]
         }
     }
