@@ -2245,7 +2245,12 @@ function drawTitleScreen() {
         // pill's BOTTOM edge matches that icon's bottom edge. This mirrors the rail
         // layout math in the "Icon rail" block below -- keep the two in sync.
         let linkY;
-        if (LAND) {
+        if (LAND && isWeb()) {
+            // Web build: the 3-icon rail (no Game Center / Challenge) sits centred
+            // enough that the rail-aligned pill below would land inside the ship
+            // ring. Park it just above the ring instead, clear of the circle.
+            linkY = shipStageY - heroR * 1.7 - pillH / 2 - FS * 0.014;
+        } else if (LAND) {
             const _hasGC   = !!window.webkit?.messageHandlers?.gameCenter;
             const _hasChal = _hasGC && !!window._tunlChallengeSupported;
             const _railN   = 3 + (_hasGC ? 1 : 0) + (_hasChal ? 1 : 0); // missions [+lb][+chal] + shop + settings
