@@ -594,6 +594,26 @@ function die(bypassShield = false) {
     return true;
 }
 
+// Store rating prompt (constants.js REVIEW_MIN_SCORE/REVIEW_COOLDOWN_MS doc block).
+// Called only from commitDeath()'s newBest branch -- a beaten record is the one
+// moment in the loop that's unambiguously good news, the same reasoning
+// shareWorthy() (share.js) already uses for the share button. `hadPriorBest`
+// excludes a brand new player's very first completed run (best was still 0
+// going in): every score is trivially "a new best" then, and asking someone to
+// rate an app they opened five seconds ago is exactly what Apple's and Google's
+// own review guidelines warn against. The cooldown lives in localStorage rather
+// than being re-derived from `best`/`stardust` so it survives independently of
+// either -- a player who never beats their record again should still only ever
+// see this once.
+function maybeRequestReview(runScore, hadPriorBest) {
+    if (!hadPriorBest || runScore < REVIEW_MIN_SCORE) return;
+    let lastAskMs = 0;
+    try { lastAskMs = parseInt(localStorage.getItem('tunnel_review_last_ts') || '0'); } catch (e) { /* ignore */ }
+    if (Date.now() - lastAskMs < REVIEW_COOLDOWN_MS) return;
+    try { localStorage.setItem('tunnel_review_last_ts', String(Date.now())); } catch (e) { /* ignore */ }
+    window.webkit?.messageHandlers?.review?.postMessage({ action: 'request' });
+}
+
 // The actual bookkeeping half of a death: score submit, shard banking, ship
 // unlocks, missions, ghost save, death markers. Split out of die() so a rewarded
 // continue can hold this off entirely rather than having to undo it -- see the
@@ -602,7 +622,13 @@ function commitDeath() {
     prevRunScore = lastRunScore;
     lastRunScore = score;
     newBest = score > best;
+    // Capture whether a *prior* best existed before this run overwrites it below --
+    // maybeRequestReview() needs to tell "beat an existing record" from "this is
+    // literally the player's first completed run" (best still 0 going in), which
+    // must never trigger a rating prompt.
+    const _hadPriorBest = best > 0;
     if (newBest) { best = score; localStorage.setItem('tunnel_best', best); }
+    if (newBest) maybeRequestReview(score, _hadPriorBest);
     runsWithoutPB = newBest ? 0 : runsWithoutPB + 1;
     newDailyBest = score > dailyBest;
     if (newDailyBest) { dailyBest = score; localStorage.setItem('tunnel_daily_best', dailyBest); }

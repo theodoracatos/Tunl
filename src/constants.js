@@ -252,6 +252,22 @@ const HIT_INVULN_SEC = 1.4;
 // runs below it are instant faceplants, not worth a 15-30s video either way.
 const CONTINUE_MIN_SCORE   = 25;
 const MAX_CONTINUES_PER_RUN = 1;
+
+// ── Store rating prompt ─────────────────────────────────────────────
+// Native review sheet (SKStoreReviewController on iOS, Play In-App Review on
+// Android - see the "review" bridge, update.js maybeRequestReview()). Fired on a
+// new all-time best, the same "this was worth celebrating, not a nag" gate
+// shareWorthy() (share.js) already uses. Same score floor as CONTINUE_MIN_SCORE
+// above, reused rather than a fresh number, for the same reason: a rating
+// prompt right after an instant-faceplant "personal best" of 9 reads as absurd.
+const REVIEW_MIN_SCORE = CONTINUE_MIN_SCORE;
+// Local cooldown between prompts, generous relative to Apple's own system-wide
+// limit (max 3 SKStoreReviewController prompts per 365 days, silently a no-op
+// beyond that) and Android's equivalent per-app throttling, so this gate is
+// never the tighter one - it exists to stop the bridge call from firing every
+// single session for a player who keeps beating their own record, not to
+// approach either store's real ceiling.
+const REVIEW_COOLDOWN_MS = 90 * 24 * 60 * 60 * 1000;
 // The existing gap between a fatal hit and the death screen becoming tappable
 // (input.js's onDown gate, draw.js's button fade-in). Reused, not extended, as
 // the continue offer's own window (update.js's phase==='dead' branch, draw.js

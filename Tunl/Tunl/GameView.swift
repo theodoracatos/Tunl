@@ -2,6 +2,7 @@ import SwiftUI
 import WebKit
 import GameKit
 import AVFoundation
+import StoreKit
 
 // Dynamic Island/notch clearance for the title screen's icon rail (CLAUDE.md
 // Concept A). TunlApp.swift's .ignoresSafeArea() (plus its manual window-transform
@@ -46,6 +47,7 @@ struct GameView: UIViewRepresentable {
         config.userContentController.add(context.coordinator, name: "ads")
         config.userContentController.add(context.coordinator, name: "share")
         config.userContentController.add(context.coordinator, name: "notifications")
+        config.userContentController.add(context.coordinator, name: "review")
 
         // Game Center Challenges (GKChallengeDefinition/GKAccessPoint.trigger...) need
         // iOS 26+ - tell the JS side up front so it only draws the CHALLENGE button on
@@ -440,6 +442,18 @@ struct GameView: UIViewRepresentable {
                         bodies: body["bodies"] as? [String] ?? [])
                 default:
                     break
+                }
+                return
+            }
+            if message.name == "review" {
+                // The only caller (update.js maybeRequestReview) already gates on a new
+                // all-time best + score floor + a local cooldown, so no further
+                // throttling here -- AppStore.requestReview itself is a silent no-op
+                // once the system has shown it 3 times in the trailing 365 days, same
+                // as SKStoreReviewController before it, just without the deprecated
+                // #available(iOS 14) branch since deployment target is already 16.4.
+                if let scene = webView?.window?.windowScene {
+                    AppStore.requestReview(in: scene)
                 }
                 return
             }

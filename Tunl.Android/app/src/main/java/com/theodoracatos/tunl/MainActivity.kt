@@ -30,6 +30,7 @@ import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import com.google.android.gms.games.PlayGames
 import com.google.android.gms.games.leaderboard.LeaderboardVariant
+import com.google.android.play.core.review.ReviewManagerFactory
 import com.google.firebase.analytics.FirebaseAnalytics
 import org.json.JSONObject
 import java.io.File
@@ -95,6 +96,11 @@ class MainActivity : ComponentActivity() {
                     TunlNative.postMessage('notifications', JSON.stringify(body));
                 }
             };
+            window.webkit.messageHandlers.review = {
+                postMessage: function(body) {
+                    TunlNative.postMessage('review', JSON.stringify(body));
+                }
+            };
             window.webkit.messageHandlers.haptic = {
                 postMessage: function(type) {
                     TunlNative.postHaptic(type);
@@ -146,6 +152,9 @@ class MainActivity : ComponentActivity() {
                             jsonStrings(body.optJSONArray("bodies")),
                         )
                     }
+                    "review" -> when (body.optString("action")) {
+                        "request" -> requestInAppReview()
+                    }
                 }
             }
         }
@@ -174,6 +183,23 @@ class MainActivity : ComponentActivity() {
             runJs("window._tunlNotifPermission && window._tunlNotifPermission(true)")
         } else {
             notifPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    // Play In-App Review (src/update.js maybeRequestReview -> the "review" bridge above).
+    // JS already gates this to a new all-time best + score floor + a 90-day local
+    // cooldown, so it's called at most a few times a year at most - no extra
+    // throttling needed here. Mirrors GameView.swift's AppStore.requestReview: fetch
+    // a fresh ReviewInfo, then hand it straight to launchReviewFlow. The API never
+    // reports whether the sheet actually showed or how the player answered (Play
+    // itself decides per its own internal quota, same spirit as the 3-per-365-day
+    // ceiling on iOS) - both listeners are fire-and-forget by design, the game flow
+    // never branches on the result.
+    private fun requestInAppReview() {
+        val manager = ReviewManagerFactory.create(this)
+        manager.requestReviewFlow().addOnCompleteListener { request ->
+            if (!request.isSuccessful) return@addOnCompleteListener
+            manager.launchReviewFlow(this, request.result)
         }
     }
 
