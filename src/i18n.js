@@ -1,9 +1,12 @@
+// TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch
 // ── Internationalisation ───────────────────────────────────────────────
 
 const LANGS = {
     en: {
         name: 'English',
         tap: 'HOLD TO FLY',
+        rotateHint: 'ROTATE YOUR DEVICE',
+        getApp: 'GET THE APP',
         musicOn: 'MUSIC ON',     musicOff: 'MUSIC OFF',
         fxOn: 'FX ON',           fxOff: 'FX OFF',
         today: 'TODAY',          allTime: 'ALL TIME',
@@ -57,6 +60,8 @@ const LANGS = {
     de: {
         name: 'Deutsch',
         tap: 'TIPPEN & HALTEN',
+        rotateHint: 'GERÄT DREHEN',
+        getApp: 'APP HOLEN',
         musicOn: 'MUSIK AN',     musicOff: 'MUSIK AUS',
         fxOn: 'TON AN',          fxOff: 'TON AUS',
         today: 'HEUTE',          allTime: 'REKORD',
@@ -110,6 +115,8 @@ const LANGS = {
     fr: {
         name: 'Francais',
         tap: 'MAINTENIR POUR VOLER',
+        rotateHint: 'TOURNEZ VOTRE APPAREIL',
+        getApp: 'TELECHARGER',
         musicOn: 'MUSIQUE ON',   musicOff: 'MUSIQUE OFF',
         fxOn: 'SON ON',          fxOff: 'SON OFF',
         today: "AUJOURD'HUI",    allTime: 'RECORD',
@@ -163,6 +170,8 @@ const LANGS = {
     it: {
         name: 'Italiano',
         tap: 'TIENI PER VOLARE',
+        rotateHint: 'RUOTA IL DISPOSITIVO',
+        getApp: 'SCARICA L\'APP',
         musicOn: 'MUSICA ON',    musicOff: 'MUSICA OFF',
         fxOn: 'SUONI ON',        fxOff: 'SUONI OFF',
         today: 'OGGI',           allTime: 'RECORD',
@@ -216,6 +225,8 @@ const LANGS = {
     es: {
         name: 'Espanol',
         tap: 'MANTEN PARA VOLAR',
+        rotateHint: 'GIRA TU DISPOSITIVO',
+        getApp: 'DESCARGAR APP',
         musicOn: 'MUSICA ON',    musicOff: 'MUSICA OFF',
         fxOn: 'SONIDO ON',       fxOff: 'SONIDO OFF',
         today: 'HOY',            allTime: 'RECORD',
@@ -269,6 +280,8 @@ const LANGS = {
     pt: {
         name: 'Portugues',
         tap: 'SEGURE PARA VOAR',
+        rotateHint: 'GIRE O SEU DISPOSITIVO',
+        getApp: 'BAIXAR O APP',
         musicOn: 'MUSICA ON',    musicOff: 'MUSICA OFF',
         fxOn: 'SOM ON',          fxOff: 'SOM OFF',
         today: 'HOJE',           allTime: 'RECORDE',
@@ -322,6 +335,8 @@ const LANGS = {
     ja: {
         name: '日本語',
         tap: '長押しで飛ぶ',
+        rotateHint: 'デバイスを横向きにしてください',
+        getApp: 'アプリを入手',
         musicOn: '音楽 ON',      musicOff: '音楽 OFF',
         fxOn: '効果音 ON',       fxOff: '効果音 OFF',
         today: '今日',           allTime: '総合記録',
@@ -375,6 +390,8 @@ const LANGS = {
     ko: {
         name: '한국어',
         tap: '눌러서 비행',
+        rotateHint: '기기를 가로로 돌려주세요',
+        getApp: '앱 다운로드',
         musicOn: '음악 ON',      musicOff: '음악 OFF',
         fxOn: '효과음 ON',       fxOff: '효과음 OFF',
         today: '오늘',           allTime: '전체 기록',
@@ -428,6 +445,8 @@ const LANGS = {
     zh: {
         name: '繁體中文',
         tap: '長按飛行',
+        rotateHint: '請將設備橫向旋轉',
+        getApp: '獲取應用程式',
         musicOn: '音樂 ON',      musicOff: '音樂 OFF',
         fxOn: '音效 ON',         fxOff: '音效 OFF',
         today: '今日',           allTime: '總紀錄',
@@ -481,6 +500,8 @@ const LANGS = {
     ru: {
         name: 'Русский',
         tap: 'ЗАЖМИ ДЛЯ ПОЛЁТА',
+        rotateHint: 'ПОВЕРНИТЕ УСТРОЙСТВО',
+        getApp: 'СКАЧАТЬ',
         musicOn: 'МУЗЫКА ON',    musicOff: 'МУЗЫКА OFF',
         fxOn: 'ЗВУК ON',         fxOff: 'ЗВУК OFF',
         today: 'СЕГОДНЯ',        allTime: 'ВСЕГО',
@@ -534,6 +555,8 @@ const LANGS = {
     ar: {
         name: 'العربية',
         tap: 'اضغط مطولاً للطيران',
+        rotateHint: 'قم بتدوير جهازك',
+        getApp: 'تنزيل',
         musicOn: 'الموسيقى تشغيل', musicOff: 'الموسيقى إيقاف',
         fxOn: 'الصوت تشغيل',      fxOff: 'الصوت إيقاف',
         today: 'اليوم',           allTime: 'كل الأوقات',
@@ -587,6 +610,8 @@ const LANGS = {
     tr: {
         name: 'Türkçe',
         tap: 'UÇMAK İÇİN BASILI TUT',
+        rotateHint: 'CİHAZINI ÇEVİR',
+        getApp: 'İNDİR',
         musicOn: 'MÜZİK AÇIK',   musicOff: 'MÜZİK KAPALI',
         fxOn: 'SES AÇIK',        fxOff: 'SES KAPALI',
         today: 'BUGÜN',          allTime: 'TÜM ZAMANLAR',
@@ -640,6 +665,8 @@ const LANGS = {
     id: {
         name: 'Indonesia',
         tap: 'TAHAN UNTUK TERBANG',
+        rotateHint: 'PUTAR PERANGKAT ANDA',
+        getApp: 'UNDUH APP',
         musicOn: 'MUSIK ON',     musicOff: 'MUSIK OFF',
         fxOn: 'SUARA ON',        fxOff: 'SUARA OFF',
         today: 'HARI INI',       allTime: 'SEPANJANG MASA',
@@ -693,6 +720,8 @@ const LANGS = {
     vi: {
         name: 'Tiếng Việt',
         tap: 'GIỮ ĐỂ BAY',
+        rotateHint: 'XOAY THIẾT BỊ CỦA BẠN',
+        getApp: 'TẢI ỨNG DỤNG',
         musicOn: 'NHẠC BẬT',     musicOff: 'NHẠC TẮT',
         fxOn: 'ÂM THANH BẬT',    fxOff: 'ÂM THANH TẮT',
         today: 'HÔM NAY',        allTime: 'TOÀN THỜI GIAN',
@@ -746,6 +775,8 @@ const LANGS = {
     hi: {
         name: 'हिन्दी',
         tap: 'उड़ने के लिए दबाए रखें',
+        rotateHint: 'अपना डिवाइस घुमाएँ',
+        getApp: 'ऐप डाउनलोड',
         musicOn: 'संगीत चालू',    musicOff: 'संगीत बंद',
         fxOn: 'ध्वनि चालू',       fxOff: 'ध्वनि बंद',
         today: 'आज',              allTime: 'सर्वकालिक',

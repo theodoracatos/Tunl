@@ -1,3 +1,4 @@
+// TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch
 // ── State ─────────────────────────────────────────────────────────────
 
 let phase, py, vy, holding, scrollX, score, newBest, newDailyBest, startRamp;
@@ -212,6 +213,28 @@ try {
         }
     }
 } catch (e) { ghostPlay = null; ghostScore = 0; }
+
+// Web build: a friend's ghost carried in on a ?g= share link (src/web.js
+// webParamGhost, base64; constants.js ghostDecode). Overrides today's local
+// best as the chase target, and lifecycle.js re-applies it past the daily
+// rollover. _webGhostScore stays 0 until the share link also carries it.
+let _webGhostPlay = null, _webGhostScore = 0;
+if (typeof webParamGhost !== 'undefined' && webParamGhost) {
+    try {
+        // Reverse share.js shareRunUrl's URL-safe base64 (also tolerates a plain
+        // standard-base64 link from an older client): - _ back to + /, re-pad to 4.
+        let _b64 = webParamGhost.replace(/-/g, '+').replace(/_/g, '/');
+        while (_b64.length % 4) _b64 += '=';
+        const _wg = ghostDecode(_b64);
+        if (_wg && _wg.length) {
+            _webGhostScore = (typeof webParamGhostScore !== 'undefined' ? webParamGhostScore : 0) | 0;
+            _webGhostPlay = _wg;
+            ghostPlay = _wg;
+            ghostScore = _webGhostScore;
+        }
+    } catch (e) { /* malformed link param - keep the local ghost */ }
+}
+
 let ghostTrack;   // this run's recording, one byte per GHOST_STEP of scrollX
 let ghostY;       // interpolated ghost screen y this frame, or null once it's behind
 let ghostPitch;   // ghost's nose angle, derived from the track's local slope (update.js)

@@ -1,3 +1,4 @@
+// TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch
 // ── Daily reminder (local notification) ───────────────────────────────
 // TUNL has no backend, so the reminder is a *local* notification scheduled
 // entirely on-device by the native layer (Tunl/Tunl/NotificationManager.swift,

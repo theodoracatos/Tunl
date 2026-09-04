@@ -1,4 +1,9 @@
+// TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch
 // ── Procedural tunnel ───────────────────────────────────────────────
+// The day whose cave/name/palette we render comes from _tunlActiveDate()
+// (src/web.js) - normally today, but the web ?d= deep link can point it at a
+// past day. Real-day logic (streak/stardust/daily reset in lifecycle.js) stays
+// on the actual date played.
 
 let _prog, _prog2, _halfGap, _wA1, _wA2, _wF1, _wF2;
 
@@ -147,7 +152,7 @@ const _worldTable = (() => {
 })();
 
 function dailyWorldName() {
-    const now    = new Date();
+    const now    = _tunlActiveDate();
     const epoch  = Date.UTC(2025, 0, 1);
     const dayIdx = Math.floor((Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - epoch) / 86400000);
     const N    = _worldTable.length;
@@ -162,7 +167,7 @@ const WORLD_NAME = dailyWorldName();
 // Level number shown in the run-start banner: day-of-year (1-366, UTC, resets
 // each Jan 1) so it reads like a level index without needing separate storage.
 function dailyLevelNum() {
-    const now   = new Date();
+    const now   = _tunlActiveDate();
     const start = Date.UTC(now.getUTCFullYear(), 0, 1);
     const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
     return Math.floor((today - start) / 86400000) + 1;

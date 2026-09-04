@@ -1,3 +1,4 @@
+// TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch
 // ── Update ────────────────────────────────────────────────────────────
 
 let prev = 0;
@@ -611,9 +612,11 @@ function commitDeath() {
     // rest of die()'s bookkeeping (shards, unlocks, missions).
     if (newDailyBest && score > 0 && ghostTrack.length > 1) {
         try {
-            const _gd = new Date();
+            // Keyed to the cave actually flown (world.js _tunlActiveDayInt): normally
+            // today, but the web ?d= replay flies a past day's corridor, and tagging it
+            // with that day keeps state.js from loading it back as today's ghost.
             localStorage.setItem('tunnel_ghost', JSON.stringify({
-                day:   _gd.getUTCFullYear() * 10000 + (_gd.getUTCMonth() + 1) * 100 + _gd.getUTCDate(),
+                day:   _tunlActiveDayInt(),
                 score,
                 data:  ghostEncode(ghostTrack),
             }));

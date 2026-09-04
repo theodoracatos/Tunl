@@ -10,6 +10,7 @@ const fs   = require('fs');
 const path = require('path');
 const vm   = require('vm');
 
+const webSrc        = fs.readFileSync(path.join(__dirname, 'src', 'web.js'), 'utf8');
 const constantsSrc = fs.readFileSync(path.join(__dirname, 'src', 'constants.js'), 'utf8');
 const worldSrc      = fs.readFileSync(path.join(__dirname, 'src', 'world.js'), 'utf8');
 
@@ -27,6 +28,9 @@ function makeWorld(innerWidth, innerHeight) {
         scrollX: 0, gapBonus: 0,   // normally state.js globals; only boundsAt/refreshWave need them
     };
     vm.createContext(sandbox);
+    // web.js is script #1 in tunl.html; world.js now leans on its _tunlActiveDate()
+    // for the daily world name / level number (?d= deep link, see project docs).
+    vm.runInContext(webSrc, sandbox, { filename: 'src/web.js' });
     vm.runInContext(constantsSrc, sandbox, { filename: 'src/constants.js' });
     vm.runInContext(worldSrc, sandbox, { filename: 'src/world.js' });
     // Top-level const/let don't land on the sandbox object automatically (same
@@ -142,8 +146,9 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
 // ── Milestone step (world.js milestoneStep, tiers documented in CLAUDE.md) ──
 {
     const w = makeWorld(600, 600);
-    check('milestoneStep < 100 is 25',    w.milestoneStep(24)   === 25);
-    check('milestoneStep 100-299 is 50',  w.milestoneStep(100)  === 50 && w.milestoneStep(299) === 50);
+    // One flat 50-point band from the start (the old 25/50/75 sub-100 band was
+    // dropped -- see the milestoneStep doc comment in src/world.js).
+    check('milestoneStep < 300 is 50',    w.milestoneStep(1)    === 50 && w.milestoneStep(24) === 50 && w.milestoneStep(299) === 50);
     check('milestoneStep 300-999 is 100', w.milestoneStep(300)  === 100 && w.milestoneStep(999) === 100);
     check('milestoneStep 1000-2999 is 250', w.milestoneStep(1000) === 250 && w.milestoneStep(2999) === 250);
     check('milestoneStep 3000-9999 is 500', w.milestoneStep(3000) === 500 && w.milestoneStep(9999) === 500);

@@ -1,3 +1,4 @@
+// TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch
 const cv  = document.getElementById('c');
 const ctx = cv.getContext('2d');
 

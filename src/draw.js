@@ -1,3 +1,4 @@
+// TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch
 // ── Theme ─────────────────────────────────────────────────────────────
 // One fixed rock palette for the whole calendar day (WEEKDAY_PALETTES,
 // constants.js), not a within-run gradient by difficulty anymore -- see that
@@ -5,7 +6,7 @@
 // load, so a session left open across a UTC day boundary picks up the new
 // day's rock the same way top5/dailyBest already roll over elsewhere.
 function getTheme() {
-    const p = WEEKDAY_PALETTES[weekdayIndex(new Date())];
+    const p = WEEKDAY_PALETTES[weekdayIndex(_tunlActiveDate())];
     return { bg: WEEKDAY_BG, wall: p.wall, stal: p.stal, stalEdge: p.stalEdge, wallBase: p.wallBase };
 }
 
@@ -1629,7 +1630,7 @@ function drawHUD() {
         ctx.shadowColor = rgb(theme.wallBase, lia * 0.9);
         ctx.shadowBlur  = 12;
         ctx.fillStyle   = rgb(lerpClr(theme.wallBase, [255, 255, 255], 0.4), lia);
-        ctx.fillText(`${T.planet} ${WEEKDAY_PALETTES[weekdayIndex(new Date())].planet.toUpperCase()}`, W/2, H * 0.30 + FS * 0.05);
+        ctx.fillText(`${T.planet} ${WEEKDAY_PALETTES[weekdayIndex(_tunlActiveDate())].planet.toUpperCase()}`, W/2, H * 0.30 + FS * 0.05);
         ctx.shadowBlur   = 0;
         ctx.restore();
     }
@@ -2066,7 +2067,7 @@ function drawTitleScreen() {
     // line's actual baseline rather than a hard H fraction.
     let planetBaselineY = LAND ? H * 0.395 - 11 : H / 2 - H * 0.038;
     {
-        const planetLine = `${T.planet} ${WEEKDAY_PALETTES[weekdayIndex(new Date())].planet.toUpperCase()}`;
+        const planetLine = `${T.planet} ${WEEKDAY_PALETTES[weekdayIndex(_tunlActiveDate())].planet.toUpperCase()}`;
         let planetFsz = FS * 0.020;
         ctx.font = `${planetFsz}px 'Courier New',monospace`;
         if (LAND) {

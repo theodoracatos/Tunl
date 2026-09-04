@@ -32,6 +32,15 @@ if ! command -v lftp &>/dev/null; then
     exit 1
 fi
 
+# Assemble site/play/ (the web build) from the repo root game files. Regenerated
+# on every deploy so it can never drift from src/. See build-play.mjs.
+echo "Building site/play/ ..."
+(
+    cd ..
+    [ -d node_modules/terser ] || npm install --no-audit --no-fund --silent
+    npm run --silent build:play
+)
+
 echo "Uploading site/ to $FTP_HOST$FTP_REMOTE_DIR ..."
 lftp -u "$FTP_USER,$FTP_PASSWORD" "ftp://$FTP_HOST" <<LFTP_UPLOAD
 set ftp:ssl-force true

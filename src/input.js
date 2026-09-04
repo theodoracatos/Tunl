@@ -1,3 +1,4 @@
+// TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch
 // ── Input ─────────────────────────────────────────────────────────────
 
 function inRect(cx, cy, r) { return cx >= r.x && cx <= r.x+r.w && cy >= r.y && cy <= r.y+r.h; }
