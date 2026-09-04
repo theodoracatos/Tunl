@@ -50,22 +50,22 @@
     "ja": "ボタンひとつの洞窟フライヤー。押して上昇、離して下降。トンネルが閉じる前に、どこまで暗闇へ進めるか。"
   },
   "hero.newTag": {
-    "en": "New in 8.3",
-    "de": "Neu in 8.3",
-    "fr": "Nouveau dans la 8.3",
-    "it": "Novità nella 8.3",
-    "es": "Novedad en la 8.3",
-    "pt": "Novo na 8.3",
-    "ja": "8.3の新機能"
+    "en": "New in 8.4",
+    "de": "Neu in 8.4",
+    "fr": "Nouveau dans la 8.4",
+    "it": "Novità nella 8.4",
+    "es": "Novedad en la 8.4",
+    "pt": "Novo na 8.4",
+    "ja": "8.4の新機能"
   },
   "hero.newBody": {
-    "en": "An opt-in daily reminder: TUNL can nudge you in the evening on days you haven't flown the new cave yet, so a streak never slips because you forgot. One tap in settings to turn it on or off.",
-    "de": "Eine optionale tägliche Erinnerung: TUNL kann dich abends an Tagen anstupsen, an denen du die neue Höhle noch nicht geflogen bist - damit eine Serie nie reißt, weil du es vergessen hast. Ein Tipp in den Einstellungen schaltet sie an oder aus.",
-    "fr": "Un rappel quotidien facultatif : TUNL peut te faire signe le soir les jours où tu n'as pas encore volé la nouvelle grotte, pour qu'une série ne se brise jamais par oubli. Un appui dans les réglages pour l'activer ou le désactiver.",
-    "it": "Un promemoria giornaliero facoltativo: TUNL può darti una spinta la sera nei giorni in cui non hai ancora volato la nuova grotta, così una serie non si interrompe mai per una dimenticanza. Un tocco nelle impostazioni per attivarlo o disattivarlo.",
-    "es": "Un recordatorio diario opcional: TUNL puede avisarte por la noche los días en que aún no has volado la cueva nueva, para que una racha nunca se rompa por olvido. Un toque en los ajustes para activarlo o desactivarlo.",
-    "pt": "Um lembrete diário opcional: o TUNL pode te cutucar à noite nos dias em que você ainda não voou a caverna nova, para que uma sequência nunca quebre por esquecimento. Um toque nas configurações para ligar ou desligar.",
-    "ja": "任意の毎日のリマインダー。まだ新しい洞窟を飛んでいない日の夜に、TUNLがそっと知らせてくれる。忘れて連続記録を落とすことがなくなる。設定でワンタップのオン・オフ。"
+    "en": "Invite a friend and earn 20 shards the moment they fly their first cave - and a shared link now opens straight into the app if they already have it, not the browser.",
+    "de": "Lade einen Freund ein und erhalte 20 Shards, sobald er seine erste Höhle fliegt - und ein geteilter Link öffnet jetzt direkt die App, wenn sie schon installiert ist, statt des Browsers.",
+    "fr": "Invite un ami et gagne 20 éclats dès qu'il vole sa première grotte - et un lien partagé ouvre désormais l'appli directement s'il l'a déjà installée, au lieu du navigateur.",
+    "it": "Invita un amico e guadagna 20 frammenti non appena vola la sua prima grotta - e un link condiviso ora apre direttamente l'app se l'ha già installata, invece del browser.",
+    "es": "Invita a un amigo y gana 20 fragmentos en cuanto vuele su primera cueva - y un enlace compartido ahora abre la app directamente si ya la tiene instalada, en vez del navegador.",
+    "pt": "Convide um amigo e ganhe 20 fragmentos assim que ele voar a primeira caverna - e um link compartilhado agora abre o app direto se ele já o tiver instalado, em vez do navegador.",
+    "ja": "友達を招待すると、友達が最初の洞窟を飛んだ瞬間にシャードを20個獲得。さらに、共有リンクはアプリがすでに入っていればブラウザではなく直接アプリを開くようになった。"
   },
   "hero.playCta": {
     "en": "Play in your browser",

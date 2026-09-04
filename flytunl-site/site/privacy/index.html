@@ -79,9 +79,11 @@
   third-party services collect, and why.</p>
 
   <h2>Data collected directly by TUNL</h2>
-  <p>TUNL itself does not collect, store, or transmit any personal data to its
-  developer. Game progress, high scores, and settings are stored locally on
-  your device.</p>
+  <p>TUNL stores your game progress, high scores, ship unlocks, and settings
+  locally on your device. Two optional features - the open-web daily
+  leaderboard and the "invite a friend" reward, both explained below - send a
+  random, non-identifying device ID to TUNL's own backend. Nothing else about
+  how you play ever leaves your device.</p>
 
   <h2>Advertising (Google AdMob)</h2>
   <p>TUNL shows interstitial ads between game sessions using
@@ -142,24 +144,48 @@
   or Google, governed by their respective privacy policies. TUNL does not
   receive or store your Game Center / Play Games identity.</p>
 
+  <h2>Daily leaderboard &amp; referral rewards (TUNL's own backend)</h2>
+  <p>The open-web version of TUNL (flytunl.ch/play) shows a live daily world
+  rank, and on all three platforms - iOS, Android, and the open web - TUNL's
+  optional "invite a friend" reward runs on <strong>TUNL's own backend</strong>,
+  built on Cloudflare Workers and Cloudflare D1. This is infrastructure
+  TUNL's developer operates directly, not a third-party advertising or
+  analytics network - the only outside party involved is Cloudflare, acting
+  purely as the hosting provider for that backend.</p>
+  <p>To support these two features, the following is sent there:</p>
+  <ul>
+    <li>A random identifier generated on your device and stored locally
+    (not linked to your name, email, or any account - TUNL has no account
+    system)</li>
+    <li>Your score, for the day's leaderboard (open web only) or for the
+    referral system's "did they actually play" check (all platforms)</li>
+    <li>If you send or follow an invite link, the same random identifiers for
+    both the sender and the recipient, so a completed invite can be credited</li>
+  </ul>
+  <p>Daily leaderboard scores are deleted after 45 days. An unclaimed
+  referral reward is kept until it is claimed; claimed referral records are
+  deleted after roughly 400 days. None of this data is sold, shared with
+  advertisers, or used for anything beyond these two features.</p>
+
   <h2>Children's privacy</h2>
   <p>TUNL does not knowingly direct personalized advertising or data
   collection at children under the age required by applicable law in your
   region. Where required, ad requests are made non-personalized by default.</p>
 
   <h2>Your choices / requesting data deletion</h2>
-  <p>TUNL has no account system and stores no personal data on its own
-  servers, so there is no TUNL-held data to delete. The only data described
-  above (your advertising identifier, approximate device/location, ad
-  interaction data, and the Firebase installation, location, and session data
-  described above) is collected and retained by Google directly (via AdMob
-  and Firebase respectively), under Google's own retention schedule described in
+  <p>TUNL has no account system, so nothing above can be tied to your real
+  identity in the first place. Most of the data described above (your
+  advertising identifier, approximate device/location, ad interaction data,
+  and the Firebase installation, location, and session data) is collected
+  and retained by Google directly (via AdMob and Firebase respectively),
+  under Google's own retention schedule described in
   <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's Privacy Policy</a>.
   To stop this collection or request its deletion:</p>
   <ul>
     <li><strong>iOS:</strong> go to Settings &gt; Privacy &amp; Security &gt; Tracking, and turn off tracking for TUNL - this limits both AdMob's and Firebase's identifier-linked collection. You can also reset your Advertising Identifier under Settings &gt; Privacy &amp; Security &gt; Apple Advertising.</li>
     <li><strong>Android:</strong> go to Settings &gt; Google &gt; Ads (or Settings &gt; Privacy &gt; Ads on newer Android versions), then select "Delete advertising ID" or "Reset advertising ID" - this limits both AdMob's and Firebase's identifier-linked collection.</li>
     <li>Purchasing "Remove Ads" stops all future ad requests, and with them, all further data collection by AdMob.</li>
+    <li><strong>Daily leaderboard / referral data:</strong> this is held on TUNL's own backend (see above), not Google's. Email <a href="mailto:info@flytunl.ch">info@flytunl.ch</a> and we'll help you locate your device's random identifier and delete the matching records. Because this data is anonymous by design and not linked to any account, we can only act on requests specific enough to identify the record.</li>
   </ul>
 
   <h2>Changes to this policy</h2>
