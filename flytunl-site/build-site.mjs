@@ -139,15 +139,19 @@ async function build() {
   }
 }
 
-// English root only: bounce a first-time visitor to their browser language once,
-// then remember the choice so it never fires again (and so returning to "/" via
-// the English link stays English). Early in <head> so there is no visible flash.
+// English root only: send the visitor to their language. A stored preference of
+// "/" (set by the "English" link, or by picking English in the switcher) pins
+// them to English; any other stored value sends them there every visit; with no
+// preference yet, detect navigator.language once and remember it. Early in <head>
+// so there is no visible flash. "en" maps to no target -> Googlebot is unaffected.
 const REDIRECT_JS = `<script>
 (function () {
   try {
     var LS = 'tunl_site_lang';
-    if (localStorage.getItem(LS)) return;
     var P = { de:'/de/', fr:'/fr/', it:'/it/', es:'/es/', pt:'/pt/', ja:'/ja/' };
+    var pref = localStorage.getItem(LS);
+    if (pref === '/') return;
+    if (pref && P[pref.replace(/\\//g, '')]) { location.replace(pref); return; }
     var l = (navigator.language || '').slice(0, 2).toLowerCase();
     if (P[l]) { localStorage.setItem(LS, P[l]); location.replace(P[l]); }
   } catch (e) {}
