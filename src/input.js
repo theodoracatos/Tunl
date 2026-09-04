@@ -286,9 +286,19 @@ function onCancel(e) {
     if (!e || e.pointerId === _titleStartPending) _titleStartPending = null;
 }
 
-window.addEventListener('pointerdown',   e => { e.preventDefault(); onDown(e); });
-window.addEventListener('pointerup',     e => { e.preventDefault(); onUp(e);   });
-window.addEventListener('pointercancel', onCancel);
+// The web build overlays real DOM on the canvas: the install-CTA pill (#cta,
+// links to the store listings) and the portrait gate (#rot). A pointer event
+// that starts inside either must be left entirely to the browser - calling
+// e.preventDefault() here swallows the CTA link tap, and routing it into
+// onDown/onUp starts a run behind the overlay. In the app builds neither
+// element exists, so this is always false there and nothing changes.
+function _fromWebOverlay(e) {
+    return !!(e && e.target && e.target.closest && e.target.closest('#cta,#rot'));
+}
+
+window.addEventListener('pointerdown',   e => { if (_fromWebOverlay(e)) return; e.preventDefault(); onDown(e); });
+window.addEventListener('pointerup',     e => { if (_fromWebOverlay(e)) return; e.preventDefault(); onUp(e);   });
+window.addEventListener('pointercancel', e => { if (_fromWebOverlay(e)) return; onCancel(e); });
 window.addEventListener('keydown', e => {
     if (['Space','ArrowUp'].includes(e.code)) { e.preventDefault(); onDown(); }
     if (e.code === 'KeyP') {
