@@ -41,6 +41,17 @@ const SCRIPTS = [
 
 const BANNER = '/*! TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch */';
 
+// Cloudflare Web Analytics beacon token. Get it from dash.cloudflare.com ->
+// Analytics & Logs -> Web Analytics -> Add a site (flytunl.ch) -> copy the token
+// out of the JS snippet it shows (the value of "token"). Paste it here and
+// redeploy. Cloudflare Web Analytics is cookieless and stores nothing on the
+// visitor's device, so it needs no consent banner. Leave empty to ship no beacon.
+const CF_ANALYTICS_TOKEN = '';
+
+const CF_BEACON = CF_ANALYTICS_TOKEN
+  ? `\n<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "${CF_ANALYTICS_TOKEN}"}'></script>`
+  : `\n<!-- Web Analytics: set CF_ANALYTICS_TOKEN in build-play.mjs to emit the Cloudflare beacon. -->`;
+
 // Injected into <head> of the served /play page only (never the repo tunl.html or
 // the app builds). Link-preview cards for shared runs, canonical URL, theme colour.
 // The og:image is the marketing feature graphic already at the site root.
@@ -58,9 +69,7 @@ const HEAD_EXTRA = `<meta name="description" content="Fly today's cave. Every pl
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="TUNL">
 <meta name="twitter:description" content="A daily hold-to-thrust cave flyer. Same cave for everyone, every day.">
-<meta name="twitter:image" content="https://flytunl.ch/feature-graphic-1024x500.png">
-<!-- TODO (deploy owner): add a privacy-respecting analytics snippet here (Plausible / GA4).
-     Left out of the build on purpose - it sends visitor data and needs your provider + key. -->`;
+<meta name="twitter:image" content="https://flytunl.ch/feature-graphic-1024x500.png">` + CF_BEACON;
 
 async function build() {
   // ---- 1. bundle + minify src/*.js -------------------------------------
