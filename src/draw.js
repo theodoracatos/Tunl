@@ -2287,9 +2287,11 @@ function drawTitleScreen() {
         const hasChallenge  = hasGameCenter && !!window._tunlChallengeSupported;
         // The rewarded-ad shard bonus row counts as a 4th daily task in the badge
         // (constants.js SHARDS_AD_REWARD) -- "watch an ad" is itself one of the day's
-        // things to do, so the badge reads N/4, not N/3.
-        const missionSlots  = dailyMissionIdx.length + 1;
-        const doneCount     = dailyMissionsClaimed.filter(Boolean).length + (shardsAdClaimedToday ? 1 : 0);
+        // things to do, so the badge reads N/4, not N/3. No ads bridge (the open
+        // web build) -> no ad row -> the badge and the panel drop back to N/3.
+        const _hasAdRow     = !!window.webkit?.messageHandlers?.ads;
+        const missionSlots  = dailyMissionIdx.length + (_hasAdRow ? 1 : 0);
+        const doneCount     = dailyMissionsClaimed.filter(Boolean).length + (_hasAdRow && shardsAdClaimedToday ? 1 : 0);
 
         // Today's world rank (state.js, populated after Game Center auth + the
         // first score submit resolves -- see main.js/GameView.swift's
@@ -2357,6 +2359,10 @@ function drawTitleScreen() {
         ctx.fillStyle = 'rgba(0,0,12,0.88)';
         ctx.fillRect(0, 0, W, H);
 
+        // Rewarded-ad shard bonus row: only where the ads bridge exists (iOS/Android).
+        // The open web build has no ad SDK, so drop the row and the divider entirely.
+        const _hasAdRow = !!window.webkit?.messageHandlers?.ads;
+
         const panW   = Math.min(W * 0.62, 380);
         const rewStrFor = m => `+${MISSION_REWARD_BY_TIER[MISSION_DEFS[dailyMissionIdx[m]].tier]} ⧫`;
         // Bottom row: the once-per-day rewarded-ad shard bonus (constants.js
@@ -2378,9 +2384,9 @@ function drawTitleScreen() {
                 pw = Math.max(pw, ctx.measureText(shown).width);
                 lw = Math.max(lw, ctx.measureText(lb).width);
             }
-            lw = Math.max(lw, ctx.measureText(adLabel).width);
+            if (_hasAdRow) lw = Math.max(lw, ctx.measureText(adLabel).width);
             ctx.font = rewFont();
-            let rw = ctx.measureText(adRewStr).width;
+            let rw = _hasAdRow ? ctx.measureText(adRewStr).width : 0;
             for (let m = 0; m < dailyMissionIdx.length; m++) rw = Math.max(rw, ctx.measureText(rewStrFor(m)).width);
             const gapPL = mFsz * 0.55, gapLR = mFsz * 1.6;
             return { pw, lw, rw, gapPL, gapLR, total: pw + gapPL + lw + gapLR + rw };
@@ -2393,9 +2399,11 @@ function drawTitleScreen() {
         }
 
         const padTop = H * 0.070, padBottom = H * 0.050, titleH = H * 0.075, rowH = H * 0.062;
-        // + a divider gap + one more row for the rewarded-ad bonus at the bottom.
+        // + a divider gap + one more row for the rewarded-ad bonus at the bottom
+        // (only when the ad row is shown -- see _hasAdRow).
         const dividerGap = rowH * 0.45;
-        const panH = padTop + titleH + rowH * dailyMissionIdx.length + dividerGap + rowH + padBottom;
+        const panH = padTop + titleH + rowH * dailyMissionIdx.length
+            + (_hasAdRow ? dividerGap + rowH : 0) + padBottom;
         const panX = W / 2 - panW / 2, panY = H / 2 - panH / 2;
         _missionsPanelRect = { x: panX, y: panY, w: panW, h: panH };
 
@@ -2447,33 +2455,36 @@ function drawTitleScreen() {
 
         // ── Rewarded-ad shard bonus row ──────────────────────────────────
         // A button, not a passive tracker: tapped in input.js -> shardsAdRequest.
-        // Dimmed when already claimed today or when native has no ad loaded
-        // (browser: shardsAdReady never flips true, so this stays inert).
-        rowY += dividerGap;
-        ctx.strokeStyle = 'rgba(65,88,155,0.35)';
-        ctx.lineWidth   = 1;
-        ctx.beginPath();
-        ctx.moveTo(blockX, rowY - rowH * 0.62);
-        ctx.lineTo(rewRX,  rowY - rowH * 0.62);
-        ctx.stroke();
+        // Dimmed when already claimed today or when native has no ad loaded.
+        // Skipped entirely on the open web build (no ads bridge -- _hasAdRow).
+        _shardsAdBtnRect = null;
+        if (_hasAdRow) {
+            rowY += dividerGap;
+            ctx.strokeStyle = 'rgba(65,88,155,0.35)';
+            ctx.lineWidth   = 1;
+            ctx.beginPath();
+            ctx.moveTo(blockX, rowY - rowH * 0.62);
+            ctx.lineTo(rewRX,  rowY - rowH * 0.62);
+            ctx.stroke();
 
-        _shardsAdBtnRect = { x: panX + panW * 0.05, y: rowY - rowH * 0.80, w: panW * 0.90, h: rowH * 1.35 };
+            _shardsAdBtnRect = { x: panX + panW * 0.05, y: rowY - rowH * 0.80, w: panW * 0.90, h: rowH * 1.35 };
 
-        ctx.font        = `${mFsz}px 'Courier New',monospace`;
-        ctx.shadowColor = 'rgba(0,0,0,0.85)';
-        ctx.shadowBlur  = 2;
-        ctx.fillStyle   = adClaimed ? `rgba(120,255,150,0.90)` : `rgba(175,190,225,${adReady ? 0.92 : 0.38})`;
-        ctx.textAlign   = 'right';
-        ctx.fillText(adClaimed ? '✓' : '▶', progRX, rowY);
-        ctx.textAlign   = 'left';
-        ctx.fillText(adLabel, labelLX, rowY);
-        ctx.textAlign   = 'right';
-        ctx.font        = rewFont();
-        ctx.fillStyle   = `rgba(255,228,125,${adClaimed ? 0.62 : adReady ? 1.0 : 0.45})`;
-        ctx.shadowColor = `rgba(255,205,60,${adClaimed ? 0.35 : adReady ? 0.60 : 0.25})`;
-        ctx.shadowBlur  = 7;
-        ctx.fillText(adRewStr, rewRX, rowY);
-        ctx.shadowBlur  = 0;
+            ctx.font        = `${mFsz}px 'Courier New',monospace`;
+            ctx.shadowColor = 'rgba(0,0,0,0.85)';
+            ctx.shadowBlur  = 2;
+            ctx.fillStyle   = adClaimed ? `rgba(120,255,150,0.90)` : `rgba(175,190,225,${adReady ? 0.92 : 0.38})`;
+            ctx.textAlign   = 'right';
+            ctx.fillText(adClaimed ? '✓' : '▶', progRX, rowY);
+            ctx.textAlign   = 'left';
+            ctx.fillText(adLabel, labelLX, rowY);
+            ctx.textAlign   = 'right';
+            ctx.font        = rewFont();
+            ctx.fillStyle   = `rgba(255,228,125,${adClaimed ? 0.62 : adReady ? 1.0 : 0.45})`;
+            ctx.shadowColor = `rgba(255,205,60,${adClaimed ? 0.35 : adReady ? 0.60 : 0.25})`;
+            ctx.shadowBlur  = 7;
+            ctx.fillText(adRewStr, rewRX, rowY);
+            ctx.shadowBlur  = 0;
+        }
 
         ctx.textAlign = 'center';
     }
