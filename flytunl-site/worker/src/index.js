@@ -1,7 +1,8 @@
 // ============================================================
 //  tunl-scores - Cloudflare Worker: daily leaderboard for flytunl.ch/play
+//  + campaign click tracking (GET /go/..., see that section below)
 // ============================================================
-//  Endpoints (CORS-locked to https://flytunl.ch):
+//  Leaderboard endpoints (CORS-locked to https://flytunl.ch):
 //    GET  /t                 -> { t } a short-lived signed token
 //    GET  /r?d=<day>&id=<id> -> { rank, total, best } for one player on one day
 //    POST /s   { d, s, p, id, tok } -> records the score, returns { rank, total, best }
@@ -22,6 +23,7 @@ const TOKEN_MIN_AGE_MS = 8000;    // a real run cannot be shorter than this
 const TOKEN_MAX_AGE_MS = 900000;  // 15 min
 const SUBMIT_FLOOR_MS = 5000;     // min gap between one player's submissions
 const PRUNE_DAYS = 45;
+const CLICK_PRUNE_DAYS = 400;     // click history is worth keeping much longer than daily-leaderboard rows
 
 const enc = new TextEncoder();
 
@@ -89,6 +91,70 @@ async function rankFor(db, day, pid) {
   return { rank: above + 1, total, best };
 }
 
+// ── Campaign click tracking ──────────────────────────────────────────
+// GET /go/<source>/<campaign>[?m=<medium>][&to=play]
+// Redirects to flytunl.ch (or flytunl.ch/play/ with ?to=play) with UTM params
+// baked on, and logs one row so GET /clicks can answer "which post actually
+// drove traffic" - the one thing Cloudflare Web Analytics can't do, since it
+// deliberately never logs query strings (see the project's viral-readiness
+// audit). Deliberately stays on this worker's own workers.dev hostname
+// rather than a route on the flytunl.ch zone: the domain's nameservers are
+// Hoststar's (ns01/ns02.hostfactory.ch), not Cloudflare's, so a Worker Route
+// on flytunl.ch itself would first need moving DNS there - a much bigger,
+// separate decision than a redirect endpoint. A workers.dev link in a bio or
+// caption works fine; a social/creator link doesn't need a branded domain to
+// do its job.
+//
+// No lookup table, no pre-registration: any source/campaign slug just works
+// the moment someone posts a link using it, matching the "tag every outbound
+// link, even before anything reads them" habit the audit recommended - now
+// something does.
+const SLUG_RE = /^[a-z0-9_-]{1,40}$/i;
+
+async function handleGo(url, db) {
+  const parts = url.pathname.split('/').filter(Boolean); // ['go', source, campaign]
+  const source = (parts[1] || '').toLowerCase();
+  const campaign = (parts[2] || '').toLowerCase();
+  // A malformed link still sends the visitor somewhere real rather than an
+  // error page - the person clicked it expecting the game, not a 400.
+  if (!SLUG_RE.test(source) || !SLUG_RE.test(campaign)) return Response.redirect(ORIGIN + '/', 302);
+
+  const medium = (url.searchParams.get('m') || 'social').slice(0, 40);
+  const toPlay = url.searchParams.get('to') === 'play';
+
+  // Logging must never block the redirect - a D1 hiccup should cost a click
+  // count, not strand a real visitor on an error.
+  try {
+    await db.prepare(
+      'INSERT INTO clicks (day, source, campaign, medium, dest, ts) VALUES (?1, ?2, ?3, ?4, ?5, ?6)'
+    ).bind(todayInt(), source, campaign, medium, toPlay ? 'play' : 'home', Date.now()).run();
+  } catch (e) { /* see above */ }
+
+  const target = new URL(toPlay ? '/play/' : '/', ORIGIN);
+  target.searchParams.set('utm_source', source);
+  target.searchParams.set('utm_medium', medium);
+  target.searchParams.set('utm_campaign', campaign);
+  return Response.redirect(target.toString(), 302);
+}
+
+// GET /clicks?key=<REPORT_KEY>[&since=<YYYYMMDD>]
+// Aggregated click counts per source/campaign/medium - this is the developer's
+// own marketing dashboard, not a public endpoint, so it's gated by a shared
+// key (set with `wrangler secret put REPORT_KEY`) rather than the CORS origin
+// lock above, which only ever applies to fetch()/XHR requests carrying an
+// Origin header - a plain browser tab or curl hitting this URL directly sends
+// none, so the origin check alone would do nothing here.
+async function handleClicks(url, db, reportKey) {
+  if (!reportKey || !eq(url.searchParams.get('key') || '', reportKey)) return json({ error: 'auth' }, 401);
+  const sinceParam = +url.searchParams.get('since');
+  const since = Number.isInteger(sinceParam) && sinceParam >= 20250101 ? sinceParam : 0;
+  const { results } = await db.prepare(
+    'SELECT source, campaign, medium, COUNT(*) AS clicks, MAX(ts) AS lastClick ' +
+    'FROM clicks WHERE day >= ?1 GROUP BY source, campaign, medium ORDER BY clicks DESC'
+  ).bind(since).all();
+  return json({ since, rows: results });
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { headers: cors() });
@@ -102,6 +168,14 @@ export default {
     const secret = env.TOKEN_SECRET;
 
     try {
+      if (request.method === 'GET' && url.pathname.startsWith('/go/')) {
+        return await handleGo(url, db);
+      }
+
+      if (request.method === 'GET' && url.pathname === '/clicks') {
+        return await handleClicks(url, db, env.REPORT_KEY);
+      }
+
       if (request.method === 'GET' && url.pathname === '/t') {
         return json({ t: await issueToken(secret) });
       }
@@ -152,5 +226,9 @@ export default {
     const d = new Date(Date.now() - PRUNE_DAYS * 86400000);
     const cutoff = d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
     await env.DB.prepare('DELETE FROM scores WHERE day < ?1').bind(cutoff).run();
+
+    const clickD = new Date(Date.now() - CLICK_PRUNE_DAYS * 86400000);
+    const clickCutoff = clickD.getUTCFullYear() * 10000 + (clickD.getUTCMonth() + 1) * 100 + clickD.getUTCDate();
+    await env.DB.prepare('DELETE FROM clicks WHERE day < ?1').bind(clickCutoff).run();
   },
 };

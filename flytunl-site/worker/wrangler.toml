@@ -13,5 +13,9 @@ database_id = "2222e48f-acc8-4e66-85f5-3844e9615988"
 [triggers]
 crons = ["17 3 * * *"]
 
-# TOKEN_SECRET is a secret, not a var - set it with:
+# TOKEN_SECRET and REPORT_KEY are secrets, not vars - set with:
 #   wrangler secret put TOKEN_SECRET
+#   wrangler secret put REPORT_KEY
+# REPORT_KEY gates GET /clicks (campaign click tracking, src/index.js) - added
+# after the initial deploy, so an already-deployed worker needs this second
+# secret set once before /clicks will authenticate (it 401s with none set).
