@@ -161,6 +161,9 @@ let streak = parseInt(localStorage.getItem('tunnel_streak') || '0');
 let stardust = parseInt(localStorage.getItem('tunnel_stardust') || '0');
 let _homeBtnRect = null, _playBtnRect = null, _shareBtnRect = null;
 let _continueBtnRect = null;
+// >0 while the death-screen SHARE button should read "link copied" instead of
+// "share" - set by share.js's desktop clipboard fallback, decayed in update.js.
+let _shareCopiedT = 0;
 let showSettings = false;
 let _settingsBtnRect = null;
 let _settingsPanelRect = null;

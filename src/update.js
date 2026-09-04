@@ -82,6 +82,7 @@ function update(dt) {
         if (!continueAdPending) deadT += dt;
         flashA      = Math.max(0, flashA  - dt * 2.5);
         shake       = Math.max(0, shake   - dt * 30);
+        if (_shareCopiedT > 0) _shareCopiedT -= dt;
         // Continue offer timed out with no tap (constants.js CONTINUE_OFFER_SEC doc --
         // longer than DEATH_INTERACTIVE_SEC on purpose, 0.9s wasn't enough to land a
         // tap on a real device).
@@ -569,6 +570,7 @@ function die(bypassShield = false) {
     magnetLoopOff();
     bgmSetSlow(false);
     phase = 'dead'; deadT = 0; flashA = 1.0; shake = 14; holding = false;
+    _shareCopiedT = 0;
     _homeBtnRect = null; _playBtnRect = null; _shareBtnRect = null; _continueBtnRect = null;
     // Impact feedback fires now, unconditionally -- a hit should always feel like a
     // hit, whether or not a rewarded continue ends up saving the run a moment later

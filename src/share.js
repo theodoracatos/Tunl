@@ -37,15 +37,23 @@ const SHARE_W = 1200, SHARE_H = 630; // link-preview proportions; reads well in 
 // (AdsManager minScoreForAd).
 const SHARE_MIN_SCORE = 25;
 function shareWorthy() {
+    // The web build is an acquisition funnel: every shared run is a tap-to-play
+    // link for someone new, so drop the "was this a good run" gate the app uses
+    // (a share button on every death reads as a nag in a retention product, but
+    // as the point of the thing here) and offer it on any run past the instant-
+    // faceplant floor.
+    if (typeof isWeb === 'function' && isWeb()) return score >= SHARE_MIN_SCORE;
     return score >= 200 || ((newBest || newDailyBest) && score >= SHARE_MIN_SCORE);
 }
 
 // True when there's somewhere for the card to actually go: the native share sheet on
-// iOS/Android, or the Web Share API when running in a plain browser (which is also how
-// this gets tested outside a device build).
+// iOS/Android, the Web Share API on mobile browsers, or - on a desktop browser with
+// neither - a clipboard copy of the deep link (shareRun() handles that fallback).
 function shareAvailable() {
-    return !!(window.webkit?.messageHandlers?.share) ||
-           (typeof navigator !== 'undefined' && !!navigator.share);
+    return !!(window.webkit?.messageHandlers?.share)
+        || (typeof navigator !== 'undefined' && !!navigator.share)
+        || (typeof isWeb === 'function' && isWeb()
+            && typeof navigator !== 'undefined' && !!navigator.clipboard);
 }
 
 // ── Run profile ───────────────────────────────────────────────────────
@@ -476,5 +484,14 @@ function shareRun() {
         } else {
             send(null);
         }
+        return;
+    }
+    // Desktop browser: no share sheet. The run card can't cross the clipboard as
+    // an image reliably across browsers, but the deep link is the whole viral
+    // payload, so copy that and let the death-screen button confirm it (T.linkCopied).
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareRunUrl())
+            .then(() => { _shareCopiedT = 1.8; })
+            .catch(() => {});
     }
 }

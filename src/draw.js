@@ -3799,17 +3799,19 @@ function drawDeathScreen() {
             ctx.beginPath(); ctx.roundRect(shareX, shareY, btnW, btnH, 8); ctx.stroke();
             // Shrink to fit: SHARE is one short word in English but a long one in
             // several locales (COMPARTILHAR, ПОДЕЛИТЬСЯ), and this button is the
-            // narrowest of the three.
+            // narrowest of the three. After a desktop copy-link fallback the label
+            // flips to T.linkCopied for ~1.8s (share.js _shareCopiedT).
+            const shareLbl = _shareCopiedT > 0 ? T.linkCopied : T.share;
             let shFsz = FS * 0.028;
             ctx.font = `bold ${shFsz}px 'Courier New',monospace`;
-            const shW = ctx.measureText(T.share).width;
+            const shW = ctx.measureText(shareLbl).width;
             if (shW > btnW * 0.86) {
                 shFsz = Math.max(shFsz * (btnW * 0.86) / shW, FS * 0.015);
                 ctx.font = `bold ${shFsz}px 'Courier New',monospace`;
             }
             sh(5, `rgba(255,200,60,${b * 0.55})`);
             ctx.fillStyle = `rgba(255,228,130,${b * 0.95})`;
-            ctx.fillText(T.share, shareCX, botY);
+            ctx.fillText(shareLbl, shareCX, botY);
             ctx.font = `bold ${FS*0.028}px 'Courier New',monospace`;
         }
 
