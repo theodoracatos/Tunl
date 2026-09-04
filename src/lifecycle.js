@@ -1,3 +1,4 @@
+// TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch
 // World-x of the first stalactite on every run (see maintainStalactites). No stalactites
 // or stalagmites at all before this -- the opening ~4-9s (score 0-25) is a clean stretch
 // so a new player's first lesson is the feel of thrust-vs-gravity, not the death screen.
@@ -46,8 +47,8 @@ function titleScreen() {
     missionRewardWon = 0;
     levelIntroT = 0;
     initAmbParts();
-    const _dt = new Date();
-    seedDailyVariety(_dt.getUTCFullYear() * 10000 + (_dt.getUTCMonth() + 1) * 100 + _dt.getUTCDate());
+    // Cave day, not necessarily today - see world.js _tunlActiveDayInt (?d= deep link).
+    seedDailyVariety(_tunlActiveDayInt());
     refreshWave();
     _startTitleMusic();
     sfxBoot();
@@ -126,10 +127,17 @@ function startPlay() {
     }
     dailyRuns++;
     localStorage.setItem('tunnel_daily_runs', dailyRuns);
+    // A ghost carried in on a ?g= share link (state.js _webGhostPlay) has to
+    // survive the daily-rollover reset above, which clears the local ghost -
+    // racing that shared ghost is the whole point of opening the link.
+    if (typeof _webGhostPlay !== 'undefined' && _webGhostPlay) {
+        ghostPlay = _webGhostPlay;
+        ghostScore = _webGhostScore | 0;
+    }
     milestoneFlash = 0; milestoneText = '';
     levelIntroT = LEVEL_INTRO_DUR;
-    const _d = new Date();
-    const _dayInt = _d.getUTCFullYear() * 10000 + (_d.getUTCMonth() + 1) * 100 + _d.getUTCDate();
+    // Cave day, not necessarily today - see world.js _tunlActiveDayInt (?d= deep link).
+    const _dayInt = _tunlActiveDayInt();
     seedRng(_dayInt);
     seedDailyVariety(_dayInt);
     // Poison/bomb clocks (constants.js POISON_INTERVAL_SEC doc): jittered +/-30% like

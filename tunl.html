@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -15,10 +16,59 @@ body {
     height:100vh; overflow:hidden; touch-action:none;
 }
 canvas { display:block; }
+
+/* Portrait gate - shown only on the open web (src/main.js, gated on isWeb()).
+   The iOS/Android wrappers lock orientation and never see this. */
+#rot {
+    position:fixed; inset:0; z-index:100; background:#04040a;
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    gap:30px; padding:32px; text-align:center;
+    color:#d4f0f3; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+#rot.show { display:flex; }
+#rot .mark { font-size:34px; font-weight:700; letter-spacing:.3em; padding-left:.3em; color:#eaf7f9; }
+#rot .phone { width:44px; height:72px; border:3px solid #4fd6e0; border-radius:11px; animation:rotPhone 2.4s ease-in-out infinite; }
+#rot .msg { font-size:14px; letter-spacing:.16em; text-transform:uppercase; opacity:.8; }
+@keyframes rotPhone { 0%,38% { transform:rotate(0); } 58%,100% { transform:rotate(-90deg); } }
+@media (prefers-reduced-motion:reduce) { #rot .phone { animation:none; transform:rotate(-90deg); } }
+
+/* Install CTA - open web only, title screen only (src/main.js _syncWebCta,
+   gated on isWeb()). Native app builds never render it. */
+#cta {
+    position:fixed; left:50%; bottom:14px; transform:translateX(-50%);
+    z-index:50; display:none; align-items:center; justify-content:center;
+    flex-wrap:wrap; gap:8px 11px; max-width:calc(100vw - 20px);
+    padding:8px 15px; border-radius:22px; text-align:center;
+    background:rgba(10,12,22,0.74); border:1px solid rgba(120,160,255,0.22);
+    -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    font-size:12px; letter-spacing:.05em;
+}
+#cta.show { display:flex; }
+#cta .lbl { color:#8aa0c8; text-transform:uppercase; }
+#cta a {
+    color:#cfe0ff; text-decoration:none; font-weight:600;
+    padding:3px 10px; border-radius:999px; border:1px solid rgba(120,160,255,0.3);
+    pointer-events:auto;
+}
+#cta a:active { background:rgba(120,160,255,0.18); }
+#cta a:focus-visible { outline:2px solid #4fd6e0; outline-offset:2px; }
+@media (max-width:520px) { #cta { font-size:11px; gap:7px; padding:7px 11px; } }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="rot" aria-hidden="true">
+    <div class="mark">TUNL</div>
+    <div class="phone"></div>
+    <div class="msg" id="rot-msg">Rotate your device</div>
+</div>
+<div id="cta" aria-hidden="true">
+    <span class="lbl" id="cta-lbl">Get the app</span>
+    <a href="https://apps.apple.com/us/app/tunl-cave-flyer/id6789721765" target="_blank" rel="noopener">App Store</a>
+    <a href="https://play.google.com/store/apps/details?id=com.theodoracatos.tunl" target="_blank" rel="noopener">Google Play</a>
+</div>
+<script src="src/web.js"></script>
 <script src="src/i18n.js"></script>
 <script src="src/constants.js"></script>
 <script src="src/world.js"></script>

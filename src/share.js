@@ -1,3 +1,4 @@
+// TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch
 // ── Daily run card ────────────────────────────────────────────────────
 // TUNL already generates one identical cave for every player on Earth each day
 // (lifecycle.js seeds every run from the UTC date), which is the hard half of a
@@ -17,6 +18,13 @@
 // command and the reference_store_listing_urls memory) are unaffected by this change.
 // This is the only place the public URL is written down in this repo.
 const SHARE_URL = 'https://flytunl.ch';
+
+// Cap on the base64 ghost carried in a web share link (shareRunUrl below). The
+// ghost is roughly one byte per point of score, so this is about 1100 score
+// points of run - longer runs still share, just without the ghost (?d cave +
+// ?s score keep the link a real challenge). Holds the whole URL well under what
+// chat apps and browsers accept.
+const SHARE_GHOST_MAX_B64 = 1500;
 
 const SHARE_W = 1200, SHARE_H = 630; // link-preview proportions; reads well in chats
 
@@ -261,7 +269,7 @@ function _shareCardCanvas() {
     // generic blue badge.
     const theme  = getTheme();
     const accent = theme.wallBase;
-    const planet = WEEKDAY_PALETTES[weekdayIndex(new Date())].planet;
+    const planet = WEEKDAY_PALETTES[weekdayIndex(_tunlActiveDate())].planet;
 
     // Ground + vignette, matching the game's own #04040a
     g.fillStyle = '#04040a';
@@ -400,8 +408,30 @@ function _shareCardCanvas() {
 
 // ── Share ─────────────────────────────────────────────────────────────
 
+// The link printed on the card. On the open web it deep-links straight back into
+// the run just flown: same cave (?d), the sender's ghost to race (?g), and their
+// score so the recipient's ghost readout is right (?s). Anywhere else (a native
+// app share) it stays the plain marketing URL - the app has no /play route and a
+// native share sheet has no ghost to hand off.
+function shareRunUrl() {
+    if (typeof isWeb !== 'function' || !isWeb()) return SHARE_URL;
+    let u = SHARE_URL.replace(/\/+$/, '') + '/play?d=' + _tunlActiveDayInt();
+    if (score > 0) u += '&s=' + Math.min(score | 0, 9999999);
+    try {
+        if (typeof ghostTrack !== 'undefined' && ghostTrack && ghostTrack.length > 1) {
+            const enc = ghostEncode(ghostTrack);
+            if (enc.length <= SHARE_GHOST_MAX_B64) {
+                // URL-safe base64, padding stripped: no %2B/%2F/%3D noise, and immune
+                // to chat clients that "URL-safe normalise" links. state.js reverses it.
+                u += '&g=' + enc.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+            }
+        }
+    } catch (e) { /* the ghost is optional in the link; ?d + ?s still challenge */ }
+    return u;
+}
+
 function shareRunText() {
-    const planet = WEEKDAY_PALETTES[weekdayIndex(new Date())].planet;
+    const planet = WEEKDAY_PALETTES[weekdayIndex(_tunlActiveDate())].planet;
     const lines = [
         `TUNL · ${T.level} ${LEVEL_NUM}: ${WORLD_NAME.toUpperCase()} · ${planet.toUpperCase()}`,
         `${score}${runMaxCombo > 1 ? `  (x${runMaxCombo} ${T.combo})` : ''}`,
@@ -415,7 +445,7 @@ function shareRunText() {
     // the same one for them today, which is the only reason a stranger's score means
     // anything. Without it this is just a screenshot of a number.
     lines.push(T.shareTagline);
-    lines.push(SHARE_URL);
+    lines.push(shareRunUrl());
     return lines.join('\n');
 }
 

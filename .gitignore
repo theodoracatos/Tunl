@@ -19,3 +19,8 @@ Tunl/build/
 *.xcarchive
 
 flytunl-site/.env
+
+# Node tooling (terser for the /play web bundle - see flytunl-site/build-play.mjs)
+node_modules/
+# Generated web build; rebuilt by build-play.mjs on every deploy
+flytunl-site/site/play/

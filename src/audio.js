@@ -1,3 +1,4 @@
+// TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch
 // ── Audio ─────────────────────────────────────────────────────────────
 
 let _ac = null, _tNode = null, _tGain = null;
@@ -148,11 +149,20 @@ function _initAC() {
 // the context down resolves into nothing instead of installing a buffer built on a dead
 // context -- _reviveAudioContext re-kicks the loaders itself via _initAC above.
 
+// The open web build (isWeb()) pulls a smaller mono AAC encode of each track to
+// roughly halve link-open weight; build-play.mjs copies the .web.m4a files into
+// play/. AAC decodes everywhere decodeAudioData is supported, so there's no
+// fallback path. The app builds keep the full stereo mp3 - gradle's copyGameFiles
+// and the Xcode resource refs list only the .mp3s, so the .m4a is never bundled.
+function _bgmUrl(name) {
+    return (typeof isWeb === 'function' && isWeb()) ? name + '.web.m4a' : name + '.mp3';
+}
+
 function _loadBgmBuffer() {
     if (!_ac || _bgmBuf || _bgmLoading) return;
     _bgmLoading = true;
     const ctx = _ac;
-    fetch('the_mountain.mp3')
+    fetch(_bgmUrl('the_mountain'))
         .then(r => r.arrayBuffer())
         .then(ab => ctx.decodeAudioData(ab))
         .then(buf => {
@@ -163,7 +173,7 @@ function _loadBgmBuffer() {
         })
         .catch(err => {
             _bgmLoading = false;
-            console.error('[audio] the_mountain.mp3 load/decode failed:', err);
+            console.error('[audio]', _bgmUrl('the_mountain'), 'load/decode failed:', err);
         });
 }
 
@@ -171,7 +181,7 @@ function _loadTitleBgmBuffer() {
     if (!_ac || _titleBgmBuf || _titleBgmLoading) return;
     _titleBgmLoading = true;
     const ctx = _ac;
-    fetch('the_mountain_documentary.mp3')
+    fetch(_bgmUrl('the_mountain_documentary'))
         .then(r => r.arrayBuffer())
         .then(ab => ctx.decodeAudioData(ab))
         .then(buf => {
@@ -187,7 +197,7 @@ function _loadTitleBgmBuffer() {
         })
         .catch(err => {
             _titleBgmLoading = false;
-            console.error('[audio] the_mountain_documentary.mp3 load/decode failed:', err);
+            console.error('[audio]', _bgmUrl('the_mountain_documentary'), 'load/decode failed:', err);
         });
 }
 

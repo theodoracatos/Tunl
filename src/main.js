@@ -1,3 +1,4 @@
+// TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch
 document.addEventListener('contextmenu', e => e.preventDefault());
 
 // Native wrappers call this after purchase/restore/launch entitlement checks
@@ -113,11 +114,62 @@ function loop(ts) {
     const dt = Math.min((ts - prev) / 1000, 0.05);
     prev = ts;
     if (!window._freezeDraw) { update(dt); draw(); }
+    _syncWebCta();
     requestAnimationFrame(loop);
 }
+
+// ── Install CTA (web only) ───────────────────────────────────────────
+// A small "Get the app" pill (#cta in tunl.html) on the title screen only,
+// linking to the two store listings. Native app builds (isWeb() false) never
+// show it. Driven from the loop; cheap - it only touches the DOM on a change,
+// and the label follows an in-game language switch.
+const _ctaEl  = document.getElementById('cta');
+const _ctaLbl = document.getElementById('cta-lbl');
+let _ctaShown = false, _ctaLangShown = null;
+function _syncWebCta() {
+    if (!_ctaEl) return;
+    const show = isWeb() && phase === 'title' && !_portraitCovered;
+    if (show && _ctaLbl && typeof T !== 'undefined' && T.getApp && _ctaLangShown !== T.getApp) {
+        _ctaLbl.textContent = T.getApp;
+        _ctaLangShown = T.getApp;
+    }
+    if (show === _ctaShown) return;
+    _ctaShown = show;
+    _ctaEl.classList.toggle('show', show);
+    _ctaEl.setAttribute('aria-hidden', show ? 'false' : 'true');
+}
+
+// ── Portrait gate (web only) ─────────────────────────────────────────
+// The game is landscape-only. The iOS (Info.plist) and Android (manifest)
+// wrappers lock orientation, so this only ever fires on the open web build
+// (flytunl.ch/play). While the viewport is portrait the loop is frozen and
+// audio suspended, and #rot (tunl.html) covers the canvas so the player can't
+// start a run they can't see.
+const _rotEl = document.getElementById('rot');
+let _portraitCovered = false;
+function _updatePortraitGate() {
+    const portrait = isWeb() && window.innerHeight > window.innerWidth;
+    if (portrait === _portraitCovered) return;
+    _portraitCovered = portrait;
+    if (_rotEl) {
+        _rotEl.classList.toggle('show', portrait);
+        _rotEl.setAttribute('aria-hidden', portrait ? 'false' : 'true');
+        const m = document.getElementById('rot-msg');
+        if (m && typeof T !== 'undefined' && T.rotateHint) m.textContent = T.rotateHint;
+    }
+    window._freezeDraw = portrait;
+    if (portrait) {
+        if (typeof _pauseAudioForAd === 'function') _pauseAudioForAd();
+    } else if (typeof _resumeAudioAfterAd === 'function') {
+        _resumeAudioAfterAd();
+    }
+}
+window.addEventListener('resize', _updatePortraitGate);
+window.addEventListener('orientationchange', _updatePortraitGate);
 
 // GameView.swift disables WKWebView's "user action required for playback"
 // policy, so audio can start immediately without waiting for the first tap.
 _initAC();
 titleScreen();
+_updatePortraitGate();
 requestAnimationFrame(ts => { prev = ts; requestAnimationFrame(loop); });

@@ -1,3 +1,4 @@
+// TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch
 // ── Stalactite system ─────────────────────────────────────────────────
 
 function makeStal(wx, isTop) {

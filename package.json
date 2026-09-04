@@ -1,0 +1,13 @@
+{
+  "name": "tunl",
+  "private": true,
+  "description": "TUNL - HTML5 Canvas hold-to-thrust cave flyer. Tooling only; the game itself is plain scripts in src/ with no build step.",
+  "scripts": {
+    "test:i18n": "node test-i18n.js",
+    "test:math": "node test-math.js",
+    "build:play": "node flytunl-site/build-play.mjs"
+  },
+  "devDependencies": {
+    "terser": "^5.36.0"
+  }
+}
