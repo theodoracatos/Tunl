@@ -83,10 +83,14 @@ async function build() {
     '<meta property="og:url" content="{{OG_URL}}">'
   );
 
-  // footer language switcher (before </footer>)
+  // Early <head> auto-redirect (English root only) - bounce a first-time visitor
+  // to their browser language, once, then never again.
+  tpl = tpl.replace('<meta charset="UTF-8">', '<meta charset="UTF-8">\n{{AUTO_REDIRECT}}');
+
+  // footer language control (before </footer>): the full picker on English, a
+  // single "English" link on the localized pages.
   tpl = tpl.replace('</footer>', '    {{LANGSWITCH}}\n  </footer>');
 
-  // banner + switcher CSS (before </style>) and script (before </body>)
   tpl = tpl.replace('</style>', LANG_CSS + '\n</style>');
   tpl = tpl.replace('</body>', LANG_JS + '\n</body>');
 
@@ -98,6 +102,7 @@ async function build() {
       if (key === 'LANG') return lang;
       if (key === 'OG_URL') return ORIGIN + langPath(lang);
       if (key === 'HEAD_ALT') return headAlt(lang);
+      if (key === 'AUTO_REDIRECT') return lang === 'en' ? REDIRECT_JS : '';
       if (key === 'LANGSWITCH') return langSwitch(lang);
       return t(key, lang);
     });
@@ -120,21 +125,37 @@ async function build() {
   }
 
   function langSwitch(lang) {
-    const opts = LANGS.map(l =>
-      `<option value="${langPath(l)}"${l === lang ? ' selected' : ''}>${NAMES[l]}</option>`
-    ).join('');
-    const bannerTexts = JSON.stringify(strings['banner.text']);
-    const dismissTexts = JSON.stringify(strings['banner.dismiss']);
-    return `<span class="langsw">`
-      + `<label for="langsel">${t('footer.langLabel', lang)}:</label> `
-      + `<select id="langsel" aria-label="${t('footer.langLabel', lang)}">${opts}</select>`
-      + `</span>`
-      + `<script>window.__TUNL_BANNER__=${bannerTexts};window.__TUNL_DISMISS__=${dismissTexts};</script>`;
+    if (lang === 'en') {
+      const opts = LANGS.map(l =>
+        `<option value="${langPath(l)}"${l === lang ? ' selected' : ''}>${NAMES[l]}</option>`
+      ).join('');
+      return `<span class="langsw">`
+        + `<label for="langsel">${t('footer.langLabel', 'en')}:</label> `
+        + `<select id="langsel" aria-label="${t('footer.langLabel', 'en')}">${opts}</select>`
+        + `</span>`;
+    }
+    // Localized pages: only an escape hatch back to English.
+    return `<a class="backtoen" href="/">English</a>`;
   }
 }
 
+// English root only: bounce a first-time visitor to their browser language once,
+// then remember the choice so it never fires again (and so returning to "/" via
+// the English link stays English). Early in <head> so there is no visible flash.
+const REDIRECT_JS = `<script>
+(function () {
+  try {
+    var LS = 'tunl_site_lang';
+    if (localStorage.getItem(LS)) return;
+    var P = { de:'/de/', fr:'/fr/', it:'/it/', es:'/es/', pt:'/pt/', ja:'/ja/' };
+    var l = (navigator.language || '').slice(0, 2).toLowerCase();
+    if (P[l]) { localStorage.setItem(LS, P[l]); location.replace(P[l]); }
+  } catch (e) {}
+})();
+</script>`;
+
 const LANG_CSS = `
-  /* ---------- Language switcher + banner ---------- */
+  /* ---------- Language control ---------- */
   .langsw { display:inline-flex; align-items:center; gap:6px; }
   .langsw label { color:var(--text-faint); font-size:12px; }
   .langsw select {
@@ -143,54 +164,21 @@ const LANG_CSS = `
     padding:4px 8px; font-size:12px; font-family:var(--sans); cursor:pointer;
   }
   .langsw select:hover { border-color:var(--cyan); }
-  .langbanner {
-    position:fixed; left:0; right:0; bottom:0; z-index:60;
-    display:flex; align-items:center; justify-content:center; gap:14px;
-    padding:11px 16px;
-    background:rgba(12,12,21,0.96); border-top:1px solid var(--line);
-    -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
-    font-size:13.5px;
-  }
-  .langbanner a { color:var(--cyan); font-weight:600; }
-  .langbanner button {
-    background:none; border:1px solid var(--line); color:var(--text-faint);
-    width:26px; height:26px; border-radius:50%; cursor:pointer; font-size:15px; line-height:1;
-  }
-  .langbanner button:hover { border-color:var(--cyan); color:var(--cyan); }`;
+  .backtoen { color:var(--text-dim); font-size:12px; }
+  .backtoen:hover { color:var(--cyan); }`;
 
 const LANG_JS = `<script>
 (function () {
-  var PATH = { en:'/', de:'/de/', fr:'/fr/', it:'/it/', es:'/es/', pt:'/pt/', ja:'/ja/' };
-  var cur = (document.documentElement.getAttribute('lang') || 'en').slice(0, 2);
   var LS = 'tunl_site_lang';
   var store = function (v) { try { localStorage.setItem(LS, v); } catch (e) {} };
-
   var sel = document.getElementById('langsel');
   if (sel) {
     sel.addEventListener('change', function () { store(sel.value); location.href = sel.value; });
   }
-
-  try {
-    if (!localStorage.getItem(LS)) {
-      var pref = (navigator.language || '').slice(0, 2).toLowerCase();
-      var texts = window.__TUNL_BANNER__ || {};
-      if (texts[pref] && pref !== cur && PATH[pref]) {
-        var bar = document.createElement('div');
-        bar.className = 'langbanner';
-        var a = document.createElement('a');
-        a.href = PATH[pref];
-        a.textContent = texts[pref] + ' \\u2192';
-        a.addEventListener('click', function () { store(PATH[pref]); });
-        var x = document.createElement('button');
-        x.setAttribute('aria-label', (window.__TUNL_DISMISS__ || {})[pref] || 'Close');
-        x.textContent = '\\u00d7';
-        x.addEventListener('click', function () { store(PATH[cur]); bar.remove(); });
-        bar.appendChild(a);
-        bar.appendChild(x);
-        document.body.appendChild(bar);
-      }
-    }
-  } catch (e) {}
+  var back = document.querySelector('.backtoen');
+  if (back) {
+    back.addEventListener('click', function () { store('/'); });
+  }
 })();
 </script>`;
 

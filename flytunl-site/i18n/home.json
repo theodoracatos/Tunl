@@ -440,17 +440,5 @@
   },
   "aria.demo": {
     "en": "TUNL gameplay demo", "de": "TUNL Gameplay-Demo", "fr": "Démo de gameplay de TUNL", "it": "Demo di gameplay di TUNL", "es": "Demo de gameplay de TUNL", "pt": "Demo de gameplay do TUNL", "ja": "TUNLのゲームプレイデモ"
-  },
-
-  "banner.text": {
-    "de": "Diese Seite auf Deutsch ansehen",
-    "fr": "Voir cette page en français",
-    "it": "Vedi questa pagina in italiano",
-    "es": "Ver esta página en español",
-    "pt": "Ver esta página em português",
-    "ja": "このページを日本語で見る"
-  },
-  "banner.dismiss": {
-    "de": "Schließen", "fr": "Fermer", "it": "Chiudi", "es": "Cerrar", "pt": "Fechar", "ja": "閉じる"
   }
 }
