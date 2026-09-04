@@ -2988,11 +2988,12 @@ function drawTitleScreen() {
         const nShipsGap   = H * 0.022;   // gap above the Unlock All Ships row
         const nRestoreGap = H * 0.022;
         const nRestoreH   = H * 0.062;   // matched to nPrivacyBtnH in the settings panel -- 0.032 read as a squashed sliver
-        // Empty-state row shown instead of the buttons when there's no native IAP
+        // Empty-state block shown instead of the buttons when there's no native IAP
         // bridge to talk to (web/dev build) -- the Shop button is always shown per
         // product decision, so this is that build's landing spot rather than a
-        // hidden button.
-        const nEmptyH     = H * 0.090;
+        // hidden button. Two lines: purchases are app-only, and so is the +1-life
+        // rewarded revive (both are things the browser build genuinely can't do).
+        const nEmptyH     = H * 0.150;
 
         // Restore Purchase stays hidden only once there's nothing left either
         // product could restore -- unlike the old remove-ads-only check, "owns one"
@@ -3116,9 +3117,22 @@ function drawTitleScreen() {
                 y += restoreH;
             }
         } else {
-            ctx.font      = `${FS * 0.020}px 'Courier New',monospace`;
-            ctx.fillStyle = 'rgba(150,160,200,0.70)';
-            ctx.fillText(T.shopUnavailable, W / 2, y + emptyH / 2);
+            // Shrink-to-fit each line independently, same pattern as the Unlock
+            // All Ships button above -- some locales (ru, tr) run these long.
+            const fitLine = (text, baseFrac, cy, clr) => {
+                let fsz = FS * baseFrac;
+                ctx.font = `${fsz}px 'Courier New',monospace`;
+                const avail = panW * 0.90;
+                const tw = ctx.measureText(text).width;
+                if (tw > avail) {
+                    fsz = Math.max(fsz * avail / tw, FS * 0.012);
+                    ctx.font = `${fsz}px 'Courier New',monospace`;
+                }
+                ctx.fillStyle = clr;
+                ctx.fillText(text, W / 2, cy);
+            };
+            fitLine(T.shopUnavailable, 0.020, y + emptyH * 0.32, 'rgba(155,165,205,0.78)');
+            fitLine(T.reviveAppOnly,   0.016, y + emptyH * 0.68, 'rgba(140,150,190,0.62)');
             y += emptyH;
         }
     }
