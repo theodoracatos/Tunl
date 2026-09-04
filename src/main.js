@@ -128,7 +128,11 @@ const _ctaLbl = document.getElementById('cta-lbl');
 let _ctaShown = false, _ctaLangShown = null;
 function _syncWebCta() {
     if (!_ctaEl) return;
-    const show = isWeb() && phase === 'title' && !_portraitCovered;
+    // Hidden while any title-screen panel is open (ALL SHIPS / shop, ship
+    // picker, settings, missions, currency info) - the pill sits at the bottom
+    // edge and otherwise floats over the panel content.
+    const _panelOpen = showShop || showShipPicker || showSettings || showMissions || showCurrencyInfo;
+    const show = isWeb() && phase === 'title' && !_portraitCovered && !_panelOpen;
     if (show && _ctaLbl && typeof T !== 'undefined' && T.getApp && _ctaLangShown !== T.getApp) {
         _ctaLbl.textContent = T.getApp;
         _ctaLangShown = T.getApp;
