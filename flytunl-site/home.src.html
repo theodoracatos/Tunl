@@ -321,12 +321,14 @@
   }
   .ship-chip {
     display:block;
-    width:32px; height:32px;
+    width:46px; height:29px;
     margin:0 auto 12px;
-    border-radius:50%;
-    background:var(--ship-color);
-    box-shadow:0 0 16px var(--ship-color);
   }
+  .ship-chip svg {
+    width:100%; height:100%;
+    filter:drop-shadow(0 0 7px var(--ship-color));
+  }
+  .ship-chip path { fill:var(--ship-color); }
   .ship-card h3 {
     font-family:var(--display);
     color:#fff;
@@ -590,43 +592,43 @@
     </div>
     <div class="ships">
       <div class="ship-card" style="--ship-color:#e8eeff">
-        <span class="ship-chip"></span>
+        <span class="ship-chip"><svg viewBox="-1.34 -1.04 3.18 2.08" aria-hidden="true"><path d="M1.72 0 1.12 -0.17 0.38 -0.22 -0.65 -0.92 -1.08 -0.22 -1.22 -0.32 -1.05 -0.08 -0.92 0 -1.05 0.08 -1.22 0.32 -1.08 0.22 -0.65 0.92 0.38 0.22 1.12 0.17Z"/></svg></span>
         <span class="ship-tag">Starter, free</span>
         <h3>PEARL</h3>
         <p>The neutral baseline every run starts with - no perk, no penalty, just the feel of the ship.</p>
       </div>
       <div class="ship-card" style="--ship-color:#ffaa00">
-        <span class="ship-chip"></span>
+        <span class="ship-chip"><svg viewBox="-1.34 -1.04 3.18 2.08" aria-hidden="true"><path d="M1.72 0 1.12 -0.17 0.38 -0.22 -0.65 -0.92 -1.08 -0.22 -1.22 -0.32 -1.05 -0.08 -0.92 0 -1.05 0.08 -1.22 0.32 -1.08 0.22 -0.65 0.92 0.38 0.22 1.12 0.17Z"/></svg></span>
         <h3>AMBER</h3>
         <p>Reaches further for coins than any other ship, at the cost of a slightly bigger hitbox.</p>
       </div>
       <div class="ship-card" style="--ship-color:#ff1a33">
-        <span class="ship-chip"></span>
+        <span class="ship-chip"><svg viewBox="-1.34 -1.04 3.18 2.08" aria-hidden="true"><path d="M1.72 0 1.12 -0.17 0.38 -0.22 -0.65 -0.92 -1.08 -0.22 -1.22 -0.32 -1.05 -0.08 -0.92 0 -1.05 0.08 -1.22 0.32 -1.08 0.22 -0.65 0.92 0.38 0.22 1.12 0.17Z"/></svg></span>
         <h3>CRIMSON</h3>
         <p>Slips through gaps other ships can't fit through, trading away some shield capacity for it.</p>
       </div>
       <div class="ship-card" style="--ship-color:#00ccff">
-        <span class="ship-chip"></span>
+        <span class="ship-chip"><svg viewBox="-1.34 -1.04 3.18 2.08" aria-hidden="true"><path d="M1.72 0 1.12 -0.17 0.38 -0.22 -0.65 -0.92 -1.08 -0.22 -1.22 -0.32 -1.05 -0.08 -0.92 0 -1.05 0.08 -1.22 0.32 -1.08 0.22 -0.65 0.92 0.38 0.22 1.12 0.17Z"/></svg></span>
         <h3>ELECTRIC</h3>
         <p>Bends time harder and longer whenever a slow-time coin lands.</p>
       </div>
       <div class="ship-card" style="--ship-color:#99ff00">
-        <span class="ship-chip"></span>
+        <span class="ship-chip"><svg viewBox="-1.34 -1.04 3.18 2.08" aria-hidden="true"><path d="M1.72 0 1.12 -0.17 0.38 -0.22 -0.65 -0.92 -1.08 -0.22 -1.22 -0.32 -1.05 -0.08 -0.92 0 -1.05 0.08 -1.22 0.32 -1.08 0.22 -0.65 0.92 0.38 0.22 1.12 0.17Z"/></svg></span>
         <h3>TOXIC</h3>
         <p>Every gold coin buys more corridor room, though the bonus burns off faster too.</p>
       </div>
       <div class="ship-card" style="--ship-color:#c080ff">
-        <span class="ship-chip"></span>
+        <span class="ship-chip"><svg viewBox="-1.34 -1.04 3.18 2.08" aria-hidden="true"><path d="M1.72 0 1.12 -0.17 0.38 -0.22 -0.65 -0.92 -1.08 -0.22 -1.22 -0.32 -1.05 -0.08 -0.92 0 -1.05 0.08 -1.22 0.32 -1.08 0.22 -0.65 0.92 0.38 0.22 1.12 0.17Z"/></svg></span>
         <h3>VOID</h3>
         <p>Carries more shield charge than any other ship, at the cost of some margin on close calls.</p>
       </div>
       <div class="ship-card" style="--ship-color:#ffffff">
-        <span class="ship-chip"></span>
+        <span class="ship-chip"><svg viewBox="-1.34 -1.04 3.18 2.08" aria-hidden="true"><path d="M1.72 0 1.12 -0.17 0.38 -0.22 -0.65 -0.92 -1.08 -0.22 -1.22 -0.32 -1.05 -0.08 -0.92 0 -1.05 0.08 -1.22 0.32 -1.08 0.22 -0.65 0.92 0.38 0.22 1.12 0.17Z"/></svg></span>
         <h3>NOVA</h3>
         <p>Pulls coins in from further away, with less ammo held in reserve.</p>
       </div>
       <div class="ship-card" style="--ship-color:#ff6600">
-        <span class="ship-chip"></span>
+        <span class="ship-chip"><svg viewBox="-1.34 -1.04 3.18 2.08" aria-hidden="true"><path d="M1.72 0 1.12 -0.17 0.38 -0.22 -0.65 -0.92 -1.08 -0.22 -1.22 -0.32 -1.05 -0.08 -0.92 0 -1.05 0.08 -1.22 0.32 -1.08 0.22 -0.65 0.92 0.38 0.22 1.12 0.17Z"/></svg></span>
         <span class="ship-tag">Rare</span>
         <h3>SOLARIS</h3>
         <p>The rarest ship in the roster - forgiving on close calls, built for players chasing the deepest runs.</p>
