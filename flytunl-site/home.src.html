@@ -293,6 +293,59 @@
   }
   .feature p { color:var(--text-dim); font-size:13.5px; margin:0; }
 
+  /* ---------- Ships ---------- */
+  .section-sub {
+    color:var(--text-dim);
+    font-size:14px;
+    max-width:520px;
+    margin:14px auto 0;
+  }
+  .ships {
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:14px;
+  }
+  .ship-card {
+    position:relative;
+    background:linear-gradient(180deg, var(--panel-2), var(--panel));
+    border:1px solid var(--line-soft);
+    border-radius:14px;
+    padding:20px 14px;
+    text-align:center;
+    transition:border-color .18s, transform .18s, box-shadow .18s;
+  }
+  .ship-card:hover {
+    border-color:var(--ship-color, var(--cyan));
+    transform:translateY(-3px);
+    box-shadow:0 22px 44px -28px var(--ship-color, var(--cyan));
+  }
+  .ship-chip {
+    display:block;
+    width:32px; height:32px;
+    margin:0 auto 12px;
+    border-radius:50%;
+    background:var(--ship-color);
+    box-shadow:0 0 16px var(--ship-color);
+  }
+  .ship-card h3 {
+    font-family:var(--display);
+    color:#fff;
+    font-size:14px;
+    font-weight:600;
+    letter-spacing:.4px;
+    margin:0 0 6px;
+  }
+  .ship-tag {
+    display:block;
+    font-family:var(--mono);
+    font-size:9.5px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--text-faint);
+    margin-bottom:8px;
+  }
+  .ship-card p { color:var(--text-dim); font-size:12.5px; margin:0; line-height:1.5; }
+
   /* ---------- Screenshots ---------- */
   .gallery {
     display:grid;
@@ -386,6 +439,7 @@
   @media (max-width:720px) {
     .section-head h2 { font-size:22px; }
     .controls { grid-template-columns:1fr; }
+    .ships { grid-template-columns:repeat(2, 1fr); }
     .gallery {
       grid-template-columns:none;
       grid-auto-flow:column;
@@ -524,6 +578,58 @@
         <span class="icon">🌍</span>
         <h3>Play in your language</h3>
         <p>TUNL is available in 15 languages, including Spanish, Arabic, Russian, Chinese, French, Korean, Portuguese, Hindi, and Vietnamese.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>Eight Ships, Eight Feels</h2>
+      <div class="rule"></div>
+      <p class="section-sub">Same one-button feel, different tradeoffs.</p>
+    </div>
+    <div class="ships">
+      <div class="ship-card" style="--ship-color:#e8eeff">
+        <span class="ship-chip"></span>
+        <span class="ship-tag">Starter, free</span>
+        <h3>PEARL</h3>
+        <p>The neutral baseline every run starts with - no perk, no penalty, just the feel of the ship.</p>
+      </div>
+      <div class="ship-card" style="--ship-color:#ffaa00">
+        <span class="ship-chip"></span>
+        <h3>AMBER</h3>
+        <p>Reaches further for coins than any other ship, at the cost of a slightly bigger hitbox.</p>
+      </div>
+      <div class="ship-card" style="--ship-color:#ff1a33">
+        <span class="ship-chip"></span>
+        <h3>CRIMSON</h3>
+        <p>Slips through gaps other ships can't fit through, trading away some shield capacity for it.</p>
+      </div>
+      <div class="ship-card" style="--ship-color:#00ccff">
+        <span class="ship-chip"></span>
+        <h3>ELECTRIC</h3>
+        <p>Bends time harder and longer whenever a slow-time coin lands.</p>
+      </div>
+      <div class="ship-card" style="--ship-color:#99ff00">
+        <span class="ship-chip"></span>
+        <h3>TOXIC</h3>
+        <p>Every gold coin buys more corridor room, though the bonus burns off faster too.</p>
+      </div>
+      <div class="ship-card" style="--ship-color:#c080ff">
+        <span class="ship-chip"></span>
+        <h3>VOID</h3>
+        <p>Carries more shield charge than any other ship, at the cost of some margin on close calls.</p>
+      </div>
+      <div class="ship-card" style="--ship-color:#ffffff">
+        <span class="ship-chip"></span>
+        <h3>NOVA</h3>
+        <p>Pulls coins in from further away, with less ammo held in reserve.</p>
+      </div>
+      <div class="ship-card" style="--ship-color:#ff6600">
+        <span class="ship-chip"></span>
+        <span class="ship-tag">Rare</span>
+        <h3>SOLARIS</h3>
+        <p>The rarest ship in the roster - forgiving on close calls, built for players chasing the deepest runs.</p>
       </div>
     </div>
   </section>

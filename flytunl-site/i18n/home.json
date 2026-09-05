@@ -363,6 +363,83 @@
     "ja": "TUNLは15言語に対応。スペイン語、アラビア語、ロシア語、中国語、フランス語、韓国語、ポルトガル語、ヒンディー語、ベトナム語などを含む。"
   },
 
+  "ships.head": { "en": "Eight Ships, Eight Feels", "de": "Acht Schiffe, acht Gefühle", "fr": "Huit vaisseaux, huit sensations", "it": "Otto navi, otto sensazioni", "es": "Ocho naves, ocho sensaciones", "pt": "Oito naves, oito sensações", "ja": "8機、8つの感触" },
+  "ships.sub": { "en": "Same one-button feel, different tradeoffs.", "de": "Dasselbe Ein-Knopf-Gefühl, unterschiedliche Kompromisse.", "fr": "La même sensation à un bouton, des compromis différents.", "it": "La stessa sensazione a un pulsante, compromessi diversi.", "es": "La misma sensación de un botón, compensaciones distintas.", "pt": "A mesma sensação de um botão, trade-offs diferentes.", "ja": "同じワンボタンの感触、違うトレードオフ。" },
+  "ships.tagPearl": { "en": "Starter, free", "de": "Starter, kostenlos", "fr": "Starter, gratuit", "it": "Starter, gratis", "es": "Inicial, gratis", "pt": "Inicial, grátis", "ja": "スターター、無料" },
+  "ships.pearl": {
+    "en": "The neutral baseline every run starts with - no perk, no penalty, just the feel of the ship.",
+    "de": "Die neutrale Basis, mit der jeder Lauf beginnt - kein Vorteil, kein Nachteil, nur das reine Fluggefühl.",
+    "fr": "La base neutre avec laquelle chaque partie commence - ni bonus ni inconvénient, juste la sensation du vaisseau.",
+    "it": "La base neutra con cui inizia ogni partita - nessun potenziamento, nessuno svantaggio, solo la sensazione della nave.",
+    "es": "La base neutra con la que empieza cada partida - sin ventaja ni inconveniente, solo la sensación de la nave.",
+    "pt": "A base neutra com que toda partida começa - sem bônus, sem desvantagem, só a sensação da nave.",
+    "ja": "すべてのランがここから始まる基準機。強化も弱点もなく、純粋な機体の感触だけ。"
+  },
+  "ships.amber": {
+    "en": "Reaches further for coins than any other ship, at the cost of a slightly bigger hitbox.",
+    "de": "Erreicht Münzen aus größerer Entfernung als jedes andere Schiff, dafür mit etwas größerer Hitbox.",
+    "fr": "Attrape les pièces de plus loin que n'importe quel autre vaisseau, avec une hitbox un peu plus grande.",
+    "it": "Raggiunge le monete da più lontano di qualsiasi altra nave, con una hitbox leggermente più grande.",
+    "es": "Alcanza las monedas desde más lejos que cualquier otra nave, con una hitbox algo más grande.",
+    "pt": "Alcança moedas de mais longe que qualquer outra nave, com uma hitbox um pouco maior.",
+    "ja": "どの機体よりも遠くのコインに届くが、当たり判定は少し大きめ。"
+  },
+  "ships.crimson": {
+    "en": "Slips through gaps other ships can't fit through, trading away some shield capacity for it.",
+    "de": "Schlüpft durch Lücken, durch die kein anderes Schiff passt - dafür mit weniger Schildkapazität.",
+    "fr": "Se faufile dans des espaces qu'aucun autre vaisseau ne peut franchir, au prix d'un peu de capacité de bouclier.",
+    "it": "Si infila in spazi che nessun'altra nave riesce ad attraversare, a costo di un po' di capacità dello scudo.",
+    "es": "Se cuela por huecos que ninguna otra nave puede cruzar, a cambio de algo de capacidad de escudo.",
+    "pt": "Passa por brechas que nenhuma outra nave atravessa, ao custo de um pouco de capacidade de escudo.",
+    "ja": "他のどの機体も通れない隙間をすり抜けられるが、その分シールド容量は少ない。"
+  },
+  "ships.electric": {
+    "en": "Bends time harder and longer whenever a slow-time coin lands.",
+    "de": "Verlangsamt die Zeit stärker und länger, sobald eine Zeitlupe-Münze eingesammelt wird.",
+    "fr": "Ralentit le temps plus fort et plus longtemps à chaque pièce de ralenti ramassée.",
+    "it": "Rallenta il tempo più a lungo e più a fondo ogni volta che raccogli una moneta di rallentamento.",
+    "es": "Ralentiza el tiempo más y durante más tiempo cada vez que recoges una moneda de cámara lenta.",
+    "pt": "Deixa o tempo mais lento e por mais tempo a cada moeda de câmera lenta coletada.",
+    "ja": "スロータイムのコインを取るたび、時間をより強く、より長く引き伸ばす。"
+  },
+  "ships.toxic": {
+    "en": "Every gold coin buys more corridor room, though the bonus burns off faster too.",
+    "de": "Jede Gold-Münze bringt mehr Korridorbreite, aber der Bonus verfliegt auch schneller.",
+    "fr": "Chaque pièce d'or élargit davantage le couloir, mais le bonus s'estompe aussi plus vite.",
+    "it": "Ogni moneta d'oro allarga di più il corridoio, ma il bonus svanisce anche più in fretta.",
+    "es": "Cada moneda de oro ensancha más el pasillo, aunque el bono también se agota más rápido.",
+    "pt": "Cada moeda de ouro alarga mais o corredor, mas o bônus também some mais rápido.",
+    "ja": "金のコイン一枚あたりの通路拡張効果が大きいが、効果の減衰も速い。"
+  },
+  "ships.void": {
+    "en": "Carries more shield charge than any other ship, at the cost of some margin on close calls.",
+    "de": "Trägt mehr Schildladungen als jedes andere Schiff, dafür mit weniger Spielraum bei knappen Vorbeiflügen.",
+    "fr": "Porte plus de charges de bouclier que tout autre vaisseau, au prix d'un peu de marge sur les frôlés.",
+    "it": "Porta più cariche di scudo di qualsiasi altra nave, a costo di un po' di margine sugli sfioramenti.",
+    "es": "Lleva más carga de escudo que cualquier otra nave, a cambio de algo de margen en los roces.",
+    "pt": "Carrega mais cargas de escudo que qualquer outra nave, ao custo de um pouco de margem nas quase-colisões.",
+    "ja": "どの機体よりも多くシールドを蓄えられるが、ニアミスの猶予は少し狭い。"
+  },
+  "ships.nova": {
+    "en": "Pulls coins in from further away, with less ammo held in reserve.",
+    "de": "Zieht Münzen aus größerer Entfernung an, hat dafür weniger Munition in Reserve.",
+    "fr": "Attire les pièces de plus loin, avec moins de munitions en réserve.",
+    "it": "Attira le monete da più lontano, con meno munizioni di riserva.",
+    "es": "Atrae las monedas desde más lejos, con menos munición en reserva.",
+    "pt": "Atrai moedas de mais longe, com menos munição de reserva.",
+    "ja": "コインをより遠くから引き寄せるが、弾の残量は少なめ。"
+  },
+  "ships.tagSolaris": { "en": "Rare", "de": "Selten", "fr": "Rare", "it": "Rara", "es": "Rara", "pt": "Rara", "ja": "レア" },
+  "ships.solaris": {
+    "en": "The rarest ship in the roster - forgiving on close calls, built for players chasing the deepest runs.",
+    "de": "Das seltenste Schiff im Roster - verzeiht knappe Vorbeiflüge, gebaut für die tiefsten Läufe.",
+    "fr": "Le vaisseau le plus rare du roster - indulgent sur les frôlés, pensé pour les runs les plus profonds.",
+    "it": "La nave più rara del roster - indulgente sugli sfioramenti, pensata per chi punta alle run più profonde.",
+    "es": "La nave más rara del catálogo - indulgente con los roces, pensada para quienes buscan las runs más profundas.",
+    "pt": "A nave mais rara do time - tolerante com quase-colisões, feita para quem busca as runs mais profundas.",
+    "ja": "ロースター中もっとも希少な機体。ニアミスに寛容で、最深記録を狙うプレイヤー向け。"
+  },
+
   "s3.head": { "en": "Screenshots", "de": "Screenshots", "fr": "Captures d'écran", "it": "Screenshot", "es": "Capturas", "pt": "Capturas de tela", "ja": "スクリーンショット" },
   "alt1": {
     "en": "TUNL title screen - one cave, every player, every day",
