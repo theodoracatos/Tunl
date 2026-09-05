@@ -108,9 +108,9 @@ function makeCoin(wx) {
         // wRed now has a real floor at introduction and grows to the same ceiling
         // (21%) the old curve reached at max difficulty.
         const t     = Math.min((_prog - 0.38) / 0.62, 1); // 0 at score ~34, 1 at score ~233
-        const wBlue   = 0.17;
-        const wRed    = lerp(0.09, 0.21, t);
-        const wOrange = 0.14;
+        let wBlue   = 0.17;
+        let wRed    = lerp(0.09, 0.21, t);
+        let wOrange = 0.14;
         // Magnet unlocks at score 71 same as before. Its base share now grows with
         // _prog2 (3% -> 6% from score ~233 to ~900) instead of being pinned at a flat
         // 3% forever -- a long marathon run is exactly where a magnet is most
@@ -124,7 +124,23 @@ function makeCoin(wx) {
             const droughtBias = Math.min(1 + greenClock / GREEN_DROUGHT_SOFT_SEC, GREEN_DROUGHT_CAP);
             wGreen = greenBase * droughtBias;
         }
-        const wGold = Math.max(0, 1 - wBlue - wRed - wOrange - wGreen);
+        let wGold = Math.max(0, 1 - wBlue - wRed - wOrange - wGreen);
+        // Gold keeps thinning out the deeper a run goes, not just as a side effect of
+        // the other shares above growing: GOLD_DEEP_DECAY (constants.js) shaves an
+        // additional cut off gold's leftover share as t and _prog2 climb (score
+        // 34->233, then 233->900), phased half-and-half across both legs so the
+        // decline keeps going long after t maxes out at score 233. The shaved amount
+        // is redistributed proportionally across whichever other types are already
+        // active, so the weights still sum to 1 and green's score-71 gate is never
+        // bent open early by an unaccounted-for leftover.
+        const goldDecayT = t * 0.5 + _prog2 * 0.5;
+        const goldCut    = wGold * GOLD_DEEP_DECAY * goldDecayT;
+        wGold -= goldCut;
+        const otherSum = wBlue + wRed + wOrange + wGreen;
+        if (goldCut > 0 && otherSum > 0) {
+            const scale = 1 + goldCut / otherSum;
+            wBlue *= scale; wRed *= scale; wOrange *= scale; wGreen *= scale;
+        }
         const cumGold   = wGold;
         const cumBlue   = cumGold + wBlue;
         const cumRed    = cumBlue + wRed;
@@ -326,7 +342,20 @@ function updateBullets(dt) {
         const bsx = b.wx - scrollX;
         if (bsx > W * 1.8 + 20) { bullets.splice(i, 1); continue; }
         let hit = false;
-        for (const s of stalactites) {
+        // Corridor wall: bullets only ever check stalactites/mines/cannon shots
+        // below, never the tunnel silhouette itself, so a bullet flying near a
+        // curving wall would visibly clip straight into solid rock with no
+        // collision at all. boundsAt() (not boundsBase()) matches what the
+        // player's own wall collision and the rendered wall use, so a bullet
+        // dies exactly where it looks like it should.
+        const wallBnd = boundsAt(b.wx);
+        if (b.y - 3.5 < wallBnd.top || b.y + 3.5 > wallBnd.bot) {
+            burstStalCrack(bsx, b.y);
+            sfxStalCrack();
+            window.webkit?.messageHandlers?.haptic?.postMessage('light');
+            hit = true;
+        }
+        if (!hit) for (const s of stalactites) {
             if (s.dying) continue;
             if (stalHitBullet(s, bsx, b.y)) {
                 s.dying = true;
@@ -523,10 +552,13 @@ function updateCannonShots(dt) {
         const bsx = s.wx - scrollX;
         if (bsx < -100) { cannonShots.splice(i, 1); continue; }
         // Flew into a wall before reaching the player -- spark and remove rather than
-        // letting it visibly clip through solid rock.
+        // letting it visibly clip through solid rock. Same crack sfx as every other
+        // projectile-hits-something case (bullet vs. stalactite/wall, above) -- this
+        // one previously sparked silently, no sound at all.
         const sb = boundsAt(s.wx);
         if (s.y < sb.top - 4 || s.y > sb.bot + 4) {
             burstStalCrack(bsx, Math.max(sb.top, Math.min(sb.bot, s.y)));
+            sfxStalCrack();
             cannonShots.splice(i, 1);
         }
     }

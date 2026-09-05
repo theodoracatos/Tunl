@@ -26,7 +26,7 @@ function titleScreen() {
     stalactites = []; nextStalWx = 420;
     coins = [];     nextCoinWx = 99999;
     chicaneCoins = [];
-    gapBonus = 0; slowTime = 0; slowTimeMax = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
+    gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
     invulnT = 0; deathCause = null;
     continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;
     reviveCountdownT = 0;
@@ -77,7 +77,7 @@ function startPlay() {
     stalactites = []; nextStalWx = STAL_START_WX;
     coins = [];     nextCoinWx = 500;
     chicaneCoins = [];
-    gapBonus = 0; slowTime = 0; slowTimeMax = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
+    gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
     invulnT = 0; deathCause = null;
     continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;
     reviveCountdownT = 0;

@@ -91,9 +91,21 @@ const COIN_HIT_R      = W  * 0.032;   // collection radius (generous)
 // picked, so it has to reserve room for the largest possible coin, not the average.
 const COIN_SIZE_MULT     = { gold: 1.0, blue: 1.0, red: 1.15, orange: 1.15, green: 1.35, bomb: 1.35 };
 const COIN_SIZE_MAX_MULT = 1.35;
-const GAP_PER_COIN    = H  * 0.06;    // bonus halfGap added per coin
-const GAP_BONUS_MAX   = H  * 0.15;    // cap: max halfGap bonus
+const GAP_PER_COIN    = H  * 0.075;   // bonus halfGap added per coin
+const GAP_BONUS_MAX   = H  * 0.19;    // cap: max halfGap bonus
 const GAP_DECAY       = H  * 0.015;   // bonus lost per second
+// Extra cut taken off gold's coin-type share as a run gets deeper, on top of the
+// natural shrink from other types' shares growing (systems.js makeCoin) -- see the
+// goldDecayT doc there. 0.35 = up to 35% of gold's leftover share redistributed to
+// the other active types by score ~900 (_prog2 = 1).
+const GOLD_DEEP_DECAY = 0.35;
+// gapBonus (systems.js) jumps instantly on pickup so a coin's *effect* is never in
+// doubt; gapBonusVisual (the value collision/rendering actually use, world.js
+// boundsAt) chases it at this constant px/s rate instead of snapping, so the wall
+// visibly widens rather than teleporting. Same lag applies on the way down after
+// GAP_DECAY starts pulling the target back in, which is why smoothing this also
+// nudges the corridor's total "wide" window slightly longer, not just its onset.
+const GAP_EASE_RATE   = H  * 0.3;
 
 function lerp(a, b, t) { return a + (b - a) * Math.min(Math.max(t, 0), 1); }
 function lerpClr(a, b, t) {
@@ -308,7 +320,7 @@ const CONTINUE_OFFER_SEC = 3.0;
 // counting down once play resumes (not during this freeze, where nothing can hit
 // the player anyway since scrollX isn't advancing), so this freeze is free grace
 // time, not time subtracted from the invulnerability window after it.
-const REVIVE_COUNTDOWN_SEC = 1.0;
+const REVIVE_COUNTDOWN_SEC = 1.2;
 
 // ── Poison / bomb rarity ─────────────────────────────────────────────
 // Both are driven by a real-time clock (state.js poisonClock/bombClock, incremented

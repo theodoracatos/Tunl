@@ -4,6 +4,9 @@
 let _ac = null, _tNode = null, _tGain = null;
 let _fNode = null, _fGain = null;
 let _mNode = null, _mGain = null, _mOsc = null;
+// Last-fired bullet-fire voices, so a death mid-burst can cut them off instead of
+// letting the tail ring on into sfxDie (see sfxBulletFireStop below).
+let _bfVoices = [];
 let _bgmBuf = null, _bgmNode = null, _bgmGain = null;
 let _bgmLoading = false, _titleBgmLoading = false; // in-flight guards for the lazy loaders
 let _bgmActive = false, _bgmPending = false;
@@ -349,7 +352,10 @@ function sfxDie() {
     g2.gain.linearRampToValueAtTime(0.001, t + dur);
     src2.connect(flt2); flt2.connect(g2); g2.connect(_ac.destination);
     src2.start(t); src2.stop(t + dur + 0.05);
-    // Impact crash near the end - low thump + sharp crack
+    // Impact crash near the end - low thump only. Used to also layer a sharp
+    // highpass "crack" here, but that's the same short highpass-noise-burst
+    // technique the projectile-hit sounds use (see sfxStalCrack), so it read as
+    // the bullet-hit sound playing again at death - dropped on request.
     const tImpact = t + dur - 0.08;
     const crash = _ac.createBufferSource();
     crash.buffer = _noiseBuf(0.3);
@@ -362,15 +368,6 @@ function sfxDie() {
     crashGain.gain.exponentialRampToValueAtTime(0.001, tImpact + 0.26);
     crash.connect(crashFlt); crashFlt.connect(crashGain); crashGain.connect(_ac.destination);
     crash.start(tImpact); crash.stop(tImpact + 0.28);
-    const crack = _ac.createBufferSource();
-    crack.buffer = _noiseBuf(0.08);
-    const crackFlt = _ac.createBiquadFilter();
-    crackFlt.type = 'highpass'; crackFlt.frequency.value = 1800;
-    const crackGain = _ac.createGain();
-    crackGain.gain.setValueAtTime(0.20, tImpact);
-    crackGain.gain.exponentialRampToValueAtTime(0.001, tImpact + 0.07);
-    crack.connect(crackFlt); crackFlt.connect(crackGain); crackGain.connect(_ac.destination);
-    crack.start(tImpact); crack.stop(tImpact + 0.08);
 }
 
 function sfxSlow() {
@@ -489,20 +486,47 @@ function sfxBomb() {
     src.start(tBoom); src.stop(tBoom + 0.46);
 }
 
+// The cannon's own muzzle blast (not the impact when its shot lands - see
+// sfxStalCrack). Used to be a single bandpassed noise sweep with no low end, no
+// sharper than the player's own bullet fire despite being a heavier artillery
+// piece. Now three layers: a lower/wider bandpassed whoosh body, a lowpass
+// thump underneath for weight, and a bright crack on the attack for punch -
+// deliberately heavier than sfxBulletFire's crisp zap so the two guns still
+// read as different weapons even though their shots share a sprite.
 function sfxCannonFire() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
     const src = _ac.createBufferSource();
-    src.buffer = _noiseBuf(0.16);
+    src.buffer = _noiseBuf(0.18);
     const flt = _ac.createBiquadFilter();
-    flt.type = 'bandpass'; flt.Q.value = 1.4;
-    flt.frequency.setValueAtTime(900, t);
-    flt.frequency.exponentialRampToValueAtTime(220, t + 0.14);
+    flt.type = 'bandpass'; flt.Q.value = 1.1;
+    flt.frequency.setValueAtTime(1100, t);
+    flt.frequency.exponentialRampToValueAtTime(180, t + 0.16);
     const g = _ac.createGain();
-    g.gain.setValueAtTime(0.30, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+    g.gain.setValueAtTime(0.32, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
     src.connect(flt); flt.connect(g); g.connect(_ac.destination);
-    src.start(t); src.stop(t + 0.17);
+    src.start(t); src.stop(t + 0.19);
+    // Low thump for artillery weight the old single-layer version lacked.
+    const src2 = _ac.createBufferSource();
+    src2.buffer = _noiseBuf(0.14);
+    const flt2 = _ac.createBiquadFilter();
+    flt2.type = 'lowpass'; flt2.frequency.value = 200;
+    const g2 = _ac.createGain();
+    g2.gain.setValueAtTime(0.34, t);
+    g2.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    src2.connect(flt2); flt2.connect(g2); g2.connect(_ac.destination);
+    src2.start(t); src2.stop(t + 0.15);
+    // Muzzle crack: a hair of bright noise on the attack for punch.
+    const src3 = _ac.createBufferSource();
+    src3.buffer = _noiseBuf(0.02);
+    const flt3 = _ac.createBiquadFilter();
+    flt3.type = 'highpass'; flt3.frequency.value = 3000;
+    const g3 = _ac.createGain();
+    g3.gain.setValueAtTime(0.18, t);
+    g3.gain.exponentialRampToValueAtTime(0.001, t + 0.02);
+    src3.connect(flt3); flt3.connect(g3); g3.connect(_ac.destination);
+    src3.start(t); src3.stop(t + 0.02);
 }
 
 function sfxShieldBreak() {
@@ -687,50 +711,114 @@ function sfxBulletPickup() {
 function sfxBulletFire() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
-    // Body: sawtooth pitch-drop, higher start and louder than before so the
-    // player's own shot reads as a real laser, not a mouse squeak - this
-    // fires every 0.32s while ammo lasts, so it stays short to avoid mush.
+    const dur = 0.08;
+    // Body: triangle wave, not the old sawtooth - sawtooth's dense harmonics on
+    // a fast downward sweep read as a nasal "quack" rather than a clean zap.
+    // A lowpass sweeping down in lockstep with pitch shaves the remaining top
+    // end off as the note falls, keeping the tail smooth instead of buzzy.
+    // Fires every 0.32s while ammo lasts, so it stays short to avoid fatigue.
     const o = _ac.createOscillator(), g = _ac.createGain();
-    o.connect(g); g.connect(_ac.destination);
-    o.type = 'sawtooth';
-    o.frequency.setValueAtTime(900, t);
-    o.frequency.exponentialRampToValueAtTime(150, t + 0.09);
-    g.gain.setValueAtTime(0.14, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.10);
-    o.start(t); o.stop(t + 0.11);
-    // Sub layer: a square wave an octave-plus down for weight under the zap.
+    const flt = _ac.createBiquadFilter();
+    o.connect(flt); flt.connect(g); g.connect(_ac.destination);
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(1400, t);
+    o.frequency.exponentialRampToValueAtTime(300, t + dur);
+    flt.type = 'lowpass';
+    flt.frequency.setValueAtTime(6000, t);
+    flt.frequency.exponentialRampToValueAtTime(700, t + dur);
+    g.gain.setValueAtTime(0.16, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.start(t); o.stop(t + dur + 0.02);
+    _bfVoices = [{ node: o, gain: g }];
+    // Sub layer: square wave locked exactly one octave below the body at every
+    // instant (same start/end ratio and duration keeps an exponential ramp's
+    // ratio constant throughout), so the two layers never drift apart the way
+    // two independently-swept pitches can - that drift was part of the old
+    // version's "off" quality.
     const o2 = _ac.createOscillator(), g2 = _ac.createGain();
     o2.connect(g2); g2.connect(_ac.destination);
     o2.type = 'square';
-    o2.frequency.setValueAtTime(280, t);
-    o2.frequency.exponentialRampToValueAtTime(75, t + 0.07);
-    g2.gain.setValueAtTime(0.06, t);
-    g2.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
-    o2.start(t); o2.stop(t + 0.09);
-    // Muzzle crack: a hair of filtered noise on the attack for punch.
+    o2.frequency.setValueAtTime(700, t);
+    o2.frequency.exponentialRampToValueAtTime(150, t + dur);
+    g2.gain.setValueAtTime(0.05, t);
+    g2.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.9);
+    o2.start(t); o2.stop(t + dur);
+    _bfVoices.push({ node: o2, gain: g2 });
+    // Muzzle crack: brief bandpassed noise on the attack for punch - tighter and
+    // quieter than a raw open highpass hiss so it adds punch without extra harshness.
     const src = _ac.createBufferSource();
-    src.buffer = _noiseBuf(0.02);
-    const flt = _ac.createBiquadFilter();
-    flt.type = 'highpass'; flt.frequency.value = 3500;
+    src.buffer = _noiseBuf(0.015);
+    const cFlt = _ac.createBiquadFilter();
+    cFlt.type = 'bandpass'; cFlt.Q.value = 1.2; cFlt.frequency.value = 5000;
     const g3 = _ac.createGain();
-    g3.gain.setValueAtTime(0.10, t);
-    g3.gain.exponentialRampToValueAtTime(0.001, t + 0.02);
-    src.connect(flt); flt.connect(g3); g3.connect(_ac.destination);
-    src.start(t); src.stop(t + 0.02);
+    g3.gain.setValueAtTime(0.09, t);
+    g3.gain.exponentialRampToValueAtTime(0.001, t + 0.015);
+    src.connect(cFlt); cFlt.connect(g3); g3.connect(_ac.destination);
+    src.start(t); src.stop(t + 0.015);
+    _bfVoices.push({ node: src, gain: g3 });
 }
 
+// Cuts off whatever the most recent sfxBulletFire() is still ringing out, called
+// the instant a real death commits (update.js's die(), not the shield-absorb
+// branch). The fire loop's 0.32s spacing is longer than any single shot's ~0.1s
+// tail, so at most one shot is ever still playing - but a death that lands within
+// that tail would otherwise let the zap bleed audibly into sfxDie's onset, reading
+// as if the bullet sound played "at death". Same cancel/hold/ramp-then-stop shape
+// as thrustOff/onFireLoopOff, just for one-shot voices instead of a loop.
+function sfxBulletFireStop() {
+    if (!_ac || _bfVoices.length === 0) return;
+    const t = _ac.currentTime;
+    for (const { node, gain } of _bfVoices) {
+        try {
+            gain.gain.cancelScheduledValues(t);
+            gain.gain.setValueAtTime(gain.gain.value, t);
+            gain.gain.linearRampToValueAtTime(0.0001, t + 0.02);
+            node.stop(t + 0.03);
+        } catch (e) { /* already stopped */ }
+    }
+    _bfVoices = [];
+}
+
+// Plays whenever a projectile (player bullet or cannon shot) hits something -
+// a stalactite, the corridor wall, or the other side's shot. Used to be a
+// single raw highpass-noise burst, which read thin/flat next to the game's
+// other layered impact sfx (compare sfxMineExplode's boom+crack). Now three
+// short layers: a bandpassed "snap" body, a brief high-frequency tick on the
+// attack, and a touch of low thump for weight.
 function sfxStalCrack() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
     const src = _ac.createBufferSource();
-    src.buffer = _noiseBuf(0.22);
+    src.buffer = _noiseBuf(0.16);
     const flt = _ac.createBiquadFilter();
-    flt.type = 'highpass'; flt.frequency.value = 1400;
+    flt.type = 'bandpass'; flt.Q.value = 1.1;
+    flt.frequency.setValueAtTime(2600, t);
+    flt.frequency.exponentialRampToValueAtTime(1200, t + 0.14);
     const g = _ac.createGain();
-    g.gain.setValueAtTime(0.38, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.20);
+    g.gain.setValueAtTime(0.34, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
     src.connect(flt); flt.connect(g); g.connect(_ac.destination);
-    src.start(t); src.stop(t + 0.22);
+    src.start(t); src.stop(t + 0.16);
+    // Transient tick on the attack for a sharp onset - same role as the muzzle
+    // crack in sfxBulletFire.
+    const src2 = _ac.createBufferSource();
+    src2.buffer = _noiseBuf(0.015);
+    const flt2 = _ac.createBiquadFilter();
+    flt2.type = 'highpass'; flt2.frequency.value = 4500;
+    const g2 = _ac.createGain();
+    g2.gain.setValueAtTime(0.22, t);
+    g2.gain.exponentialRampToValueAtTime(0.001, t + 0.015);
+    src2.connect(flt2); flt2.connect(g2); g2.connect(_ac.destination);
+    src2.start(t); src2.stop(t + 0.015);
+    // Low thump underneath so the hit reads with a bit of weight, not pure static.
+    const o = _ac.createOscillator(), g3 = _ac.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(180, t);
+    o.frequency.exponentialRampToValueAtTime(70, t + 0.08);
+    g3.gain.setValueAtTime(0.10, t);
+    g3.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+    o.connect(g3); g3.connect(_ac.destination);
+    o.start(t); o.stop(t + 0.09);
 }
 
 function thrustOn() {

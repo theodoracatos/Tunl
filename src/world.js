@@ -192,7 +192,7 @@ function halfGapAt(wx) {
 // collision benefit from collected coins.
 function boundsAt(wx) {
     const cy = centerAt(wx);
-    const hg = _halfGap + gapBonus;
+    const hg = _halfGap + gapBonusVisual;
     return { top: cy - hg, bot: cy + hg };
 }
 

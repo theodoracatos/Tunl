@@ -419,7 +419,7 @@ function drawWorld() {
     drawBullets();
 
     // Wall edge glow - shifts from theme base -> cyan when bonus is active
-    const bonusT  = Math.min(gapBonus / GAP_BONUS_MAX, 1);
+    const bonusT  = Math.min(gapBonusVisual / GAP_BONUS_MAX, 1);
     const wb      = theme.wallBase;
     const edgeR   = Math.round(lerp(wb[0],  40, bonusT));
     const edgeG   = Math.round(lerp(wb[1], 210, bonusT));
@@ -1030,7 +1030,7 @@ function drawWorld() {
     if (phase === 'play') {
         const b       = boundsAt(scrollX + PX);
         const minDist = Math.min(py - PR - b.top, b.bot - (py + PR));
-        const safe    = (_halfGap + gapBonus) * 0.35;
+        const safe    = (_halfGap + gapBonusVisual) * 0.35;
         const danger  = Math.max(0, 1 - minDist / safe);
         if (danger > 0) {
             ctx.fillStyle = `rgba(255,20,20,${danger*0.22})`;
@@ -1547,8 +1547,8 @@ function drawHUD() {
     }
 
     // Gap bonus bar (bottom, gold)
-    if (phase === 'play' && gapBonus > 0) {
-        const ratio = gapBonus / GAP_BONUS_MAX;
+    if (phase === 'play' && gapBonusVisual > 0) {
+        const ratio = gapBonusVisual / GAP_BONUS_MAX;
         const barW  = W * 0.55 * ratio;
         const barY  = H * 0.955;
         const barH  = 4;

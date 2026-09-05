@@ -183,6 +183,11 @@ function update(dt) {
     // has to keep collecting to hold the wider corridor, not just bank it once. Mastery
     // eases the decay rate back down (never fully to baseline -- see masteryLerp doc).
     gapBonus   = Math.max(0, gapBonus   - GAP_DECAY * (activeSkin === 4 ? masteryLerp(4, 1.6, 1.2) : 1.0) * dt);
+    // gapBonusVisual chases the instant-jump gapBonus target at a constant rate
+    // instead of snapping to it (constants.js GAP_EASE_RATE doc) - this is the
+    // value collision/rendering actually use, so the wall visibly widens rather
+    // than teleporting.
+    gapBonusVisual += Math.max(-GAP_EASE_RATE * dt, Math.min(GAP_EASE_RATE * dt, gapBonus - gapBonusVisual));
     const _slowWas = slowTime > 0, _magWas = magnetTime > 0;
     slowTime   = Math.max(0, slowTime   - dt);
     magnetTime = Math.max(0, magnetTime - dt);
@@ -568,6 +573,7 @@ function die(bypassShield = false) {
     thrustOff();
     onFireLoopOff();
     magnetLoopOff();
+    sfxBulletFireStop();
     bgmSetSlow(false);
     phase = 'dead'; deadT = 0; flashA = 1.0; shake = 14; holding = false;
     _shareCopiedT = 0;

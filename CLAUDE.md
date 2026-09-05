@@ -93,11 +93,19 @@ in flight the same way they destroy a mine.
 ### Coin system
 Coins collect into `gapBonus` (extra halfGap px, capped, decays over time):
 ```javascript
-const GAP_PER_COIN  = H * 0.06;    // +26px halfGap per coin at H=440
-const GAP_BONUS_MAX = H * 0.15;    // cap: max ~66px halfGap bonus at H=440
-const GAP_DECAY     = H * 0.015;   // ~4s per coin at constant decay rate
+const GAP_PER_COIN  = H * 0.075;   // +33px halfGap per coin at H=440
+const GAP_BONUS_MAX = H * 0.19;    // cap: max ~84px halfGap bonus at H=440
+const GAP_DECAY     = H * 0.015;   // bonus lost per second (~5s per coin's worth)
 ```
-Wall glow shifts purple → cyan when bonus is active. Gold bar at bottom shows remaining bonus.
+`gapBonus` itself still jumps instantly on pickup (systems.js), but collision and
+rendering never read it directly - they read `gapBonusVisual` (update.js), which
+chases `gapBonus` at a constant `GAP_EASE_RATE` px/s instead of snapping to it. That's
+what makes the wall visibly widen rather than teleport, and because the same lag
+applies on the way down once `GAP_DECAY` starts pulling the target back in, smoothing
+this also nudges the corridor's total "wide" window a little longer, not just its
+onset. Wall glow shifts purple → cyan when bonus is active. Gold bar at bottom shows
+remaining bonus - both keyed off `gapBonusVisual` too, so what's shown always matches
+what's actually collided against.
 
 ### Difficulty scaling functions
 
@@ -119,8 +127,8 @@ chicaneProb    // 0.24 → 0.42 once _prog > 0.40 (hard cap 0.62)
 ```
 
 At score 233 (`_prog` = 1) the full corridor is `2 * H * 0.163`. With `gapBonus` maxed
-(`GAP_BONUS_MAX` = `H * 0.15` of extra halfGap, i.e. `H * 0.30` of extra full width) a
-maxed bonus nearly doubles the corridor - coins are essential at high difficulty.
+(`GAP_BONUS_MAX` = `H * 0.19` of extra halfGap, i.e. `H * 0.38` of extra full width) a
+maxed bonus more than doubles the corridor - coins are essential at high difficulty.
 
 ### Coin type progression
 
@@ -131,6 +139,15 @@ Coins are staged by `_prog` so power-ups introduce gradually:
 - score 71+ (_prog >= 0.55): + green (magnet, pulls coins)
 
 Mines (bombs) first spawn at wx=1800 (score ~30); shield coins unlock at score ~34 so the player faces mines briefly without protection - intentional.
+
+Gold's share isn't just "whatever's left after the other types' shares" - it also
+gets an explicit extra cut as a run goes deeper (`GOLD_DEEP_DECAY` in
+`src/constants.js`, applied in `makeCoin`, `src/systems.js`), phased half over the
+score 34→233 ramp (`t`) and half over the score 233→900 marathon (`_prog2`), so gold
+keeps thinning out long after `t` maxes at score 233 instead of holding flat. The
+shaved-off share is redistributed proportionally across whichever other types are
+already active - never a flat leftover-to-green fallback, which would otherwise bend
+green's score-71 gate open early.
 
 **Coin/power-up audio** (`audio.js`): the pickup sounds carry a loudness hierarchy -
 gold and blue (slow) sit at their base level; red (shield), green (magnet) and bomb are
@@ -390,7 +407,7 @@ the forced interstitial, not a video the player actively taps):
 
 ## Key design decisions (do not revert)
 
-- **Coin bonus is a real difficulty lever, not a marginal aid**: `GAP_PER_COIN` = H*0.06, `GAP_BONUS_MAX` = H*0.15 (see Coin system above) - at max difficulty (196px full corridor at H=600) one coin adds ~37% to the halfGap, a maxed bonus nearly doubles it. Coins are essential at high difficulty by design, not a small nudge - don't shrink these constants back down to make the bonus merely "helpful."
+- **Coin bonus is a real difficulty lever, not a marginal aid**: `GAP_PER_COIN` = H*0.075, `GAP_BONUS_MAX` = H*0.19 (see Coin system above) - at max difficulty (196px full corridor at H=600) one coin adds ~46% to the halfGap, a maxed bonus more than doubles it. Coins are essential at high difficulty by design, not a small nudge - don't shrink these constants back down to make the bonus merely "helpful."
 - **boundsBase for coin placement**: Coins placed ignoring current bonus so they're always reachable even without a bonus. Never use `boundsAt()` for coin placement.
 - **Triangle-circle collision**: Stalactites use proper geometric collision matching the visual triangle, not AABB. Changing to AABB would make invisible collisions at the edges.
 - **No em dashes (-)** anywhere in code, comments, or UI text. Use hyphen-minus (-) instead.

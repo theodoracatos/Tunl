@@ -272,7 +272,7 @@ let parts, thrustParts, deadT, titleT, flashA, shake, trailY;
 let stalactites, nextStalWx;
 let coins, nextCoinWx;
 let chicaneCoins;
-let gapBonus;
+let gapBonus, gapBonusVisual;
 let slowTime, slowTimeMax, shieldCount, shieldFlash, magnetTime;
 // Grace/invulnerability window after an absorbed hit (constants.js HIT_INVULN_SEC doc).
 let invulnT;
