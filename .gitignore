@@ -35,3 +35,6 @@ flytunl-site/site/ja/
 
 # Cloudflare Worker local state (flytunl-site/worker)
 .wrangler/
+
+# Claude Code scratch (working files, never a deliverable)
+.claude-scratch/

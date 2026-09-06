@@ -223,6 +223,7 @@ function update(dt) {
         sfxOnFire();
         onFireLoopOn();
         window.webkit?.messageHandlers?.haptic?.postMessage('light');
+        window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: 'tunl_ach_on_fire' });
     }
 
     // New all-time record: fires once, the frame live score first overtakes the true
@@ -244,6 +245,7 @@ function update(dt) {
         pushNotif(PX + PR * 3, py - H * 0.12, 1.4, T.pbPassed, [255, 210, 50]);
         sfxPbPassed();
         window.webkit?.messageHandlers?.haptic?.postMessage('light');
+        window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: 'tunl_ach_new_legend' });
     }
 
     // Poison/bomb clocks: real elapsed play time, not tied to coin density/rejection
@@ -288,6 +290,7 @@ function update(dt) {
                     pushNotif(PX + PR * 3, py - H * 0.07, 1.4, T.ghostPassed, [150, 200, 255]);
                     sfxCombo(4);
                     window.webkit?.messageHandlers?.haptic?.postMessage('light');
+                    window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: 'tunl_ach_ghost_hunter' });
                 }
             }
         }
@@ -633,6 +636,7 @@ function commitDeath() {
     // literally the player's first completed run" (best still 0 going in), which
     // must never trigger a rating prompt.
     const _hadPriorBest = best > 0;
+    if (!_hadPriorBest) window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: 'tunl_ach_first_flight' });
     if (newBest) { best = score; localStorage.setItem('tunnel_best', best); }
     if (newBest) maybeRequestReview(score, _hadPriorBest);
     // Referral reward (constants.js REFERRAL_REWARD doc block): the inverse of
@@ -722,12 +726,28 @@ function commitDeath() {
         break;
     }
     localStorage.setItem('tunnel_shards', shards);
-    if (skinUnlockIdx >= 0) localStorage.setItem('tunnel_skins', unlockedSkins);
+    if (skinUnlockIdx >= 0) {
+        localStorage.setItem('tunnel_skins', unlockedSkins);
+        window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: SHIP_ACHIEVEMENTS[skinUnlockIdx] });
+    }
     // Ship mastery: did flying this run's ship cross a new XP threshold (constants.js
     // MASTERY_XP_THRESHOLDS)? Compared against the level snapshotted at startPlay() since
     // skinXP[activeSkin] was already incremented live during play (systems.js).
     skinMasteryUpIdx = masteryLevel(activeSkin) > runStartMasteryLevel ? activeSkin : -1;
     localStorage.setItem('tunnel_skin_xp', JSON.stringify(skinXP));
+    // Achievements: "Ace Pilot" fires the run a ship first reaches max mastery; "Master
+    // of the Fleet" fires the run that maxing THIS ship happens to complete the set
+    // across every ship currently owned (checked here rather than only at unlock time,
+    // since owning all 8 and mastering the last one can happen in either order).
+    if (skinMasteryUpIdx >= 0 && masteryLevel(skinMasteryUpIdx) === MASTERY_XP_THRESHOLDS.length - 1) {
+        window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: 'tunl_ach_ace_pilot' });
+        let _allMastered = true;
+        for (let i = 0; i < SKINS.length; i++) {
+            if (!(unlockedSkins & (1 << i))) continue;
+            if (masteryLevel(i) < MASTERY_XP_THRESHOLDS.length - 1) { _allMastered = false; break; }
+        }
+        if (_allMastered) window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: 'tunl_ach_master_fleet' });
+    }
     // Daily missions: fold this run's stats into today's cumulative totals, then check
     // today's 3 active missions (constants.js MISSION_DEFS via state.js dailyMissionIdx)
     // for newly-met targets. Rewards are granted once per mission per day.

@@ -39,22 +39,68 @@ map. Open `tunl.html` in a browser to play.
 One JS class-free script, state machine with three phases: `'title'` | `'play'` | `'dead'`
 
 ### Canvas size
-`W = window.innerWidth` (uncapped), `H = Math.min(window.innerHeight, 600)` - H is capped at 600 for consistent difficulty; W fills the screen so landscape layouts use the full width.
+`W = Math.min(window.innerWidth, 956)`, `H = Math.min(window.innerHeight, 600)` - **W is capped at 956 (iPhone 17 Pro Max landscape width) on every platform** for leaderboard fairness (see "Cross-device fairness" below); H is capped at 600 for consistent difficulty (520 on Android-app, 440 on web). A device wider than 956 letterboxes left/right. H also drives `_FEEL_SCALE` - see "Screen-independent feel" under Physics constants.
 
 ### Physics constants
 ```javascript
-const GRAVITY = 1150;  // px/s² downward
-const THRUST  = 2400;  // px/s² upward when holding (net: 1250 up)
-const MAX_VY  = 820;   // terminal velocity cap
+// values below are quoted at _H_REF (440pt); every device multiplies by _FEEL_SCALE = H/_H_REF
+const GRAVITY = 1300;  // px/s² downward
+const THRUST  = 3400;  // px/s² upward when holding (net: 2100 up)
+const MAX_VY  = 1080;  // terminal velocity cap
 ```
-Net upward force (1250) is slightly stronger than net downward (1150) - climbing is a
-touch more responsive than falling, deliberately. Do NOT change this ratio, it's the
-core feel of the game.
+VERY high-energy ship, tuned up hard across several requested passes (GRAVITY 1150 ->
+1300, THRUST 2400 -> 3400, MAX_VY 820 -> 1080) chasing a "Flappy Bird snappy" feel. The
+input model is UNCHANGED - still hold-to-thrust (an acceleration ramp), not Flappy's
+instant velocity impulse - but net-up (2100) is now so far above net-down (1300) that
+holding snaps the ship to the climb cap in ~0.5s, reading as an almost-instant pop.
+If this needs walking back: original feel is GRAVITY 1150 / THRUST 2400 / MAX_VY 820;
+a middle ground is THRUST ~2700.
+
+**Screen-independent feel (do not revert - explicit rule).** GRAVITY/THRUST/MAX_VY are
+quoted at `_H_REF` = 440pt (iPhone 17 Pro Max landscape height, the size the feel was
+tuned and player-tested at) and **every device** - apps and web alike - scales all three
+by `_FEEL_SCALE = H / _H_REF`. Because the corridor half-gap also scales with H, this
+makes every trajectory geometrically similar to the reference - same fraction of the
+corridor covered per second, same time-to-cross, identical felt snappiness on a 375pt
+iPhone 12 mini, a 440pt 17 Pro Max, and a 520pt Android tablet. A bigger screen genuinely
+gets steeper px/s² and a smaller one gentler, by design. Any new code that reasons about
+vertical motion must stay ratio-based (fraction of MAX_VY, fraction of H) and never
+compare `vy` against a hardcoded px/s literal - scale the literal by `_FEEL_SCALE` if
+you need one (see the speed-line `vyFloor` in draw.js).
+
+The web build clamps W/H to 956x440 - the iPhone 17 Pro Max's own landscape footprint -
+so `_FEEL_SCALE` lands at ~1.0 and **web plays as a pixel-and-physics copy of the 17 Pro
+Max**. There is no separate web feel tuning any more; the old `_WEB_FEEL` 1.3 multiplier
+was deleted (it only ever existed to fight the floatiness of web's earlier 520 clamp).
+
+### Cross-device fairness (do not revert without re-auditing)
+
+The daily seed makes the cave pixel-identical in world-x for every player on Earth, and
+`score = floor(scrollX / 60) + bonusScore` is pure world-distance, so the leaderboard is
+only fair if flying a given stretch of world-x is equally hard on every screen. Two
+independent axes:
+
+- **Vertical** (gravity/thrust/fall vs corridor): normalized by `_FEEL_SCALE` - see
+  "Screen-independent feel". Fair by construction; `test-math.js` guards it.
+- **Horizontal** (how fast the cave scrolls past): `scrollSpd()` multiplies by `W/600`,
+  and obstacle spacing is fixed in world-x, so reaction time per obstacle at a given
+  score is `∝ 1/W`. This is why **W is capped at 956** (`constants.js`) - without it an
+  Android tablet (W ~1280) faced the shared cave ~1.75x faster than a small phone at the
+  same score. The cap is a no-op on iOS (`TARGETED_DEVICE_FAMILY = 1`, no iPhone exceeds
+  ~956) and clamps large Android devices. Residual: small phones (SE, minis) still get
+  slightly *more* reaction time - erring generous for small screens, which is the
+  acceptable direction.
+- Lookahead *time* (`W*0.78 / scrollSpd`) is W-independent - every device gets the same
+  seconds of visual warning. Good.
+- Known residual, not yet addressed: `PR = W*0.018` (hitbox) vs corridor `∝ H`, so
+  hitbox/corridor tracks aspect ratio - iPhones are all ~2.17 so it's negligible on iOS;
+  a squarer Android tablet with H capped at 520 is ~20% more forgiving. Fixing it means
+  keying `PR` off H instead of W, which is a feel change needing its own playtest.
 
 ### Player
 ```javascript
-const PX = W * 0.22;   // fixed horizontal position on screen
-const PR = W * 0.018;  // radius (≈10.8px at W=600)
+const PX = W * 0.22;   // fixed horizontal position on screen (W capped at 956)
+const PR = W * 0.018;  // radius (≈10.8px at W=600, ≈17.2px at the W=956 cap)
 ```
 
 ### Procedural tunnel
@@ -117,7 +163,7 @@ All of these are then multiplied by the day's `DAY_ARCHETYPES` entry (`world.js`
 given day runs a bit denser or sparser than the base curve.
 
 ```javascript
-scrollSpd()    // 230 → 400 → 560 px/s at W=600, scaled by W/600, then an uncapped sqrt tail
+scrollSpd()    // 230 → 400 → 560 px/s at W=600, scaled by W/600 (W capped at 956), then an uncapped sqrt tail
 stalSpacing()  // 260 → 145 → 70 px between stalactites (floor 50)
 stalLenFrac()  // 0.46 → 0.64 → 0.76 fraction of halfGap (hard cap 0.80)
 coinSpacing()  // 600 → 320 → 230 px between coins (floor 175)

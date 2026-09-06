@@ -66,6 +66,9 @@ function scrollSpd() {
     // creeping up forever (sqrt eased, like _prog's ramp) instead of the other
     // difficulty knobs, which stay capped so the corridor stays navigable.
     const beyond = Math.max(_prog2 - 1, 0);
+    // * W/600 keeps the on-screen pixel speed consistent across widths. W is capped at
+    // 956 (constants.js) so this can't hand a wide-screen player a faster/harder cave
+    // than a phone at the same score - see the fairness audit note in CLAUDE.md.
     return (base + Math.sqrt(beyond) * 90) * W / 600;
 }
 
@@ -164,8 +167,8 @@ function dailyWorldName() {
 
 const WORLD_NAME = dailyWorldName();
 
-// Level number shown in the run-start banner: day-of-year (1-366, UTC, resets
-// each Jan 1) so it reads like a level index without needing separate storage.
+// World number shown in the run-start banner: day-of-year (1-366, UTC, resets
+// each Jan 1) so it reads like a world index without needing separate storage.
 function dailyLevelNum() {
     const now   = _tunlActiveDate();
     const start = Date.UTC(now.getUTCFullYear(), 0, 1);

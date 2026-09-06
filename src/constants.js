@@ -3,29 +3,35 @@ const cv  = document.getElementById('c');
 const ctx = cv.getContext('2d');
 
 // Every feel constant is tuned against a phone in landscape (~956x440pt on an
-// iPhone 17 Pro Max). GRAVITY/THRUST/MAX_VY are absolute px/s and px/s^2, and
-// scrollSpd() scales by W/600 -- so on a maximised desktop window (W ~1900,
-// H 600) the ship crosses a 50% bigger playfield at the same accel while the
-// tunnel scrolls 3x faster, which reads as floaty AND outpaced ("träge"). For
-// the web build only, clamp W and H to that phone footprint so the whole game
-// plays at exactly the proportions it was tuned for; the canvas then centres in
-// the window (CSS letterbox). isWeb() is false in both apps (bridge bound before
-// the first script), so the apps keep the raw window size untouched.
+// iPhone 17 Pro Max). GRAVITY/THRUST/MAX_VY are px/s and px/s^2 at that reference
+// height and then scaled by H/_H_REF on every device (see the "screen-independent
+// feel" rule in CLAUDE.md and the _FEEL_SCALE block below), so a shorter or taller
+// screen gets proportionally gentler or steeper px/s^2 and the ship crosses the same
+// fraction of the corridor per second everywhere - the felt snappiness is identical
+// on an iPhone 12 mini, an iPhone 17 Pro Max and an Android tablet. The web build
+// clamps W and H to the iPhone 17 Pro Max's own landscape footprint (956x440) so it
+// plays as a pixel-for-pixel copy of that device; the apps keep their raw height (with
+// caps below) but share the 956 width cap. isWeb() is false in both apps (bridge bound
+// before the first script).
 const _WEB = (typeof isWeb === 'function' && isWeb());
-// Android has no TARGETED_DEVICE_FAMILY-style phone-only restriction (unlike
-// iOS, see Info.plist) and Play Store doesn't exclude tablets, so a large
-// Android tablet in landscape can push innerHeight well past the general
-// 600 cap below. GRAVITY/THRUST/MAX_VY are absolute px/s(^2), tuned against a
-// phone (~440pt landscape height, see the comment above them) and don't scale
-// with H at all, so the closer H sits to that tuning target the snappier the
-// ship feels; capping only at 600 still leaves a tablet's ship reading as
-// floaty relative to a phone's. Reuses the web build's already-tuned 520
-// ceiling (W stays uncapped here, deliberately unlike web - see CLAUDE.md
-// "W fills the screen" - this only tightens the vertical physics-feel gap,
-// it doesn't attempt full web-style letterbox parity).
+// W is capped at 956 (iPhone 17 Pro Max landscape width) on EVERY platform, for
+// leaderboard fairness. scrollSpd() scales by W/600, and obstacle spacing is fixed in
+// world-x, so on an uncapped wide screen (Android tablet, oversized phone) the shared
+// daily cave scrolls past faster and every obstacle's reaction window at a given score
+// shrinks by ~W/956 - a real, skill-independent handicap on a global leaderboard. No
+// current iPhone exceeds ~956 so this is a no-op on iOS today; it clamps large Android
+// devices to the 17-Pro-Max profile. A screen wider than 956 letterboxes left/right
+// (body flex-centres the canvas over #04040a; input.js already maps through the
+// getBoundingClientRect offset). See the fairness audit note in CLAUDE.md.
+//
+// H: Android's Play Store allows tablets (no TARGETED_DEVICE_FAMILY=1 phone lock, see
+// Info.plist / pbxproj) so its innerHeight can run well past a phone's; the 520 cap
+// keeps a tablet's corridor from being a physically much wider (easier) tunnel than the
+// phone it was balanced against. The _FEEL_SCALE block already normalizes the *feel*
+// across heights - this cap is about corridor size / difficulty, not feel.
 const _ANDROID_APP = (typeof isAndroidApp === 'function' && isAndroidApp());
-const W  = _WEB ? Math.min(window.innerWidth, 940)  : window.innerWidth;
-const H  = _WEB ? Math.min(window.innerHeight, 520)
+const W  = Math.min(window.innerWidth, 956);
+const H  = _WEB ? Math.min(window.innerHeight, 440)
          : _ANDROID_APP ? Math.min(window.innerHeight, 520)
          : Math.min(window.innerHeight, 600);
 // UI_H/FS drive text AND UI element sizing (ship icons, spacing) -- deliberately NOT the
@@ -60,15 +66,31 @@ let SAFE_L = 0, SAFE_R = 0;
 
 const PX      = W  * 0.22;
 const PR      = W  * 0.018;
-// GRAVITY/THRUST/MAX_VY are absolute px/s and px/s^2, tuned for a phone. On desktop
-// web a player still read the ship as "floating too much" after the W/H clamp, so
-// the vertical dynamics get a modest web-only boost. Both terms scale by the SAME
-// factor, so the net-up:net-down ratio (1250:1150) CLAUDE.md guards is preserved
-// exactly. isWeb() is false in the apps, which keep the raw values.
-const _WEB_FEEL = _WEB ? 1.3 : 1;
-const GRAVITY = 1150 * _WEB_FEEL;
-const THRUST  = 2400 * _WEB_FEEL;
-const MAX_VY  = 820  * _WEB_FEEL;
+// SCREEN-INDEPENDENT FEEL (CLAUDE.md rule). GRAVITY/THRUST/MAX_VY are quoted at
+// _H_REF - the landscape height the feel was tuned and player-tested at, an iPhone 17
+// Pro Max (~956x440pt) - and EVERY device (apps and web alike) scales them by
+// H/_H_REF. Because the corridor half-gap also scales with H, this keeps every
+// trajectory geometrically similar to the reference: same fraction of the corridor
+// covered per second, same time-to-cross, identical felt snappiness on a 375pt iPhone
+// 12 mini, a 440pt 17 Pro Max, a 520pt Android tablet, and the web build (which clamps
+// H to 440, so _FEEL_SCALE lands at ~1.0 and web == the 17 Pro Max exactly). A bigger
+// screen literally gets steeper px/s^2 and a smaller one gentler, by construction.
+// There is no separate web feel multiplier any more - the old _WEB_FEEL 1.3 boost
+// existed only to fight the floatiness of web's old taller-than-a-phone 520 clamp, and
+// dropping that clamp to 440 removes the reason for it. Anything that reasons about
+// absolute px/s^2 (draw.js speed-lines already divide by MAX_VY, so it's fine) must
+// stay ratio-based, not compare against a hardcoded velocity.
+const _H_REF      = 440;
+const _FEEL_SCALE = H / _H_REF;
+// Vertical dynamics were pushed hard on request across several passes (all values below
+// are at _H_REF): GRAVITY 1150 -> 1300, THRUST 2400 -> 3400, MAX_VY 820 -> 1080, chasing
+// a "Flappy Bird snappy" hold response. The hold model is unchanged (an acceleration
+// ramp, not Flappy's instant velocity impulse) but net-up (2100) vs net-down (1300)
+// means holding snaps the ship to the climb cap in ~0.5s, reading as an almost-instant
+// pop. VERY high-energy, miles from the original 1250:1150 / 820.
+const GRAVITY = 1300 * _FEEL_SCALE;
+const THRUST  = 3400 * _FEEL_SCALE;
+const MAX_VY  = 1080 * _FEEL_SCALE;
 const RSTEP   = 3;
 
 const DEV_INVINCIBLE = false; // set true to disable all deaths (testing only)
@@ -577,3 +599,8 @@ const SKINS = [
     { color: '#ffffff', shadow: [255,255,255],  name: 'NOVA',    cost: 32000, stardustGate: 110              },
     { color: '#ff6600', shadow: [255,100,0],    name: 'SOLARIS', cost: 50000, stardustGate: 180              },
 ];
+
+// Game Center / Play Games achievement IDs, index-aligned with SKINS above. PEARL (index
+// 0) is the free starter ship and has no unlock achievement, hence the leading ''.
+const SHIP_ACHIEVEMENTS = ['', 'tunl_ach_ship_amber', 'tunl_ach_ship_crimson', 'tunl_ach_ship_electric',
+                            'tunl_ach_ship_toxic', 'tunl_ach_ship_void', 'tunl_ach_ship_nova', 'tunl_ach_ship_solaris'];

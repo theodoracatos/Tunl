@@ -4,13 +4,9 @@ Prepares a new TUNL version for submission to the App Store and Google Play, and
 whether the marketing site needs updating to match. This recurs every version bump -- run
 it instead of re-deriving the process from scratch each time.
 
-**Marketing site is flytunl.ch only now (`flytunl-site/site/` in this repo).** Since
-2026-08-29 the user's standing instruction is: never touch the Schedly repo
-(`Schedly/Schedly/wwwroot/tunl/`) for TUNL again -- schedly.ch is frozen, not
-decommissioned, just not maintained. All step-4 site edits below go to
-`flytunl-site/site/index.html` / `support/index.html` / `privacy/index.html` and are
-deployed via `flytunl-site/deploy.sh`. Ignore every `Schedly/...` path in the older
-wording still present in this file.
+**Marketing site is flytunl.ch only, in `flytunl-site/` (this repo).** Never touch the
+Schedly repo (`Schedly/Schedly/wwwroot/tunl/`) for TUNL -- schedly.ch is frozen since
+2026-08-29, not decommissioned, just not maintained.
 
 Scope: this command gets everything *ready* for submission. It never runs an actual
 Xcode archive/build, never touches App Store Connect / Play Console, and never commits
@@ -64,13 +60,13 @@ keep the filename identical (`Contents.json` in that same folder references it b
   ask the user for properly sized exports, or flag that the icon will need a proper
   multi-density export pass before this step can be done right.
 
-**Schedly marketing assets** (only if the *wordmark/logotype*, not just the app-icon
-glyph, also changed -- these are different things, don't conflate them):
-`Schedly/Schedly/wwwroot/tunl/wordmark.svg`, `wordmark-dark.png`, `wordmark-light.png`,
-`wordmark-light.svg`, `favicon.svg`, `favicon-16.png`, `favicon-32.png`, `favicon-512.png`,
-`apple-touch-icon-180.png`. Also `feature-graphic-1024x500.png` if the Play Store feature
-graphic itself needs to change (it's composed from the wordmark + background, not a raw
-app icon export).
+**Wordmark/logotype assets** (only if the *wordmark/logotype*, not just the app-icon
+glyph, also changed -- these are different things, don't conflate them): masters live in
+`branding/` (`wordmark.svg`, `wordmark-light.svg`, `icon-mark.svg`,
+`feature-graphic.svg`). Run `branding/export-icons.sh` to regenerate every raster from
+the masters -- it writes iOS/Android icon rasters, `flytunl-site/site/`'s favicons and
+`wordmark.svg`, and `branding/web/`'s copies in one pass. Never hand-edit the generated
+rasters directly.
 
 ## 3. Release notes, all 15 languages
 
@@ -89,25 +85,30 @@ es, pt, ja, ko, zh, ru, ar, tr, id, vi, hi.
   not just inline chat text -- it needs to survive being copy-pasted into two different
   consoles across 15 locale fields each.
 
-## 4. Check schedly.ch
+## 4. Check flytunl.ch
 
-Open `Schedly/Schedly/wwwroot/tunl/marketing.html` and `support.html` and decide, based
-on what's actually new this release, whether either needs a copy update:
-- `marketing.html`'s `<p class="whatsnew">` banner -- almost always needs updating to
-  the new version number and headline feature(s).
-- The `.features` grid -- only if this release adds/changes a *persistent* feature
-  (new coin type, new obstacle, new system). A release that's just an icon refresh or a
-  bug-fix pass usually doesn't need a features-grid change.
-- `support.html`'s one-line game description -- only if the core mechanics list it
-  enumerates (stalactites, mines, cannons, etc.) is now out of date.
-- Screenshots/hero video in the `Screenshots/` folder and `hero-demo.mp4` -- these go
-  stale fast (they're simulator captures) but replacing them isn't something you can do
-  yourself; flag to the user if the visible gameplay has changed enough that current
+The marketing site lives in **this repo**, at `flytunl-site/` -- never the Schedly repo
+(frozen since 2026-08-29, see `reference_store_listing_urls` memory). Decide, based on
+what's actually new this release, whether any of these need a copy update:
+- **Homepage whatsnew banner**: edit `hero.newBody` (and its translations) in
+  `flytunl-site/i18n/home.json` -- NOT `flytunl-site/site/index.html` directly, which is
+  generated + gitignored. See `project_homepage_i18n` memory for the full edit workflow
+  (`home.src.html` + `home.json`, rebuilt by `build-site.mjs`). Falls back to English if
+  a translation is missed, so a partial update is safe but should still be finished.
+  This string goes stale on every release if not bumped.
+- The homepage's feature list -- only if this release adds/changes a *persistent*
+  feature (new coin type, new obstacle, new system). A release that's just an icon
+  refresh or a bug-fix pass usually doesn't need it touched.
+- `flytunl-site/site/support/index.html`'s one-line game description -- only if the core
+  mechanics list it enumerates (stalactites, mines, cannons, etc.) is now out of date.
+  This page is plain English HTML, edited directly (not part of the i18n build).
+- Screenshots/hero video under `Screenshots/` and `flytunl-site/site/media-*/` -- these
+  go stale fast (they're simulator captures) but replacing them isn't something you can
+  do yourself; flag to the user if the visible gameplay has changed enough that current
   screenshots look wrong, and let them recapture.
-- Edits here are draft-only until copied live -- see `reference_store_listing_urls`
-  memory: this repo's `wwwroot/tunl/` *is* the live site (ASP.NET serves it directly),
-  so an edit here is already "live" once committed+deployed in the Schedly repo, unlike
-  the Tunl repo's own draft copies of these same files (which are NOT what's served).
+- Edits here are draft-only until deployed -- run `flytunl-site/deploy.sh` (which
+  rebuilds via `build-site.mjs`/`build-play.mjs` before uploading) to actually push
+  live, per the standing "site update only after the version is live" rule.
 
 ## 5. What this command does NOT do
 

@@ -123,7 +123,13 @@ struct GameView: UIViewRepresentable {
     class Coordinator: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNavigationDelegate, GKGameCenterControllerDelegate, GKLocalPlayerListener {
 
         static let leaderboardID = "tunl_highscore"
-        static let allTimeLeaderboardID = "tunl_highscore_alltime"
+        // v2: cut over in 9.0 to retire the original tunl_highscore_alltime board, whose
+        // top score was set on a pre-rebalance build significantly easier than the
+        // current difficulty curve - see the corresponding App Store Connect leaderboard
+        // (must be created there before this ships; the old ID stays registered but is
+        // no longer submitted to). Don't cut a v3 lightly - each cut wipes everyone's
+        // legitimately-earned all-time scores, not just the stale one.
+        static let allTimeLeaderboardID = "tunl_highscore_alltime_v2"
 
         weak var webView: WKWebView?
         let iap = IAPManager()
@@ -277,6 +283,25 @@ struct GameView: UIViewRepresentable {
                 self?.fetchWorldRank()
                 // A score submit is also how a challenge gets beaten, so re-check.
                 self?.fetchActiveChallenges()
+            }
+        }
+
+        // Reports one achievement at 100% complete. `showsCompletionBanner: true` lets
+        // GameKit show its own banner, so there's no need for an in-game notif to match -
+        // unlike onFire/pbPassed/ghostPassed, this fires purely into Game Center's own UI.
+        // Called unconditionally whenever its JS-side trigger condition is newly met, same
+        // as submitScore above - GKAchievement.report() is idempotent for an
+        // already-100%-complete achievement (no duplicate banner), so no client-side
+        // "have I already sent this" guard is needed on either side of the bridge.
+        private func reportAchievement(_ id: String) {
+            guard GKLocalPlayer.local.isAuthenticated else { return }
+            let achievement = GKAchievement(identifier: id)
+            achievement.percentComplete = 100
+            achievement.showsCompletionBanner = true
+            GKAchievement.report([achievement]) { error in
+                if let error {
+                    print("Game Center achievement report failed (\(id)): \(error.localizedDescription)")
+                }
             }
         }
 
@@ -441,6 +466,8 @@ struct GameView: UIViewRepresentable {
                     showLeaderboard()
                 case "challenge":
                     if #available(iOS 26.0, *) { presentChallengeCreation() }
+                case "achievement":
+                    if let id = body["id"] as? String, !id.isEmpty { reportAchievement(id) }
                 default: break
                 }
                 return

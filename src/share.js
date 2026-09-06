@@ -310,8 +310,8 @@ function _shareCardCanvas() {
     g.fillText('TUNL', 70, 92);
     g.shadowBlur = 0;
 
-    // Right side stacks the level line over a planet subtitle, same pairing the title
-    // screen shows: "LEVEL n: <rock>" in cool blue, "<T.planet> <PLANET>" in the day's
+    // Right side stacks the world line over a planet subtitle, same pairing the title
+    // screen shows: "WORLD n: <rock>" in cool blue, "<T.planet> <PLANET>" in the day's
     // rock accent so the world name visually *is* the day's rock.
     g.textAlign = 'right';
     g.font = F(24, true);

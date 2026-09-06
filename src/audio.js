@@ -1,7 +1,7 @@
 // TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch
 // ── Audio ─────────────────────────────────────────────────────────────
 
-let _ac = null, _tNode = null, _tGain = null;
+let _ac = null, _tVoice = null;
 let _fNode = null, _fGain = null;
 let _mNode = null, _mGain = null, _mOsc = null;
 // Last-fired bullet-fire voices, so a death mid-burst can cut them off instead of
@@ -821,27 +821,379 @@ function sfxStalCrack() {
     o.start(t); o.stop(t + 0.09);
 }
 
-function thrustOn() {
-    if (!_ac || _tNode || !fxOn) return;
+// ── Per-skin thruster voices ─────────────────────────────────────────────
+// Every skin used to share this exact bandpass-noise texture as its hold-to-thrust
+// sound. Each ship below gets an engine built from its own color/perk identity
+// instead. thrustOn() picks the builder by activeSkin (constants.js SKINS index) -
+// the skin can only change from the title screen, never mid-hold, so no runtime
+// skin-switch case needs handling here.
+//
+// Master gains retuned 2026-09-05: the values below used to be picked by ear
+// against each other (a flat 0.4x knocked down from each voice's originally-
+// designed level so nothing overpowered PEARL's untouched 0.20), which quietly
+// assumed the master-gain number is a decent proxy for perceived loudness. It
+// isn't - narrow bandpass filtering strips most of a noise source's energy before
+// it ever reaches that gain node, and each voice narrows a different amount, so
+// two voices with similar "master gain" numbers can differ wildly in actual
+// output. Measured by offline-rendering every voice in isolation (OfflineAudioContext,
+// steady-state RMS over its hold texture) against the real the_mountain.mp3 bed at
+// its actual in-game gain (0.10): every single ship measured *quieter* than the
+// music (-33 to -41.5 dB RMS vs the bed's -32 dB), and the spread between ships
+// was 8.4 dB despite being "tuned to the same range". Retuned so every voice's
+// master gain lands within ~1 dB of -28 dB RMS (about 4 dB above the music bed,
+// clearly audible without burying the coin/milestone one-shots that peak louder
+// still) - solo peaks stay near -16 to -19 dB and combined-with-bgm peaks near
+// -13 dB, both far from clipping (there's no limiter on the destination bus, so
+// headroom here is the only thing keeping this safe). Re-verify with the same
+// method (see git history around this commit for the test harness) before hand-
+// tuning any of these numbers again - by-ear comparisons of these voices in
+// isolation don't predict how they sit under the actual bgm.
+
+// Shared release envelope: ramps the voice's master gain to silence, then stops
+// and disconnects every node once the fade finishes so nothing ended-but-still-
+// referenced lingers in the graph.
+function _thrustRelease(g, stoppables, allNodes, dur) {
+    const t = _ac.currentTime;
+    g.gain.cancelScheduledValues(t);
+    g.gain.setValueAtTime(g.gain.value, t);
+    g.gain.linearRampToValueAtTime(0.001, t + dur);
+    setTimeout(() => {
+        stoppables.forEach(n => { try { n.stop(); } catch(e){} });
+        allNodes.forEach(n => { try { n.disconnect(); } catch(e){} });
+    }, dur * 1000 + 80);
+}
+
+function _thrustPearl() {
     const src = _ac.createBufferSource();
     src.buffer = _noiseBuf(0.5); src.loop = true;
     const flt = _ac.createBiquadFilter();
     flt.type = 'bandpass'; flt.frequency.value = 115; flt.Q.value = 0.9;
-    _tGain = _ac.createGain();
-    _tGain.gain.setValueAtTime(0.001, _ac.currentTime);
-    _tGain.gain.linearRampToValueAtTime(0.20, _ac.currentTime + 0.07);
-    src.connect(flt); flt.connect(_tGain); _tGain.connect(_ac.destination);
-    src.start(); _tNode = src;
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(0.001, _ac.currentTime);
+    g.gain.linearRampToValueAtTime(0.719, _ac.currentTime + 0.07);
+    src.connect(flt); flt.connect(g); g.connect(_ac.destination);
+    src.start();
+    return { stop: () => _thrustRelease(g, [src], [src, flt, g], 0.10) };
+}
+
+// AMBER: a warm resonant burn that breathes - a slow tremolo swells the mid-range
+// glow brighter and dimmer, like coals cycling with the heat.
+function _thrustAmber() {
+    const src = _ac.createBufferSource();
+    src.buffer = _noiseBuf(0.5); src.loop = true;
+    const flt = _ac.createBiquadFilter();
+    flt.type = 'bandpass'; flt.frequency.value = 170; flt.Q.value = 1.6;
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(0.001, _ac.currentTime);
+    g.gain.linearRampToValueAtTime(0.616, _ac.currentTime + 0.09);
+    const lfo = _ac.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 2.2;
+    const lfoGain = _ac.createGain(); lfoGain.gain.value = 0.044;
+    lfo.connect(lfoGain); lfoGain.connect(g.gain);
+    const glow = _ac.createOscillator(); glow.type = 'sine'; glow.frequency.value = 340;
+    const glowGain = _ac.createGain(); glowGain.gain.value = 0.05;
+    glow.connect(glowGain); glowGain.connect(g);
+    src.connect(flt); flt.connect(g); g.connect(_ac.destination);
+    src.start(); lfo.start(); glow.start();
+    return { stop: () => _thrustRelease(g, [src, lfo, glow], [src, flt, lfo, lfoGain, glow, glowGain, g], 0.12) };
+}
+
+// CRIMSON: a real jet-engine roar - broadband exhaust turbulence, a mid-range
+// chest, and a thin turbine whine riding on top, for a ship built for speed
+// over armor. Went through a growl and a whistle before landing here.
+function _thrustCrimson() {
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(0.001, _ac.currentTime);
+    g.gain.linearRampToValueAtTime(0.370, _ac.currentTime + 0.08);
+    const roarSrc = _ac.createBufferSource();
+    roarSrc.buffer = _noiseBuf(0.6); roarSrc.loop = true;
+    const roarFlt = _ac.createBiquadFilter(); roarFlt.type = 'lowpass'; roarFlt.frequency.value = 1100;
+    const roarGain = _ac.createGain(); roarGain.gain.value = 0.55;
+    roarSrc.connect(roarFlt); roarFlt.connect(roarGain); roarGain.connect(g);
+    const chestSrc = _ac.createBufferSource();
+    chestSrc.buffer = _noiseBuf(0.5); chestSrc.loop = true;
+    const chestFlt = _ac.createBiquadFilter(); chestFlt.type = 'bandpass'; chestFlt.frequency.value = 340; chestFlt.Q.value = 0.6;
+    const chestGain = _ac.createGain(); chestGain.gain.value = 0.35;
+    chestSrc.connect(chestFlt); chestFlt.connect(chestGain); chestGain.connect(g);
+    const whine = _ac.createOscillator(); whine.type = 'sine'; whine.frequency.value = 2200;
+    const whineLfo = _ac.createOscillator(); whineLfo.type = 'sine'; whineLfo.frequency.value = 5.5;
+    const whineLfoGain = _ac.createGain(); whineLfoGain.gain.value = 12;
+    whineLfo.connect(whineLfoGain); whineLfoGain.connect(whine.frequency);
+    const whineGain = _ac.createGain(); whineGain.gain.value = 0.045;
+    whine.connect(whineGain); whineGain.connect(g);
+    g.connect(_ac.destination);
+    roarSrc.start(); chestSrc.start(); whine.start(); whineLfo.start();
+    return {
+        stop: () => _thrustRelease(
+            g,
+            [roarSrc, chestSrc, whine, whineLfo],
+            [roarSrc, roarFlt, roarGain, chestSrc, chestFlt, chestGain, whine, whineLfo, whineLfoGain, whineGain, g],
+            0.12
+        )
+    };
+}
+
+// ELECTRIC: a low square-wave hum ring-modulated into a Tesla-coil buzz, arcing
+// like current barely held inside the coil.
+function _thrustElectric() {
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(0.001, _ac.currentTime);
+    g.gain.linearRampToValueAtTime(0.320, _ac.currentTime + 0.05);
+    const hum = _ac.createOscillator(); hum.type = 'square'; hum.frequency.value = 85;
+    const humGain = _ac.createGain(); humGain.gain.value = 0.09;
+    hum.connect(humGain); humGain.connect(g);
+    const src = _ac.createBufferSource();
+    src.buffer = _noiseBuf(0.5); src.loop = true;
+    const hp = _ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 700;
+    const am = _ac.createGain(); am.gain.value = 0.14;
+    const ringLfo = _ac.createOscillator(); ringLfo.type = 'sine'; ringLfo.frequency.value = 38;
+    const ringLfoGain = _ac.createGain(); ringLfoGain.gain.value = 0.14;
+    ringLfo.connect(ringLfoGain); ringLfoGain.connect(am.gain);
+    src.connect(hp); hp.connect(am); am.connect(g);
+    g.connect(_ac.destination);
+    src.start(); hum.start(); ringLfo.start();
+    return { stop: () => _thrustRelease(g, [src, hum, ringLfo], [src, hp, am, ringLfo, ringLfoGain, hum, humGain, g], 0.12) };
+}
+
+// TOXIC: a slow filter sweep gurgles through the noise floor while a vibrato-heavy
+// undertone drifts off pitch, like something venting fumes.
+function _thrustToxic() {
+    const src = _ac.createBufferSource();
+    src.buffer = _noiseBuf(0.5); src.loop = true;
+    const lp = _ac.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 4; lp.frequency.value = 320;
+    const sweepLfo = _ac.createOscillator(); sweepLfo.type = 'sine'; sweepLfo.frequency.value = 0.6;
+    const sweepGain = _ac.createGain(); sweepGain.gain.value = 220;
+    sweepLfo.connect(sweepGain); sweepGain.connect(lp.frequency);
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(0.001, _ac.currentTime);
+    g.gain.linearRampToValueAtTime(0.298, _ac.currentTime + 0.10);
+    const wobble = _ac.createOscillator(); wobble.type = 'sine'; wobble.frequency.value = 54;
+    const vibLfo = _ac.createOscillator(); vibLfo.type = 'sine'; vibLfo.frequency.value = 4;
+    const vibGain = _ac.createGain(); vibGain.gain.value = 7;
+    vibLfo.connect(vibGain); vibGain.connect(wobble.frequency);
+    const wobbleGain = _ac.createGain(); wobbleGain.gain.value = 0.10;
+    wobble.connect(wobbleGain); wobbleGain.connect(g);
+    src.connect(lp); lp.connect(g); g.connect(_ac.destination);
+    src.start(); sweepLfo.start(); wobble.start(); vibLfo.start();
+    return {
+        stop: () => _thrustRelease(
+            g,
+            [src, sweepLfo, wobble, vibLfo],
+            [src, lp, sweepLfo, sweepGain, wobble, vibLfo, vibGain, wobbleGain, g],
+            0.12
+        )
+    };
+}
+
+// VOID: a deep rumble that breathes open and closed, a sub-bass pull that keeps
+// sinking and resets, and a feedback echo that grows darker with every repeat -
+// thrust swallowed rather than reflected.
+function _thrustVoid() {
+    const src = _ac.createBufferSource();
+    src.buffer = _noiseBuf(0.6); src.loop = true;
+    const flt = _ac.createBiquadFilter(); flt.type = 'bandpass'; flt.frequency.value = 50; flt.Q.value = 0.8;
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(0.001, _ac.currentTime);
+    g.gain.linearRampToValueAtTime(0.387, _ac.currentTime + 0.15);
+
+    // Slow breathing - the void opens and closes instead of droning at a fixed level.
+    const breathLfo = _ac.createOscillator(); breathLfo.type = 'sine'; breathLfo.frequency.value = 0.14;
+    const breathGain = _ac.createGain(); breathGain.gain.value = 0.064;
+    breathLfo.connect(breathGain); breathGain.connect(g.gain);
+
+    // Gravity pull - a deep sub drone that sinks in pitch over several seconds, then
+    // glides back up, like something dragged toward a singularity and released.
+    // Scheduled directly rather than driven by a raw LFO waveform so the release is
+    // a smooth glide instead of an abrupt reset.
+    const pull = _ac.createOscillator(); pull.type = 'sine'; pull.frequency.setValueAtTime(52, _ac.currentTime);
+    const pullGain = _ac.createGain(); pullGain.gain.value = 0.10;
+    pull.connect(pullGain); pullGain.connect(g);
+    let pullAlive = true, pullTimer = null;
+    (function pullCycle() {
+        if (!pullAlive) return;
+        const t0 = _ac.currentTime;
+        pull.frequency.cancelScheduledValues(t0);
+        pull.frequency.setValueAtTime(pull.frequency.value, t0);
+        pull.frequency.linearRampToValueAtTime(30, t0 + 6.5);
+        pull.frequency.linearRampToValueAtTime(52, t0 + 7.3);
+        pullTimer = setTimeout(pullCycle, 7300);
+    })();
+
+    // Feedback echo darkened on every pass by a lowpass in the loop, so repeats get
+    // swallowed into mud instead of reflecting cleanly.
+    const delay = _ac.createDelay(1.0); delay.delayTime.value = 0.34;
+    const fbFilter = _ac.createBiquadFilter(); fbFilter.type = 'lowpass'; fbFilter.frequency.value = 750;
+    const fb = _ac.createGain(); fb.gain.value = 0.48;
+    delay.connect(fbFilter); fbFilter.connect(fb); fb.connect(delay);
+    const wet = _ac.createGain(); wet.gain.value = 0.55;
+
+    src.connect(flt); flt.connect(g); g.connect(_ac.destination);
+    g.connect(delay); delay.connect(wet); wet.connect(g);
+    src.start(); breathLfo.start(); pull.start();
+
+    return {
+        stop: () => {
+            pullAlive = false;
+            if (pullTimer) clearTimeout(pullTimer);
+            _thrustRelease(
+                g,
+                [src, breathLfo, pull],
+                [src, flt, breathLfo, breathGain, pull, pullGain, delay, fbFilter, fb, wet, g],
+                0.12
+            );
+        }
+    };
+}
+
+// NOVA: a bright, high-passed sparkle chimes over a thin engine bed, two barely-
+// detuned tones beating like starlight caught on metal.
+function _thrustNova() {
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(0.001, _ac.currentTime);
+    g.gain.linearRampToValueAtTime(0.216, _ac.currentTime + 0.08);
+    const bedSrc = _ac.createBufferSource();
+    bedSrc.buffer = _noiseBuf(0.5); bedSrc.loop = true;
+    const bedFlt = _ac.createBiquadFilter(); bedFlt.type = 'bandpass'; bedFlt.frequency.value = 115; bedFlt.Q.value = 0.9;
+    const bedGain = _ac.createGain(); bedGain.gain.value = 0.32;
+    bedSrc.connect(bedFlt); bedFlt.connect(bedGain); bedGain.connect(g);
+    const sparkSrc = _ac.createBufferSource();
+    sparkSrc.buffer = _noiseBuf(0.5); sparkSrc.loop = true;
+    const hp = _ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 2400; hp.Q.value = 0.7;
+    const sparkGain = _ac.createGain(); sparkGain.gain.value = 0.30;
+    sparkSrc.connect(hp); hp.connect(sparkGain); sparkGain.connect(g);
+    const c1 = _ac.createOscillator(); c1.type = 'sine'; c1.frequency.value = 1800;
+    const c2 = _ac.createOscillator(); c2.type = 'sine'; c2.frequency.value = 1812;
+    const chimeGain = _ac.createGain(); chimeGain.gain.value = 0.05;
+    const trem = _ac.createOscillator(); trem.type = 'sine'; trem.frequency.value = 3.4;
+    const tremGain = _ac.createGain(); tremGain.gain.value = 0.04;
+    trem.connect(tremGain); tremGain.connect(chimeGain.gain);
+    c1.connect(chimeGain); c2.connect(chimeGain); chimeGain.connect(g);
+    g.connect(_ac.destination);
+    bedSrc.start(); sparkSrc.start(); c1.start(); c2.start(); trem.start();
+    return {
+        stop: () => _thrustRelease(
+            g,
+            [bedSrc, sparkSrc, c1, c2, trem],
+            [bedSrc, bedFlt, bedGain, sparkSrc, hp, sparkGain, c1, c2, chimeGain, trem, tremGain, g],
+            0.12
+        )
+    };
+}
+
+// SOLARIS: a rumbling base under a swelling harmonic choir and a slow stereo
+// drift, crackling pops overhead, and a lub-dub reactor heartbeat underneath -
+// the only engine in the fleet that sings and beats instead of just droning,
+// for the last and most expensive ship in the roster.
+function _thrustSolaris() {
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(0.001, _ac.currentTime);
+    g.gain.linearRampToValueAtTime(0.875, _ac.currentTime + 0.12);
+
+    const rumbleSrc = _ac.createBufferSource();
+    rumbleSrc.buffer = _noiseBuf(0.6); rumbleSrc.loop = true;
+    const rumbleFlt = _ac.createBiquadFilter(); rumbleFlt.type = 'bandpass'; rumbleFlt.frequency.value = 85; rumbleFlt.Q.value = 0.6;
+    const rumbleGain = _ac.createGain(); rumbleGain.gain.value = 0.55;
+    rumbleSrc.connect(rumbleFlt); rumbleFlt.connect(rumbleGain); rumbleGain.connect(g);
+
+    // Fundamental swell plus two tracked overtones - a rising/falling harmonic choir,
+    // not just a filtered noise band like every other ship.
+    const wind = _ac.createOscillator(); wind.type = 'sine'; wind.frequency.value = 150;
+    const overtone2 = _ac.createOscillator(); overtone2.type = 'sine'; overtone2.frequency.value = 300;
+    const overtone3 = _ac.createOscillator(); overtone3.type = 'sine'; overtone3.frequency.value = 450;
+    const windLfo = _ac.createOscillator(); windLfo.type = 'sine'; windLfo.frequency.value = 0.08;
+    const windLfoGain = _ac.createGain(); windLfoGain.gain.value = 90;
+    const windLfoGain2 = _ac.createGain(); windLfoGain2.gain.value = 180;
+    const windLfoGain3 = _ac.createGain(); windLfoGain3.gain.value = 270;
+    windLfo.connect(windLfoGain); windLfoGain.connect(wind.frequency);
+    windLfo.connect(windLfoGain2); windLfoGain2.connect(overtone2.frequency);
+    windLfo.connect(windLfoGain3); windLfoGain3.connect(overtone3.frequency);
+    const windGain = _ac.createGain(); windGain.gain.value = 0.07;
+    const ot2Gain = _ac.createGain(); ot2Gain.gain.value = 0.030;
+    const ot3Gain = _ac.createGain(); ot3Gain.gain.value = 0.018;
+    wind.connect(windGain); windGain.connect(g);
+    overtone2.connect(ot2Gain); ot2Gain.connect(g);
+    overtone3.connect(ot3Gain); ot3Gain.connect(g);
+
+    // Slow stereo drift - the only ship whose thrust moves in space.
+    const panner = _ac.createStereoPanner();
+    const panLfo = _ac.createOscillator(); panLfo.type = 'sine'; panLfo.frequency.value = 0.05;
+    const panLfoGain = _ac.createGain(); panLfoGain.gain.value = 0.6;
+    panLfo.connect(panLfoGain); panLfoGain.connect(panner.pan);
+
+    g.connect(panner); panner.connect(_ac.destination);
+    rumbleSrc.start(); wind.start(); overtone2.start(); overtone3.start(); windLfo.start(); panLfo.start();
+
+    // Crackling pops - real intermittent bursts, not a steady AM texture.
+    let popAlive = true, popTimer = null;
+    (function pop() {
+        if (!popAlive) return;
+        const dur = 0.05 + Math.random() * 0.05;
+        const t0 = _ac.currentTime;
+        const psrc = _ac.createBufferSource(); psrc.buffer = _noiseBuf(dur);
+        const pflt = _ac.createBiquadFilter(); pflt.type = 'bandpass'; pflt.frequency.value = 2200 + Math.random() * 2600; pflt.Q.value = 2.5;
+        const pg = _ac.createGain();
+        pg.gain.setValueAtTime(0.0001, t0);
+        pg.gain.linearRampToValueAtTime(0.14 + Math.random() * 0.10, t0 + 0.006);
+        pg.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+        psrc.connect(pflt); pflt.connect(pg); pg.connect(g);
+        psrc.start(t0); psrc.stop(t0 + dur + 0.02);
+        setTimeout(() => { try { psrc.disconnect(); pflt.disconnect(); pg.disconnect(); } catch(e){} }, (dur + 0.05) * 1000);
+        popTimer = setTimeout(pop, 130 + Math.random() * 320);
+    })();
+
+    // Reactor heartbeat - a lub-dub double pulse, not a single metronomic thump, the
+    // one engine in the fleet that beats like something alive instead of droning.
+    let beatAlive = true, beatTimer = null;
+    function playThump(delay, freqStart, peakGain) {
+        const t0 = _ac.currentTime + delay;
+        const o = _ac.createOscillator(); o.type = 'sine';
+        o.frequency.setValueAtTime(freqStart, t0);
+        o.frequency.exponentialRampToValueAtTime(freqStart * 0.5, t0 + 0.16);
+        const og = _ac.createGain();
+        og.gain.setValueAtTime(0.0001, t0);
+        og.gain.linearRampToValueAtTime(peakGain, t0 + 0.008);
+        og.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.2);
+        o.connect(og); og.connect(g);
+        o.start(t0); o.stop(t0 + 0.22);
+        setTimeout(() => { try { o.disconnect(); og.disconnect(); } catch(e){} }, (delay + 0.24) * 1000 + 60);
+    }
+    (function heartbeat() {
+        if (!beatAlive) return;
+        playThump(0, 92, 0.28);
+        playThump(0.16, 78, 0.36);
+        beatTimer = setTimeout(heartbeat, 900);
+    })();
+
+    return {
+        stop: () => {
+            popAlive = false;
+            beatAlive = false;
+            if (popTimer) clearTimeout(popTimer);
+            if (beatTimer) clearTimeout(beatTimer);
+            _thrustRelease(
+                g,
+                [rumbleSrc, wind, overtone2, overtone3, windLfo, panLfo],
+                [rumbleSrc, rumbleFlt, rumbleGain, wind, overtone2, overtone3, windLfo, windLfoGain, windLfoGain2, windLfoGain3,
+                 windGain, ot2Gain, ot3Gain, panner, panLfo, panLfoGain, g],
+                0.12
+            );
+        }
+    };
+}
+
+const _THRUST_BUILDERS = [
+    _thrustPearl, _thrustAmber, _thrustCrimson, _thrustElectric,
+    _thrustToxic, _thrustVoid, _thrustNova, _thrustSolaris
+];
+
+function thrustOn() {
+    if (!_ac || _tVoice || !fxOn) return;
+    _tVoice = (_THRUST_BUILDERS[activeSkin] || _thrustPearl)();
 }
 
 function thrustOff() {
-    if (!_tNode) return;
-    const t = _ac.currentTime;
-    _tGain.gain.cancelScheduledValues(t);
-    _tGain.gain.setValueAtTime(_tGain.gain.value, t);
-    _tGain.gain.linearRampToValueAtTime(0.001, t + 0.10);
-    const n = _tNode; _tNode = null; _tGain = null;
-    setTimeout(() => { try { n.stop(); } catch(e){} }, 200);
+    if (!_tVoice) return;
+    _tVoice.stop();
+    _tVoice = null;
 }
 
 // Ambient burning-thruster loop -- starts the instant onFire flips true (update.js,

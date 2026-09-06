@@ -105,6 +105,8 @@ function startPlay() {
     if (_lastDay !== _todayInt) {
         streak = _lastDay === _yesterdayInt ? streak + 1 : 1;
         localStorage.setItem('tunnel_streak', streak);
+        if (streak === 7)  window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: 'tunl_ach_streak_7' });
+        if (streak === 30) window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: 'tunl_ach_streak_30' });
         // Stardust: flat per-day grant, decoupled from skill or run count (constants.js
         // STARDUST_PER_DAY doc comment) -- the SOLARIS-only currency that makes coming
         // back tomorrow the only lever, not how well or how much is played today.

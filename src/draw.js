@@ -1057,7 +1057,10 @@ function drawWorld() {
 
     // Speed lines - horizontal streaks driven by vertical velocity OR scroll speed
     if (phase === 'play') {
-        const vyFrac    = Math.max(0, (Math.abs(vy) - 300) / (MAX_VY - 300));
+        // 300 floor is quoted at _H_REF like the physics constants (constants.js), so
+        // the streaks start at the same relative vy on every screen, not the same absolute.
+        const vyFloor   = 300 * _FEEL_SCALE;
+        const vyFrac    = Math.max(0, (Math.abs(vy) - vyFloor) / (MAX_VY - vyFloor));
         const actualSpd = scrollSpd() * slowScrollFactor();
         const normSpd   = actualSpd * 600 / W;
         const spdFrac   = Math.max(0, (normSpd - 380) / (560 - 380));
@@ -1605,7 +1608,7 @@ function drawHUD() {
         ctx.restore();
     }
 
-    // Level intro banner -- "LEVEL n: Name", shown briefly at the start of each run
+    // World intro banner -- "WORLD n: Name", shown briefly at the start of each run
     if (levelIntroT > 0 && phase === 'play') {
         const lia = Math.min(1, levelIntroT / LEVEL_INTRO_FADE);
         ctx.save();
@@ -2021,7 +2024,7 @@ function drawTitleScreen() {
     ctx.shadowColor = `hsla(${levelHue}, 90%, 60%, ${a * 0.6})`;
     ctx.shadowBlur  = 8 + 4 * Math.sin(gtime * 2.2);
     ctx.fillStyle   = `hsla(${levelHue}, 85%, 72%, ${a * 0.95})`;
-    // Prefixed with "LEVEL <day-of-year>:" so the world name reads like a level
+    // Prefixed with "WORLD <day-of-year>:" so the world name reads like a world
     // index -- same LEVEL_NUM/T.level pair already used in the run-start banner
     // (see above), just surfaced here too per user request. This line is centered
     // on titleX, but titleX sits much closer to the divider than to the left screen

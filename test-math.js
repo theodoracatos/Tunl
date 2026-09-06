@@ -40,6 +40,7 @@ function makeWorld(innerWidth, innerHeight) {
     // gotcha test-i18n.js works around) -- pull out everything the checks below need.
     vm.runInContext(`
         this.W = W; this.H = H; this.GRAVITY = GRAVITY; this.THRUST = THRUST;
+        this.MAX_VY = MAX_VY; this.FEEL_SCALE = _FEEL_SCALE; this.H_REF = _H_REF;
         this.lerp = lerp; this.POISON_LOSS_PCT_MIN = POISON_LOSS_PCT_MIN; this.POISON_LOSS_PCT_MAX = POISON_LOSS_PCT_MAX;
         this.halfGapAt = halfGapAt; this.boundsBase = boundsBase; this.refreshWave = refreshWave;
         this.scrollSpd = scrollSpd; this.stalSpacing = stalSpacing; this.coinSpacing = coinSpacing;
@@ -59,13 +60,37 @@ function check(name, cond) {
     }
 }
 
-// ── Physics ratio (CLAUDE.md: "Do NOT change this ratio, it's the core feel") ──
+// ── Physics: base constants, screen-independent feel, and net-force direction ──
+// CLAUDE.md "Screen-independent feel (do not revert)": GRAVITY/THRUST/MAX_VY are quoted
+// at _H_REF (440) and every device multiplies by _FEEL_SCALE = H/_H_REF. So the checks
+// divide the scaled value back down to the base before comparing.
 {
-    const w = makeWorld(600, 600);
+    const w  = makeWorld(600, 600);              // app path; H caps at 600
+    const w2 = makeWorld(956, 440);              // reference height -> _FEEL_SCALE == 1
+    check('_H_REF is 440 (iPhone 17 Pro Max landscape height)', w.H_REF === 440);
+    check('_FEEL_SCALE = H/_H_REF', Math.abs(w.FEEL_SCALE - 600 / 440) < 1e-9 && w2.FEEL_SCALE === 1);
+    check('base GRAVITY/THRUST/MAX_VY are 1300/3400/1080 at _H_REF',
+        w2.GRAVITY === 1300 && w2.THRUST === 3400 && w2.MAX_VY === 1080);
+    check('all three feel constants scale by the SAME _FEEL_SCALE',
+        Math.abs(w.GRAVITY / w.FEEL_SCALE - 1300) < 1e-6 &&
+        Math.abs(w.THRUST  / w.FEEL_SCALE - 3400) < 1e-6 &&
+        Math.abs(w.MAX_VY  / w.FEEL_SCALE - 1080) < 1e-6);
     const netUp   = w.THRUST - w.GRAVITY;
     const netDown = w.GRAVITY;
-    check('GRAVITY/THRUST match documented constants (1150/2400)', w.GRAVITY === 1150 && w.THRUST === 2400);
-    check('net upward force (1250) is stronger than net downward (1150)', netUp === 1250 && netDown === 1150 && netUp > netDown);
+    check('net upward force stays stronger than net downward (climbing more responsive)',
+        netUp > netDown && Math.abs(netUp / w.FEEL_SCALE - 2100) < 1e-6 && Math.abs(netDown / w.FEEL_SCALE - 1300) < 1e-6);
+}
+
+// ── Cross-device fairness: W is capped at 956 on every platform ──────────────
+// CLAUDE.md "Cross-device fairness": scrollSpd() scales by W/600, so an uncapped wide
+// screen would scroll the shared daily cave past faster at a given score. W must clamp.
+{
+    check('W caps at 956 on a wide screen', makeWorld(1512, 700).W === 956 && makeWorld(2000, 900).W === 956);
+    check('W is untouched below the cap', makeWorld(812, 375).W === 812);
+    const narrow = makeWorld(667, 375), wide = makeWorld(1400, 375);
+    narrow.scrollX = wide.scrollX = 8000; narrow.refreshWave(); wide.refreshWave();
+    check('two screens at the same score never scroll the cave more than the 956/667 width ratio apart',
+        wide.scrollSpd() / narrow.scrollSpd() <= 956 / 667 + 1e-9);
 }
 
 // ── Corridor bounds (src/world.js boundsBase/halfGapAt) ──────────────────────

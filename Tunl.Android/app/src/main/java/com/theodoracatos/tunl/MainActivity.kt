@@ -95,6 +95,31 @@ class MainActivity : ComponentActivity() {
     private val billing by lazy { BillingManager(this) }
     private val ads by lazy { AdsManager(this) }
 
+    // Maps the JS side's self-chosen achievement ids (SHIP_ACHIEVEMENTS in src/constants.js
+    // and the bare string literals alongside it) to this platform's own string resource,
+    // since Play Console generates its own opaque achievement id per achievement rather
+    // than letting the id be chosen like Game Center's tunl_ach_* identifiers do.
+    private val achievementResIds = mapOf(
+        "tunl_ach_first_flight"   to R.string.achievement_first_flight,
+        "tunl_ach_ship_amber"     to R.string.achievement_ship_amber,
+        "tunl_ach_ship_crimson"   to R.string.achievement_ship_crimson,
+        "tunl_ach_ship_electric"  to R.string.achievement_ship_electric,
+        "tunl_ach_ship_toxic"     to R.string.achievement_ship_toxic,
+        "tunl_ach_ship_void"      to R.string.achievement_ship_void,
+        "tunl_ach_ship_nova"      to R.string.achievement_ship_nova,
+        "tunl_ach_ship_solaris"   to R.string.achievement_ship_solaris,
+        "tunl_ach_ace_pilot"      to R.string.achievement_ace_pilot,
+        "tunl_ach_master_fleet"   to R.string.achievement_master_fleet,
+        "tunl_ach_on_fire"        to R.string.achievement_on_fire,
+        "tunl_ach_new_legend"     to R.string.achievement_new_legend,
+        "tunl_ach_ghost_hunter"   to R.string.achievement_ghost_hunter,
+        "tunl_ach_streak_7"       to R.string.achievement_streak_7,
+        "tunl_ach_streak_30"      to R.string.achievement_streak_30,
+        "tunl_ach_score_1000"     to R.string.achievement_score_1000,
+        "tunl_ach_score_10000"    to R.string.achievement_score_10000,
+        "tunl_ach_score_100000"   to R.string.achievement_score_100000,
+    )
+
     // Shims window.webkit.messageHandlers.{gameCenter,iap,ads,haptic} so the game's
     // existing iOS bridge calls (see update.js/draw.js/input.js/systems.js) work
     // unchanged on Android. haptic gets its own bridge method since it posts a bare
@@ -153,6 +178,7 @@ class MainActivity : ComponentActivity() {
                     "gameCenter" -> when (body.optString("action")) {
                         "submit" -> submitScore(body.optInt("score"))
                         "show" -> showLeaderboard()
+                        "achievement" -> unlockAchievement(body.optString("id"))
                     }
                     "iap" -> when (body.optString("action")) {
                         // productId defaults to remove_ads for backward compatibility
@@ -514,6 +540,16 @@ class MainActivity : ComponentActivity() {
         PlayGames.getLeaderboardsClient(this)
             .submitScoreImmediate(getString(R.string.leaderboard_id), score.toLong())
             .addOnCompleteListener { fetchWorldRank() }
+    }
+
+    // Mirrors GameView.swift's reportAchievement. unlock() is idempotent for an
+    // already-unlocked achievement (no duplicate popup), so no client-side "have I
+    // already sent this" guard is needed, same reasoning as submitScore above. Silently
+    // no-ops on an id with no mapped resource (e.g. a stale REPLACE_WITH_ACHIEVEMENT_ID
+    // placeholder still in strings.xml) rather than crashing on a bad getString() call.
+    private fun unlockAchievement(id: String) {
+        val resId = achievementResIds[id] ?: return
+        PlayGames.getAchievementsClient(this).unlock(getString(resId))
     }
 
     // Mirrors GameView.swift's fetchWorldRank: pulls the player's standing on the daily
