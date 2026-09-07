@@ -50,22 +50,22 @@
     "ja": "ボタンひとつの洞窟フライヤー。押して上昇、離して下降。トンネルが閉じる前に、どこまで暗闇へ進めるか。"
   },
   "hero.newTag": {
-    "en": "New in 9.0",
-    "de": "Neu in 9.0",
-    "fr": "Nouveau dans la 9.0",
-    "it": "Novità nella 9.0",
-    "es": "Novedad en la 9.0",
-    "pt": "Novo na 9.0",
-    "ja": "9.0の新機能"
+    "en": "New in 9.1",
+    "de": "Neu in 9.1",
+    "fr": "Nouveau dans la 9.1",
+    "it": "Novità nella 9.1",
+    "es": "Novedad en la 9.1",
+    "pt": "Novo na 9.1",
+    "ja": "9.1の新機能"
   },
   "hero.newBody": {
-    "en": "18 Achievements have landed - unlock them by flying, upgrading ships, and returning daily. Every ship also has its own new engine sound now.",
-    "de": "18 Erfolge sind da - schalte sie frei, indem du fliegst, Schiffe aufrüstest und täglich zurückkehrst. Jedes Schiff hat jetzt auch einen eigenen neuen Triebwerksklang.",
-    "fr": "18 Succès ont fait leur apparition - débloque-les en volant, en améliorant tes vaisseaux et en revenant chaque jour. Chaque vaisseau a aussi son propre nouveau son de moteur.",
-    "it": "Sono arrivati 18 Obiettivi - sbloccali volando, potenziando le navi e tornando ogni giorno. Ogni nave ha anche un nuovo suono del motore tutto suo.",
-    "es": "Han llegado 18 Logros - desbloquéalos volando, mejorando naves y volviendo cada día. Cada nave también tiene ahora su propio sonido de motor.",
-    "pt": "Chegaram 18 Conquistas - desbloqueie-as voando, evoluindo naves e voltando todo dia. Cada nave também tem agora seu próprio som de motor.",
-    "ja": "18個の実績が登場 - 飛行し、機体を強化し、毎日戻ってくることで解除できる。各機体にも新しい専用のエンジン音が追加された。"
+    "en": "Eight new Achievements. Finish a run on each of TUNL's seven daily worlds to collect its badge, then earn the Grand Tour for flying all seven.",
+    "de": "Acht neue Erfolge. Beende auf jeder der sieben Tageswelten von TUNL einen Lauf, um ihr Abzeichen zu holen - und schnapp dir die Grand Tour, wenn du alle sieben geflogen bist.",
+    "fr": "Huit nouveaux Succès. Termine une partie sur chacun des sept mondes quotidiens de TUNL pour décrocher son badge, puis obtiens le Grand Tour en les parcourant tous les sept.",
+    "it": "Otto nuovi Obiettivi. Completa una corsa su ognuno dei sette mondi giornalieri di TUNL per prenderne il distintivo, poi ottieni il Grand Tour volando su tutti e sette.",
+    "es": "Ocho nuevos Logros. Completa una partida en cada uno de los siete mundos diarios de TUNL para conseguir su insignia y gana el Grand Tour por volar los siete.",
+    "pt": "Oito novas Conquistas. Complete uma corrida em cada um dos sete mundos diários de TUNL para ganhar seu emblema e conquiste o Grand Tour por voar em todos os sete.",
+    "ja": "8つの新しい実績。TUNLの7つのデイリーワールドそれぞれで1回飛行を完走してバッジを集め、7つすべてを飛べばグランドツアーを獲得。"
   },
   "hero.playCta": {
     "en": "Play in your browser",
