@@ -5,6 +5,10 @@ Nothing here is loaded by the game or the apps at runtime - these are upload
 assets only. (The marketing site has its own separate set under
 `flytunl-site/site/Screenshots/`.)
 
+Only the last couple of releases are kept here; pre-8.4 version sets and the
+matching `store-metadata/<8.0..8.2>/` trees were pruned (recoverable from git
+history) - each release's raw captures start on the Desktop anyway, not here.
+
 ## Layout
 
 ```
@@ -28,16 +32,16 @@ listings portrait, so `make-portrait-frames.py` drops each landscape shot into a
 portrait "cave corridor" frame (Courier-New headline + TUNL wordmark). See that
 script's docstring; headline copy per screenshot lives inline in it.
 
-## Regenerating the 7.0 portrait set
+## Regenerating a portrait set
 
-```
-# raw sim captures expected at ~/Desktop/iOS_7.0 (en) and ~/Desktop/iOS_7.0_br (pt-BR)
-python3 Screenshots/make-portrait-frames.py      # needs Pillow + rsvg-convert
-```
-Writes `iOS_7.0/en/portrait/01..05.png` and `iOS_7.0/pt-BR/portrait/01..05.png`.
+`make-portrait-frames.py` is the recipe (headline copy + frame layout inline in
+its docstring); the in/out paths near the bottom are version-pinned and get
+edited per release. `make-portrait-video-frame.py` and `build-portrait-video.sh`
+are the equivalents for the portrait App Preview video. All three read raw
+captures from the Desktop and need Pillow + rsvg-convert.
 
 ## App Preview video spec (App Store Connect, 6.9" / 6.5")
 
-1920x886, H.264 High, 30fps, 15-30s, no audio required. `A1.mov` / `B1.mov`
-have already been transcoded to this; the raw recordings they came from are on
-the Desktop, not in the repo.
+1920x886, H.264 High, 30fps, 15-30s, no audio required. The kept
+`app-preview-*.mp4` files under the current `iOS_<version>/` dirs are already in
+this format; raw recordings live on the Desktop, not in the repo.
