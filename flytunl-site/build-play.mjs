@@ -65,7 +65,9 @@ const CF_BEACON = CF_ANALYTICS_TOKEN
 // guessed version of Google's own boilerplate risks being subtly wrong, and
 // getting EU consent wording wrong is a compliance problem, not just a bug.
 const FUNDING_CHOICES_SNIPPET = '';
-const ADS_HEAD = `\n<!-- Google Ad Manager: H5 Games Ads (interstitial + rewarded) -->
+const ADS_HEAD = `\n<!-- Google AdSense (site verification + ad serving) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4882203470005029" crossorigin="anonymous"></script>
+<!-- Google Ad Manager: H5 Games Ads (interstitial + rewarded) -->
 <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js" crossorigin="anonymous"></script>` +
   (FUNDING_CHOICES_SNIPPET
     ? `\n${FUNDING_CHOICES_SNIPPET}`
