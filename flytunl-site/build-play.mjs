@@ -160,6 +160,14 @@ async function build() {
     sources[`${name}.js`] = await readFile(path.join(root, 'src', `${name}.js`), 'utf8');
   }
 
+  // TUNL_VERSION is the single source of truth (src/constants.js), shared by all
+  // three targets. Stamp it into <head> so the live web build's version is
+  // greppable (curl -s https://flytunl.ch/play | grep tunl:version) without
+  // diffing the bundle. window.TUNL_VERSION carries the same value at runtime.
+  const verMatch = sources['constants.js'].match(/const\s+TUNL_VERSION\s*=\s*['"]([^'"]+)['"]/);
+  if (!verMatch) throw new Error('src/constants.js: TUNL_VERSION const not found');
+  const TUNL_VERSION = verMatch[1];
+
   const min = await minify(sources, {
     compress: { passes: 2 },
     mangle: true,            // locals only - see header note
@@ -184,7 +192,7 @@ async function build() {
   if (html === before) throw new Error('no <script src="src/..."> tags found in tunl.html - load order changed?');
   html = html.replace('</body>', `<script src="tunl.bundle.js?v=${v}"></script>\n</body>`);
   if (!html.includes('</head>')) throw new Error('no </head> in tunl.html');
-  html = html.replace('</head>', HEAD_EXTRA + '\n</head>');
+  html = html.replace('</head>', HEAD_EXTRA + `\n<meta name="tunl:version" content="${TUNL_VERSION}">\n</head>`);
   await writeFile(path.join(outDir, 'index.html'), html, 'utf8');
 
   // ---- 3. static assets referenced by index.html --------------------
@@ -200,7 +208,7 @@ async function build() {
   }
 
   const kb = (min.code.length / 1024).toFixed(0);
-  console.log(`play/ built - tunl.bundle.js ${kb} KB (from ${SCRIPTS.length} files)`);
+  console.log(`play/ built - tunl.bundle.js ${kb} KB (from ${SCRIPTS.length} files), version ${TUNL_VERSION}`);
 }
 
 build().catch(err => { console.error('[build-play] failed:', err); process.exit(1); });

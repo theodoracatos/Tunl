@@ -1,0 +1,162 @@
+# 9.1 planet achievements - 15-locale text for review
+Titles kept Latin in every locale (matches the in-game PLANET banner). ja/ko/zh/hi transliterate only 'Grand Tour'. Descriptions localised.
+
+### tunl_ach_planet_ceres
+
+| locale | title | post-earned | pre-earned |
+|---|---|---|---|
+| en-US | Ceres Grey | You finished a run on Ceres. | Finish a run on Ceres, TUNL's Monday world. |
+| de-DE | Ceres Grey | Du hast einen Lauf auf Ceres beendet. | Beende einen Lauf auf Ceres, TUNLs Montag-Welt. |
+| fr-FR | Ceres Grey | Tu as terminé une partie sur Ceres. | Termine une partie sur Ceres, le monde du lundi de TUNL. |
+| it | Ceres Grey | Hai completato una corsa su Ceres. | Completa una corsa su Ceres, il mondo del lunedì di TUNL. |
+| es-ES | Ceres Grey | Terminaste una partida en Ceres. | Termina una partida en Ceres, el mundo del lunes de TUNL. |
+| pt-BR | Ceres Grey | Você terminou uma corrida em Ceres. | Termine uma corrida em Ceres, o mundo de segunda-feira no TUNL. |
+| ru | Ceres Grey | Ты завершил забег на Ceres. | Заверши забег на Ceres, мире понедельника в TUNL. |
+| ja | Ceres Grey | Ceresでランをクリアしました。 | TUNLの月曜の世界、Ceresでランをクリアしよう。 |
+| ko | Ceres Grey | Ceres에서 런을 완료했습니다. | TUNL의 월요일 세계인 Ceres에서 런을 완료하세요. |
+| zh-Hant | Ceres Grey | 你在 Ceres 完成了一趟飛行。 | 在 TUNL 的星期一世界 Ceres 完成一趟飛行。 |
+| tr | Ceres Grey | Ceres dünyasında bir koşu tamamladın. | Ceres dünyasında bir koşu tamamla - TUNL'un Pazartesi dünyası. |
+| vi | Ceres Grey | Bạn đã hoàn thành một lượt chơi trên Ceres. | Hoàn thành một lượt chơi trên Ceres, thế giới Thứ Hai của TUNL. |
+| id | Ceres Grey | Kamu menyelesaikan lari di Ceres. | Selesaikan lari di Ceres, dunia Senin milik TUNL. |
+| hi | Ceres Grey | आपने Ceres पर एक रन पूरा किया। | Ceres पर एक रन पूरा करें, जो TUNL की सोमवार की दुनिया है। |
+| ar-SA | Ceres Grey | أكملت جولة على Ceres. | أكمل جولة على Ceres، عالم الاثنين في TUNL. |
+
+### tunl_ach_planet_mars
+
+| locale | title | post-earned | pre-earned |
+|---|---|---|---|
+| en-US | Mars Rust | You finished a run on Mars. | Finish a run on Mars, TUNL's Tuesday world. |
+| de-DE | Mars Rust | Du hast einen Lauf auf Mars beendet. | Beende einen Lauf auf Mars, TUNLs Dienstag-Welt. |
+| fr-FR | Mars Rust | Tu as terminé une partie sur Mars. | Termine une partie sur Mars, le monde du mardi de TUNL. |
+| it | Mars Rust | Hai completato una corsa su Mars. | Completa una corsa su Mars, il mondo del martedì di TUNL. |
+| es-ES | Mars Rust | Terminaste una partida en Mars. | Termina una partida en Mars, el mundo del martes de TUNL. |
+| pt-BR | Mars Rust | Você terminou uma corrida em Mars. | Termine uma corrida em Mars, o mundo de terça-feira no TUNL. |
+| ru | Mars Rust | Ты завершил забег на Mars. | Заверши забег на Mars, мире вторника в TUNL. |
+| ja | Mars Rust | Marsでランをクリアしました。 | TUNLの火曜の世界、Marsでランをクリアしよう。 |
+| ko | Mars Rust | Mars에서 런을 완료했습니다. | TUNL의 화요일 세계인 Mars에서 런을 완료하세요. |
+| zh-Hant | Mars Rust | 你在 Mars 完成了一趟飛行。 | 在 TUNL 的星期二世界 Mars 完成一趟飛行。 |
+| tr | Mars Rust | Mars dünyasında bir koşu tamamladın. | Mars dünyasında bir koşu tamamla - TUNL'un Salı dünyası. |
+| vi | Mars Rust | Bạn đã hoàn thành một lượt chơi trên Mars. | Hoàn thành một lượt chơi trên Mars, thế giới Thứ Ba của TUNL. |
+| id | Mars Rust | Kamu menyelesaikan lari di Mars. | Selesaikan lari di Mars, dunia Selasa milik TUNL. |
+| hi | Mars Rust | आपने Mars पर एक रन पूरा किया। | Mars पर एक रन पूरा करें, जो TUNL की मंगलवार की दुनिया है। |
+| ar-SA | Mars Rust | أكملت جولة على Mars. | أكمل جولة على Mars، عالم الثلاثاء في TUNL. |
+
+### tunl_ach_planet_luna
+
+| locale | title | post-earned | pre-earned |
+|---|---|---|---|
+| en-US | Luna Ash | You finished a run on Luna. | Finish a run on Luna, TUNL's Wednesday world. |
+| de-DE | Luna Ash | Du hast einen Lauf auf Luna beendet. | Beende einen Lauf auf Luna, TUNLs Mittwoch-Welt. |
+| fr-FR | Luna Ash | Tu as terminé une partie sur Luna. | Termine une partie sur Luna, le monde du mercredi de TUNL. |
+| it | Luna Ash | Hai completato una corsa su Luna. | Completa una corsa su Luna, il mondo del mercoledì di TUNL. |
+| es-ES | Luna Ash | Terminaste una partida en Luna. | Termina una partida en Luna, el mundo del miércoles de TUNL. |
+| pt-BR | Luna Ash | Você terminou uma corrida em Luna. | Termine uma corrida em Luna, o mundo de quarta-feira no TUNL. |
+| ru | Luna Ash | Ты завершил забег на Luna. | Заверши забег на Luna, мире среды в TUNL. |
+| ja | Luna Ash | Lunaでランをクリアしました。 | TUNLの水曜の世界、Lunaでランをクリアしよう。 |
+| ko | Luna Ash | Luna에서 런을 완료했습니다. | TUNL의 수요일 세계인 Luna에서 런을 완료하세요. |
+| zh-Hant | Luna Ash | 你在 Luna 完成了一趟飛行。 | 在 TUNL 的星期三世界 Luna 完成一趟飛行。 |
+| tr | Luna Ash | Luna dünyasında bir koşu tamamladın. | Luna dünyasında bir koşu tamamla - TUNL'un Çarşamba dünyası. |
+| vi | Luna Ash | Bạn đã hoàn thành một lượt chơi trên Luna. | Hoàn thành một lượt chơi trên Luna, thế giới Thứ Tư của TUNL. |
+| id | Luna Ash | Kamu menyelesaikan lari di Luna. | Selesaikan lari di Luna, dunia Rabu milik TUNL. |
+| hi | Luna Ash | आपने Luna पर एक रन पूरा किया। | Luna पर एक रन पूरा करें, जो TUNL की बुधवार की दुनिया है। |
+| ar-SA | Luna Ash | أكملت جولة على Luna. | أكمل جولة على Luna، عالم الأربعاء في TUNL. |
+
+### tunl_ach_planet_io
+
+| locale | title | post-earned | pre-earned |
+|---|---|---|---|
+| en-US | Io Obsidian | You finished a run on Io. | Finish a run on Io, TUNL's Thursday world. |
+| de-DE | Io Obsidian | Du hast einen Lauf auf Io beendet. | Beende einen Lauf auf Io, TUNLs Donnerstag-Welt. |
+| fr-FR | Io Obsidian | Tu as terminé une partie sur Io. | Termine une partie sur Io, le monde du jeudi de TUNL. |
+| it | Io Obsidian | Hai completato una corsa su Io. | Completa una corsa su Io, il mondo del giovedì di TUNL. |
+| es-ES | Io Obsidian | Terminaste una partida en Io. | Termina una partida en Io, el mundo del jueves de TUNL. |
+| pt-BR | Io Obsidian | Você terminou uma corrida em Io. | Termine uma corrida em Io, o mundo de quinta-feira no TUNL. |
+| ru | Io Obsidian | Ты завершил забег на Io. | Заверши забег на Io, мире четверга в TUNL. |
+| ja | Io Obsidian | Ioでランをクリアしました。 | TUNLの木曜の世界、Ioでランをクリアしよう。 |
+| ko | Io Obsidian | Io에서 런을 완료했습니다. | TUNL의 목요일 세계인 Io에서 런을 완료하세요. |
+| zh-Hant | Io Obsidian | 你在 Io 完成了一趟飛行。 | 在 TUNL 的星期四世界 Io 完成一趟飛行。 |
+| tr | Io Obsidian | Io dünyasında bir koşu tamamladın. | Io dünyasında bir koşu tamamla - TUNL'un Perşembe dünyası. |
+| vi | Io Obsidian | Bạn đã hoàn thành một lượt chơi trên Io. | Hoàn thành một lượt chơi trên Io, thế giới Thứ Năm của TUNL. |
+| id | Io Obsidian | Kamu menyelesaikan lari di Io. | Selesaikan lari di Io, dunia Kamis milik TUNL. |
+| hi | Io Obsidian | आपने Io पर एक रन पूरा किया। | Io पर एक रन पूरा करें, जो TUNL की गुरुवार की दुनिया है। |
+| ar-SA | Io Obsidian | أكملت جولة على Io. | أكمل جولة على Io، عالم الخميس في TUNL. |
+
+### tunl_ach_planet_ianthe
+
+| locale | title | post-earned | pre-earned |
+|---|---|---|---|
+| en-US | Ianthe Violet | You finished a run on Ianthe. | Finish a run on Ianthe, TUNL's Friday world. |
+| de-DE | Ianthe Violet | Du hast einen Lauf auf Ianthe beendet. | Beende einen Lauf auf Ianthe, TUNLs Freitag-Welt. |
+| fr-FR | Ianthe Violet | Tu as terminé une partie sur Ianthe. | Termine une partie sur Ianthe, le monde du vendredi de TUNL. |
+| it | Ianthe Violet | Hai completato una corsa su Ianthe. | Completa una corsa su Ianthe, il mondo del venerdì di TUNL. |
+| es-ES | Ianthe Violet | Terminaste una partida en Ianthe. | Termina una partida en Ianthe, el mundo del viernes de TUNL. |
+| pt-BR | Ianthe Violet | Você terminou uma corrida em Ianthe. | Termine uma corrida em Ianthe, o mundo de sexta-feira no TUNL. |
+| ru | Ianthe Violet | Ты завершил забег на Ianthe. | Заверши забег на Ianthe, мире пятницы в TUNL. |
+| ja | Ianthe Violet | Iantheでランをクリアしました。 | TUNLの金曜の世界、Iantheでランをクリアしよう。 |
+| ko | Ianthe Violet | Ianthe에서 런을 완료했습니다. | TUNL의 금요일 세계인 Ianthe에서 런을 완료하세요. |
+| zh-Hant | Ianthe Violet | 你在 Ianthe 完成了一趟飛行。 | 在 TUNL 的星期五世界 Ianthe 完成一趟飛行。 |
+| tr | Ianthe Violet | Ianthe dünyasında bir koşu tamamladın. | Ianthe dünyasında bir koşu tamamla - TUNL'un Cuma dünyası. |
+| vi | Ianthe Violet | Bạn đã hoàn thành một lượt chơi trên Ianthe. | Hoàn thành một lượt chơi trên Ianthe, thế giới Thứ Sáu của TUNL. |
+| id | Ianthe Violet | Kamu menyelesaikan lari di Ianthe. | Selesaikan lari di Ianthe, dunia Jumat milik TUNL. |
+| hi | Ianthe Violet | आपने Ianthe पर एक रन पूरा किया। | Ianthe पर एक रन पूरा करें, जो TUNL की शुक्रवार की दुनिया है। |
+| ar-SA | Ianthe Violet | أكملت جولة على Ianthe. | أكمل جولة على Ianthe، عالم الجمعة في TUNL. |
+
+### tunl_ach_planet_pallas
+
+| locale | title | post-earned | pre-earned |
+|---|---|---|---|
+| en-US | Pallas Green | You finished a run on Pallas. | Finish a run on Pallas, TUNL's Saturday world. |
+| de-DE | Pallas Green | Du hast einen Lauf auf Pallas beendet. | Beende einen Lauf auf Pallas, TUNLs Samstag-Welt. |
+| fr-FR | Pallas Green | Tu as terminé une partie sur Pallas. | Termine une partie sur Pallas, le monde du samedi de TUNL. |
+| it | Pallas Green | Hai completato una corsa su Pallas. | Completa una corsa su Pallas, il mondo del sabato di TUNL. |
+| es-ES | Pallas Green | Terminaste una partida en Pallas. | Termina una partida en Pallas, el mundo del sábado de TUNL. |
+| pt-BR | Pallas Green | Você terminou uma corrida em Pallas. | Termine uma corrida em Pallas, o mundo de sábado no TUNL. |
+| ru | Pallas Green | Ты завершил забег на Pallas. | Заверши забег на Pallas, мире субботы в TUNL. |
+| ja | Pallas Green | Pallasでランをクリアしました。 | TUNLの土曜の世界、Pallasでランをクリアしよう。 |
+| ko | Pallas Green | Pallas에서 런을 완료했습니다. | TUNL의 토요일 세계인 Pallas에서 런을 완료하세요. |
+| zh-Hant | Pallas Green | 你在 Pallas 完成了一趟飛行。 | 在 TUNL 的星期六世界 Pallas 完成一趟飛行。 |
+| tr | Pallas Green | Pallas dünyasında bir koşu tamamladın. | Pallas dünyasında bir koşu tamamla - TUNL'un Cumartesi dünyası. |
+| vi | Pallas Green | Bạn đã hoàn thành một lượt chơi trên Pallas. | Hoàn thành một lượt chơi trên Pallas, thế giới Thứ Bảy của TUNL. |
+| id | Pallas Green | Kamu menyelesaikan lari di Pallas. | Selesaikan lari di Pallas, dunia Sabtu milik TUNL. |
+| hi | Pallas Green | आपने Pallas पर एक रन पूरा किया। | Pallas पर एक रन पूरा करें, जो TUNL की शनिवार की दुनिया है। |
+| ar-SA | Pallas Green | أكملت جولة على Pallas. | أكمل جولة على Pallas، عالم السبت في TUNL. |
+
+### tunl_ach_planet_rhodia
+
+| locale | title | post-earned | pre-earned |
+|---|---|---|---|
+| en-US | Rhodia Rose | You finished a run on Rhodia. | Finish a run on Rhodia, TUNL's Sunday world. |
+| de-DE | Rhodia Rose | Du hast einen Lauf auf Rhodia beendet. | Beende einen Lauf auf Rhodia, TUNLs Sonntag-Welt. |
+| fr-FR | Rhodia Rose | Tu as terminé une partie sur Rhodia. | Termine une partie sur Rhodia, le monde du dimanche de TUNL. |
+| it | Rhodia Rose | Hai completato una corsa su Rhodia. | Completa una corsa su Rhodia, il mondo della domenica di TUNL. |
+| es-ES | Rhodia Rose | Terminaste una partida en Rhodia. | Termina una partida en Rhodia, el mundo del domingo de TUNL. |
+| pt-BR | Rhodia Rose | Você terminou uma corrida em Rhodia. | Termine uma corrida em Rhodia, o mundo de domingo no TUNL. |
+| ru | Rhodia Rose | Ты завершил забег на Rhodia. | Заверши забег на Rhodia, мире воскресенья в TUNL. |
+| ja | Rhodia Rose | Rhodiaでランをクリアしました。 | TUNLの日曜の世界、Rhodiaでランをクリアしよう。 |
+| ko | Rhodia Rose | Rhodia에서 런을 완료했습니다. | TUNL의 일요일 세계인 Rhodia에서 런을 완료하세요. |
+| zh-Hant | Rhodia Rose | 你在 Rhodia 完成了一趟飛行。 | 在 TUNL 的星期日世界 Rhodia 完成一趟飛行。 |
+| tr | Rhodia Rose | Rhodia dünyasında bir koşu tamamladın. | Rhodia dünyasında bir koşu tamamla - TUNL'un Pazar dünyası. |
+| vi | Rhodia Rose | Bạn đã hoàn thành một lượt chơi trên Rhodia. | Hoàn thành một lượt chơi trên Rhodia, thế giới Chủ Nhật của TUNL. |
+| id | Rhodia Rose | Kamu menyelesaikan lari di Rhodia. | Selesaikan lari di Rhodia, dunia Minggu milik TUNL. |
+| hi | Rhodia Rose | आपने Rhodia पर एक रन पूरा किया। | Rhodia पर एक रन पूरा करें, जो TUNL की रविवार की दुनिया है। |
+| ar-SA | Rhodia Rose | أكملت جولة على Rhodia. | أكمل جولة على Rhodia، عالم الأحد في TUNL. |
+
+### tunl_ach_grand_tour
+
+| locale | title | post-earned | pre-earned |
+|---|---|---|---|
+| en-US | Grand Tour | You have flown all seven of TUNL's worlds. | Finish a run on all seven daily worlds, Monday through Sunday. |
+| de-DE | Grand Tour | Du bist durch alle sieben Welten von TUNL geflogen. | Beende einen Lauf auf jeder der sieben Tageswelten, von Montag bis Sonntag. |
+| fr-FR | Grand Tour | Tu as parcouru les sept mondes de TUNL. | Termine une partie sur les sept mondes quotidiens, du lundi au dimanche. |
+| it | Grand Tour | Hai volato su tutti e sette i mondi di TUNL. | Completa una corsa su ciascuno dei sette mondi giornalieri, dal lunedì alla domenica. |
+| es-ES | Grand Tour | Volaste por los siete mundos de TUNL. | Termina una partida en los siete mundos diarios, de lunes a domingo. |
+| pt-BR | Grand Tour | Você voou por todos os sete mundos do TUNL. | Termine uma corrida nos sete mundos diários, de segunda a domingo. |
+| ru | Grand Tour | Ты пролетел все семь миров TUNL. | Заверши забег на всех семи ежедневных мирах, с понедельника по воскресенье. |
+| ja | グランドツアー | TUNLの7つの世界すべてを飛びました。 | 月曜から日曜まで、7つの毎日の世界すべてでランをクリアしよう。 |
+| ko | 그랜드 투어 | TUNL의 일곱 세계를 모두 비행했습니다. | 월요일부터 일요일까지 일곱 개의 일일 세계를 모두 완료하세요. |
+| zh-Hant | 環遊之旅 | 你已飛越 TUNL 的全部七個世界。 | 在星期一到星期日的七個每日世界都完成一趟飛行。 |
+| tr | Grand Tour | TUNL'un yedi dünyasının hepsinde uçtun. | Pazartesiden Pazara, yedi günlük dünyanın hepsinde bir koşu tamamla. |
+| vi | Grand Tour | Bạn đã bay qua cả bảy thế giới của TUNL. | Hoàn thành một lượt chơi trên cả bảy thế giới hằng ngày, từ Thứ Hai đến Chủ Nhật. |
+| id | Grand Tour | Kamu telah terbang melewati ketujuh dunia TUNL. | Selesaikan lari di ketujuh dunia harian, dari Senin sampai Minggu. |
+| hi | ग्रैंड टूर | आपने TUNL की सभी सात दुनियाओं में उड़ान भरी। | सोमवार से रविवार तक, सभी सात दैनिक दुनियाओं में एक रन पूरा करें। |
+| ar-SA | Grand Tour | لقد طرت عبر عوالم TUNL السبعة كلها. | أكمل جولة على العوالم السبعة اليومية كلها، من الاثنين إلى الأحد. |

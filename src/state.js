@@ -153,6 +153,10 @@ let missionRewardWon = 0;
 let runCoinsByType = { gold: 0, blue: 0, red: 0, green: 0, orange: 0 }; // this run's per-type coin counts
 let _skinBtnRects = [];
 let streak = parseInt(localStorage.getItem('tunnel_streak') || '0');
+// Persistent 7-bit mask of which weekday worlds (constants.js WEEKDAY_PALETTES,
+// bit i = index i) the player has finished a real run on -- backs the
+// PLANET_ACHIEVEMENTS set, set in commitDeath() (update.js).
+let planetsFlown = parseInt(localStorage.getItem('tunnel_planets_flown') || '0');
 // SOLARIS-only currency (constants.js STARDUST_PER_DAY): +1 on every new calendar day
 // opened (lifecycle.js's day-boundary block, alongside the streak update above), +1
 // bonus every STARDUST_STREAK_BONUS_DAY-th unbroken streak day. Deliberately earned

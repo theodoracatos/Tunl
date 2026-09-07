@@ -36,8 +36,17 @@ blocks (search `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION`, there are 2 of
 - `versionName` -> the new version string, quoted (e.g. `'4.0'`)
 - `versionCode` -> bump by 1 from whatever it currently is
 
-Verify both after editing (`grep -n "MARKETING_VERSION\|CURRENT_PROJECT_VERSION"` /
-`grep -n "versionCode\|versionName"`) rather than trusting the edit blind.
+**Shared / web** -- `src/constants.js`:
+- `TUNL_VERSION` -> the new version string (e.g. `'4.0'`). Single source of truth
+  shared by all three targets; `build-play.mjs` and `build-site.mjs` read it and stamp
+  `<meta name="tunl:version">` into every generated page, and it is exposed as
+  `window.TUNL_VERSION` at runtime. Not user-facing (the homepage "New in X" hero badge
+  is the human-readable signal) -- just keep it in sync with the two native version
+  strings above.
+
+Verify all three after editing (`grep -n "MARKETING_VERSION\|CURRENT_PROJECT_VERSION"` /
+`grep -n "versionCode\|versionName"` / `grep -n "TUNL_VERSION" src/constants.js`) rather
+than trusting the edit blind.
 
 ## 2. App icon replacement (only if new assets were provided this release)
 
@@ -68,22 +77,40 @@ the masters -- it writes iOS/Android icon rasters, `flytunl-site/site/`'s favico
 `wordmark.svg`, and `branding/web/`'s copies in one pass. Never hand-edit the generated
 rasters directly.
 
-## 3. Release notes, all 15 languages
+## 3. Release notes AND promotional text, all 15 languages
 
-Same language set as the game's own i18n (`src/i18n.js` `LANG_ORDER`): en, de, fr, it,
-es, pt, ja, ko, zh, ru, ar, tr, id, vi, hi.
+Two separate fields, both needed, don't ship one without checking the other:
 
+**3.1 What's New / release notes** (both stores, version-specific) -- same language set
+as the game's own i18n (`src/i18n.js` `LANG_ORDER`): en, de, fr, it, es, pt, ja, ko, zh,
+ru, ar, tr, id, vi, hi.
 - Write real content based on what's actually new this release (step 0) -- don't reuse
   a previous version's notes with the number swapped.
 - Keep every language under Google Play's 500-character-per-locale release notes limit
-  (write a quick length-check script, don't eyeball it -- see the 3.2 release notes for
-  the pattern). App Store's limit is far more generous, so one set of copy covers both.
-- Match TUNL's existing voice (see `Schedly/Schedly/wwwroot/tunl/marketing.html` for
-  tone reference: short, punchy, second-person, a little dramatic -- "push into the
-  dark", not corporate changelog-speak).
-- Deliver as a markdown file (one section per language) via the scratchpad + SendUserFile,
-  not just inline chat text -- it needs to survive being copy-pasted into two different
-  consoles across 15 locale fields each.
+  (write a quick length-check script, don't eyeball it -- see past `store-metadata/*/
+  release-notes.md` files for the pattern). App Store's limit is far more generous, so
+  one set of copy covers both.
+- Match TUNL's existing voice: short, punchy, second-person, a little dramatic -- "push
+  into the dark", not corporate changelog-speak.
+
+**3.2 Promotional text** (App Store Connect "Werbetexte" field only -- Google Play has
+no equivalent, don't look for one). 170-char limit per locale. This is EASY TO FORGET
+because it's a separate field from What's New, sits above the description in ASC, and
+was left empty through 9.0 -- always check it explicitly, every release, not just when
+asked.
+- Evergreen tagline copy (the daily-cave hook, hold-to-climb/release-to-fall), not
+  version-specific -- once it's good it doesn't need rewriting every release the way
+  What's New does. Only touch it again if the pitch itself changes or the user asks.
+- If it's already populated from a prior release and nothing about the core pitch
+  changed, leave it alone -- don't silently overwrite existing promo copy.
+- If it's empty (a new locale, or a gap like the pre-9.1 state), draft it now rather
+  than leaving it blank -- don't skip this field because the task at hand was framed as
+  "release notes."
+
+Deliver both as one markdown file (one section per language, per field -- see
+`store-metadata/9.1/release-notes.md` for the shape) via the scratchpad + SendUserFile,
+not just inline chat text -- it needs to survive being copy-pasted into two different
+consoles across 15+ locale fields each.
 
 ## 4. Check flytunl.ch
 

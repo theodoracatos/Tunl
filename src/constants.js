@@ -1,4 +1,14 @@
 // TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch
+
+// Single source of truth for the marketing version, shared by all three targets
+// (iOS/Android read their own native MARKETING_VERSION / versionName - keep this in
+// sync via /release step 1). Not rendered in any UI (would be a gated web/app change);
+// it exists so a build can identify itself: window.TUNL_VERSION for a DevTools check,
+// and build-play.mjs stamps it into /play as <meta name="tunl:version"> so the live
+// web build's version is greppable without diffing the bundle.
+const TUNL_VERSION = '9.1';
+if (typeof window !== 'undefined') window.TUNL_VERSION = TUNL_VERSION;
+
 const cv  = document.getElementById('c');
 const ctx = cv.getContext('2d');
 
@@ -176,6 +186,22 @@ const WEEKDAY_BG = [8, 7, 13];
 
 // Monday = 0 ... Sunday = 6 (JS's own getUTCDay() is Sunday = 0).
 function weekdayIndex(date) { return (date.getUTCDay() + 6) % 7; }
+
+// Game Center / Play Games achievement IDs for "flew this world", index-aligned
+// with WEEKDAY_PALETTES above (0 = Monday/Ceres ... 6 = Sunday/Rhodia). Fired
+// from commitDeath() (update.js) on the first finished run of a real length
+// (CONTINUE_MIN_SCORE) on each world; state.js `planetsFlown` is the persistent
+// 7-bit mask that makes each one a one-shot. `tunl_ach_grand_tour` is the
+// capstone -- fired the run that completes the set (mask == 0x7f). Same
+// self-chosen-id + Android-shim setup as SHIP_ACHIEVEMENTS below; Android maps
+// these to Play Console's opaque ids in MainActivity.kt / strings.xml.
+const PLANET_ACHIEVEMENTS = [
+    'tunl_ach_planet_ceres',  'tunl_ach_planet_mars',   'tunl_ach_planet_luna',
+    'tunl_ach_planet_io',     'tunl_ach_planet_ianthe', 'tunl_ach_planet_pallas',
+    'tunl_ach_planet_rhodia',
+];
+const PLANET_GRAND_TOUR_ACH = 'tunl_ach_grand_tour';
+const PLANET_ALL_FLOWN_MASK = (1 << PLANET_ACHIEVEMENTS.length) - 1; // 0x7f
 
 // ── Ship mastery ──────────────────────────────────────────────────────
 // Per-ship XP (state.js `skinXP`, one coin collected while that ship is active

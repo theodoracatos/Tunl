@@ -30,6 +30,15 @@ const I18N = path.join(here, 'i18n/home.json');
 const ORIGIN = 'https://flytunl.ch';
 
 async function build() {
+  // TUNL_VERSION: single source of truth in src/constants.js, shared by all three
+  // targets. Stamped into each page's <head> as <meta name="tunl:version"> purely
+  // for quick "which release is this site on" checks - not user-facing copy (the
+  // "New in X" hero badge is the human-readable version signal).
+  const constantsSrc = await readFile(path.join(here, '..', 'src', 'constants.js'), 'utf8');
+  const verMatch = constantsSrc.match(/const\s+TUNL_VERSION\s*=\s*['"]([^'"]+)['"]/);
+  if (!verMatch) throw new Error('src/constants.js: TUNL_VERSION const not found');
+  const TUNL_VERSION = verMatch[1];
+
   const raw = JSON.parse(await readFile(I18N, 'utf8'));
   const LANGS = raw._langs;                 // ["en","de",...]
   const NAMES = raw._langNames;
@@ -75,7 +84,7 @@ async function build() {
   }
   tpl = tpl.replace(
     '<meta property="og:type" content="website">',
-    '<meta property="og:type" content="website">\n{{HEAD_ALT}}'
+    `<meta property="og:type" content="website">\n<meta name="tunl:version" content="${TUNL_VERSION}">\n{{HEAD_ALT}}`
   );
   // og:url is currently a fixed root URL - make it per-page
   tpl = tpl.replace(

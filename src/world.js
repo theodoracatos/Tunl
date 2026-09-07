@@ -154,10 +154,22 @@ const _worldTable = (() => {
     return arr;
 })();
 
+// Whole UTC days since 2025-01-01 for the day we're rendering. Both the world
+// name and the world number key off this one monotonic index so they stay
+// locked 1:1: WORLD n uses name-table slot n, and gen === ceil(n / 900), i.e.
+// "WORLD 900" is visibly the last before the "<name> 2" generation begins.
+// The epoch is arbitrary (a round anchor comfortably before the first daily
+// seed on 2026-07-06) and invisible to players - it only has to stay fixed
+// forever and keep dayIdx positive, including for past-day ?d= deep links.
+function _worldDayIdx() {
+    const now   = _tunlActiveDate();
+    const epoch = Date.UTC(2025, 0, 1);
+    const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+    return Math.floor((today - epoch) / 86400000);
+}
+
 function dailyWorldName() {
-    const now    = _tunlActiveDate();
-    const epoch  = Date.UTC(2025, 0, 1);
-    const dayIdx = Math.floor((Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - epoch) / 86400000);
+    const dayIdx = _worldDayIdx();
     const N    = _worldTable.length;
     const gen  = Math.floor(dayIdx / N) + 1;
     const slot = _worldTable[((dayIdx % N) + N) % N];
@@ -167,13 +179,15 @@ function dailyWorldName() {
 
 const WORLD_NAME = dailyWorldName();
 
-// World number shown in the run-start banner: day-of-year (1-366, UTC, resets
-// each Jan 1) so it reads like a world index without needing separate storage.
+// World number shown in the run-start banner: a monotonic count of days since
+// the 2025-01-01 epoch (WORLD 1 = 2025-01-01), never resets, never repeats.
+// Was day-of-year (1-366) until 2026-09-07, which reset every Jan 1 - so
+// "WORLD 5" came round every year, it had a leap-year wart at 366, and it was
+// decoupled from the name's 900-day cycle. Sharing _worldDayIdx() with the
+// name fixes all three. clamped to >= 1 so a pre-epoch ?d= deep link can't
+// show WORLD 0 or negative.
 function dailyLevelNum() {
-    const now   = _tunlActiveDate();
-    const start = Date.UTC(now.getUTCFullYear(), 0, 1);
-    const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-    return Math.floor((today - start) / 86400000) + 1;
+    return Math.max(1, _worldDayIdx() + 1);
 }
 const LEVEL_NUM = dailyLevelNum();
 

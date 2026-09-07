@@ -118,6 +118,16 @@ class MainActivity : ComponentActivity() {
         "tunl_ach_score_1000"     to R.string.achievement_score_1000,
         "tunl_ach_score_10000"    to R.string.achievement_score_10000,
         "tunl_ach_score_100000"   to R.string.achievement_score_100000,
+        // 9.1: one per weekday world (src/constants.js PLANET_ACHIEVEMENTS) + grand-tour
+        // capstone.
+        "tunl_ach_planet_ceres"   to R.string.achievement_planet_ceres,
+        "tunl_ach_planet_mars"    to R.string.achievement_planet_mars,
+        "tunl_ach_planet_luna"    to R.string.achievement_planet_luna,
+        "tunl_ach_planet_io"      to R.string.achievement_planet_io,
+        "tunl_ach_planet_ianthe"  to R.string.achievement_planet_ianthe,
+        "tunl_ach_planet_pallas"  to R.string.achievement_planet_pallas,
+        "tunl_ach_planet_rhodia"  to R.string.achievement_planet_rhodia,
+        "tunl_ach_grand_tour"     to R.string.achievement_grand_tour,
     )
 
     // Shims window.webkit.messageHandlers.{gameCenter,iap,ads,haptic} so the game's
@@ -545,11 +555,17 @@ class MainActivity : ComponentActivity() {
     // Mirrors GameView.swift's reportAchievement. unlock() is idempotent for an
     // already-unlocked achievement (no duplicate popup), so no client-side "have I
     // already sent this" guard is needed, same reasoning as submitScore above. Silently
-    // no-ops on an id with no mapped resource (e.g. a stale REPLACE_WITH_ACHIEVEMENT_ID
-    // placeholder still in strings.xml) rather than crashing on a bad getString() call.
+    // no-ops on an id with no mapped resource, and on a mapped id whose strings.xml value
+    // is still a TUNL_TODO_* / REPLACE_WITH_ACHIEVEMENT_ID placeholder, rather than firing
+    // a bad unlock() call.
     private fun unlockAchievement(id: String) {
         val resId = achievementResIds[id] ?: return
-        PlayGames.getAchievementsClient(this).unlock(getString(resId))
+        val playId = getString(resId)
+        // Skip ids whose Play Console value hasn't been filled in yet (strings.xml
+        // TUNL_TODO_* / legacy REPLACE_WITH_ACHIEVEMENT_ID) - unlock() with a bogus id
+        // just logs an error.
+        if (playId.startsWith("TUNL_TODO") || playId.startsWith("REPLACE_")) return
+        PlayGames.getAchievementsClient(this).unlock(playId)
     }
 
     // Mirrors GameView.swift's fetchWorldRank: pulls the player's standing on the daily

@@ -798,6 +798,26 @@ function commitDeath() {
         bestSX = _dmWx;
         localStorage.setItem('tunnel_best_sx', bestSX);
     }
+    // "Flew this world" achievements (constants.js PLANET_ACHIEVEMENTS): the first
+    // finished run of a real length (CONTINUE_MIN_SCORE, the same floor the review
+    // and referral gates use) on each of the 7 weekday worlds flips that world's
+    // bit in the persistent `planetsFlown` mask and fires its one-shot achievement;
+    // filling the mask fires the grand-tour capstone. Keyed to
+    // weekdayIndex(_tunlActiveDate()) -- the world actually shown this run
+    // (draw.js) -- not the real date, so a web ?d= replay of a past day's cave
+    // still counts for that day's world. Native-only in effect (the bridge is a
+    // no-op on web); the localStorage write is harmless there.
+    if (score >= CONTINUE_MIN_SCORE) {
+        const _planetIdx = weekdayIndex(_tunlActiveDate());
+        if (!(planetsFlown & (1 << _planetIdx))) {
+            planetsFlown |= (1 << _planetIdx);
+            localStorage.setItem('tunnel_planets_flown', planetsFlown);
+            window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: PLANET_ACHIEVEMENTS[_planetIdx] });
+            if (planetsFlown === PLANET_ALL_FLOWN_MASK) {
+                window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: PLANET_GRAND_TOUR_ACH });
+            }
+        }
+    }
     _startTitleMusic();
 }
 

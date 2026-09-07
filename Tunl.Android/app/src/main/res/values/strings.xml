@@ -32,6 +32,17 @@
     <string name="achievement_score_10000" translatable="false">CgkI_MyGndIBEAIQBg</string>
     <string name="achievement_score_100000" translatable="false">CgkI_MyGndIBEAIQEA</string>
 
+    <!-- 9.1: one "flew this world" achievement per weekday palette (src/constants.js
+         PLANET_ACHIEVEMENTS / WEEKDAY_PALETTES) plus a grand-tour capstone. -->
+    <string name="achievement_planet_ceres" translatable="false">CgkI_MyGndIBEAIQFg</string>
+    <string name="achievement_planet_mars" translatable="false">CgkI_MyGndIBEAIQFw</string>
+    <string name="achievement_planet_luna" translatable="false">CgkI_MyGndIBEAIQGw</string>
+    <string name="achievement_planet_io" translatable="false">CgkI_MyGndIBEAIQFQ</string>
+    <string name="achievement_planet_ianthe" translatable="false">CgkI_MyGndIBEAIQFA</string>
+    <string name="achievement_planet_pallas" translatable="false">CgkI_MyGndIBEAIQGQ</string>
+    <string name="achievement_planet_rhodia" translatable="false">CgkI_MyGndIBEAIQGg</string>
+    <string name="achievement_grand_tour" translatable="false">CgkI_MyGndIBEAIQGA</string>
+
     <!-- AdMob console -> Apps -> TUNL (Android) -> App ID. Separate from the iOS app ID. -->
     <string name="admob_app_id" translatable="false">ca-app-pub-4882203470005029~3522958941</string>
     <!-- AdMob console -> Apps -> TUNL (Android) -> Ad units -> Interstitial -> Ad unit ID. -->
