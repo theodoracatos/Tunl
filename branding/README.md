@@ -34,6 +34,17 @@ and unchanged by the icon direction; the two are meant to lock up together
   screen), `fw_`-prefixed IDs; it used to be a ~270KB embedded PNG of the
   retired ring-portal U.
 
+## `game-center/` — App Store Connect Game Center art
+
+- `gen-challenge-image.py` — generates `challenge-beat-my-score.jpg`, the
+  challenge image for "Beat My Score" (`tunl_challenge_alltime`). Same glyph +
+  glow language as the generated leaderboard/achievement icons, extended to
+  ASC's 3840x2160 challenge slot (JPEG, sRGB, no alpha). Re-run it to tweak;
+  needs `numpy` + `Pillow`.
+
+The leaderboard and achievement icons themselves are still generated ad hoc
+(the scripts have not been folded into the repo yet).
+
 Regenerate every applied raster from the masters with
 `branding/export-icons.sh` (needs `rsvg-convert` + Python `Pillow`). One-off:
 ```
