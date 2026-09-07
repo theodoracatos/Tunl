@@ -37,7 +37,7 @@ const outDir = path.join(root, 'flytunl-site/site/play');
 // src load order - MUST match the <script> tags in tunl.html.
 const SCRIPTS = [
   'web', 'i18n', 'constants', 'world', 'state', 'lifecycle', 'systems',
-  'audio', 'input', 'update', 'draw', 'share', 'notify', 'main',
+  'audio', 'input', 'update', 'draw', 'share', 'notify', 'main', 'ads-web',
 ];
 
 const BANNER = '/*! TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch */';
@@ -52,6 +52,24 @@ const CF_ANALYTICS_TOKEN = '7783839e84374212b7d76f25e1fb8e87';
 const CF_BEACON = CF_ANALYTICS_TOKEN
   ? `\n<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "${CF_ANALYTICS_TOKEN}"}'></script>`
   : `\n<!-- Web Analytics: set CF_ANALYTICS_TOKEN in build-play.mjs to emit the Cloudflare beacon. -->`;
+
+// Google Ad Manager H5 Games Ads (see src/ads-web.js for the full write-up).
+// gpt.js is safe to ship unconditionally here - this HEAD_EXTRA only ever
+// reaches the served /play page, never tunl.html or the app builds, so the
+// app WebViews (which use native AdMob instead) never load it.
+//
+// FUNDING_CHOICES_SNIPPET is the EU/UK/CH consent-message script AdSense
+// generates once flytunl.ch's site application clears review - copy it
+// verbatim from AdSense -> Datenschutz und Mitteilungen -> Mitteilungen ->
+// "Code abrufen" and paste it here. Left blank (not hand-written) because a
+// guessed version of Google's own boilerplate risks being subtly wrong, and
+// getting EU consent wording wrong is a compliance problem, not just a bug.
+const FUNDING_CHOICES_SNIPPET = '';
+const ADS_HEAD = `\n<!-- Google Ad Manager: H5 Games Ads (interstitial + rewarded) -->
+<script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js" crossorigin="anonymous"></script>` +
+  (FUNDING_CHOICES_SNIPPET
+    ? `\n${FUNDING_CHOICES_SNIPPET}`
+    : `\n<!-- TODO: paste the Funding Choices (EU consent) snippet here - see FUNDING_CHOICES_SNIPPET above. -->`);
 
 // Injected into <head> of the served /play page only (never the repo tunl.html or
 // the app builds). Link-preview cards for shared runs, canonical URL, theme colour.
@@ -70,7 +88,7 @@ const HEAD_EXTRA = `<meta name="description" content="Fly today's cave. Every pl
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="TUNL">
 <meta name="twitter:description" content="A daily hold-to-thrust cave flyer. Same cave for everyone, every day.">
-<meta name="twitter:image" content="https://flytunl.ch/feature-graphic-1024x500.png">` + CF_BEACON;
+<meta name="twitter:image" content="https://flytunl.ch/feature-graphic-1024x500.png">` + CF_BEACON + ADS_HEAD;
 
 async function build() {
   // ---- 1. bundle + minify src/*.js -------------------------------------
