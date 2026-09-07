@@ -73,6 +73,61 @@ const ADS_HEAD = `\n<!-- Google AdSense (site verification + ad serving) -->
     ? `\n${FUNDING_CHOICES_SNIPPET}`
     : `\n<!-- TODO: paste the Funding Choices (EU consent) snippet here - see FUNDING_CHOICES_SNIPPET above. -->`);
 
+// Firebase Analytics for the web build - adds a "Web" data stream to the same
+// GA4 property (Firebase project tunl-2030f) that backs the iOS and Android
+// apps, so /play traffic shows up next to them in the Firebase console.
+//
+// Web-only by construction: this reaches the served /play page only, never
+// tunl.html or the app WebViews (they report via the native Firebase SDK).
+//
+// Consent: unlike the apps (which flip consent to GRANTED after their own
+// consent flow, see AdsManager.swift/.kt), the web build has no consent banner
+// yet - Cloudflare Web Analytics was chosen precisely to avoid one. So Google
+// Consent Mode v2 defaults every storage type to 'denied' here: GA4 still
+// records cookieless, modeled pings (page_view / session_start / first_visit /
+// user_engagement) - enough to see web usage volume - but sets no _ga cookie,
+// so no banner is legally required for CH/EU/UK. When the Funding Choices
+// snippet lands (FUNDING_CHOICES_SNIPPET above), its callback can gtag('consent',
+// 'update', {...: 'granted'}) to upgrade users who opt in.
+//
+// FIREBASE_WEB_CONFIG: from the "flytunl.ch/play" Web app registered in the
+// Firebase console (Project tunl-2030f -> Projekteinstellungen -> Meine Apps).
+// apiKey and appId are public client identifiers (they ship in every Firebase
+// web app's page source), not secrets - Firebase security is enforced by rules
+// and API-key referrer restrictions, not by hiding these. If measurementId is
+// not a real G-XXXXXXXXXX the block below emits only a comment (no dead script).
+const FIREBASE_WEB_CONFIG = {
+  apiKey: 'AIzaSyDU65rBkalyGdUXe7ccDGHtBKwFX46uVtw',
+  authDomain: 'tunl-2030f.firebaseapp.com',
+  projectId: 'tunl-2030f',
+  storageBucket: 'tunl-2030f.firebasestorage.app',
+  messagingSenderId: '60214471260',
+  appId: '1:60214471260:web:7408a0f3cb0f7073431499',
+  measurementId: 'G-EPC8QC7S7P',
+};
+
+const FIREBASE_HEAD = FIREBASE_WEB_CONFIG.measurementId.startsWith('G-')
+  ? `\n<!-- Firebase Analytics (Web data stream, project tunl-2030f) -->
+<script>
+  // Google Consent Mode v2 - denied by default (no consent banner on /play).
+  // Must run before gtag.js loads; the Firebase SDK injects gtag.js itself.
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {
+    ad_storage: 'denied', ad_user_data: 'denied',
+    ad_personalization: 'denied', analytics_storage: 'denied',
+  });
+</script>
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js';
+  import { getAnalytics, isSupported } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-analytics.js';
+  isSupported().then((ok) => {
+    if (!ok) return;
+    getAnalytics(initializeApp(${JSON.stringify(FIREBASE_WEB_CONFIG)}));
+  }).catch(() => {});
+</script>`
+  : `\n<!-- Firebase Analytics: fill FIREBASE_WEB_CONFIG in build-play.mjs (register a Web app in Firebase project tunl-2030f). -->`;
+
 // Injected into <head> of the served /play page only (never the repo tunl.html or
 // the app builds). Link-preview cards for shared runs, canonical URL, theme colour.
 // The og:image is the marketing feature graphic already at the site root.
@@ -90,7 +145,7 @@ const HEAD_EXTRA = `<meta name="description" content="Fly today's cave. Every pl
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="TUNL">
 <meta name="twitter:description" content="A daily hold-to-thrust cave flyer. Same cave for everyone, every day.">
-<meta name="twitter:image" content="https://flytunl.ch/feature-graphic-1024x500.png">` + CF_BEACON + ADS_HEAD;
+<meta name="twitter:image" content="https://flytunl.ch/feature-graphic-1024x500.png">` + CF_BEACON + ADS_HEAD + FIREBASE_HEAD;
 
 async function build() {
   // ---- 1. bundle + minify src/*.js -------------------------------------
