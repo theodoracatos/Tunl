@@ -58,12 +58,18 @@ const CF_BEACON = CF_ANALYTICS_TOKEN
 // reaches the served /play page, never tunl.html or the app builds, so the
 // app WebViews (which use native AdMob instead) never load it.
 //
-// FUNDING_CHOICES_SNIPPET is the EU/UK/CH consent-message script AdSense
-// generates once flytunl.ch's site application clears review - copy it
-// verbatim from AdSense -> Datenschutz und Mitteilungen -> Mitteilungen ->
-// "Code abrufen" and paste it here. Left blank (not hand-written) because a
-// guessed version of Google's own boilerplate risks being subtly wrong, and
-// getting EU consent wording wrong is a compliance problem, not just a bug.
+// FUNDING_CHOICES_SNIPPET: the explicit EU/UK/CH consent-message loader from
+// AdSense -> Datenschutz und Mitteilungen -> Europäische Verordnungen ->
+// Mitteilungen -> "Code abrufen". As of 2026-09-07 this is NO LONGER required:
+// adsbygoogle.js (loaded below) auto-injects the Funding Choices loader for
+// ca-pub-4882203470005029 whenever a message is configured, and gpt.js shares
+// the same page-level `__tcfapi`, so the consent flow already runs on /play
+// (verified live: fundingchoicesmessages.google.com requests fire,
+// window.__tcfapi + window.googlefc are present). Kept as an override slot only:
+// paste the explicit snippet here if Google ever stops auto-loading it for the
+// AdSense tag, or if /play drops adsbygoogle.js and keeps only gpt.js. Left
+// blank otherwise - a hand-written guess at Google's boilerplate is a
+// compliance risk, not just a bug.
 const FUNDING_CHOICES_SNIPPET = '';
 const ADS_HEAD = `\n<!-- Google AdSense (site verification + ad serving) -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4882203470005029" crossorigin="anonymous"></script>
@@ -71,7 +77,7 @@ const ADS_HEAD = `\n<!-- Google AdSense (site verification + ad serving) -->
 <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js" crossorigin="anonymous"></script>` +
   (FUNDING_CHOICES_SNIPPET
     ? `\n${FUNDING_CHOICES_SNIPPET}`
-    : `\n<!-- TODO: paste the Funding Choices (EU consent) snippet here - see FUNDING_CHOICES_SNIPPET above. -->`);
+    : `\n<!-- Funding Choices (EU consent) is auto-loaded by adsbygoogle.js above - see FUNDING_CHOICES_SNIPPET note. -->`);
 
 // Firebase Analytics for the web build - adds a "Web" data stream to the same
 // GA4 property (Firebase project tunl-2030f) that backs the iOS and Android
