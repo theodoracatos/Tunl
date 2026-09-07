@@ -20,7 +20,7 @@ to get the same verdict mid-session before attempting a push.
 ## What is this
 
 TUNL is an HTML5 Canvas hold-to-thrust cave flyer game.
-`tunl.html` is an HTML/CSS shell that loads 12 plain scripts from `src/` in order - no
+`tunl.html` is an HTML/CSS shell that loads 15 plain scripts from `src/` in order - no
 libraries, no modules, no build step, one shared global scope. Run `/map` for the file
 map. Open `tunl.html` in a browser to play.
 
