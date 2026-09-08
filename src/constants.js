@@ -304,6 +304,20 @@ const CANNON_SHOT_R      = W * 0.013;
 const CANNON_FIRE_LEAD   = W * 0.62;
 const CANNON_SHOT_TRAVEL = 1.15;
 
+// ── Falling stalactites ───────────────────────────────────────────────
+// A ceiling stalactite that visibly shakes (dust telegraph) as it scrolls in,
+// breaks loose as the player closes within FALL_LEAD, and drops FALL_SPAN
+// world-px of scroll later into a lowered rock that then just sits in the
+// corridor and scrolls past - so it reads as "a spike grew downward here, route
+// around it", with the crack as fair warning. It is never dropped onto someone
+// already level with it (the detach trigger guards that). Cadence lives in
+// world.js fallSpacing(); flagging is in maintainStalactites; drop + landing in
+// updateFallingStals. Both scale with W (fixed on-screen geometry, W capped 956).
+// FALL_LEAD small enough that the loose stalactite spends ~0.6s visibly cracking
+// on screen before it lets go; FALL_SPAN a quick drop just ahead of the ship.
+const FALL_LEAD = W * 0.44;
+const FALL_SPAN = W * 0.26;
+
 // Bomb coin (purple): blast radius for the "destroy nearby obstacles" pickup effect --
 // see systems.js triggerBombExplosion(). "Small" on purpose -- clears immediate danger,
 // not the whole visible screen.

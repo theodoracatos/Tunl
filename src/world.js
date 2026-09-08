@@ -120,10 +120,42 @@ function deepMorphAt(wx) {
     return { a1: c0.a1 + (c1.a1 - c0.a1) * bl, a2: c0.a2 + (c1.a2 - c0.a2) * bl };
 }
 
+// Deep-run chambers (score ~900+): a rare seeded world-x window where the
+// corridor half-gap balloons to DEEP_CHAMBER_PEAK and settles back on a sine
+// bump - a breather and a visual change, never a hazard (wider is always
+// navigable). Applied to _halfGap (refreshWave) AND halfGapAt() so boundsBase /
+// coin+mine placement follow the room. At most one per DEEP_CHAMBER_PERIOD
+// world-px, ~55% of periods carrying one in a seeded sub-window that never
+// touches a period boundary (so the factor is always 1, i.e. continuous, at the
+// seams). Same _deepHash / _deepVarietyOn plumbing as the shape morph.
+const DEEP_CHAMBER_PERIOD = 15000;
+const DEEP_CHAMBER_PEAK   = 2.1;
+function deepChamberAt(wx) {
+    if (!_deepVarietyOn || wx <= DEEP_VARIETY_WX) return 1;
+    const u   = (wx - DEEP_VARIETY_WX) / DEEP_CHAMBER_PERIOD;
+    const seg = Math.floor(u);
+    if (_deepHash(seg + 4096) > 0.55) return 1;           // ~45% of periods: no chamber
+    const start = 0.12 + _deepHash(seg + 4097) * 0.45;    // position within the period
+    const width = 0.16 + _deepHash(seg + 4098) * 0.12;    // fraction of the period spanned
+    const frac  = u - seg;
+    if (frac <= start || frac >= start + width) return 1;
+    const local = (frac - start) / width;                 // 0..1 across the chamber
+    return 1 + Math.sin(local * Math.PI) * (DEEP_CHAMBER_PEAK - 1);
+}
+
+// Falling stalactites (constants.js FALL_LEAD / FALL_SPAN): cadence only - which
+// stalactites get flagged is maintainStalactites(), the drop is updateFallingStals().
+// Absent before ~score 200 (nextFallWx starts at world-x 12000 in startPlay); then
+// from a rare set-piece (~one per 3400px) toward steady deep pressure, floored so
+// they never pile onto everything else once scrollSpd is uncapped.
+function fallSpacing() {
+    return Math.max(lerp(3400, 2000, Math.min(_prog2, 1)) - 350 * Math.max(_prog2 - 1, 0), 1800);
+}
+
 function refreshWave() {
     _prog    = Math.min(Math.sqrt(scrollX / 14000), 1);
     _prog2   = Math.max(scrollX - 14000, 0) / 40000;          // no cap - escalates forever
-    _halfGap = lerp(H * 0.34,  H * 0.163, _prog);
+    _halfGap = lerp(H * 0.34,  H * 0.163, _prog) * deepChamberAt(scrollX);
     // Wave amplitude/frequency keep growing with _prog2 (capped at 2x to stay navigable)
     const wMult  = 1 + 0.12 * Math.min(_prog2, 2);            // up to +24% amplitude
     const wFMult = 1 + 0.14 * Math.min(_prog2, 2);            // up to +28% frequency = tighter bends
@@ -287,10 +319,10 @@ function centerAt(wx) {
 }
 
 // halfGapAt predicts the corridor half-gap when the player reaches world x.
-// Uses the same sqrt(wx/14000) progression as refreshWave so bounds are accurate
-// for placement up to ~900px ahead.
+// Uses the same sqrt(wx/14000) progression as refreshWave (and the same deep-run
+// chamber factor) so bounds are accurate for placement up to ~900px ahead.
 function halfGapAt(wx) {
-    return lerp(H * 0.34, H * 0.163, Math.min(Math.sqrt(wx / 14000), 1));
+    return lerp(H * 0.34, H * 0.163, Math.min(Math.sqrt(wx / 14000), 1)) * deepChamberAt(wx);
 }
 
 // boundsAt uses base _halfGap + current bonus so both rendering and

@@ -274,6 +274,11 @@ function drawWorld() {
         const sx = s.wx - scrollX;
         if (sx < -70 || sx > W+70) continue;
         if (s.fade <= 0) continue;
+        // Falling stalactite: translate the whole (wall-attached) draw down by the
+        // drop offset, and cap the "base" at the rock's own top instead of the
+        // off-screen canvas edge so it reads as a loose chunk, not a giant spike.
+        const fallY = (s.falls && s.detached) ? stalFallY(s) : 0;
+        if (fallY) { ctx.save(); ctx.translate(0, fallY); }
         if (s.fade < 1.0) ctx.globalAlpha = s.fade;
         const b = boundsAt(s.wx), hw = s.width / 2;
         const len = s.length;
@@ -282,7 +287,8 @@ function drawWorld() {
         const bLwall = s.isTop ? boundsAt(s.wx - hw_base).top : boundsAt(s.wx - hw_base).bot;
         const bRwall = s.isTop ? boundsAt(s.wx + hw_base).top : boundsAt(s.wx + hw_base).bot;
         const tipY = s.isTop ? b.top + len : b.bot - len;
-        const canvasBase = s.isTop ? -10 : H + 10;
+        const canvasBase = fallY ? Math.min(bLwall, bRwall) - 3
+                         : s.isTop ? -10 : H + 10;
         const gradY0 = s.isTop ? Math.min(bLwall, bRwall) : Math.max(bLwall, bRwall);
 
         // Gradient: dark at root, warmer mid-body, bright at tip
@@ -371,6 +377,7 @@ function drawWorld() {
         ctx.stroke();
 
         if (s.fade < 1.0) ctx.globalAlpha = 1.0;
+        if (fallY) ctx.restore();
     }
 
     // Top wall - dark at canvas top, accent-tinted at corridor edge

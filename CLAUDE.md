@@ -123,6 +123,19 @@ Two bounds functions:
 Triangle-shaped obstacles from top or bottom wall. Accurate triangle-circle collision (not AABB).
 Paired stalactites (chicane from both sides) appear after `_prog > 0.40` with 24% chance.
 
+**Falling stalactites** (`FALL_LEAD`/`FALL_SPAN` in `constants.js`, `fallSpacing()` in
+`world.js`, `stalFallY`/`updateFallingStals` in `systems.js`): from world-x 12000
+(~score 200, `nextFallWx` set in `startPlay`), a seeded cadence flags the next single
+(non-chicane) ceiling stalactite to break loose. It trickles dust as it scrolls in,
+detaches when the player is within `FALL_LEAD` (and still clearly ahead), eases down over
+`FALL_SPAN` world-px of scroll (`stalFallY` = `fallDist·t²`, **scrollX-indexed so a blue
+coin can't desync it**, same as the ghost), then just sits as a lowered rock and scrolls
+past. `fallDist` settles it with a **guaranteed `PR*2.6` duck-under gap below** (clamped
+live in `stalFallY` against a since-narrowed corridor); the gap above is whatever's left.
+`fy` is folded into `stalHit`/`stalHitBullet`/`triggerBombExplosion`/the draw loop so
+collision and render always agree. Bullets/bombs kill a falling one like any stalactite.
+`fallSpacing()` runs `~3400 -> 2000` world-px over `_prog2`, floored at 1800.
+
 ### Cannons
 Rare wall-mounted artillery turret (`src/systems.js` `makeCannon`/`maintainCannons`/
 `updateCannonShots`), first appearing at wx=6000 (score ~100) and spaced far apart
@@ -199,10 +212,21 @@ without touching the navigability caps:
   breathes. The **trend itself is untouched and still climbs forever** - the "scrollSpd
   never plateaus" rule holds; the pulse only textures it.
 
-Both are pure functions of `scrollX` + `_deepDay` (captured in `seedDailyVariety`,
-independent of the `rng()` obstacle stream and the `h`-chain), so every player flies the
-identical sequence and the scrollX-indexed ghost stays locked. Shipped as Phase 1 of the
-"deep run" brief; falling stalactites / chambers / boulders are later phases.
+- **Chambers** (`deepChamberAt` in `world.js`, `DEEP_CHAMBER_PERIOD`/`DEEP_CHAMBER_PEAK`):
+  a rare seeded world-x window (~55% of 15000px periods) where the half-gap balloons to
+  `DEEP_CHAMBER_PEAK` (2.1x) on a sine bump then settles back - a breather, never a
+  hazard (wider is always navigable). Applied to `_halfGap` in `refreshWave` **and**
+  `halfGapAt()` so `boundsBase` / coin+mine placement follow the room. The sub-window
+  never touches a period boundary, so the factor is always 1 (continuous) at the seams.
+  This is the one thing that legitimately breaks "the corridor only ever narrows" past
+  the plateau, by design.
+
+Both morph and pulse are pure functions of `scrollX` + `_deepDay` (captured in
+`seedDailyVariety`, independent of the `rng()` obstacle stream and the `h`-chain), so
+every player flies the identical sequence and the scrollX-indexed ghost stays locked.
+`_deepVarietyOn` (default true) is a kill switch for morph + pulse + chambers. Phases 1-2
+of the "deep run" brief (shape morph + speed pulse + chambers + falling stalactites, see
+Stalactites above); boulders / coin-line shapes / apex-biased mines are Phase 3.
 
 ### Coin type progression
 

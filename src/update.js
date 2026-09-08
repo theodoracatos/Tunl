@@ -410,6 +410,7 @@ function update(dt) {
 
     // Maintain lists
     maintainStalactites();
+    updateFallingStals(dt);   // detach + drop + shatter flagged stalactites
     maintainCoins();
     maintainMines();
     maintainCannons();

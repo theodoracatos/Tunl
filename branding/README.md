@@ -41,9 +41,16 @@ and unchanged by the icon direction; the two are meant to lock up together
   glow language as the generated leaderboard/achievement icons, extended to
   ASC's 3840x2160 challenge slot (JPEG, sRGB, no alpha). Re-run it to tweak;
   needs `numpy` + `Pillow`.
+- `gen-leaderboard-icons.py` — generates `leaderboard-daily.png`
+  ("TUNL Highscore", `tunl_highscore`) and `leaderboard-alltime.png`
+  ("Ewige Bestenliste", `tunl_highscore_alltime_v2`): 1024x1024 PNG, sRGB, no
+  alpha, for the ASC / Play Games leaderboard icon slot. Daily is a gold trophy
+  on the dashed "record line"; all-time is a platinum laurel wreath around the
+  climb chevron. Same navy-glow language as above; needs `numpy` + `Pillow`.
+- `gen-planet-achievement-icons.py` — the 8 weekday-world achievement icons.
 
-The leaderboard and achievement icons themselves are still generated ad hoc
-(the scripts have not been folded into the repo yet).
+The other achievement icons are still generated ad hoc (those scripts have not
+been folded into the repo yet).
 
 Regenerate every applied raster from the masters with
 `branding/export-icons.sh` (needs `rsvg-convert` + Python `Pillow`). One-off:

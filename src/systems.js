@@ -22,7 +22,24 @@ function maintainStalactites() {
                 chicaneCoins.push({ wx: coinWx, y: centerAt(coinWx), collected: false, type: 'gold', fade: 1.0 });
             }
         } else {
-            stalactites.push(makeStal(nextStalWx, rng() < 0.5));
+            // Once the fall cursor is due, the next single stalactite becomes a
+            // falling one (forced isTop -- a ceiling spike is the only thing that
+            // can drop). updateFallingStals() detaches it as the player closes in.
+            let isTop = rng() < 0.5;
+            let makeFall = false;
+            if (nextFallWx !== 99999 && scrollX >= nextFallWx) {
+                isTop = true; makeFall = true;
+                nextFallWx += fallSpacing() * (0.7 + rng() * 0.6);
+            }
+            const st = makeStal(nextStalWx, isTop);
+            if (makeFall) {
+                st.falls = true;
+                st.detached = false;
+                st.detachScrollX = 0;
+                st.fallDist = 0;
+                st.detachAtWx = nextStalWx - FALL_LEAD;
+            }
+            stalactites.push(st);
         }
         nextStalWx += spacing;
     }
@@ -31,6 +48,76 @@ function maintainStalactites() {
     }
     while (chicaneCoins.length && chicaneCoins[0].wx < scrollX - 200) {
         chicaneCoins.shift();
+    }
+}
+
+// ── Falling stalactites ───────────────────────────────────────────────
+// Vertical drop offset (px) of a falling stalactite: 0 until it detaches, then
+// an ease-in sweep to s.fallDist over FALL_SPAN world-px of scroll, then held.
+// Indexed by scrollX (not elapsed time) so a blue-coin slow can't desync the
+// drop from the tunnel, same as the ghost. Clamped so the tip can never punch
+// through a since-narrowed far wall. Read by stalHit / stalHitBullet / the draw
+// loop / triggerBombExplosion so collision and render always agree.
+function stalFallY(s) {
+    if (!s.falls || !s.detached) return 0;
+    const t  = Math.min((scrollX - s.detachScrollX) / FALL_SPAN, 1);
+    const b  = boundsAt(s.wx);
+    // Same PR*2.6 floor the settle target uses - guarantees a duck-under gap
+    // below the rock even if the corridor narrowed while it was dropping.
+    return Math.min(s.fallDist * t * t, Math.max(0, (b.bot - b.top) - s.length - PR * 2.6));
+}
+
+// Per-frame: trickle telegraph dust from loose (not-yet-detached) falling
+// stalactites, detach them as the player closes within FALL_LEAD, trail debris
+// during the drop, and thud on landing (after which it's just a lowered rock
+// that scrolls past like any stalactite). Called from update() right after
+// maintainStalactites(). No dt integration - the drop is pure scrollX
+// (stalFallY) - only the particle spawn rates use dt.
+function updateFallingStals(dt) {
+    const playerWx = scrollX + PX;
+    for (const s of stalactites) {
+        if (!s.falls || s.dying) continue;
+        const sx = s.wx - scrollX;
+        const onScreen = sx > -30 && sx < W + 30;
+        if (!s.detached) {
+            // Loose: dust trickle + faint jitter cue while it scrolls in.
+            if (onScreen && Math.random() < dt * 8) {
+                const b = boundsAt(s.wx);
+                parts.push({ x: sx + (Math.random() - 0.5) * s.width, y: b.top + s.length,
+                             vx: (Math.random() - 0.5) * 16, vy: 16 + Math.random() * 30,
+                             life: 0.4 + Math.random() * 0.4, r: 1 + Math.random() * 1.8, h: 26 + Math.random() * 16 });
+            }
+            // Detach once the player is within FALL_LEAD - but only while the
+            // stalactite is still clearly ahead, so a frame skip can't trip it
+            // with the ship already level with the rock.
+            if (playerWx >= s.detachAtWx && sx > PX * 0.75) {
+                s.detached = true;
+                s.detachScrollX = scrollX;
+                const b = boundsAt(s.wx);
+                // Settle depth: toward the far wall but never blocking it, and
+                // capped so a big (chamber) corridor doesn't make it a guillotine.
+                s.fallDist = Math.max(0, Math.min((b.bot - b.top) - s.length - PR * 2.6, _halfGap * 1.5));
+                shake += 4;
+                sfxStalCrack();
+                burstStalCrack(sx, b.top + s.length);
+                window.webkit?.messageHandlers?.haptic?.postMessage('light');
+            }
+        } else if (!s.landed) {
+            const t = Math.min((scrollX - s.detachScrollX) / FALL_SPAN, 1);
+            if (t < 1) {
+                if (onScreen && Math.random() < dt * 26) {
+                    const b = boundsAt(s.wx);
+                    parts.push({ x: sx + (Math.random() - 0.5) * s.width, y: b.top + s.length + stalFallY(s) - 2,
+                                 vx: (Math.random() - 0.5) * 26, vy: -(6 + Math.random() * 24),
+                                 life: 0.3 + Math.random() * 0.3, r: 1 + Math.random() * 1.8, h: 24 + Math.random() * 14 });
+                }
+            } else {
+                s.landed = true;
+                const b = boundsAt(s.wx);
+                burstStalCrack(sx, b.top + s.length + stalFallY(s));
+                if (onScreen) { shake += 3; sfxStalCrack(); }
+            }
+        }
     }
 }
 
@@ -581,7 +668,8 @@ function triggerBombExplosion(cx, cy) {
         if (s.dying) continue;
         const sx = s.wx - scrollX;
         const b  = boundsAt(s.wx);
-        const tipY = s.isTop ? b.top + s.length : b.bot - s.length;
+        const fy = stalFallY(s);
+        const tipY = s.isTop ? b.top + s.length + fy : b.bot - s.length;
         const dx = sx - cx, dy = tipY - cy;
         if (dx*dx + dy*dy < r2) {
             s.dying = true; s.fade = 1.0;
@@ -643,9 +731,10 @@ function stalHit(s, r = PR) {
     const sx = s.wx - scrollX;
     if (sx < -80 || sx > W + 80) return false;
     const b = boundsAt(s.wx), hw = s.width / 2 * 0.85, r2 = r * r;
+    const fy = stalFallY(s);   // 0 unless this is a detached falling stalactite
     let ax, ay, bx2, by2, tx, ty;
     if (s.isTop) {
-        ax = sx-hw; ay = b.top; bx2 = sx+hw; by2 = b.top; tx = sx; ty = b.top+s.length;
+        ax = sx-hw; ay = b.top+fy; bx2 = sx+hw; by2 = b.top+fy; tx = sx; ty = b.top+s.length+fy;
     } else {
         ax = sx-hw; ay = b.bot; bx2 = sx+hw; by2 = b.bot; tx = sx; ty = b.bot-s.length;
     }
@@ -659,9 +748,10 @@ function stalHitBullet(s, bsx, by) {
     const sx = s.wx - scrollX;
     if (Math.abs(sx - bsx) > s.width / 2 + 8) return false;
     const b = boundsAt(s.wx), hw = s.width / 2 * 0.85;
+    const fy = stalFallY(s);
     let ax, ay, bx2, by2, tx, ty;
     if (s.isTop) {
-        ax = sx-hw; ay = b.top; bx2 = sx+hw; by2 = b.top; tx = sx; ty = b.top+s.length;
+        ax = sx-hw; ay = b.top+fy; bx2 = sx+hw; by2 = b.top+fy; tx = sx; ty = b.top+s.length+fy;
     } else {
         ax = sx-hw; ay = b.bot; bx2 = sx+hw; by2 = b.bot; tx = sx; ty = b.bot-s.length;
     }

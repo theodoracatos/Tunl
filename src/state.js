@@ -274,6 +274,10 @@ let onFireFlash;
 
 let parts, thrustParts, deadT, titleT, flashA, shake, trailY;
 let stalactites, nextStalWx;
+// World-x cursor for flagging the next stalactite as a falling one (systems.js
+// maintainStalactites / updateFallingStals). Starts at 12000 (~score 200) in
+// startPlay, 99999 on the title screen so the attract-mode cave never drops one.
+let nextFallWx;
 let coins, nextCoinWx;
 let chicaneCoins;
 let gapBonus, gapBonusVisual;

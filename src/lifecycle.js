@@ -23,7 +23,7 @@ function titleScreen() {
     score = 0; newBest = false; newDailyBest = false;
     parts = []; thrustParts = []; deadT = 0; titleT = 0; flashA = 0; shake = 0; trailY = [];
     skinFx = []; skinFxT = 0; shipPitch = 0;
-    stalactites = []; nextStalWx = 420;
+    stalactites = []; nextStalWx = 420; nextFallWx = 99999;
     coins = [];     nextCoinWx = 99999;
     chicaneCoins = [];
     gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
@@ -75,6 +75,9 @@ function startPlay() {
     // not the death screen. Coins are deliberately left at their normal start distance --
     // they teach collection and can't kill anyone.
     stalactites = []; nextStalWx = STAL_START_WX;
+    // Falling stalactites: none before world-x 12000 (~score 200) -- a fresh
+    // player learns plain stalactites first (see updateFallingStals / fallSpacing).
+    nextFallWx = 12000;
     coins = [];     nextCoinWx = 500;
     chicaneCoins = [];
     gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];

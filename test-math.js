@@ -46,8 +46,9 @@ function makeWorld(innerWidth, innerHeight) {
         this.scrollSpd = scrollSpd; this.stalSpacing = stalSpacing; this.coinSpacing = coinSpacing;
         this.mineSpacing = mineSpacing; this.cannonSpacing = cannonSpacing; this.milestoneStep = milestoneStep;
         this.setDayArchetype = function(i) { _dayArchetype = i; };
-        this.deepMorphAt = deepMorphAt;
+        this.deepMorphAt = deepMorphAt; this.deepChamberAt = deepChamberAt; this.fallSpacing = fallSpacing;
         this.DEEP_VARIETY_WX = DEEP_VARIETY_WX; this.DEEP_PULSE_AMP = DEEP_PULSE_AMP; this.DEEP_PULSE_WAVELEN = DEEP_PULSE_WAVELEN;
+        this.DEEP_CHAMBER_PEAK = DEEP_CHAMBER_PEAK;
         this.setDeepDay = function(d) { _deepDay = d; };
         this.setDeepVariety = function(on) { _deepVarietyOn = on; };
         this.waveParams = function() { return { wA1: _wA1, wA2: _wA2, wF1: _wF1, wF2: _wF2 }; };
@@ -293,6 +294,41 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
     const span = (hi - lo) / (sum / N);
     check(`deep speed pulse peak-to-peak is ~2x its +/-${w.DEEP_PULSE_AMP} amplitude (${span.toFixed(3)})`,
         lo > 0 && span > w.DEEP_PULSE_AMP * 1.6 && span < w.DEEP_PULSE_AMP * 2.2);
+
+    // ── Deep chambers (world.js deepChamberAt) ──────────────────────────────
+    // Inert below the plateau; bounded to [1, DEEP_CHAMBER_PEAK]; continuous
+    // (never a step at a period seam); and it does return to 1 between rooms so
+    // the corridor isn't just permanently wider deep.
+    let chInert = true;
+    for (let day = 0; day < 15; day++) {
+        w.setDeepDay(day);
+        for (let wx = 0; wx <= D; wx += 1500) if (w.deepChamberAt(wx) !== 1) chInert = false;
+    }
+    check('deep chambers are inert at/below the score-900 plateau', chInert);
+
+    let chOk = true, chPk = 1, everReset = true;
+    for (let day = 0; day < 30; day++) {
+        w.setDeepDay(day);
+        let prev = w.deepChamberAt(D + 3), sawOne = false, sawGap = false;
+        for (let wx = D + 25; wx < D + 500000; wx += 25) {
+            const c = w.deepChamberAt(wx);
+            if (c < 1 - 1e-9 || c > w.DEEP_CHAMBER_PEAK + 1e-9) chOk = false;
+            if (Math.abs(c - prev) > 0.06) chOk = false;   // continuity
+            if (c > 1.5) sawOne = true;
+            if (c === 1)  sawGap = true;
+            chPk = Math.max(chPk, c);
+            prev = c;
+        }
+        if (!(sawOne && sawGap)) everReset = false;
+    }
+    w.setDeepDay(0);
+    check(`deep chambers stay in [1, ${w.DEEP_CHAMBER_PEAK}], continuous, and reset between rooms (peak ${chPk.toFixed(2)})`,
+        chOk && chPk > 1.6 && everReset);
+
+    // Falling-stalactite cadence: absent early, then a real deep presence, floored.
+    const fsAt = (wx) => { w.scrollX = wx; w.refreshWave(); return w.fallSpacing(); };
+    check('fallSpacing tightens from a rare set-piece to a floored deep cadence',
+        fsAt(D - 40000) > fsAt(D) && fsAt(D) > fsAt(D + 200000) && fsAt(D + 5_000_000) >= 1800);
 }
 
 if (failed) {
