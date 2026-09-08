@@ -25,7 +25,17 @@ try:
 except AttributeError:                       # very old Pillow
     RAQM = None
 
-W, H = 1080, 2340   # 9:16 (2340 = 1080 * 16/9), native TikTok/Reels/Shorts canvas
+# Canvas. "portrait" is the original 9:16 short-form frame; "square" is the
+# 1:1 variant Google Ads wants alongside the horizontal and vertical video
+# assets (an App campaign scores its ad strength on having all three). Same
+# corridor art, headline and wordmark - only the vertical rhythm differs,
+# because 1080x1080 has no tall dead corridor below the card for the ship to
+# fill, so everything below the subhead compresses into one bottom band.
+CANVAS = os.environ.get("TUNL_CANVAS", "portrait")
+W, H = (1080, 1080) if CANVAS == "square" else (1080, 2340)
+# 2340 = 1080 * 16/9, native TikTok/Reels/Shorts canvas.
+SQUARE = CANVAS == "square"
+_HS = H / 2340.0   # vertical-density scale vs. the reference portrait canvas
 REPO = "/Users/theodoracatos/Development/Tunl"
 WORDMARK_SVG = os.path.join(REPO, "branding/wordmark.svg")
 OUT_DIR = os.environ.get("TUNL_FRAME_OUT_DIR", os.path.join(REPO, "Screenshots/iOS_8.0/en"))
@@ -106,7 +116,7 @@ def draw_corridor(img, seed):
         d.rectangle([lx - 22, y, lx, y + step], fill=edge_col)
         d.rectangle([rx, y, rx + 22, y + step], fill=edge_col)
         d.rectangle([rx + 22, y, W, y + step], fill=col)
-    for _ in range(2200):
+    for _ in range(int(2200 * _HS)):
         y = rnd.randint(0, H)
         lx, rx = wall_x("L", y, seed), wall_x("R", y, seed)
         x = rnd.uniform(0, lx) if rnd.random() < 0.5 else rnd.uniform(rx, W)
@@ -126,7 +136,7 @@ def draw_corridor(img, seed):
         pts = [(wall_x(edge, y, seed), y) for y in ys]
         d.line(pts, fill=(*CYAN, 90), width=9)
         d.line(pts, fill=(*CYAN, 220), width=4)
-    for _ in range(260):
+    for _ in range(int(260 * _HS)):
         y = rnd.randint(0, H)
         lx, rx = wall_x("L", y, seed), wall_x("R", y, seed)
         x = rnd.uniform(lx + 12, rx - 12)
@@ -164,7 +174,7 @@ def draw_ship(img, cx, cy, scale, seed):
 def vignette(img):
     hole = Image.new("L", (W, H), 255)
     ImageDraw.Draw(hole).ellipse([-W * 0.35, H * 0.16, W * 1.35, H * 0.9], fill=60)
-    hole = hole.filter(ImageFilter.GaussianBlur(200))
+    hole = hole.filter(ImageFilter.GaussianBlur(int(200 * _HS)))
     overlay = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     overlay.putalpha(hole)
     img.alpha_composite(overlay)
@@ -240,8 +250,8 @@ def build():
 
     lines, accent_idx, sub = TEXT.get(LOCALE, TEXT["en"])
     tlkw = {"direction": "rtl"} if DIRECTION == "rtl" else {}
-    size = 92
-    while size > 50:
+    size = 66 if SQUARE else 92
+    while size > (44 if SQUARE else 50):
         hf = font(LOCALE, size)
         widest = max(d.textlength(l, font=hf, **tlkw) for l in lines)
         if widest <= W - 100:
@@ -249,7 +259,7 @@ def build():
         size -= 3
     hf = font(LOCALE, size)
     lh = int(size * 1.22)
-    y = 96
+    y = 52 if SQUARE else 96
     for i, line in enumerate(lines):
         col = CYAN if i == accent_idx else INK
         center_text(d, W / 2, y, line, hf, col, DIRECTION)
@@ -262,7 +272,7 @@ def build():
     card_w = int(W * 0.90)
     card_h = int(card_w * SRC_RATIO)
     cx = (W - card_w) // 2
-    cy = head_bottom + 46
+    cy = head_bottom + (30 if SQUARE else 46)
 
     sh = Image.new("RGBA", img.size, (0, 0, 0, 0))
     ImageDraw.Draw(sh).rounded_rectangle(
@@ -289,13 +299,13 @@ def build():
         [cx, cy, cx + card_w, cy + card_h], radius=CARD_RADIUS, outline=(*INK, 230), width=2)
 
     # Subhead under the card (from TEXT[LOCALE] above).
-    ssize = 46
-    while ssize > 26:
+    ssize = 34 if SQUARE else 46
+    while ssize > (22 if SQUARE else 26):
         sf = font(LOCALE, ssize)
         if d.textlength(sub, font=sf, **tlkw) <= W - 120:
             break
         ssize -= 2
-    sub_y = cy + card_h + 40
+    sub_y = cy + card_h + (28 if SQUARE else 40)
     center_text(d, W / 2, sub_y, sub, font(LOCALE, ssize), DIM, DIRECTION)
     sub_bottom = sub_y + ssize * 1.1
 
@@ -307,16 +317,29 @@ def build():
     # (ship at H*0.85, wordmark at H-wm.height-90, url at H-58) so this
     # reduces to that exact composition when SRC_RATIO matches the old crop.
     rem = H - sub_bottom
-    ship_y = sub_bottom + rem * 0.61
-    wm_top = sub_bottom + rem * 0.76
-    url_y = sub_bottom + rem * 0.94
+    if SQUARE:
+        # One shallow bottom band instead of a tall corridor: the ship moves
+        # out to the right so it clears the centred wordmark, and shrinks
+        # because there is no longer half a canvas of empty cave to anchor.
+        ship_x, ship_scale = W * 0.80, 1.0
+        ship_y = sub_bottom + rem * 0.45
+        wm_top = sub_bottom + rem * 0.22
+        url_y = sub_bottom + rem * 0.80
+        wm_w = 260
+    else:
+        ship_x, ship_scale = W * 0.62, 1.7
+        ship_y = sub_bottom + rem * 0.61
+        wm_top = sub_bottom + rem * 0.76
+        url_y = sub_bottom + rem * 0.94
+        wm_w = 320
 
-    draw_ship(img, W * 0.62, ship_y, 1.7, seed=5)
-    wm = wordmark_png(320)
+    draw_ship(img, ship_x, ship_y, ship_scale, seed=5)
+    wm = wordmark_png(wm_w)
     img.alpha_composite(wm, ((W - wm.width) // 2, int(wm_top)))
     center_text(d, W / 2, url_y, "flytunl.ch", font("_latin", 26), (120, 134, 162, 255))
 
-    out_path = os.path.join(OUT_DIR, "portrait-video-frame.png")
+    out_path = os.path.join(
+        OUT_DIR, "square-video-frame.png" if SQUARE else "portrait-video-frame.png")
     img.save(out_path, "PNG")
     print("wrote", out_path)
     print("hole rect (px, for ffmpeg): x=%d y=%d w=%d h=%d" % (cx, cy, card_w, card_h))

@@ -38,3 +38,6 @@ flytunl-site/site/ja/
 
 # Claude Code scratch (working files, never a deliverable)
 .claude-scratch/
+
+# JetBrains IDE
+.idea/
