@@ -697,6 +697,13 @@ function commitDeath() {
         } catch (e) { /* ghost is a nice-to-have; never break the death flow over it */ }
     }
     localStorage.setItem('tunnel_no_pb', runsWithoutPB);
+    // Lifetime distance: raw world-px flown this run, added to the all-time total
+    // (state.js lifetimeDist, shown on the title screen). Pure distance, not score -
+    // no coin/near-miss bonus - so it's "how far have I actually flown".
+    if (scrollX > 0) {
+        lifetimeDist += scrollX;
+        localStorage.setItem('tunnel_lifetime_dist', String(Math.round(lifetimeDist)));
+    }
     if (score > 0) {
         top5 = [...top5, score].sort((a, b) => b - a).slice(0, 5);
         localStorage.setItem('tunnel_top5', JSON.stringify(top5));

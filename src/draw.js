@@ -2178,8 +2178,24 @@ function drawTitleScreen() {
         ctx.fillStyle   = `rgba(190,212,255,${a * 0.98})`;
         ctx.shadowColor = 'rgba(0,0,0,0.90)';
         ctx.shadowBlur  = 3;
-        ctx.fillText(`${T.allTime}  ${best}`, titleX, LAND ? planetBaselineY + (H * 0.70 - planetBaselineY) * 0.33 : H / 2 - H * 0.038);
+        const rekordY = LAND ? planetBaselineY + (H * 0.70 - planetBaselineY) * 0.33 : H / 2 - H * 0.038;
+        ctx.fillText(`${T.allTime}  ${best}`, titleX, rekordY);
         ctx.shadowBlur  = 0;
+
+        // Lifetime distance flown (state.js lifetimeDist, banked in commitDeath).
+        // A slow progression number that ticks up every day you play - deliberately
+        // subordinate to REKORD: smaller, dimmer, tucked right under it, so it reads
+        // as a footnote to the headline stat, not a second competing stat block
+        // (the "Dock & Drawer" audit above kept only one headline stat on screen).
+        if (lifetimeDist > 0) {
+            const flownTxt = String(Math.floor(lifetimeDist / 60)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+            ctx.font      = `${FS * 0.023}px 'Courier New',monospace`;
+            ctx.fillStyle = `rgba(150,170,215,${a * 0.62})`;
+            ctx.shadowColor = 'rgba(0,0,0,0.85)';
+            ctx.shadowBlur  = 2;
+            ctx.fillText(`${T.flown}  ${flownTxt}`, titleX, rekordY + FS * 0.036);
+            ctx.shadowBlur  = 0;
+        }
     }
 
     // ── Hero ship stage ─────────────────────────────────────────────────

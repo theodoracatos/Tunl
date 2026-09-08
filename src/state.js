@@ -21,6 +21,11 @@ const _initToday    = (() => { const d = new Date(); return d.getUTCFullYear()*1
 const _savedLastDay = parseInt(localStorage.getItem('tunnel_lastday') || '0');
 let best          = parseInt(localStorage.getItem('tunnel_best')    || '0');
 let bestSX        = parseInt(localStorage.getItem('tunnel_best_sx') || '0');
+// Lifetime distance flown, in world-px, summed across every run ever (banked in
+// commitDeath). Never spent, never resets - a slow progression counter shown on
+// the title screen under REKORD. Displayed as lifetimeDist/60, the same "distance"
+// unit the live score uses (score = floor(scrollX/60) + bonus).
+let lifetimeDist  = parseFloat(localStorage.getItem('tunnel_lifetime_dist') || '0') || 0;
 let runsWithoutPB = parseInt(localStorage.getItem('tunnel_no_pb')   || '0');
 let top5 = _savedLastDay === _initToday ? JSON.parse(localStorage.getItem('tunnel_top5') || '[]') : [];
 let dailyBest = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tunnel_daily_best') || '0') : 0;
