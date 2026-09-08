@@ -414,6 +414,7 @@ function update(dt) {
     maintainCoins();
     maintainMines();
     maintainCannons();
+    maintainBoulders();
 
     // Fade coins that are blocked by a stalactite or have scrolled off the left edge
     for (const arr of [coins, chicaneCoins]) for (const coin of arr) {
@@ -475,6 +476,27 @@ function update(dt) {
             shake += 12;
             burst(sx, my);
             pushNotif(sx, my - H*0.06, 1.1, T.blocked, [255, 90, 40]);
+            window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
+            break;
+        }
+    }
+
+    // Boulder collision (circle-circle, same trade-off hitbox + shield-absorb as a mine).
+    for (let bi = 0; bi < boulders.length; bi++) {
+        const bo = boulders[bi];
+        const sx = bo.wx - scrollX;
+        if (sx < -bo.r - 40 || sx > W + bo.r + 40) continue;
+        const dx = PX - sx, dy = py - bo.y, rr = cPR + bo.r;
+        if (dx*dx + dy*dy < rr*rr) {
+            deathCause = 'open';
+            if (die()) return;
+            // Shield absorbed - shove the ship clear of the rock so it can't re-hit.
+            const d = Math.max(1, Math.hypot(dx, dy));
+            py = bo.y + (dy / d) * (rr + 2);
+            vy = 0;
+            shake += 12;
+            burst(sx, bo.y);
+            pushNotif(sx, bo.y - H*0.06, 1.1, T.blocked, [255, 90, 40]);
             window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
             break;
         }

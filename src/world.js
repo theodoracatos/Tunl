@@ -152,6 +152,13 @@ function fallSpacing() {
     return Math.max(lerp(3400, 2000, Math.min(_prog2, 1)) - 350 * Math.max(_prog2 - 1, 0), 1800);
 }
 
+// Boulders (systems.js makeBoulder/maintainBoulders): a deep-only routing
+// obstacle from world-x 84000 (~score 1400). Rare - closer to a cannon's cadence
+// than a mine's - so it reads as "commit up or down now", not a dodge-fest.
+function boulderSpacing() {
+    return Math.max(3400 - 250 * Math.max(_prog2 - 1.75, 0), 2400);
+}
+
 function refreshWave() {
     _prog    = Math.min(Math.sqrt(scrollX / 14000), 1);
     _prog2   = Math.max(scrollX - 14000, 0) / 40000;          // no cap - escalates forever

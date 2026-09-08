@@ -181,7 +181,22 @@ function makeCoin(wx) {
     if (hi <= lo) return null;
     const cy     = (lo + hi) / 2;
     const margin = (hi - lo) * 0.40;
-    const coinY  = Math.max(lo, Math.min(hi, cy + (rng() - 0.5) * 2 * margin));
+    // rng() is consumed either way so the type roll below (and everything after in
+    // the stream) is unchanged. Past the plateau, deep coin runs trace a seeded
+    // slow arc instead of scattering independently - a "line to follow", a second
+    // thing to read besides the walls. Pure _deepHash, so the shape is identical
+    // for every player that day.
+    const rY = rng();
+    let coinY;
+    if (_deepVarietyOn && wx > DEEP_VARIETY_WX) {
+        const seg = Math.floor((wx - DEEP_VARIETY_WX) / 3200);
+        const ph  = _deepHash(seg + 0x2000) * Math.PI * 2;
+        const k   = lerp(0.004, 0.012, _deepHash(seg + 0x2001));
+        const amp = (hi - lo) * 0.5 * (0.45 + _deepHash(seg + 0x2002) * 0.55);
+        coinY = Math.max(lo, Math.min(hi, cy + Math.sin(wx * k + ph) * amp));
+    } else {
+        coinY = Math.max(lo, Math.min(hi, cy + (rY - 0.5) * 2 * margin));
+    }
     const r = rng();
     let type = 'gold';
     if (_prog >= 0.38) {
@@ -457,6 +472,18 @@ function updateBullets(dt) {
             }
         }
         if (!hit) {
+            for (const bo of boulders) {
+                const dx = b.wx - bo.wx, dy = b.y - bo.y;
+                if (dx*dx + dy*dy < (bo.r + 3.5) * (bo.r + 3.5)) {
+                    burstStalCrack(bsx, b.y);   // sparks off - solid rock, not destroyed
+                    sfxStalCrack();
+                    window.webkit?.messageHandlers?.haptic?.postMessage('light');
+                    hit = true;
+                    break;
+                }
+            }
+        }
+        if (!hit) {
             for (let mi = mines.length - 1; mi >= 0; mi--) {
                 const m  = mines[mi];
                 const dx = b.wx - m.wx;
@@ -571,7 +598,19 @@ function makeMine(wx) {
     }
 
     if (hi - lo < MINE_R * 2) return null;
-    const baseY = lo + rng() * (hi - lo);
+    let baseY = lo + rng() * (hi - lo);
+    // Apex bias (deep only, flagged): at a genuine bend apex - where the corridor
+    // shape already forces the player onto the centreline - most mines snap toward
+    // that centreline instead of scattering. Same count, same speed; it just puts
+    // the mine where the player has to be. _deepHash keyed so it doesn't perturb
+    // the rng() stream. Watch this one in playtest for a "the game is cheating" read.
+    if (_deepVarietyOn && wx > DEEP_VARIETY_WX) {
+        const cM = centerAt(wx), cL = centerAt(wx - 40), cR = centerAt(wx + 40);
+        const isApex = (cL - cM) * (cR - cM) > 0;   // neighbours same side => local extremum
+        if (isApex && _deepHash(Math.floor(wx / 130) + 0x4000) < 0.6) {
+            baseY = Math.max(lo, Math.min(hi, lerp(baseY, cM, 0.75)));
+        }
+    }
     return { wx, baseY, phase: rng() * Math.PI * 2, bobAmp };
 }
 
@@ -651,6 +690,39 @@ function updateCannonShots(dt) {
     }
 }
 
+// ── Boulders ──────────────────────────────────────────────────────────
+// A large static rounded rock parked in the deep corridor. Unlike a mine it is
+// telegraphed by sheer size from far off and it does NOT span the corridor -
+// there is always a pass above AND below, so it asks "commit up or down" rather
+// than "react". Radius is bounded so both gaps clear the player
+// (R <= halfGap - 2*PR), and the centre is nudged a seeded amount toward one
+// wall so one route is the easy one and the other is the squeeze. Circle-circle
+// collision (update.js), same shield-absorb behaviour as a mine. Bombs clear
+// them; bullets just spark off (it is solid rock, not a destructible hazard).
+function makeBoulder(wx) {
+    const b  = boundsBase(wx);
+    const hg = (b.bot - b.top) / 2;
+    const maxR = Math.min(hg - PR * 2 - 6, hg * 0.42);
+    if (maxR < W * 0.018) return null;                 // corridor too tight for one
+    // Don't stack a boulder on a stalactite chicane / tip.
+    for (const s of stalactites) if (Math.abs(s.wx - wx) < maxR + s.width) return null;
+    const r    = maxR * (0.82 + _deepHash(Math.floor(wx / 260) + 0x3000) * 0.18);
+    const cy   = (b.top + b.bot) / 2;
+    const room = hg - r - PR * 2;                       // how far the centre can shift
+    const side = _deepHash(Math.floor(wx / 260) + 0x3001) < 0.5 ? -1 : 1;
+    const off  = side * room * (0.35 + _deepHash(Math.floor(wx / 260) + 0x3002) * 0.5);
+    return { wx, y: cy + off, r };
+}
+
+function maintainBoulders() {
+    while (nextBoulderWx < scrollX + W + 700) {
+        const bo = makeBoulder(nextBoulderWx);
+        if (bo) boulders.push(bo);
+        nextBoulderWx += boulderSpacing() * (0.75 + _deepHash(Math.floor(nextBoulderWx / 300) + 0x3003) * 0.5);
+    }
+    while (boulders.length && boulders[0].wx < scrollX - 200) boulders.shift();
+}
+
 // ── Bomb explosion ────────────────────────────────────────────────────
 // Triggered by collecting a bomb coin (see checkCoinCollection). A small blast
 // centered on the pickup point (cx/cy in screen space) that clears every nearby
@@ -684,6 +756,15 @@ function triggerBombExplosion(cx, cy) {
         if (dx*dx + dy*dy < r2) {
             mines.splice(mi, 1);
             burst(sx, my);
+        }
+    }
+    for (let bi = boulders.length - 1; bi >= 0; bi--) {
+        const bo = boulders[bi];
+        const dx = (bo.wx - scrollX) - cx, dy = bo.y - cy;
+        if (dx*dx + dy*dy < (BOMB_RADIUS + bo.r) * (BOMB_RADIUS + bo.r)) {
+            boulders.splice(bi, 1);
+            burstStalCrack(bo.wx - scrollX, bo.y);
+            burst(bo.wx - scrollX, bo.y, 20);
         }
     }
     for (let ci = cannonShots.length - 1; ci >= 0; ci--) {

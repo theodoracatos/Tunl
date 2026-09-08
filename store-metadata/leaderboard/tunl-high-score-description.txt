@@ -5,47 +5,61 @@ Order = LANG_ORDER (src/i18n.js).
 
 ========================================================================
 
-[en]  (105)
+[en]  (107)
 One daily cave, identical for every player worldwide. Hold to fly, dodge the walls. Resets at midnight UTC.
 
-[de]  (112)
+[de]  (114)
 Jeden Tag dieselbe Höhle für alle Spieler weltweit. Halten = fliegen, Wänden ausweichen. Reset um Mitternacht UTC.
 
-[fr]  (107)
+[fr]  (109)
 Chaque jour la même grotte pour tous les joueurs. Maintiens pour voler, évite les parois. Reset à minuit UTC.
 
-[it]  (106)
+[it]  (107)
 Ogni giorno la stessa grotta per tutti. Tieni premuto per volare, schiva le pareti. Reset a mezzanotte UTC.
 
-[es]  (105)
+[es]  (107)
 Cada día la misma cueva para todos. Mantén pulsado para volar, esquiva las paredes. Reset a medianoche UTC.
 
-[pt]  (109)
+[pt]  (111)
 Todo dia a mesma caverna para todos os jogadores. Segure para voar, desvie das paredes. Reset à meia-noite UTC.
 
-[ja]  (44)
+[ja]  (45)
 毎日、世界中の全員が同じ洞窟に挑戦。長押しで飛び、壁を避けよう。UTC午前0時にリセット。
 
-[ko]  (52)
+[ko]  (60)
 매일 전 세계 모든 플레이어가 같은 동굴에 도전. 길게 눌러 비행하고 벽을 피하세요. UTC 자정에 초기화.
 
-[zh]  (30)
+[zh]  (36)
 每天全球玩家挑战同一个洞穴。按住飞行，躲避岩壁。每天 UTC 午夜重置。
 
-[ru]  (108)
+[ru]  (111)
 Каждый день одна пещера для всех игроков мира. Удерживай, чтобы лететь, уклоняйся от стен. Сброс в полночь UTC.
 
-[ar]  (96)
+[ar]  (100)
 كل يوم كهف واحد لجميع اللاعبين حول العالم. اضغط للطيران وتفادَ الجدران. إعادة الضبط منتصف الليل UTC.
 
-[tr]  (107)
+[tr]  (110)
 Her gün tüm oyuncular için aynı mağara. Uçmak için basılı tut, duvarlardan kaç. Gece yarısı UTC'de sıfırlanır.
 
-[id]  (105)
+[id]  (107)
 Setiap hari gua yang sama untuk semua pemain. Tahan untuk terbang, hindari dinding. Reset tengah malam UTC.
 
-[vi]  (95)
+[vi]  (97)
 Mỗi ngày một hang động chung cho mọi người chơi. Giữ để bay, né vách đá. Đặt lại lúc nửa đêm UTC.
 
-[hi]  (96)
+[hi]  (103)
 हर दिन सभी खिलाड़ियों के लिए एक ही गुफा। उड़ने के लिए दबाए रखें, दीवारों से बचें। आधी रात UTC पर रीसेट।
+
+========================================================================
+SCOREFORMAT / SCOREFORMATSUFFIX (Play Console leaderboard settings)
+
+Scoreformat:            Numerisch (Numeric)
+  Dezimalstellen:       0
+  -> the in-game score is floor(scrollX/60) + bonusScore, a plain integer
+     ("SCORE: 1234"). Not currency, not a time.
+
+Scoreformatsuffix:      leave EMPTY (both Singular and Plural)
+  -> the game never labels the number with a unit. Matches the iOS Game
+     Center board (no suffix there either), so the two platforms read the
+     same. If a suffix is ever wanted, use "pt" / "pts" (or per-locale
+     Punkt/Punkte, point/points, etc.) - but empty is the cleaner default.

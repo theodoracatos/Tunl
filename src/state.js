@@ -296,6 +296,10 @@ let reviveCountdownT;
 let bullets, bulletAmmo, bulletFireTimer;
 let mines, nextMineWx;
 let cannons, nextCannonWx;
+// Boulders: large static rounded rocks in the deep corridor - a "go over or
+// under" routing choice (systems.js makeBoulder/maintainBoulders). From world-x
+// 84000 (~score 1400) in startPlay, 99999 on the title screen.
+let boulders, nextBoulderWx;
 let cannonShots;
 // Poison/bomb: real-time clocks (see constants.js POISON_INTERVAL_SEC doc), not
 // per-coin-candidate probabilities. poisonClock/bombClock accumulate play seconds

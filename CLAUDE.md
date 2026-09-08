@@ -138,6 +138,17 @@ becomes a floor spike and the dodge is unambiguously "go over it". The gap above
 collision and render always agree. Bullets/bombs kill a falling one like any stalactite.
 `fallSpacing()` runs `~3400 -> 2000` world-px over `_prog2`, floored at 1800.
 
+### Boulders
+Large static rounded rock parked in the **deep** corridor (`src/systems.js`
+`makeBoulder`/`maintainBoulders`, from world-x 84000 / ~score 1400, `boulderSpacing()` in
+`world.js` - a sparse set-piece cadence, floor 2400px). Unlike a mine it is telegraphed
+by sheer size and **never spans the corridor**: radius is bounded (`R <= halfGap - 2*PR`)
+and the centre is nudged a seeded amount toward one wall, so there is always a pass above
+AND below - one easy, one a squeeze. It asks "commit up or down" rather than "react".
+Circle-circle collision (`update.js`), same shield-absorb + shove-clear as a mine. Bombs
+clear boulders; player bullets just spark off (solid rock, not a destructible hazard).
+Seeded via `_deepHash`, no `rng()`-stream impact.
+
 ### Cannons
 Rare wall-mounted artillery turret (`src/systems.js` `makeCannon`/`maintainCannons`/
 `updateCannonShots`), first appearing at wx=6000 (score ~100) and spaced far apart
@@ -223,12 +234,23 @@ without touching the navigability caps:
   This is the one thing that legitimately breaks "the corridor only ever narrows" past
   the plateau, by design.
 
-Both morph and pulse are pure functions of `scrollX` + `_deepDay` (captured in
-`seedDailyVariety`, independent of the `rng()` obstacle stream and the `h`-chain), so
-every player flies the identical sequence and the scrollX-indexed ghost stays locked.
-`_deepVarietyOn` (default true) is a kill switch for morph + pulse + chambers. Phases 1-2
-of the "deep run" brief (shape morph + speed pulse + chambers + falling stalactites, see
-Stalactites above); boulders / coin-line shapes / apex-biased mines are Phase 3.
+Everything above (morph, pulse, chambers) is a pure function of `scrollX` + `_deepDay`
+(captured in `seedDailyVariety`, independent of the `rng()` obstacle stream and the
+`h`-chain), so every player flies the identical sequence and the scrollX-indexed ghost
+stays locked. `_deepVarietyOn` (default true) is the master kill switch for all of it.
+
+**Phase 3** (also `_deepVarietyOn` / `_deepHash`, all past `DEEP_VARIETY_WX`):
+- **Coin-line shapes** (`makeCoin`, `src/systems.js`): deep coin `y` follows a seeded
+  slow sine arc per ~3200px band instead of scattering independently - a line to follow.
+  `rng()` is still consumed so coin *types* are unchanged; only positions move.
+- **Palette drift** (`draw()`, `src/draw.js`): past `_prog2 > 1` the wall / stalactite
+  *glow* (`wallBase`/`stalEdge`) lerps toward a cool deep tint, capped at 0.30. Base rock
+  colour and the daily identity are untouched. Subtle on purpose.
+- **Apex-biased mines** (`makeMine`, `src/systems.js`, flagged): at a genuine bend apex
+  (`centerAt` neighbours both on one side) ~60% of mines snap toward the centreline -
+  where the corridor shape already forces the player. Same count/speed. **Watch in
+  playtest for a "the game is cheating" read** - cut it if it feels unfair.
+- **Boulders**: see the Boulders section above.
 
 ### Coin type progression
 

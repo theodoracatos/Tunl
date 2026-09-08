@@ -46,7 +46,8 @@ function makeWorld(innerWidth, innerHeight) {
         this.scrollSpd = scrollSpd; this.stalSpacing = stalSpacing; this.coinSpacing = coinSpacing;
         this.mineSpacing = mineSpacing; this.cannonSpacing = cannonSpacing; this.milestoneStep = milestoneStep;
         this.setDayArchetype = function(i) { _dayArchetype = i; };
-        this.deepMorphAt = deepMorphAt; this.deepChamberAt = deepChamberAt; this.fallSpacing = fallSpacing;
+        this.deepMorphAt = deepMorphAt; this.deepChamberAt = deepChamberAt;
+        this.fallSpacing = fallSpacing; this.boulderSpacing = boulderSpacing;
         this.DEEP_VARIETY_WX = DEEP_VARIETY_WX; this.DEEP_PULSE_AMP = DEEP_PULSE_AMP; this.DEEP_PULSE_WAVELEN = DEEP_PULSE_WAVELEN;
         this.DEEP_CHAMBER_PEAK = DEEP_CHAMBER_PEAK;
         this.setDeepDay = function(d) { _deepDay = d; };
@@ -329,6 +330,12 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
     const fsAt = (wx) => { w.scrollX = wx; w.refreshWave(); return w.fallSpacing(); };
     check('fallSpacing tightens from a rare set-piece to a floored deep cadence',
         fsAt(D - 40000) > fsAt(D) && fsAt(D) > fsAt(D + 200000) && fsAt(D + 5_000_000) >= 1800);
+
+    // Boulders (Phase 3): rare - spacing floors well above every recurring hazard.
+    const bsAt = (wx) => { w.scrollX = wx; w.refreshWave(); return w.boulderSpacing(); };
+    check('boulderSpacing stays a sparse set-piece cadence (>= 2400, above mine/coin spacing)',
+        bsAt(84000) >= 2400 && bsAt(5_000_000) >= 2400 &&
+        bsAt(5_000_000) > w.mineSpacing() * 5 && bsAt(5_000_000) > w.coinSpacing() * 5);
 }
 
 if (failed) {

@@ -36,6 +36,7 @@ function titleScreen() {
     pbPassed = false; pbFlash = 0;
     mines = []; nextMineWx = 99999;
     cannons = []; nextCannonWx = 99999; cannonShots = [];
+    boulders = []; nextBoulderWx = 99999;
     // Coins never spawn on the title screen (nextCoinWx = 99999 above), so these are
     // never actually consulted here -- just kept defined to avoid stray undefineds.
     poisonClock = 0; nextPoisonAt = POISON_INTERVAL_SEC;
@@ -94,6 +95,8 @@ function startPlay() {
     // Cannons start much later than mines (score ~100) and are spaced far apart -- a
     // rare hazard, not a constant one (see world.js cannonSpacing()).
     cannons = []; nextCannonWx = 6000; cannonShots = [];
+    // Boulders: deep-only routing obstacle, from world-x 84000 (~score 1400).
+    boulders = []; nextBoulderWx = 84000;
     bonusScore = 0; milestoneNext = 50; nearMissTimer = 0; coinCombo = 0; coinComboTimer = 0;
     runCoins = 0; runNearMisses = 0; runMaxCombo = 0; skinUnlockIdx = -1;
     skinMasteryUpIdx = -1; missionRewardWon = 0;

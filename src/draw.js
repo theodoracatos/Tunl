@@ -241,6 +241,15 @@ function drawWorld() {
     ctx.translate(ox, oy);
 
     const theme = getTheme();
+    // Deep-run palette drift: nudge the wall / stalactite GLOW toward a cooler
+    // deep tint the further in you get - "it looks different down here" fights
+    // monotony even when the mechanics hold steady. Subtle, capped, and only the
+    // accent glows move; the base rock colour and the daily identity are untouched.
+    if (_deepVarietyOn && _prog2 > 1) {
+        const d = Math.min((_prog2 - 1) * 0.10, 0.30);
+        theme.wallBase = lerpClr(theme.wallBase, [92, 122, 208], d);
+        theme.stalEdge = lerpClr(theme.stalEdge, [110, 140, 220], d * 0.8);
+    }
     const bgStr = rgb(theme.bg);
     if (bgStr !== _lastBgStr) { document.body.style.background = bgStr; _lastBgStr = bgStr; }
     ctx.fillStyle = bgStr;
@@ -524,6 +533,32 @@ function drawWorld() {
             ctx.fillStyle = `rgba(255,230,80,${0.90 * pulse})`;
             ctx.fill();
         }
+    }
+
+    // Boulders - solid rounded rock, same stone treatment as the walls/stalactites
+    for (const bo of boulders) {
+        const sx = bo.wx - scrollX;
+        if (sx < -bo.r - 30 || sx > W + bo.r + 30) continue;
+        const bgrd = ctx.createRadialGradient(sx - bo.r * 0.35, bo.y - bo.r * 0.4, bo.r * 0.1, sx, bo.y, bo.r);
+        bgrd.addColorStop(0,   rgb(lerpClr(theme.stal, theme.stalEdge, 0.35)));
+        bgrd.addColorStop(0.6, rgb(theme.stal));
+        bgrd.addColorStop(1,   rgb(lerpClr(theme.stal, [0, 0, 0], 0.35)));
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(sx, bo.y, bo.r, 0, Math.PI * 2);
+        ctx.fillStyle = bgrd;
+        ctx.fill();
+        ctx.clip();
+        _paintStonePattern(scrollX);
+        ctx.restore();
+        ctx.beginPath();
+        ctx.arc(sx, bo.y, bo.r, 0, Math.PI * 2);
+        ctx.shadowColor = rgb(theme.stalEdge, 0.5);
+        ctx.shadowBlur  = 12;
+        ctx.strokeStyle = rgb(theme.stalEdge, 0.7);
+        ctx.lineWidth   = 2;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
     }
 
     // Mines

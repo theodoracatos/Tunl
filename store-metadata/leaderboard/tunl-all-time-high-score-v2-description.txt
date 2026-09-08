@@ -1,0 +1,121 @@
+TUNL All-Time High Score v2 - leaderboard texts (15 locales)
+Leaderboard: tunl_highscore_alltime_v2 (all-time, NEVER resets) - display name
+"TUNL All-Time High Score v2". This is the sole active all-time board (v1
+tunl_highscore_alltime is being archived).
+
+Order = LANG_ORDER (src/i18n.js).
+
+Voice: never resets + it is your best across EVERY daily cave (each day's tunnel
+is procedurally different, so the all-time best is a record over all of them) +
+the one-line control model.
+
+Note: App Store Connect Game Center leaderboards have only a localized display
+name, no description field. The short block below fits any place that does take
+descriptive text (Play Console "additional details", the marketing site, press
+notes); the long block is for store copy / press.
+
+========================================================================
+SHORT - "Beschreibung der Bestenliste (optional)", < 120 chars, count in ( )
+========================================================================
+
+[en]  (112)
+Your best run ever, from any day's cave. Never resets - beat your all-time record. Hold to fly, dodge the walls.
+
+[de]  (109)
+Deine beste Fahrt aller Zeiten, aus jeder Tages-Höhle. Kein Reset - schlag deinen Rekord. Halten zum Fliegen.
+
+[fr]  (115)
+Ton meilleur vol de tous les temps, toutes grottes confondues. Aucun reset - bats ton record. Maintiens pour voler.
+
+[it]  (108)
+Il tuo miglior volo di sempre, in ogni grotta. Nessun reset - batti il tuo record. Tieni premuto per volare.
+
+[es]  (111)
+Tu mejor partida de siempre, de cualquier cueva. Nunca se reinicia - bate tu récord. Mantén pulsado para volar.
+
+[pt]  (112)
+Sua melhor corrida de todos os tempos, em qualquer caverna. Nunca reinicia - bata seu recorde. Segure para voar.
+
+[ja]  (46)
+リセットなしの通算ベスト。どの日の洞窟の記録でもOK。自己ベストを更新しよう。長押しで飛行。
+
+[ko]  (58)
+리셋 없는 통산 최고 기록. 어느 날의 동굴이든 상관없이 자기 최고 점수에 도전하세요. 길게 눌러 비행.
+
+[zh]  (35)
+永不重置的历史最高分。任意某天的洞穴均可，挑战你的个人纪录。按住飞行。
+
+[ru]  (113)
+Твой лучший результат за всё время, в пещере любого дня. Без сброса - побей свой рекорд. Удерживай, чтобы лететь.
+
+[ar]  (97)
+أفضل جولة لك على الإطلاق، في كهف أي يوم. بلا إعادة ضبط - حطّم رقمك القياسي. اضغط مطوّلًا للطيران.
+
+[tr]  (114)
+Tüm zamanların en iyi uçuşun, herhangi bir günün mağarasında. Sıfırlama yok - rekorunu kır. Uçmak için basılı tut.
+
+[id]  (107)
+Skor terbaikmu sepanjang masa, dari gua hari mana pun. Tanpa reset - pecahkan rekormu. Tahan untuk terbang.
+
+[vi]  (110)
+Thành tích tốt nhất mọi thời của bạn, ở hang động của bất kỳ ngày nào. Không đặt lại - phá kỷ lục. Giữ để bay.
+
+[hi]  (104)
+अब तक का आपका सर्वश्रेष्ठ रन, किसी भी दिन की गुफा से। कभी रीसेट नहीं - अपना रिकॉर्ड तोड़ें। दबाकर उड़ें।
+
+========================================================================
+LONG - store description / press copy
+========================================================================
+
+[en]
+This board never resets. It holds your single best score across every daily cave you have ever flown - and since each day's tunnel is procedurally different, beating your all-time best means truly outflying all of them. Hold to climb, release to fall.
+
+[de]
+Diese Bestenliste wird nie zurückgesetzt. Sie hält deine beste Punktzahl über alle Tages-Höhlen, die du je geflogen bist - und da jeder Tunnel prozedural anders ist, heißt einen neuen Allzeitrekord zu schaffen, sie alle zu übertreffen. Halten zum Steigen, loslassen zum Fallen.
+
+[fr]
+Ce classement ne se réinitialise jamais. Il conserve ton meilleur score sur toutes les grottes quotidiennes que tu as parcourues - et comme chaque tunnel est généré différemment, battre ton record absolu, c'est vraiment tous les surpasser. Maintiens pour monter, relâche pour descendre.
+
+[it]
+Questa classifica non si azzera mai. Conserva il tuo punteggio migliore su tutte le grotte giornaliere che hai volato - e poiché ogni tunnel è generato in modo diverso, superare il tuo record assoluto significa batterle davvero tutte. Tieni premuto per salire, rilascia per scendere.
+
+[es]
+Esta clasificación nunca se reinicia. Guarda tu mejor puntuación de todas las cuevas diarias que has volado - y como cada túnel se genera distinto, superar tu récord absoluto significa vencerlas todas de verdad. Mantén pulsado para subir, suelta para caer.
+
+[pt]
+Esta classificação nunca reinicia. Ela guarda a sua melhor pontuação em todas as cavernas diárias que você já voou - e como cada túnel é gerado de forma diferente, bater o seu recorde absoluto significa superar todas elas. Segure para subir, solte para cair.
+
+[ja]
+このランキングはリセットされません。あなたがこれまで飛んだすべての日替わり洞窟の中での自己ベストを記録します。トンネルは日ごとに変化するため、通算ベストの更新はそのすべてを上回ることを意味します。長押しで上昇、離すと下降。
+
+[ko]
+이 순위표는 초기화되지 않습니다. 지금까지 비행한 모든 일일 동굴 중 당신의 최고 점수를 기록합니다. 매일 터널이 다르게 생성되므로, 통산 최고 기록을 경신하려면 그 모두를 뛰어넘어야 합니다. 누르면 상승, 떼면 하강.
+
+[zh]
+此排行榜永不重置。它记录你飞越过的所有每日洞穴中的最高分——由于每天的隧道都不同，刷新历史最高分意味着真正超越了它们全部。按住上升，松开下落。
+
+[ru]
+Эта таблица никогда не сбрасывается. В ней хранится твой лучший результат по всем дневным пещерам, которые ты когда-либо пролетал, - а поскольку каждый туннель генерируется по-разному, побить свой абсолютный рекорд значит превзойти их все. Удерживай, чтобы подниматься, отпускай, чтобы падать.
+
+[ar]
+هذه القائمة لا يُعاد ضبطها أبدًا. تحتفظ بأفضل نتيجة لك عبر كل الكهوف اليومية التي طرت فيها - وبما أن كل نفق يولَّد بشكل مختلف، فإن تحطيم رقمك القياسي المطلق يعني التفوق عليها جميعًا. اضغط مطوّلًا للصعود، وأفلت للهبوط.
+
+[tr]
+Bu sıralama asla sıfırlanmaz. Şimdiye kadar uçtuğun tüm günlük mağaralardaki en yüksek puanını tutar - ve her tünel farklı üretildiği için, tüm zamanların rekorunu kırmak hepsini gerçekten geçmek demektir. Yükselmek için basılı tut, düşmek için bırak.
+
+[id]
+Papan peringkat ini tidak pernah disetel ulang. Ia menyimpan skor terbaikmu dari semua gua harian yang pernah kamu terbangi - dan karena setiap terowongan dibuat berbeda, memecahkan rekor sepanjang masamu berarti benar-benar mengalahkan semuanya. Tahan untuk naik, lepas untuk turun.
+
+[vi]
+Bảng xếp hạng này không bao giờ đặt lại. Nó lưu điểm cao nhất của bạn qua mọi hang động hằng ngày bạn từng bay - và vì mỗi đường hầm được tạo khác nhau, phá kỷ lục mọi thời của bạn nghĩa là thực sự vượt qua tất cả. Giữ để bay lên, thả để rơi xuống.
+
+[hi]
+यह लीडरबोर्ड कभी रीसेट नहीं होता। यह आपके द्वारा उड़ाई गई हर दैनिक गुफा में आपका सर्वश्रेष्ठ स्कोर रखता है - और चूँकि हर सुरंग अलग तरह से बनती है, अपना ऑल-टाइम रिकॉर्ड तोड़ने का मतलब है उन सबको पीछे छोड़ना। ऊपर के लिए दबाए रखें, गिरने के लिए छोड़ें।
+
+========================================================================
+SCOREFORMAT / SCOREFORMATSUFFIX (same as the daily board)
+
+Scoreformat:            Numerisch (Numeric), 0 Dezimalstellen
+Scoreformatsuffix:      leave EMPTY (Singular + Plural)
+  -> score is floor(scrollX/60) + bonusScore, a plain unit-less integer.
+     Matches the daily board and the iOS Game Center boards.

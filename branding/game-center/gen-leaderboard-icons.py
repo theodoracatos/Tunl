@@ -249,7 +249,9 @@ def compose_alltime():
     img = add_glow(img, cw, (110, 150, 255), blur=10 * SS, strength=0.28)
     img = paint(img, cw.point(lambda p: int(p * 0.30)), (150, 180, 255), white_core=0)
 
-    cx, cy = S * 0.5, S * 0.55
+    # cy set so the wreath's own vertical mid-line (it spans ~cy-0.85R to cy+R)
+    # lands on the icon centre, not its geometric anchor
+    cx, cy = S * 0.5, S * 0.478
     R = S * 0.315
 
     lm = laurel_mask(cx, cy, R)
