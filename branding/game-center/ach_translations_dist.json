@@ -1,0 +1,64 @@
+{
+  "_note": "Lifetime-distance achievements (src/constants.js DIST_ACHIEVEMENTS). Same array shape as ach_translations_9_1.json: [title, post-earned description, pre-earned description]. Play Console has ONE description field - use the pre-earned string there. Icons: achievement-icons/dist_moon.png, dist_sun.png (512x512 RGB, no alpha). Points: moon 25, sun 50. Hidden: No. Incremental: No.",
+
+  "en-US": {
+    "tunl_ach_dist_moon": ["To the Moon", "You have flown as far as the Moon.", "Across all your runs, fly the distance to the Moon."],
+    "tunl_ach_dist_sun":  ["To the Sun",  "You have flown as far as the Sun.",  "Across all your runs, fly the distance to the Sun."]
+  },
+  "de-DE": {
+    "tunl_ach_dist_moon": ["Bis zum Mond", "Du bist so weit geflogen wie bis zum Mond.", "Fliege über alle deine Läufe die Strecke bis zum Mond."],
+    "tunl_ach_dist_sun":  ["Bis zur Sonne", "Du bist so weit geflogen wie bis zur Sonne.", "Fliege über alle deine Läufe die Strecke bis zur Sonne."]
+  },
+  "fr-FR": {
+    "tunl_ach_dist_moon": ["Jusqu'à la Lune", "Vous avez parcouru la distance jusqu'à la Lune.", "Sur l'ensemble de vos parties, parcourez la distance jusqu'à la Lune."],
+    "tunl_ach_dist_sun":  ["Jusqu'au Soleil", "Vous avez parcouru la distance jusqu'au Soleil.", "Sur l'ensemble de vos parties, parcourez la distance jusqu'au Soleil."]
+  },
+  "it": {
+    "tunl_ach_dist_moon": ["Fino alla Luna", "Hai percorso la distanza fino alla Luna.", "In tutte le tue partite, percorri la distanza fino alla Luna."],
+    "tunl_ach_dist_sun":  ["Fino al Sole", "Hai percorso la distanza fino al Sole.", "In tutte le tue partite, percorri la distanza fino al Sole."]
+  },
+  "es-ES": {
+    "tunl_ach_dist_moon": ["Hasta la Luna", "Has volado la distancia hasta la Luna.", "Entre todas tus partidas, vuela la distancia hasta la Luna."],
+    "tunl_ach_dist_sun":  ["Hasta el Sol", "Has volado la distancia hasta el Sol.", "Entre todas tus partidas, vuela la distancia hasta el Sol."]
+  },
+  "pt-BR": {
+    "tunl_ach_dist_moon": ["Até a Lua", "Você voou a distância até a Lua.", "Em todas as suas partidas, voe a distância até a Lua."],
+    "tunl_ach_dist_sun":  ["Até o Sol", "Você voou a distância até o Sol.", "Em todas as suas partidas, voe a distância até o Sol."]
+  },
+  "ru": {
+    "tunl_ach_dist_moon": ["До Луны", "Вы пролетели расстояние до Луны.", "За все ваши забеги пролетите расстояние до Луны."],
+    "tunl_ach_dist_sun":  ["До Солнца", "Вы пролетели расстояние до Солнца.", "За все ваши забеги пролетите расстояние до Солнца."]
+  },
+  "ja": {
+    "tunl_ach_dist_moon": ["月まで", "月までの距離を飛行しました。", "全プレイの合計で、月までの距離を飛行する。"],
+    "tunl_ach_dist_sun":  ["太陽まで", "太陽までの距離を飛行しました。", "全プレイの合計で、太陽までの距離を飛行する。"]
+  },
+  "ko": {
+    "tunl_ach_dist_moon": ["달까지", "달까지의 거리를 비행했습니다.", "모든 플레이를 합쳐 달까지의 거리를 비행하세요."],
+    "tunl_ach_dist_sun":  ["태양까지", "태양까지의 거리를 비행했습니다.", "모든 플레이를 합쳐 태양까지의 거리를 비행하세요."]
+  },
+  "zh-Hant": {
+    "tunl_ach_dist_moon": ["直達月球", "你已飛行了地球到月球的距離。", "在你所有的遊玩中，飛行地球到月球的距離。"],
+    "tunl_ach_dist_sun":  ["直達太陽", "你已飛行了地球到太陽的距離。", "在你所有的遊玩中，飛行地球到太陽的距離。"]
+  },
+  "tr": {
+    "tunl_ach_dist_moon": ["Ay'a Kadar", "Ay'a kadar olan mesafeyi uçtun.", "Tüm oyunların boyunca Ay'a kadar olan mesafeyi uç."],
+    "tunl_ach_dist_sun":  ["Güneş'e Kadar", "Güneş'e kadar olan mesafeyi uçtun.", "Tüm oyunların boyunca Güneş'e kadar olan mesafeyi uç."]
+  },
+  "vi": {
+    "tunl_ach_dist_moon": ["Đến Mặt Trăng", "Bạn đã bay hết quãng đường đến Mặt Trăng.", "Qua tất cả các lượt chơi, bay hết quãng đường đến Mặt Trăng."],
+    "tunl_ach_dist_sun":  ["Đến Mặt Trời", "Bạn đã bay hết quãng đường đến Mặt Trời.", "Qua tất cả các lượt chơi, bay hết quãng đường đến Mặt Trời."]
+  },
+  "id": {
+    "tunl_ach_dist_moon": ["Menuju Bulan", "Kamu telah terbang sejauh jarak ke Bulan.", "Di seluruh permainanmu, terbanglah sejauh jarak ke Bulan."],
+    "tunl_ach_dist_sun":  ["Menuju Matahari", "Kamu telah terbang sejauh jarak ke Matahari.", "Di seluruh permainanmu, terbanglah sejauh jarak ke Matahari."]
+  },
+  "hi": {
+    "tunl_ach_dist_moon": ["चाँद तक", "आप चाँद तक की दूरी उड़ चुके हैं।", "अपनी सभी दौड़ों में मिलाकर, चाँद तक की दूरी उड़ें।"],
+    "tunl_ach_dist_sun":  ["सूरज तक", "आप सूरज तक की दूरी उड़ चुके हैं।", "अपनी सभी दौड़ों में मिलाकर, सूरज तक की दूरी उड़ें।"]
+  },
+  "ar-SA": {
+    "tunl_ach_dist_moon": ["إلى القمر", "لقد طرت مسافة تعادل المسافة إلى القمر.", "عبر كل جولاتك، اقطع طيرانًا المسافة إلى القمر."],
+    "tunl_ach_dist_sun":  ["إلى الشمس", "لقد طرت مسافة تعادل المسافة إلى الشمس.", "عبر كل جولاتك، اقطع طيرانًا المسافة إلى الشمس."]
+  }
+}
