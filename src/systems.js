@@ -18,7 +18,18 @@ function maintainStalactites() {
             stalactites.push(makeStal(nextStalWx,       true));
             stalactites.push(makeStal(nextStalWx + 65, false));
             const coinWx = nextStalWx - 85;
-            if (coinWx > 0 && (!chicaneCoins.length || chicaneCoins[chicaneCoins.length - 1].wx < coinWx - 30)) {
+            // Min world-x gap between two chicane gold coins. Deliberately a fixed
+            // distance (floored high), NOT the old flat 30px: past _prog2 the
+            // stalactite spacing collapses toward its 50px floor and chicaneProb
+            // climbs to 0.62, so a 30px gate let almost every deep chicane drop a
+            // centred gold coin -- ~7/sec in the deep run, right on the line the
+            // player threads anyway. That kept gapBonus permanently maxed (+H*0.19
+            // halfGap, more than undoing the whole 0.34->0.163 geometric narrowing),
+            // so the deep corridor was effectively WIDER than a beginner's. Gating
+            // on a real distance (not chicane density) keeps chicane gold a genuine
+            // reward without it becoming a corridor-width IV drip. coinSpacing()
+            // term so a Coin Rush day still runs a little denser.
+            if (coinWx > 0 && (!chicaneCoins.length || chicaneCoins[chicaneCoins.length - 1].wx < coinWx - Math.max(340, coinSpacing() * 0.85))) {
                 chicaneCoins.push({ wx: coinWx, y: centerAt(coinWx), collected: false, type: 'gold', fade: 1.0 });
             }
         } else {

@@ -220,10 +220,15 @@ without touching the navigability caps:
   `sin(wx*f)` at large `wx` scrambles accumulated phase and needs a phase-integral
   rework (a later phase if wanted). `test-math.js` guards inertness below the plateau,
   the <4% energy ceiling across 40 day-seeds, and boundary continuity.
-- **Speed pulse** (in `scrollSpd()`): past `_prog2 > 1`, a `±DEEP_PULSE_AMP` (8%) seeded
-  sine swell around the trend over `DEEP_PULSE_WAVELEN` world-px, so the deep game
-  breathes. The **trend itself is untouched and still climbs forever** - the "scrollSpd
-  never plateaus" rule holds; the pulse only textures it.
+- **Speed pulse** (in `scrollSpd()`): past `_prog2 > 1`, a seeded swell of up to
+  `+DEEP_PULSE_AMP` (12%) **above** the trend over `DEEP_PULSE_WAVELEN` world-px
+  (`swell = 0.5 - 0.5*cos(...)`, in `[0,1]`), so the deep game surges and eases back.
+  It is **surge-only - it never dips below the trend** (was `±8%` around the trend
+  until 2026-09-08, i.e. half of every cycle the deep run decelerated, which reads as
+  the game getting easier). Because each breath's trough sits exactly on the trend and
+  the **trend itself is untouched and still climbs forever** ("scrollSpd never
+  plateaus"), every successive breath is faster than the last - the speed envelope
+  only ever rises; only the within-breath ease-back varies.
 
 - **Chambers** (`deepChamberAt` in `world.js`, `DEEP_CHAMBER_PERIOD`/`DEEP_CHAMBER_PEAK`):
   a rare seeded world-x window (~55% of 15000px periods) where the half-gap balloons to

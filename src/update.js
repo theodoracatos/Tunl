@@ -182,7 +182,18 @@ function update(dt) {
     // TOXIC trades faster gap-bonus decay for its 2x-per-coin buff (systems.js) --
     // has to keep collecting to hold the wider corridor, not just bank it once. Mastery
     // eases the decay rate back down (never fully to baseline -- see masteryLerp doc).
-    gapBonus   = Math.max(0, gapBonus   - GAP_DECAY * (activeSkin === 4 ? masteryLerp(4, 1.6, 1.2) : 1.0) * dt);
+    //
+    // Deep-run decay ramp: past the _prog2 plateau every corridor geometry knob is
+    // frozen and gold coins are abundant (chicanes), so a maxed gapBonus used to sit
+    // there permanently -- +GAP_BONUS_MAX halfGap more than cancels the whole
+    // 0.34->0.163 narrowing, making the deep corridor effectively wider than a
+    // beginner's and flattening the difficulty curve exactly where it should bite.
+    // Scaling the DECAY (not shrinking GAP_PER_COIN / GAP_BONUS_MAX -- those stay a
+    // real lever early, see CLAUDE.md) up to 2.5x by score ~2400 means holding the
+    // bonus wide deep needs a steady coin stream, and any lapse narrows the wall
+    // back toward its frozen geometry. Inert until score 233 (_prog2 == 0).
+    const _deepDecay = lerp(1, 2.5, Math.min(_prog2 / 3, 1));
+    gapBonus   = Math.max(0, gapBonus   - GAP_DECAY * _deepDecay * (activeSkin === 4 ? masteryLerp(4, 1.6, 1.2) : 1.0) * dt);
     // gapBonusVisual chases the instant-jump gapBonus target at a constant rate
     // instead of snapping to it (constants.js GAP_EASE_RATE doc) - this is the
     // value collision/rendering actually use, so the wall visibly widens rather

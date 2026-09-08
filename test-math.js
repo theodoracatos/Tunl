@@ -284,17 +284,22 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
     const n2 = spdAt(D + 2000 * w.DEEP_PULSE_WAVELEN);
     check('speed trend still climbs indefinitely past the plateau with the pulse in', n0 < n1 && n1 < n2);
 
-    // Pulse span across one deep wavelength (trend is near-flat locally there):
-    // peak-to-peak should be ~2*AMP of the mean, and speed never <= 0.
+    // Surge-only pulse: across one deep wavelength every pulsed sample must sit AT
+    // OR ABOVE the pure trend (the deep run never gets slower), and the peak excess
+    // is ~DEEP_PULSE_AMP of the trend.
     const w0 = D + 400 * w.DEEP_PULSE_WAVELEN;
-    let lo = Infinity, hi = 0, sum = 0, N = 240;
+    const trendAt = (wx) => { w.setDeepVariety(false); const s = spdAt(wx); w.setDeepVariety(true); return s; };
+    let minRatio = Infinity, maxRatio = 0, N = 240;
     for (let i = 0; i < N; i++) {
-        const s = spdAt(w0 + (i / N) * w.DEEP_PULSE_WAVELEN);
-        lo = Math.min(lo, s); hi = Math.max(hi, s); sum += s;
+        const wx = w0 + (i / N) * w.DEEP_PULSE_WAVELEN;
+        const r = spdAt(wx) / trendAt(wx);
+        minRatio = Math.min(minRatio, r); maxRatio = Math.max(maxRatio, r);
     }
-    const span = (hi - lo) / (sum / N);
-    check(`deep speed pulse peak-to-peak is ~2x its +/-${w.DEEP_PULSE_AMP} amplitude (${span.toFixed(3)})`,
-        lo > 0 && span > w.DEEP_PULSE_AMP * 1.6 && span < w.DEEP_PULSE_AMP * 2.2);
+    check(`deep speed pulse never dips below the trend (min ratio ${minRatio.toFixed(4)})`,
+        minRatio >= 1 - 1e-6);
+    check(`deep speed pulse peak surge is ~+${w.DEEP_PULSE_AMP} of the trend (peak ratio ${maxRatio.toFixed(4)})`,
+        maxRatio > 1 + w.DEEP_PULSE_AMP * 0.8 && maxRatio < 1 + w.DEEP_PULSE_AMP * 1.05);
+    w.setDeepDay(0);
 
     // ── Deep chambers (world.js deepChamberAt) ──────────────────────────────
     // Inert below the plateau; bounded to [1, DEEP_CHAMBER_PEAK]; continuous

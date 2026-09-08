@@ -83,7 +83,7 @@ function seedDailyVariety(dayInt) {
 let _deepVarietyOn = true;
 const DEEP_VARIETY_WX    = 54000;   // _prog2 == 1, score ~900
 const DEEP_CHAR_WAVELEN  = 4200;    // world-px each shape character holds
-const DEEP_PULSE_AMP     = 0.08;    // speed pulse: +/- fraction of the trend
+const DEEP_PULSE_AMP     = 0.12;    // speed pulse: surge of up to +this fraction ABOVE the trend (never below)
 const DEEP_PULSE_WAVELEN = 2600;    // world-px per speed-pulse cycle
 // Amplitude multipliers on (wave 1, wave 2). Wave 1 is the slow wide arc, wave 2
 // the faster shallow ripple: lifting wave 2 toward wave 1 makes the ride bumpy,
@@ -184,14 +184,18 @@ function scrollSpd() {
     // difficulty knobs, which stay capped so the corridor stays navigable.
     const beyond = Math.max(_prog2 - 1, 0);
     let spd = base + Math.sqrt(beyond) * 90;
-    // Deep-run speed pulse (score ~900+): a slow seeded swell of +/-DEEP_PULSE_AMP
-    // around the trend above, so the deep game breathes instead of being one
-    // monotone acceleration. The trend is untouched and still climbs forever (the
-    // "scrollSpd never plateaus" rule); this only textures it. Pure function of
-    // scrollX, so it's deterministic and the scrollX-indexed ghost stays locked.
+    // Deep-run speed pulse (score ~900+): a slow seeded swell of up to +DEEP_PULSE_AMP
+    // ABOVE the trend, so the deep game surges and eases back instead of being one
+    // flat acceleration - but it never dips *below* the trend, so the deep run can
+    // never actually get slower (it used to be +/-AMP around the trend, i.e. ~half of
+    // every cycle the deep game decelerated, which reads as "getting easier"). The
+    // trend is untouched and still climbs forever (the "scrollSpd never plateaus"
+    // rule). Pure function of scrollX, so it's deterministic and the scrollX-indexed
+    // ghost stays locked.
     if (_prog2 > 1 && _deepVarietyOn) {
         const ph = _deepHash(0x7ff) * Math.PI * 2;   // fixed per-day phase, distinct index
-        spd *= 1 + DEEP_PULSE_AMP * Math.sin((scrollX - DEEP_VARIETY_WX) / DEEP_PULSE_WAVELEN * Math.PI * 2 + ph);
+        const swell = 0.5 - 0.5 * Math.cos((scrollX - DEEP_VARIETY_WX) / DEEP_PULSE_WAVELEN * Math.PI * 2 + ph);
+        spd *= 1 + DEEP_PULSE_AMP * swell;   // swell in [0,1] -> spd in [trend, trend*(1+AMP)]
     }
     // * W/600 keeps the on-screen pixel speed consistent across widths. W is capped at
     // 956 (constants.js) so this can't hand a wide-screen player a faster/harder cave
