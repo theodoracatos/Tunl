@@ -41,18 +41,15 @@ function _rockNoise(x) {
 const ROCK_ROUGHNESS_MAX = 0;
 
 // Ramps the roughness from smooth (0) at the start of a run up to the full
-// ROCK_ROUGHNESS_MAX cap at score 1000, reading `score` directly -- an
-// earlier version used scrollX/60000 instead (score's own distance term)
-// on the assumption that score could wobble non-monotonically via poison
-// coins, but that's wrong: poison only debits runCoins (the shard pool,
-// update.js/systems.js), never bonusScore, and bonusScore only ever
-// increments (near-miss, coin combo) -- score is strictly non-decreasing
-// through a run, so reading it directly is both safe and exact ("score
-// 1000" now means literally 100%, not an approximation). Plain linear
-// ramp, not eased like _prog's sqrt -- "smooth", the ask here, just means
-// no jump/step, which any continuous function already gives.
+// ROCK_ROUGHNESS_MAX cap at score 1000, reading `score` directly. The drain
+// coin (systems.js) can now pull `score` DOWN mid-run, so this is no longer
+// strictly monotone -- but `Math.min(score/1000, 1)` is still bounded to
+// [<=0, 1] (update.js clamps score at 0) and the whole feature is currently
+// off (ROCK_ROUGHNESS_MAX = 0), so a small dip just briefly eases the rock
+// back toward smooth, which is fine. Plain linear ramp, not eased like
+// _prog's sqrt -- "smooth" here just means no jump/step.
 function _rockRoughness() {
-    return Math.min(score / 1000, 1) * ROCK_ROUGHNESS_MAX;
+    return Math.min(Math.max(score, 0) / 1000, 1) * ROCK_ROUGHNESS_MAX;
 }
 
 function _wallJagged(wx, seedOffset) {
@@ -132,9 +129,9 @@ function _paintStonePattern(scrollX) {
 }
 
 function drawCoinIcon(cx, cy, type, r) {
-    const isBlu = type === 'blue', isRed = type === 'red', isGrn = type === 'green', isOrng = type === 'orange', isPsn = type === 'poison', isBmb = type === 'bomb';
-    const bodyClr = isBlu ? '#4dd9ff' : isRed ? '#ff4444' : isGrn ? '#44ff88' : isOrng ? '#ff5500' : isPsn ? '#5fbf00' : isBmb ? '#b833ff' : '#ffe040';
-    const [gr, gg, gb] = isBlu ? [60,200,255] : isRed ? [255,60,60] : isGrn ? [50,255,120] : isOrng ? [255,85,0] : isPsn ? [110,200,20] : isBmb ? [190,50,255] : [255,225,50];
+    const isBlu = type === 'blue', isRed = type === 'red', isGrn = type === 'green', isOrng = type === 'orange', isPsn = type === 'poison', isBmb = type === 'bomb', isDrn = type === 'drain';
+    const bodyClr = isBlu ? '#4dd9ff' : isRed ? '#ff4444' : isGrn ? '#44ff88' : isOrng ? '#ff5500' : isPsn ? '#5fbf00' : isBmb ? '#b833ff' : isDrn ? '#7a2f4f' : '#ffe040';
+    const [gr, gg, gb] = isBlu ? [60,200,255] : isRed ? [255,60,60] : isGrn ? [50,255,120] : isOrng ? [255,85,0] : isPsn ? [110,200,20] : isBmb ? [190,50,255] : isDrn ? [170,55,95] : [255,225,50];
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI*2);
     ctx.fillStyle   = bodyClr;
@@ -861,9 +858,9 @@ function drawWorld() {
 
         ctx.globalAlpha = coin.fade;
 
-        const isBlu = coin.type === 'blue', isRed = coin.type === 'red', isGrn = coin.type === 'green', isOrng = coin.type === 'orange', isPsn = coin.type === 'poison', isBmb = coin.type === 'bomb';
-        const bodyClr = isBlu ? '#4dd9ff' : isRed ? '#ff4444' : isGrn ? '#44ff88' : isOrng ? '#ff5500' : isPsn ? '#5fbf00' : isBmb ? '#b833ff' : '#ffe040';
-        const [gr, gg, gb] = isBlu ? [60,200,255] : isRed ? [255,60,60] : isGrn ? [50,255,120] : isOrng ? [255,85,0] : isPsn ? [110,200,20] : isBmb ? [190,50,255] : [255,225,50];
+        const isBlu = coin.type === 'blue', isRed = coin.type === 'red', isGrn = coin.type === 'green', isOrng = coin.type === 'orange', isPsn = coin.type === 'poison', isBmb = coin.type === 'bomb', isDrn = coin.type === 'drain';
+        const bodyClr = isBlu ? '#4dd9ff' : isRed ? '#ff4444' : isGrn ? '#44ff88' : isOrng ? '#ff5500' : isPsn ? '#5fbf00' : isBmb ? '#b833ff' : isDrn ? '#7a2f4f' : '#ffe040';
+        const [gr, gg, gb] = isBlu ? [60,200,255] : isRed ? [255,60,60] : isGrn ? [50,255,120] : isOrng ? [255,85,0] : isPsn ? [110,200,20] : isBmb ? [190,50,255] : isDrn ? [170,55,95] : [255,225,50];
         const darkR = Math.floor(gr * 0.28), darkG = Math.floor(gg * 0.28), darkB = Math.floor(gb * 0.28);
 
         if (isPsn) {
@@ -942,6 +939,67 @@ function drawWorld() {
             ctx.stroke();
             ctx.lineCap = 'butt';
 
+            ctx.restore();
+        } else if (isDrn) {
+            // Second hazard coin. Its own silhouette so it never reads as "more
+            // poison": a hollow, broken ring with inward barbs that CONTRACTS on the
+            // pulse (every legitimate coin blooms outward), counter-spinning, with a
+            // dark punched-out core -- "this one takes something away" -- and a heavy
+            // downward chevron (poison owns the X; this is the colourblind-safe
+            // "score goes down" mark).
+            const jag = coin.wx * 0.021;
+            const breathe = 0.92 - 0.12 * Math.sin(gtime * 4.2 + jag);
+            const pr = COIN_R * 1.18 * breathe;
+
+            const grdD = ctx.createRadialGradient(sx, coin.y, pr * 0.2, sx, coin.y, pr * 3.2);
+            grdD.addColorStop(0,    `rgba(${gr},${gg},${gb},0.34)`);
+            grdD.addColorStop(0.45, `rgba(${gr},${gg},${gb},0.12)`);
+            grdD.addColorStop(1,    'transparent');
+            ctx.beginPath(); ctx.arc(sx, coin.y, pr * 3.0, 0, Math.PI * 2);
+            ctx.fillStyle = grdD; ctx.fill();
+
+            ctx.save();
+            ctx.translate(sx, coin.y);
+            ctx.rotate(-gtime * 0.7 - coin.wx * 0.006);   // counter-spin vs treasure coins
+
+            const N = 9;
+            ctx.beginPath();
+            for (let i = 0; i <= N; i++) {
+                const ang  = (i / N) * Math.PI * 2;
+                const barb = i % 2 === 0 ? 1.0 : 0.52;    // alternating inward spikes
+                const x = Math.sin(ang) * pr * barb, y = -Math.cos(ang) * pr * barb;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            const bGrdD = ctx.createRadialGradient(0, 0, pr * 0.15, 0, 0, pr * 1.2);
+            bGrdD.addColorStop(0,   'rgba(8,4,8,0.95)');
+            bGrdD.addColorStop(0.5, bodyClr);
+            bGrdD.addColorStop(1,   `rgb(${Math.min(255,gr+50)},${Math.min(255,gg+30)},${Math.min(255,gb+45)})`);
+            ctx.fillStyle   = bGrdD;
+            ctx.shadowColor = `rgba(${gr},${gg},${gb},0.6)`;
+            ctx.shadowBlur  = 8;
+            ctx.fill();
+            ctx.shadowBlur  = 0;
+            ctx.strokeStyle = 'rgba(6,2,6,0.7)';
+            ctx.lineWidth   = Math.max(pr * 0.10, 1);
+            ctx.stroke();
+
+            ctx.beginPath(); ctx.arc(0, 0, pr * 0.34, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(4,2,5,0.92)';
+            ctx.fill();
+            ctx.restore();
+
+            ctx.save();
+            ctx.translate(sx, coin.y);
+            ctx.beginPath();
+            ctx.moveTo(-pr * 0.42, -pr * 0.12);
+            ctx.lineTo(0,           pr * 0.40);
+            ctx.lineTo( pr * 0.42, -pr * 0.12);
+            ctx.strokeStyle = 'rgba(255,235,240,0.9)';
+            ctx.lineWidth   = Math.max(pr * 0.16, 1.4);
+            ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+            ctx.stroke();
+            ctx.lineJoin = 'miter'; ctx.lineCap = 'butt';
             ctx.restore();
         } else {
         const pulse = 1 + 0.18 * Math.sin(gtime * 5.5 + coin.wx * 0.013);

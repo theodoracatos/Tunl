@@ -262,7 +262,7 @@ stays locked. `_deepVarietyOn` (default true) is the master kill switch for all 
 Coins are staged by `_prog` so power-ups introduce gradually:
 - score 0-11 (_prog < 0.22): gold only (gap bonus)
 - score 11-33 (_prog 0.22-0.38): + blue (slow time: scroll sags to 0.6x on pickup then ramps back to full over ~4s - see slowScrollFactor)
-- score 34-70 (_prog 0.38-0.55): + red (shield, absorbs 1 hit) + orange (bullet ammo)
+- score 34-70 (_prog 0.38-0.55): + red (shield, absorbs 1 hit) + orange (bullet ammo) + the clock-driven poison / bomb / drain coins (see their sections below)
 - score 71+ (_prog >= 0.55): + green (magnet, pulls coins)
 
 Mines (bombs) first spawn at wx=1800 (score ~30); shield coins unlock at score ~34 so the player faces mines briefly without protection - intentional.
@@ -300,8 +300,10 @@ falling edge of `magnetTime`, and `bgmSetSlow(false)` fires there too (plus
 `startPlay`/`die`) purely as a belt-and-braces snap-home in case the glide and the
 gameplay timer drift.
 
-**Poison/bomb rarity**: both unlock at score ~34+ (`_prog >= 0.38`, same gate as
-red/orange) and are driven by a real-time clock, not a per-coin-candidate percentage
+**Poison/bomb/drain rarity**: all three unlock at score ~34+ (`_prog >= 0.38`, same
+gate as red/orange) and are driven by a real-time clock (`drainClock` mirrors
+`poisonClock`/`bombClock` exactly; see the Drain coin section below), not a
+per-coin-candidate percentage
 (`poisonClock`/`bombClock`, `state.js`, incremented every play-frame in `update.js`).
 An earlier version rolled a percentage per coin *candidate*, derived from a target
 hits/sec so the cadence wouldn't accelerate with difficulty - correct in principle, but
@@ -354,7 +356,25 @@ stalactites fade out the same way a bullet-destroyed one does, mines and in-flig
 cannon shots are destroyed outright, and any cannon that hasn't fired yet is disabled.
 See `triggerBombExplosion` in `src/systems.js`, called from `checkCoinCollection`'s
 `bomb` branch (joins the coin combo and banks toward `runCoins` like any other power-up
-- only poison opts out of that shared path).
+- only the two hazard coins opt out of that shared path).
+
+**Drain coin**: the SECOND hazard coin (`'drain'`, wine `#7a2f4f`, `isDrn` branch in
+`src/draw.js` - a hollow broken ring with inward barbs that *contracts* on the pulse,
+counter-spins, dark punched-out core, heavy downward chevron; poison owns the X). Where
+poison debits the *pending shard bank* (`runCoins`, meta progress), drain debits the
+*visible run score*: `checkCoinCollection`'s `drain` branch subtracts
+`ceil(score * lerp(DRAIN_LOSS_PCT_MIN, DRAIN_LOSS_PCT_MAX, _prog))` (5%->8%) from
+`bonusScore`, so the HUD number itself drops. `bonusScore` may now go negative;
+`update.js` clamps the displayed `score` at 0, and because the loss is a fraction of a
+shrinking number it can never actually reach a negative total. Compounds over repeated
+hits like poison's %-loss, and because it is a % of the current score its absolute bite
+*grows the deeper the run goes* - deliberately, so the deep run gets harder over
+distance. Breaks the combo (`coinCombo = 0`) like poison. Same real-time-clock cadence
+model as poison/bomb (`drainClock`/`nextDrainAt`, `DRAIN_INTERVAL_SEC` ~30s - rarer
+than poison since it stings more visibly), checked between the poison and bomb clocks in
+`makeCoin()` so a ready bomb still wins a triple-ready coin. Magnet-exempt like poison.
+`sfxDrain` (`audio.js`) is a downward triangle glissando + bandpassed noise "suck" -
+distinct from poison's sour sawtooth squelch so the two punishers sound different.
 
 ### Addictive systems
 
@@ -590,7 +610,7 @@ project memory) held after re-checking.
 - Multiple difficulty modes
 - Mobile fullscreen on iOS/Android
 - Level theming (lava/ice/neon)
-- Additional power-up types beyond the current seven (gold/blue/red/orange/green/bomb/poison)
+- Additional coin types beyond the current eight (gold/blue/red/orange/green/bomb + the two hazards poison/drain)
 - Friend ghosts carried inside a share link (see Ghost run below - the local ghost is
   already only a few hundred bytes, so a shared one is mostly a transport problem)
 - A playable web build. Deliberately NOT on the roadmap right now: the user decided

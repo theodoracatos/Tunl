@@ -289,6 +289,15 @@ function makeCoin(wx) {
             poisonClock = 0;
             nextPoisonAt = POISON_INTERVAL_SEC * (0.7 + rng() * 0.6);
         }
+        // Drain checked after poison, before bomb: a coin where both punisher clocks
+        // are ready becomes drain (poison's clock still resets -- same "each rerolls
+        // independently" rule as the poison/bomb tie), but a ready bomb still wins the
+        // final override so a reward is never eaten by a punisher on a triple-ready coin.
+        if (drainClock >= nextDrainAt) {
+            type = 'drain';
+            drainClock = 0;
+            nextDrainAt = DRAIN_INTERVAL_SEC * (0.7 + rng() * 0.6);
+        }
         if (bombClock >= nextBombAt) {
             type = 'bomb';
             bombClock = 0;
@@ -342,6 +351,25 @@ function checkCoinCollection() {
                 shake += 6;
                 if (loss > 0) pushNotif(sx, coin.y - 34, 1.1, `-${loss}\u200A⧫`, [140,225,40]);
                 sfxPoison();
+                window.webkit?.messageHandlers?.haptic?.postMessage('warning');
+                continue;
+            }
+            if (coin.type === 'drain') {
+                // Second hazard coin: debits a compounding percentage of the VISIBLE
+                // run score (bonusScore), not the shard pool poison takes. The HUD
+                // number itself drops. Fraction of the current score (constants.js
+                // DRAIN_LOSS_PCT_MIN/MAX), so the absolute hit grows the deeper the
+                // run goes -- on-theme for "the game gets harder over distance". Can't
+                // drive the total negative (fraction of a shrinking number); update.js
+                // clamps score at 0 regardless. Breaks the combo like poison.
+                coinCombo = 0; coinComboTimer = 0;
+                const drainPct = lerp(DRAIN_LOSS_PCT_MIN, DRAIN_LOSS_PCT_MAX, _prog);
+                const loss = Math.max(1, Math.ceil(Math.max(0, score) * drainPct));
+                bonusScore -= loss;
+                burstCoin(sx, coin.y, 328, 24);
+                shake += 6;
+                pushNotif(sx, coin.y - 34, 1.2, `-${loss}`, [200, 70, 110]);
+                sfxDrain();
                 window.webkit?.messageHandlers?.haptic?.postMessage('warning');
                 continue;
             }

@@ -312,6 +312,10 @@ let cannonShots;
 // actually clears placement (makeCoin, systems.js) becomes that type.
 let poisonClock, nextPoisonAt;
 let bombClock, nextBombAt;
+// Drain coin clock (constants.js DRAIN_INTERVAL_SEC doc): same model as
+// poisonClock/bombClock. Once it passes nextDrainAt the next placed coin becomes
+// 'drain', which debits a % of the visible run score (bonusScore).
+let drainClock, nextDrainAt;
 // Magnet soft-pity clock (constants.js GREEN_DROUGHT_SOFT_SEC doc): real play
 // seconds since a green coin last actually cleared placement in makeCoin(). Unlike
 // poisonClock/bombClock this never forces a type -- it only nudges the weighted

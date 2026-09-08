@@ -458,6 +458,39 @@ function sfxPoison() {
     sq.start(t); sq.stop(t + 0.36);
 }
 
+function sfxDrain() {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    // Score being siphoned away: a long downward glissando on a detuned triangle
+    // pair (hollow, vacuum-ish) rather than poison's sour sawtooth squelch, so the
+    // two punishers sound like different bad things. Ends on a soft filtered
+    // down-thump.
+    [220, 208].forEach((freq, i) => {
+        const o = _ac.createOscillator(), g = _ac.createGain();
+        o.connect(g); g.connect(_ac.destination);
+        o.type = 'triangle';
+        const t0 = t + i * 0.04;
+        o.frequency.setValueAtTime(freq, t0);
+        o.frequency.exponentialRampToValueAtTime(freq * 0.32, t0 + 0.40);
+        g.gain.setValueAtTime(0.11, t0);
+        g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.46);
+        o.start(t0); o.stop(t0 + 0.48);
+    });
+    // Descending filtered-noise "suck" under the tones.
+    const ns = _ac.createBufferSource();
+    ns.buffer = _noiseBuf(0.4);
+    const nf = _ac.createBiquadFilter();
+    nf.type = 'bandpass';
+    nf.frequency.setValueAtTime(900, t);
+    nf.frequency.exponentialRampToValueAtTime(120, t + 0.4);
+    nf.Q.value = 3;
+    const ng = _ac.createGain();
+    ng.gain.setValueAtTime(0.16, t + 0.02);
+    ng.gain.exponentialRampToValueAtTime(0.001, t + 0.44);
+    ns.connect(nf); nf.connect(ng); ng.connect(_ac.destination);
+    ns.start(t); ns.stop(t + 0.46);
+}
+
 function sfxBomb() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;

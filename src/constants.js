@@ -421,6 +421,23 @@ const REVIVE_COUNTDOWN_SEC = 1.2;
 // good run has real odds of at least one.
 const POISON_INTERVAL_SEC = 20; // avg real seconds between poison coins
 const BOMB_INTERVAL_SEC   = 16; // avg real seconds between bomb coins
+// Drain coin (wine): the second punishing coin. Poison debits the *pending shard
+// bank* (runCoins, meta progress); drain debits the *visible run score* (bonusScore,
+// see systems.js checkCoinCollection + update.js score clamp), so the HUD number
+// itself drops when you hit one. Same real-time-clock cadence model as poison/bomb
+// (constants.js POISON_INTERVAL_SEC doc for why a clock, not a per-candidate %), but
+// rarer -- it stings more visibly, and with two punishers now live the combined
+// punishment cadence (poison 20s + drain 30s ~= one per 12s) already runs a touch
+// ahead of bomb's 16s reward. That's deliberate: the deep run is meant to get
+// *harder* over distance, and because drain takes a fixed *percentage* of the
+// current score its absolute bite grows as the run goes deeper.
+const DRAIN_INTERVAL_SEC  = 30; // avg real seconds between drain coins
+// Percentage of the current total score clawed back per drain hit, lerp on _prog
+// (score ~34 -> ~233). Compounds over repeated hits like poison's %-loss, and
+// because it is a fraction of a shrinking number it can never drive the score
+// negative (update.js still clamps at 0 as a belt-and-braces guard).
+const DRAIN_LOSS_PCT_MIN  = 0.05;
+const DRAIN_LOSS_PCT_MAX  = 0.08;
 
 // ── Magnet (green) soft pity ─────────────────────────────────────────
 // UX audit, Konzept 07: unlike poison/bomb, magnet is not force-overridden onto the

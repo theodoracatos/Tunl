@@ -212,7 +212,10 @@ function update(dt) {
     const spd = scrollSpd() * slowScrollFactor();
     scrollX += spd * dt;
     refreshWave();
-    score = Math.floor(scrollX / 60) + bonusScore;
+    // Math.max(0, ...): bonusScore can now go negative (drain coin debits it, see
+    // systems.js checkCoinCollection). The %-based drain math can't actually reach a
+    // negative total, but clamp anyway so nothing downstream ever sees score < 0.
+    score = Math.max(0, Math.floor(scrollX / 60) + bonusScore);
 
     // On fire: fires once, the frame live score first overtakes the bar it has to beat.
     // That bar is today's daily best, EXCEPT on the day's first run where dailyBest is
@@ -264,6 +267,7 @@ function update(dt) {
     // makeCoin() in systems.js for where these get consumed.
     poisonClock += dt;
     bombClock   += dt;
+    drainClock  += dt;
     greenClock  += dt;
 
     // ── Ghost (constants.js GHOST_STEP) ──────────────────────────────
@@ -441,6 +445,14 @@ function update(dt) {
             parts.push({ x: csx, y: coin.y + COIN_R * 0.6, vx: (Math.random()-0.5)*8, vy: 30+Math.random()*35,
                          life: 0.6+Math.random()*0.3, r: 1.0+Math.random()*1.6, h: 95+Math.random()*20 });
         }
+        // Drain coins shed dark wine motes that fall and drift inward -- same "this
+        // one is a live hazard" tell as poison's ooze, its own colour (h ~ -10 wraps
+        // to deep red) and inward pull so it doesn't just read as more poison.
+        if (coin.type === 'drain' && csx > -40 && csx < W + 40 && Math.random() < dt * 2.2) {
+            parts.push({ x: csx + (Math.random()-0.5)*COIN_R*1.4, y: coin.y - COIN_R*0.4,
+                         vx: (csx < PX ? 12 : -12) + (Math.random()-0.5)*10, vy: 18+Math.random()*26,
+                         life: 0.5+Math.random()*0.35, r: 1.0+Math.random()*1.5, h: 348+Math.random()*16 });
+        }
     }
 
     // Wall + stalactite collision. CRIMSON has a slimmer hitbox (its buff); AMBER
@@ -535,15 +547,15 @@ function update(dt) {
         }
     }
 
-    // Magnet: pull visible uncollected coins toward the player. Poison is exempt -- it's
-    // a hazard, not a pickup, and magnet is a reward the player earned; pulling poison in
-    // would turn a power-up into a trap the instant one's on screen, punishing exactly the
-    // players who worked for the buff.
+    // Magnet: pull visible uncollected coins toward the player. The two hazard coins
+    // (poison, drain) are exempt -- they're hazards, not pickups, and magnet is a
+    // reward the player earned; pulling one in would turn a power-up into a trap the
+    // instant one's on screen, punishing exactly the players who worked for the buff.
     if (magnetTime > 0) {
         const playerWx = scrollX + PX;
         const pullSpeed = W * 1.4;
         for (const arr of [coins, chicaneCoins]) for (const coin of arr) {
-            if (coin.collected || coin.fade <= 0 || coin.type === 'poison') continue;
+            if (coin.collected || coin.fade <= 0 || coin.type === 'poison' || coin.type === 'drain') continue;
             const csx = coin.wx - scrollX;
             if (csx < -20 || csx > W + 60) continue;
             const dx = playerWx - coin.wx, dy = py - coin.y;
