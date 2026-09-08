@@ -701,8 +701,18 @@ function commitDeath() {
     // (state.js lifetimeDist, shown on the title screen). Pure distance, not score -
     // no coin/near-miss bonus - so it's "how far have I actually flown".
     if (scrollX > 0) {
+        const _distBefore = Math.floor((lifetimeDist) / 60);
         lifetimeDist += scrollX;
         localStorage.setItem('tunnel_lifetime_dist', String(Math.round(lifetimeDist)));
+        // Lifetime-distance achievements (constants.js DIST_ACHIEVEMENTS): the run
+        // that crosses each mark fires it once. A single run can't span a tier, so
+        // the crossing is always a clean single-threshold pass.
+        const _distNow = Math.floor(lifetimeDist / 60);
+        for (const da of DIST_ACHIEVEMENTS) {
+            if (_distBefore < da.at && _distNow >= da.at) {
+                window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: da.id });
+            }
+        }
     }
     if (score > 0) {
         top5 = [...top5, score].sort((a, b) => b - a).slice(0, 5);

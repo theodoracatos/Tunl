@@ -128,6 +128,10 @@ class MainActivity : ComponentActivity() {
         "tunl_ach_planet_pallas"  to R.string.achievement_planet_pallas,
         "tunl_ach_planet_rhodia"  to R.string.achievement_planet_rhodia,
         "tunl_ach_grand_tour"     to R.string.achievement_grand_tour,
+        // Lifetime-distance milestones (src/constants.js DIST_ACHIEVEMENTS). Values are
+        // TUNL_TODO_* placeholders until the two are created in Play Console.
+        "tunl_ach_dist_moon"      to R.string.achievement_dist_moon,
+        "tunl_ach_dist_sun"       to R.string.achievement_dist_sun,
     )
 
     // Shims window.webkit.messageHandlers.{gameCenter,iap,ads,haptic} so the game's

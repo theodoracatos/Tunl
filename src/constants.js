@@ -203,6 +203,19 @@ const PLANET_ACHIEVEMENTS = [
 const PLANET_GRAND_TOUR_ACH = 'tunl_ach_grand_tour';
 const PLANET_ALL_FLOWN_MASK = (1 << PLANET_ACHIEVEMENTS.length) - 1; // 0x7f
 
+// Lifetime-distance achievements: fired from commitDeath() the run that pushes
+// the all-time total (state.js `lifetimeDist`, shown on the title screen as
+// `lifetimeDist / 60`) past each mark. A single run can never span a whole tier,
+// so the before/after crossing check there fires each exactly once - no extra
+// persisted flag needed. `at` is in the same displayed distance unit as the
+// title-screen figure. MOON is the real ~384 400 km to the Moon; SUN is loose
+// poetry (real 1 AU ~150M would be decades of play) - a genuine multi-month /
+// year-plus long-haul goal. Same self-chosen-id setup as the achievements above.
+const DIST_ACHIEVEMENTS = [
+    { id: 'tunl_ach_dist_moon', at: 384000 },
+    { id: 'tunl_ach_dist_sun',  at: 3000000 },
+];
+
 // ── Ship mastery ──────────────────────────────────────────────────────
 // Per-ship XP (state.js `skinXP`, one coin collected while that ship is active
 // = 1 XP) unlocks up to 3 mastery levels. Each level eases that ship's buff a
