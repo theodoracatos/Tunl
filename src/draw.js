@@ -2246,7 +2246,7 @@ function drawTitleScreen() {
         // as a footnote to the headline stat, not a second competing stat block
         // (the "Dock & Drawer" audit above kept only one headline stat on screen).
         if (lifetimeDist > 0) {
-            const flownTxt = String(Math.floor(lifetimeDist / 60)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+            const flownTxt = String(Math.floor(lifetimeDist / 60));
             ctx.font      = `${FS * 0.023}px 'Courier New',monospace`;
             ctx.fillStyle = `rgba(150,170,215,${a * 0.62})`;
             ctx.shadowColor = 'rgba(0,0,0,0.85)';
@@ -2670,26 +2670,10 @@ function drawTitleScreen() {
                 ctx.fillText(starTxt, startXw + shardW, walletY);
             }
             ctx.textAlign = 'center';
-
-            // "?" button opening the shards/stardust/coins explainer
-            // (showCurrencyInfo) -- lives right beside the numbers it explains,
-            // same as it did on the old base screen's wallet line, just moved
-            // here with the wallet itself.
-            const infoR  = FS * 0.016;
-            const infoCx = Math.min(startXw + shardW + starW + infoR * 2.4, shipPanX + shipPanW - infoR * 2);
-            const infoCy = walletY;
-            _currencyInfoBtnRect = { cx: infoCx, cy: infoCy, r: infoR * 2.0 };
-            ctx.shadowColor = 'rgba(255,255,255,0.55)';
-            ctx.shadowBlur  = 6;
-            ctx.beginPath();
-            ctx.arc(infoCx, infoCy, infoR, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(255,255,255,0.90)';
-            ctx.lineWidth   = 1.6;
-            ctx.stroke();
-            ctx.font        = `bold ${infoR * 1.4}px 'Courier New',monospace`;
-            ctx.fillStyle   = 'rgba(255,255,255,0.98)';
-            ctx.fillText('?', infoCx, infoCy);
-            ctx.shadowBlur  = 0;
+            // The shards/stardust/coins explainer that used to hang off a tiny "?"
+            // here now lives as a "HOW IT WORKS" row in the Settings panel -- see
+            // _settingsGuideBtnRect. Ship shopping was the wrong context for the
+            // coin/hazard half of that panel, and it sat two taps deep.
         }
 
         const gridCX    = W / 2;
@@ -2830,11 +2814,6 @@ function drawTitleScreen() {
         }
 
         ctx.textAlign = 'center';
-    } else {
-        // Stops a stale rect from a previous time the sheet was open from
-        // being tappable on the base screen once it's closed again -- this
-        // button only exists while the sheet itself is drawn.
-        _currencyInfoBtnRect = null;
     }
 
     // Shared pill-button helper, used by the Settings panel's Music/FX toggle
@@ -2931,10 +2910,17 @@ function drawTitleScreen() {
         const nNotifBtnH     = H * 0.062;
         const nNotifSectionH = hasNotifBtn ? nSectionGap + nNotifBtnH : 0;
 
+        // "HOW IT WORKS" row -- opens the shards/stardust/coins/hazards explainer
+        // (showCurrencyInfo). Always present, unlike the EEA-only privacy row and
+        // the bridge-gated notif row above it; this is where that explainer lives
+        // now that it's off the ALL SHIPS sheet.
+        const nGuideBtnH     = H * 0.062;
+        const nGuideSectionH = nSectionGap + nGuideBtnH;
+
         const langCols   = LANG_ORDER.length > 10 ? 3 : 2;
         const langRows   = Math.ceil(LANG_ORDER.length / langCols);
         const nLangListH = langRows * nLbh + Math.max(0, langRows - 1) * nLbGap;
-        const nPanH = nPadTop + nTitleH + nAudioRowH + nSectionGap + nLangLabelH + nLangListH + nPrivacySectionH + nNotifSectionH + nPadBottom;
+        const nPanH = nPadTop + nTitleH + nAudioRowH + nSectionGap + nLangLabelH + nLangListH + nPrivacySectionH + nNotifSectionH + nGuideSectionH + nPadBottom;
 
         // Leave a hair of margin inside the 0.02..0.98 clamp band below rather than
         // filling it exactly, so this never comes down to a single rounding error.
@@ -2951,6 +2937,7 @@ function drawTitleScreen() {
         const sectionGap = nSectionGap * settingsScale;
         const privacyBtnH = nPrivacyBtnH * settingsScale;
         const notifBtnH   = nNotifBtnH   * settingsScale;
+        const guideBtnH   = nGuideBtnH   * settingsScale;
         const langListH  = nLangListH  * settingsScale;
         const privacySectionH = nPrivacySectionH * settingsScale;
         const notifSectionH   = nNotifSectionH   * settingsScale;
@@ -3095,6 +3082,33 @@ function drawTitleScreen() {
             ctx.fillText(nLabel, W / 2, nby + notifBtnH / 2);
             _notifToggleRect = { x: nbx, y: nby, w: nbw, h: notifBtnH };
             y += notifBtnH;
+        }
+
+        // "HOW IT WORKS" row -- opens showCurrencyInfo (shards/stardust/coins/
+        // hazards explainer). Same pill treatment as the privacy row, neutral
+        // slate rather than the notif row's green since it's an action, not a
+        // toggle. Tapped in input.js.
+        {
+            y += sectionGap;
+            const gbw = panW * 0.78, gby = y;
+            const gbx = W / 2 - gbw / 2;
+            ctx.fillStyle = 'rgba(15,18,40,0.72)';
+            ctx.beginPath(); ctx.roundRect(gbx, gby, gbw, guideBtnH, 7); ctx.fill();
+            ctx.strokeStyle = 'rgba(120,140,200,0.50)';
+            ctx.lineWidth   = 1;
+            ctx.beginPath(); ctx.roundRect(gbx, gby, gbw, guideBtnH, 7); ctx.stroke();
+            const gLabel = `${T.howItWorks}  ?`;
+            let gFs = FS * 0.019;
+            ctx.font = `${gFs}px 'Courier New',monospace`;
+            const gLabelW = ctx.measureText(gLabel).width;
+            if (gLabelW > gbw * 0.88) {
+                gFs = Math.max(gFs * gbw * 0.88 / gLabelW, FS * 0.013);
+                ctx.font = `${gFs}px 'Courier New',monospace`;
+            }
+            ctx.fillStyle = 'rgba(190,200,240,0.90)';
+            ctx.fillText(gLabel, W / 2, gby + guideBtnH / 2);
+            _settingsGuideBtnRect = { x: gbx, y: gby, w: gbw, h: guideBtnH };
+            y += guideBtnH;
         }
     }
 
@@ -3265,15 +3279,15 @@ function drawTitleScreen() {
         }
     }
 
-    // Shard/stardust/coin explainer, opened via the small "i" button left of
-    // SHIP/NAVE (_currencyInfoBtnRect, drawn above). One static
-    // panel rather than four separate tooltips -- shards, stardust and the coin
-    // legend are the one screen's worth of numbers that don't teach themselves by
-    // playing (unlike coin effects, which read from look and result during a run),
-    // so bundling them beats making a new player hunt down five tiny "i"s one at a
-    // time. Opt-in (tap to open, tap outside to close, same as Shop/Settings) rather
-    // than a forced hint -- see CLAUDE.md Onboarding for why an unprompted hint was
-    // rejected here before.
+    // Shard/stardust/coin explainer, opened from the Settings panel's "HOW IT
+    // WORKS" row (_settingsGuideBtnRect) and drawn here on top of it. One static
+    // panel rather than four separate tooltips -- shards, stardust, the coin
+    // legend and the two hazard coins are the one screen's worth of things that
+    // don't teach themselves by playing (unlike the power-up coins, which read
+    // from look and result during a run), so bundling them beats making a new
+    // player hunt down tiny "i"s one at a time. Opt-in (tap to open, tap outside
+    // to close, same as Shop/Settings) rather than a forced hint -- see CLAUDE.md
+    // Onboarding for why an unprompted hint was rejected here before.
     if (showCurrencyInfo) {
         ctx.fillStyle = 'rgba(0,0,12,0.88)';
         ctx.fillRect(0, 0, W, H);

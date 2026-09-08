@@ -47,6 +47,16 @@ function onDown(e) {
             _notifPromptResolve(false);
         }
 
+        // Opened from the Settings panel's "HOW IT WORKS" row and drawn on top of
+        // it, so it has to intercept before the showSettings block below (which is
+        // still true underneath) -- otherwise a tap outside this panel would be
+        // read as "close Settings" and leave this one orphaned.
+        if (showCurrencyInfo) {
+            // Tap anywhere outside the panel closes it; a tap inside on the body text does
+            // nothing (no buttons live inside this panel, unlike Shop/Settings).
+            if (!_currencyInfoPanelRect || !inRect(cx, cy, _currencyInfoPanelRect)) { showCurrencyInfo = false; sfxUiClose(); }
+            return;
+        }
         // Language panel intercepts all taps when open
         if (showSettings) {
             if (_privacyChoicesBtnRect && inRect(cx, cy, _privacyChoicesBtnRect)) {
@@ -82,14 +92,13 @@ function onDown(e) {
                     return;
                 }
             }
+            // "HOW IT WORKS" row -> shards/stardust/coins/hazards explainer, drawn
+            // on top of the still-open Settings panel (tap outside it returns here).
+            if (_settingsGuideBtnRect && inRect(cx, cy, _settingsGuideBtnRect)) {
+                showCurrencyInfo = true; sfxUiTap(); return;
+            }
             // Tap outside the panel closes it; a tap inside on empty space does nothing.
             if (!_settingsPanelRect || !inRect(cx, cy, _settingsPanelRect)) { showSettings = false; sfxUiClose(); }
-            return;
-        }
-        if (showCurrencyInfo) {
-            // Tap anywhere outside the panel closes it; a tap inside on the body text does
-            // nothing (no buttons live inside this panel, unlike Shop/Settings).
-            if (!_currencyInfoPanelRect || !inRect(cx, cy, _currencyInfoPanelRect)) { showCurrencyInfo = false; sfxUiClose(); }
             return;
         }
         if (showShop) {
@@ -133,10 +142,6 @@ function onDown(e) {
         // keeps the sheet open, same as picking a language keeps Settings
         // open); anything else -- background, header, wallet line -- closes it.
         if (showShipPicker) {
-            if (_currencyInfoBtnRect) {
-                const b = _currencyInfoBtnRect, dx = cx - b.cx, dy = cy - b.cy;
-                if (dx*dx + dy*dy < b.r*b.r) { showCurrencyInfo = true; sfxUiTap(); return; }
-            }
             for (let i = 0; i < _skinBtnRects.length; i++) {
                 const b = _skinBtnRects[i];
                 if (inCircle(cx, cy, b)) {
@@ -203,20 +208,15 @@ function onDown(e) {
             sfxUiSelect(activeSkin);
             return;
         }
-        if (_currencyInfoBtnRect) {
-            const b = _currencyInfoBtnRect, dx = cx - b.cx, dy = cy - b.cy;
-            if (dx*dx + dy*dy < b.r*b.r) { showCurrencyInfo = true; sfxUiTap(); return; }
-        }
-
         // Nothing hit: wait for a confirmed release before starting a run (see note above).
         _titleStartPending = e.pointerId;
         return;
     }
     _initAC();
     if (phase === 'title') {
+        if (showCurrencyInfo) { showCurrencyInfo = false; return; }  // layered on top of Settings -- dismiss it first
         if (showSettings) { showSettings = false; return; }
         if (showShop) { showShop = false; return; }
-        if (showCurrencyInfo) { showCurrencyInfo = false; return; }
         if (showMissions) { showMissions = false; return; }
         if (showShipPicker) { showShipPicker = false; return; }
         if (showNotifPrompt) _notifPromptResolve(false);   // keyboard start also dismisses it

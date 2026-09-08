@@ -181,13 +181,16 @@ let _challengeBtnRect = null;
 let showShop = false;
 let _shopBtnRect = null;
 let _shopPanelRect = null;
-// Small "i" button next to the shard wallet on the ship panel, opening a one-screen
-// explainer for shards/stardust/coins -- the one place new players hit numbers
-// (⧫/✦) that mean nothing without context, unlike coins which are self-explanatory
-// by look and effect during a run. See CLAUDE.md Onboarding: this is opt-in (tap to
+// "HOW IT WORKS" row at the bottom of the Settings panel, opening a one-screen
+// explainer for shards/stardust/coins/hazards -- the numbers (⧫/✦) and the two
+// hazard coins that mean nothing without context, unlike the power-up coins which
+// are self-explanatory by look and effect during a run. Lives in Settings (the
+// reference/about surface, one tap from the title) rather than buried in the ALL
+// SHIPS sheet where it started -- ship shopping is the wrong context for the coin
+// and hazard half of the panel. See CLAUDE.md Onboarding: this is opt-in (tap to
 // open) rather than a forced hint, so it doesn't repeat the removed title-screen hint.
 let showCurrencyInfo = false;
-let _currencyInfoBtnRect = null;
+let _settingsGuideBtnRect = null;
 let _currencyInfoPanelRect = null;
 // CONCEPT A (Dock & Drawer) title-screen prototype -- Missions drawer and ALL
 // SHIPS sheet, opened from the icon rail / hero ship link in drawTitleScreen().
