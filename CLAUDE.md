@@ -126,12 +126,14 @@ Paired stalactites (chicane from both sides) appear after `_prog > 0.40` with 24
 **Falling stalactites** (`FALL_LEAD`/`FALL_SPAN` in `constants.js`, `fallSpacing()` in
 `world.js`, `stalFallY`/`updateFallingStals` in `systems.js`): from world-x 12000
 (~score 200, `nextFallWx` set in `startPlay`), a seeded cadence flags the next single
-(non-chicane) ceiling stalactite to break loose. It trickles dust as it scrolls in,
-detaches when the player is within `FALL_LEAD` (and still clearly ahead), eases down over
-`FALL_SPAN` world-px of scroll (`stalFallY` = `fallDist·t²`, **scrollX-indexed so a blue
-coin can't desync it**, same as the ghost), then just sits as a lowered rock and scrolls
-past. `fallDist` settles it with a **guaranteed `PR*2.6` duck-under gap below** (clamped
-live in `stalFallY` against a since-narrowed corridor); the gap above is whatever's left.
+(non-chicane) ceiling stalactite to break loose. While loose it **shakes left/right**
+(the draw loop's `wobX`, ramping as it nears the detach point) plus trickles dust, so the
+player can spot which spikes drop. It detaches when the player is within `FALL_LEAD` (and
+still clearly ahead), then **falls the full corridor** over `FALL_SPAN` world-px of scroll
+(`stalFallY` = `fallDist·t²` where `fallDist = corridor - length`, **scrollX-indexed so a
+blue coin can't desync it**, same as the ghost) until the tip meets the far wall - it
+becomes a floor spike and the dodge is unambiguously "go over it". The gap above is
+`>= 1.2 * halfGap` (stalLenFrac hard-caps length at 0.8). Then it just scrolls past.
 `fy` is folded into `stalHit`/`stalHitBullet`/`triggerBombExplosion`/the draw loop so
 collision and render always agree. Bullets/bombs kill a falling one like any stalactite.
 `fallSpacing()` runs `~3400 -> 2000` world-px over `_prog2`, floored at 1800.

@@ -55,16 +55,16 @@ function maintainStalactites() {
 // Vertical drop offset (px) of a falling stalactite: 0 until it detaches, then
 // an ease-in sweep to s.fallDist over FALL_SPAN world-px of scroll, then held.
 // Indexed by scrollX (not elapsed time) so a blue-coin slow can't desync the
-// drop from the tunnel, same as the ghost. Clamped so the tip can never punch
-// through a since-narrowed far wall. Read by stalHit / stalHitBullet / the draw
-// loop / triggerBombExplosion so collision and render always agree.
+// drop from the tunnel, same as the ghost. It falls the full corridor until the
+// tip meets the far wall (becomes a floor spike - the dodge is unambiguously
+// "go over it"); clamped live so the tip can't punch through a since-narrowed
+// wall. Read by stalHit / stalHitBullet / the draw loop / triggerBombExplosion
+// so collision and render always agree.
 function stalFallY(s) {
     if (!s.falls || !s.detached) return 0;
     const t  = Math.min((scrollX - s.detachScrollX) / FALL_SPAN, 1);
     const b  = boundsAt(s.wx);
-    // Same PR*2.6 floor the settle target uses - guarantees a duck-under gap
-    // below the rock even if the corridor narrowed while it was dropping.
-    return Math.min(s.fallDist * t * t, Math.max(0, (b.bot - b.top) - s.length - PR * 2.6));
+    return Math.min(s.fallDist * t * t, Math.max(0, (b.bot - b.top) - s.length));
 }
 
 // Per-frame: trickle telegraph dust from loose (not-yet-detached) falling
@@ -94,9 +94,9 @@ function updateFallingStals(dt) {
                 s.detached = true;
                 s.detachScrollX = scrollX;
                 const b = boundsAt(s.wx);
-                // Settle depth: toward the far wall but never blocking it, and
-                // capped so a big (chamber) corridor doesn't make it a guillotine.
-                s.fallDist = Math.max(0, Math.min((b.bot - b.top) - s.length - PR * 2.6, _halfGap * 1.5));
+                // Falls the whole corridor - tip meets the far wall, leaving the
+                // gap ABOVE (>= 1.2 * halfGap, since stalLenFrac caps length at 0.8).
+                s.fallDist = Math.max(0, (b.bot - b.top) - s.length);
                 shake += 4;
                 sfxStalCrack();
                 burstStalCrack(sx, b.top + s.length);

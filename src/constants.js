@@ -305,16 +305,15 @@ const CANNON_FIRE_LEAD   = W * 0.62;
 const CANNON_SHOT_TRAVEL = 1.15;
 
 // ── Falling stalactites ───────────────────────────────────────────────
-// A ceiling stalactite that visibly shakes (dust telegraph) as it scrolls in,
-// breaks loose as the player closes within FALL_LEAD, and drops FALL_SPAN
-// world-px of scroll later into a lowered rock that then just sits in the
-// corridor and scrolls past - so it reads as "a spike grew downward here, route
-// around it", with the crack as fair warning. It is never dropped onto someone
-// already level with it (the detach trigger guards that). Cadence lives in
-// world.js fallSpacing(); flagging is in maintainStalactites; drop + landing in
-// updateFallingStals. Both scale with W (fixed on-screen geometry, W capped 956).
-// FALL_LEAD small enough that the loose stalactite spends ~0.6s visibly cracking
-// on screen before it lets go; FALL_SPAN a quick drop just ahead of the ship.
+// A ceiling stalactite that visibly SHAKES left/right (draw.js wobX) and trickles
+// dust as it scrolls in - the tell for which spikes drop - then breaks loose as
+// the player closes within FALL_LEAD and falls the full corridor over FALL_SPAN
+// world-px of scroll, tip meeting the far wall so it reads as "this spike is
+// dropping to the floor, get over it". Never dropped onto someone already level
+// with it (the detach trigger guards that). Cadence: world.js fallSpacing();
+// flagging: maintainStalactites; drop: updateFallingStals. Both scale with W
+// (fixed on-screen geometry, W capped 956). FALL_LEAD small enough that the loose
+// spike shakes on screen ~0.6s before it lets go; FALL_SPAN a quick drop.
 const FALL_LEAD = W * 0.44;
 const FALL_SPAN = W * 0.26;
 

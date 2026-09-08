@@ -278,7 +278,16 @@ function drawWorld() {
         // drop offset, and cap the "base" at the rock's own top instead of the
         // off-screen canvas edge so it reads as a loose chunk, not a giant spike.
         const fallY = (s.falls && s.detached) ? stalFallY(s) : 0;
-        if (fallY) { ctx.save(); ctx.translate(0, fallY); }
+        // Loose (flagged, not yet dropped): shake it left/right, building as it
+        // nears the detach point, so the player can spot which spikes will fall.
+        // Cosmetic only -> time-indexed jitter is fine here.
+        let wobX = 0;
+        if (s.falls && !s.detached) {
+            const range = W - PX - FALL_LEAD;
+            const wobT  = range > 0 ? Math.max(0, Math.min(1, 1 - (sx - PX - FALL_LEAD) / range)) : 1;
+            wobX = Math.sin(gtime * 27 + s.wx * 0.05) * lerp(0.7, 3.6, wobT);
+        }
+        if (fallY || wobX) { ctx.save(); ctx.translate(wobX, fallY); }
         if (s.fade < 1.0) ctx.globalAlpha = s.fade;
         const b = boundsAt(s.wx), hw = s.width / 2;
         const len = s.length;
@@ -377,7 +386,7 @@ function drawWorld() {
         ctx.stroke();
 
         if (s.fade < 1.0) ctx.globalAlpha = 1.0;
-        if (fallY) ctx.restore();
+        if (fallY || wobX) ctx.restore();
     }
 
     // Top wall - dark at canvas top, accent-tinted at corridor edge
