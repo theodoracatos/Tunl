@@ -50,22 +50,22 @@
     "ja": "ボタンひとつの洞窟フライヤー。押して上昇、離して下降。トンネルが閉じる前に、どこまで暗闇へ進めるか。"
   },
   "hero.newTag": {
-    "en": "New in 9.1",
-    "de": "Neu in 9.1",
-    "fr": "Nouveau dans la 9.1",
-    "it": "Novità nella 9.1",
-    "es": "Novedad en la 9.1",
-    "pt": "Novo na 9.1",
-    "ja": "9.1の新機能"
+    "en": "New in 10.0",
+    "de": "Neu in 10.0",
+    "fr": "Nouveau dans la 10.0",
+    "it": "Novità nella 10.0",
+    "es": "Novedad en la 10.0",
+    "pt": "Novo na 10.0",
+    "ja": "10.0の新機能"
   },
   "hero.newBody": {
-    "en": "Eight new Achievements. Finish a run on each of TUNL's seven daily worlds to collect its badge, then earn the Grand Tour for flying all seven.",
-    "de": "Acht neue Erfolge. Beende auf jeder der sieben Tageswelten von TUNL einen Lauf, um ihr Abzeichen zu holen - und schnapp dir die Grand Tour, wenn du alle sieben geflogen bist.",
-    "fr": "Huit nouveaux Succès. Termine une partie sur chacun des sept mondes quotidiens de TUNL pour décrocher son badge, puis obtiens le Grand Tour en les parcourant tous les sept.",
-    "it": "Otto nuovi Obiettivi. Completa una corsa su ognuno dei sette mondi giornalieri di TUNL per prenderne il distintivo, poi ottieni il Grand Tour volando su tutti e sette.",
-    "es": "Ocho nuevos Logros. Completa una partida en cada uno de los siete mundos diarios de TUNL para conseguir su insignia y gana el Grand Tour por volar los siete.",
-    "pt": "Oito novas Conquistas. Complete uma corrida em cada um dos sete mundos diários de TUNL para ganhar seu emblema e conquiste o Grand Tour por voar em todos os sete.",
-    "ja": "8つの新しい実績。TUNLの7つのデイリーワールドそれぞれで1回飛行を完走してバッジを集め、7つすべてを飛べばグランドツアーを獲得。"
+    "en": "Your lifetime distance flown now shows right on the title screen - chase two new Achievements for it, To the Moon and To the Sun. Plus a second hazard coin, deeper runs that keep changing shape past score 900, and stalactites that shake loose and fall.",
+    "de": "Deine insgesamt geflogene Distanz erscheint jetzt direkt auf dem Titelbildschirm - schnapp dir dafür zwei neue Erfolge: To the Moon und To the Sun. Dazu eine zweite Gefahren-Münze, Läufe jenseits von Punktestand 900, die ihre Form ständig ändern, und Stalaktiten, die sich lösen und herabstürzen.",
+    "fr": "Ta distance totale parcourue s'affiche désormais sur l'écran titre - décroche deux nouveaux Succès pour ça : To the Moon et To the Sun. Avec en plus une deuxième pièce dangereuse, des parties qui changent de forme en continu au-delà du score 900, et des stalactites qui se détachent et tombent.",
+    "it": "La tua distanza totale percorsa appare ora direttamente nella schermata del titolo - conquista due nuovi Obiettivi per questo: To the Moon e To the Sun. In più una seconda moneta pericolosa, corse che continuano a cambiare forma oltre il punteggio 900, e stalattiti che si staccano e cadono.",
+    "es": "Tu distancia total recorrida aparece ahora en la pantalla de título - consigue dos nuevos Logros por ello: To the Moon y To the Sun. Además, una segunda moneda peligrosa, partidas que siguen cambiando de forma pasado el puntaje 900, y estalactitas que se sueltan y caen.",
+    "pt": "Sua distância total percorrida agora aparece na tela de título - conquiste duas novas Conquistas por isso: To the Moon e To the Sun. Além de uma segunda moeda perigosa, corridas que continuam mudando de forma além da pontuação 900, e estalactites que se soltam e caem.",
+    "ja": "生涯飛行距離がタイトル画面に表示されるように。2つの新しい実績「To the Moon」「To the Sun」を目指そう。さらに2種類目の危険なコイン、スコア900を超えても形を変え続けるコース、そして揺れて落ちてくる鍾乳石も追加。"
   },
   "hero.playCta": {
     "en": "Play in your browser",
@@ -210,13 +210,13 @@
     "ja": "鍾乳石、機雷、砲台"
   },
   "f5.p": {
-    "en": "Sharp obstacles, paired chicanes, and rare wall-mounted cannons that open fire as you close in force split-second calls as the run speeds up. Watch out for the toxic green coin too - it looks like a pickup, but it costs you shards.",
-    "de": "Scharfe Hindernisse, doppelte Schikanen und seltene wandmontierte Kanonen, die das Feuer eröffnen, sobald du näher kommst - während der Lauf schneller wird, zählen Sekundenbruchteile. Achte auch auf die giftgrüne Münze - sie sieht aus wie ein Bonus, kostet dich aber Shards.",
-    "fr": "Des obstacles pointus, des chicanes doubles et de rares canons muraux qui ouvrent le feu dès que tu approches : quand la partie accélère, tout se joue au dixième de seconde. Méfie-toi aussi de la pièce vert toxique - elle ressemble à un bonus, mais elle te coûte des shards.",
-    "it": "Ostacoli affilati, chicane doppie e rari cannoni a muro che aprono il fuoco quando ti avvicini: mentre la partita accelera, contano le frazioni di secondo. Occhio anche alla moneta verde tossica - sembra un bonus, ma ti costa shard.",
-    "es": "Obstáculos afilados, chicanas dobles y raros cañones montados en la pared que abren fuego cuando te acercas: según se acelera la partida, todo se juega en fracciones de segundo. Cuidado también con la moneda verde tóxica - parece un objeto, pero te cuesta esquirlas.",
-    "pt": "Obstáculos afiados, chicanes duplas e raros canhões na parede que abrem fogo quando você se aproxima: conforme a partida acelera, tudo se decide em frações de segundo. Cuidado também com a moeda verde tóxica - parece um item, mas custa fragmentos.",
-    "ja": "鋭い障害物、左右から迫るシケイン、そして接近すると火を噴く珍しい壁掛け砲台。走りが速くなるほど、判断はコンマ数秒。毒々しい緑のコインにも注意 - 取れそうに見えて、シャードを失う。"
+    "en": "Sharp obstacles, paired chicanes, and rare wall-mounted cannons that open fire as you close in force split-second calls as the run speeds up. Watch out for two hazard coins too - a toxic green one that costs you shards, and a wine-red one that drains your score - both look like ordinary pickups.",
+    "de": "Scharfe Hindernisse, doppelte Schikanen und seltene wandmontierte Kanonen, die das Feuer eröffnen, sobald du näher kommst - während der Lauf schneller wird, zählen Sekundenbruchteile. Achte auch auf zwei Gefahren-Münzen: eine giftgrüne, die dich Shards kostet, und eine weinrote, die deinen Punktestand anzapft - beide sehen aus wie normale Bonusmünzen.",
+    "fr": "Des obstacles pointus, des chicanes doubles et de rares canons muraux qui ouvrent le feu dès que tu approches : quand la partie accélère, tout se joue au dixième de seconde. Méfie-toi aussi de deux pièces dangereuses - une vert toxique qui te coûte des shards, et une rouge bordeaux qui draine ton score - toutes deux ressemblent à des bonus ordinaires.",
+    "it": "Ostacoli affilati, chicane doppie e rari cannoni a muro che aprono il fuoco quando ti avvicini: mentre la partita accelera, contano le frazioni di secondo. Occhio anche a due monete pericolose - una verde tossica che ti costa shard, e una rosso vinaccia che prosciuga il punteggio - entrambe sembrano bonus normali.",
+    "es": "Obstáculos afilados, chicanas dobles y raros cañones montados en la pared que abren fuego cuando te acercas: según se acelera la partida, todo se juega en fracciones de segundo. Cuidado también con dos monedas peligrosas - una verde tóxica que te cuesta esquirlas, y una roja vino que drena tu puntuación - ambas parecen bonus normales.",
+    "pt": "Obstáculos afiados, chicanes duplas e raros canhões na parede que abrem fogo quando você se aproxima: conforme a partida acelera, tudo se decide em frações de segundo. Cuidado também com duas moedas perigosas - uma verde tóxica que custa fragmentos, e uma vermelho-vinho que drena sua pontuação - ambas parecem itens normais.",
+    "ja": "鋭い障害物、左右から迫るシケイン、そして接近すると火を噴く珍しい壁掛け砲台。走りが速くなるほど、判断はコンマ数秒。危険なコインにも2種類注意 - シャードを失う毒々しい緑のコインと、スコアを削るワインレッドのコイン。どちらも普通のボーナスに見える。"
   },
   "f6.h": {
     "en": "One more run after you crash",
