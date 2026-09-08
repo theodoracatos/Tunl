@@ -26,6 +26,11 @@ let _waveJitterA = 1, _waveJitterF = 1;
 // stalSpacing/coinSpacing/mineSpacing below and maintainStalactites in
 // systems.js).
 let _dayArchetype = 0;
+// UTC day-int of the cave being flown, captured in seedDailyVariety. Seeds the
+// deep-run shape/pace variety (deepMorphAt / the scrollSpd pulse) independently
+// of the rng() obstacle stream. 0 until seedDailyVariety runs (and in the
+// test-math sandbox, which just exercises "day 0" deterministically).
+let _deepDay = 0;
 function seedDailyVariety(dayInt) {
     // Same hash chain as before (phase1/phase2), just kept going for the extra
     // draws below - still fully independent of the rng() stream used for
@@ -45,6 +50,74 @@ function seedDailyVariety(dayInt) {
     _waveJitterA = 1 + (draw() * 2 - 1) * 0.08;
     _waveJitterF = 1 + (draw() * 2 - 1) * 0.08;
     _dayArchetype = Math.floor(draw() * DAY_ARCHETYPES.length);
+    _deepDay = dayInt;
+}
+
+// ── Deep-run variety (score ~900+) ───────────────────────────────────
+// Past the _prog2 plateau every corridor geometry knob is capped (CLAUDE.md:
+// pushing them further makes the tunnel unnavigable) and only scrollSpd() still
+// climbs - so the deep game was one variable, speed, getting slowly twitchier
+// against a frozen corridor. These two additions give the deep run a changing
+// SHAPE and PACE without breaching that navigability wall:
+//
+//  - deepMorphAt() redistributes the two corridor waves' AMPLITUDES per a
+//    seeded per-day character sequence, so a deep stretch reads as big clean
+//    sweeps, or beating chop, or near-straight. The a1/a2 splits are chosen so
+//    wA1*wF1 + wA2*wF2 (peak corridor velocity) never exceeds ~1.03x the frozen
+//    plateau - the corridor is a different shape, never more wiggle-energy than
+//    today. Only amplitudes move; frequencies are left alone, because changing
+//    the frequency of sin(wx*f) at large wx scrambles accumulated phase and
+//    would need a phase-integral rework (a later phase, if wanted).
+//  - the pulse in scrollSpd(): a slow seeded swell of +/-DEEP_PULSE_AMP around
+//    the ever-rising trend, so the deep game breathes instead of being one
+//    monotone acceleration. The trend itself is untouched (the "never plateau"
+//    rule holds); the pulse only textures it.
+//
+// Both are pure functions of scrollX + _deepDay, so every player flies the
+// identical sequence and the scrollX-indexed ghost stays locked to it, and both
+// are inert below DEEP_VARIETY_WX so the hand-tuned mid-game is byte-identical.
+// Master kill-switch for both deep-run additions - always true in the shipping
+// game; a one-line revert path if a deep playtest ever wants them off without a
+// code rollback, and the seam test-math.js uses to isolate the morph's effect
+// from the pre-existing _prog2 wave boost.
+let _deepVarietyOn = true;
+const DEEP_VARIETY_WX    = 54000;   // _prog2 == 1, score ~900
+const DEEP_CHAR_WAVELEN  = 4200;    // world-px each shape character holds
+const DEEP_PULSE_AMP     = 0.08;    // speed pulse: +/- fraction of the trend
+const DEEP_PULSE_WAVELEN = 2600;    // world-px per speed-pulse cycle
+// Amplitude multipliers on (wave 1, wave 2). Wave 1 is the slow wide arc, wave 2
+// the faster shallow ripple: lifting wave 2 toward wave 1 makes the ride bumpy,
+// dropping it leaves long clean sweeps. Every row keeps a1*W1v + a2*W2v within
+// ~3% of the (1,1) plateau - see the test-math guard.
+const DEEP_CHARS = [
+    { a1: 1.00, a2: 1.00 },   // even     - the current frozen plateau shape
+    { a1: 1.45, a2: 0.32 },   // sweeps   - big clean arcs, ripple flattened out
+    { a1: 0.32, a2: 1.60 },   // chop     - fast wave dominates, bumpy ride
+    { a1: 0.24, a2: 0.34 },   // straight - shallow, hold steady at speed
+];
+
+// Deterministic per-day pick for band index n. Independent of the rng() obstacle
+// stream AND of seedDailyVariety's h-chain, so it shifts neither placement nor
+// _dayArchetype. Same imul mix as _worldTable's shuffle rng.
+function _deepHash(n) {
+    let s = Math.imul((_deepDay ^ 0x9e3779b9) + Math.imul(n + 1, 0x6d2b79f5), 0x45d9f3b) >>> 0;
+    s = Math.imul(s ^ (s >>> 15), 1 | s);
+    s = (s + Math.imul(s ^ (s >>> 7), 61 | s)) ^ s;
+    return ((s ^ (s >>> 14)) >>> 0) / 4294967296;
+}
+
+// Wave-amplitude split (a1, a2 multipliers) active at world-x wx, smoothstepped
+// across the last 30% of each band so the wall never kinks at a boundary.
+function deepMorphAt(wx) {
+    if (!_deepVarietyOn || wx <= DEEP_VARIETY_WX) return { a1: 1, a2: 1 };
+    const u    = (wx - DEEP_VARIETY_WX) / DEEP_CHAR_WAVELEN;
+    const seg  = Math.floor(u);
+    const frac = u - seg;
+    const c0 = DEEP_CHARS[Math.floor(_deepHash(seg)     * DEEP_CHARS.length)];
+    const c1 = DEEP_CHARS[Math.floor(_deepHash(seg + 1) * DEEP_CHARS.length)];
+    const t  = frac < 0.7 ? 0 : (frac - 0.7) / 0.3;
+    const bl = t * t * (3 - 2 * t);
+    return { a1: c0.a1 + (c1.a1 - c0.a1) * bl, a2: c0.a2 + (c1.a2 - c0.a2) * bl };
 }
 
 function refreshWave() {
@@ -54,8 +127,13 @@ function refreshWave() {
     // Wave amplitude/frequency keep growing with _prog2 (capped at 2x to stay navigable)
     const wMult  = 1 + 0.12 * Math.min(_prog2, 2);            // up to +24% amplitude
     const wFMult = 1 + 0.14 * Math.min(_prog2, 2);            // up to +28% frequency = tighter bends
-    _wA1     = lerp(H * 0.07,  H * 0.12,  _prog) * wMult * _waveJitterA;
-    _wA2     = lerp(H * 0.035, H * 0.055, _prog) * wMult * _waveJitterA;
+    // Deep-run shape morph (score ~900+, see deepMorphAt): sampled at the player's
+    // own scrollX and then held across the whole visible span - the same lookahead
+    // approximation the _prog2 boost already relies on. boundsBase() samples per-wx
+    // for placement accuracy.
+    const dm = deepMorphAt(scrollX);
+    _wA1     = lerp(H * 0.07,  H * 0.12,  _prog) * wMult * _waveJitterA * dm.a1;
+    _wA2     = lerp(H * 0.035, H * 0.055, _prog) * wMult * _waveJitterA * dm.a2;
     _wF1     = lerp(0.0025,    0.0048,    _prog) * wFMult * _waveJitterF;
     _wF2     = lerp(0.0060,    0.0115,    _prog) * wFMult * _waveJitterF;
 }
@@ -66,10 +144,20 @@ function scrollSpd() {
     // creeping up forever (sqrt eased, like _prog's ramp) instead of the other
     // difficulty knobs, which stay capped so the corridor stays navigable.
     const beyond = Math.max(_prog2 - 1, 0);
+    let spd = base + Math.sqrt(beyond) * 90;
+    // Deep-run speed pulse (score ~900+): a slow seeded swell of +/-DEEP_PULSE_AMP
+    // around the trend above, so the deep game breathes instead of being one
+    // monotone acceleration. The trend is untouched and still climbs forever (the
+    // "scrollSpd never plateaus" rule); this only textures it. Pure function of
+    // scrollX, so it's deterministic and the scrollX-indexed ghost stays locked.
+    if (_prog2 > 1 && _deepVarietyOn) {
+        const ph = _deepHash(0x7ff) * Math.PI * 2;   // fixed per-day phase, distinct index
+        spd *= 1 + DEEP_PULSE_AMP * Math.sin((scrollX - DEEP_VARIETY_WX) / DEEP_PULSE_WAVELEN * Math.PI * 2 + ph);
+    }
     // * W/600 keeps the on-screen pixel speed consistent across widths. W is capped at
     // 956 (constants.js) so this can't hand a wide-screen player a faster/harder cave
     // than a phone at the same score - see the fairness audit note in CLAUDE.md.
-    return (base + Math.sqrt(beyond) * 90) * W / 600;
+    return spd * W / 600;
 }
 
 // Blue coin: multiplied into the scroll speed (update.js) and the speed-line
@@ -215,14 +303,16 @@ function boundsAt(wx) {
 
 // boundsBase predicts placement bounds using the wave params and halfGap that
 // will be in effect when the player reaches wx. Mirrors refreshWave's scaling
-// (including the _prog2 wave amplitude/frequency boost) for accurate lookahead.
+// (the _prog2 wave amplitude/frequency boost AND the deep-run shape morph) for
+// accurate lookahead - sampled per-wx here rather than frozen at the player's x.
 function boundsBase(wx) {
     const p      = Math.min(Math.sqrt(wx / 14000), 1);
     const p2     = Math.max(wx - 14000, 0) / 40000;
     const wMult  = 1 + 0.12 * Math.min(p2, 2);
     const wFMult = 1 + 0.14 * Math.min(p2, 2);
-    const wA1 = lerp(H * 0.07,  H * 0.12,  p) * wMult * _waveJitterA;
-    const wA2 = lerp(H * 0.035, H * 0.055, p) * wMult * _waveJitterA;
+    const dm  = deepMorphAt(wx);   // deep-run shape morph, per-wx for placement accuracy
+    const wA1 = lerp(H * 0.07,  H * 0.12,  p) * wMult * _waveJitterA * dm.a1;
+    const wA2 = lerp(H * 0.035, H * 0.055, p) * wMult * _waveJitterA * dm.a2;
     const wF1 = lerp(0.0025,    0.0048,    p) * wFMult * _waveJitterF;
     const wF2 = lerp(0.0060,    0.0115,    p) * wFMult * _waveJitterF;
     const hg  = halfGapAt(wx);

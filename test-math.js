@@ -46,6 +46,11 @@ function makeWorld(innerWidth, innerHeight) {
         this.scrollSpd = scrollSpd; this.stalSpacing = stalSpacing; this.coinSpacing = coinSpacing;
         this.mineSpacing = mineSpacing; this.cannonSpacing = cannonSpacing; this.milestoneStep = milestoneStep;
         this.setDayArchetype = function(i) { _dayArchetype = i; };
+        this.deepMorphAt = deepMorphAt;
+        this.DEEP_VARIETY_WX = DEEP_VARIETY_WX; this.DEEP_PULSE_AMP = DEEP_PULSE_AMP; this.DEEP_PULSE_WAVELEN = DEEP_PULSE_WAVELEN;
+        this.setDeepDay = function(d) { _deepDay = d; };
+        this.setDeepVariety = function(on) { _deepVarietyOn = on; };
+        this.waveParams = function() { return { wA1: _wA1, wA2: _wA2, wF1: _wF1, wF2: _wF2 }; };
     `, sandbox, { filename: 'export' });
     return sandbox;
 }
@@ -213,6 +218,81 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
     const expected = 1000 * Math.pow(0.85, 8);
     check('8 poison hits at max difficulty leave roughly the 0.85^N survivor fraction (compounding, not flat)',
         Math.abs(pool - expected) / expected < 0.05);
+}
+
+// ── Deep-run variety (world.js deepMorphAt + the scrollSpd speed pulse) ──────
+// CLAUDE.md "Deep-run variety": past the score-900 plateau the corridor SHAPE
+// and scroll PACE vary by a seeded per-day sequence, but neither may breach the
+// navigability wall the geometry caps exist to hold. Guards: the amplitude morph
+// is fully inert before the plateau, continuous across band boundaries, and
+// never raises corridor velocity (wA1*wF1 + wA2*wF2) more than ~5% over the
+// frozen plateau; the speed pulse stays inside its stated +/-8% band, never
+// stalls, and leaves the underlying trend still climbing forever.
+{
+    const w = makeWorld(600, 600);
+    const D = w.DEEP_VARIETY_WX;
+
+    // Inert at/below the plateau: mid-game corridor math is untouched.
+    let preInert = true;
+    for (let day = 0; day < 12; day++) {
+        w.setDeepDay(day);
+        for (let wx = 0; wx <= D; wx += 1500) {
+            const m = w.deepMorphAt(wx);
+            if (m.a1 !== 1 || m.a2 !== 1) preInert = false;
+        }
+    }
+    w.setDeepDay(0);
+    check('deep shape morph is fully inert at/below the score-900 plateau', preInert);
+
+    // Corridor velocity (wA1*wF1 + wA2*wF2) with the morph vs the SAME wx with it
+    // off - isolates the morph from the pre-existing _prog2 wave boost, which also
+    // lifts this value and is not what this guards.
+    const energyOn  = (wx) => { w.setDeepVariety(true);  w.scrollX = wx; w.refreshWave(); const p = w.waveParams(); return p.wA1 * p.wF1 + p.wA2 * p.wF2; };
+    const energyOff = (wx) => { w.setDeepVariety(false); w.scrollX = wx; w.refreshWave(); const p = w.waveParams(); return p.wA1 * p.wF1 + p.wA2 * p.wF2; };
+    let energyOk = true, peak = 0;
+    for (let day = 0; day < 40; day++) {
+        w.setDeepDay(day);
+        for (let wx = D + 150; wx < D + 300000; wx += 550) {
+            const r = energyOn(wx) / energyOff(wx);
+            if (r > peak) peak = r;
+            if (r > 1.04) energyOk = false;
+        }
+    }
+    w.setDeepDay(0); w.setDeepVariety(true);
+    check(`deep shape morph never raises corridor velocity >4% over the same wx unmorphed (peak ${peak.toFixed(3)}x)`, energyOk);
+
+    // Continuity: no seam in the amplitude split across character boundaries.
+    let contOk = true, worst = 0;
+    for (let day = 0; day < 15; day++) {
+        w.setDeepDay(day);
+        let prev = w.deepMorphAt(D + 5);
+        for (let wx = D + 30; wx < D + 80000; wx += 25) {
+            const m = w.deepMorphAt(wx);
+            worst = Math.max(worst, Math.abs(m.a1 - prev.a1), Math.abs(m.a2 - prev.a2));
+            prev = m;
+        }
+    }
+    w.setDeepDay(0);
+    check(`deep shape morph is continuous across character boundaries (max step ${worst.toFixed(4)})`, worst < 0.05);
+
+    // Speed pulse: trend isolated at whole-wavelength nodes (sin term constant).
+    const spdAt = (wx) => { w.scrollX = wx; w.refreshWave(); return w.scrollSpd(); };
+    const n0 = spdAt(D + 100  * w.DEEP_PULSE_WAVELEN);
+    const n1 = spdAt(D + 500  * w.DEEP_PULSE_WAVELEN);
+    const n2 = spdAt(D + 2000 * w.DEEP_PULSE_WAVELEN);
+    check('speed trend still climbs indefinitely past the plateau with the pulse in', n0 < n1 && n1 < n2);
+
+    // Pulse span across one deep wavelength (trend is near-flat locally there):
+    // peak-to-peak should be ~2*AMP of the mean, and speed never <= 0.
+    const w0 = D + 400 * w.DEEP_PULSE_WAVELEN;
+    let lo = Infinity, hi = 0, sum = 0, N = 240;
+    for (let i = 0; i < N; i++) {
+        const s = spdAt(w0 + (i / N) * w.DEEP_PULSE_WAVELEN);
+        lo = Math.min(lo, s); hi = Math.max(hi, s); sum += s;
+    }
+    const span = (hi - lo) / (sum / N);
+    check(`deep speed pulse peak-to-peak is ~2x its +/-${w.DEEP_PULSE_AMP} amplitude (${span.toFixed(3)})`,
+        lo > 0 && span > w.DEEP_PULSE_AMP * 1.6 && span < w.DEEP_PULSE_AMP * 2.2);
 }
 
 if (failed) {

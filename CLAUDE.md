@@ -176,6 +176,34 @@ At score 233 (`_prog` = 1) the full corridor is `2 * H * 0.163`. With `gapBonus`
 (`GAP_BONUS_MAX` = `H * 0.19` of extra halfGap, i.e. `H * 0.38` of extra full width) a
 maxed bonus more than doubles the corridor - coins are essential at high difficulty.
 
+### Deep-run variety (score ~900+, do not revert)
+
+Past `_prog2 = 1` (score ~900) every corridor geometry knob is capped and only
+`scrollSpd()` moves - so a five-digit run was one variable, speed, getting twitchier
+against a frozen corridor. Two additions in `world.js` (all `DEEP_*` consts + `_deepHash`
++ `deepMorphAt`, gated by `_deepVarietyOn`) give the deep run a changing shape and pace
+without touching the navigability caps:
+
+- **Shape morph** (`deepMorphAt`, folded into `refreshWave` and `boundsBase`): past
+  `DEEP_VARIETY_WX` the two corridor waves' **amplitudes** are rescaled by a seeded
+  per-day sequence of characters (`DEEP_CHARS`: even / sweeps / chop / near-straight),
+  each holding `DEEP_CHAR_WAVELEN` world-px then smoothstepping into the next. The a1/a2
+  splits are picked so `wA1*wF1 + wA2*wF2` (peak corridor velocity) never exceeds ~1.02x
+  the same-`wx` unmorphed value - a different *ride*, never more wiggle-energy than
+  today. **Frequencies are deliberately left untouched**: changing the frequency of
+  `sin(wx*f)` at large `wx` scrambles accumulated phase and needs a phase-integral
+  rework (a later phase if wanted). `test-math.js` guards inertness below the plateau,
+  the <4% energy ceiling across 40 day-seeds, and boundary continuity.
+- **Speed pulse** (in `scrollSpd()`): past `_prog2 > 1`, a `±DEEP_PULSE_AMP` (8%) seeded
+  sine swell around the trend over `DEEP_PULSE_WAVELEN` world-px, so the deep game
+  breathes. The **trend itself is untouched and still climbs forever** - the "scrollSpd
+  never plateaus" rule holds; the pulse only textures it.
+
+Both are pure functions of `scrollX` + `_deepDay` (captured in `seedDailyVariety`,
+independent of the `rng()` obstacle stream and the `h`-chain), so every player flies the
+identical sequence and the scrollX-indexed ghost stays locked. Shipped as Phase 1 of the
+"deep run" brief; falling stalactites / chambers / boulders are later phases.
+
 ### Coin type progression
 
 Coins are staged by `_prog` so power-ups introduce gradually:
