@@ -53,6 +53,8 @@ function makeWorld(innerWidth, innerHeight) {
         this.setDeepDay = function(d) { _deepDay = d; };
         this.setDeepVariety = function(on) { _deepVarietyOn = on; };
         this.waveParams = function() { return { wA1: _wA1, wA2: _wA2, wF1: _wF1, wF2: _wF2 }; };
+        this.ghostEncode = ghostEncode; this.ghostDecode = ghostDecode;
+        this.DAILY_SHARD_CAP = DAILY_SHARD_CAP; this.GAP_EASE_RATE = GAP_EASE_RATE;
     `, sandbox, { filename: 'export' });
     return sandbox;
 }
@@ -341,6 +343,75 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
     check('boulderSpacing stays a sparse set-piece cadence (>= 2400, above mine/coin spacing)',
         bsAt(84000) >= 2400 && bsAt(5_000_000) >= 2400 &&
         bsAt(5_000_000) > w.mineSpacing() * 5 && bsAt(5_000_000) > w.coinSpacing() * 5);
+}
+
+// ── Ghost round-trip (constants.js ghostEncode/ghostDecode) ─────────────────
+// CLAUDE.md "Ghost run": one byte per GHOST_STEP world-px, quantised over [0,H],
+// so a ghost recorded on one screen replays correctly on any other size. The
+// only invariant that actually matters is that encode/decode is a lossless
+// round-trip for any byte sequence a track can legitimately contain.
+{
+    const w = makeWorld(600, 600);
+    const roundTrip = (bytes) => Array.from(w.ghostDecode(w.ghostEncode(Uint8Array.from(bytes))));
+
+    check('ghost round-trip: empty track', JSON.stringify(roundTrip([])) === '[]');
+    check('ghost round-trip: single byte, both quantisation extremes',
+        JSON.stringify(roundTrip([0])) === '[0]' && JSON.stringify(roundTrip([255])) === '[255]');
+
+    const short = [0, 1, 127, 128, 254, 255, 42];
+    check('ghost round-trip: short mixed track', JSON.stringify(roundTrip(short)) === JSON.stringify(short));
+
+    // ghostEncode chunks by 1024 bytes (String.fromCharCode.apply's argument
+    // limit) -- exercise a track that crosses several chunk boundaries, at
+    // exact multiples and just off them.
+    let chunkOk = true;
+    for (const len of [1023, 1024, 1025, 2048, 2049, 5000]) {
+        const track = Array.from({ length: len }, (_, i) => (i * 37) % 256);
+        if (JSON.stringify(roundTrip(track)) !== JSON.stringify(track)) chunkOk = false;
+    }
+    check('ghost round-trip: chunked encoding survives at/around the 1024-byte boundary', chunkOk);
+}
+
+// ── Shard banking cap (src/update.js die(), mirrored here -- keep this formula
+// in sync with that inline block if it ever changes) ────────────────────────
+// CLAUDE.md "Ship unlock economy": DAILY_SHARD_CAP is the real ceiling that
+// makes unlocks track days played, not a single grind session.
+{
+    const w = makeWorld(600, 600);
+    const bankedAt = (runCoins, dailyShardsEarned) => Math.max(0, Math.min(runCoins, w.DAILY_SHARD_CAP - dailyShardsEarned));
+
+    check('shard banking: a fresh day banks the full run pool up to the cap',
+        bankedAt(50, 0) === 50 && bankedAt(1000, 0) === w.DAILY_SHARD_CAP);
+    check('shard banking: an already-capped day banks nothing more (no negative-clamp underflow)',
+        bankedAt(50, w.DAILY_SHARD_CAP) === 0 && bankedAt(50, w.DAILY_SHARD_CAP + 40) === 0);
+    check('shard banking: a partially-earned day banks only the remaining headroom',
+        bankedAt(1000, w.DAILY_SHARD_CAP - 30) === 30);
+    check('shard banking: never exceeds the run\'s own coin pool even with headroom to spare',
+        bankedAt(10, 0) === 10);
+}
+
+// ── Gap-bonus easing (src/update.js gapBonusVisual, GAP_EASE_RATE) ──────────
+// CLAUDE.md "Coin system": gapBonusVisual chases the instantly-jumping gapBonus
+// target at a constant px/s rate rather than snapping, so collision/rendering
+// see the wall widen smoothly. Mirrored formula, same sync-if-it-changes rule.
+{
+    const w = makeWorld(600, 600);
+    const ease = (current, target, dt) => current + Math.max(-w.GAP_EASE_RATE * dt, Math.min(w.GAP_EASE_RATE * dt, target - current));
+
+    check('gap easing: steps toward the target, not past it, for a small dt',
+        ease(0, 100, 0.1) > 0 && ease(0, 100, 0.1) < 100);
+    check('gap easing: clamps to the rate cap and never overshoots a distant target in one frame',
+        ease(0, 100000, 1) === w.GAP_EASE_RATE);
+    check('gap easing: converges to the target after enough frames (repeated small dt steps)', (() => {
+        let v = 0;
+        for (let i = 0; i < 1000; i++) v = ease(v, 100, 1 / 60);
+        return Math.abs(v - 100) < 1e-6;
+    })());
+    check('gap easing: works symmetrically chasing downward (decay direction)', (() => {
+        let v = 200;
+        for (let i = 0; i < 1000; i++) v = ease(v, 0, 1 / 60);
+        return Math.abs(v - 0) < 1e-6;
+    })());
 }
 
 if (failed) {

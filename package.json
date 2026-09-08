@@ -5,6 +5,8 @@
   "scripts": {
     "test:i18n": "node test-i18n.js",
     "test:math": "node test-math.js",
+    "test:collision": "node test-collision.js",
+    "test": "npm run test:i18n && npm run test:math && npm run test:collision",
     "build:play": "node flytunl-site/build-play.mjs"
   },
   "devDependencies": {

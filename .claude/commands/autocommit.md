@@ -12,14 +12,16 @@ Stage all current changes and commit with a generated message. Do not ask the us
 
 2. Safety check: if `git status` lists any of these files, stop and tell the user - do not stage or commit anything: `.env`, `appsettings.Production.json`, `appsettings.Staging.json`, or any file whose name contains `secret`, `credential`, or `password`. Otherwise continue immediately.
 
-3. Run `git add -A`.
+3. Run `npm test` (i18n + math + collision suites). If any check fails, stop - do not stage or commit anything - and report the failure to the user instead.
 
-4. Write a commit message based on the diff:
+4. Run `git add -A`.
+
+5. Write a commit message based on the diff:
    - Subject line under 72 characters, same verb style as recent commits
    - Focus on why, not what
    - No user confirmation needed - just write it
 
-5. Commit:
+6. Commit:
    ```bash
    git commit -m "$(cat <<'EOF'
    <generated subject line>
@@ -29,6 +31,6 @@ Stage all current changes and commit with a generated message. Do not ask the us
    )"
    ```
 
-6. Run `git push` to push the commit to the remote.
+7. Run `git push` to push the commit to the remote.
 
-7. Run `git status` to confirm the working tree is clean, then report the commit subject and number of files committed.
+8. Run `git status` to confirm the working tree is clean, then report the commit subject and number of files committed.

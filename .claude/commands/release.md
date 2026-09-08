@@ -25,7 +25,13 @@ Those stay manual, gated steps for the user.
   provided the source files (don't proceed on icon replacement with placeholders or by
   generating your own -- ask for the files, or wait if told to).
 
-## 1. Version bump
+## 1. Run the test suite first
+
+Run `npm test` (i18n key-parity + difficulty/scoring math + collision geometry checks).
+If anything fails, stop and fix or flag it before touching version numbers or store
+copy - don't prepare a release on top of a known-broken invariant.
+
+## 2. Version bump
 
 **iOS** -- `Tunl/Tunl.xcodeproj/project.pbxproj`, both the Debug and Release config
 blocks (search `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION`, there are 2 of each):
@@ -48,7 +54,7 @@ Verify all three after editing (`grep -n "MARKETING_VERSION\|CURRENT_PROJECT_VER
 `grep -n "versionCode\|versionName"` / `grep -n "TUNL_VERSION" src/constants.js`) rather
 than trusting the edit blind.
 
-## 2. App icon replacement (only if new assets were provided this release)
+## 3. App icon replacement (only if new assets were provided this release)
 
 **iOS** -- single 1024x1024 PNG, no other sizes needed (modern single-size app icon):
 `Tunl/Tunl/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png`. Overwrite in place,
@@ -77,11 +83,11 @@ the masters -- it writes iOS/Android icon rasters, `flytunl-site/site/`'s favico
 `wordmark.svg`, and `branding/web/`'s copies in one pass. Never hand-edit the generated
 rasters directly.
 
-## 3. Release notes AND promotional text, all 15 languages
+## 4. Release notes AND promotional text, all 15 languages
 
 Two separate fields, both needed, don't ship one without checking the other:
 
-**3.1 What's New / release notes** (both stores, version-specific) -- same language set
+**4.1 What's New / release notes** (both stores, version-specific) -- same language set
 as the game's own i18n (`src/i18n.js` `LANG_ORDER`): en, de, fr, it, es, pt, ja, ko, zh,
 ru, ar, tr, id, vi, hi.
 - Write real content based on what's actually new this release (step 0) -- don't reuse
@@ -93,7 +99,7 @@ ru, ar, tr, id, vi, hi.
 - Match TUNL's existing voice: short, punchy, second-person, a little dramatic -- "push
   into the dark", not corporate changelog-speak.
 
-**3.2 Promotional text** (App Store Connect "Werbetexte" field only -- Google Play has
+**4.2 Promotional text** (App Store Connect "Werbetexte" field only -- Google Play has
 no equivalent, don't look for one). 170-char limit per locale. This is EASY TO FORGET
 because it's a separate field from What's New, sits above the description in ASC, and
 was left empty through 9.0 -- always check it explicitly, every release, not just when
@@ -112,7 +118,7 @@ Deliver both as one markdown file (one section per language, per field -- see
 not just inline chat text -- it needs to survive being copy-pasted into two different
 consoles across 15+ locale fields each.
 
-## 4. Check flytunl.ch
+## 5. Check flytunl.ch
 
 The marketing site lives in **this repo**, at `flytunl-site/` -- never the Schedly repo
 (frozen since 2026-08-29, see `reference_store_listing_urls` memory). Decide, based on
@@ -137,7 +143,7 @@ what's actually new this release, whether any of these need a copy update:
   rebuilds via `build-site.mjs`/`build-play.mjs` before uploading) to actually push
   live, per the standing "site update only after the version is live" rule.
 
-## 5. What this command does NOT do
+## 6. What this command does NOT do
 
 State this explicitly in the final report so the user knows what's still manual:
 - No Xcode archive/build, no `gradlew` build, no `.aab`/`.ipa` generation
@@ -146,7 +152,7 @@ State this explicitly in the final report so the user knows what's still manual:
 - No git commit/push (run `/autocommit` in each repo separately once satisfied)
 - No new screenshot/video capture (simulator-only, needs the user's own machine)
 
-## 6. Final report
+## 7. Final report
 
 Give the user a short checklist: what got bumped/replaced/drafted, what's still needed
 from them before this can actually ship, and where to find the release-notes file.
