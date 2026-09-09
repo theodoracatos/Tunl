@@ -50,22 +50,22 @@
     "ja": "ボタンひとつの洞窟フライヤー。押して上昇、離して下降。トンネルが閉じる前に、どこまで暗闇へ進めるか。"
   },
   "hero.newTag": {
-    "en": "New in 10.0",
-    "de": "Neu in 10.0",
-    "fr": "Nouveau dans la 10.0",
-    "it": "Novità nella 10.0",
-    "es": "Novedad en la 10.0",
-    "pt": "Novo na 10.0",
-    "ja": "10.0の新機能"
+    "en": "New in 10.1",
+    "de": "Neu in 10.1",
+    "fr": "Nouveau dans la 10.1",
+    "it": "Novità nella 10.1",
+    "es": "Novedad en la 10.1",
+    "pt": "Novo na 10.1",
+    "ja": "10.1の新機能"
   },
   "hero.newBody": {
-    "en": "Your lifetime distance flown now shows right on the title screen - chase two new Achievements for it, To the Moon and To the Sun. Plus a second hazard coin, deeper runs that keep changing shape past score 900, and stalactites that shake loose and fall.",
-    "de": "Deine insgesamt geflogene Distanz erscheint jetzt direkt auf dem Titelbildschirm - schnapp dir dafür zwei neue Erfolge: To the Moon und To the Sun. Dazu eine zweite Gefahren-Münze, Läufe jenseits von Punktestand 900, die ihre Form ständig ändern, und Stalaktiten, die sich lösen und herabstürzen.",
-    "fr": "Ta distance totale parcourue s'affiche désormais sur l'écran titre - décroche deux nouveaux Succès pour ça : To the Moon et To the Sun. Avec en plus une deuxième pièce dangereuse, des parties qui changent de forme en continu au-delà du score 900, et des stalactites qui se détachent et tombent.",
-    "it": "La tua distanza totale percorsa appare ora direttamente nella schermata del titolo - conquista due nuovi Obiettivi per questo: To the Moon e To the Sun. In più una seconda moneta pericolosa, corse che continuano a cambiare forma oltre il punteggio 900, e stalattiti che si staccano e cadono.",
-    "es": "Tu distancia total recorrida aparece ahora en la pantalla de título - consigue dos nuevos Logros por ello: To the Moon y To the Sun. Además, una segunda moneda peligrosa, partidas que siguen cambiando de forma pasado el puntaje 900, y estalactitas que se sueltan y caen.",
-    "pt": "Sua distância total percorrida agora aparece na tela de título - conquiste duas novas Conquistas por isso: To the Moon e To the Sun. Além de uma segunda moeda perigosa, corridas que continuam mudando de forma além da pontuação 900, e estalactites que se soltam e caem.",
-    "ja": "生涯飛行距離がタイトル画面に表示されるように。2つの新しい実績「To the Moon」「To the Sun」を目指そう。さらに2種類目の危険なコイン、スコア900を超えても形を変え続けるコース、そして揺れて落ちてくる鍾乳石も追加。"
+    "en": "A quiet fix: achievements added after you'd already met their conditions - unlocking a ship, finishing your first run, and more - now unlock retroactively. No missing badges for returning pilots.",
+    "de": "Ein stiller Fix: Erfolge, die eingeführt wurden, nachdem du ihre Bedingung schon erfüllt hattest - ein Schiff freischalten, deinen ersten Lauf beenden und mehr - werden jetzt rückwirkend vergeben. Keine fehlenden Abzeichen mehr für wiederkehrende Piloten.",
+    "fr": "Un correctif discret : les succès ajoutés après que tu avais déjà rempli leur condition - débloquer un vaisseau, terminer ta première partie, et plus - se débloquent désormais rétroactivement. Plus aucun badge manquant pour les pilotes de retour.",
+    "it": "Una correzione silenziosa: gli obiettivi aggiunti dopo che ne avevi già soddisfatto la condizione - sbloccare una nave, completare la tua prima corsa e altro - ora si sbloccano retroattivamente. Niente più distintivi mancanti per i piloti di ritorno.",
+    "es": "Una corrección silenciosa: los logros añadidos después de que ya cumplieras su condición - desbloquear una nave, terminar tu primera partida y más - ahora se desbloquean de forma retroactiva. Nada de insignias perdidas para pilotos que regresan.",
+    "pt": "Uma correção discreta: as conquistas adicionadas depois de você já ter cumprido a condição - desbloquear uma nave, terminar sua primeira corrida e mais - agora são desbloqueadas retroativamente. Sem mais emblemas faltando para pilotos que retornam.",
+    "ja": "静かな修正：条件をすでに満たしていたのに反映されなかった実績（機体のアンロック、初めてのランの完走など）が、今後は遡って解除されるようになりました。復帰パイロットのバッジ漏れはもうありません。"
   },
   "hero.playCta": {
     "en": "Play in your browser",

@@ -79,60 +79,51 @@ const ADS_HEAD = `\n<!-- Google AdSense (site verification + ad serving) -->
     ? `\n${FUNDING_CHOICES_SNIPPET}`
     : `\n<!-- Funding Choices (EU consent) is auto-loaded by adsbygoogle.js above - see FUNDING_CHOICES_SNIPPET note. -->`);
 
-// Firebase Analytics for the web build - adds a "Web" data stream to the same
-// GA4 property (Firebase project tunl-2030f) that backs the iOS and Android
-// apps, so /play traffic shows up next to them in the Firebase console.
+// Web analytics for /play - so traffic shows up next to the iOS/Android apps
+// in the Firebase/GA4 console. Web-only by construction: reaches the served
+// /play page only, never tunl.html or the app WebViews (they report via the
+// native Firebase SDK, which has no relation to any of this).
 //
-// Web-only by construction: this reaches the served /play page only, never
-// tunl.html or the app WebViews (they report via the native Firebase SDK).
+// 2026-09-09: THIS IS A SERVER-TO-SERVER RELAY, NOT A DIRECT gtag.js LOAD.
+// Two direct-load approaches were tried first (Firebase SDK's getAnalytics(),
+// then bare gtag.js) and both failed identically: every real browser tested
+// (this dev's Mac, a phone on cellular, a different computer in incognito)
+// got a 503 from every request to google-analytics.com, while curl against
+// the byte-identical URL always got 204 - see project_web_firebase_analytics
+// memory for the 3-day investigation. The one variable that mattered was
+// "sent by a real browser" vs "sent server-to-server". So instead of the
+// page hitting Google directly, it posts to our own tunl-scores Cloudflare
+// Worker (already live for the leaderboard), which relays to GA4's
+// Measurement Protocol from its own server-side fetch() - see POST /ga in
+// flytunl-site/worker/src/index.js.
 //
-// Consent: unlike the apps (which flip consent to GRANTED after their own
-// consent flow, see AdsManager.swift/.kt), the web build has no consent banner
-// yet - Cloudflare Web Analytics was chosen precisely to avoid one. So Google
-// Consent Mode v2 defaults every storage type to 'denied' here: GA4 still
-// records cookieless, modeled pings (page_view / session_start / first_visit /
-// user_engagement) - enough to see web usage volume - but sets no _ga cookie,
-// so no banner is legally required for CH/EU/UK. When the Funding Choices
-// snippet lands (FUNDING_CHOICES_SNIPPET above), its callback can gtag('consent',
-// 'update', {...: 'granted'}) to upgrade users who opt in.
-//
-// FIREBASE_WEB_CONFIG: from the "flytunl.ch/play" Web app registered in the
-// Firebase console (Project tunl-2030f -> Projekteinstellungen -> Meine Apps).
-// apiKey and appId are public client identifiers (they ship in every Firebase
-// web app's page source), not secrets - Firebase security is enforced by rules
-// and API-key referrer restrictions, not by hiding these. If measurementId is
-// not a real G-XXXXXXXXXX the block below emits only a comment (no dead script).
-const FIREBASE_WEB_CONFIG = {
-  apiKey: 'AIzaSyDU65rBkalyGdUXe7ccDGHtBKwFX46uVtw',
-  authDomain: 'tunl-2030f.firebaseapp.com',
-  projectId: 'tunl-2030f',
-  storageBucket: 'tunl-2030f.firebasestorage.app',
-  messagingSenderId: '60214471260',
-  appId: '1:60214471260:web:7408a0f3cb0f7073431499',
-  measurementId: 'G-EPC8QC7S7P',
-};
+// No cookie is ever set by this (no gtag.js runs in the browser at all) - cid
+// is a client-generated, localStorage-persisted pseudonymous id, same privacy
+// posture as the old cookieless Consent-Mode setup, still no banner needed.
+const WEB_ANALYTICS_RELAY = 'https://tunl-scores.theodoracatos.workers.dev/ga';
 
-const FIREBASE_HEAD = FIREBASE_WEB_CONFIG.measurementId.startsWith('G-')
-  ? `\n<!-- Firebase Analytics (Web data stream, project tunl-2030f) -->
+const FIREBASE_HEAD = WEB_ANALYTICS_RELAY
+  ? `\n<!-- Web analytics (relayed server-to-server via the tunl-scores Worker - see build-play.mjs) -->
 <script>
-  // Google Consent Mode v2 - denied by default (no consent banner on /play).
-  // Must run before gtag.js loads; the Firebase SDK injects gtag.js itself.
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('consent', 'default', {
-    ad_storage: 'denied', ad_user_data: 'denied',
-    ad_personalization: 'denied', analytics_storage: 'denied',
-  });
-</script>
-<script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js';
-  import { getAnalytics, isSupported } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-analytics.js';
-  isSupported().then((ok) => {
-    if (!ok) return;
-    getAnalytics(initializeApp(${JSON.stringify(FIREBASE_WEB_CONFIG)}));
-  }).catch(() => {});
+(function(){
+  try {
+    var KEY = 'tunl_ga_cid';
+    var cid = localStorage.getItem(KEY);
+    if (!cid) {
+      cid = (crypto.randomUUID ? crypto.randomUUID() : (Date.now() + '.' + Math.random().toString(36).slice(2)));
+      localStorage.setItem(KEY, cid);
+    }
+    var sid = String(Math.floor(Date.now() / 1000));
+    fetch(${JSON.stringify(WEB_ANALYTICS_RELAY)}, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ cid: cid, sid: sid, dl: location.href, dt: document.title }),
+      keepalive: true,
+    }).catch(function(){});
+  } catch (e) {}
+})();
 </script>`
-  : `\n<!-- Firebase Analytics: fill FIREBASE_WEB_CONFIG in build-play.mjs (register a Web app in Firebase project tunl-2030f). -->`;
+  : `\n<!-- Web analytics: WEB_ANALYTICS_RELAY not set in build-play.mjs. -->`;
 
 // Injected into <head> of the served /play page only (never the repo tunl.html or
 // the app builds). Link-preview cards for shared runs, canonical URL, theme colour.

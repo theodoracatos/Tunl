@@ -13,9 +13,20 @@ database_id = "2222e48f-acc8-4e66-85f5-3844e9615988"
 [triggers]
 crons = ["17 3 * * *"]
 
-# TOKEN_SECRET and REPORT_KEY are secrets, not vars - set with:
+# TOKEN_SECRET, REPORT_KEY and GA_API_SECRET are secrets, not vars - set with:
 #   wrangler secret put TOKEN_SECRET
 #   wrangler secret put REPORT_KEY
+#   wrangler secret put GA_API_SECRET
 # REPORT_KEY gates GET /clicks (campaign click tracking, src/index.js) - added
 # after the initial deploy, so an already-deployed worker needs this second
 # secret set once before /clicks will authenticate (it 401s with none set).
+# GA_API_SECRET is the Measurement Protocol API secret for the GA4 web stream
+# (GA4 Admin -> Datenstreams -> flytunl.ch/play -> Measurement Protocol -
+# API-Secrets) - added 2026-09-09, see POST /ga in src/index.js and the
+# project_web_firebase_analytics memory for why this exists (every real
+# browser 503s hitting Google's collect endpoint directly; this worker relays
+# server-to-server instead, which - like curl - has always worked).
+
+[vars]
+# Public identifier, not a secret - ships in every GA4 site's page source too.
+GA_MEASUREMENT_ID = "G-832RTQR2KX"

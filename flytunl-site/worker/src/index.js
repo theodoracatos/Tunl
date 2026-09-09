@@ -2,11 +2,13 @@
 //  tunl-scores - Cloudflare Worker: daily leaderboard for flytunl.ch/play
 //  + campaign click tracking (GET /go/..., see that section) + the two-sided
 //  referral reward (POST /referral, /referral/claim, see that section)
+//  + a server-to-server GA4 Analytics relay (POST /ga, see that section)
 // ============================================================
 //  Leaderboard endpoints (see ALLOWED_ORIGINS below for what's accepted):
 //    GET  /t                 -> { t } a short-lived signed token
 //    GET  /r?d=<day>&id=<id> -> { rank, total, best } for one player on one day
 //    POST /s   { d, s, p, id, tok } -> records the score, returns { rank, total, best }
+//    POST /ga  { cid, sid, dl, dt } -> relays one page_view to GA4
 //
 //  Storage: D1 (see schema.sql). One row per (day, player); the best score wins.
 //  A daily cron prunes rows older than 45 days.
@@ -224,6 +226,70 @@ async function handleReferralClaim(request, db) {
   return json({ claimed: res.meta?.changes || 0 });
 }
 
+// ── Analytics relay ──────────────────────────────────────────────────
+// POST /ga { cid, sid, dl, dt } - relays one page_view to GA4 via the
+// Measurement Protocol (server-to-server), instead of the page loading
+// gtag.js and hitting google-analytics.com directly.
+//
+// Added 2026-09-09 after 3 days of every real-browser vantage point tested
+// (this dev's Mac, a phone on cellular, a different computer in incognito)
+// getting a 503 from Google's collect endpoint on every single request,
+// while curl against the byte-identical URL always got 204 - see the
+// project_web_firebase_analytics memory for the full investigation. The one
+// consistent variable was "sent by a real browser" vs "sent server-to-
+// server", so this worker (which already talks to Google fine for other
+// things) relays instead: the browser posts here, this worker's own fetch()
+// - server-to-server, like curl - does the actual Measurement Protocol call.
+//
+// cid is a client-generated pseudonymous id (crypto.randomUUID(), persisted
+// in localStorage by the page - see FIREBASE_HEAD in build-play.mjs), not
+// tied to any cookie GA4 sets itself, so this needs no consent banner any
+// more than the gtag.js path it replaces did.
+async function handleGA(request, measurementId, apiSecret) {
+  if (!apiSecret) return json({ error: 'not_configured' }, 501);
+
+  const body = await request.json().catch(() => null);
+  if (!body) return json({ error: 'body' }, 400);
+
+  const cid = String(body.cid || '');
+  const sid = String(body.sid || '');
+  const dl = String(body.dl || '').slice(0, 300);
+  const dt = String(body.dt || 'TUNL').slice(0, 100);
+  if (!/^[a-zA-Z0-9.-]{6,64}$/.test(cid)) return json({ error: 'cid' }, 400);
+
+  const payload = {
+    client_id: cid,
+    events: [{
+      name: 'page_view',
+      params: {
+        page_location: dl,
+        page_title: dt,
+        session_id: sid,
+        engagement_time_msec: 1,
+      },
+    }],
+  };
+
+  const mpUrl = `https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`;
+  try {
+    // Forward the visitor's real User-Agent so GA4 can still parse
+    // browser/OS - otherwise every hit would look identical (this worker's
+    // own runtime), losing the Technologie/Browser reports entirely.
+    await fetch(mpUrl, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: {
+        'content-type': 'application/json',
+        'user-agent': request.headers.get('user-agent') || '',
+      },
+    });
+  } catch (e) {
+    // Best-effort: analytics must never surface an error to the player.
+  }
+
+  return json({ ok: true });
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { headers: cors() });
@@ -239,6 +305,10 @@ export default {
     try {
       if (request.method === 'GET' && url.pathname.startsWith('/go/')) {
         return await handleGo(url, db);
+      }
+
+      if (request.method === 'POST' && url.pathname === '/ga') {
+        return await handleGA(request, env.GA_MEASUREMENT_ID, env.GA_API_SECRET);
       }
 
       if (request.method === 'POST' && url.pathname === '/referral') {

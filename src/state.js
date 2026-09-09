@@ -352,3 +352,47 @@ const MAX_DEATH_MARKERS = 25;
 // centre. null -> fall back to whichever wall py was nearer.
 let deathCause = null;
 let bestMarker = null;   // { wx, side } of all-time best run's death spot
+
+// ── Achievement backfill ──────────────────────────────────────────────
+// Every achievement elsewhere in the codebase (update.js/lifecycle.js/input.js) fires
+// only from a *live* transition: the run a ship first unlocks, the run that crosses a
+// distance/score mark, the moment a streak counter ticks over. A player who already met
+// the underlying condition before that achievement even shipped (already had ship 3
+// unlocked, already had a lifetime distance or best score past a mark, already at a 7+
+// day streak) never revisits that live moment again, so without this pass they could
+// NEVER earn it - this is what left "Erster Flug"/"Amber Zündung"/"Crimson Lauf"/ship
+// achievements ungranted for existing players. GKAchievement.report() (GameView.swift)
+// and AchievementsClient.unlock() (MainActivity.kt) are both idempotent for an
+// already-completed achievement (no duplicate banner/popup), so re-checking every load
+// and re-firing anything currently true is safe - no "already backfilled" flag needed,
+// and any achievement added in the future is covered automatically just by adding its
+// condition here alongside its live call site.
+(function backfillAchievements() {
+    const report = id => window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id });
+    if (best > 0) report('tunl_ach_first_flight');
+    for (let i = 1; i < SHIP_ACHIEVEMENTS.length; i++) {
+        if (unlockedSkins & (1 << i)) report(SHIP_ACHIEVEMENTS[i]);
+    }
+    for (let i = 0; i < PLANET_ACHIEVEMENTS.length; i++) {
+        if (planetsFlown & (1 << i)) report(PLANET_ACHIEVEMENTS[i]);
+    }
+    if (planetsFlown === PLANET_ALL_FLOWN_MASK) report(PLANET_GRAND_TOUR_ACH);
+    const _distNow = Math.floor(lifetimeDist / 60);
+    for (const da of DIST_ACHIEVEMENTS) {
+        if (_distNow >= da.at) report(da.id);
+    }
+    if (best >= 1000)   report('tunl_ach_score_1000');
+    if (best >= 10000)  report('tunl_ach_score_10000');
+    if (best >= 100000) report('tunl_ach_score_100000');
+    if (streak >= 7)  report('tunl_ach_streak_7');
+    if (streak >= 30) report('tunl_ach_streak_30');
+    let _anyMaxed = false, _allOwnedMaxed = true, _hasOwned = false;
+    for (let i = 0; i < SKINS.length; i++) {
+        if (!(unlockedSkins & (1 << i))) continue;
+        _hasOwned = true;
+        if (masteryLevel(i) === MASTERY_XP_THRESHOLDS.length - 1) _anyMaxed = true;
+        else _allOwnedMaxed = false;
+    }
+    if (_anyMaxed) report('tunl_ach_ace_pilot');
+    if (_hasOwned && _allOwnedMaxed) report('tunl_ach_master_fleet');
+})();
