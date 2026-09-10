@@ -180,6 +180,9 @@ window.addEventListener('orientationchange', _updatePortraitGate);
 // always changes it, while iOS Safari's toolbar show/hide changes only the
 // height, so a scroll-driven chrome collapse won't trip it.
 if (isWeb()) {
+    // Letterbox starfield (tunl.html's body.web-bg) - open web only, see its CSS
+    // comment for why.
+    document.body.classList.add('web-bg');
     let _rotoBootW = window.innerWidth, _rotoT = 0;
     const _reloadAfterRotate = () => {
         if (Math.abs(window.innerWidth - _rotoBootW) < 4) return;

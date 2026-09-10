@@ -6,7 +6,7 @@
 // it exists so a build can identify itself: window.TUNL_VERSION for a DevTools check,
 // and build-play.mjs stamps it into /play as <meta name="tunl:version"> so the live
 // web build's version is greppable without diffing the bundle.
-const TUNL_VERSION = '10.2';
+const TUNL_VERSION = '10.3';
 if (typeof window !== 'undefined') window.TUNL_VERSION = TUNL_VERSION;
 
 const cv  = document.getElementById('c');
@@ -58,7 +58,31 @@ const H  = _WEB ? Math.min(window.innerHeight, 440)
 // UI sizing, never H itself, so corridor width/difficulty is completely unaffected.
 const UI_H = Math.max(H, 600);
 const FS = Math.sqrt(W * UI_H);   // font scale: ~603 in landscape, matches old 600x600 sizes
-cv.width = W; cv.height = H;
+
+// Web-only, display size only - never touches W/H (the logical/physics coordinate
+// space every gameplay constant above is quoted in). On a desktop wider than the
+// 956x440 native footprint the canvas would otherwise sit small in a sea of empty
+// letterbox space; _DISPLAY_SCALE stretches how big it draws on the page, exactly
+// like zooming a photo, while every draw call still runs in the same W/H units it
+// always has (verified only constants.js itself touches cv.width/height - see the
+// CLAUDE.md canvas-size-vs-internal-resolution note). Capped at 1.4x so a big
+// monitor doesn't get a visibly larger, easier-to-read obstacle telegraph than a
+// phone gets on the same shared daily leaderboard - this is a page-layout fix, not
+// a difficulty knob. Backed by devicePixelRatio so the larger box still renders
+// crisp instead of a blurry upscale of the 956x440 raster. Mobile web and both
+// native apps are unaffected (scale locks to 1).
+const _DPR = window.devicePixelRatio || 1;
+const _DISPLAY_SCALE = _WEB
+    ? Math.min(1.4, Math.max(1, Math.min(window.innerWidth / W, window.innerHeight / H)))
+    : 1;
+const _RASTER_SCALE = _DISPLAY_SCALE * _DPR;
+cv.width = W * _RASTER_SCALE;
+cv.height = H * _RASTER_SCALE;
+if (_RASTER_SCALE !== 1) {
+    cv.style.width = (W * _DISPLAY_SCALE) + 'px';
+    cv.style.height = (H * _DISPLAY_SCALE) + 'px';
+    ctx.scale(_RASTER_SCALE, _RASTER_SCALE);
+}
 
 // Dynamic Island / notch clearance, in canvas px (1:1 with CSS px -- W/H above are
 // already window.innerWidth/innerHeight, not scaled by devicePixelRatio). Pushed

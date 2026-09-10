@@ -367,7 +367,18 @@ let bestMarker = null;   // { wx, side } of all-time best run's death spot
 // and re-firing anything currently true is safe - no "already backfilled" flag needed,
 // and any achievement added in the future is covered automatically just by adding its
 // condition here alongside its live call site.
-(function backfillAchievements() {
+//
+// Exposed on window (not a bare IIFE) because running it at page-parse time alone is
+// not enough: both platforms start their sign-in *before* loading the page but resolve
+// it asynchronously, and the page - a local file - parses in milliseconds. So at this
+// point GKLocalPlayer.local.isAuthenticated is still false and reportAchievement()
+// (GameView.swift) drops every id on its auth guard; Play Games' unlock() likewise
+// no-ops on an unauthenticated client. Native therefore calls this again the moment
+// auth resolves (GameView.swift authenticateGameCenter, MainActivity.kt
+// signIntoPlayGames), which is the call that actually lands - and also covers a player
+// who signs in mid-session. The load-time call below is kept because it is free and
+// does land for anyone whose session happens to already be authenticated.
+window._tunlBackfillAchievements = function backfillAchievements() {
     const report = id => window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id });
     if (best > 0) report('tunl_ach_first_flight');
     for (let i = 1; i < SHIP_ACHIEVEMENTS.length; i++) {
@@ -395,4 +406,5 @@ let bestMarker = null;   // { wx, side } of all-time best run's death spot
     }
     if (_anyMaxed) report('tunl_ach_ace_pilot');
     if (_hasOwned && _allOwnedMaxed) report('tunl_ach_master_fleet');
-})();
+};
+window._tunlBackfillAchievements();

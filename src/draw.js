@@ -248,7 +248,10 @@ function drawWorld() {
         theme.stalEdge = lerpClr(theme.stalEdge, [110, 140, 220], d * 0.8);
     }
     const bgStr = rgb(theme.bg);
-    if (bgStr !== _lastBgStr) { document.body.style.background = bgStr; _lastBgStr = bgStr; }
+    // backgroundColor, not the background shorthand: the shorthand resets
+    // background-image too, which would blank out the web build's letterbox
+    // starfield (tunl.html's body.web-bg) on every theme change.
+    if (bgStr !== _lastBgStr) { document.body.style.backgroundColor = bgStr; _lastBgStr = bgStr; }
     ctx.fillStyle = bgStr;
     ctx.fillRect(-20, -20, W+40, H+40);
 

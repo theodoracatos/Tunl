@@ -50,22 +50,22 @@
     "ja": "ボタンひとつの洞窟フライヤー。押して上昇、離して下降。トンネルが閉じる前に、どこまで暗闇へ進めるか。"
   },
   "hero.newTag": {
-    "en": "New in 10.2",
-    "de": "Neu in 10.2",
-    "fr": "Nouveau dans la 10.2",
-    "it": "Novità nella 10.2",
-    "es": "Novedad en la 10.2",
-    "pt": "Novo na 10.2",
-    "ja": "10.2の新機能"
+    "en": "New in 10.3",
+    "de": "Neu in 10.3",
+    "fr": "Nouveau dans la 10.3",
+    "it": "Novità nella 10.3",
+    "es": "Novedad en la 10.3",
+    "pt": "Novo na 10.3",
+    "ja": "10.3の新機能"
   },
   "hero.newBody": {
-    "en": "Eased the climb and fall speed after player feedback - it felt too snappy, with deaths coming before the rush kicked in. Same hold-to-fly feel, just more room to enjoy the ride before the cave closes in.",
-    "de": "Steig- und Falltempo nach Spieler-Feedback abgeschwächt - es fühlte sich zu schnell an, und der Tod kam oft, bevor der Kick überhaupt einsetzte. Gleiches Hold-to-Fly-Gefühl, nur mehr Raum, den Ritt zu genießen, bevor die Höhle sich schließt.",
-    "fr": "Vitesse de montée et de chute adoucie après les retours des joueurs - ça semblait trop brusque, et la mort arrivait souvent avant même que la montée d'adrénaline commence. Même sensation de vol en maintenant, mais plus de marge pour profiter de la descente avant que la grotte ne se referme.",
-    "it": "Velocità di salita e caduta ammorbidita dopo il feedback dei giocatori - sembrava troppo scattante, con la morte che arrivava prima ancora di sentire l'adrenalina. Stessa sensazione di volo a pressione prolungata, solo più spazio per goderti la corsa prima che la grotta si chiuda.",
-    "es": "Suavizada la velocidad de subida y caída tras el feedback de los jugadores - se sentía demasiado brusca, y la muerte llegaba antes de sentir la adrenalina. Misma sensación de vuelo mantenido, solo con más margen para disfrutar el vuelo antes de que la cueva se cierre.",
-    "pt": "Suavizamos a velocidade de subida e queda após o feedback dos jogadores - estava muito brusca, e a morte chegava antes da adrenalina começar. A mesma sensação de voo ao segurar, só com mais espaço para aproveitar o voo antes de a caverna se fechar.",
-    "ja": "プレイヤーからのフィードバックを受け、上昇・落下速度を調整しました。以前は反応が急すぎて、興奮を味わう前に墜落することが多かったはず。ホールドで飛ぶ操作感はそのままに、洞窟が閉じるまでの飛行をもっと楽しめるようになりました。"
+    "en": "Every ship just got far cheaper to unlock, so the full hangar is a fair goal instead of an endless grind. New pilots also get a gentler start: the opening coins now guide you through the whole control, release to glide down and hold to climb.",
+    "de": "Jedes Schiff lässt sich jetzt viel günstiger freischalten, der komplette Hangar ist ein faires Ziel statt endlosem Grind. Auch neue Piloten starten sanfter: Die ersten Münzen führen dich durch die ganze Steuerung, loslassen zum Gleiten, halten zum Steigen.",
+    "fr": "Chaque vaisseau coûte bien moins cher à débloquer : le hangar complet devient un objectif atteignable, plus une quête sans fin. Les nouveaux pilotes démarrent aussi plus en douceur : les premières pièces guident toute la prise en main, relâche pour descendre, maintiens pour monter.",
+    "it": "Ogni nave ora costa molto meno da sbloccare: l'hangar completo diventa un obiettivo giusto, non un grind infinito. Anche i nuovi piloti partono più dolcemente: le prime monete ti guidano attraverso tutti i comandi, rilascia per planare, tieni premuto per salire.",
+    "es": "Cada nave es ahora mucho más barata de desbloquear: el hangar completo es una meta justa, no un farmeo sin fin. Los nuevos pilotos también empiezan con más suavidad: las primeras monedas te guían por todo el control, suelta para planear y mantén para subir.",
+    "pt": "Cada nave ficou muito mais barata de desbloquear: o hangar completo virou uma meta justa, não uma grind sem fim. Os novos pilotos também começam mais suave: as primeiras moedas guiam você por todo o controle, solte para planar e segure para subir.",
+    "ja": "すべての機体のアンロック費用を大きく引き下げました。全機体の格納庫が終わりのない作業ではなく、正当な目標になります。新人パイロットのスタートもより滑らかに。最初のコインが操作のすべてを導きます。離して滑空、押して上昇。"
   },
   "hero.playCta": {
     "en": "Play in your browser",

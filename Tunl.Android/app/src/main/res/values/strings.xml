@@ -43,11 +43,9 @@
     <string name="achievement_planet_rhodia" translatable="false">CgkI_MyGndIBEAIQGg</string>
     <string name="achievement_grand_tour" translatable="false">CgkI_MyGndIBEAIQGA</string>
 
-    <!-- Lifetime-distance milestones (src/constants.js DIST_ACHIEVEMENTS). Placeholder
-         values: unlockAchievement() skips any id starting TUNL_TODO. Replace with the
-         real Play Console ids once the two achievements are created there. -->
-    <string name="achievement_dist_moon" translatable="false">TUNL_TODO_DIST_MOON</string>
-    <string name="achievement_dist_sun" translatable="false">TUNL_TODO_DIST_SUN</string>
+    <!-- Lifetime-distance milestones (src/constants.js DIST_ACHIEVEMENTS). -->
+    <string name="achievement_dist_moon" translatable="false">CgkI_MyGndIBEAIQHQ</string>
+    <string name="achievement_dist_sun" translatable="false">CgkI_MyGndIBEAIQHA</string>
 
     <!-- AdMob console -> Apps -> TUNL (Android) -> App ID. Separate from the iOS app ID. -->
     <string name="admob_app_id" translatable="false">ca-app-pub-4882203470005029~3522958941</string>

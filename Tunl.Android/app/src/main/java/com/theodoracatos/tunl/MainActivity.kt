@@ -128,8 +128,7 @@ class MainActivity : ComponentActivity() {
         "tunl_ach_planet_pallas"  to R.string.achievement_planet_pallas,
         "tunl_ach_planet_rhodia"  to R.string.achievement_planet_rhodia,
         "tunl_ach_grand_tour"     to R.string.achievement_grand_tour,
-        // Lifetime-distance milestones (src/constants.js DIST_ACHIEVEMENTS). Values are
-        // TUNL_TODO_* placeholders until the two are created in Play Console.
+        // Lifetime-distance milestones (src/constants.js DIST_ACHIEVEMENTS).
         "tunl_ach_dist_moon"      to R.string.achievement_dist_moon,
         "tunl_ach_dist_sun"       to R.string.achievement_dist_sun,
     )
@@ -476,7 +475,9 @@ class MainActivity : ComponentActivity() {
     // backgrounds mid-purchase or mid-ad; guards against poking a WebView
     // whose Activity is already on its way out.
     private fun runJs(script: String) {
-        if (isFinishing || isDestroyed) return
+        // signIntoPlayGames() starts before webView is built in onCreate, so a very
+        // fast auth callback could in principle land here first.
+        if (!::webView.isInitialized || isFinishing || isDestroyed) return
         webView.evaluateJavascript(script, null)
     }
 
@@ -533,13 +534,33 @@ class MainActivity : ComponentActivity() {
         val signInClient = PlayGames.getGamesSignInClient(this)
         signInClient.isAuthenticated.addOnCompleteListener { task ->
             val authenticated = task.isSuccessful && task.result.isAuthenticated
-            if (!authenticated) signInClient.signIn()
-            // Prime the death screen's rank line either way: already-signed-in players
-            // get it immediately, and a fresh sign-in resolves before the first death in
-            // practice. Without this the first death of a session has no standing to show
-            // and no baseline to compute the first delta against.
-            else fetchWorldRank()
+            if (authenticated) {
+                onPlayGamesReady()
+            } else {
+                // Chain off the sign-in itself: without this, a player who was not yet
+                // authenticated at launch never reaches onPlayGamesReady() at all.
+                signInClient.signIn().addOnCompleteListener { signIn ->
+                    if (signIn.isSuccessful && signIn.result.isAuthenticated) onPlayGamesReady()
+                }
+            }
         }
+    }
+
+    // Mirrors GameView.swift's authenticateGameCenter success branch. The backfill call
+    // is the point: src/state.js's _tunlBackfillAchievements also runs at page-parse
+    // time, but sign-in above is async and the page (a local asset) parses in
+    // milliseconds, so unlock() at that moment fires on an unauthenticated client and is
+    // silently dropped. This is the call that actually grants a returning player the
+    // achievements they already qualified for, and it covers a mid-session sign-in too.
+    //
+    // fetchWorldRank() primes the death screen's rank line so the first death of a
+    // session already has a standing to show and a baseline to compute the first delta
+    // against, instead of one blank run. Both sign-in paths reach it now: previously
+    // only the already-authenticated branch did, so a player who signed in fresh this
+    // launch had no rank until their first submit came back.
+    private fun onPlayGamesReady() {
+        runJs("window._tunlBackfillAchievements && window._tunlBackfillAchievements()")
+        fetchWorldRank()
     }
 
     private fun submitScore(score: Int) {

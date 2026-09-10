@@ -227,6 +227,14 @@ struct GameView: UIViewRepresentable {
                     // "Play" in a friend's challenge notification, etc.) - without
                     // registering, those taps just launch the app with no route in.
                     GKLocalPlayer.local.register(self)
+                    // Re-run the page's achievement backfill (src/state.js
+                    // _tunlBackfillAchievements). It also runs at page-parse time, but
+                    // that happens long before this handler resolves, so every id it
+                    // posts then hits reportAchievement's isAuthenticated guard and is
+                    // dropped. This is the call that actually grants a returning
+                    // player the achievements they already qualified for.
+                    self.webView?.evaluateJavaScript(
+                        "window._tunlBackfillAchievements && window._tunlBackfillAchievements()")
                     // Prime the death screen's rank line, so the first death of a
                     // session already has a standing to show and a baseline to compute
                     // the first delta against, instead of one blank run.
