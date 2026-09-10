@@ -2423,9 +2423,11 @@ function drawTitleScreen() {
 
         // Today's world rank (state.js, populated after Game Center auth + the
         // first score submit resolves -- see main.js/GameView.swift's
-        // fetchWorldRank). Same hasRank gate the death screen's rank column
-        // uses; stays hidden rather than showing a placeholder until then.
-        const hasRank = worldRank !== null && worldRank > 0;
+        // fetchWorldRank). Same gate the death screen's rank column uses; stays
+        // hidden rather than showing a placeholder until then, and also stays
+        // hidden while the day's field is too thin to be worth showing at all
+        // (constants.js WORLD_RANK_MIN_FIELD).
+        const hasRank = worldRankWorthShowing();
 
         const items = [];
         // Badge stays visible even at 4/4 (it used to hide on completion, which read as
@@ -3723,8 +3725,10 @@ function drawDeathScreen() {
     // (state.js worldRank), it takes the top of the column and the local list shrinks
     // to 3 rows to pay for it. With no rank available (offline, no Game Center /
     // Play Games session, or the first submit still in flight) the old 5-row layout
-    // is kept exactly as it was.
-    const hasRank = worldRank !== null && worldRank > 0;
+    // is kept exactly as it was -- and the same fallback now also covers a day whose
+    // field is too small for a standing to mean anything (constants.js
+    // WORLD_RANK_MIN_FIELD: "#1 / 2" reads as "nobody plays this", not as a rank).
+    const hasRank = worldRankWorthShowing();
     const LB_N    = hasRank ? 3 : 5;
     const LB_STEP = hasRank ? H * 0.080 : H * 0.095;
 

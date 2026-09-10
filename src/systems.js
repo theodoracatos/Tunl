@@ -199,7 +199,19 @@ function makeCoin(wx) {
     // for every player that day.
     const rY = rng();
     let coinY;
-    if (_deepVarietyOn && wx > DEEP_VARIETY_WX) {
+    if (wx < ONBOARD_ARC_WX) {
+        // Onboarding arc (constants.js ONBOARD_ARC_WX): the opening coins sit on a
+        // gentle wave that starts BELOW the launch line, so taking the first one
+        // means releasing and gliding down and taking the second means holding and
+        // climbing back -- the game's only wordless lesson that release is half the
+        // control scheme. Phase 0.9 rather than 0 so the very first coin is already
+        // clearly low rather than dead centre; amplitude tapers to 0 by ONBOARD_ARC_WX
+        // so it rejoins the normal scattered placement with no visible seam.
+        const u     = wx / ONBOARD_ARC_WX;                 // 0 -> 1 across the stretch
+        const taper = 1 - u * u;                           // full at the start, 0 at the end
+        const amp   = (hi - lo) * 0.5 * ONBOARD_ARC_FRAC * taper;
+        coinY = Math.max(lo, Math.min(hi, cy + Math.sin(u * Math.PI * 2.2 + 0.9) * amp));
+    } else if (_deepVarietyOn && wx > DEEP_VARIETY_WX) {
         const seg = Math.floor((wx - DEEP_VARIETY_WX) / 3200);
         const ph  = _deepHash(seg + 0x2000) * Math.PI * 2;
         const k   = lerp(0.004, 0.012, _deepHash(seg + 0x2001));

@@ -350,6 +350,46 @@ const BOMB_RADIUS = W * 0.30;
 // (see die()'s bypassShield branch); a future rewarded "continue" reuses the same timer.
 const HIT_INVULN_SEC = 1.4;
 
+// ── Onboarding: teaching RELEASE ─────────────────────────────────────
+// The obstacle-free opening stretch (lifecycle.js STAL_START_WX) teaches thrust, but
+// nothing in the game ever teaches that RELEASING is the other half of the control
+// scheme -- and CLAUDE.md rules out re-adding a title-screen text hint for it (that was
+// tried in 5.0 and removed the same day). The runway alone doesn't cover it: the ship
+// launches at H/2 with the corridor ceiling ~H*0.43 above it, and at net-up 1800 px/s^2
+// a player who simply presses and holds reaches that ceiling in ~0.46s. Their first
+// lesson is still the death screen.
+//
+// So the opening coins teach it instead, wordlessly and unmissably: over this stretch
+// the coin line is forced onto a gentle arc that starts BELOW the launch line, so the
+// natural way to take the first coin is to let go and glide down, and the natural way
+// to take the second is to hold and climb back. Coins can't kill anyone, so the lesson
+// costs a new player nothing if they miss it, and an experienced player just reads it
+// as a pleasant opening swoop.
+//
+// Applied in makeCoin() (systems.js). rng() is consumed either way, so the coin TYPE
+// roll and everything downstream in the seeded stream is byte-identical -- only the
+// y positions move, exactly like the deep-run coin-line shapes it sits next to.
+const ONBOARD_ARC_WX   = 2200;  // world-x the arc fades out at (~first 3 coins, ~6s)
+const ONBOARD_ARC_FRAC = 0.55;  // how much of the available half-corridor the arc uses
+
+// ── World rank visibility floor ──────────────────────────────────────
+// The daily world rank (death screen's right column + the title screen's leaderboard
+// rail badge) is only motivating if there's a real field to be ranked against. Below
+// this many participants on the day it is actively DEMOTIVATING: a live check of the
+// web leaderboard on 2026-09-10 found 0-4 distinct players on most days, which renders
+// as "#1 / 2" -- a number whose real message to the player is "nobody else is here."
+// Under this floor both surfaces fall back to exactly what they already do when no rank
+// is known at all (the 5-row local list, no rail badge), which is a strictly better
+// read than an honest-but-lonely standing. Raise or drop this as the real player base
+// moves; it costs nothing once the field is genuinely deep.
+//
+// Only the TOTAL is gated, never the player's own rank value -- a legitimately deep
+// field where the player happens to sit at #1 must still show.
+const WORLD_RANK_MIN_FIELD = 50;
+function worldRankWorthShowing() {
+    return worldRank !== null && worldRank > 0 && worldRankTotal >= WORLD_RANK_MIN_FIELD;
+}
+
 // ── Rewarded continue ────────────────────────────────────────────────
 // Offered at most once per run, only past this score -- same floor as the
 // interstitial's MIN_SCORE_FOR_AD (AdsManager.swift/.kt), for the same reason:
@@ -495,21 +535,22 @@ const HOLD_GATE_MAX_SEC = 2.25;
 // *coins collected* -- without this a single long grind session could bank enough shards
 // to unlock everything at once, which defeats the point of the shard system (see
 // lifecycle.js day-boundary reset + update.js die() banking). Total cost of all 7
-// shard-priced tiers, SOLARIS included, is 240+880+2200+4800+12000+32000+50000 = 102120
+// shard-priced tiers, SOLARIS included, is 240+320+560+1280+2400+4000+5600 = 14400
 // (if a tier is added or re-costed, update this sum).
 //
 // Set deliberately tight (160) so unlock speed is paced almost entirely by *days
 // returned*, not by a grind session: even a great run banks only a fraction of a day's
 // coin income before hitting the cap, and skill past "decent" just means reaching the
 // 160 in fewer runs, not banking more. Every paid tier also carries a `stardustGate`
-// (see below), but at this cap the shard side is the binding constraint for everyone --
-// with the full 300/day ceiling (cap + ad bonus + missions) the whole roster is
-// ~102120/300 ≈ 340 days, and SOLARIS's 50000 alone is ~170 days, roughly level with its
-// 180-day stardust gate. History: this cap was 1800 (hardcore ~1800-1920/day, so
-// `stardustGate` did the pacing), then 350, 200, 160, then 180 for a 300 shards/day
-// ceiling (180 coins + 120 missions); set back to 160 when the daily rewarded-ad bonus
-// (SHARDS_AD_REWARD below) took over the missing 20, keeping the ceiling at 300 but
-// re-sourcing part of it as an opt-in ad.
+// (see below), and as of the 2026-09-10 re-cost (see SKINS) that gate -- not the shard
+// price -- is the binding constraint at every tier for a player banking near the
+// ceiling, which is the whole point of the stardust system. At the full 300/day ceiling
+// the entire roster's shard cost is 14400/300 = 48 days, deliberately well inside
+// SOLARIS's own 180-day gate so the calendar does the pacing. History: this cap was 1800
+// (hardcore ~1800-1920/day, so `stardustGate` did the pacing), then 350, 200, 160, then
+// 180 for a 300 shards/day ceiling (180 coins + 120 missions); set back to 160 when the
+// daily rewarded-ad bonus (SHARDS_AD_REWARD below) took over the missing 20, keeping the
+// ceiling at 300 but re-sourcing part of it as an opt-in ad.
 //
 // Two other shard sources are exempt from this cap: the 3 daily missions
 // (MISSION_REWARD_BY_TIER below, 30+40+50) and the once-per-day rewarded-ad bonus
@@ -578,10 +619,11 @@ const REFERRAL_REWARD = 20;
 // real weekly streaks). AMBER's gate of 1 is satisfied on a brand-new install's very
 // first run (STARDUST_PER_DAY is granted before the first tier's shard cost is even
 // checked, see lifecycle.js), so this doesn't cost a new player their fast first unlock.
-// Day 180 is a floor, not a guarantee, for SOLARIS specifically -- it also carries a
-// 50000 shard cost (DAILY_SHARD_CAP comment above), so only a hardcore player who's
-// banking near the daily cap actually lands on day 180; anyone slower stays shard-bound
-// past it, same as every other dual-gated tier.
+// Since the 2026-09-10 shard re-cost (see SKINS) these gates are the REAL schedule, not
+// an aspirational floor sitting under an unreachable price: a player banking near the
+// daily ceiling now lands on each tier's gate day almost exactly, SOLARIS included
+// (day 180). A slower player stays shard-bound a little past each gate, which is the
+// intended soft difference between "returns daily and plays well" and "returns daily".
 const STARDUST_PER_DAY          = 1;
 const STARDUST_STREAK_BONUS_DAY = 7; // every Nth unbroken streak day grants +1 extra
 
@@ -662,15 +704,34 @@ function pickDailyMissionIndices(dayInt) {
 // drawback further per masteryLerp() below, see that call site in each file for the
 // level-3 endpoint of every stat.
 //   SOLARIS  (update.js near-miss, update.js cPR)           +100% near-miss range / +20% hitbox
+// Shard costs were re-tuned 2026-09-10 after measuring what they actually cost in
+// days (scratchpad sim against the real curves). The old ladder
+// (240/880/2200/4800/12000/32000/50000, cumulative 102120) meant the bindingconstraint
+// flipped from `stardustGate` to shards at VOID and then ran away: NOVA was
+// ~174 days even for a player maxing all 300 shards/day, SOLARIS ~341 -- and at a
+// realistic ~80/day (half the coin cap, no ad, no missions) they were ~652 and ~1277
+// days. The top three tiers weren't "aspirational", they were unreachable, and the
+// stardust gate they were supposed to be paced by (110/180) had stopped doing any
+// work at all because shards bound first by a factor of 2-7x.
+//
+// The ladder below restores the documented intent (see the Stardust block above:
+// "coming back tomorrow is the only lever"). Cumulative cost is set just under what
+// each tier's stardustGate implies at a realistic ~80 shards/day, so:
+//   - a player banking near the daily ceiling is gated by stardust at EVERY tier,
+//     which is what that system exists to do (SOLARIS still lands on day 180 exactly);
+//   - a weaker/less frequent player stays shard-bound a little past each gate, so
+//     shards still mean something without ever becoming the wall.
+// Cumulative: 240 / 560 / 1120 / 2400 / 4800 / 8800 / 14400 (keep DAILY_SHARD_CAP's
+// doc comment in sync with that last figure).
 const SKINS = [
-    { color: '#e8eeff', shadow: [210,220,255],  name: 'PEARL'                                                },
-    { color: '#ffaa00', shadow: [255,155,0],    name: 'AMBER',   cost: 240,   stardustGate: 1                },
-    { color: '#ff1a33', shadow: [255,30,55],    name: 'CRIMSON', cost: 880,   stardustGate: 5                },
-    { color: '#00ccff', shadow: [0,190,255],    name: 'ELECTRIC',cost: 2200,  stardustGate: 15               },
-    { color: '#99ff00', shadow: [140,255,0],    name: 'TOXIC',   cost: 4800,  stardustGate: 35               },
-    { color: '#c080ff', shadow: [180,90,255],   name: 'VOID',    cost: 12000, stardustGate: 65               },
-    { color: '#ffffff', shadow: [255,255,255],  name: 'NOVA',    cost: 32000, stardustGate: 110              },
-    { color: '#ff6600', shadow: [255,100,0],    name: 'SOLARIS', cost: 50000, stardustGate: 180              },
+    { color: '#e8eeff', shadow: [210,220,255],  name: 'PEARL'                                               },
+    { color: '#ffaa00', shadow: [255,155,0],    name: 'AMBER',   cost: 240,  stardustGate: 1                },
+    { color: '#ff1a33', shadow: [255,30,55],    name: 'CRIMSON', cost: 320,  stardustGate: 5                },
+    { color: '#00ccff', shadow: [0,190,255],    name: 'ELECTRIC',cost: 560,  stardustGate: 15               },
+    { color: '#99ff00', shadow: [140,255,0],    name: 'TOXIC',   cost: 1280, stardustGate: 35               },
+    { color: '#c080ff', shadow: [180,90,255],   name: 'VOID',    cost: 2400, stardustGate: 65               },
+    { color: '#ffffff', shadow: [255,255,255],  name: 'NOVA',    cost: 4000, stardustGate: 110              },
+    { color: '#ff6600', shadow: [255,100,0],    name: 'SOLARIS', cost: 5600, stardustGate: 180              },
 ];
 
 // Game Center / Play Games achievement IDs, index-aligned with SKINS above. PEARL (index

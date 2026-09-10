@@ -487,6 +487,15 @@ leaderboard plus the movement since their last run, and the local list below it 
 to 3 rows to pay for it. With no rank available (offline, no Game Center / Play Games
 session, first submit still in flight) the old 5-row layout renders unchanged.
 
+**Hidden below `WORLD_RANK_MIN_FIELD` participants** (`constants.js`, currently 50, via
+the shared `worldRankWorthShowing()` used by both the death screen and the title
+screen's leaderboard rail badge). A live check of the web leaderboard on 2026-09-10
+found 0-4 distinct players on most days, which renders as "#1 / 2" - a standing whose
+real message to the player is "nobody else is here." Under the floor both surfaces fall
+back to exactly what they already do when no rank is known. Only the total is gated,
+never the rank value, so a genuinely deep field with the player at #1 still shows. Raise
+or drop the floor as the real player base moves.
+
 No backend: `GKLeaderboard.loadEntries` (`GameView.swift` `fetchWorldRank`) and
 `loadLeaderboardMetadata`'s `LeaderboardVariant` (`MainActivity.kt` `fetchWorldRank`)
 both already return rank *and* total count. Both fire after a submit resolves, and once
@@ -535,6 +544,19 @@ player's first hold press or `HOLD_GATE_MAX_SEC` (`constants.js`, 2.25s), so the
 flies dead level and never drops before the player acts. This applies to PLAY AGAIN
 restarts too - `input.js` no longer pre-sets `holding`/`hasHeldThisRun` on the restart
 tap, so a restart opens exactly like a fresh title-screen start rather than mid-thrust.
+
+**The opening coins teach RELEASE** (`ONBOARD_ARC_WX` / `ONBOARD_ARC_FRAC` in
+`constants.js`, applied in `makeCoin()`). Everything above teaches thrust; nothing taught
+that letting go is the other half of the control scheme, and a text hint for it is ruled
+out (see below). The runway alone doesn't cover it: the ship launches at H/2 with the
+corridor ceiling ~H*0.43 above it, so at net-up 1800 px/s^2 a player who just presses and
+holds hits the ceiling in ~0.46s. So over the first 2200 world-px the coin line is forced
+onto a gentle arc that starts **below** the launch line (verified at +35 to +37px on
+every seed sampled) and rises above it for the second coin - take the first by letting go
+and gliding down, take the second by holding and climbing. Amplitude tapers to 0 by
+`ONBOARD_ARC_WX` so it rejoins normal scattered placement with no seam. `rng()` is
+consumed either way, so coin *types* and the whole downstream seeded stream are
+unchanged - only y positions move, exactly like the deep-run coin-line shapes.
 
 **Do not re-add a title-screen control hint.** A "HOLD to climb / RELEASE to fall" line
 under HOLD TO FLY was added in 5.0 and removed the same day after seeing it on a real
@@ -593,9 +615,21 @@ and `stardustGate` days played (`stardust` in `state.js`, +1 per
 calendar day opened regardless of skill or how much is played that day, +1 bonus per
 7-day unbroken streak - see the Stardust doc block in `constants.js`). Stardust is never
 spent, only checked as a `>=` threshold, so a tier's gate doesn't stack on top of the
-next tier's. SOLARIS (the 8th/last ship) needs 50000 shards and 180 stardust (~half a
+next tier's. SOLARIS (the 8th/last ship) needs 5600 shards and 180 stardust (~half a
 year at the daily floor) - see that same doc block for why shards alone or stardust alone
 can't do this job, and the worked timelines for hardcore/good/bad player tiers.
+
+**Shard costs were re-tuned 2026-09-10 (do not revert to the old ladder).** The previous
+prices (240/880/2200/4800/12000/32000/50000, cumulative 102120) were measured against the
+real curves and found to make the top three tiers effectively unreachable: NOVA was ~174
+days even at the full 300/day ceiling and ~652 days at a realistic ~80/day, SOLARIS ~341
+and ~1277. Worse, the binding constraint flipped from `stardustGate` to shards at VOID,
+so the stardust system - the thing that is supposed to pace unlocks - stopped doing any
+work at all for the entire top half of the roster. The current ladder
+(240/320/560/1280/2400/4000/5600, cumulative 14400) is set just under what each tier's
+gate implies at ~80 shards/day, so **stardust is the binding constraint at every tier**
+and SOLARIS still lands on day 180 exactly. Re-run the numbers before changing either
+side; a shard-side raise silently re-breaks the gate schedule.
 
 **Unlock All Ships IAP**: a real-money non-consumable (`unlock_all_ships`, alongside the
 existing `remove_ads`) that instantly force-unlocks every ship, current and future
