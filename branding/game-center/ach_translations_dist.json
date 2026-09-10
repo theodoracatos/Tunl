@@ -45,9 +45,9 @@
     "tunl_ach_dist_moon": ["Ay'a Kadar", "Ay'a kadar olan mesafeyi uçtun.", "Tüm oyunların boyunca Ay'a kadar olan mesafeyi uç."],
     "tunl_ach_dist_sun":  ["Güneş'e Kadar", "Güneş'e kadar olan mesafeyi uçtun.", "Tüm oyunların boyunca Güneş'e kadar olan mesafeyi uç."]
   },
-  "vi": {
-    "tunl_ach_dist_moon": ["Đến Mặt Trăng", "Bạn đã bay hết quãng đường đến Mặt Trăng.", "Qua tất cả các lượt chơi, bay hết quãng đường đến Mặt Trăng."],
-    "tunl_ach_dist_sun":  ["Đến Mặt Trời", "Bạn đã bay hết quãng đường đến Mặt Trời.", "Qua tất cả các lượt chơi, bay hết quãng đường đến Mặt Trời."]
+  "pl": {
+    "tunl_ach_dist_moon": ["Na Księżyc", "Pokonano dystans aż do Księżyca.", "W sumie wszystkich lotów pokonaj dystans do Księżyca."],
+    "tunl_ach_dist_sun":  ["Do Słońca", "Pokonano dystans aż do Słońca.", "W sumie wszystkich lotów pokonaj dystans do Słońca."]
   },
   "id": {
     "tunl_ach_dist_moon": ["Menuju Bulan", "Kamu telah terbang sejauh jarak ke Bulan.", "Di seluruh permainanmu, terbanglah sejauh jarak ke Bulan."],

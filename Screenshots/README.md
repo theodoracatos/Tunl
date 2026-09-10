@@ -40,6 +40,22 @@ edited per release. `make-portrait-video-frame.py` and `build-portrait-video.sh`
 are the equivalents for the portrait App Preview video. All three read raw
 captures from the Desktop and need Pillow + rsvg-convert.
 
+## Adding a locale without a fresh capture
+
+`recaption-locale.py` is the fast path for a secondary/long-tail locale that
+doesn't warrant its own simulator recording session: it takes an existing
+locale's already-composited 1320x2868 portrait screenshots (e.g. downloaded
+full-res from an existing App Store Connect locale via the iris/v1
+`appScreenshotSets` API) and repaints only the headline + subhead zones with
+translated text, byte-identical everywhere else (card/gameplay capture,
+corridor art, ship, wordmark). The in-game UI text baked into the card stays
+in the source locale's language - fine for a locale that's mainly getting
+marketing captions localized, not a substitute for `make-portrait-frames.py`
+on a locale that deserves a real native-language capture. See its docstring
+for the erase-zone geometry and why it uses clean reference bands rather than
+a naive per-row background fill (the latter ghosts visible horizontal lines
+through monospace text at cap-height/baseline rows).
+
 ## App Preview video spec (App Store Connect, 6.9" / 6.5")
 
 1920x886, H.264 High, 30fps, 15-30s, no audio required. The kept

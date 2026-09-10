@@ -45,16 +45,20 @@ One JS class-free script, state machine with three phases: `'title'` | `'play'` 
 ```javascript
 // values below are quoted at _H_REF (440pt); every device multiplies by _FEEL_SCALE = H/_H_REF
 const GRAVITY = 1300;  // px/s² downward
-const THRUST  = 3400;  // px/s² upward when holding (net: 2100 up)
+const THRUST  = 3100;  // px/s² upward when holding (net: 1800 up)
 const MAX_VY  = 1080;  // terminal velocity cap
 ```
-VERY high-energy ship, tuned up hard across several requested passes (GRAVITY 1150 ->
-1300, THRUST 2400 -> 3400, MAX_VY 820 -> 1080) chasing a "Flappy Bird snappy" feel. The
-input model is UNCHANGED - still hold-to-thrust (an acceleration ramp), not Flappy's
-instant velocity impulse - but net-up (2100) is now so far above net-down (1300) that
-holding snaps the ship to the climb cap in ~0.5s, reading as an almost-instant pop.
-If this needs walking back: original feel is GRAVITY 1150 / THRUST 2400 / MAX_VY 820;
-a middle ground is THRUST ~2700.
+Originally tuned up hard across several requested passes (GRAVITY 1150 -> 1300, THRUST
+2400 -> 3400, MAX_VY 820 -> 1080) chasing a "Flappy Bird snappy" feel, but real-player
+Reddit feedback (2026-09-09) called the accel "too fast" with players dying before the
+run's rush ever landed. Walked back to the documented middle ground on 2026-09-09:
+THRUST 3400 -> 2700. A same-day playtest of 2700 felt off in the other direction (too
+floaty), so it was nudged back up to **3100** - net-up 1800 vs net-down 1300, roughly
+midway between the original 2100:1300 snap and the 2700 pass's 1400:1300 softness.
+GRAVITY and MAX_VY are untouched throughout. The input model is UNCHANGED - still
+hold-to-thrust (an acceleration ramp), not Flappy's instant velocity impulse - just
+tuned to a less hair-trigger point on that same ramp. If this needs walking back
+further: original pre-tuning feel is GRAVITY 1150 / THRUST 2400 / MAX_VY 820.
 
 **Screen-independent feel (do not revert - explicit rule).** GRAVITY/THRUST/MAX_VY are
 quoted at `_H_REF` = 440pt (iPhone 17 Pro Max landscape height, the size the feel was
@@ -201,6 +205,16 @@ chicaneProb    // 0.24 → 0.42 once _prog > 0.40 (hard cap 0.62)
 At score 233 (`_prog` = 1) the full corridor is `2 * H * 0.163`. With `gapBonus` maxed
 (`GAP_BONUS_MAX` = `H * 0.19` of extra halfGap, i.e. `H * 0.38` of extra full width) a
 maxed bonus more than doubles the corridor - coins are essential at high difficulty.
+
+**Onboarding corridor widen** (`earlyWidenAt()`, `world.js`): the base curve's wx=0
+half-gap (`H*0.34`, corridor 68% of screen height) already reads as narrow to a player
+who hasn't yet found the hold-to-thrust feel, so `earlyWidenAt(wx)` adds extra half-gap
+on top of the base curve - `H*0.09` at wx=0 (walls reduced to a sliver each side, corridor
+~86% of screen height), smoothstepped down to 0 by `EARLY_WIDEN_WX` = 12000 (~score 200)
+so it rejoins the hand-tuned base curve exactly, with no kink, before the difficulty
+plateau at wx=14000. Added in both `refreshWave()` and `halfGapAt()` so rendering/
+collision (`boundsAt`) and placement (`boundsBase`, via `halfGapAt`) agree - same pattern
+as `deepChamberAt`.
 
 ### Deep-run variety (score ~900+, do not revert)
 

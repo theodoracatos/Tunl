@@ -50,22 +50,22 @@
     "ja": "ボタンひとつの洞窟フライヤー。押して上昇、離して下降。トンネルが閉じる前に、どこまで暗闇へ進めるか。"
   },
   "hero.newTag": {
-    "en": "New in 10.1",
-    "de": "Neu in 10.1",
-    "fr": "Nouveau dans la 10.1",
-    "it": "Novità nella 10.1",
-    "es": "Novedad en la 10.1",
-    "pt": "Novo na 10.1",
-    "ja": "10.1の新機能"
+    "en": "New in 10.2",
+    "de": "Neu in 10.2",
+    "fr": "Nouveau dans la 10.2",
+    "it": "Novità nella 10.2",
+    "es": "Novedad en la 10.2",
+    "pt": "Novo na 10.2",
+    "ja": "10.2の新機能"
   },
   "hero.newBody": {
-    "en": "A quiet fix: achievements added after you'd already met their conditions - unlocking a ship, finishing your first run, and more - now unlock retroactively. No missing badges for returning pilots.",
-    "de": "Ein stiller Fix: Erfolge, die eingeführt wurden, nachdem du ihre Bedingung schon erfüllt hattest - ein Schiff freischalten, deinen ersten Lauf beenden und mehr - werden jetzt rückwirkend vergeben. Keine fehlenden Abzeichen mehr für wiederkehrende Piloten.",
-    "fr": "Un correctif discret : les succès ajoutés après que tu avais déjà rempli leur condition - débloquer un vaisseau, terminer ta première partie, et plus - se débloquent désormais rétroactivement. Plus aucun badge manquant pour les pilotes de retour.",
-    "it": "Una correzione silenziosa: gli obiettivi aggiunti dopo che ne avevi già soddisfatto la condizione - sbloccare una nave, completare la tua prima corsa e altro - ora si sbloccano retroattivamente. Niente più distintivi mancanti per i piloti di ritorno.",
-    "es": "Una corrección silenciosa: los logros añadidos después de que ya cumplieras su condición - desbloquear una nave, terminar tu primera partida y más - ahora se desbloquean de forma retroactiva. Nada de insignias perdidas para pilotos que regresan.",
-    "pt": "Uma correção discreta: as conquistas adicionadas depois de você já ter cumprido a condição - desbloquear uma nave, terminar sua primeira corrida e mais - agora são desbloqueadas retroativamente. Sem mais emblemas faltando para pilotos que retornam.",
-    "ja": "静かな修正：条件をすでに満たしていたのに反映されなかった実績（機体のアンロック、初めてのランの完走など）が、今後は遡って解除されるようになりました。復帰パイロットのバッジ漏れはもうありません。"
+    "en": "Eased the climb and fall speed after player feedback - it felt too snappy, with deaths coming before the rush kicked in. Same hold-to-fly feel, just more room to enjoy the ride before the cave closes in.",
+    "de": "Steig- und Falltempo nach Spieler-Feedback abgeschwächt - es fühlte sich zu schnell an, und der Tod kam oft, bevor der Kick überhaupt einsetzte. Gleiches Hold-to-Fly-Gefühl, nur mehr Raum, den Ritt zu genießen, bevor die Höhle sich schließt.",
+    "fr": "Vitesse de montée et de chute adoucie après les retours des joueurs - ça semblait trop brusque, et la mort arrivait souvent avant même que la montée d'adrénaline commence. Même sensation de vol en maintenant, mais plus de marge pour profiter de la descente avant que la grotte ne se referme.",
+    "it": "Velocità di salita e caduta ammorbidita dopo il feedback dei giocatori - sembrava troppo scattante, con la morte che arrivava prima ancora di sentire l'adrenalina. Stessa sensazione di volo a pressione prolungata, solo più spazio per goderti la corsa prima che la grotta si chiuda.",
+    "es": "Suavizada la velocidad de subida y caída tras el feedback de los jugadores - se sentía demasiado brusca, y la muerte llegaba antes de sentir la adrenalina. Misma sensación de vuelo mantenido, solo con más margen para disfrutar el vuelo antes de que la cueva se cierre.",
+    "pt": "Suavizamos a velocidade de subida e queda após o feedback dos jogadores - estava muito brusca, e a morte chegava antes da adrenalina começar. A mesma sensação de voo ao segurar, só com mais espaço para aproveitar o voo antes de a caverna se fechar.",
+    "ja": "プレイヤーからのフィードバックを受け、上昇・落下速度を調整しました。以前は反応が急すぎて、興奮を味わう前に墜落することが多かったはず。ホールドで飛ぶ操作感はそのままに、洞窟が閉じるまでの飛行をもっと楽しめるようになりました。"
   },
   "hero.playCta": {
     "en": "Play in your browser",
@@ -354,13 +354,13 @@
     "ja": "あなたの言語でプレイ"
   },
   "f13.p": {
-    "en": "TUNL is available in 15 languages, including Spanish, Arabic, Russian, Chinese, French, Korean, Portuguese, Hindi, and Vietnamese.",
-    "de": "TUNL gibt es in 15 Sprachen, darunter Spanisch, Arabisch, Russisch, Chinesisch, Französisch, Koreanisch, Portugiesisch, Hindi und Vietnamesisch.",
-    "fr": "TUNL est disponible en 15 langues, dont l'espagnol, l'arabe, le russe, le chinois, le français, le coréen, le portugais, l'hindi et le vietnamien.",
-    "it": "TUNL è disponibile in 15 lingue, tra cui spagnolo, arabo, russo, cinese, francese, coreano, portoghese, hindi e vietnamita.",
-    "es": "TUNL está disponible en 15 idiomas, incluidos español, árabe, ruso, chino, francés, coreano, portugués, hindi y vietnamita.",
-    "pt": "O TUNL está disponível em 15 idiomas, incluindo espanhol, árabe, russo, chinês, francês, coreano, português, hindi e vietnamita.",
-    "ja": "TUNLは15言語に対応。スペイン語、アラビア語、ロシア語、中国語、フランス語、韓国語、ポルトガル語、ヒンディー語、ベトナム語などを含む。"
+    "en": "TUNL is available in 15 languages, including Spanish, Arabic, Russian, Chinese, French, Korean, Portuguese, Hindi, and Polish.",
+    "de": "TUNL gibt es in 15 Sprachen, darunter Spanisch, Arabisch, Russisch, Chinesisch, Französisch, Koreanisch, Portugiesisch, Hindi und Polnisch.",
+    "fr": "TUNL est disponible en 15 langues, dont l'espagnol, l'arabe, le russe, le chinois, le français, le coréen, le portugais, l'hindi et le polonais.",
+    "it": "TUNL è disponibile in 15 lingue, tra cui spagnolo, arabo, russo, cinese, francese, coreano, portoghese, hindi e polacco.",
+    "es": "TUNL está disponible en 15 idiomas, incluidos español, árabe, ruso, chino, francés, coreano, portugués, hindi y polaco.",
+    "pt": "O TUNL está disponível em 15 idiomas, incluindo espanhol, árabe, russo, chinês, francês, coreano, português, hindi e polonês.",
+    "ja": "TUNLは15言語に対応。スペイン語、アラビア語、ロシア語、中国語、フランス語、韓国語、ポルトガル語、ヒンディー語、ポーランド語などを含む。"
   },
 
   "ships.head": { "en": "Eight Ships, Eight Feels", "de": "Acht Schiffe, acht Gefühle", "fr": "Huit vaisseaux, huit sensations", "it": "Otto navi, otto sensazioni", "es": "Ocho naves, ocho sensaciones", "pt": "Oito naves, oito sensações", "ja": "8機、8つの感触" },

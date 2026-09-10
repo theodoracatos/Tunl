@@ -3017,7 +3017,7 @@ function drawTitleScreen() {
             ctx.stroke();
 
             // Shrink the label font to fit narrower buttons (3-col grid, long
-            // names like "Indonesia" / "Tiếng Việt") instead of overflowing.
+            // names like "Indonesia" / "Polski") instead of overflowing.
             let langFontPx = FS * 0.023;
             ctx.font = `${active ? 'bold ' : ''}${langFontPx}px 'Courier New',monospace`;
             const nameW = ctx.measureText(lang.name).width;

@@ -206,7 +206,7 @@ TEXT = {
     "ru": (["Держишь - вверх.", "Отпустил - вниз."], 0, "Одна кнопка. Вот и вся игра."),
     "tr": (["Basınca yükselir.", "Bırakınca düşer."], 0, "Tek tuş. Oyunun tamamı."),
     "id": (["Tahan, naik.", "Lepas, turun."], 0, "Satu tombol. Itu seluruh gimnya."),
-    "vi": (["Giữ thì lên.", "Thả thì xuống."], 0, "Một nút. Cả trò chơi."),
+    "pl": (["Przytrzymaj, wznosi.", "Puść, opada."], 0, "Jeden przycisk. Cała gra."),
     "ja": (["押すと上昇。", "離すと落下。"], 0, "ボタン1つ。それだけ。"),
     "ko": (["누르면 상승.", "놓으면 하강."], 0, "버튼 하나. 그게 전부."),
     "zh": (["按住上升。", "放開下墜。"], 0, "一個按鍵，就是全部。"),

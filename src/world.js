@@ -159,10 +159,30 @@ function boulderSpacing() {
     return Math.max(3400 - 250 * Math.max(_prog2 - 1.75, 0), 2400);
 }
 
+// Onboarding corridor widen (score 0-~200, do not revert without re-auditing):
+// a brand-new player's first runs are where the "hold to climb, release to
+// fall" control model gets learned, and the base curve's wx=0 half-gap
+// (H*0.34, corridor 68% of screen height) already reads as narrow to someone
+// who hasn't found the feel yet. This adds extra half-gap on top of the base
+// curve, biggest at wx=0 (walls reduced to a sliver each side) and
+// smoothstepped down to 0 by EARLY_WIDEN_WX so the ramp rejoins the
+// hand-tuned base curve exactly, with no kink, in time for the difficulty
+// plateau at wx=14000 (score ~233). Both refreshWave and halfGapAt add it, so
+// rendering/collision (boundsAt) and placement (boundsBase, via halfGapAt)
+// agree - same pattern as deepChamberAt.
+const EARLY_WIDEN_WX   = 12000;  // ~score 200 - fully rejoins the base curve
+const EARLY_WIDEN_FRAC = 0.09;   // extra half-gap at wx=0, as a fraction of H
+function earlyWidenAt(wx) {
+    if (wx >= EARLY_WIDEN_WX) return 0;
+    const t  = 1 - wx / EARLY_WIDEN_WX;
+    const bl = t * t * (3 - 2 * t);   // smoothstep - flat approach at both ends
+    return H * EARLY_WIDEN_FRAC * bl;
+}
+
 function refreshWave() {
     _prog    = Math.min(Math.sqrt(scrollX / 14000), 1);
     _prog2   = Math.max(scrollX - 14000, 0) / 40000;          // no cap - escalates forever
-    _halfGap = lerp(H * 0.34,  H * 0.163, _prog) * deepChamberAt(scrollX);
+    _halfGap = lerp(H * 0.34,  H * 0.163, _prog) * deepChamberAt(scrollX) + earlyWidenAt(scrollX);
     // Wave amplitude/frequency keep growing with _prog2 (capped at 2x to stay navigable)
     const wMult  = 1 + 0.12 * Math.min(_prog2, 2);            // up to +24% amplitude
     const wFMult = 1 + 0.14 * Math.min(_prog2, 2);            // up to +28% frequency = tighter bends
@@ -333,7 +353,7 @@ function centerAt(wx) {
 // Uses the same sqrt(wx/14000) progression as refreshWave (and the same deep-run
 // chamber factor) so bounds are accurate for placement up to ~900px ahead.
 function halfGapAt(wx) {
-    return lerp(H * 0.34, H * 0.163, Math.min(Math.sqrt(wx / 14000), 1)) * deepChamberAt(wx);
+    return lerp(H * 0.34, H * 0.163, Math.min(Math.sqrt(wx / 14000), 1)) * deepChamberAt(wx) + earlyWidenAt(wx);
 }
 
 // boundsAt uses base _halfGap + current bonus so both rendering and

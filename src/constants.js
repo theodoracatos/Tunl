@@ -6,7 +6,7 @@
 // it exists so a build can identify itself: window.TUNL_VERSION for a DevTools check,
 // and build-play.mjs stamps it into /play as <meta name="tunl:version"> so the live
 // web build's version is greppable without diffing the bundle.
-const TUNL_VERSION = '10.1';
+const TUNL_VERSION = '10.2';
 if (typeof window !== 'undefined') window.TUNL_VERSION = TUNL_VERSION;
 
 const cv  = document.getElementById('c');
@@ -94,12 +94,16 @@ const _H_REF      = 440;
 const _FEEL_SCALE = H / _H_REF;
 // Vertical dynamics were pushed hard on request across several passes (all values below
 // are at _H_REF): GRAVITY 1150 -> 1300, THRUST 2400 -> 3400, MAX_VY 820 -> 1080, chasing
-// a "Flappy Bird snappy" hold response. The hold model is unchanged (an acceleration
-// ramp, not Flappy's instant velocity impulse) but net-up (2100) vs net-down (1300)
-// means holding snaps the ship to the climb cap in ~0.5s, reading as an almost-instant
-// pop. VERY high-energy, miles from the original 1250:1150 / 820.
+// a "Flappy Bird snappy" hold response. Real-player feedback (Reddit, 2026-09-09) called
+// the accel "too fast" with deaths coming before the run's rush ever landed, so THRUST
+// was pulled back to the documented middle ground: 3400 -> 2700. A same-day playtest of
+// that value felt off in the other direction (too floaty), so it was nudged back up to
+// 3100 - net-up 1800 vs net-down 1300, roughly midway between the original 2100:1300
+// snap and the 2700 pass's 1400:1300 softness. GRAVITY and MAX_VY are untouched. The
+// hold model is still unchanged (an acceleration ramp, not Flappy's instant velocity
+// impulse), just tuned to a less hair-trigger point on that same ramp.
 const GRAVITY = 1300 * _FEEL_SCALE;
-const THRUST  = 3400 * _FEEL_SCALE;
+const THRUST  = 3100 * _FEEL_SCALE;
 const MAX_VY  = 1080 * _FEEL_SCALE;
 const RSTEP   = 3;
 

@@ -78,16 +78,16 @@ function check(name, cond) {
     const w2 = makeWorld(956, 440);              // reference height -> _FEEL_SCALE == 1
     check('_H_REF is 440 (iPhone 17 Pro Max landscape height)', w.H_REF === 440);
     check('_FEEL_SCALE = H/_H_REF', Math.abs(w.FEEL_SCALE - 600 / 440) < 1e-9 && w2.FEEL_SCALE === 1);
-    check('base GRAVITY/THRUST/MAX_VY are 1300/3400/1080 at _H_REF',
-        w2.GRAVITY === 1300 && w2.THRUST === 3400 && w2.MAX_VY === 1080);
+    check('base GRAVITY/THRUST/MAX_VY are 1300/3100/1080 at _H_REF',
+        w2.GRAVITY === 1300 && w2.THRUST === 3100 && w2.MAX_VY === 1080);
     check('all three feel constants scale by the SAME _FEEL_SCALE',
         Math.abs(w.GRAVITY / w.FEEL_SCALE - 1300) < 1e-6 &&
-        Math.abs(w.THRUST  / w.FEEL_SCALE - 3400) < 1e-6 &&
+        Math.abs(w.THRUST  / w.FEEL_SCALE - 3100) < 1e-6 &&
         Math.abs(w.MAX_VY  / w.FEEL_SCALE - 1080) < 1e-6);
     const netUp   = w.THRUST - w.GRAVITY;
     const netDown = w.GRAVITY;
     check('net upward force stays stronger than net downward (climbing more responsive)',
-        netUp > netDown && Math.abs(netUp / w.FEEL_SCALE - 2100) < 1e-6 && Math.abs(netDown / w.FEEL_SCALE - 1300) < 1e-6);
+        netUp > netDown && Math.abs(netUp / w.FEEL_SCALE - 1800) < 1e-6 && Math.abs(netDown / w.FEEL_SCALE - 1300) < 1e-6);
 }
 
 // ── Cross-device fairness: W is capped at 956 on every platform ──────────────
@@ -107,7 +107,8 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
     const w = makeWorld(iw, ih);
     const H = w.H;
 
-    check(`[${iw}x${ih}] halfGapAt(0) == H*0.34`, Math.abs(w.halfGapAt(0) - H * 0.34) < 1e-9);
+    check(`[${iw}x${ih}] halfGapAt(0) == H*0.34 + early-widen bonus (H*0.09)`, Math.abs(w.halfGapAt(0) - H * 0.43) < 1e-9);
+    check(`[${iw}x${ih}] early-widen bonus is gone by wx=12000 (rejoins base curve)`, Math.abs(w.halfGapAt(12000) - w.lerp(H * 0.34, H * 0.163, Math.min(Math.sqrt(12000 / 14000), 1))) < 1e-9);
     check(`[${iw}x${ih}] halfGapAt(14000+) == H*0.163 (max difficulty plateau)`, Math.abs(w.halfGapAt(14000) - H * 0.163) < 1e-9 && w.halfGapAt(20000) === w.halfGapAt(14000));
     // Monotonic: corridor only ever narrows as wx grows, never widens back out.
     let prevHg = w.halfGapAt(0);
