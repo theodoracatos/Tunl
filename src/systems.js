@@ -231,18 +231,28 @@ function makeCoin(wx) {
         // explicit floor (UX audit, Befund 3 / Konzept 07). wBlue/wOrange stay flat
         // at their old approximate values (continuity with the previous curve);
         // wRed now has a real floor at introduction and grows to the same ceiling
-        // (21%) the old curve reached at max difficulty.
+        // (21%) the old curve reached at max difficulty. Blue/orange settle at their
+        // own natural ceiling once t maxes at score 233 too -- see the goldCutT/
+        // goldCutP2 split below.
         const t     = Math.min((_prog - 0.38) / 0.62, 1); // 0 at score ~34, 1 at score ~233
         let wBlue   = 0.17;
         let wRed    = lerp(0.09, 0.21, t);
         let wOrange = 0.14;
-        // Magnet unlocks at score 71 same as before. Its base share now grows with
-        // _prog2 (3% -> 6% from score ~233 to ~900) instead of being pinned at a flat
-        // 3% forever -- a long marathon run is exactly where a magnet is most
-        // "run-defining" for chaining combos, so it shouldn't stay as rare there as
-        // it is early on. greenDroughtBias layers a soft, uncapped-frequency (but
+        // Magnet unlocks at score 71 same as before. Its base share (greenBase below)
+        // grows with _prog2 (3% -> 6% from score ~233 to ~900) instead of being pinned
+        // at a flat 3% forever -- a long marathon run is exactly where a magnet is most
+        // "run-defining" for chaining combos, so it shouldn't stay as rare there as it
+        // is early on. greenDroughtBias layers a soft, uncapped-frequency (but
         // capped-strength) pity nudge on top -- see constants.js GREEN_DROUGHT_*
-        // doc and the greenClock reset below.
+        // doc and the greenClock reset below. Green's ACTUAL final share (wGreen,
+        // after the goldCutP2 redistribution further down) lands well above this
+        // 3-6% base -- ~3.7% at score 233 climbing to ~14.5% by score 900+ -- because
+        // green is deliberately the sole sink for gold's marathon-phase decay once
+        // red/blue/orange all flatten out at score 233 (see the goldCutT/goldCutP2
+        // comment below). That's intentional, not drift: unlike red's stack cap,
+        // magnet's is a duration that decays in real time (5s baseline vs. a ~28s
+        // average gap between green pickups at the score-900+ coin cadence), so a
+        // bigger share doesn't leave pickups going to waste the way excess red did.
         let wGreen = 0;
         if (_prog >= 0.55) {
             const greenBase   = lerp(0.03, 0.06, _prog2);
@@ -253,19 +263,32 @@ function makeCoin(wx) {
         // Gold keeps thinning out the deeper a run goes, not just as a side effect of
         // the other shares above growing: GOLD_DEEP_DECAY (constants.js) shaves an
         // additional cut off gold's leftover share as t and _prog2 climb (score
-        // 34->233, then 233->900), phased half-and-half across both legs so the
-        // decline keeps going long after t maxes out at score 233. The shaved amount
-        // is redistributed proportionally across whichever other types are already
-        // active, so the weights still sum to 1 and green's score-71 gate is never
-        // bent open early by an unaccounted-for leftover.
-        const goldDecayT = t * 0.5 + _prog2 * 0.5;
-        const goldCut    = wGold * GOLD_DEEP_DECAY * goldDecayT;
-        wGold -= goldCut;
-        const otherSum = wBlue + wRed + wOrange + wGreen;
-        if (goldCut > 0 && otherSum > 0) {
-            const scale = 1 + goldCut / otherSum;
-            wBlue *= scale; wRed *= scale; wOrange *= scale; wGreen *= scale;
+        // 34->233, then 233->900). The two legs are redistributed differently
+        // (2026-09-11, replacing one blended goldDecayT fed through a single
+        // proportional split): every capped power-up -- red (shield, capped stacks),
+        // blue (slow time, capped duration), orange (ammo, capped bullets) -- was
+        // drifting past its intended ceiling by the deep-run plateau when the whole
+        // cut scaled all four "other" types together, since they were already the
+        // largest shares (red hit ~26% against its documented 21% ceiling; blue/orange
+        // similarly overshot their flat baselines). Real player complaint: "too many
+        // shields." So the t-leg (score 34->233, the same window red's own ramp
+        // climbs in) still redistributes across blue/orange/green like before -- that
+        // keeps green's score-71 gate from opening early via an unaccounted leftover,
+        // same as always. But the _prog2 leg (score 233->900, the marathon) goes to
+        // green alone: blue/orange/red are all flat past score 233 (matching red's own
+        // ramp, which is t-only), and green is the one type explicitly designed to
+        // keep growing through the marathon (see greenBase above) -- "magnet is most
+        // run-defining on a long run" already motivated that ramp, so the marathon
+        // surplus from gold's decay belongs there too, not diluting the other three.
+        const goldCutT  = wGold * GOLD_DEEP_DECAY * t * 0.5;
+        const goldCutP2 = wGold * GOLD_DEEP_DECAY * _prog2 * 0.5;
+        wGold -= (goldCutT + goldCutP2);
+        const rampSum = wBlue + wOrange + wGreen;
+        if (goldCutT > 0 && rampSum > 0) {
+            const scale = 1 + goldCutT / rampSum;
+            wBlue *= scale; wOrange *= scale; wGreen *= scale;
         }
+        if (goldCutP2 > 0) wGreen += goldCutP2;
         const cumGold   = wGold;
         const cumBlue   = cumGold + wBlue;
         const cumRed    = cumBlue + wRed;
