@@ -7,6 +7,17 @@
 // scrolls in -- it never pops into view mid-screen.
 const STAL_START_WX = 1500;
 
+// One rng stream per spawner, all derived from the day (constants.js makeRngStream).
+// Distinct salts so the streams are independent of each other, not phase-shifted
+// copies. Called from both titleScreen() (the attract-mode tunnel spawns
+// stalactites) and startPlay().
+function _seedSpawnStreams(dayInt) {
+    rngStal   = makeRngStream(Math.imul(dayInt ^ 0x5741, 0x2545F491));
+    rngCoin   = makeRngStream(Math.imul(dayInt ^ 0xC01D, 0x9E3779B1));
+    rngMine   = makeRngStream(Math.imul(dayInt ^ 0x4D19, 0x85EBCA6B));
+    rngCannon = makeRngStream(Math.imul(dayInt ^ 0xCA77, 0xC2B2AE35));
+}
+
 function initAmbParts() {
     ambParts = Array.from({ length: 30 }, () => ({
         x:   Math.random() * W,
@@ -23,9 +34,10 @@ function titleScreen() {
     score = 0; newBest = false; newDailyBest = false;
     parts = []; thrustParts = []; deadT = 0; titleT = 0; flashA = 0; shake = 0; trailY = [];
     skinFx = []; skinFxT = 0; shipPitch = 0;
+    _seedSpawnStreams(_tunlActiveDayInt());
     stalactites = []; nextStalWx = 420; nextFallWx = 99999;
     coins = [];     nextCoinWx = 99999;
-    chicaneCoins = [];
+    chicaneCoins = []; lastChicaneCoinWx = -Infinity;
     gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
     invulnT = 0; deathCause = null;
     continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;
@@ -39,10 +51,8 @@ function titleScreen() {
     boulders = []; nextBoulderWx = 99999;
     // Coins never spawn on the title screen (nextCoinWx = 99999 above), so these are
     // never actually consulted here -- just kept defined to avoid stray undefineds.
-    poisonClock = 0; nextPoisonAt = POISON_INTERVAL_SEC;
-    bombClock   = 0; nextBombAt   = BOMB_INTERVAL_SEC;
-    drainClock  = 0; nextDrainAt  = DRAIN_INTERVAL_SEC;
-    greenClock  = 0;
+    nextPoisonWx = 0; nextBombWx = 0; nextDrainWx = 0;
+    lastBlueWx = 0; lastRedWx = 0; lastGreenWx = 0;
     flightClock = 0; flightAchIdx = 0;
     prevRunScore = 0; lastRunScore = 0; milestoneFlash = 0; milestoneText = '';
     runCoins = 0; runNearMisses = 0; runMaxCombo = 0; skinUnlockIdx = -1;
@@ -78,11 +88,17 @@ function startPlay() {
     // not the death screen. Coins are deliberately left at their normal start distance --
     // they teach collection and can't kill anyone.
     stalactites = []; nextStalWx = STAL_START_WX;
-    // Falling stalactites: none before world-x 12000 (~score 200) -- a fresh
-    // player learns plain stalactites first (see updateFallingStals / fallSpacing).
-    nextFallWx = 12000;
+    // Falling stalactites: none before world-x 7800 (~score 130) -- a fresh player
+    // learns plain stalactites first (see updateFallingStals / fallSpacing). Was
+    // 12000 (~score 200) until 2026-09-11: a replay audit against the real daily
+    // leaderboard found the highest daily best ever recorded is 169, so at 12000
+    // this was content essentially no player had ever seen. 7800 keeps a full ~100
+    // points of plain-stalactite schooling first and still lands inside the reach of
+    // a good run. The loose spike shakes and trickles dust before it lets go, so the
+    // tell is readable the first time it happens.
+    nextFallWx = 7800;
     coins = [];     nextCoinWx = 500;
-    chicaneCoins = [];
+    chicaneCoins = []; lastChicaneCoinWx = -Infinity;
     gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
     invulnT = 0; deathCause = null;
     continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;
@@ -97,8 +113,15 @@ function startPlay() {
     // Cannons start much later than mines (score ~100) and are spaced far apart -- a
     // rare hazard, not a constant one (see world.js cannonSpacing()).
     cannons = []; nextCannonWx = 6000; cannonShots = [];
-    // Boulders: deep-only routing obstacle, from world-x 84000 (~score 1400).
-    boulders = []; nextBoulderWx = 84000;
+    // Boulders: routing obstacle ("commit up or down"), from world-x 5100 (~score
+    // 85) -- just past the magnet gate (score 71), before the first cannon (100).
+    // Was 84000 (~score 1400, ~109 real seconds of flawless flight) until
+    // 2026-09-11, which a replay audit showed meant no player had ever seen one: the
+    // highest daily best in the leaderboard is 169. Moving it early is also the
+    // FORGIVING direction, not the harsh one - makeBoulder() bounds the radius by the
+    // corridor, so at score 85 the narrow pass measures 1.74 player diameters versus
+    // 1.11 at score 1400. boulderSpacing() keeps it a sparse set-piece either way.
+    boulders = []; nextBoulderWx = 5100;
     bonusScore = 0; milestoneNext = 50; nearMissTimer = 0; coinCombo = 0; coinComboTimer = 0;
     runCoins = 0; runNearMisses = 0; runMaxCombo = 0; skinUnlockIdx = -1;
     skinMasteryUpIdx = -1; missionRewardWon = 0;
@@ -155,15 +178,22 @@ function startPlay() {
     // Cave day, not necessarily today - see world.js _tunlActiveDayInt (?d= deep link).
     const _dayInt = _tunlActiveDayInt();
     seedRng(_dayInt);
+    _seedSpawnStreams(_dayInt);
     seedDailyVariety(_dayInt);
     // Poison/bomb clocks (constants.js POISON_INTERVAL_SEC doc): jittered +/-30% like
     // every other next*Wx spacing in this file, and drawn from the same seeded rng()
     // so a given calendar day plays out identically for every player, same as the
     // tunnel shape and every other obstacle's placement.
-    poisonClock = 0; nextPoisonAt = POISON_INTERVAL_SEC * (0.7 + rng() * 0.6);
-    bombClock   = 0; nextBombAt   = BOMB_INTERVAL_SEC   * (0.7 + rng() * 0.6);
-    drainClock  = 0; nextDrainAt  = DRAIN_INTERVAL_SEC  * (0.7 + rng() * 0.6);
-    greenClock  = 0;
+    // Hazard/reward coin cadence as world-x targets (state.js nextPoisonWx doc). The
+    // jitter still comes from the same seeded rng(), so a given calendar day plays out
+    // identically for every player - which is now literally true rather than
+    // approximately, since these no longer depend on how fast the device scrolls.
+    nextPoisonWx = worldPxForSec(POISON_INTERVAL_SEC * (0.7 + rngCoin() * 0.6), 0);
+    nextBombWx   = worldPxForSec(BOMB_INTERVAL_SEC   * (0.7 + rngCoin() * 0.6), 0);
+    nextDrainWx  = worldPxForSec(DRAIN_INTERVAL_SEC  * (0.7 + rngCoin() * 0.6), 0);
+    // Power-up supply floors: 0 = "as if one just landed at the start line". They only
+    // apply past the score-34 gate in makeCoin() anyway, well beyond any floor width.
+    lastBlueWx = 0; lastRedWx = 0; lastGreenWx = 0;
     flightClock = 0; flightAchIdx = 0;
     refreshWave();
     _startBgMusic();

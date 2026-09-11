@@ -55,6 +55,11 @@ function makeWorld(innerWidth, innerHeight) {
         this.waveParams = function() { return { wA1: _wA1, wA2: _wA2, wF1: _wF1, wF2: _wF2 }; };
         this.ghostEncode = ghostEncode; this.ghostDecode = ghostDecode;
         this.DAILY_SHARD_CAP = DAILY_SHARD_CAP; this.GAP_EASE_RATE = GAP_EASE_RATE;
+        this.GAP_DECAY = GAP_DECAY; this.GAP_PER_COIN = GAP_PER_COIN; this.GAP_BONUS_MAX = GAP_BONUS_MAX;
+        this.worldPxForSec = worldPxForSec; this.scrollSpdBase = scrollSpdBase;
+        this.CHICANE_GOLD_GAP_SEC = CHICANE_GOLD_GAP_SEC; this.CHICANE_GOLD_EARLY_MULT = CHICANE_GOLD_EARLY_MULT;
+        this.POWERUP_MIN_GAP_SEC = POWERUP_MIN_GAP_SEC; this.POWERUP_GAP_EARLY_MULT = POWERUP_GAP_EARLY_MULT;
+        this.DEEP_APEX_WX = DEEP_APEX_WX;
     `, sandbox, { filename: 'export' });
     return sandbox;
 }
@@ -247,7 +252,7 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
         }
     }
     w.setDeepDay(0);
-    check('deep shape morph is fully inert at/below the score-900 plateau', preInert);
+    check('deep shape morph is fully inert at/below DEEP_VARIETY_WX', preInert);
 
     // Corridor velocity (wA1*wF1 + wA2*wF2) with the morph vs the SAME wx with it
     // off - isolates the morph from the pre-existing _prog2 wave boost, which also
@@ -313,7 +318,7 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
         w.setDeepDay(day);
         for (let wx = 0; wx <= D; wx += 1500) if (w.deepChamberAt(wx) !== 1) chInert = false;
     }
-    check('deep chambers are inert at/below the score-900 plateau', chInert);
+    check('deep chambers are inert at/below DEEP_VARIETY_WX', chInert);
 
     let chOk = true, chPk = 1, everReset = true;
     for (let day = 0; day < 30; day++) {
@@ -335,15 +340,97 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
         chOk && chPk > 1.6 && everReset);
 
     // Falling-stalactite cadence: absent early, then a real deep presence, floored.
+    // Sampled at fixed world-x, not relative to D: fallSpacing is a function of
+    // _prog2 alone, and D - 40000 would be a negative scrollX now that
+    // DEEP_VARIETY_WX sits at 30000.
     const fsAt = (wx) => { w.scrollX = wx; w.refreshWave(); return w.fallSpacing(); };
     check('fallSpacing tightens from a rare set-piece to a floored deep cadence',
-        fsAt(D - 40000) > fsAt(D) && fsAt(D) > fsAt(D + 200000) && fsAt(D + 5_000_000) >= 1800);
+        fsAt(14000) > fsAt(54000) && fsAt(54000) > fsAt(254000) && fsAt(5_000_000) >= 1800);
 
     // Boulders (Phase 3): rare - spacing floors well above every recurring hazard.
     const bsAt = (wx) => { w.scrollX = wx; w.refreshWave(); return w.boulderSpacing(); };
     check('boulderSpacing stays a sparse set-piece cadence (>= 2400, above mine/coin spacing)',
         bsAt(84000) >= 2400 && bsAt(5_000_000) >= 2400 &&
         bsAt(5_000_000) > w.mineSpacing() * 5 && bsAt(5_000_000) > w.coinSpacing() * 5);
+}
+
+// ── Supply pacing (2026-09-11 balance pass) ─────────────────────────────────
+// The pass that re-gated coin supply rests on three claims that are pure math and
+// therefore guardable here: the chicane-gold gate is a real per-SECOND cap at every
+// depth (not a distance that keeps shrinking as scrollSpd climbs forever), that gate
+// and the power-up floors are no-ops for the whole stretch real players reach, and
+// the gate is W-independent so the cave stays pixel-identical across devices.
+{
+    const w = makeWorld(956, 600);
+
+    // worldPxForSec must NOT carry a W term - the daily cave is shared in world-x.
+    const wNarrow = makeWorld(600, 600);
+    const wWide   = makeWorld(1400, 600);
+    let wIndep = true;
+    for (const wx of [3000, 14000, 30000, 60000, 120000, 400000]) {
+        wNarrow.scrollX = wx; wNarrow.refreshWave();
+        wWide.scrollX   = wx; wWide.refreshWave();
+        if (Math.abs(wNarrow.worldPxForSec(2.2) - wWide.worldPxForSec(2.2)) > 1e-9) wIndep = false;
+        // ...while scrollSpd itself is deliberately W-scaled, so this is a real distinction.
+        if (wNarrow.scrollSpd() >= wWide.scrollSpd()) wIndep = false;
+    }
+    check('worldPxForSec is W-independent (shared cave) while scrollSpd stays W-scaled', wIndep);
+
+    // The chicane gate converts to a bounded coins/sec at every depth, forever. A
+    // fixed world-px gate cannot do this: scrollSpd never plateaus, so any constant
+    // distance decays toward zero seconds. Measured at the reference width the gate
+    // is quoted for.
+    const rateAt = (wx) => {
+        w.scrollX = wx; w.refreshWave();
+        const sec  = w.CHICANE_GOLD_GAP_SEC * w.lerp(w.CHICANE_GOLD_EARLY_MULT, 1, Math.min(Math.max(wx - 14000, 0) / 40000, 1));
+        const gate = Math.max(w.worldPxForSec(sec), w.coinSpacing() * 0.85);
+        return w.scrollSpd() / gate;                       // chicane gold coins per second
+    };
+    // Deep: bounded above (the cap this exists for) and bounded below (it must not
+    // collapse either). A fixed world-px gate cannot satisfy the upper bound at all -
+    // scrollSpd never plateaus, so any constant distance decays toward zero seconds.
+    let deepOk = true, peakRate = 0, minRate = Infinity;
+    for (let wx = 54000; wx < 3_000_000; wx += 2500) {
+        const r = rateAt(wx);
+        peakRate = Math.max(peakRate, r);
+        minRate  = Math.min(minRate,  r);
+        if (r > 0.75 || r < 0.25) deepOk = false;
+    }
+    // Holding gapBonus pinned at its cap needs GAP_DECAY/GAP_PER_COIN gold per second
+    // (times the update.js _deepDecay ramp deep, which only makes the bar higher).
+    const holdRate = w.GAP_DECAY / w.GAP_PER_COIN;
+    check(`chicane gold stays a bounded per-second cadence at any depth (deep ${minRate.toFixed(2)}-${peakRate.toFixed(2)}/s)`, deepOk);
+    check(`deep chicane gold no longer outruns the hold-at-cap rate by an order of magnitude (${(peakRate / holdRate).toFixed(1)}x, was ~10x)`,
+        peakRate / holdRate < 3);
+
+    // Both gates must be inert where real runs actually end. Highest daily best ever
+    // recorded is 169 (D1 tunl_scores, 2026-09-11), so "early" here is score <= 233.
+    // The gate is inert if it permits far more chicane gold per second than the
+    // chicane cadence itself ever delivers there (measured 0.19-0.46/s across bands).
+    let earlyNoop = true, earlyMinRate = Infinity;
+    for (let wx = 2100; wx <= 14000; wx += 250) {
+        w.scrollX = wx; w.refreshWave();
+        if (Math.max(wx - 14000, 0) !== 0) earlyNoop = false;   // the ramp term must be 0 here
+        earlyMinRate = Math.min(earlyMinRate, rateAt(wx));
+        // Power-up floors below the measured natural gaps at this depth (4.3s red,
+        // ~6.7s blue/green) so they cannot thin the early coin line.
+        for (const k of Object.keys(w.POWERUP_MIN_GAP_SEC)) {
+            if (w.POWERUP_MIN_GAP_SEC[k] * w.POWERUP_GAP_EARLY_MULT > 4.3) earlyNoop = false;
+        }
+    }
+    if (earlyMinRate < 0.9) earlyNoop = false;
+    check(`chicane gate and power-up floors are no-ops below score 233 (early gate allows ${earlyMinRate.toFixed(2)}/s vs a ~0.2-0.5/s natural cadence)`, earlyNoop);
+
+    // Orange deliberately has no floor: bullets auto-fire every 0.32s, so a 5-shot
+    // pickup drains itself in 1.6s and there is no stock that can sit pinned.
+    check('orange (ammo) is deliberately exempt from the power-up floors',
+        w.POWERUP_MIN_GAP_SEC.orange === undefined && w.POWERUP_MIN_GAP_SEC.red !== undefined);
+
+    // The apex-mine bias stayed on the old score-900 line while the rest of the deep
+    // variety moved to 30000 - it is the one piece flagged as an unplaytested
+    // fairness risk (CLAUDE.md), so it must not ride along.
+    check('apex-mine bias did not move earlier with DEEP_VARIETY_WX',
+        w.DEEP_APEX_WX === 54000 && w.DEEP_VARIETY_WX < w.DEEP_APEX_WX);
 }
 
 // ── Ghost round-trip (constants.js ghostEncode/ghostDecode) ─────────────────

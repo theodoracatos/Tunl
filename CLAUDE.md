@@ -79,7 +79,90 @@ was deleted (it only ever existed to fight the floatiness of web's earlier 520 c
 
 ### Cross-device fairness (do not revert without re-auditing)
 
-The daily seed makes the cave pixel-identical in world-x for every player on Earth, and
+**This is enforced by `test-cave.js`, not just asserted.** It replays the real
+spawners frame by frame at six device sizes and compares the resulting obstacle lists
+byte for byte. Run it after touching anything in `maintain*()` / `make*()` / the
+difficulty curves. Until 2026-09-11 the claim below was simply false - a replay of one
+day seed at six sizes produced six different caves, diverging from wx ~938 (score 15).
+Four independent causes had to be fixed, and all four are easy to reintroduce:
+
+1. **Sample the difficulty curves at the PLACEMENT wx, never the player's.**
+   `stalSpacing()` / `stalLenFrac()` / `coinSpacing()` / `mineSpacing()` /
+   `cannonSpacing()` / `boulderSpacing()` / `fallSpacing()` / `chicaneProb()` and
+   `makeCoin`'s whole type ladder now take a wx (`progAt`/`prog2At` in `world.js`).
+   The spawn loops run to a horizon, so reading `_prog` meant reading the difficulty
+   wherever the player happened to be when the loop reached that slot.
+2. **Do placement geometry in REFERENCE units, not screen units.** `PR`/`COIN_R`/
+   `MINE_R` are W-derived sizes while the corridor is H-derived, so any placement test
+   comparing the two came out differently per aspect ratio - and since `makeMine`
+   draws `rng()` only on success, one differing rejection forked the whole stream. The
+   `PLACE_*` constants + `_H_TO_REF`/`_REF_TO_H` (`constants.js`) are the fix;
+   the real `PR` is untouched, because keying the actual hitbox off H is still "a feel
+   change needing its own playtest".
+3. **One rng stream per spawner** (`makeRngStream`, `state.js` `rngStal/rngCoin/
+   rngMine/rngCannon`). This was the deep one: all spawners shared `rng()` and
+   interleave per frame, and `scrollX` advances by `scrollSpd()*dt` which carries a
+   W/600 term - so the frame on which an object crossed the horizon, and therefore the
+   ORDER of draws, varied by screen width. Same seed, same curves, different cave.
+4. **Cadences that are tuned in seconds must be stored as world-x.** The poison/bomb/
+   drain and power-up-floor clocks were `+= dt`; seconds-per-world-px depends on
+   `scrollSpd`, so they fired at different world positions per device (and the hazard
+   branch draws `rng()`). They are world-x cursors now (`state.js` `nextPoisonWx`),
+   converted from the tuned seconds via `worldPxForSec()`, which uses the reference
+   width. Same trick as the chicane-gold gate.
+
+Two consequences worth knowing. **`SPAWN_AHEAD_*` (`constants.js`) encodes an ordering
+invariant**: stalactites are created first and furthest ahead, and every spawner that
+inspects the stalactite array must sit far enough inside that horizon for its whole
+inspection radius to be populated. Cannons and boulders used to sit OUTSIDE it, so
+their overlap checks were half blind - which is the only reason they were as common as
+they were. Fixing that made them nearly extinct until they got retry loops
+(`CANNON_RETRY_OFFSETS` / `BOULDER_RETRY_OFFSETS`), same pattern as
+`MINE_RETRY_OFFSETS`.
+
+**The retry loops then re-broke the same invariant, and a browser playtest is what
+caught it (2026-09-11).** The budget is `SPAWN_AHEAD_X + largest retry offset +
+inspection radius <= SPAWN_AHEAD_STAL`, and the retry term was simply never added -
+so a retried probe walked straight back out past the stalactite horizon and the veto
+it was retrying for saw an empty array again. Measured over 60000 world-px: **15 of 18
+boulders and 28 of 28 cannons** were placed blind, 12 boulders had a pass sealed by a
+stalactite and one was sealed on **both** sides (an unavoidable death at score 940).
+The very first boulder of the day had a ceiling spike driven through its top edge.
+Three fixes, all load-bearing:
+- `SPAWN_AHEAD_STAL` 600 -> **1550**, covering every retry reach. Raising the horizon
+  rather than clamping the offsets, because clamping boulders to the ~226px that fit
+  inside 600 would have dropped 15 of 18 of them - re-creating the near-extinction the
+  retry loops exist to fix. The stalactite sequence itself does not change (each
+  spawner has owned its own rng stream since the cross-device pass, so creating
+  stalactites earlier no longer reorders anyone's draws); the cost is a longer live
+  stalactite array (~39 -> ~70 deep).
+- **Flat-radius vetoes had to become geometric**, because once the horizon was wide
+  enough to enforce them they turned out to be unsatisfiable deep - `stalSpacing()`
+  floors at 50px, so "no spike within 140px" (cannons) or "within ~73px" (boulders) is
+  a window that essentially never exists. `makeCannon` now vetoes only **same-wall**
+  stalactites within `PLACE_CANNON_R + placeStalW` (a ceiling spike was never a reason
+  to move a floor-mounted cannon), and draws its wall **before** the retry loop so the
+  rng stream no longer depends on how many offsets were rejected.
+- `_makeBoulderAt` **tests the contract instead of a proxy for it**: both passes must
+  survive the stalactites that actually overlap the rock, measured against the circle's
+  half-chord at each spike's own x, requiring >= 1.1 player diameters each. A spike near
+  the rock's edge barely eats into a pass, which the old proxy could not tell apart from
+  a spike through its middle. Measured after: **0 sealed passes** (was 12 of 18), first
+  boulder back at score 85 on 7 of 8 day-seeds, cannon density unchanged (27.5 per 60000
+  world-px), boulder density 9.3. Deep boulders are genuinely rare past score 900 (0.04
+  per 1000 world-px vs 0.21 early) - at that corridor width two 1.1-diameter passes plus
+  the rock barely fit, so that thinning is honest, not a bug.
+
+`test-cave.js` now asserts the whole budget table and re-checks every boulder's two
+passes, so neither can rot silently again.
+
+**And the old deep mine density was itself an artifact** of that
+same blindness: with the horizons ordered, `_makeMineAt`'s 300px tip-push radius left
+no vertical room at all past the plateau (stalSpacing floors at 50px there), so the
+radius now lerps 300 -> 90 over `_prog2`. Measured deep mine density 0.98 -> 2.0 per
+1000 world-px; below score 233 every one of these changes is a measured no-op.
+
+The daily seed makes the cave identical in world-x for every player on Earth, and
 `score = floor(scrollX / 60) + bonusScore` is pure world-distance, so the leaderboard is
 only fair if flying a given stretch of world-x is equally hard on every screen. Two
 independent axes:
@@ -128,30 +211,46 @@ Triangle-shaped obstacles from top or bottom wall. Accurate triangle-circle coll
 Paired stalactites (chicane from both sides) appear after `_prog > 0.40` with 24% chance.
 
 **Falling stalactites** (`FALL_LEAD`/`FALL_SPAN` in `constants.js`, `fallSpacing()` in
-`world.js`, `stalFallY`/`updateFallingStals` in `systems.js`): from world-x 12000
-(~score 200, `nextFallWx` set in `startPlay`), a seeded cadence flags the next single
-(non-chicane) ceiling stalactite to break loose. While loose it **shakes left/right**
+`world.js`, `stalFallY`/`updateFallingStals` in `systems.js`): from world-x 7800
+(~score 130, `nextFallWx` set in `startPlay`; the first one actually lands a bit later,
+~score 160, since the cursor flags the next *single* non-chicane ceiling spike after it),
+a seeded cadence flags it to break loose. While loose it **shakes left/right**
 (the draw loop's `wobX`, ramping as it nears the detach point) plus trickles dust, so the
 player can spot which spikes drop. It detaches when the player is within `FALL_LEAD` (and
 still clearly ahead), then **falls the full corridor** over `FALL_SPAN` world-px of scroll
-(`stalFallY` = `fallDist·t²` where `fallDist = corridor - length`, **scrollX-indexed so a
-blue coin can't desync it**, same as the ghost) until the tip meets the far wall - it
-becomes a floor spike and the dodge is unambiguously "go over it". The gap above is
+(`stalFallY` = `(corridor - length)·t²`, **scrollX-indexed so a blue coin can't desync
+it**, same as the ghost) until the tip meets the far wall - it becomes a floor spike and
+the dodge is unambiguously "go over it". That distance is recomputed **live every
+frame**, never frozen at detach: the corridor keeps moving after a spike lets go
+(`gapBonusVisual` easing in, a deep chamber, `_halfGap` drift), and a captured value left
+spikes hanging in mid-air - measured 5 of 33 in one run, up to 3.8 player diameters above
+the floor, because a landed spike kept its frozen offset while the floor moved away.
+Guarded in `test-collision.js`. The gap above is
 `>= 1.2 * halfGap` (stalLenFrac hard-caps length at 0.8). Then it just scrolls past.
 `fy` is folded into `stalHit`/`stalHitBullet`/`triggerBombExplosion`/the draw loop so
 collision and render always agree. Bullets/bombs kill a falling one like any stalactite.
 `fallSpacing()` runs `~3400 -> 2000` world-px over `_prog2`, floored at 1800.
 
 ### Boulders
-Large static rounded rock parked in the **deep** corridor (`src/systems.js`
-`makeBoulder`/`maintainBoulders`, from world-x 84000 / ~score 1400, `boulderSpacing()` in
-`world.js` - a sparse set-piece cadence, floor 2400px). Unlike a mine it is telegraphed
-by sheer size and **never spans the corridor**: radius is bounded (`R <= halfGap - 2*PR`)
+Large static rounded rock (`src/systems.js` `makeBoulder`/`maintainBoulders`, from
+world-x 5100 / ~score 85, `boulderSpacing()` in `world.js` - a sparse set-piece cadence,
+floor 2400px). Unlike a mine it is telegraphed by sheer size and **never spans the corridor**: radius is bounded (`R <= halfGap - 2*PR`)
 and the centre is nudged a seeded amount toward one wall, so there is always a pass above
 AND below - one easy, one a squeeze. It asks "commit up or down" rather than "react".
 Circle-circle collision (`update.js`), same shield-absorb + shove-clear as a mine. Bombs
 clear boulders; player bullets just spark off (solid rock, not a destructible hazard).
 Seeded via `_deepHash`, no `rng()`-stream impact.
+
+Started at world-x 84000 (~score 1400) until 2026-09-11. A replay audit against the real
+daily leaderboard (D1 `tunl_scores`) showed that meant **no player had ever seen one**:
+28 recorded player-days, median daily best 70, highest ever 169 - and 84000 is ~109 real
+seconds of flawless flight. Moving it to 5100 is also the *forgiving* direction, not the
+harsh one, because `makeBoulder` bounds the radius by the corridor: measured across the
+sample grid the narrow pass is 1.74 player diameters at score 85 versus 1.11 at score
+1400. Measured across 8 day-seeds the first boulder lands at score 85 on 7 of them and
+by score 150 on the last. Same reasoning moved falling stalactites 12000 -> 7800.
+**Don't push this content back out past ~score 170 without new leaderboard data showing
+players actually get there.**
 
 ### Cannons
 Rare wall-mounted artillery turret (`src/systems.js` `makeCannon`/`maintainCannons`/
@@ -166,6 +265,12 @@ angle (vs. the player's always-horizontal bullets) tells them apart. Same hitbox
 trade-offs and shield-absorb behavior as mine collision; player bullets destroy a shot
 in flight the same way they destroy a mine.
 
+`makeCannon`'s placement veto is **same-wall and geometric** (`PLACE_CANNON_R +
+placeStalW`), not the flat 140px both-walls test it started as - see the
+`SPAWN_AHEAD_*` discussion under Cross-device fairness for why that flat radius could
+never be satisfied past the plateau, and why the wall (`isTop`) is now drawn before the
+retry loop rather than inside the winning branch.
+
 ### Coin system
 Coins collect into `gapBonus` (extra halfGap px, capped, decays over time):
 ```javascript
@@ -173,6 +278,27 @@ const GAP_PER_COIN  = H * 0.075;   // +33px halfGap per coin at H=440
 const GAP_BONUS_MAX = H * 0.19;    // cap: max ~84px halfGap bonus at H=440
 const GAP_DECAY     = H * 0.015;   // bonus lost per second (~5s per coin's worth)
 ```
+**Chicane gold is gated in SECONDS, not world-px** (`CHICANE_GOLD_GAP_SEC` /
+`CHICANE_GOLD_EARLY_MULT` in `constants.js`, `worldPxForSec()` in `world.js`, applied in
+`maintainStalactites`). Deep, `stalSpacing()` sits on its 50px floor at a 0.62 chicane
+probability, so nearly every chicane wants to drop a centred gold coin right on the line
+the player threads anyway. A flat 30px gate gave ~7/sec; the 340px gate that replaced it
+still measured **2.09/sec** in the deep run, because a fixed distance keeps shrinking in
+seconds as `scrollSpd()` climbs forever. Against the ~0.2 coins/sec that holds `gapBonus`
+pinned at its cap, that was a 10x oversupply - and the measured consequence was that the
+*effective* half-gap ran flat at ~0.34*H for the entire run, i.e. **the whole 0.34 ->
+0.163 narrowing was cancelled out and the corridor never actually got tighter.** A time
+gate is flat in coins/sec at every depth by construction. Two implementation constraints:
+it must use `worldPxForSec()` (the W-independent speed) and NOT `scrollSpd()`, or the
+cave forks by screen width and the shared daily seed stops being shared; and it is gated
+on `lastChicaneCoinWx` (`state.js`), not on the tail of the live `chicaneCoins` array,
+which is culled behind the player and so silently capped any gate wider than ~1700px.
+Measured result across 8 day-seeds at a 50/70% collection rate: median free channel at a
+stalactite now falls 9.4 -> 7.5 -> 6.7 -> 5.5 -> 3.6 -> 2.1 player diameters across the
+score bands, against a flat ~5-7 before. The base `GAP_DECAY` was deliberately NOT raised
+to achieve this (it would have narrowed the score 25-233 corridor too); the deep end is
+handled by the pre-existing `_deepDecay` ramp in `update.js`, which is inert until 233.
+
 `gapBonus` itself still jumps instantly on pickup (systems.js), but collision and
 rendering never read it directly - they read `gapBonusVisual` (update.js), which
 chases `gapBonus` at a constant `GAP_EASE_RATE` px/s instead of snapping to it. That's
@@ -216,11 +342,20 @@ plateau at wx=14000. Added in both `refreshWave()` and `halfGapAt()` so renderin
 collision (`boundsAt`) and placement (`boundsBase`, via `halfGapAt`) agree - same pattern
 as `deepChamberAt`.
 
-### Deep-run variety (score ~900+, do not revert)
+### Deep-run variety (score ~500+, do not revert)
 
 Past `_prog2 = 1` (score ~900) every corridor geometry knob is capped and only
 `scrollSpd()` moves - so a five-digit run was one variable, speed, getting twitchier
-against a frozen corridor. Two additions in `world.js` (all `DEEP_*` consts + `_deepHash`
+against a frozen corridor. `DEEP_VARIETY_WX` (the switch-on point for the shape morph,
+chambers, deep coin-line shapes and the palette drift) was **moved 54000 -> 30000
+(score ~500) on 2026-09-11**, same leaderboard argument as the Boulders section: at
+54000 none of it had ever been seen. It is safe below the plateau because every one of
+those features is bounded *relative to the same wx unmorphed* (the `test-math` energy
+guard holds at any wx, and chambers only ever widen). Two things deliberately did NOT
+move with it: the **speed pulse** (still gated on `_prog2 > 1` in `scrollSpd()` -
+surging above a still-ramping trend is a different proposition from surging above a flat
+one) and the **apex-biased mines**, which keep their own `DEEP_APEX_WX` = 54000 because
+that one is flagged below as an unplaytested fairness risk. Two additions in `world.js` (all `DEEP_*` consts + `_deepHash`
 + `deepMorphAt`, gated by `_deepVarietyOn`) give the deep run a changing shape and pace
 without touching the navigability caps:
 
@@ -279,6 +414,33 @@ Coins are staged by `_prog` so power-ups introduce gradually:
 - score 34-70 (_prog 0.38-0.55): + red (shield, absorbs 1 hit) + orange (bullet ammo) + the clock-driven poison / bomb / drain coins (see their sections below)
 - score 71+ (_prog >= 0.55): + green (magnet, pulls coins)
 
+**Power-up SUPPLY is paced in real seconds, not just by weighted share**
+(`POWERUP_MIN_GAP_SEC` / `POWERUP_GAP_EARLY_MULT` in `constants.js`, enforced in
+`makeCoin`; `blueClock`/`redClock`/`greenClock` in `state.js`, ticked in `update.js`).
+A measured replay audit (2026-09-11) found every capped power-up pinned at its ceiling
+once a run got deep - shield stack full 87-100% of the time from score 233 on, slow-time
+active 38-85% of the run. The *durations* were never the problem (4s per blue coin, 3s
+per magnet are short); the weighted roll simply has no notion of real time, so as
+`coinSpacing()` tightens and `scrollSpd()` climbs, every type's coins-per-second climbs
+with them. Three rules, all load-bearing:
+- A vetoed power-up coin is **skipped entirely** (`makeCoin` returns `null`), never
+  downgraded to gold - downgrading would hand the suppressed share to gold and re-break
+  the corridor bonus (below).
+- The floor **scales in with depth**, so it is a measured no-op below score 233. That
+  band is where real runs actually end; this pass is only allowed to make the deep run
+  harder. Same rule governs `CHICANE_GOLD_EARLY_MULT` and the `makeMine` retry.
+- The check sits **after** the poison/bomb/drain overrides, so a ready hazard is never
+  delayed by an unrelated shield veto and the hazard `rng()` stream is untouched.
+- **Orange (ammo) is deliberately exempt.** Bullets auto-fire every 0.32s
+  (`updateBullets`), so a 5-shot pickup drains itself in 1.6s - there is no stock to
+  pin, and measured with firing modelled the player is armed only 2-9% of the run at
+  every depth. An earlier pass of the audit called ammo "pegged at 10/10"; that was a
+  modelling error, not a finding. `test-math.js` guards the exemption.
+
+The values are FLOORS, not the resulting cadence - the type still has to win the
+weighted roll afterwards, which adds ~4-6s deep. Pick a floor by subtracting that from
+the cadence you want, then re-measure.
+
 Mines (bombs) first spawn at wx=1800 (score ~30); shield coins unlock at score ~34 so the player faces mines briefly without protection - intentional.
 
 Gold's share isn't just "whatever's left after the other types' shares" - it also
@@ -313,7 +475,13 @@ and the cannon shots in `updateCannonShots`, so during bullet-time nothing strea
 through a slowed tunnel at full speed) - the blue coin is a decelerate-then-recover
 swoop, not a flat half-speed plateau, and tunnel, projectiles and soundtrack speed back
 up together. `slowTimeMax` (state.js, captured at each pickup in `systems.js`) is the
-window the ramp lerps over. Green runs a faint
+window the ramp lerps over. The **stack cap was cut 8.0s -> 6.0s** on 2026-09-11
+(ELECTRIC's 12/15 scaled with it to keep its documented +50%): slow-time measured
+active 38-85% of the run past score 233, which makes the blue coin the baseline pace
+rather than a rescue and works directly against the "`scrollSpd()` never plateaus" rule
+below. The 4.0s **per coin** is untouched - the swoop is the mechanic; what changed is
+how far a streak of them can run the window out. Blue also carries a
+`POWERUP_MIN_GAP_SEC` floor (see Coin type progression). Green runs a faint
 ambient shimmer loop while the magnet is live (`magnetLoopOn`/`magnetLoopOff`, same
 at-most-once guard pattern as the thruster / onFire loops). Both are driven ON from the
 pickup branch in `systems.js`; the magnet loop is turned OFF from `update.js` on the
@@ -463,7 +631,9 @@ in the coin, not just the separate `sfxCombo` ping (which only fires from x2). S
 ### Daily run card (share)
 
 `src/share.js`. TUNL seeds every run from the UTC date (`lifecycle.js`), so every player
-on Earth flies a pixel-identical cave each day - the hard half of a shareable daily game.
+on Earth flies a pixel-identical cave each day - the hard half of a shareable daily
+game. (Verified per-device by `test-cave.js`; see "Cross-device fairness" for the four
+things that have to stay true for it.)
 The card is the other half.
 
 The image is deliberately a picture of the **run**, not a score badge: the corridor is a
@@ -610,7 +780,16 @@ the forced interstitial, not a video the player actively taps):
   in JS comments, but it is illegal inside an XML comment. `AndroidManifest.xml` and
   `res/xml/*.xml` use single hyphens or a colon instead.
 - **`scrollSpd()` never plateaus**: every other difficulty knob (`stalSpacing`, `stalLenFrac`, `coinSpacing`, `mineSpacing`, wave amplitude/frequency) caps once `_prog2` saturates, because those define corridor *geometry* and pushing them further would make the tunnel unnavigable. Scroll speed has no such ceiling - it only shrinks reaction time - so past `_prog2 > 1` (score ~900) it keeps climbing forever via a sqrt-eased tail (`base + sqrt(_prog2-1)*90`), intentionally so a long enough run is never merely "endurance at a fixed pace." Don't re-add a hard cap here.
-- **Mines are the only thing that guarantees no run survives forever, don't make them wall-anchored or bonus-aware**: because every *other* hazard (stalactites/chicanes) is wall-rooted with an absolute, capped length, a player who keeps `gapBonus` maxed can park near the corridor's vertical center past ~score 1567 and never be threatened by a wall or stalactite again, no matter how high the uncapped `scrollSpd()` (above) climbs - speed alone doesn't endanger a stationary target. `makeMine()` (`systems.js`) placing mines across the full un-bonused `boundsBase()` width, not wall-anchored like a stalactite, is what closes that gap: an unpredictable mine still demands a real `MAX_VY`-bounded dodge every `mineSpacing()` world-px, and that reaction window keeps shrinking in real time as `scrollSpd()` rises without limit - so eventually no input sequence can dodge one, for any skill level. See the doc comment above `makeMine()` for the full argument.
+- **Mines are the only thing that guarantees no run survives forever, don't make them wall-anchored or bonus-aware**: because every *other* hazard (stalactites/chicanes) is wall-rooted with an absolute, capped length, a player who keeps `gapBonus` maxed can park near the corridor's vertical center past ~score 1567 and never be threatened by a wall or stalactite again, no matter how high the uncapped `scrollSpd()` (above) climbs - speed alone doesn't endanger a stationary target. `makeMine()` (`systems.js`) placing mines across the full un-bonused `boundsBase()` width, not wall-anchored like a stalactite, is what closes that gap: an unpredictable mine still demands a real `MAX_VY`-bounded dodge every `mineSpacing()` world-px, and that reaction window keeps shrinking in real time as `scrollSpd()` rises without limit - so eventually no input sequence can dodge one, for any skill level. See the doc comment above `makeMine()` for the full argument. **`MINE_RETRY_OFFSETS`
+(2026-09-11) is what keeps that argument true in practice**: `makeMine` vetoes any x with
+a stalactite above *and* below, and deep that is almost every x (50px spacing, 0.62
+chicane odds), so ~90% of mines were being silently dropped and spatial density ran
+*backwards* with difficulty - 1.66 per 1000 world-px at score 100-150 but only 0.35 past
+1400. A vetoed mine now shuffles forward up to 135px (under the 140px minimum spacing
+between consecutive mines, so the array stays sorted) and retries. Deep only (`_prog2 >
+0`): a retry below the plateau measurably *raised* early mine density, and the early game
+is off-limits to this pass. Restoring the drain also matters for the shield stack - a
+stock that can only be spent by getting hit never drains if nothing is hitting you.
 
 ## Ship unlock economy
 

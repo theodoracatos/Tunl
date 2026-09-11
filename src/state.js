@@ -281,6 +281,9 @@ let onFire;
 let onFireFlash;
 
 let parts, thrustParts, deadT, titleT, flashA, shake, trailY;
+// One independent rng stream per spawner (constants.js makeRngStream doc) - shared
+// state would make the cave depend on frame timing, and therefore on screen width.
+let rngStal, rngCoin, rngMine, rngCannon;
 let stalactites, nextStalWx;
 // World-x cursor for flagging the next stalactite as a falling one (systems.js
 // maintainStalactites / updateFallingStals). Starts at 12000 (~score 200) in
@@ -288,6 +291,12 @@ let stalactites, nextStalWx;
 let nextFallWx;
 let coins, nextCoinWx;
 let chicaneCoins;
+// World-x of the last chicane gold coin actually placed (systems.js
+// maintainStalactites). A high-water mark rather than "the tail of chicaneCoins",
+// because that array is culled behind the player and so cannot hold a gate wider
+// than ~1700 world-px - see the comment at the gate itself. Starts at -Infinity so
+// the first chicane of a run is never gated.
+let lastChicaneCoinWx;
 let gapBonus, gapBonusVisual;
 let slowTime, slowTimeMax, shieldCount, shieldFlash, magnetTime;
 // Grace/invulnerability window after an absorbed hit (constants.js HIT_INVULN_SEC doc).
@@ -313,17 +322,25 @@ let cannonShots;
 // per-coin-candidate probabilities. poisonClock/bombClock accumulate play seconds
 // (update.js); once one passes its jittered next*At target, the next coin that
 // actually clears placement (makeCoin, systems.js) becomes that type.
-let poisonClock, nextPoisonAt;
-let bombClock, nextBombAt;
-// Drain coin clock (constants.js DRAIN_INTERVAL_SEC doc): same model as
-// poisonClock/bombClock. Once it passes nextDrainAt the next placed coin becomes
-// 'drain', which debits a % of the visible run score (bonusScore).
-let drainClock, nextDrainAt;
-// Magnet soft-pity clock (constants.js GREEN_DROUGHT_SOFT_SEC doc): real play
-// seconds since a green coin last actually cleared placement in makeCoin(). Unlike
-// poisonClock/bombClock this never forces a type -- it only nudges the weighted
-// roll's green share upward, and is reset there, not on collection.
-let greenClock;
+// World-x cursors, NOT real-time clocks. They used to be seconds accumulated with
+// `+= dt`, which is how the doc still describes the intent - but seconds-per-world-px
+// carries scrollSpd's W/600 term, so a wall-clock cadence lands at a different WORLD
+// position on every screen width, and the poison/bomb/drain branch draws rng() when it
+// fires: that forked the shared daily cave. Storing the target as a world position
+// (converted from the tuned seconds by world.js worldPxForSec, which uses the
+// reference width) makes the cadence identical for every player AND independent of
+// frame rate, while still landing on the tuned ~20s/16s/30s at the reference device.
+let nextPoisonWx, nextBombWx, nextDrainWx;
+
+// World-x where a coin of that type last cleared placement (constants.js
+// POWERUP_MIN_GAP_SEC doc) - same world-x model as the three above, and for the same
+// cross-device reason. Unlike poison/bomb/drain these never FORCE a type; they only
+// veto one the weighted roll picked too soon after the last, and the coin is then
+// dropped rather than downgraded to gold. lastGreenWx does double duty: the floor
+// AND the magnet soft-pity bias (constants.js GREEN_DROUGHT_SOFT_SEC) that lifts
+// green's share the longer it has been. All three are set in makeCoin(), where a coin
+// actually clears placement - not on collection.
+let lastBlueWx, lastRedWx, lastGreenWx;
 // Real elapsed play seconds this run (constants.js FLIGHT_ACHIEVEMENTS doc),
 // accumulated the same way as poisonClock/bombClock/drainClock. flightAchIdx is
 // the next not-yet-fired index into FLIGHT_ACHIEVEMENTS -- monotonic within a run

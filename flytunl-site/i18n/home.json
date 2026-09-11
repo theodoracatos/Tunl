@@ -50,22 +50,22 @@
     "ja": "ボタンひとつの洞窟フライヤー。押して上昇、離して下降。トンネルが閉じる前に、どこまで暗闇へ進めるか。"
   },
   "hero.newTag": {
-    "en": "New in 10.4",
-    "de": "Neu in 10.4",
-    "fr": "Nouveau dans la 10.4",
-    "it": "Novità nella 10.4",
-    "es": "Novedad en la 10.4",
-    "pt": "Novo na 10.4",
-    "ja": "10.4の新機能"
+    "en": "New in 10.5",
+    "de": "Neu in 10.5",
+    "fr": "Nouveau dans la 10.5",
+    "it": "Novità nella 10.5",
+    "es": "Novedad en la 10.5",
+    "pt": "Novo na 10.5",
+    "ja": "10.5の新機能"
   },
   "hero.newBody": {
-    "en": "Two new achievements reward staying airborne for a full minute, then two, in one run. The deep-run coin mix also got a tune-up: shield, slow-time and ammo pickups stop piling up late in a run, while the magnet shows up more on long marathons.",
-    "de": "Zwei neue Erfolge belohnen dich dafür, dass du eine volle Minute, dann zwei, in einem Lauf in der Luft bleibst. Auch die Münzmischung in tiefen Läufen wurde nachjustiert: Schild, Zeitlupe und Munition häufen sich spät im Lauf nicht mehr an, dafür taucht der Magnet öfter bei langen Marathonläufen auf.",
-    "fr": "Deux nouveaux succès récompensent le fait de rester en vol une minute pleine, puis deux, en une seule partie. Le mélange de pièces en profondeur a aussi été réajusté : bouclier, ralenti et munitions ne s'accumulent plus en fin de partie, tandis que l'aimant apparaît plus souvent lors des longs marathons.",
-    "it": "Due nuovi obiettivi premiano chi resta in volo per un minuto pieno, poi due, in una sola partita. Anche la distribuzione delle monete nelle partite profonde è stata rivista: scudo, rallentamento e munizioni non si accumulano più a fine partita, mentre il magnete compare più spesso nelle maratone lunghe.",
-    "es": "Dos logros nuevos premian mantenerte en vuelo un minuto entero, y luego dos, en una sola partida. La mezcla de monedas en partidas profundas también se ajustó: escudo, ralentización y munición ya no se acumulan al final de la partida, y el imán aparece más en las maratones largas.",
-    "pt": "Duas novas conquistas recompensam ficar no ar um minuto inteiro, depois dois, em uma única partida. A mistura de moedas em partidas profundas também foi ajustada: escudo, câmera lenta e munição não se acumulam mais no fim da partida, e o ímã aparece mais em maratonas longas.",
-    "ja": "1回のプレイで1分間、そして2分間飛行し続けると獲得できる新しい実績を2つ追加しました。深いプレイでのコイン配分も調整し、シールド、スロータイム、弾薬がプレイ後半にたまりすぎないようにしつつ、マグネットは長いマラソンプレイでより多く出現するようにしました。"
+    "en": "Boulders and falling stalactites now show up much earlier in a run, so you'll meet them in the first minute instead of hundreds of runs deep. Retuned the coin economy, fixed a couple of placement bugs, and every screen size now flies the exact same daily cave.",
+    "de": "Felsbrocken und fallende Stalaktiten tauchen jetzt viel früher in einem Lauf auf, du triffst sie schon in der ersten Minute statt erst tief im Spiel. Die Münzökonomie wurde nachjustiert, ein paar Platzierungsfehler behoben, und jede Bildschirmgröße fliegt jetzt exakt dieselbe Tageshöhle.",
+    "fr": "Les rochers et les stalactites tombantes apparaissent désormais bien plus tôt dans une partie, dès la première minute au lieu de très en profondeur. Économie des pièces réajustée, quelques bugs de placement corrigés, et chaque taille d'écran vole désormais exactement la même grotte du jour.",
+    "it": "Massi e stalattiti cadenti compaiono ora molto prima in una partita, già nel primo minuto invece che in profondità. Economia delle monete riequilibrata, corretti un paio di bug di posizionamento, e ogni dimensione di schermo vola ora esattamente la stessa grotta del giorno.",
+    "es": "Las rocas y las estalactitas que caen aparecen ahora mucho antes en una partida, ya en el primer minuto en lugar de muy en profundidad. Se reajustó la economía de monedas, se corrigieron un par de errores de colocación, y ahora cada tamaño de pantalla vuela exactamente la misma cueva del día.",
+    "pt": "Rochas e estalactites que caem agora aparecem bem mais cedo em uma partida, já no primeiro minuto em vez de bem no fundo. Reequilibramos a economia de moedas, corrigimos alguns bugs de posicionamento, e agora cada tamanho de tela voa exatamente a mesma caverna do dia.",
+    "ja": "岩と落下する鍾乳石が、プレイのかなり早い段階、最初の1分以内に登場するようになりました。コイン経済も再調整し、配置に関するバグをいくつか修正。さらに、どの画面サイズでも同じ「今日の洞窟」を飛ぶようになりました。"
   },
   "hero.playCta": {
     "en": "Play in your browser",

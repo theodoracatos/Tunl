@@ -158,7 +158,11 @@ function update(dt) {
         scrollX += scrollSpd() * lf * lf * dt;
         refreshWave();
         score = Math.floor(scrollX / 60) + bonusScore;
-        maintainStalactites(); maintainCoins(); maintainMines(); maintainCannons();
+        // maintainBoulders too, for completeness with the main path below. A no-op in
+        // practice (the ramp covers ~100 world-px and the first boulder sits at 5100,
+        // far outside the spawn horizon), but leaving it out was only safe while
+        // boulders started at 84000 -- don't reintroduce that coupling.
+        maintainStalactites(); maintainCoins(); maintainMines(); maintainCannons(); maintainBoulders();
         return;
     }
 
@@ -192,6 +196,16 @@ function update(dt) {
     // real lever early, see CLAUDE.md) up to 2.5x by score ~2400 means holding the
     // bonus wide deep needs a steady coin stream, and any lapse narrows the wall
     // back toward its frozen geometry. Inert until score 233 (_prog2 == 0).
+    //
+    // Re-validated 2026-09-11 and deliberately LEFT ALONE. This ramp never actually
+    // got to do its job before, because chicane gold was pouring in at a measured
+    // ~2/s deep and simply outran any decay rate. With that supply re-gated at the
+    // source (systems.js CHICANE_GOLD_GAP_SEC) the ramp as written is exactly enough:
+    // measured across 8 day-seeds at a 50/70% collection rate, the median free
+    // channel at a stalactite now falls 9.3 -> 7.2 -> 6.6 -> 5.3 -> 3.9 -> 2.0 player
+    // diameters across the score bands, against a flat ~6-7 before. A steeper ramp
+    // (2.8x by score ~1180) was tried and rejected - it cancelled the coin bonus deep
+    // almost entirely, which is the opposite failure to the one being fixed.
     const _deepDecay = lerp(1, 2.5, Math.min(_prog2 / 3, 1));
     gapBonus   = Math.max(0, gapBonus   - GAP_DECAY * _deepDecay * (activeSkin === 4 ? masteryLerp(4, 1.6, 1.2) : 1.0) * dt);
     // gapBonusVisual chases the instant-jump gapBonus target at a constant rate
@@ -262,13 +276,8 @@ function update(dt) {
         window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: 'tunl_ach_new_legend' });
     }
 
-    // Poison/bomb clocks: real elapsed play time, not tied to coin density/rejection
-    // rate/day archetype/screen width -- see constants.js POISON_INTERVAL_SEC doc and
-    // makeCoin() in systems.js for where these get consumed.
-    poisonClock += dt;
-    bombClock   += dt;
-    drainClock  += dt;
-    greenClock  += dt;
+    // (The coin-cadence clocks that used to be ticked here are gone: they are world-x
+    // cursors now, advanced in makeCoin() itself - see state.js nextPoisonWx.)
 
     // Flight-duration achievements (constants.js FLIGHT_ACHIEVEMENTS doc): a plain
     // forward walk, since flightClock only ever increases within a run.

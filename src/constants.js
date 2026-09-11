@@ -6,7 +6,7 @@
 // it exists so a build can identify itself: window.TUNL_VERSION for a DevTools check,
 // and build-play.mjs stamps it into /play as <meta name="tunl:version"> so the live
 // web build's version is greppable without diffing the bundle.
-const TUNL_VERSION = '10.4';
+const TUNL_VERSION = '10.5';
 if (typeof window !== 'undefined') window.TUNL_VERSION = TUNL_VERSION;
 
 const cv  = document.getElementById('c');
@@ -153,7 +153,20 @@ const COIN_SIZE_MULT     = { gold: 1.0, blue: 1.0, red: 1.15, orange: 1.15, gree
 const COIN_SIZE_MAX_MULT = 1.35;
 const GAP_PER_COIN    = H  * 0.075;   // bonus halfGap added per coin
 const GAP_BONUS_MAX   = H  * 0.19;    // cap: max halfGap bonus
-const GAP_DECAY       = H  * 0.015;   // bonus lost per second
+// Bonus lost per second. This BASE value is deliberately unchanged (and should stay
+// unchanged): GAP_DECAY/GAP_PER_COIN is the gold-coin rate needed to hold the bonus
+// pinned at its cap forever, and at H*0.015 that is 0.2 coins/s - which is correct
+// for the early game, where the bonus is an onboarding aid and gold is the only
+// thing a new player is collecting. The 2026-09-11 audit found the bonus pinned at
+// its cap 42-93% of the time from score 233 on (effective half-gap running flat at
+// ~0.34*H for the whole run, i.e. the entire 0.34 -> 0.163 narrowing cancelled out),
+// but the cause was SUPPLY, not decay: chicane gold was spawning at a measured
+// 2.09/s deep, 10x the hold-at-cap rate. That is fixed at the source (see
+// CHICANE_GOLD_GAP_SEC), and the deep end is handled by the _deepDecay ramp in
+// update.js, which is inert until score 233. Raising this base instead was tried and
+// rejected: it measurably narrowed the corridor in the score 25-100 band too, and
+// that band is where real runs actually end.
+const GAP_DECAY       = H  * 0.015;   // bonus lost per second (see doc above)
 // Extra cut taken off gold's coin-type share as a run gets deeper, on top of the
 // natural shrink from other types' shares growing (systems.js makeCoin) -- see the
 // goldDecayT doc there. 0.35 = up to 35% of gold's leftover share redistributed to
@@ -334,6 +347,30 @@ function ghostDecode(b64) {
 }
 
 // ── Seeded PRNG (mulberry32) ──────────────────────────────────────────
+// makeRngStream() hands out an INDEPENDENT mulberry32 with its own state. Each
+// spawner (stalactites, coins, mines, cannons) gets one, seeded from the day.
+//
+// They used to share the single rng() below, and that is what made the "identical
+// daily cave" guarantee impossible to hold: the maintain*() loops run once per frame
+// and each creates everything out to its horizon, so the frame on which a given
+// object crosses that horizon decides whether its draws land before or after the
+// other systems' draws that frame. scrollX advances by scrollSpd()*dt, which carries
+// a W/600 term, so the frame boundaries - and therefore the INTERLEAVING of the
+// shared stream - differed by screen width. Same seed, same spacing curves, and the
+// cave still diverged within a few thousand world-px. With one stream per spawner,
+// the Nth stalactite's draws are the Nth pair from the stalactite stream no matter
+// when any other system ran. It also decouples the systems from each other: adding or
+// removing a spawner no longer reshuffles everybody else's cave.
+function makeRngStream(seed) {
+    let st = seed >>> 0;
+    return function () {
+        st = (st + 0x6D2B79F5) >>> 0;
+        let t = Math.imul(st ^ (st >>> 15), 1 | st);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
 let _seed = 0;
 function seedRng(s) { _seed = s >>> 0; }
 function rng() {
@@ -345,6 +382,91 @@ function rng() {
 
 const MINE_R = W * 0.011;
 
+// ── Placement-only radii (cross-device fairness) ─────────────────────
+// PR / COIN_R / MINE_R are all W-derived, because they are on-screen SIZES and the
+// screen is W wide. The corridor, though, is H-derived. Any placement decision that
+// compares a W-sized margin against an H-sized corridor therefore comes out
+// differently on a different aspect ratio - and because makeMine() draws rng() only
+// when placement succeeds, one differing rejection forks the whole shared obstacle
+// stream from that point on. That is half of why six device sizes produced six
+// different daily caves (see world.js progAt/prog2At for the other half, and the
+// Cross-device fairness section in CLAUDE.md).
+//
+// These mirror the same radii at the reference device (W 956 x H 440, the size the
+// feel was tuned at) but expressed against H, so they cancel against the H-derived
+// corridor and every placement test becomes device-invariant. They are used ONLY by
+// the placement/rejection code in systems.js - makeCoin, coinBlockedByStal, makeMine,
+// makeBoulder. Collision and rendering keep using the real PR / COIN_R / MINE_R,
+// untouched: CLAUDE.md calls keying the actual hitbox off H "a feel change needing
+// its own playtest", and this is deliberately not that change.
+// Minimum gap the corridor centre keeps from the top/bottom of the screen
+// (world.js centerAt / boundsBase). H-relative, so the clamp lands at the same
+// fraction of the corridor on every screen height - see the doc at the call site.
+const WALL_PAD = H * (8 / _H_REF);
+
+// These are ABSOLUTE reference pixels, not H-scaled, because some placement tests mix
+// the two axes: a stalactite is a triangle whose x is world-px (device-invariant) but
+// whose y is H-px (device-scaled), so coinBlockedByStal's point-in-triangle test
+// stretches vertically with H unless it is done in one common space. The rule is
+// therefore: do mixed-axis placement geometry in REFERENCE space (convert y with
+// _H_TO_REF), and scale a purely vertical margin into device space with _REF_TO_H.
+// Spawn horizon width. All five maintain*() loops create objects out to
+// `scrollX + SPAWN_W + N`. That used to be the live W, which looks harmless - it only
+// changes HOW FAR AHEAD things are made, not what - except that every system draws
+// from ONE shared rng() stream and they interleave frame by frame. A wider screen ran
+// each system a little further ahead, so the draws came out in a different ORDER, and
+// the whole shared cave diverged from the first few hundred world-px. Pinning it to
+// the W cap (constants.js W) makes the interleaving identical everywhere, and since no
+// device is wider than the cap the horizon still always sits past the right edge, so
+// nothing pops in mid-screen.
+const SPAWN_W = 956;
+// Per-spawner horizon offsets on top of SPAWN_W. ORDERING INVARIANT: stalactites are
+// created first and furthest ahead, and every other spawner that INSPECTS the
+// stalactite array must sit far enough inside that horizon for its whole inspection
+// radius to be already populated. Otherwise a spawner near the edge sees a different
+// set of stalactites depending on exactly where the frame step landed - which is
+// screen-width dependent, and forks the shared cave again (test-cave.js catches it).
+//
+// The budget is `SPAWN_AHEAD_X + largest retry offset + inspection radius`, and the
+// RETRY OFFSET TERM IS THE ONE THAT IS EASY TO FORGET. The retry loops (MINE_/
+// CANNON_/BOULDER_RETRY_OFFSETS) were added in the same pass that ordered these
+// horizons, and the accounting here was left at the no-retry numbers - so every
+// spawner that retried walked its probe straight back out past the stalactite
+// horizon and the veto it was retrying for went blind again. Measured on one day
+// seed over 60000 world-px: 15 of 18 boulders and 28 of 28 cannons were finally
+// placed beyond the horizon, i.e. their overlap checks had seen nothing. 12 of
+// those boulders ended up with one pass sealed by a stalactite and one with BOTH
+// sealed (an unavoidable death), which is exactly the "always a pass above AND
+// below" contract makeBoulder exists to keep.
+// test-cave.js asserts this table rather than trusting it to stay current:
+//   coins   500 +    0 +  46 =  546 <= 1550  OK  (coinBlockedByStal, no retry)
+//   mines   200 +  135 + 300 =  635 <= 1550  OK  (_makeMineAt tip push)
+//   cannons 300 +  600 +  48 =  948 <= 1550  OK  (makeCannon overlap)
+//   boulder 300 + 1000 + 108 = 1408 <= 1550  OK  (makeBoulder overlap)
+// Raising the stalactite horizon rather than clamping the offsets is deliberate:
+// clamping boulders to the ~226px that fit inside the old 600 would have dropped 15
+// of 18 boulders, i.e. re-created the near-extinction the retry loops were added to
+// fix. The stalactite sequence itself is unchanged by a wider horizon (each spawner
+// has owned its own rng stream since the cross-device pass, so creating stalactites
+// earlier no longer reorders anyone's draws) - it only means the vetoes can now see
+// what they are vetoing against. Everything is still created well off the right edge
+// (W <= 956); the cost is a longer live stalactite array (~39 -> ~70 deep).
+const SPAWN_AHEAD_STAL    = 1550;
+const SPAWN_AHEAD_COIN    = 500;
+const SPAWN_AHEAD_MINE    = 200;
+const SPAWN_AHEAD_CANNON  = 300;
+const SPAWN_AHEAD_BOULDER = 300;
+
+const _W_REF_PLACE = 956;
+const _REF_TO_H    = H / _H_REF;      // reference-Y px  -> this device's px
+const _H_TO_REF    = _H_REF / H;      // this device's px -> reference-Y px
+const PLACE_PR     = _W_REF_PLACE * 0.018;
+const PLACE_COIN_R = _W_REF_PLACE * 0.009;
+const PLACE_MINE_R = _W_REF_PLACE * 0.011;
+// Stalactite half-width used by placement rejection only, at the reference device.
+// The drawn/collided s.width stays W-derived (see makeStal).
+function placeStalW(wx) { return _W_REF_PLACE * lerp(0.030, 0.018, progAt(wx)); }
+
 // ── Cannons ───────────────────────────────────────────────────────────
 // Rare wall-mounted turret hazard: sits flush against a wall like a
 // stalactite root, fires exactly one diagonal shot as the player closes in,
@@ -353,6 +475,10 @@ const MINE_R = W * 0.011;
 // updateCannonShots); CANNON_SHOT_TRAVEL is how long the shot takes to
 // close that same distance, so together they fix the shot's closing speed.
 const CANNON_R           = W * 0.020;
+// Reference-space twin of CANNON_R, for makeCannon's placement veto only (same rule
+// as PLACE_PR / PLACE_MINE_R: anything that decides whether an object EXISTS must not
+// be keyed off the live W, or the cave forks by screen width).
+const PLACE_CANNON_R     = _W_REF_PLACE * 0.020;
 const CANNON_SHOT_R      = W * 0.013;
 const CANNON_FIRE_LEAD   = W * 0.62;
 const CANNON_SHOT_TRAVEL = 1.15;
@@ -532,6 +658,54 @@ const DRAIN_LOSS_PCT_MAX  = 0.08;
 const GREEN_DROUGHT_SOFT_SEC = 40;
 const GREEN_DROUGHT_CAP      = 2.0;
 
+// ── Power-up supply floors (systems.js makeCoin) ─────────────────────
+// Minimum real seconds between two coins of the same power-up type. Added
+// 2026-09-11 after a measured replay audit found every capped power-up sitting
+// permanently at its ceiling once a run got deep: from score 233 on the shield
+// stack was full 87-100% of the time, ammo sat at 10/10, and slow-time was active
+// 38-85% of the run. The DURATIONS were never the problem (4s per blue coin, 3s per
+// magnet are short); the SUPPLY was - the weighted roll in makeCoin has no notion of
+// real time, so as coinSpacing() tightens and scrollSpd() climbs, every type's
+// coins-per-second climbs with them, and a stack that can only be spent by getting
+// hit refills faster than any player can drain it.
+//
+// Two deliberate choices about how this is enforced:
+//  - A rejected power-up coin is SKIPPED ENTIRELY (makeCoin returns null), not
+//    downgraded to gold. Downgrading would hand the whole suppressed share to gold
+//    and re-break the corridor bonus this same pass is fixing (see GAP_DECAY).
+//  - The floor SCALES IN with depth (POWERUP_GAP_EARLY_MULT below), so it is a
+//    no-op for the whole stretch real players actually fly. The measured natural
+//    gaps at score 100-233 are 4.3s (red) and ~6.7s (blue/orange/green) against
+//    early floors of ~2.5-3.6s - the early game must not get HARDER, since that
+//    band is where runs actually end. It binds from score ~300 on, where the audit
+//    found the oversupply.
+//
+// These are FLOORS, not the resulting cadence. After a floor elapses the type still
+// has to win the weighted roll, so the real interval is the floor plus the expected
+// wait for that roll: ~4-6s deep, per type share. The values below are picked so the
+// measured deep intervals land near 13s (blue/red) and 15s (green) - pick a floor by
+// subtracting that wait from the cadence you actually want, and re-measure rather
+// than reading the number here as the answer.
+//
+// ORANGE IS DELIBERATELY ABSENT. Ammo looked pinned at 10/10 in the first pass of
+// the audit, but that was a modelling error: bullets AUTO-FIRE every 0.32s while
+// ammo > 0 (systems.js updateBullets), so a 5-shot pickup empties itself in 1.6s and
+// there is no stock to pin. Measured with firing modelled, the player is armed only
+// 2-9% of the run at every depth - orange is the rarest state in the game, not the
+// most oversupplied, and a floor on it would only make a scarce thing scarcer.
+const POWERUP_MIN_GAP_SEC = { blue: 8, red: 9, green: 8 };
+// Minimum real seconds between two chicane gold coins (systems.js
+// maintainStalactites). Same "cadence in seconds, not pixels" reasoning as the
+// floors above - see the full argument at the call site and in the GAP_DECAY doc.
+const CHICANE_GOLD_GAP_SEC = 2.2;
+// ...scaled by this at/below the _prog2 ramp start and lerped to 1.0 by score ~900,
+// so the gate is a no-op for the whole stretch real players actually reach. Same
+// "never make the early game harder" rule as POWERUP_GAP_EARLY_MULT.
+const CHICANE_GOLD_EARLY_MULT = 0.45;
+// Multiplier on the values above at/below the _prog2 ramp start, lerped to 1.0 by
+// _prog2 = 1 (score ~900). See the "no-op early" argument in the doc block above.
+const POWERUP_GAP_EARLY_MULT = 0.30;
+
 // Poison's runCoins penalty (this run's pending shard bank -- see update.js die()) is a
 // percentage of the current pool, not a flat amount -- deliberately, on the explicit
 // call that poison should "really punish" rather than just nudge. A %-based tax DOES
@@ -693,7 +867,16 @@ const MISSION_DEFS = [
     { id: 'dist',     stat: 'dist',       target: 800, tier: 1 },
     { id: 'red',      stat: 'red',        target: 4,   tier: 2 },
     { id: 'green',    stat: 'green',      target: 2,   tier: 2 },
-    { id: 'score',    stat: 'bestScore',  target: 175, tier: 2 },
+    // 175 was higher than any score any player has ever recorded: the D1 daily
+    // leaderboard (tunl_scores, checked 2026-09-11) holds 28 player-days with a
+    // median daily best of 70 and an all-time high of 169. bestScore is a daily MAX,
+    // not a sum, so playing more runs barely helps - it was simply unwinnable. 150
+    // keeps it firmly aspirational (above ~95% of recorded player-days) while being
+    // a score that has actually been reached. Re-check against the live leaderboard
+    // before moving it again; the other coin-count targets in this table have the
+    // same problem and are NOT fixed here, because the right value for those depends
+    // on runs-per-day, which nothing currently measures.
+    { id: 'score',    stat: 'bestScore',  target: 150, tier: 2 },
     { id: 'bomb',     stat: 'bomb',       target: 3,   tier: 2 },
 ];
 function pickDailyMissionIndices(dayInt) {

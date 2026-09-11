@@ -27,7 +27,17 @@ const sandbox = { Math, console };
 vm.createContext(sandbox);
 vm.runInContext(extractFn(systemsSrc, 'ptSeg2'), sandbox, { filename: 'ptSeg2' });
 vm.runInContext(extractFn(systemsSrc, 'inTri'),  sandbox, { filename: 'inTri' });
-const { ptSeg2, inTri } = sandbox;
+// stalFallY needs a handful of game globals; stub them so the drop geometry can be
+// exercised without a canvas or a live run. `corridor` is what the test moves around.
+sandbox.FALL_SPAN = 250;
+sandbox.scrollX   = 0;
+sandbox.corridor  = 300;
+vm.runInContext('function boundsAt(wx) { return { top: 0, bot: corridor }; }', sandbox, { filename: 'boundsAtStub' });
+vm.runInContext(extractFn(systemsSrc, 'stalFallY'), sandbox, { filename: 'stalFallY' });
+const { ptSeg2, inTri, stalFallY } = sandbox;
+// Tip position the draw loop and stalHit both compute: wall root + length + drop.
+const tipY = (s) => boundsAtTop() + s.length + stalFallY(s);
+const boundsAtTop = () => 0;
 
 let failed = false;
 function check(name, cond) {
@@ -75,6 +85,56 @@ function check(name, cond) {
     check('sliver triangle: near the tip is inside', inTri(0, 98, ...sliver));
     check('sliver triangle: outside the slanted edge is rejected', !inTri(4.9, 50, ...sliver));
     check('sliver triangle: past the tip (beyond the apex) is rejected', !inTri(0, 101, ...sliver));
+}
+
+// -- Falling stalactite drop geometry (systems.js stalFallY) --------------------
+// CLAUDE.md: a detached falling stalactite "falls the full corridor until the tip
+// meets the far wall (becomes a floor spike - the dodge is unambiguously 'go over
+// it')". The travel distance therefore has to track the LIVE corridor, not a value
+// frozen at detach: gapBonusVisual, deep chambers and _halfGap all keep moving the
+// floor after a spike lets go. A frozen distance left 5 of 33 spikes hanging in
+// mid-air in a measured run, by up to 3.8 player diameters.
+{
+    const spike = { falls: true, detached: true, detachScrollX: 0, length: 80, wx: 0 };
+    const land = (corridorAtDetach, corridorAtLanding) => {
+        sandbox.corridor = corridorAtDetach;
+        sandbox.scrollX  = 0;
+        stalFallY(spike);                       // a frame mid-flight, at the old width
+        sandbox.corridor = corridorAtLanding;
+        sandbox.scrollX  = sandbox.FALL_SPAN;   // t = 1
+        return corridorAtLanding - tipY(spike); // 0 = tip flush with the floor
+    };
+
+    sandbox.corridor = 300; sandbox.scrollX = 0;
+    check('undetached spike has no drop offset',
+        stalFallY({ falls: true, detached: false, detachScrollX: 0, length: 80, wx: 0 }) === 0 &&
+        stalFallY({ falls: false, detached: true, detachScrollX: 0, length: 80, wx: 0 }) === 0);
+
+    check('tip lands flush on the floor in a steady corridor', Math.abs(land(300, 300)) < 1e-9);
+    check('tip lands flush even if the corridor WIDENED after detach (the mid-air bug)',
+        Math.abs(land(300, 460)) < 1e-9);
+    check('tip lands flush, never through the wall, if the corridor NARROWED after detach',
+        Math.abs(land(300, 210)) < 1e-9);
+
+    // Ease-in over the span: monotone, starts at 0, never overshoots the floor.
+    sandbox.corridor = 300;
+    let mono = true, prevOff = -1, overshoot = false;
+    for (let i = 0; i <= 40; i++) {
+        sandbox.scrollX = (i / 40) * sandbox.FALL_SPAN;
+        const off = stalFallY(spike);
+        if (off < prevOff - 1e-9) mono = false;
+        if (tipY(spike) > sandbox.corridor + 1e-9) overshoot = true;
+        prevOff = off;
+    }
+    sandbox.scrollX = 0;
+    check('drop is monotone across the span and never overshoots the floor',
+        mono && !overshoot && stalFallY(spike) === 0);
+
+    // Held after landing: keeps tracking the floor rather than drifting off it.
+    sandbox.scrollX = sandbox.FALL_SPAN * 4;
+    let held = true;
+    for (const c of [300, 360, 420, 260, 500]) { sandbox.corridor = c; if (Math.abs(c - tipY(spike)) > 1e-9) held = false; }
+    check('a landed spike stays on the floor as the corridor keeps moving', held);
 }
 
 if (failed) {

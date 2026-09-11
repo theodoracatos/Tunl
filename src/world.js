@@ -81,7 +81,24 @@ function seedDailyVariety(dayInt) {
 // code rollback, and the seam test-math.js uses to isolate the morph's effect
 // from the pre-existing _prog2 wave boost.
 let _deepVarietyOn = true;
-const DEEP_VARIETY_WX    = 54000;   // _prog2 == 1, score ~900
+// Where the deep-run variety (shape morph, chambers, coin-line shapes, palette
+// drift) switches on. Was 54000 (_prog2 == 1, score ~900) until 2026-09-11, when a
+// replay audit against the real leaderboard found the highest daily best ever
+// recorded is 169 - so every one of these features was content no player had ever
+// seen. Moved to 30000 (_prog2 == 0.4, score 500). Safe below the plateau because
+// every one of them is bounded RELATIVE to the same wx unmorphed: the morph's
+// amplitude splits are capped against corridor velocity at that wx (test-math
+// guards this at any wx, not just past the plateau), and chambers only ever widen.
+// The speed pulse is NOT moved with it - it stays gated on `_prog2 > 1` in
+// scrollSpd(), because surging *above* a trend that is still steeply ramping is a
+// different proposition from surging above a flat one.
+const DEEP_VARIETY_WX    = 30000;   // _prog2 == 0.4, score ~500
+// Apex-biased mines (systems.js makeMine) deliberately did NOT move with
+// DEEP_VARIETY_WX. CLAUDE.md flags that one as "watch in playtest for a 'the game
+// is cheating' read" and it has never had a device playtest; pulling an unproven
+// fairness risk 400 points earlier is not part of a supply/pacing fix. Kept on the
+// old score-900 line until someone actually flies it.
+const DEEP_APEX_WX       = 54000;   // _prog2 == 1, score ~900
 const DEEP_CHAR_WAVELEN  = 4200;    // world-px each shape character holds
 const DEEP_PULSE_AMP     = 0.12;    // speed pulse: surge of up to +this fraction ABOVE the trend (never below)
 const DEEP_PULSE_WAVELEN = 2600;    // world-px per speed-pulse cycle
@@ -148,15 +165,16 @@ function deepChamberAt(wx) {
 // Absent before ~score 200 (nextFallWx starts at world-x 12000 in startPlay); then
 // from a rare set-piece (~one per 3400px) toward steady deep pressure, floored so
 // they never pile onto everything else once scrollSpd is uncapped.
-function fallSpacing() {
-    return Math.max(lerp(3400, 2000, Math.min(_prog2, 1)) - 350 * Math.max(_prog2 - 1, 0), 1800);
+function fallSpacing(wx = scrollX) {
+    const p2 = prog2At(wx);
+    return Math.max(lerp(3400, 2000, Math.min(p2, 1)) - 350 * Math.max(p2 - 1, 0), 1800);
 }
 
 // Boulders (systems.js makeBoulder/maintainBoulders): a deep-only routing
 // obstacle from world-x 84000 (~score 1400). Rare - closer to a cannon's cadence
 // than a mine's - so it reads as "commit up or down now", not a dodge-fest.
-function boulderSpacing() {
-    return Math.max(3400 - 250 * Math.max(_prog2 - 1.75, 0), 2400);
+function boulderSpacing(wx = scrollX) {
+    return Math.max(3400 - 250 * Math.max(prog2At(wx) - 1.75, 0), 2400);
 }
 
 // Onboarding corridor widen (score 0-~200, do not revert without re-auditing):
@@ -197,12 +215,21 @@ function refreshWave() {
     _wF2     = lerp(0.0060,    0.0115,    _prog) * wFMult * _waveJitterF;
 }
 
-function scrollSpd() {
-    const base = lerp(lerp(230, 400, _prog), 560, Math.min(_prog2, 1));
+// scrollSpd() without the W/600 term - i.e. the part that is a pure function of
+// scrollX and therefore IDENTICAL on every device. Anything that turns "how many
+// seconds of play" into "how many world-px" must key off this, never off
+// scrollSpd(): the daily seed makes the cave pixel-identical in world-x for every
+// player on Earth (CLAUDE.md "Cross-device fairness"), so a world-x threshold
+// derived from the W-scaled speed would quietly give a wide phone a different cave
+// than a small one. See the chicane-gold gate in systems.js maintainStalactites for
+// the one caller that needs this, and how it converts back to seconds.
+function scrollSpdBase(wx = scrollX) {
+    const _p = progAt(wx), _p2 = prog2At(wx);
+    const base = lerp(lerp(230, 400, _p), 560, Math.min(_p2, 1));
     // Past the _prog2 ramp (score ~900), speed never plateaus - it keeps
     // creeping up forever (sqrt eased, like _prog's ramp) instead of the other
     // difficulty knobs, which stay capped so the corridor stays navigable.
-    const beyond = Math.max(_prog2 - 1, 0);
+    const beyond = Math.max(_p2 - 1, 0);
     let spd = base + Math.sqrt(beyond) * 90;
     // Deep-run speed pulse (score ~900+): a slow seeded swell of up to +DEEP_PULSE_AMP
     // ABOVE the trend, so the deep game surges and eases back instead of being one
@@ -212,16 +239,28 @@ function scrollSpd() {
     // trend is untouched and still climbs forever (the "scrollSpd never plateaus"
     // rule). Pure function of scrollX, so it's deterministic and the scrollX-indexed
     // ghost stays locked.
-    if (_prog2 > 1 && _deepVarietyOn) {
+    if (_p2 > 1 && _deepVarietyOn) {
         const ph = _deepHash(0x7ff) * Math.PI * 2;   // fixed per-day phase, distinct index
-        const swell = 0.5 - 0.5 * Math.cos((scrollX - DEEP_VARIETY_WX) / DEEP_PULSE_WAVELEN * Math.PI * 2 + ph);
+        const swell = 0.5 - 0.5 * Math.cos((wx - DEEP_VARIETY_WX) / DEEP_PULSE_WAVELEN * Math.PI * 2 + ph);
         spd *= 1 + DEEP_PULSE_AMP * swell;   // swell in [0,1] -> spd in [trend, trend*(1+AMP)]
     }
-    // * W/600 keeps the on-screen pixel speed consistent across widths. W is capped at
-    // 956 (constants.js) so this can't hand a wide-screen player a faster/harder cave
-    // than a phone at the same score - see the fairness audit note in CLAUDE.md.
-    return spd * W / 600;
+    return spd;
 }
+
+// * W/600 keeps the on-screen pixel speed consistent across widths. W is capped at
+// 956 (constants.js) so this can't hand a wide-screen player a faster/harder cave
+// than a phone at the same score - see the fairness audit note in CLAUDE.md.
+function scrollSpd() { return scrollSpdBase() * W / 600; }
+
+// World-px that correspond to `sec` seconds of play at the REFERENCE width
+// (W_REF_SPD below), independent of the device actually running. Use this wherever
+// a cadence wants to be expressed in seconds but has to land on a world-x grid that
+// every player shares. 956 is the W cap (constants.js), i.e. the width the feel and
+// these cadences were tuned at; a narrower phone therefore experiences the same
+// world-x cadence as slightly MORE seconds, which is the same "err generous for
+// small screens" direction the W cap already takes.
+const W_REF_SPD = 956;
+function worldPxForSec(sec, wx = scrollX) { return scrollSpdBase(wx) * (W_REF_SPD / 600) * sec; }
 
 // Blue coin: multiplied into the scroll speed (update.js) and the speed-line
 // intensity (draw.js). It is NOT a flat 0.6x-while-active plateau - the coin sags
@@ -246,15 +285,33 @@ const DAY_ARCHETYPES = [
     { stal: 1,    coin: 1,    mine: 0.75, chic: 1    }, // Mine Gauntlet
     { stal: 1.15, coin: 0.72, mine: 1.15, chic: 0.8  }, // Coin Rush
 ];
-function stalSpacing() { return Math.max(lerp(lerp(260,  145, _prog),  70,  _prog2) * DAY_ARCHETYPES[_dayArchetype].stal, 50); }
-function stalLenFrac() { return Math.min(lerp(lerp(0.46, 0.64, _prog), 0.76, _prog2), 0.80); }
-function coinSpacing() { return Math.max(lerp(lerp(600,  320, _prog), 230,  _prog2) * DAY_ARCHETYPES[_dayArchetype].coin, 175); }
-function mineSpacing() { return Math.max(lerp(lerp(900, 340, _prog), 200, _prog2) * DAY_ARCHETYPES[_dayArchetype].mine, 200); }
+// ── Difficulty curves, sampled at a WORLD POSITION ───────────────────
+// Every one of these takes the wx being placed, defaulting to the player's own
+// scrollX for the handful of callers that legitimately mean "here, now".
+//
+// Passing the placement wx is load-bearing for cross-device fairness, not a tidy-up.
+// The spawn loops run `while (nextXWx < scrollX + W + N)`, so the moment a given
+// world position gets its spacing rolled depends on the screen WIDTH - and these
+// curves used to read the _prog/_prog2 globals, i.e. the difficulty at the PLAYER's
+// scrollX. A wider screen therefore sampled the curve earlier (lower _prog) for the
+// same placement and got a different spacing out of it, which forked the "identical
+// daily cave" guarantee from wx ~938 (score 15) onward. Measured before this change:
+// six device sizes produced six different caves. See the Cross-device fairness
+// section in CLAUDE.md and the guard in test-cave.js.
+function progAt(wx)  { return Math.min(Math.sqrt(Math.max(wx, 0) / 14000), 1); }
+function prog2At(wx) { return Math.max(wx - 14000, 0) / 40000; }   // uncapped, like _prog2
+
+function stalSpacing(wx = scrollX) { return Math.max(lerp(lerp(260,  145, progAt(wx)),  70,  prog2At(wx)) * DAY_ARCHETYPES[_dayArchetype].stal, 50); }
+function stalLenFrac(wx = scrollX) { return Math.min(lerp(lerp(0.46, 0.64, progAt(wx)), 0.76, prog2At(wx)), 0.80); }
+function coinSpacing(wx = scrollX) { return Math.max(lerp(lerp(600,  320, progAt(wx)), 230,  prog2At(wx)) * DAY_ARCHETYPES[_dayArchetype].coin, 175); }
+function mineSpacing(wx = scrollX) { return Math.max(lerp(lerp(900, 340, progAt(wx)), 200, prog2At(wx)) * DAY_ARCHETYPES[_dayArchetype].mine, 200); }
+// Chicane odds, same story - rolled per placement, not per player position.
+function chicaneProb(wx = scrollX) { return Math.min(lerp(0.24, 0.42, prog2At(wx)) * DAY_ARCHETYPES[_dayArchetype].chic, 0.62); }
 // Cannons: rare on purpose, so the spacing floor stays far above every other
 // obstacle's (stalSpacing/coinSpacing/mineSpacing all bottom out well under
 // 1000) even at max difficulty -- this should read as an occasional set-piece
 // ambush, not a recurring hazard type.
-function cannonSpacing() { return Math.max(lerp(lerp(4200, 2400, _prog), 1500, _prog2), 1200); }
+function cannonSpacing(wx = scrollX) { return Math.max(lerp(lerp(4200, 2400, progAt(wx)), 1500, prog2At(wx)), 1200); }
 
 // Milestone spacing (50/100/etc. step added to milestoneNext each time one fires --
 // see update.js). Widens in stages so milestones stay a frequent early-game reward but
@@ -346,7 +403,11 @@ function centerAt(wx) {
     const raw = H / 2
         + _wA1 * Math.sin(wx * _wF1 + _wavePhase1)
         + _wA2 * Math.sin(wx * _wF2 + 1.57 + _wavePhase2);
-    return Math.max(_halfGap + 8, Math.min(H - _halfGap - 8, raw));
+    // WALL_PAD scales with H (constants.js). A flat 8px did not, so the corridor
+    // centre clamped to a slightly different place on every screen height - enough to
+    // flip a placement rejection and fork the shared cave. See CLAUDE.md
+    // "Cross-device fairness".
+    return Math.max(_halfGap + WALL_PAD, Math.min(H - _halfGap - WALL_PAD, raw));
 }
 
 // halfGapAt predicts the corridor half-gap when the player reaches world x.
@@ -380,6 +441,6 @@ function boundsBase(wx) {
     const wF2 = lerp(0.0060,    0.0115,    p) * wFMult * _waveJitterF;
     const hg  = halfGapAt(wx);
     const raw = H / 2 + wA1 * Math.sin(wx * wF1 + _wavePhase1) + wA2 * Math.sin(wx * wF2 + 1.57 + _wavePhase2);
-    const cy  = Math.max(hg + 8, Math.min(H - hg - 8, raw));
+    const cy  = Math.max(hg + WALL_PAD, Math.min(H - hg - WALL_PAD, raw));
     return { top: cy - hg, bot: cy + hg };
 }
