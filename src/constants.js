@@ -6,7 +6,7 @@
 // it exists so a build can identify itself: window.TUNL_VERSION for a DevTools check,
 // and build-play.mjs stamps it into /play as <meta name="tunl:version"> so the live
 // web build's version is greppable without diffing the bundle.
-const TUNL_VERSION = '10.3';
+const TUNL_VERSION = '10.4';
 if (typeof window !== 'undefined') window.TUNL_VERSION = TUNL_VERSION;
 
 const cv  = document.getElementById('c');

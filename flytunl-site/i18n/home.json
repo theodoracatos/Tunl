@@ -50,22 +50,22 @@
     "ja": "ボタンひとつの洞窟フライヤー。押して上昇、離して下降。トンネルが閉じる前に、どこまで暗闇へ進めるか。"
   },
   "hero.newTag": {
-    "en": "New in 10.3",
-    "de": "Neu in 10.3",
-    "fr": "Nouveau dans la 10.3",
-    "it": "Novità nella 10.3",
-    "es": "Novedad en la 10.3",
-    "pt": "Novo na 10.3",
-    "ja": "10.3の新機能"
+    "en": "New in 10.4",
+    "de": "Neu in 10.4",
+    "fr": "Nouveau dans la 10.4",
+    "it": "Novità nella 10.4",
+    "es": "Novedad en la 10.4",
+    "pt": "Novo na 10.4",
+    "ja": "10.4の新機能"
   },
   "hero.newBody": {
-    "en": "Every ship just got far cheaper to unlock, so the full hangar is a fair goal instead of an endless grind. New pilots also get a gentler start: the opening coins now guide you through the whole control, release to glide down and hold to climb.",
-    "de": "Jedes Schiff lässt sich jetzt viel günstiger freischalten, der komplette Hangar ist ein faires Ziel statt endlosem Grind. Auch neue Piloten starten sanfter: Die ersten Münzen führen dich durch die ganze Steuerung, loslassen zum Gleiten, halten zum Steigen.",
-    "fr": "Chaque vaisseau coûte bien moins cher à débloquer : le hangar complet devient un objectif atteignable, plus une quête sans fin. Les nouveaux pilotes démarrent aussi plus en douceur : les premières pièces guident toute la prise en main, relâche pour descendre, maintiens pour monter.",
-    "it": "Ogni nave ora costa molto meno da sbloccare: l'hangar completo diventa un obiettivo giusto, non un grind infinito. Anche i nuovi piloti partono più dolcemente: le prime monete ti guidano attraverso tutti i comandi, rilascia per planare, tieni premuto per salire.",
-    "es": "Cada nave es ahora mucho más barata de desbloquear: el hangar completo es una meta justa, no un farmeo sin fin. Los nuevos pilotos también empiezan con más suavidad: las primeras monedas te guían por todo el control, suelta para planear y mantén para subir.",
-    "pt": "Cada nave ficou muito mais barata de desbloquear: o hangar completo virou uma meta justa, não uma grind sem fim. Os novos pilotos também começam mais suave: as primeiras moedas guiam você por todo o controle, solte para planar e segure para subir.",
-    "ja": "すべての機体のアンロック費用を大きく引き下げました。全機体の格納庫が終わりのない作業ではなく、正当な目標になります。新人パイロットのスタートもより滑らかに。最初のコインが操作のすべてを導きます。離して滑空、押して上昇。"
+    "en": "Two new achievements reward staying airborne for a full minute, then two, in one run. The deep-run coin mix also got a tune-up: shield, slow-time and ammo pickups stop piling up late in a run, while the magnet shows up more on long marathons.",
+    "de": "Zwei neue Erfolge belohnen dich dafür, dass du eine volle Minute, dann zwei, in einem Lauf in der Luft bleibst. Auch die Münzmischung in tiefen Läufen wurde nachjustiert: Schild, Zeitlupe und Munition häufen sich spät im Lauf nicht mehr an, dafür taucht der Magnet öfter bei langen Marathonläufen auf.",
+    "fr": "Deux nouveaux succès récompensent le fait de rester en vol une minute pleine, puis deux, en une seule partie. Le mélange de pièces en profondeur a aussi été réajusté : bouclier, ralenti et munitions ne s'accumulent plus en fin de partie, tandis que l'aimant apparaît plus souvent lors des longs marathons.",
+    "it": "Due nuovi obiettivi premiano chi resta in volo per un minuto pieno, poi due, in una sola partita. Anche la distribuzione delle monete nelle partite profonde è stata rivista: scudo, rallentamento e munizioni non si accumulano più a fine partita, mentre il magnete compare più spesso nelle maratone lunghe.",
+    "es": "Dos logros nuevos premian mantenerte en vuelo un minuto entero, y luego dos, en una sola partida. La mezcla de monedas en partidas profundas también se ajustó: escudo, ralentización y munición ya no se acumulan al final de la partida, y el imán aparece más en las maratones largas.",
+    "pt": "Duas novas conquistas recompensam ficar no ar um minuto inteiro, depois dois, em uma única partida. A mistura de moedas em partidas profundas também foi ajustada: escudo, câmera lenta e munição não se acumulam mais no fim da partida, e o ímã aparece mais em maratonas longas.",
+    "ja": "1回のプレイで1分間、そして2分間飛行し続けると獲得できる新しい実績を2つ追加しました。深いプレイでのコイン配分も調整し、シールド、スロータイム、弾薬がプレイ後半にたまりすぎないようにしつつ、マグネットは長いマラソンプレイでより多く出現するようにしました。"
   },
   "hero.playCta": {
     "en": "Play in your browser",
