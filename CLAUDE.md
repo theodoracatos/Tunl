@@ -285,10 +285,17 @@ Gold's share isn't just "whatever's left after the other types' shares" - it als
 gets an explicit extra cut as a run goes deeper (`GOLD_DEEP_DECAY` in
 `src/constants.js`, applied in `makeCoin`, `src/systems.js`), phased half over the
 score 34→233 ramp (`t`) and half over the score 233→900 marathon (`_prog2`), so gold
-keeps thinning out long after `t` maxes at score 233 instead of holding flat. The
-shaved-off share is redistributed proportionally across whichever other types are
-already active - never a flat leftover-to-green fallback, which would otherwise bend
-green's score-71 gate open early.
+keeps thinning out long after `t` maxes at score 233 instead of holding flat. The two
+legs are redistributed differently (retuned 2026-09-11, replacing one blended
+`goldDecayT` fed through a single proportional split): the t-leg still spreads
+proportionally across whichever of blue/orange/green are already active - never a
+flat leftover-to-green fallback, which would otherwise bend green's score-71 gate
+open early - but the `_prog2` leg goes to green alone, since red/blue/orange are all
+flat past score 233 (matching red's own ramp, which is t-only) while green is the one
+type designed to keep growing through the marathon. The single-split version let every
+capped power-up (red's stack cap, blue's slow-time duration, orange's ammo cap) drift
+past its documented ceiling by the deep-run plateau - red was hitting ~26% against its
+21% cap - a real player complaint ("too many shields").
 
 **Coin/power-up audio** (`audio.js`): the pickup sounds carry a loudness hierarchy -
 gold and blue (slow) sit at their base level; red (shield), green (magnet) and bomb are
