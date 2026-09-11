@@ -270,6 +270,14 @@ function update(dt) {
     drainClock  += dt;
     greenClock  += dt;
 
+    // Flight-duration achievements (constants.js FLIGHT_ACHIEVEMENTS doc): a plain
+    // forward walk, since flightClock only ever increases within a run.
+    flightClock += dt;
+    while (flightAchIdx < FLIGHT_ACHIEVEMENTS.length && flightClock >= FLIGHT_ACHIEVEMENTS[flightAchIdx].at) {
+        window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: FLIGHT_ACHIEVEMENTS[flightAchIdx].id });
+        flightAchIdx++;
+    }
+
     // ── Ghost (constants.js GHOST_STEP) ──────────────────────────────
     // Record this run, and replay today's best alongside it. Both are indexed by
     // scrollX rather than elapsed time so the ghost stays locked to the corridor even

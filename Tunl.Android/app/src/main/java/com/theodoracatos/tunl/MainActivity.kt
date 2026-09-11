@@ -131,6 +131,9 @@ class MainActivity : ComponentActivity() {
         // Lifetime-distance milestones (src/constants.js DIST_ACHIEVEMENTS).
         "tunl_ach_dist_moon"      to R.string.achievement_dist_moon,
         "tunl_ach_dist_sun"       to R.string.achievement_dist_sun,
+        // Flight-duration milestones (src/constants.js FLIGHT_ACHIEVEMENTS).
+        "tunl_ach_flight_1min"    to R.string.achievement_flight_1min,
+        "tunl_ach_flight_2min"    to R.string.achievement_flight_2min,
     )
 
     // Shims window.webkit.messageHandlers.{gameCenter,iap,ads,haptic} so the game's

@@ -324,6 +324,12 @@ let drainClock, nextDrainAt;
 // poisonClock/bombClock this never forces a type -- it only nudges the weighted
 // roll's green share upward, and is reset there, not on collection.
 let greenClock;
+// Real elapsed play seconds this run (constants.js FLIGHT_ACHIEVEMENTS doc),
+// accumulated the same way as poisonClock/bombClock/drainClock. flightAchIdx is
+// the next not-yet-fired index into FLIGHT_ACHIEVEMENTS -- monotonic within a run
+// since flightClock only increases, so a simple forward walk (no before/after
+// crossing check) is enough.
+let flightClock, flightAchIdx;
 let notifs;
 let bonusScore, milestoneNext, nearMissTimer, coinCombo, coinComboTimer;
 let runCoins, runNearMisses, runMaxCombo;

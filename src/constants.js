@@ -244,6 +244,18 @@ const DIST_ACHIEVEMENTS = [
     { id: 'tunl_ach_dist_sun',  at: 3000000 },
 ];
 
+// Flight-duration achievements: fired from update.js's play-phase block the frame
+// this run's real elapsed play time (state.js `flightClock`, accumulated the same
+// way as poisonClock/bombClock/drainClock) crosses each mark. Per-run, not
+// lifetime, so unlike DIST_ACHIEVEMENTS there is no persisted stat to re-derive
+// after the fact - deliberately excluded from _tunlBackfillAchievements(), same as
+// on_fire/new_legend/ghost_hunter. `flightAchIdx` (state.js) just walks this array
+// forward once per run since flightClock only ever increases.
+const FLIGHT_ACHIEVEMENTS = [
+    { id: 'tunl_ach_flight_1min', at: 60 },
+    { id: 'tunl_ach_flight_2min', at: 120 },
+];
+
 // ── Ship mastery ──────────────────────────────────────────────────────
 // Per-ship XP (state.js `skinXP`, one coin collected while that ship is active
 // = 1 XP) unlocks up to 3 mastery levels. Each level eases that ship's buff a

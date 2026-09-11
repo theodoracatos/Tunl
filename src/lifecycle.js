@@ -43,6 +43,7 @@ function titleScreen() {
     bombClock   = 0; nextBombAt   = BOMB_INTERVAL_SEC;
     drainClock  = 0; nextDrainAt  = DRAIN_INTERVAL_SEC;
     greenClock  = 0;
+    flightClock = 0; flightAchIdx = 0;
     prevRunScore = 0; lastRunScore = 0; milestoneFlash = 0; milestoneText = '';
     runCoins = 0; runNearMisses = 0; runMaxCombo = 0; skinUnlockIdx = -1;
     runCoinsByType = { gold: 0, blue: 0, red: 0, green: 0, orange: 0 };
@@ -163,6 +164,7 @@ function startPlay() {
     bombClock   = 0; nextBombAt   = BOMB_INTERVAL_SEC   * (0.7 + rng() * 0.6);
     drainClock  = 0; nextDrainAt  = DRAIN_INTERVAL_SEC  * (0.7 + rng() * 0.6);
     greenClock  = 0;
+    flightClock = 0; flightAchIdx = 0;
     refreshWave();
     _startBgMusic();
     sfxEngineSpoolUp();

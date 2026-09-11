@@ -1,0 +1,64 @@
+{
+  "_note": "Flight-duration achievements (src/constants.js FLIGHT_ACHIEVEMENTS). Same array shape as ach_translations_dist.json: [title, post-earned description, pre-earned description]. Play Console has ONE description field - use the pre-earned string there. Icons: achievement-icons/flight_1min.png, flight_2min.png (512x512 RGB, no alpha). Points: 1min 15, 2min 30 - escalation mirrors score_1000/score_10000 (10/25) and streak_7/streak_30 (10/30), since a 'good' run is only ~20-36s and a 'great' run ~54-97s (see CLAUDE.md POISON_INTERVAL_SEC doc), so even 1 minute is a solidly above-average run and 2 minutes is deep-run territory. Hidden: No. Incremental: No. Title style follows the existing 'Four Digits'/'Five Digits'/'Six Digits' numeric-tier convention rather than an evocative name.",
+
+  "en-US": {
+    "tunl_ach_flight_1min": ["One Minute", "You stayed airborne for 1 minute in a single run.", "Stay airborne for 1 minute in a single run."],
+    "tunl_ach_flight_2min": ["Two Minutes", "You stayed airborne for 2 minutes in a single run.", "Stay airborne for 2 minutes in a single run."]
+  },
+  "de-DE": {
+    "tunl_ach_flight_1min": ["Eine Minute", "Du bist in einem einzigen Lauf 1 Minute lang in der Luft geblieben.", "Bleibe in einem einzigen Lauf 1 Minute lang in der Luft."],
+    "tunl_ach_flight_2min": ["Zwei Minuten", "Du bist in einem einzigen Lauf 2 Minuten lang in der Luft geblieben.", "Bleibe in einem einzigen Lauf 2 Minuten lang in der Luft."]
+  },
+  "fr-FR": {
+    "tunl_ach_flight_1min": ["Une minute", "Vous êtes resté en vol pendant 1 minute au cours d'une seule partie.", "Restez en vol pendant 1 minute au cours d'une seule partie."],
+    "tunl_ach_flight_2min": ["Deux minutes", "Vous êtes resté en vol pendant 2 minutes au cours d'une seule partie.", "Restez en vol pendant 2 minutes au cours d'une seule partie."]
+  },
+  "it": {
+    "tunl_ach_flight_1min": ["Un minuto", "Sei rimasto in volo per 1 minuto in una singola partita.", "Resta in volo per 1 minuto in una singola partita."],
+    "tunl_ach_flight_2min": ["Due minuti", "Sei rimasto in volo per 2 minuti in una singola partita.", "Resta in volo per 2 minuti in una singola partita."]
+  },
+  "es-ES": {
+    "tunl_ach_flight_1min": ["Un minuto", "Te mantuviste en vuelo durante 1 minuto en una sola partida.", "Mantente en vuelo durante 1 minuto en una sola partida."],
+    "tunl_ach_flight_2min": ["Dos minutos", "Te mantuviste en vuelo durante 2 minutos en una sola partida.", "Mantente en vuelo durante 2 minutos en una sola partida."]
+  },
+  "pt-BR": {
+    "tunl_ach_flight_1min": ["Um minuto", "Você ficou no ar por 1 minuto em uma única partida.", "Fique no ar por 1 minuto em uma única partida."],
+    "tunl_ach_flight_2min": ["Dois minutos", "Você ficou no ar por 2 minutos em uma única partida.", "Fique no ar por 2 minutos em uma única partida."]
+  },
+  "ru": {
+    "tunl_ach_flight_1min": ["Одна минута", "Вы продержались в воздухе 1 минуту за один забег.", "Продержитесь в воздухе 1 минуту за один забег."],
+    "tunl_ach_flight_2min": ["Две минуты", "Вы продержались в воздухе 2 минуты за один забег.", "Продержитесь в воздухе 2 минуты за один забег."]
+  },
+  "ja": {
+    "tunl_ach_flight_1min": ["1分間", "1回のプレイで1分間飛行し続けました。", "1回のプレイで1分間飛行し続ける。"],
+    "tunl_ach_flight_2min": ["2分間", "1回のプレイで2分間飛行し続けました。", "1回のプレイで2分間飛行し続ける。"]
+  },
+  "ko": {
+    "tunl_ach_flight_1min": ["1분", "한 번의 플레이에서 1분 동안 비행을 유지했습니다.", "한 번의 플레이에서 1분 동안 비행을 유지하세요."],
+    "tunl_ach_flight_2min": ["2분", "한 번의 플레이에서 2분 동안 비행을 유지했습니다.", "한 번의 플레이에서 2분 동안 비행을 유지하세요."]
+  },
+  "zh-Hant": {
+    "tunl_ach_flight_1min": ["一分鐘", "你在單次遊玩中持續飛行了1分鐘。", "在單次遊玩中持續飛行1分鐘。"],
+    "tunl_ach_flight_2min": ["兩分鐘", "你在單次遊玩中持續飛行了2分鐘。", "在單次遊玩中持續飛行2分鐘。"]
+  },
+  "tr": {
+    "tunl_ach_flight_1min": ["Bir Dakika", "Tek bir oyunda 1 dakika boyunca havada kaldın.", "Tek bir oyunda 1 dakika boyunca havada kal."],
+    "tunl_ach_flight_2min": ["İki Dakika", "Tek bir oyunda 2 dakika boyunca havada kaldın.", "Tek bir oyunda 2 dakika boyunca havada kal."]
+  },
+  "pl": {
+    "tunl_ach_flight_1min": ["Jedna Minuta", "Pozostałeś w powietrzu przez 1 minutę podczas jednego przelotu.", "Pozostań w powietrzu przez 1 minutę podczas jednego przelotu."],
+    "tunl_ach_flight_2min": ["Dwie Minuty", "Pozostałeś w powietrzu przez 2 minuty podczas jednego przelotu.", "Pozostań w powietrzu przez 2 minuty podczas jednego przelotu."]
+  },
+  "id": {
+    "tunl_ach_flight_1min": ["Satu Menit", "Kamu tetap terbang selama 1 menit dalam satu permainan.", "Tetaplah terbang selama 1 menit dalam satu permainan."],
+    "tunl_ach_flight_2min": ["Dua Menit", "Kamu tetap terbang selama 2 menit dalam satu permainan.", "Tetaplah terbang selama 2 menit dalam satu permainan."]
+  },
+  "hi": {
+    "tunl_ach_flight_1min": ["एक मिनट", "आप एक ही दौड़ में 1 मिनट तक हवा में रहे।", "एक ही दौड़ में 1 मिनट तक हवा में रहें।"],
+    "tunl_ach_flight_2min": ["दो मिनट", "आप एक ही दौड़ में 2 मिनट तक हवा में रहे।", "एक ही दौड़ में 2 मिनट तक हवा में रहें।"]
+  },
+  "ar-SA": {
+    "tunl_ach_flight_1min": ["دقيقة واحدة", "بقيت في الجو لمدة دقيقة واحدة في جولة واحدة.", "ابقَ في الجو لمدة دقيقة واحدة في جولة واحدة."],
+    "tunl_ach_flight_2min": ["دقيقتان", "بقيت في الجو لمدة دقيقتين في جولة واحدة.", "ابقَ في الجو لمدة دقيقتين في جولة واحدة."]
+  }
+}

@@ -47,6 +47,10 @@
     <string name="achievement_dist_moon" translatable="false">CgkI_MyGndIBEAIQHQ</string>
     <string name="achievement_dist_sun" translatable="false">CgkI_MyGndIBEAIQHA</string>
 
+    <!-- Flight-duration achievements (src/constants.js FLIGHT_ACHIEVEMENTS). -->
+    <string name="achievement_flight_1min" translatable="false">CgkI_MyGndIBEAIQHg</string>
+    <string name="achievement_flight_2min" translatable="false">CgkI_MyGndIBEAIQHw</string>
+
     <!-- AdMob console -> Apps -> TUNL (Android) -> App ID. Separate from the iOS app ID. -->
     <string name="admob_app_id" translatable="false">ca-app-pub-4882203470005029~3522958941</string>
     <!-- AdMob console -> Apps -> TUNL (Android) -> Ad units -> Interstitial -> Ad unit ID. -->
