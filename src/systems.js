@@ -946,17 +946,37 @@ function updateCannonShots(dt) {
         if (c.fired || playerWx < c.fireAtWx) continue;
         c.fired = true;
         const b = boundsAt(c.wx);
-        const muzzleY    = c.isTop ? b.top + CANNON_R * 1.1 : b.bot - CANNON_R * 1.1;
-        const closingSpd = CANNON_FIRE_LEAD / CANNON_SHOT_TRAVEL;
+        const wallY = c.isTop ? b.top : b.bot;
         // Crosses most (not all) of the corridor diagonally -- a rngCannon()-picked span so
         // successive cannons don't all draw the exact same line across the tunnel.
         const spanY = (b.bot - b.top) * (0.55 + rngCannon() * 0.35) * (c.isTop ? 1 : -1);
+        // Unit vector of the shot's travel ON SCREEN. The shot closes CANNON_FIRE_LEAD
+        // horizontally (the player sits still at PX while the world scrolls past) while
+        // crossing spanY vertically, both over CANNON_SHOT_TRAVEL - so this, not the
+        // stored world-x vx, is the direction the thing visibly moves in. draw.js aims
+        // the barrel along it and rotates the projectile sprite to match; before 12.0
+        // the barrel was pinned at a hardcoded 0.55rad (44 degrees off the real line)
+        // and the sprite was rotated by atan2(vy, vx) on the WORLD velocity, which
+        // pointed it down-RIGHT while the shot travelled LEFT - 129 degrees wrong.
+        const shotLen = Math.hypot(CANNON_FIRE_LEAD, spanY);
+        c.aimUX = -CANNON_FIRE_LEAD / shotLen;
+        c.aimUY = spanY / shotLen;
+        // Spawn at the barrel's MUZZLE rather than at the pivot, so the shot leaves the
+        // end of the barrel instead of appearing beside it. Shortening the remaining
+        // travel by exactly the barrel length (k) keeps both the arrival time
+        // (CANNON_SHOT_TRAVEL) and the endpoint identical to spawning at the pivot -
+        // the start just slides along the same line, so nothing about the tuned warning
+        // window moves.
+        const barrelLen = CANNON_R * CANNON_BARREL_LEN;
+        const k = 1 - barrelLen / shotLen;
+        const muzzleX = c.wx   + c.aimUX * barrelLen;
+        const muzzleY = wallY  + c.aimUY * barrelLen;
         cannonShots.push({
-            wx: c.wx, y: muzzleY,
-            vx: scrollSpd() - closingSpd,
-            vy: spanY / CANNON_SHOT_TRAVEL,
+            wx: muzzleX, y: muzzleY,
+            vx: scrollSpd() - (CANNON_FIRE_LEAD * k) / CANNON_SHOT_TRAVEL,
+            vy: (spanY * k) / CANNON_SHOT_TRAVEL,
         });
-        burst(c.wx - scrollX, muzzleY, 10);
+        burst(muzzleX - scrollX, muzzleY, 10);
         sfxCannonFire();
     }
     // Same slowScrollFactor()/warpScrollFactor() scaling as the player's bullets and

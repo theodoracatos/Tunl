@@ -265,6 +265,37 @@ angle (vs. the player's always-horizontal bullets) tells them apart. Same hitbox
 trade-offs and shield-absorb behavior as mine collision; player bullets destroy a shot
 in flight the same way they destroy a mine.
 
+**The barrel aims where the shot actually goes** (12.0). Two separate bugs made it
+point somewhere else entirely, both visual only:
+- The barrel was pinned at a hardcoded `dir * 0.55` rad, i.e. 58 degrees below
+  horizontal, while the shot leaves at roughly 14 - the gun pointed steeply down-left
+  and the shell went nearly straight left. It now aims along the shot's real on-screen
+  unit vector, which `updateCannonShots` stores on the cannon (`c.aimUX/aimUY`) when it
+  fires; before firing it aims at the mid-span shot it is about to take, which the
+  `rngCannon()` span only swings by ~4 degrees.
+- The projectile sprite was rotated by `atan2(s.vy, s.vx)` on the stored **world-x**
+  velocity. The player is fixed at `PX` while the world scrolls past, so a shot whose
+  world `vx` is positive still crosses the screen leftward: the sprite pointed
+  down-RIGHT while the shot travelled LEFT, 129 degrees wrong. It now uses the screen
+  velocity (`s.vx - scrollSpd()`), which is also correct during slow-time/warp since
+  both terms scale by the same factor.
+
+The shot also spawns at the barrel's **muzzle** rather than at the wall pivot, so it
+leaves the end of the barrel instead of appearing beside it. The remaining travel is
+shortened by exactly the barrel length (`CANNON_BARREL_LEN`, shared between `draw.js`
+and `systems.js` so they cannot drift), which slides the start along the same line and
+leaves both the arrival time (`CANNON_SHOT_TRAVEL`) and the endpoint untouched -
+verified at 1.448s against a 1.45 target, so the warning window tuned just above does
+not move.
+
+One invariant this relies on, checked rather than assumed: `rngCannon()` is drawn both
+by `makeCannon` (at the spawn horizon) and by `updateCannonShots` (at fire time) on the
+same stream, which would fork the cave per player if the two could interleave
+differently. They can't - a cannon spawns at `scrollX = wx - 1256` and fires at
+`scrollX = wx - 803`, and `cannonSpacing()`'s 1200px floor is wider than that 453px
+window, so the order is always spawn-N, fire-N, spawn-N+1. Measured identical across
+17 cannons for two pilots with different scroll histories on the same day.
+
 `makeCannon`'s placement veto is **same-wall and geometric** (`PLACE_CANNON_R +
 placeStalW`), not the flat 140px both-walls test it started as - see the
 `SPAWN_AHEAD_*` discussion under Cross-device fairness for why that flat radius could

@@ -596,6 +596,9 @@ const CANNON_R           = W * 0.020;
 // be keyed off the live W, or the cave forks by screen width).
 const PLACE_CANNON_R     = _W_REF_PLACE * 0.020;
 const CANNON_SHOT_R      = W * 0.013;
+// Barrel length as a multiple of CANNON_R. Shared: draw.js draws the barrel this long
+// and systems.js spawns the shot at its tip, so they must not drift apart.
+const CANNON_BARREL_LEN  = 2.2;
 const CANNON_FIRE_LEAD   = W * 0.62;
 // 1.15 -> 1.45 in 12.0: raised the shot's own flight time (CANNON_FIRE_LEAD, hence
 // where the muzzle fires from, is untouched) after a red-team measurement found

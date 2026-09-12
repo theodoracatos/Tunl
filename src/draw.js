@@ -720,14 +720,26 @@ function drawWorld() {
         const b     = boundsAt(c.wx);
         const wallY = c.isTop ? b.top : b.bot;
         const dir   = c.isTop ? 1 : -1;
-        const barrelLen = CANNON_R * 2.2, barrelW = CANNON_R * 0.60;
+        const barrelLen = CANNON_R * CANNON_BARREL_LEN, barrelW = CANNON_R * 0.60;
         ctx.save();
         ctx.globalAlpha = (c.fired ? 0.45 : 1.0) * warpFade;   // ghosted while phased through
         ctx.translate(sx, wallY);
 
-        // Barrel, angled into the corridor toward its firing direction
+        // Barrel, aimed along the line the shot actually travels ON SCREEN. Until 12.0
+        // this was a hardcoded `dir * 0.55`, which put the barrel 58 degrees below
+        // horizontal while the shot leaves at roughly 14 - the gun visibly pointed
+        // somewhere the shell never went. systems.js stores the real unit vector on the
+        // cannon when it fires; before that we aim at the mid-span shot it is going to
+        // take (the rngCannon() span only swings the result by about 4 degrees, so the
+        // pre-fire aim is honest rather than decorative).
+        const spanNom = (b.bot - b.top) * 0.725 * dir;
+        const lenNom  = Math.hypot(CANNON_FIRE_LEAD, spanNom);
+        const aimUX = c.aimUX !== undefined ? c.aimUX : -CANNON_FIRE_LEAD / lenNom;
+        const aimUY = c.aimUY !== undefined ? c.aimUY : spanNom / lenNom;
+        // The barrel is drawn along local +y scaled by dir, so rotate by the angle that
+        // maps (0, dir) onto the aim vector.
         ctx.save();
-        ctx.rotate(dir * 0.55);
+        ctx.rotate(Math.atan2(-aimUX * dir, aimUY * dir));
         const barrelGrd = ctx.createLinearGradient(-barrelW/2, 0, barrelW/2, 0);
         barrelGrd.addColorStop(0,   '#18181a');
         barrelGrd.addColorStop(0.5, '#5c5c62');
@@ -779,7 +791,11 @@ function drawWorld() {
         if (sx < -20 || sx > W + 20) continue;
         ctx.save();
         ctx.globalAlpha = warpFade;   // ghosted while phased through
-        drawProjectile(sx, s.y, Math.atan2(s.vy, s.vx));
+        // Screen velocity, not the stored world-x one: the player is fixed at PX while
+        // the world scrolls past, so a shot whose world vx is POSITIVE still crosses the
+        // screen leftward. Rotating by atan2(s.vy, s.vx) pointed the sprite ~129 degrees
+        // away from the direction it was visibly moving (fixed in 12.0).
+        drawProjectile(sx, s.y, Math.atan2(s.vy, s.vx - scrollSpd()));
         ctx.restore();
     }
 
