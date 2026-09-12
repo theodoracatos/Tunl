@@ -271,6 +271,30 @@ placeStalW`), not the flat 140px both-walls test it started as - see the
 never be satisfied past the plateau, and why the wall (`isTop`) is now drawn before the
 retry loop rather than inside the winning branch.
 
+**`CANNON_SHOT_TRAVEL` raised 1.15 -> 1.45 in 12.0 (`CANNON_FIRE_LEAD` untouched).** A
+red-team simulation flagged cannon shots as the weakest-telegraphed hazard in the game -
+every other obstacle is visible on screen well before the final dodge (`SPAWN_AHEAD_*`),
+but a cannon's shot doesn't even exist until `CANNON_FIRE_LEAD` world-px out, and its
+vertical span is freshly rolled from `rngCannon()` at that exact instant, so its whole
+warning window IS its flight time. Measured across a pooled 800-run/20-day sample (same
+expert-tier pilot, same seeds, before/after only `CANNON_SHOT_TRAVEL` changing): the
+share of cannon deaths already unavoidable more than a human reaction-time (0.25s)
+before impact fell from **19.4% (n=31, worst of every hazard type, including
+stalactites at 17.9% and walls at 11.5%) to 2.9% (n=34, now the best or tied-best)**;
+stalactite (18.1%) and wall (9.7%) numbers barely moved in the same run, confirming the
+change is isolated to cannons - `CANNON_SHOT_TRAVEL` only feeds the shot's own vx/vy in
+`updateCannonShots`, nothing else reads it. `CANNON_FIRE_LEAD` is deliberately
+untouched, so the muzzle still fires from the same on-screen position and at the same
+world-x as before (verified live: fires ~587-593 world-px out, matching
+`CANNON_FIRE_LEAD` = `W*0.62` either way) - only the shot's closing speed dropped, since
+`closingSpd = CANNON_FIRE_LEAD / CANNON_SHOT_TRAVEL`. Cannon rarity/density is
+unaffected (`cannonSpacing()` untouched; the pooled sample's cannon-death count, n=31 vs
+n=34 out of 800 runs, moved by sampling noise alone, same source as every other
+hazard's small day-to-day swing - the game's one unseeded gameplay `Math.random()` call
+is the warp coin's duration roll (`triggerWarp`'s `accuracy === undefined` fallback,
+see the Warp portal section below), which compounds enough over a long run to shift
+exactly which runs land in each rare-death bucket from one sample to the next).
+
 ### Warp portal ("Sog")
 
 Reward set-piece added in 11.0, not a hazard - the game's answer to "reacting" and

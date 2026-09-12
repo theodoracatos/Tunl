@@ -566,7 +566,11 @@ const CANNON_R           = W * 0.020;
 const PLACE_CANNON_R     = _W_REF_PLACE * 0.020;
 const CANNON_SHOT_R      = W * 0.013;
 const CANNON_FIRE_LEAD   = W * 0.62;
-const CANNON_SHOT_TRAVEL = 1.15;
+// 1.15 -> 1.45 in 12.0: raised the shot's own flight time (CANNON_FIRE_LEAD, hence
+// where the muzzle fires from, is untouched) after a red-team measurement found
+// cannon shots the worst-telegraphed hazard in the game - see CLAUDE.md's Cannons
+// section for the measured before/after numbers.
+const CANNON_SHOT_TRAVEL = 1.45;
 
 // ── Falling stalactites ───────────────────────────────────────────────
 // A ceiling stalactite that visibly SHAKES left/right (draw.js wobX) and trickles
