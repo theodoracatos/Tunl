@@ -429,12 +429,60 @@ This reuses `WARP_DUR_MIN..MAX_SEC` rather than adding a new constant pair; only
 *where in the range* a given warp lands changed, not the range itself.
 
 ### Coin system
-Coins collect into `gapBonus` (extra halfGap px, capped, decays over time):
+Coins collect into `gapBonus` (extra halfGap px, capped, decays over time). Since 12.0
+all three magnitudes are **fractions of the corridor's own half-gap, not of `H`**
+(`constants.js`, accessors `gapPerCoin()` / `gapBonusMax()` / `gapDecay()` in
+`world.js` next to `refreshWave()`):
 ```javascript
-const GAP_PER_COIN  = H * 0.075;   // +33px halfGap per coin at H=440
-const GAP_BONUS_MAX = H * 0.19;    // cap: max ~84px halfGap bonus at H=440
-const GAP_DECAY     = H * 0.015;   // bonus lost per second (~5s per coin's worth)
+const GAP_PER_COIN_FRAC  = 0.075 / 0.43;   // bonus halfGap added per coin
+const GAP_BONUS_MAX_FRAC = 0.19  / 0.43;   // cap: max halfGap bonus
+const GAP_DECAY_FRAC     = 0.015 / 0.43;   // bonus lost per second
 ```
+
+**Why they stopped being absolute (do not revert).** A fixed number of px added to a
+base corridor that shrinks `H*0.34 -> H*0.163` is a curve-flattener by construction,
+and a red-team replay measured exactly that. The bonus is easy to hold - chicane gold
+sits on the corridor centreline, i.e. the line the player already flies, so collecting
+it costs no detour - and an expert holds it at ~66% of cap for the whole run. Measured
+widening of the corridor by score band, same pilot, same seeds, before vs after:
+
+| band | 0-25 | 25-50 | 50-100 | 100-233 | 233-500 | 500-900 | 900+ |
+|------|------|-------|--------|---------|---------|---------|------|
+| before | 1.00x | 1.16x | 1.36x | 1.55x | 1.79x | 1.99x | **2.01x** |
+| after  | 1.00x | 1.14x | 1.32x | 1.42x | 1.42x | 1.41x | **1.40x** |
+
+Before, the reward grew steadily with depth until it doubled the deep corridor - the
+corridor the pilot actually flew narrowed only 10.6 -> 8.6 ship diameters against a
+designed 11.0 -> 4.2. After, the widening is flat from score 100 on (the early rise is
+just the bar filling from empty), and the flown corridor narrows 10.6 -> 5.9. A run's
+corridor is now the base curve TIMES a constant instead of PLUS one, so the shape the
+difficulty curve was designed to have is the shape that gets flown.
+
+Two properties make this safe, both asserted in `test-math.js`:
+- **The fractions are anchored so wx=0 reproduces the old absolute values exactly**
+  (`halfGapAt(0)` = `H*0.43`, hence the `/0.43`). Score 0 is a byte-exact no-op and the
+  band real runs actually end in barely moves: the `average`-tier median was 22 before
+  and 22 after, mean -2%. Deep runs are where it bites - expert mean 625 -> 459, p90
+  1543 -> 1092. Same standing rule as the 2026-09-11 pass: only the deep run may get
+  harder.
+- **All three scale together**, so every ratio between them is depth-independent: still
+  2.53 coins to fill the bar from empty, still 0.2 coins/sec to hold it at the cap. The
+  supply economics `CHICANE_GOLD_GAP_SEC` and `POWERUP_MIN_GAP_SEC` were tuned against
+  are untouched; only the px magnitude tracks the corridor the bonus is a bonus ON.
+
+They scale off `_gapRef` (`world.js`), which is the base difficulty curve **without**
+`deepChamberAt` - a chamber is a transient local breather, not a difficulty level, and
+letting the cap balloon 2.1x on entering one would only snap it back on the way out.
+`update.js` also clamps `gapBonus` down to `gapBonusMax()` every frame, so a bonus
+banked in a wide stretch gives ground as the corridor narrows under it.
+
+`DEEP_DECAY_PEAK` (the deep decay ramp, `update.js`) was expected to need lowering once
+the magnitudes scaled - it doesn't. Swept at 1.0 / 1.6 / 2.5 and 25.0 over 100 expert
+runs each, the held bonus moved 0.850 -> 0.849 -> 0.821 and the per-band corridor not
+at all: coin **supply** refills the bar far faster than any of those rates drain it, so
+decay is no longer the binding constraint, the cap is. Left at 2.5 rather than re-tuned
+on a guess. If the deep run needs tightening again, the lever is supply or
+`GAP_BONUS_MAX_FRAC`, not that ramp.
 **Chicane gold is gated in SECONDS, not world-px** (`CHICANE_GOLD_GAP_SEC` /
 `CHICANE_GOLD_EARLY_MULT` in `constants.js`, `worldPxForSec()` in `world.js`, applied in
 `maintainStalactites`). Deep, `stalSpacing()` sits on its 50px floor at a 0.62 chicane
@@ -452,7 +500,7 @@ on `lastChicaneCoinWx` (`state.js`), not on the tail of the live `chicaneCoins` 
 which is culled behind the player and so silently capped any gate wider than ~1700px.
 Measured result across 8 day-seeds at a 50/70% collection rate: median free channel at a
 stalactite now falls 9.4 -> 7.5 -> 6.7 -> 5.5 -> 3.6 -> 2.1 player diameters across the
-score bands, against a flat ~5-7 before. The base `GAP_DECAY` was deliberately NOT raised
+score bands, against a flat ~5-7 before. The base decay rate was deliberately NOT raised
 to achieve this (it would have narrowed the score 25-233 corridor too); the deep end is
 handled by the pre-existing `_deepDecay` ramp in `update.js`, which is inert until 233.
 
@@ -460,7 +508,7 @@ handled by the pre-existing `_deepDecay` ramp in `update.js`, which is inert unt
 rendering never read it directly - they read `gapBonusVisual` (update.js), which
 chases `gapBonus` at a constant `GAP_EASE_RATE` px/s instead of snapping to it. That's
 what makes the wall visibly widen rather than teleport, and because the same lag
-applies on the way down once `GAP_DECAY` starts pulling the target back in, smoothing
+applies on the way down once the decay starts pulling the target back in, smoothing
 this also nudges the corridor's total "wide" window a little longer, not just its
 onset. Wall glow shifts purple → cyan when bonus is active. Gold bar at bottom shows
 remaining bonus - both keyed off `gapBonusVisual` too, so what's shown always matches
@@ -501,9 +549,12 @@ cannonSpacing()// 4200 → 2400 → 1500 px between cannons (floor 1200)
 chicaneProb    // 0.24 → 0.42 once _prog > 0.40 (hard cap 0.62)
 ```
 
-At score 233 (`_prog` = 1) the full corridor is `2 * H * 0.163`. With `gapBonus` maxed
-(`GAP_BONUS_MAX` = `H * 0.19` of extra halfGap, i.e. `H * 0.38` of extra full width) a
-maxed bonus more than doubles the corridor - coins are essential at high difficulty.
+At score 233 (`_prog` = 1) the full corridor is `2 * H * 0.163`. A maxed `gapBonus`
+widens it by `GAP_BONUS_MAX_FRAC` (1.44x), the same factor it widens the wx=0 corridor
+by - coins matter just as much at high difficulty as they ever did, they just no longer
+matter *disproportionately* there. Pre-12.0 this same maxed bonus was a flat `H*0.19`
+at every depth, which at the plateau was **2.17x** - more than doubling the corridor
+the difficulty curve had just spent 233 points narrowing.
 
 **Onboarding corridor widen** (`earlyWidenAt()`, `world.js`): the base curve's wx=0
 half-gap (`H*0.34`, corridor 68% of screen height) already reads as narrow to a player
@@ -1023,7 +1074,7 @@ the forced interstitial, not a video the player actively taps):
   console-driven headless-playtest workflow reads/writes it directly, never through
   this key - only the keyboard binding needed the guard. Flip `DEV_PAUSE_KEY` to
   `true` locally to get the shortcut back for debugging; never ship it `true`.
-- **Coin bonus is a real difficulty lever, not a marginal aid**: `GAP_PER_COIN` = H*0.075, `GAP_BONUS_MAX` = H*0.19 (see Coin system above) - at max difficulty (196px full corridor at H=600) one coin adds ~46% to the halfGap, a maxed bonus more than doubles it. Coins are essential at high difficulty by design, not a small nudge - don't shrink these constants back down to make the bonus merely "helpful."
+- **Coin bonus is a real difficulty lever, not a marginal aid**: `GAP_PER_COIN_FRAC` = 0.075/0.43, `GAP_BONUS_MAX_FRAC` = 0.19/0.43 of the corridor's own half-gap (see Coin system above) - one coin adds ~17% to the halfGap and a maxed bonus 44%, at every depth. Coins are essential by design, not a small nudge - don't shrink these back down to make the bonus merely "helpful." The 12.0 change from absolute px to corridor fractions is **not** a weakening of that lever: it is exactly as strong as it always was early (wx=0 is a byte-exact no-op) and now equally strong, rather than disproportionately stronger, deep.
 - **boundsBase for coin placement**: Coins placed ignoring current bonus so they're always reachable even without a bonus. Never use `boundsAt()` for coin placement.
 - **Triangle-circle collision**: Stalactites use proper geometric collision matching the visual triangle, not AABB. Changing to AABB would make invisible collisions at the edges.
 - **No em dashes (-)** anywhere in code, comments, or UI text. Use hyphen-minus (-) instead.

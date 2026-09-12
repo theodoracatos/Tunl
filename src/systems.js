@@ -31,7 +31,7 @@ function maintainStalactites() {
             // replaced it still gave a measured 2.09/sec in the deep run, because a
             // fixed distance keeps shrinking in seconds as scrollSpd() climbs
             // forever. Against the ~0.43 coins/sec that holds gapBonus pinned at its
-            // cap (constants.js GAP_DECAY), that was a 5x oversupply, and the
+            // cap (constants.js GAP_DECAY_FRAC), that was a 5x oversupply, and the
             // measured result was an effective half-gap running flat at ~0.34*H for
             // the entire run -- the whole 0.34->0.163 narrowing cancelled out.
             // A time gate is flat in coins/sec at every depth by construction:
@@ -118,10 +118,10 @@ function maintainStalactites() {
 // used to be captured once into s.fallDist and then only ever clamped DOWNWARD
 // against the live corridor - which is correct if the corridor narrows mid-fall but
 // leaves the spike hanging in mid-air if it WIDENS, and the corridor widens
-// constantly: gapBonusVisual eases in at GAP_EASE_RATE (up to H*0.19 of extra
-// half-gap), deep chambers balloon it 2.1x, and _halfGap itself drifts as the player
-// advances. Measured over one run: 5 of 33 spikes finished their drop above the
-// floor, by up to 60px at landing and up to 131px (3.8 player diameters) afterwards,
+// constantly: gapBonusVisual eases in at GAP_EASE_RATE (up to GAP_BONUS_MAX_FRAC
+// of extra half-gap), deep chambers balloon it 2.1x, and _halfGap itself drifts as
+// the player advances. Measured over one run: 5 of 33 spikes finished their drop
+// above the floor, by up to 60px at landing and up to 131px (3.8 player diameters),
 // since a landed spike kept its frozen offset while the floor below it kept moving
 // away. Because b.bot - b.top is exactly 2*(_halfGap + gapBonusVisual), evaluating
 // it here makes the tip land on b.bot and then STAY on it for the rest of the
@@ -430,7 +430,7 @@ function makeCoin(wx) {
     // the rngCoin() stream downstream of it are bit-identical to before this floor
     // existed. A vetoed coin is dropped ENTIRELY rather than falling back to gold:
     // handing the suppressed share to gold would re-break the corridor bonus this
-    // same pass is fixing (constants.js GAP_DECAY / CHICANE_GOLD_GAP_SEC). Gated on
+    // same pass is fixing (constants.js GAP_DECAY_FRAC / CHICANE_GOLD_GAP_SEC). Gated on
     // the same score-34 threshold as poison/bomb/drain so it can never thin the
     // onboarding coin line, where blue is the only non-gold type and the arc is the
     // game's one wordless lesson that RELEASE is half the control scheme. Orange has
@@ -622,7 +622,7 @@ function checkCoinCollection() {
                 sfxBomb();
                 window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
             } else {
-                gapBonus = Math.min(GAP_BONUS_MAX, gapBonus + GAP_PER_COIN * (activeSkin === 4 ? masteryLerp(4, 2.0, 2.5) : 1));
+                gapBonus = Math.min(gapBonusMax(), gapBonus + gapPerCoin() * (activeSkin === 4 ? masteryLerp(4, 2.0, 2.5) : 1));
                 burstCoin(sx, coin.y, 44);
                 // Stack offset computed once and shared by both notifs below: they
                 // belong to the same pickup, so they keep their tight fixed 32px gap

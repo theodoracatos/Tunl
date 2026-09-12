@@ -6,6 +6,11 @@
 // on the actual date played.
 
 let _prog, _prog2, _halfGap, _wA1, _wA2, _wF1, _wF2;
+// The corridor half-gap the GAP BONUS scales off (constants.js GAP_*_FRAC).
+// Deliberately the base difficulty curve WITHOUT deepChamberAt: a chamber is a
+// transient local breather, not a difficulty level, and letting the bonus cap
+// balloon 2.1x on entering one would only snap it back down on the way out.
+let _gapRef;
 
 // Per-day phase offset for the two corridor waves, derived from the same UTC
 // day-int used to seed the obstacle rng() (not the rng() stream itself, so it
@@ -276,7 +281,9 @@ function earlyWidenAt(wx) {
 function refreshWave() {
     _prog    = Math.min(Math.sqrt(scrollX / 14000), 1);
     _prog2   = Math.max(scrollX - 14000, 0) / 40000;          // no cap - escalates forever
-    _halfGap = lerp(H * 0.34,  H * 0.163, _prog) * deepChamberAt(scrollX) + earlyWidenAt(scrollX);
+    const _gapBase = lerp(H * 0.34,  H * 0.163, _prog);
+    _gapRef  = _gapBase + earlyWidenAt(scrollX);
+    _halfGap = _gapBase * deepChamberAt(scrollX) + earlyWidenAt(scrollX);
     // Wave amplitude/frequency keep growing with _prog2 (capped at 2x to stay navigable)
     const wMult  = 1 + 0.12 * Math.min(_prog2, 2);            // up to +24% amplitude
     const wFMult = 1 + 0.14 * Math.min(_prog2, 2);            // up to +28% frequency = tighter bends
@@ -290,6 +297,16 @@ function refreshWave() {
     _wF1     = lerp(0.0025,    0.0048,    _prog) * wFMult * _waveJitterF;
     _wF2     = lerp(0.0060,    0.0115,    _prog) * wFMult * _waveJitterF;
 }
+
+// Gap-bonus magnitudes, as a fraction of the corridor rather than of the screen -
+// see the full argument above GAP_PER_COIN_FRAC in constants.js. All three scale
+// together, so the ratios between them (2.53 coins to fill the bar, 0.2 coins/sec to
+// hold it at the cap) are identical at every depth; only the px magnitude tracks the
+// corridor. _gapRef is undefined until the first refreshWave(), which both
+// titleScreen() and startPlay() run before anything can read these.
+function gapPerCoin()  { return _gapRef * GAP_PER_COIN_FRAC; }
+function gapBonusMax() { return _gapRef * GAP_BONUS_MAX_FRAC; }
+function gapDecay()    { return _gapRef * GAP_DECAY_FRAC; }
 
 // scrollSpd() without the W/600 term - i.e. the part that is a pure function of
 // scrollX and therefore IDENTICAL on every device. Anything that turns "how many

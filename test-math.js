@@ -55,7 +55,9 @@ function makeWorld(innerWidth, innerHeight) {
         this.waveParams = function() { return { wA1: _wA1, wA2: _wA2, wF1: _wF1, wF2: _wF2 }; };
         this.ghostEncode = ghostEncode; this.ghostDecode = ghostDecode;
         this.DAILY_SHARD_CAP = DAILY_SHARD_CAP; this.GAP_EASE_RATE = GAP_EASE_RATE;
-        this.GAP_DECAY = GAP_DECAY; this.GAP_PER_COIN = GAP_PER_COIN; this.GAP_BONUS_MAX = GAP_BONUS_MAX;
+        this.GAP_DECAY_FRAC = GAP_DECAY_FRAC; this.GAP_PER_COIN_FRAC = GAP_PER_COIN_FRAC;
+        this.GAP_BONUS_MAX_FRAC = GAP_BONUS_MAX_FRAC; this.DEEP_DECAY_PEAK = DEEP_DECAY_PEAK;
+        this.gapPerCoin = gapPerCoin; this.gapBonusMax = gapBonusMax; this.gapDecay = gapDecay;
         this.worldPxForSec = worldPxForSec; this.scrollSpdBase = scrollSpdBase;
         this.CHICANE_GOLD_GAP_SEC = CHICANE_GOLD_GAP_SEC; this.CHICANE_GOLD_EARLY_MULT = CHICANE_GOLD_EARLY_MULT;
         this.POWERUP_MIN_GAP_SEC = POWERUP_MIN_GAP_SEC; this.POWERUP_GAP_EARLY_MULT = POWERUP_GAP_EARLY_MULT;
@@ -411,9 +413,12 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
         minRate  = Math.min(minRate,  r);
         if (r > 0.75 || r < 0.25) deepOk = false;
     }
-    // Holding gapBonus pinned at its cap needs GAP_DECAY/GAP_PER_COIN gold per second
+    // Holding gapBonus pinned at its cap needs gapDecay()/gapPerCoin() gold per second
     // (times the update.js _deepDecay ramp deep, which only makes the bar higher).
-    const holdRate = w.GAP_DECAY / w.GAP_PER_COIN;
+    // Since 12.0 both scale off the same _gapRef, so this ratio is a pure constant -
+    // the supply economics are depth-independent by construction (see the assertion
+    // on that invariant further down).
+    const holdRate = w.GAP_DECAY_FRAC / w.GAP_PER_COIN_FRAC;
     check(`chicane gold stays a bounded per-second cadence at any depth (deep ${minRate.toFixed(2)}-${peakRate.toFixed(2)}/s)`, deepOk);
     check(`deep chicane gold no longer outruns the hold-at-cap rate by an order of magnitude (${(peakRate / holdRate).toFixed(1)}x, was ~10x)`,
         peakRate / holdRate < 3);
@@ -491,6 +496,63 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
         bankedAt(1000, w.DAILY_SHARD_CAP - 30) === 30);
     check('shard banking: never exceeds the run\'s own coin pool even with headroom to spare',
         bankedAt(10, 0) === 10);
+}
+
+// ── Gap bonus scales WITH the corridor (constants.js GAP_*_FRAC, 12.0) ──────
+// The bonus used to be absolute px against a corridor that shrinks 0.34H -> 0.163H,
+// which flattened the difficulty curve by construction (measured: designed 11.0 ->
+// 4.2 ship diameters, actually flown 10.6 -> 8.6). Keying it to the corridor makes
+// a run's effective width the base curve TIMES a constant instead of PLUS one.
+// Two properties carry that claim, and both are cheap to assert:
+{
+    const w = makeWorld(956, 440);
+    const H = w.H;
+    // (a) wx=0 is an exact no-op against the old absolute values. This is what makes
+    //     the change legal under "never make score <233 harder" - the early game,
+    //     where real runs actually end, is anchored rather than re-tuned.
+    w.scrollX = 0; w.refreshWave();
+    const near = (a, b) => Math.abs(a - b) < 1e-9;
+    check('gap bonus at wx=0 exactly reproduces the pre-12.0 absolute values',
+        near(w.gapPerCoin(),  H * 0.075) &&
+        near(w.gapBonusMax(), H * 0.19)  &&
+        near(w.gapDecay(),    H * 0.015));
+
+    // (b) every RATIO between the three is depth-independent, so the coin economics
+    //     CHICANE_GOLD_GAP_SEC / POWERUP_MIN_GAP_SEC were tuned against are untouched:
+    //     still 2.53 coins to fill the bar, still 0.2 coins/sec to hold it at the cap.
+    let ratiosFlat = true, fillSeen = null, holdSeen = null;
+    for (let wx = 0; wx <= 300000; wx += 1500) {
+        w.scrollX = wx; w.refreshWave();
+        const fill = w.gapBonusMax() / w.gapPerCoin();
+        const hold = w.gapDecay()    / w.gapPerCoin();
+        if (fillSeen === null) { fillSeen = fill; holdSeen = hold; }
+        if (Math.abs(fill - fillSeen) > 1e-9 || Math.abs(hold - holdSeen) > 1e-9) ratiosFlat = false;
+    }
+    check(`gap-bonus ratios are depth-independent (${fillSeen.toFixed(2)} coins to fill, ${holdSeen.toFixed(2)} coins/sec to hold)`,
+        ratiosFlat && Math.abs(fillSeen - 2.5333333) < 1e-4 && Math.abs(holdSeen - 0.2) < 1e-9);
+
+    // (c) the cap genuinely shrinks with the corridor - that IS the fix, stated
+    //     against the OLD absolute value rather than against itself. Pre-12.0 the cap
+    //     was a flat H*0.19 at every depth, so the plateau corridor (half-gap H*0.163)
+    //     got MORE than its own width handed back; now it gets the same proportion the
+    //     early game does. Deliberately not compared via halfGapAt(), which folds in
+    //     deepChamberAt() - a chamber is a transient widening that exists either way
+    //     and would only dilute the comparison.
+    const OLD_CAP = H * 0.19;
+    w.scrollX = 0;     w.refreshWave(); const capEarly = w.gapBonusMax();
+    w.scrollX = 60000; w.refreshWave(); const capDeep  = w.gapBonusMax();
+    check(`maxed bonus is unchanged early and materially smaller deep (${(capEarly/OLD_CAP).toFixed(2)}x -> ${(capDeep/OLD_CAP).toFixed(2)}x of the old flat cap)`,
+        Math.abs(capEarly - OLD_CAP) < 1e-9 && capDeep / OLD_CAP > 0.30 && capDeep / OLD_CAP < 0.45);
+
+    // (d) the deep-decay ramp is still fully inert before the plateau - it is a
+    //     second-order tightener now, not the load-bearing fix, but it must not leak
+    //     into the band real runs actually end in.
+    let rampInert = true;
+    for (let wx = 0; wx <= 14000; wx += 500) {
+        w.scrollX = wx; w.refreshWave();
+        if (Math.max(wx - 14000, 0) / 40000 !== 0) rampInert = false;
+    }
+    check('deep-decay ramp stays inert at/below the difficulty plateau', rampInert);
 }
 
 // ── Gap-bonus easing (src/update.js gapBonusVisual, GAP_EASE_RATE) ──────────

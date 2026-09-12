@@ -158,22 +158,53 @@ const COIN_HIT_R      = W  * 0.032;   // collection radius (generous)
 // picked, so it has to reserve room for the largest possible coin, not the average.
 const COIN_SIZE_MULT     = { gold: 1.0, blue: 1.0, red: 1.15, orange: 1.15, green: 1.35, bomb: 1.35, warp: 1.2 };
 const COIN_SIZE_MAX_MULT = 1.35;
-const GAP_PER_COIN    = H  * 0.075;   // bonus halfGap added per coin
-const GAP_BONUS_MAX   = H  * 0.19;    // cap: max halfGap bonus
-// Bonus lost per second. This BASE value is deliberately unchanged (and should stay
-// unchanged): GAP_DECAY/GAP_PER_COIN is the gold-coin rate needed to hold the bonus
-// pinned at its cap forever, and at H*0.015 that is 0.2 coins/s - which is correct
-// for the early game, where the bonus is an onboarding aid and gold is the only
-// thing a new player is collecting. The 2026-09-11 audit found the bonus pinned at
-// its cap 42-93% of the time from score 233 on (effective half-gap running flat at
-// ~0.34*H for the whole run, i.e. the entire 0.34 -> 0.163 narrowing cancelled out),
-// but the cause was SUPPLY, not decay: chicane gold was spawning at a measured
-// 2.09/s deep, 10x the hold-at-cap rate. That is fixed at the source (see
-// CHICANE_GOLD_GAP_SEC), and the deep end is handled by the _deepDecay ramp in
-// update.js, which is inert until score 233. Raising this base instead was tried and
-// rejected: it measurably narrowed the corridor in the score 25-100 band too, and
-// that band is where real runs actually end.
-const GAP_DECAY       = H  * 0.015;   // bonus lost per second (see doc above)
+// ── Gap bonus: fractions of the CORRIDOR, not of the screen ───────────
+// Through 12.0 these were absolute (H*0.075 / H*0.19 / H*0.015) - a fixed number of
+// px added to a base corridor that shrinks H*0.34 -> H*0.163 over a run. A constant
+// added to a shrinking number is a curve-flattener by construction, and a red-team
+// replay measured exactly that: an expert pilot holds gapBonus at 66% of its cap for
+// the WHOLE run (chicane gold sits on the corridor centreline, i.e. the line they
+// already fly, so collecting it costs no detour), which widened the corridor 1.29x at
+// score 0 but 1.77x from the difficulty plateau on. Designed narrowing 11.0 -> 4.2
+// ship diameters; actually flown, 14.2 -> 7.4. Roughly two thirds of the designed
+// narrowing was being handed back by the game's own reward.
+//
+// Keying them to the half-gap makes the bonus scale-invariant: a run's corridor is
+// now the base curve TIMES a constant instead of the base curve PLUS one, so the
+// shape the difficulty curve was designed to have is the shape the player flies.
+//
+// Anchored so wx=0 reproduces the old absolute values EXACTLY (halfGapAt(0) = H*0.43,
+// hence 0.075/0.43, 0.19/0.43, 0.015/0.43). Two consequences worth keeping in mind:
+//   - Score 0 is an exact no-op and the early game moves by at most a few percent.
+//     This pass is only allowed to make the DEEP run harder - same standing rule the
+//     2026-09-11 balance pass set ("never make score <233 harder").
+//   - All three scale TOGETHER, so every ratio between them holds at every depth:
+//     still 2.53 coins to fill the bar from empty, still 0.2 coins/sec to hold it at
+//     the cap. The supply economics CHICANE_GOLD_GAP_SEC and POWERUP_MIN_GAP_SEC were
+//     tuned against are untouched; only the px magnitude now tracks the corridor the
+//     bonus is a bonus ON.
+// This does not contradict "coin bonus is a real difficulty lever" (CLAUDE.md): the
+// lever is exactly as strong as it ever was early, and now equally strong - rather
+// than disproportionately stronger - deep. The accessors live in world.js next to
+// refreshWave(), which is what computes the reference half-gap they scale off.
+const GAP_PER_COIN_FRAC  = 0.075 / 0.43;   // bonus halfGap added per coin
+const GAP_BONUS_MAX_FRAC = 0.19  / 0.43;   // cap: max halfGap bonus
+const GAP_DECAY_FRAC     = 0.015 / 0.43;   // bonus lost per second
+// Peak multiplier on the decay rate deep (update.js _deepDecay, lerped in over
+// _prog2/3, so fully inert until score 233 and only at peak around score ~2400).
+// UNCHANGED at 2.5, and named here only so it can be swept without editing the decay
+// line. Through 12.0 this was the only brake on a bonus that could otherwise cancel
+// the whole corridor narrowing; with the magnitudes now scaling WITH the corridor
+// that job is done by construction, so the expectation going in was that 2.5 would
+// now overshoot and need lowering.
+// It doesn't, and the reason is worth recording so nobody re-litigates it: swept at
+// 1.0 / 1.6 / 2.5 (and 25.0 as a sanity check) over 100 expert runs each, the held
+// bonus moved 0.850 -> 0.849 -> 0.821 and the per-band corridor not at all. Coin
+// SUPPLY refills the bar far faster than any of these rates drain it, so decay is
+// simply not the binding constraint any more - the cap is. Left alone rather than
+// re-tuned on a guess; if the deep run ever needs tightening again, the lever is
+// supply (CHICANE_GOLD_GAP_SEC) or GAP_BONUS_MAX_FRAC, not this.
+const DEEP_DECAY_PEAK    = 2.5;
 // Extra cut taken off gold's coin-type share as a run gets deeper, on top of the
 // natural shrink from other types' shares growing (systems.js makeCoin) -- see the
 // goldDecayT doc there. 0.35 = up to 35% of gold's leftover share redistributed to
@@ -183,7 +214,7 @@ const GOLD_DEEP_DECAY = 0.35;
 // doubt; gapBonusVisual (the value collision/rendering actually use, world.js
 // boundsAt) chases it at this constant px/s rate instead of snapping, so the wall
 // visibly widens rather than teleporting. Same lag applies on the way down after
-// GAP_DECAY starts pulling the target back in, which is why smoothing this also
+// the decay starts pulling the target back in, which is why smoothing this also
 // nudges the corridor's total "wide" window slightly longer, not just its onset.
 const GAP_EASE_RATE   = H  * 0.3;
 
@@ -333,7 +364,7 @@ const NO_HIT_ACH_ID = 'tunl_ach_no_hit';
 
 // "Ohne Bonus" (no-bonus run) achievement: reach NO_BONUS_ACH_SCORE in a single run
 // without ever collecting a GOLD coin - the only coin type that feeds `gapBonus`
-// (constants.js GAP_PER_COIN, systems.js checkCoinCollection), so this is "the corridor
+// (constants.js GAP_PER_COIN_FRAC, systems.js checkCoinCollection), so this is "the corridor
 // was never widened," not PACIFIST_ACH's "no coins of any type" - other power-up coins
 // (blue/red/orange/green/bomb) are still fair game. Checked against
 // `runCoinsByType.gold` (state.js), live, guarded by `noBonusAchFired`. Per-run, not
@@ -873,7 +904,7 @@ const GREEN_DROUGHT_CAP      = 2.0;
 // Two deliberate choices about how this is enforced:
 //  - A rejected power-up coin is SKIPPED ENTIRELY (makeCoin returns null), not
 //    downgraded to gold. Downgrading would hand the whole suppressed share to gold
-//    and re-break the corridor bonus this same pass is fixing (see GAP_DECAY).
+//    and re-break the corridor bonus this same pass is fixing (see GAP_DECAY_FRAC).
 //  - The floor SCALES IN with depth (POWERUP_GAP_EARLY_MULT below), so it is a
 //    no-op for the whole stretch real players actually fly. The measured natural
 //    gaps at score 100-233 are 4.3s (red) and ~6.7s (blue/orange/green) against
@@ -897,7 +928,7 @@ const GREEN_DROUGHT_CAP      = 2.0;
 const POWERUP_MIN_GAP_SEC = { blue: 8, red: 9, green: 8 };
 // Minimum real seconds between two chicane gold coins (systems.js
 // maintainStalactites). Same "cadence in seconds, not pixels" reasoning as the
-// floors above - see the full argument at the call site and in the GAP_DECAY doc.
+// floors above - see the full argument at the call site and in the GAP_DECAY_FRAC doc.
 const CHICANE_GOLD_GAP_SEC = 2.2;
 // ...scaled by this at/below the _prog2 ramp start and lerped to 1.0 by score ~900,
 // so the gate is a no-op for the whole stretch real players actually reach. Same

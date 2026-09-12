@@ -193,13 +193,20 @@ function update(dt) {
     //
     // Deep-run decay ramp: past the _prog2 plateau every corridor geometry knob is
     // frozen and gold coins are abundant (chicanes), so a maxed gapBonus used to sit
-    // there permanently -- +GAP_BONUS_MAX halfGap more than cancels the whole
+    // there permanently -- a maxed absolute bonus more than cancelled the whole
     // 0.34->0.163 narrowing, making the deep corridor effectively wider than a
     // beginner's and flattening the difficulty curve exactly where it should bite.
-    // Scaling the DECAY (not shrinking GAP_PER_COIN / GAP_BONUS_MAX -- those stay a
-    // real lever early, see CLAUDE.md) up to 2.5x by score ~2400 means holding the
-    // bonus wide deep needs a steady coin stream, and any lapse narrows the wall
-    // back toward its frozen geometry. Inert until score 233 (_prog2 == 0).
+    // Scaling the DECAY up to 2.5x by score ~2400 means holding the bonus wide deep
+    // needs a steady coin stream, and any lapse narrows the wall back toward its
+    // frozen geometry. Inert until score 233 (_prog2 == 0).
+    //
+    // 12.0 note: this ramp used to be the ONLY thing pushing back on a maxed bonus
+    // deep, because the magnitudes themselves were absolute px. They are now
+    // fractions of the corridor (constants.js GAP_*_FRAC), so "a maxed gapBonus
+    // cancels the whole 0.34->0.163 narrowing" is no longer possible by
+    // construction, and this ramp is a second-order tightener on top of that rather
+    // than the load-bearing fix. Its peak multiplier was re-measured against the new
+    // scaling rather than inherited on faith - see DEEP_DECAY_PEAK.
     //
     // Re-validated 2026-09-11 and deliberately LEFT ALONE. This ramp never actually
     // got to do its job before, because chicane gold was pouring in at a measured
@@ -210,8 +217,12 @@ function update(dt) {
     // diameters across the score bands, against a flat ~6-7 before. A steeper ramp
     // (2.8x by score ~1180) was tried and rejected - it cancelled the coin bonus deep
     // almost entirely, which is the opposite failure to the one being fixed.
-    const _deepDecay = lerp(1, 2.5, Math.min(_prog2 / 3, 1));
-    gapBonus   = Math.max(0, gapBonus   - GAP_DECAY * _deepDecay * (activeSkin === 4 ? masteryLerp(4, 1.6, 1.2) : 1.0) * dt);
+    const _deepDecay = lerp(1, DEEP_DECAY_PEAK, Math.min(_prog2 / 3, 1));
+    gapBonus   = Math.max(0, gapBonus   - gapDecay() * _deepDecay * (activeSkin === 4 ? masteryLerp(4, 1.6, 1.2) : 1.0) * dt);
+    // The cap tracks the corridor, so a bonus banked in a wide stretch has to give
+    // ground as the corridor narrows under it. Continuous (the base curve moves
+    // slowly) and gapBonusVisual's easing smooths whatever is left.
+    gapBonus   = Math.min(gapBonus, gapBonusMax());
     // gapBonusVisual chases the instant-jump gapBonus target at a constant rate
     // instead of snapping to it (constants.js GAP_EASE_RATE doc) - this is the
     // value collision/rendering actually use, so the wall visibly widens rather
