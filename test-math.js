@@ -356,8 +356,8 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
 
     // Falling-stalactite cadence: absent early, then a real deep presence, floored.
     // Sampled at fixed world-x, not relative to D: fallSpacing is a function of
-    // _prog2 alone, and D - 40000 would be a negative scrollX now that
-    // DEEP_VARIETY_WX sits at 30000.
+    // _prog2 alone, and D - 40000 would go negative regardless of exactly where
+    // DEEP_VARIETY_WX sits (9000 as of 12.0, was 30000).
     const fsAt = (wx) => { w.scrollX = wx; w.refreshWave(); return w.fallSpacing(); };
     check('fallSpacing tightens from a rare set-piece to a floored deep cadence',
         fsAt(14000) > fsAt(54000) && fsAt(54000) > fsAt(254000) && fsAt(5_000_000) >= 1800);

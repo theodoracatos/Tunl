@@ -442,6 +442,22 @@ onset. Wall glow shifts purple → cyan when bonus is active. Gold bar at bottom
 remaining bonus - both keyed off `gapBonusVisual` too, so what's shown always matches
 what's actually collided against.
 
+**Off-screen wall warning strip** (`draw.js`, added in 12.0, right after the wall-edge
+glow it sits alongside): a maxed `gapBonusVisual` can push the corridor edge past the
+canvas entirely (`boundsAt().top < 0` or `.bot > H`) - `centerAt()`'s clamp only keeps
+the corridor centred *inside* `_halfGap`, it has no idea the bonus is about to widen the
+edge straight off the screen. When that happens the wall polygon fills nowhere on
+screen for that column, but the player can still die there: `update.js`'s SECOND
+collision check (`py - cPR < 0 || py + cPR > H`) is screen-anchored, not corridor-
+anchored, and fires whenever the (invisible, far-off-screen) corridor check can't -
+found by a red-team audit as the game's one systematic source of "the wall I died on
+was never drawn" deaths (27-55% of play-frames past score 25, depending on skill tier).
+The strip is purely visual (a pulsing warm-red band right at `y=0`/`y=H`, only over the
+x-ranges where that column is actually off-screen) - `boundsAt()` and the collision code
+above are untouched. It reads as a hazard-warning colour distinct from the wall-glow's
+purple/cyan bonus indicator on purpose: one says "the bonus is active", the other says
+"the edge you can't see is live right here.
+
 ### Difficulty scaling functions
 
 Two-phase difficulty system:
@@ -475,20 +491,51 @@ plateau at wx=14000. Added in both `refreshWave()` and `halfGapAt()` so renderin
 collision (`boundsAt`) and placement (`boundsBase`, via `halfGapAt`) agree - same pattern
 as `deepChamberAt`.
 
-### Deep-run variety (score ~500+, do not revert)
+### Deep-run variety (score ~150+, do not revert)
 
 Past `_prog2 = 1` (score ~900) every corridor geometry knob is capped and only
 `scrollSpd()` moves - so a five-digit run was one variable, speed, getting twitchier
 against a frozen corridor. `DEEP_VARIETY_WX` (the switch-on point for the shape morph,
 chambers, deep coin-line shapes and the palette drift) was **moved 54000 -> 30000
 (score ~500) on 2026-09-11**, same leaderboard argument as the Boulders section: at
-54000 none of it had ever been seen. It is safe below the plateau because every one of
-those features is bounded *relative to the same wx unmorphed* (the `test-math` energy
-guard holds at any wx, and chambers only ever widen). Two things deliberately did NOT
-move with it: the **speed pulse** (still gated on `_prog2 > 1` in `scrollSpd()` -
-surging above a still-ramping trend is a different proposition from surging above a flat
-one) and the **apex-biased mines**, which keep their own `DEEP_APEX_WX` = 54000 because
-that one is flagged below as an unplaytested fairness risk. Two additions in `world.js` (all `DEEP_*` consts + `_deepHash`
+54000 none of it had ever been seen. **Moved again 30000 -> 9000 (score ~150) in
+12.0** - a red-team simulation (2400 runs across 4 calibrated skill tiers) found the
+real leaderboard sample's own tier reached wx 30000 in exactly 0% of 600 runs: same
+mistake, one order smaller. At 9000, a tier just under real players' best runs reaches
+it in 24.7% of runs, one step better (expert) in 63.5% - see the doc comment above
+`DEEP_VARIETY_WX` in `world.js` for the full numbers. It is safe at any value because
+every one of those features is bounded *relative to the same wx unmorphed* (the
+`test-math` energy guard holds at any wx, and chambers only ever widen). Two things
+deliberately did NOT move with it: the **speed pulse** (still gated on `_prog2 > 1` in
+`scrollSpd()` - surging above a still-ramping trend is a different proposition from
+surging above a flat one) and the **apex-biased mines**, which keep their own
+`DEEP_APEX_WX` = 54000 because that one is flagged below as an unplaytested fairness
+risk.
+
+**Moving `DEEP_VARIETY_WX` earlier exposed two latent bugs that moving it back
+wouldn't have fixed - both are now fixed, not worked around:**
+1. `deepMorphAt` jumped straight from the inert `{a1:1,a2:1}` to a fully-hashed
+   character in a single world-px at the `DEEP_VARIETY_WX` boundary itself - a real
+   seam that the existing "continuous across character boundaries" guard in
+   `test-math.js` never sampled (it starts checking a few hundred world-px past the
+   boundary, well after the jump). At wx=30000 this sat deep past every boulder that
+   was ever placed there, so it went uncaught; at wx=9000 it landed right in active
+   boulder territory and `test-cave.js`'s boulder-pass-safety check caught it as a
+   sealed pass. Fixed by giving segment 0 its own entry ramp - the same 30%-of-
+   wavelength blend every later segment already spends blending OUT, spent blending
+   IN instead - which keeps `wx <= DEEP_VARIETY_WX` exactly inert (nothing at or below
+   the documented switch-on point moves) while making everything past it seamless.
+2. `test-cave.js`'s own boulder-safety check had a second, independent bug: it
+   extracted `boundsBase`/`placeStalW` from one `makeWorld()` sandbox that never had
+   `startRun(day)` called on it, so it validated every day's boulders against
+   world.js's bare load-time defaults (phase 0, jitter 1, archetype 0, `_deepHash`
+   seeded off day 0) instead of that day's real seeded state - the portal check right
+   below it already re-seeds per day and was never affected. This test bug is what
+   turned bug #1's tiny, already-fixed seam into a false "2 boulders sealed" failure
+   in the first place; both are fixed now, and `node test-cave.js` shows 0 sealed
+   passes across the full DAYS sample either way.
+
+Two additions in `world.js` (all `DEEP_*` consts + `_deepHash`
 + `deepMorphAt`, gated by `_deepVarietyOn`) give the deep run a changing shape and pace
 without touching the navigability caps:
 
@@ -943,6 +990,15 @@ the forced interstitial, not a video the player actively taps):
 
 ## Key design decisions (do not revert)
 
+- **No live debug keyboard shortcuts ship unguarded**: `input.js`'s `KeyP` handler
+  (toggles `window._freezeDraw`, freezing a live run - world, physics, and audio -
+  indefinitely) is gated behind `DEV_PAUSE_KEY` (`constants.js`, ships `false`; same
+  pattern as `DEV_INVINCIBLE`). Through 11.0 this shipped live in the web build: a
+  red-team audit found it, unguarded, gave any player unlimited thinking time on a
+  shared daily leaderboard for free. `window._freezeDraw` itself is untouched - the
+  console-driven headless-playtest workflow reads/writes it directly, never through
+  this key - only the keyboard binding needed the guard. Flip `DEV_PAUSE_KEY` to
+  `true` locally to get the shortcut back for debugging; never ship it `true`.
 - **Coin bonus is a real difficulty lever, not a marginal aid**: `GAP_PER_COIN` = H*0.075, `GAP_BONUS_MAX` = H*0.19 (see Coin system above) - at max difficulty (196px full corridor at H=600) one coin adds ~46% to the halfGap, a maxed bonus more than doubles it. Coins are essential at high difficulty by design, not a small nudge - don't shrink these constants back down to make the bonus merely "helpful."
 - **boundsBase for coin placement**: Coins placed ignoring current bonus so they're always reachable even without a bonus. Never use `boundsAt()` for coin placement.
 - **Triangle-circle collision**: Stalactites use proper geometric collision matching the visual triangle, not AABB. Changing to AABB would make invisible collisions at the edges.

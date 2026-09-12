@@ -301,7 +301,11 @@ window.addEventListener('pointerup',     e => { if (_fromWebOverlay(e)) return; 
 window.addEventListener('pointercancel', e => { if (_fromWebOverlay(e)) return; onCancel(e); });
 window.addEventListener('keydown', e => {
     if (['Space','ArrowUp'].includes(e.code)) { e.preventDefault(); onDown(); }
-    if (e.code === 'KeyP') {
+    // Gated behind DEV_PAUSE_KEY (constants.js, ships false) -- this used to be a bare
+    // 'P' shortcut that froze a live run indefinitely, world/physics/audio and all,
+    // discovered during a red-team audit. window._freezeDraw itself is untouched for
+    // the console-driven headless-playtest workflow; only the keyboard binding is off.
+    if (DEV_PAUSE_KEY && e.code === 'KeyP') {
         window._freezeDraw = !window._freezeDraw;
         if (_ac) { window._freezeDraw ? _ac.suspend() : _ac.resume(); }
     }

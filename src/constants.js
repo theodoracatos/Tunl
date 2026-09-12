@@ -132,6 +132,13 @@ const MAX_VY  = 1080 * _FEEL_SCALE;
 const RSTEP   = 3;
 
 const DEV_INVINCIBLE = false; // set true to disable all deaths (testing only)
+// Ships false. Was a bare, unguarded 'P' keydown handler through 11.0 (input.js) --
+// a red-team audit found it froze a LIVE run indefinitely (world/physics/audio all
+// suspended) with no confirmation and no visible state, which on a leaderboard game
+// is unlimited thinking time for free. window._freezeDraw itself stays -- the headless
+// playtest workflow (see CLAUDE.md-adjacent memory) drives it from the console, never
+// from this key -- only the keyboard shortcut is gated. Flip true for local testing.
+const DEV_PAUSE_KEY = false;
 
 // Coin constants
 const COIN_R          = W  * 0.009;   // visual radius

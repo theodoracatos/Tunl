@@ -85,14 +85,26 @@ let _deepVarietyOn = true;
 // drift) switches on. Was 54000 (_prog2 == 1, score ~900) until 2026-09-11, when a
 // replay audit against the real leaderboard found the highest daily best ever
 // recorded is 169 - so every one of these features was content no player had ever
-// seen. Moved to 30000 (_prog2 == 0.4, score 500). Safe below the plateau because
-// every one of them is bounded RELATIVE to the same wx unmorphed: the morph's
-// amplitude splits are capped against corridor velocity at that wx (test-math
-// guards this at any wx, not just past the plateau), and chambers only ever widen.
+// seen. Moved to 30000 (_prog2 == 0.4, score 500) that day.
+//
+// Moved again in 12.0, to 9000 (score 150) - same mistake one order smaller. A
+// red-team simulation (2400 runs across 4 calibrated skill tiers, method in
+// CLAUDE.md's audit trail) found the real leaderboard sample (median daily best 70)
+// sits at its "average" tier, and measured that tier reaching wx 30000 in exactly
+// **0%** of 600 runs - the content was still content nobody had ever seen, just one
+// step removed from the boulder mistake instead of two. At 9000: average 3.3% of
+// runs, good (the tier just under real players' own best runs) 24.7%, expert 63.5% -
+// so this is the same "does ANY meaningful share of real play reach it" bar the
+// 2026-09-11 boulder move used (7 of 8 day-seeds by score 85-150), not a promise
+// that most runs will.
+// Safe at any value because every deep-variety piece is bounded RELATIVE to the same
+// wx unmorphed: the morph's amplitude splits are capped against corridor velocity at
+// that wx (test-math guards this at any wx, not just past the plateau), and chambers
+// only ever widen.
 // The speed pulse is NOT moved with it - it stays gated on `_prog2 > 1` in
 // scrollSpd(), because surging *above* a trend that is still steeply ramping is a
 // different proposition from surging above a flat one.
-const DEEP_VARIETY_WX    = 30000;   // _prog2 == 0.4, score ~500
+const DEEP_VARIETY_WX    = 9000;    // _prog2 == 0, score ~150
 // Apex-biased mines (systems.js makeMine) deliberately did NOT move with
 // DEEP_VARIETY_WX. CLAUDE.md flags that one as "watch in playtest for a 'the game
 // is cheating' read" and it has never had a device playtest; pulling an unproven
@@ -125,8 +137,28 @@ function _deepHash(n) {
 
 // Wave-amplitude split (a1, a2 multipliers) active at world-x wx, smoothstepped
 // across the last 30% of each band so the wall never kinks at a boundary.
+// Every LATER character boundary is continuous by construction: a segment holds its
+// character flat for the first 70% of its span, then blends toward the NEXT segment's
+// character over the last 30%, so by the time wx crosses into that next segment the
+// value has already arrived - no seam. Segment 0 itself had nothing to blend FROM,
+// though: below DEEP_VARIETY_WX this returned a bare {1,1} with no segment machinery
+// at all, so crossing D could jump straight from {1,1} to a fully-hashed character in
+// a single world-px - a real seam, just one small enough (and far enough into a score
+// band nothing used to place there) that it went uncaught until 12.0 moved
+// DEEP_VARIETY_WX into active boulder territory and test-cave.js's pass-safety check
+// hit it. Fixed by giving segment 0 its OWN entry ramp, spending the same 30%-of-
+// wavelength window every later segment spends blending OUT, blending IN instead -
+// symmetric, and it keeps wx <= DEEP_VARIETY_WX exactly {1,1} (nothing at/below the
+// documented switch-on point moves), never shifting where deviation starts.
 function deepMorphAt(wx) {
     if (!_deepVarietyOn || wx <= DEEP_VARIETY_WX) return { a1: 1, a2: 1 };
+    const entry = DEEP_CHAR_WAVELEN * 0.3;
+    if (wx <= DEEP_VARIETY_WX + entry) {
+        const t  = (wx - DEEP_VARIETY_WX) / entry;
+        const bl = t * t * (3 - 2 * t);
+        const c1 = DEEP_CHARS[Math.floor(_deepHash(0) * DEEP_CHARS.length)];
+        return { a1: 1 + (c1.a1 - 1) * bl, a2: 1 + (c1.a2 - 1) * bl };
+    }
     const u    = (wx - DEEP_VARIETY_WX) / DEEP_CHAR_WAVELEN;
     const seg  = Math.floor(u);
     const frac = u - seg;

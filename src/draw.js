@@ -497,6 +497,48 @@ function drawWorld() {
     }
     ctx.stroke();
 
+    // Off-screen wall warning strip (red-team audit, 2026-09-12; see CLAUDE.md's
+    // "Coin bonus vs. canvas edge" note). A maxed gapBonusVisual can push topArr[i]
+    // negative or botArr[i] past H - once that happens the wall polygon above fills
+    // entirely off-canvas for that column and NOTHING is drawn there. That's not
+    // just a cosmetic gap: update.js's collision has a second, screen-anchored check
+    // (`py - cPR < 0 || py + cPR > H`) that fires whenever the corridor's own check
+    // can't (b.top/b.bot are too far past py to ever trip), so the SCREEN EDGE, not
+    // the invisible corridor line, is the real lethal boundary there. Mark it
+    // directly wherever it's live, rather than leaving a silent, undrawn kill line -
+    // this is purely visual, boundsAt()/the collision code above are untouched.
+    {
+        const pulse  = 0.55 + 0.35 * Math.sin(gtime * 5.5);
+        const bandH  = Math.max(6, H * 0.022);
+        const drawEdgeBand = (arr, atTop) => {
+            let run = false, x0 = 0;
+            for (let i = 0; i <= n; i++) {
+                const off = i < n && (atTop ? arr[i] < 0 : arr[i] > H);
+                if (off && !run) { run = true; x0 = xs[i]; }
+                if ((!off || i === n) && run) {
+                    run = false;
+                    const x1 = xs[i - 1];
+                    const grd = ctx.createLinearGradient(0, atTop ? 0 : H, 0, atTop ? bandH : H - bandH);
+                    grd.addColorStop(0, `rgba(255,60,40,${0.55 * pulse})`);
+                    grd.addColorStop(1, 'rgba(255,60,40,0)');
+                    ctx.fillStyle = grd;
+                    ctx.fillRect(x0, atTop ? 0 : H - bandH, x1 - x0, bandH);
+                    ctx.beginPath();
+                    ctx.moveTo(x0, atTop ? 0.5 : H - 0.5);
+                    ctx.lineTo(x1, atTop ? 0.5 : H - 0.5);
+                    ctx.strokeStyle = `rgba(255,120,80,${0.85 * pulse})`;
+                    ctx.lineWidth   = 2;
+                    ctx.shadowColor = `rgba(255,70,40,${0.7 * pulse})`;
+                    ctx.shadowBlur  = 10;
+                    ctx.stroke();
+                    ctx.shadowBlur  = 0;
+                }
+            }
+        };
+        drawEdgeBand(topArr, true);
+        drawEdgeBand(botArr, false);
+    }
+
     // Death markers - rings etched into the wall at each death spot. y is resolved
     // live from the current corridor so the ring swings with the wave and stays stuck
     // to the wall edge as gapBonus widens/narrows it (see deathMarkers in state.js).

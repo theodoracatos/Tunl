@@ -230,6 +230,13 @@ for (const day of DAYS) {
     for (const day of DAYS) {
         // snapshot() rows: stal [wx, isTop, length, falls], boulder [wx, y, r]
         const { snap } = replay(956, 440, day, 40000);
+        // boundsBase/placeStalW close over this sandbox's per-day wave phase/jitter/
+        // archetype/deep-hash state (world.js seedDailyVariety), which only ever gets
+        // set by startRun() - without this call they silently validate every day
+        // against day-0's own defaults (phase 0, jitter 1, archetype 0) instead of the
+        // day actually being checked. PR/H_TO_REF are pure W/H constants and don't
+        // need this. Mirrors the portal check below, which already re-seeds per day.
+        w.startRun(day);
         for (const [bwx, by, br] of snap.boulder) {
             const bb = boundsBase(bwx);
             let top = bb.top, bot = bb.bot;
