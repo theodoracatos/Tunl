@@ -1059,6 +1059,19 @@ stretch is where a new player's first lesson is the feel of thrust-vs-gravity ra
 the death screen. (Coins still start at their normal distance - they teach collection and
 can't kill anyone. Mines start at world-x 1800, just after the first stalactite.)
 
+**Safe opening zone + training flights (2026-09-13, beginner "too hard, deleted it"
+feedback)** (`SAFE_START_WX` doc block in `constants.js`, `safeOpenAt()`/`wallsSafe()`
+in `world.js`, `safeWallBump()` in `update.js`). Every run opens with the corridor
+pushed out to the screen edges (`boundsAt()` only, never `boundsBase()`, so the shared
+cave and `test-cave.js` are untouched) and **walls that bump instead of kill** until
+world-x 3000 (~score 50), closing over the last 1200px. Hazards stay lethal. A
+**training run** - a player's first 3 runs while their all-time `best` < 100 (the best
+guard exists because `totalRuns` only started counting in 11.0) - stretches that to
+world-x 18000 (~score 300, ~32s) with a "walls now deadly" notif as it closes, and is
+kept out of every record: no leaderboard submit, no best/daily best/top list/ghost, no
+score achievements or score missions. Shards and coin missions still pay. Near-miss
+bonus and the red danger flash are off while walls are soft (no wall-riding farm).
+
 **The launch ramp is 0.5s** (`START_RAMP_SEC`, `constants.js`, applied in `update.js`).
 The run opens with the ship flying up into frame and levelling out, with `py`/`vy`/
 `shipPitch` driven by the ramp rather than by the player - so it is time the player

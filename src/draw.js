@@ -507,7 +507,10 @@ function drawWorld() {
     // the invisible corridor line, is the real lethal boundary there. Mark it
     // directly wherever it's live, rather than leaving a silent, undrawn kill line -
     // this is purely visual, boundsAt()/the collision code above are untouched.
-    {
+    // Skipped inside the safe opening zone (constants.js SAFE_START_WX doc): the walls
+    // sit a sliver from the edge there, the jagged edge noise can poke past it, and
+    // the edge is soft anyway - a "lethal edge" warning would be a false alarm.
+    if (safeOpenAt(scrollX + PX) <= 0) {
         const pulse  = 0.55 + 0.35 * Math.sin(gtime * 5.5);
         const bandH  = Math.max(6, H * 0.022);
         const drawEdgeBand = (arr, atTop) => {
@@ -1290,8 +1293,9 @@ function drawWorld() {
         ctx.globalAlpha = 1;
     }
 
-    // Proximity danger flash
-    if (phase === 'play') {
+    // Proximity danger flash - not while the walls are soft (constants.js
+    // SAFE_START_WX doc), a red "danger" wash there would teach the wrong thing.
+    if (phase === 'play' && !wallsSafe()) {
         const b       = boundsAt(scrollX + PX);
         const minDist = Math.min(py - PR - b.top, b.bot - (py + PR));
         const safe    = (_halfGap + gapBonusVisual) * 0.35;
@@ -1792,6 +1796,19 @@ function drawHUD() {
         ctx.fillText(`${T.best}  ${best}`, W/2, hudY);
         ctx.shadowBlur  = 0;
         hudY += bestFsz * 0.85 + H * 0.01;
+    }
+
+    // Training flight tag (constants.js SAFE_START_WX doc), so a new player knows why
+    // this run's score won't show up on the leaderboard.
+    if (trainingRun && phase === 'play') {
+        const trFsz = FS * 0.025;
+        ctx.font        = `bold ${trFsz}px 'Courier New',monospace`;
+        ctx.fillStyle   = 'rgba(120,230,170,0.92)';
+        ctx.shadowColor = 'rgba(0,0,0,0.85)';
+        ctx.shadowBlur  = 4;
+        ctx.fillText(T.training, W/2, hudY);
+        ctx.shadowBlur  = 0;
+        hudY += trFsz * 0.85 + H * 0.01;
     }
 
     // Next skin nudge - faint pulsing hint when this run's banked-so-far shards would
@@ -3775,6 +3792,11 @@ function drawDeathScreen() {
         // each time the slot below happened to hold something else. Dropping the
         // redundant line removes the whole collision class instead of chasing it
         // banner by banner.
+    } else if (trainingRun) {
+        sh(4, `rgba(40,140,90,${a * 0.45})`);
+        ctx.font      = `bold ${FS*0.030}px 'Courier New',monospace`;
+        ctx.fillStyle = `rgba(130,235,175,${a * 0.95})`;
+        ctx.fillText(T.training, LC, H * 0.495);
     } else if (best > 0) {
         sh(4, `rgba(60,90,180,${a * 0.45})`);
         ctx.font      = `bold ${FS*0.026}px 'Courier New',monospace`;

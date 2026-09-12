@@ -733,6 +733,34 @@ const BOMB_RADIUS = W * 0.30;
 // (see die()'s bypassShield branch); a future rewarded "continue" reuses the same timer.
 const HIT_INVULN_SEC = 1.4;
 
+// ── Onboarding: safe opening + training flights ──────────────────────
+// Beginner feedback (2026-09-13, several players): "too hard, frustrating, deleted".
+// The measured cause is the control scheme, not the obstacles - a beginner's median
+// run was 1.0s of flight, i.e. they die to the ceiling/floor before the first
+// stalactite ever arrives. So the opening of every run is a safe zone: the corridor
+// opens up to the screen edges (world.js safeOpenAt, boundsAt only - placement via
+// boundsBase is untouched, so the shared daily cave is unchanged) and the walls bump
+// the ship back instead of killing it (update.js). Hazards stay lethal throughout.
+//
+// SAFE_START_WX applies to EVERY run, so it is fair by construction on the shared
+// leaderboard. A TRAINING run (a new player's first TRAINING_RUNS runs, while their
+// all-time best is still under TRAINING_MAX_BEST) stretches the zone to
+// TRAINING_SAFE_WX (~score 300) so the first minutes end in real distance instead of
+// the death screen - and in exchange a training run is kept out of every record:
+// no leaderboard submit, no best/daily best/top list/ghost, no score achievements or
+// score missions (update.js commitDeath). Shards and collected-coin missions still pay.
+// The best guard matters because totalRuns only exists since 11.0: an established
+// player's counter restarted at 0, but their best did not.
+// The corridor eases back over the last *_CLOSE_WX of the zone and the walls stay
+// soft until it has fully closed, so the handover can never kill on its own.
+const SAFE_START_WX          = 3000;   // ~score 50, every run
+const SAFE_CLOSE_WX          = 1200;
+const TRAINING_SAFE_WX       = 18000;  // ~score 300, training runs only
+const TRAINING_CLOSE_WX      = 2400;
+const TRAINING_RUNS          = 3;
+const TRAINING_MAX_BEST      = 100;
+const SAFE_OPEN_PAD          = H * (10 / _H_REF);   // wall sliver left at each screen edge
+
 // ── Onboarding: teaching RELEASE ─────────────────────────────────────
 // The obstacle-free opening stretch (lifecycle.js STAL_START_WX) teaches thrust, but
 // nothing in the game ever teaches that RELEASING is the other half of the control

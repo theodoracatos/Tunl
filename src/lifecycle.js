@@ -40,6 +40,7 @@ function titleScreen() {
     chicaneCoins = []; lastChicaneCoinWx = -Infinity;
     gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
     invulnT = 0; deathCause = null;
+    safeEndWx = 0; safeCloseWx = 1; trainingRun = false; safeBumpT = 0; wallsLiveShown = false;
     continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;
     reviveCountdownT = 0;
     bullets = []; bulletAmmo = 0; bulletFireTimer = 0;
@@ -188,6 +189,11 @@ function startPlay() {
             window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: ra.id });
         }
     }
+    // Safe opening zone / training flight (constants.js SAFE_START_WX doc).
+    trainingRun = _runsBefore < TRAINING_RUNS && best < TRAINING_MAX_BEST;
+    safeEndWx   = trainingRun ? TRAINING_SAFE_WX : SAFE_START_WX;
+    safeCloseWx = trainingRun ? TRAINING_CLOSE_WX : SAFE_CLOSE_WX;
+    safeBumpT = 0; wallsLiveShown = false;
     // A ghost carried in on a ?g= share link (state.js _webGhostPlay) has to
     // survive the daily-rollover reset above, which clears the local ghost -
     // racing that shared ghost is the whole point of opening the link.

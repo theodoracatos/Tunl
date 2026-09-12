@@ -386,6 +386,15 @@ function update(dt) {
         }
     }
 
+    // Training flight: say it out loud when the corridor starts closing in, since
+    // the walls turning lethal ~300 points into the run would otherwise be a surprise.
+    safeBumpT = Math.max(0, safeBumpT - dt);
+    if (trainingRun && !wallsLiveShown && scrollX + PX >= safeEndWx - safeCloseWx) {
+        wallsLiveShown = true;
+        pushNotif(PX + PR * 3, py - H * 0.10, 1.8, T.wallsLive, [255, 120, 70]);
+        window.webkit?.messageHandlers?.haptic?.postMessage('medium');
+    }
+
     // Milestone check
     if (score >= milestoneNext) {
         triggerMilestone(milestoneNext);
@@ -395,22 +404,22 @@ function update(dt) {
     // Skill achievements (constants.js doc comments above each _ACH_ const): all three
     // are live/per-frame checks with a one-shot guard, since their conditions (score
     // rising, flightClock rising) would otherwise stay true and re-fire every frame.
-    if (!sprintAchFired && score >= SPRINT_ACH_SCORE && flightClock <= SPRINT_ACH_MAX_SEC) {
+    if (!trainingRun && !sprintAchFired && score >= SPRINT_ACH_SCORE && flightClock <= SPRINT_ACH_MAX_SEC) {
         sprintAchFired = true;
         window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: SPRINT_ACH_ID });
     }
-    if (!noHitAchFired && score >= NO_HIT_ACH_SCORE && runHitCount === 0) {
+    if (!trainingRun && !noHitAchFired && score >= NO_HIT_ACH_SCORE && runHitCount === 0) {
         noHitAchFired = true;
         window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: NO_HIT_ACH_ID });
     }
-    if (!noBonusAchFired && score >= NO_BONUS_ACH_SCORE && runCoinsByType.gold === 0) {
+    if (!trainingRun && !noBonusAchFired && score >= NO_BONUS_ACH_SCORE && runCoinsByType.gold === 0) {
         noBonusAchFired = true;
         window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: NO_BONUS_ACH_ID });
     }
 
     // Near-miss bonus (wall proximity)
     nearMissTimer = Math.max(0, nearMissTimer - dt);
-    if (nearMissTimer <= 0) {
+    if (nearMissTimer <= 0 && !wallsSafe()) {
         const nmB = boundsAt(scrollX + PX);
         const nmC = Math.min(py - PR - nmB.top, nmB.bot - (py + PR));
         // VOID trades a smaller near-miss window for its extra shield capacity
@@ -554,9 +563,14 @@ function update(dt) {
               : activeSkin === 1 ? PR * masteryLerp(1, 1.10, 1.03)
               : activeSkin === 7 ? PR * masteryLerp(7, 1.20, 1.10)
               : PR;
+    const _wallsSafe = wallsSafe();
     for (const dx of [-cPR * 0.7, 0, cPR * 0.7]) {
         const b = boundsAt(scrollX + PX + dx);
         if (py - cPR < b.top || py + cPR > b.bot) {
+            // Safe opening zone (constants.js SAFE_START_WX doc): the wall bumps the
+            // ship back instead of killing it - a soft bounce plus a spark, so hitting
+            // it still reads as a mistake to learn from rather than as nothing.
+            if (_wallsSafe) { safeWallBump(b.top, b.bot, cPR); break; }
             // Mid-grace-window OR mid-warp: the wall is solid geometry, not a hazard,
             // so simply skipping the check (like stalactites/mines below) would let
             // the ship drift into the rock for the rest of the window. Clamp back
@@ -573,7 +587,8 @@ function update(dt) {
         }
     }
     if (py - cPR < 0 || py + cPR > H) {
-        if (invulnT > 0 || warpTime > 0) { py = Math.max(cPR, Math.min(H - cPR, py)); }
+        if (_wallsSafe) safeWallBump(0, H, cPR);
+        else if (invulnT > 0 || warpTime > 0) { py = Math.max(cPR, Math.min(H - cPR, py)); }
         else {
             deathCause = (py - cPR < 0) ? 'wallTop' : 'wallBot';
             markDeathHit(PX, (py - cPR < 0) ? 0 : H, cPR);
@@ -771,6 +786,21 @@ function update(dt) {
 // harmless, since it is only ever read once phase is 'dead'. The radius is the KILLER's
 // size, not the ship's, so the ring reads as "this is what got you" rather than as a
 // second ship outline; for a wall hit there is no object, so the ship radius is passed.
+// Soft wall inside the safe opening zone (constants.js SAFE_START_WX doc): clamp back
+// inside, reflect a fraction of the velocity that was carrying the ship into the wall,
+// and throttle the spark/haptic so riding along the edge doesn't strobe.
+function safeWallBump(top, bot, r) {
+    const hitTop = py - r < top;
+    py = Math.max(top + r, Math.min(bot - r, py));
+    if (hitTop ? vy < 0 : vy > 0) vy = -vy * 0.35;
+    if (safeBumpT <= 0) {
+        safeBumpT = 0.25;
+        burst(PX, hitTop ? top : bot, 8);
+        shake = Math.max(shake, 3);
+        window.webkit?.messageHandlers?.haptic?.postMessage('light');
+    }
+}
+
 function markDeathHit(x, y, r) {
     deathHitX = x; deathHitY = y; deathHitR = Math.max(r, PR * 0.9);
 }
@@ -863,7 +893,10 @@ function maybeRequestReview(runScore, hadPriorBest) {
 function commitDeath() {
     prevRunScore = lastRunScore;
     lastRunScore = score;
-    newBest = score > best;
+    // Training flight (constants.js SAFE_START_WX doc): the long safe zone makes its
+    // score incomparable, so it stays out of every record and leaderboard below.
+    const _counts = !trainingRun;
+    newBest = _counts && score > best;
     // Capture whether a *prior* best existed before this run overwrites it below --
     // maybeRequestReview() needs to tell "beat an existing record" from "this is
     // literally the player's first completed run" (best still 0 going in), which
@@ -872,7 +905,7 @@ function commitDeath() {
     if (!_hadPriorBest) window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: 'tunl_ach_first_flight' });
     // "Pacifist" (constants.js PACIFIST_ACH_SCORE/PACIFIST_ACH_ID): reached the
     // difficulty plateau this run without collecting a single coin.
-    if (score >= PACIFIST_ACH_SCORE && runCoins === 0) {
+    if (_counts && score >= PACIFIST_ACH_SCORE && runCoins === 0) {
         window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: PACIFIST_ACH_ID });
     }
     if (newBest) { best = score; localStorage.setItem('tunnel_best', best); }
@@ -885,11 +918,11 @@ function commitDeath() {
     // rather than a fresh constant, same floor REVIEW_MIN_SCORE reuses it
     // for - the worker re-checks this independently regardless (never trust
     // the client on something that grants value).
-    if (!_hadPriorBest && score >= CONTINUE_MIN_SCORE && typeof submitReferral === 'function') {
+    if (_counts && !_hadPriorBest && score >= CONTINUE_MIN_SCORE && typeof submitReferral === 'function') {
         submitReferral(score);
     }
     runsWithoutPB = newBest ? 0 : runsWithoutPB + 1;
-    newDailyBest = score > dailyBest;
+    newDailyBest = _counts && score > dailyBest;
     if (newDailyBest) { dailyBest = score; localStorage.setItem('tunnel_daily_best', dailyBest); }
     // Ghost: today's best run becomes the thing the next run races. Keyed to the day the
     // run was actually played (recomputed here, not read from state.js's page-load
@@ -943,7 +976,7 @@ function commitDeath() {
             }
         }
     }
-    if (score > 0) {
+    if (_counts && score > 0) {
         top5 = [...top5, score].sort((a, b) => b - a).slice(0, 5);
         localStorage.setItem('tunnel_top5', JSON.stringify(top5));
         window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'submit', score });
@@ -1026,10 +1059,10 @@ function commitDeath() {
     dailyMissionStats.green      += runCoinsByType.green;
     dailyMissionStats.orange     += runCoinsByType.orange;
     dailyMissionStats.bomb       += runCoinsByType.bomb || 0;
-    dailyMissionStats.dist       += score;
+    dailyMissionStats.dist       += _counts ? score : 0;
     dailyMissionStats.nearMisses += runNearMisses;
     dailyMissionStats.bestCombo   = Math.max(dailyMissionStats.bestCombo, runMaxCombo);
-    dailyMissionStats.bestScore   = Math.max(dailyMissionStats.bestScore, score);
+    if (_counts) dailyMissionStats.bestScore = Math.max(dailyMissionStats.bestScore, score);
     dailyMissionStats.runs        = dailyRuns;
     missionRewardWon = 0;
     for (let m = 0; m < dailyMissionIdx.length; m++) {
@@ -1076,7 +1109,7 @@ function commitDeath() {
     // (draw.js) -- not the real date, so a web ?d= replay of a past day's cave
     // still counts for that day's world. Native-only in effect (the bridge is a
     // no-op on web); the localStorage write is harmless there.
-    if (score >= CONTINUE_MIN_SCORE) {
+    if (_counts && score >= CONTINUE_MIN_SCORE) {
         const _planetIdx = weekdayIndex(_tunlActiveDate());
         if (!(planetsFlown & (1 << _planetIdx))) {
             planetsFlown |= (1 << _planetIdx);

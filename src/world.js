@@ -550,8 +550,26 @@ function boundsAt(wx) {
     // "boundsBase for coin placement"): nothing that decides where an object gets
     // PLACED may depend on whether a warp happens to be live for this player.
     const hg = _halfGap + gapBonusVisual + warpWidenVisual;
-    return { top: cy - hg, bot: cy + hg };
+    let top = cy - hg, bot = cy + hg;
+    // Safe opening zone (constants.js SAFE_START_WX doc): same boundsAt-only rule -
+    // the walls are pushed out to the screen edges for rendering/collision, never for
+    // placement. Only ever widens.
+    const o = safeOpenAt(wx);
+    if (o > 0) {
+        top = Math.min(top, lerp(top, SAFE_OPEN_PAD, o));
+        bot = Math.max(bot, lerp(bot, H - SAFE_OPEN_PAD, o));
+    }
+    return { top, bot };
 }
+
+// 1 = corridor fully open, 0 = normal. Holds at 1 until the last safeCloseWx of the
+// zone, then smoothsteps shut exactly at safeEndWx. Pure function of world-x.
+function safeOpenAt(wx) {
+    if (wx >= safeEndWx) return 0;
+    const t = Math.min(1, (safeEndWx - wx) / safeCloseWx);
+    return t * t * (3 - 2 * t);
+}
+function wallsSafe() { return scrollX + PX < safeEndWx; }
 
 // boundsBase predicts placement bounds using the wave params and halfGap that
 // will be in effect when the player reaches wx. Mirrors refreshWave's scaling
