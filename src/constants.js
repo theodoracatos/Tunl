@@ -6,7 +6,7 @@
 // it exists so a build can identify itself: window.TUNL_VERSION for a DevTools check,
 // and build-play.mjs stamps it into /play as <meta name="tunl:version"> so the live
 // web build's version is greppable without diffing the bundle.
-const TUNL_VERSION = '11.0';
+const TUNL_VERSION = '12.0';
 if (typeof window !== 'undefined') window.TUNL_VERSION = TUNL_VERSION;
 
 const cv  = document.getElementById('c');
@@ -757,6 +757,20 @@ const REVIEW_COOLDOWN_MS = 90 * 24 * 60 * 60 * 1000;
 // offer must cost zero extra wait or tap versus today, so the offer has to fit
 // inside time that's already unskippable, not add its own.
 const DEATH_INTERACTIVE_SEC = 0.9;
+// How long the crash itself stays on screen before the death panel starts fading in
+// (draw.js drawDeathScreen/drawContinueOffer). The world is already frozen the moment
+// phase flips to 'dead' (update.js's dead branch advances nothing but deadT), so this
+// costs no simulation -- it only stops the panel from painting over the one frame that
+// explains the run. Before 12.0 the panel reached full opacity at deadT ~0.15s and the
+// ship was drawn for 0.18s, so the player never actually saw what killed them: a
+// red-team audit measured a beginner's whole run at 0.9s of flight and found the death
+// screen's only message was the word "dead" and a number. deathCause has existed since
+// the death-marker work but was never shown to anyone.
+// Deliberately NOT added to DEATH_INTERACTIVE_SEC: this beat sits INSIDE the existing
+// unskippable window (0.40 < 0.9), so restarting costs exactly the same wait and the
+// same one tap it did before. CONTINUE_OFFER_SEC is the one thing that does get this
+// added back (update.js), because that budget is measured in *visible* offer time.
+const DEATH_REPLAY_SEC = 0.40;
 // The continue offer's own timeout -- deliberately NOT reusing DEATH_INTERACTIVE_SEC
 // above. First real-device pass found 0.9s (matched to that *existing* pre-interactive
 // beat, so declining would cost zero extra wait) too short to actually use: a player
@@ -916,6 +930,18 @@ const LEVEL_INTRO_FADE = 0.6; // seconds of that spent fading out at the end
 // engages exactly as if the gate had never existed, so an unattended run still ends up
 // falling like every other unheld ship.
 const HOLD_GATE_MAX_SEC = 2.25;
+
+// Launch ramp (update.js): the run opens with the ship flying up into frame from below
+// and levelling out, with py/vy/shipPitch driven by the ramp rather than by the player.
+// Held at 1.3s through 11.0. Cut to 0.5s in 12.0 after a red-team audit measured what
+// that actually costs the audience the onboarding is FOR: a beginner's median run is
+// 1.0s of flight, so the ramp was longer than the game, and only 31% of a new player's
+// death-to-death loop was time they could act in (1.3s ramp + 1.0s flight + 0.9s
+// DEATH_INTERACTIVE_SEC). Strong players are unaffected either way -- at a 17.7s median
+// run the ramp is noise -- so this is purely a first-minutes fix.
+// Keep it a named constant: the ramp also gates scrollX (the lf*lf term below it) and
+// is the window the boot audio plays under, so a future change wants one place to edit.
+const START_RAMP_SEC = 0.5;
 
 // Shards banked per calendar day are capped so unlocks track *days played*, not just
 // *coins collected* -- without this a single long grind session could bank enough shards

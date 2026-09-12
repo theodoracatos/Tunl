@@ -1418,8 +1418,10 @@ function drawWorld() {
         ctx.restore();
     }
 
-    // Player
-    if (phase !== 'dead' || deadT < 0.18) {
+    // Player. On death the ship keeps rendering (in red, below) for the whole
+    // DEATH_REPLAY_SEC freeze frame rather than the old flat 0.18s, so the crash is
+    // actually on screen long enough to read before the panel fades in over it.
+    if (phase !== 'dead' || deadT < DEATH_REPLAY_SEC) {
         const sk = SKINS[activeSkin] || SKINS[0];
         const [sr, sg, sb] = sk.shadow;
         const pitchAngle = shipPitch;
@@ -3604,8 +3606,14 @@ function drawDeathScreen() {
                                   // run-profile block's cleanup; set explicitly here
                                   // instead of relying on whatever the previous
                                   // frame happened to leave it as
-    const a  = Math.min(1, deadT * 6.5);
+    // Offset by the freeze frame (constants.js DEATH_REPLAY_SEC). The button row below
+    // (deadT > 0.75) and input.js's DEATH_INTERACTIVE_SEC gate are deliberately NOT
+    // offset: 0.40 + the 0.15s fade still lands well inside the 0.9s the death screen
+    // was already unskippable for, so this beat is free -- it costs the player no extra
+    // wait and no extra tap, it just stops the panel painting over the fatal frame.
+    const a  = Math.min(1, Math.max(0, deadT - DEATH_REPLAY_SEC) * 6.5);
     const sh = (blur, col = 'rgba(0,0,0,0.90)') => { ctx.shadowColor = col; ctx.shadowBlur = blur; };
+    if (a <= 0) return;
 
     // Dark overlay
     ctx.fillStyle = `rgba(4,4,14,${a * 0.82})`;
@@ -4082,10 +4090,69 @@ function drawDeathScreen() {
     }
 }
 
+// Death freeze frame (constants.js DEATH_REPLAY_SEC, state.js deathHitX/Y/R).
+// For the first fraction of a second after a fatal hit the world is already frozen --
+// update.js's 'dead' branch advances nothing but deadT -- so this costs no simulation.
+// All it adds is a reticle that snaps onto whatever landed the hit, so the player gets
+// to SEE the cause before drawDeathScreen fades in over it. deathCause has been tracked
+// since the death-marker work but was never shown to the player; through 11.0 the death
+// screen's entire message was the word "dead" and a number, which is a poor answer to
+// the one question a player has at that moment.
+// Screen coords, not world-x: nothing scrolls while phase is 'dead', and a wall hit has
+// no world object to key off anyway.
+function drawDeathFreeze() {
+    if (!deathHitR) return;
+    const t    = Math.min(1, deadT / DEATH_REPLAY_SEC);
+    const ease = 1 - (1 - t) * (1 - t);                 // snaps in fast, settles
+    // Overlap the panel's own fade-in by FREEZE_OUT so the reticle dissolves under it
+    // instead of popping out one frame before the overlay appears.
+    const FREEZE_OUT = 0.25;
+    const fade = Math.min(1, Math.max(0, (DEATH_REPLAY_SEC + FREEZE_OUT - deadT) / FREEZE_OUT));
+    const a    = fade * Math.min(1, t * 5);
+    if (a <= 0) return;
+    const rr   = deathHitR * (4.2 - 3.0 * ease);        // contracts onto the killer
+
+    ctx.save();
+    ctx.lineCap = 'round';
+
+    // Contracting lock-on ring
+    ctx.beginPath();
+    ctx.arc(deathHitX, deathHitY, rr, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255,90,60,${a * 0.95})`;
+    ctx.lineWidth   = Math.max(2, PR * 0.16);
+    ctx.shadowColor = `rgba(255,70,40,${a * 0.8})`;
+    ctx.shadowBlur  = 16;
+    ctx.stroke();
+
+    // Four ticks riding in with it - reads as a reticle rather than a second explosion
+    for (let i = 0; i < 4; i++) {
+        const ang = Math.PI / 4 + i * Math.PI / 2;
+        const c = Math.cos(ang), sN = Math.sin(ang);
+        ctx.beginPath();
+        ctx.moveTo(deathHitX + c * rr * 1.18, deathHitY + sN * rr * 1.18);
+        ctx.lineTo(deathHitX + c * rr * 1.62, deathHitY + sN * rr * 1.62);
+        ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+
+    // Steady inner ring on the object itself, so the eye lands on it once the outer
+    // ring has finished contracting.
+    ctx.beginPath();
+    ctx.arc(deathHitX, deathHitY, deathHitR * 1.12, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255,190,150,${a * 0.55 * ease})`;
+    ctx.lineWidth   = Math.max(1.5, PR * 0.10);
+    ctx.stroke();
+
+    ctx.restore();
+}
+
 function draw() {
     drawWorld();
     drawHUD();
     if (phase === 'title') drawTitleScreen();
+    // Above the world, under the panel: the reticle has to sit on the frozen crash, and
+    // the panel has to be able to fade in over the reticle.
+    if (phase === 'dead')  drawDeathFreeze();
     // continueOfferPending gates which one shows, never both -- see update.js's
     // die()/commitDeath() split and constants.js's CONTINUE_OFFER_SEC doc.
     if (phase === 'dead')  { if (continueOfferPending) drawContinueOffer(); else drawDeathScreen(); }
@@ -4133,7 +4200,11 @@ function drawContinueOffer() {
     ctx.save();
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
-    const a = Math.min(1, deadT * 8);
+    // Same freeze frame as the death panel. update.js's timeout adds DEATH_REPLAY_SEC
+    // to CONTINUE_OFFER_SEC for exactly this reason, so the offer is still on screen for
+    // the full tuned budget rather than losing 0.4s of it.
+    const a = Math.min(1, Math.max(0, deadT - DEATH_REPLAY_SEC) * 8);
+    if (a <= 0) { _continueBtnRect = null; return; }
 
     ctx.fillStyle = `rgba(4,4,14,${a * 0.80})`;
     ctx.fillRect(0, 0, W, H);
@@ -4148,7 +4219,7 @@ function drawContinueOffer() {
     // Countdown ring: dim full-circle track plus a bright arc that sweeps away
     // clockwise from noon as CONTINUE_OFFER_SEC runs out, so "how long do I have"
     // reads at a glance instead of being a silent timeout.
-    const remain = Math.max(0, 1 - deadT / CONTINUE_OFFER_SEC);
+    const remain = Math.max(0, 1 - (deadT - DEATH_REPLAY_SEC) / CONTINUE_OFFER_SEC);
     ctx.beginPath();
     ctx.arc(cx, cy, r * 1.18, 0, Math.PI * 2);
     ctx.strokeStyle = `rgba(120,220,255,${a * 0.18})`;

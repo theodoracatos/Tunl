@@ -408,6 +408,15 @@ const MAX_DEATH_MARKERS = 25;
 // in that wall) -> the ring hangs on that wall; 'open' (mine / cannon shot) -> corridor
 // centre. null -> fall back to whichever wall py was nearer.
 let deathCause = null;
+// Where the fatal hit landed, in SCREEN coords, plus the radius of whatever landed it.
+// Set at the same collision sites as deathCause just above, and read only by draw.js's
+// freeze-frame (DEATH_REPLAY_SEC) to ring the thing that killed the player before the
+// death panel covers it. Screen coords, not world-x, because the world is frozen for
+// the whole window this is read in -- nothing scrolls once phase is 'dead', so there is
+// no wx->sx drift to correct for, and a wall hit has no world object to key off anyway.
+// Like deathCause these are also written on hits that a shield or invulnT absorbs; that
+// is harmless (they are only ever read in the 'dead' phase) and keeps the two in step.
+let deathHitX = 0, deathHitY = 0, deathHitR = 0;
 let bestMarker = null;   // { wx, side } of all-time best run's death spot
 
 // ── Achievement backfill ──────────────────────────────────────────────

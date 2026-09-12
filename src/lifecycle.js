@@ -132,7 +132,7 @@ function startPlay() {
     // can meet the reward before the first real hazard set-piece.
     portals = []; nextPortalWx = PORTAL_START_WX;
     warpTime = 0; warpMax = 0; warpWidenVisual = 0; warpMult = WARP_MULT_MIN;
-    bonusScore = 0; milestoneNext = 50; nearMissTimer = 0; coinCombo = 0; coinComboTimer = 0;
+    bonusScore = 0; milestoneNext = 25;   // first band is 25 below score 100 (world.js milestoneStep) nearMissTimer = 0; coinCombo = 0; coinComboTimer = 0;
     runCoins = 0; runNearMisses = 0; runMaxCombo = 0; skinUnlockIdx = -1;
     runHitCount = 0; sprintAchFired = false; noHitAchFired = false; noBonusAchFired = false; runBoulderNarrowPasses = 0;
     skinMasteryUpIdx = -1; missionRewardWon = 0;

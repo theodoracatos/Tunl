@@ -387,10 +387,20 @@ function cannonSpacing(wx = scrollX) { return Math.max(lerp(lerp(4200, 2400, pro
 // last band (keeps growing by the same +1000 forever) rather than settling into a fixed
 // step, matching this file's existing philosophy that nothing here should feel like
 // flat-pace endurance once a run goes long (see CLAUDE.md's scrollSpd() doc).
-// Used to have a 25-point band below score 100 (25/50/75) but that fired 3 milestones
-// before a weak run even reaches 100 -- dropped in favor of one flat 50-point band from
-// the start; still fast enough to reward a rough first run without the extra popups.
+// The 25-point band below score 100 (25/50/75) was dropped once, on the grounds that it
+// "fired 3 milestones before a weak run even reaches 100". Restored in 12.0, because
+// that reasoning was calibrated against strong players and the audience is not one: a
+// red-team replay against the real leaderboard sample (median daily best 70) put actual
+// players at a median run of 22, and measured that only 13% of their runs ever reached
+// the first 50-point milestone at all -- 2% within a new player's first five runs. The
+// first positive thing the game has to say other than "dead" was sitting at more than
+// twice the distance a typical run covers.
+// Strictly a first-minutes fix: the band ends at 100, so every milestone a competent
+// run sees is exactly where it was, and the "!!"/"!!!" escalation (triggerMilestone,
+// input.js) is untouched. If this ever gets revisited again, the number that matters is
+// the share of REAL runs that fire a milestone, not the count a good run accumulates.
 function milestoneStep(n) {
+    if (n < 100)   return 25;
     if (n < 300)   return 50;
     if (n < 1000)  return 100;
     if (n < 3000)  return 250;

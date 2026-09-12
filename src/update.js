@@ -86,7 +86,11 @@ function update(dt) {
         // Continue offer timed out with no tap (constants.js CONTINUE_OFFER_SEC doc --
         // longer than DEATH_INTERACTIVE_SEC on purpose, 0.9s wasn't enough to land a
         // tap on a real device).
-        if (continueOfferPending && !continueAdPending && deadT >= CONTINUE_OFFER_SEC) {
+        // The offer only becomes visible/tappable after the DEATH_REPLAY_SEC freeze
+        // frame (draw.js), so its tuned budget is offset by that -- otherwise 12.0 would
+        // have silently shortened a window that a real-device pass already found too
+        // short once. CONTINUE_OFFER_SEC keeps meaning "seconds the offer is on screen".
+        if (continueOfferPending && !continueAdPending && deadT >= CONTINUE_OFFER_SEC + DEATH_REPLAY_SEC) {
             continueOfferPending = false;
             commitDeath();
         }
@@ -138,7 +142,7 @@ function update(dt) {
 
     // Launch animation: ship rises from below and rotates to horizontal over 1.3s
     if (startRamp < 1) {
-        startRamp = Math.min(startRamp + dt / 1.3, 1);
+        startRamp = Math.min(startRamp + dt / START_RAMP_SEC, 1);
         const et  = startRamp * startRamp * (3 - 2 * startRamp); // smoothstep
         py        = lerp(H + PR * 4, H / 2, et);
         vy        = 0;
@@ -540,13 +544,18 @@ function update(dt) {
             // never kills you," the widened corridor is just breathing room on top.
             if (invulnT > 0 || warpTime > 0) { py = Math.max(b.top + cPR, Math.min(b.bot - cPR, py)); break; }
             deathCause = (py - cPR < b.top) ? 'wallTop' : 'wallBot';
+            markDeathHit(PX + dx, (py - cPR < b.top) ? b.top : b.bot, cPR);
             if (die()) return;
             break;
         }
     }
     if (py - cPR < 0 || py + cPR > H) {
         if (invulnT > 0 || warpTime > 0) { py = Math.max(cPR, Math.min(H - cPR, py)); }
-        else { deathCause = (py - cPR < 0) ? 'wallTop' : 'wallBot'; if (die()) return; }
+        else {
+            deathCause = (py - cPR < 0) ? 'wallTop' : 'wallBot';
+            markDeathHit(PX, (py - cPR < 0) ? 0 : H, cPR);
+            if (die()) return;
+        }
     }
     // Stalactites/mines/boulders/cannon shots all phase through harmlessly while a
     // warp is live (constants.js "Warp portal" doc) - same convention HIT_INVULN_SEC
@@ -556,7 +565,13 @@ function update(dt) {
     // trigger the "blocked" feedback either - the player never touched them.
     if (warpTime <= 0) for (const s of stalactites) {
         if (s.dying) continue;
-        if (stalHit(s, cPR)) { deathCause = s.isTop ? 'wallTop' : 'wallBot'; if (die()) return; break; }
+        if (stalHit(s, cPR)) {
+            deathCause = s.isTop ? 'wallTop' : 'wallBot';
+            const sb = boundsAt(s.wx), sfy = stalFallY(s);
+            markDeathHit(s.wx - scrollX, s.isTop ? sb.top + s.length + sfy : sb.bot - s.length, s.width);
+            if (die()) return;
+            break;
+        }
     }
 
     // Warp portal ring: an x-crossing test (constants.js "Warp portal" doc), not a
@@ -608,6 +623,7 @@ function update(dt) {
         const dx = PX - sx, dy = py - my;
         if (dx*dx + dy*dy < mineHitR2) {
             deathCause = 'open';
+            markDeathHit(sx, my, MINE_R);
             if (die()) return;
             // Shield absorbed - destroy the mine so it can't immediately re-hit
             mines.splice(mi, 1);
@@ -627,6 +643,7 @@ function update(dt) {
         const dx = PX - sx, dy = py - bo.y, rr = cPR + bo.r;
         if (dx*dx + dy*dy < rr*rr) {
             deathCause = 'open';
+            markDeathHit(sx, bo.y, bo.r);
             if (die()) return;
             // Shield absorbed - shove the ship clear of the rock so it can't re-hit.
             const d = Math.max(1, Math.hypot(dx, dy));
@@ -664,6 +681,7 @@ function update(dt) {
         const dx = PX - sx, dy = py - s.y;
         if (dx*dx + dy*dy < cannonHitR2) {
             deathCause = 'open';
+            markDeathHit(sx, s.y, CANNON_SHOT_R);
             if (die()) return;
             // Shield absorbed - destroy the shot so it can't immediately re-hit
             cannonShots.splice(ci, 1);
@@ -722,6 +740,16 @@ function update(dt) {
         if (p.y < 0)  p.y = H;
         if (p.y > H)  p.y = 0;
     }
+}
+
+// Records where the fatal hit landed so draw.js's DEATH_REPLAY_SEC freeze frame can
+// ring it (constants.js DEATH_REPLAY_SEC doc). Called at the same sites that already set
+// deathCause, and like deathCause it also fires on hits a shield or invulnT absorbs --
+// harmless, since it is only ever read once phase is 'dead'. The radius is the KILLER's
+// size, not the ship's, so the ring reads as "this is what got you" rather than as a
+// second ship outline; for a wall hit there is no object, so the ship radius is passed.
+function markDeathHit(x, y, r) {
+    deathHitX = x; deathHitY = y; deathHitR = Math.max(r, PR * 0.9);
 }
 
 function die(bypassShield = false) {

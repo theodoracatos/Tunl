@@ -703,13 +703,23 @@ distinct from poison's sour sawtooth squelch so the two punishers sound differen
 **Score formula**: `score = Math.floor(scrollX / 60) + bonusScore`
 `bonusScore` accumulates from coin collection and near-miss bonuses; resets each run.
 
-**Milestone moments**: Triggers at 50, 100, 150, 200, 250, 300, 400, 500, 600...
-Step size widens with score via `milestoneStep()` (`world.js`): 50 up to 300, 100 up to
-1000, 250 up to 3000, 500 up to 10000, 1000 beyond - uncapped, keeps growing forever
-rather than settling into a fixed step (same "never just endurance at a fixed pace"
-philosophy as `scrollSpd()`, see its own doc comment). Used to have a 25-point band
-below score 100 (25/50/75) but that fired 3 milestones before a weak run even reaches
-100, so it was dropped in favor of one flat 50-point band from the start. Originally a
+**Milestone moments**: Triggers at 25, 50, 75, 100, 150, 200, 250, 300, 400, 500, 600...
+Step size widens with score via `milestoneStep()` (`world.js`): 25 up to 100, 50 up to
+300, 100 up to 1000, 250 up to 3000, 500 up to 10000, 1000 beyond - uncapped, keeps
+growing forever rather than settling into a fixed step (same "never just endurance at a
+fixed pace" philosophy as `scrollSpd()`, see its own doc comment).
+
+The 25-point band below 100 was **dropped once and restored in 12.0** - don't drop it
+again without new data. The removal argued it "fired 3 milestones before a weak run even
+reaches 100", which is true and was the wrong test: it counted milestones per run instead
+of asking what share of runs fire one at all. A red-team replay against the real
+leaderboard sample (median daily best 70) put actual players at a **median run of 22**,
+with only **13% of runs** ever reaching the old first milestone at 50 - **2% within a new
+player's first five runs**. The first thing the game had to say other than "dead" sat at
+more than twice the distance a typical run covers. The band ends at 100 so everything a
+competent run sees is exactly where it was; `test-math.js` asserts the whole ladder plus
+that invariant. If this is revisited again, the number that matters is the share of REAL
+runs that fire a milestone, not the count a good run accumulates. Originally a
 flat +50 step past 100, which meant a strong player blowing past 200-1000 in under a
 minute hit a milestone every ~50 points, every one of them already-maxed-out `!!!` (see below) -
 noisy repetition, not a reward; widened after that feedback. Shows big floating text +
@@ -731,6 +741,28 @@ The gold pickup sound itself climbs a major-pentatonic step per combo level
 (`sfxCoin(coinCombo)`, `audio.js`), plateauing a major-tenth up - the streak is audible
 in the coin, not just the separate `sfxCombo` ping (which only fires from x2). Same
 "widen the step, never cap flat" shape as `milestoneStep()`.
+
+**Death freeze frame** (`DEATH_REPLAY_SEC` in `constants.js`, `drawDeathFreeze()` in
+`draw.js`, `markDeathHit()` in `update.js`, `deathHitX/Y/R` in `state.js`): for the first
+0.40s after a fatal hit the death panel does not paint at all. The world is already
+frozen (`update.js`'s `dead` branch advances nothing but `deadT`), the wrecked ship keeps
+rendering in red, and a reticle contracts onto whatever landed the hit. Added in 12.0:
+`deathCause` had existed since the death-marker work but was never shown to the player,
+so through 11.0 the death screen's entire answer to "what did I do wrong" was the word
+"dead" and a number - against a measured beginner run of 0.9s of flight.
+
+Two things make this **free rather than a tax on restarting**, and both must stay true:
+the panel's own alpha is the only thing offset (the button row's `deadT > 0.75` fade and
+`input.js`'s `DEATH_INTERACTIVE_SEC` gate are untouched, so 0.40 + the 0.15s fade still
+lands inside the 0.9s the death screen was already unskippable for - restarting costs the
+same wait and the same one tap it always did); and `CONTINUE_OFFER_SEC` **is** offset by
+`DEATH_REPLAY_SEC` in `update.js`, because that budget is measured in seconds the offer is
+actually *on screen* - a real-device pass already found 0.9s too short once, so silently
+shaving 0.4s off it would have re-broken that. `drawContinueOffer` also nulls
+`_continueBtnRect` while it is invisible, so there is no tappable-but-unseen button.
+`markDeathHit` is called at the same six sites that set `deathCause`, and like
+`deathCause` it also fires on shield/invuln-absorbed hits - harmless, since it is only
+ever read in the `dead` phase.
 
 **Death screen context**: Shows "+X vs last" / "-X vs last" after the second run. Uses `prevRunScore` (run before the current one). Score number glows gold when within 5 of personal best.
 
@@ -848,6 +880,17 @@ off the right edge and scrolls into view - it never pops in mid-screen. The open
 stretch is where a new player's first lesson is the feel of thrust-vs-gravity rather than
 the death screen. (Coins still start at their normal distance - they teach collection and
 can't kill anyone. Mines start at world-x 1800, just after the first stalactite.)
+
+**The launch ramp is 0.5s** (`START_RAMP_SEC`, `constants.js`, applied in `update.js`).
+The run opens with the ship flying up into frame and levelling out, with `py`/`vy`/
+`shipPitch` driven by the ramp rather than by the player - so it is time the player
+cannot act in. Held at 1.3s through 11.0; cut in 12.0 after the same red-team replay
+measured what that costs the audience the onboarding exists for. A beginner's median run
+is **1.0s of flight**, so the ramp was longer than the game, and the full death-to-death
+loop (1.3s ramp + 1.0s flight + 0.9s `DEATH_INTERACTIVE_SEC`) was only **31%** time the
+player could act in. At 0.5s that is ~42%. Strong players are unaffected either way - at
+a 17.7s median run the ramp is noise - so this is purely a first-minutes fix. Don't push
+it back up without re-measuring the interactive share, not the animation's own look.
 
 On top of that, **every run opens with a level glide**: gravity is withheld until the
 player's first hold press or `HOLD_GATE_MAX_SEC` (`constants.js`, 2.25s), so the ship

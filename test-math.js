@@ -189,13 +189,28 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
 // ── Milestone step (world.js milestoneStep, tiers documented in CLAUDE.md) ──
 {
     const w = makeWorld(600, 600);
-    // One flat 50-point band from the start (the old 25/50/75 sub-100 band was
-    // dropped -- see the milestoneStep doc comment in src/world.js).
-    check('milestoneStep < 300 is 50',    w.milestoneStep(1)    === 50 && w.milestoneStep(24) === 50 && w.milestoneStep(299) === 50);
+    // 25-point band below 100 (restored in 12.0 -- see the milestoneStep doc comment
+    // in src/world.js for why the earlier removal was calibrated against the wrong
+    // audience), then the bands that were always there.
+    check('milestoneStep < 100 is 25',    w.milestoneStep(1)    === 25 && w.milestoneStep(25) === 25 && w.milestoneStep(99) === 25);
+    check('milestoneStep 100-299 is 50',  w.milestoneStep(100)  === 50 && w.milestoneStep(299) === 50);
     check('milestoneStep 300-999 is 100', w.milestoneStep(300)  === 100 && w.milestoneStep(999) === 100);
     check('milestoneStep 1000-2999 is 250', w.milestoneStep(1000) === 250 && w.milestoneStep(2999) === 250);
     check('milestoneStep 3000-9999 is 500', w.milestoneStep(3000) === 500 && w.milestoneStep(9999) === 500);
     check('milestoneStep >= 10000 is 1000, uncapped', w.milestoneStep(10000) === 1000 && w.milestoneStep(1_000_000) === 1000);
+    // The ladder a real run actually walks (lifecycle.js seeds milestoneNext = 25 and
+    // update.js adds milestoneStep each time one fires). Asserted as a whole sequence
+    // because the per-band checks above can all pass while the seed is wrong.
+    {
+        const ladder = [];
+        for (let n = 25; ladder.length < 12; n += w.milestoneStep(n)) ladder.push(n);
+        check('milestone ladder starts 25/50/75 then rejoins the old 50-point band',
+            ladder.join(',') === '25,50,75,100,150,200,250,300,400,500,600,700');
+        // The point of the 12.0 change is that it is a FIRST-MINUTES fix only. Anything
+        // a competent run reaches has to be exactly where it was before.
+        check('milestone ladder is unchanged at and above score 100',
+            ladder.filter(n => n >= 100).join(',') === '100,150,200,250,300,400,500,600,700');
+    }
 }
 
 // ── Score formula (src/update.js: score = floor(scrollX/60) + bonusScore) ──
