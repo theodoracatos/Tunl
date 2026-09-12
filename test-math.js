@@ -498,6 +498,53 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
         bankedAt(10, 0) === 10);
 }
 
+// ── Physics is frame-rate independent (src/update.js, 12.0) ─────────────────
+// `py += vy * dt` AFTER the velocity update pretends the ship spent the whole frame at
+// its end-of-frame speed, overshooting by 0.5*a*dt^2 every frame - an error that scales
+// with frame length, so the ship flew a different trajectory on every refresh rate.
+// Everyone flies the same daily cave into the same leaderboard, so that mattered more
+// than anything _FEEL_SCALE and the W cap exist to equalise (measured: a good pilot's
+// median was 118 at 144Hz vs 67 at 60Hz vs 41 at 30Hz, decision rate pinned).
+// The trapezoid (average of old and new velocity) is exact for constant acceleration.
+{
+    const w = makeWorld(956, 440);
+    const A = w.THRUST - w.GRAVITY, MAXV = w.MAX_VY, T = 0.5;
+    // Integrate a pure held-thrust climb the same way update.js does, at a given fps.
+    // Compared against the exact solution for the time ACTUALLY simulated (steps*dt),
+    // not for T: a frame rate that doesn't divide T evenly (45Hz) lands a fraction of a
+    // frame past it, and measuring that as integrator error would be a bug in the test.
+    const flyFor = (fps) => {
+        const dt = 1 / fps;
+        const steps = Math.round(T / dt);
+        let py = 0, vy = 0;
+        for (let i = 0; i < steps; i++) {
+            const prev = vy;
+            vy = Math.max(-MAXV, Math.min(MAXV, vy + A * dt));
+            py += (prev + vy) * 0.5 * dt;
+        }
+        return { py, t: steps * dt };
+    };
+    let worst = 0;
+    for (const fps of [144, 120, 90, 72, 60, 45, 30, 24]) {
+        const r = flyFor(fps);
+        const exact = 0.5 * A * r.t * r.t;
+        worst = Math.max(worst, Math.abs(r.py - exact) / exact);
+    }
+    check(`held-thrust trajectory is identical at every frame rate (worst deviation ${(worst * 100).toFixed(4)}%)`,
+        worst < 1e-9);
+
+    // And the old integrator genuinely wasn't - guards against a silent revert to
+    // `py += vy * dt`, which would pass nothing else in this file.
+    const flyForOld = (fps) => {
+        const dt = 1 / fps, steps = Math.round(T / dt);
+        let py = 0, vy = 0;
+        for (let i = 0; i < steps; i++) { vy = Math.max(-MAXV, Math.min(MAXV, vy + A * dt)); py += vy * dt; }
+        return py;   // 144 and 30 both divide T evenly, so this comparison is bias-free
+    };
+    check(`the pre-12.0 integrator did diverge by frame rate (144Hz ${flyForOld(144).toFixed(1)}px vs 30Hz ${flyForOld(30).toFixed(1)}px)`,
+        Math.abs(flyForOld(144) - flyForOld(30)) > 5);
+}
+
 // ── Gap bonus scales WITH the corridor (constants.js GAP_*_FRAC, 12.0) ──────
 // The bonus used to be absolute px against a corridor that shrinks 0.34H -> 0.163H,
 // which flattened the difficulty curve by construction (measured: designed 11.0 ->

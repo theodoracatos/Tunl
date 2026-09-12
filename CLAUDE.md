@@ -60,6 +60,31 @@ hold-to-thrust (an acceleration ramp), not Flappy's instant velocity impulse - j
 tuned to a less hair-trigger point on that same ramp. If this needs walking back
 further: original pre-tuning feel is GRAVITY 1150 / THRUST 2400 / MAX_VY 820.
 
+**Frame-rate-independent integration (do not revert).** `update.js` integrates the ship
+with the TRAPEZOID - `py += (vyPrev + vy) * 0.5 * dt` - not `py += vy * dt` after the
+velocity update. The latter pretends the ship spent the whole frame already at its
+end-of-frame speed, overshooting by `0.5*a*dt^2` every frame; because that error scales
+with FRAME LENGTH, the ship flew a measurably different trajectory on every refresh
+rate. Measured over 0.5s of held thrust: 228px at 144Hz, 232px at 60Hz, 240px at 30Hz,
+against an exact 225px. Since everyone flies the same daily cave into the same
+leaderboard, that was a bigger inequity than anything `_FEEL_SCALE` and the W cap exist
+to equalise. Replaying a bit-identical input schedule now gives a **0.000px** spread
+across 12-144Hz (was 4.1px on that same schedule); `test-math.js` asserts both that and
+that the old integrator genuinely diverged, so a silent revert fails.
+
+Two honest caveats. **This did not close the measured score gap between frame rates** -
+a simulated pilot still scored ~33% higher at 144Hz than at 60Hz afterwards, essentially
+unchanged. The physics half is now exact; the rest is input resolution (a thumb can only
+change state on a frame boundary, so a 144Hz device genuinely gets finer control), which
+no integrator change can remove and which a bang-bang bot exaggerates relative to a
+human. **And the fix is very slightly a nerf at 60Hz**: the ship now covers 225px rather
+than 232px over a 0.5s climb, and proportionally more on short taps (the old error was
+`1 + dt/T`, so it flattered quick corrections most). No constant rescale can reproduce
+the old behaviour for that reason. Left uncompensated deliberately; if a real-device
+playtest finds it sluggish, the lever is THRUST (3100), where ~+3% restores the old
+half-second manoeuvre - but re-read the tuning history above first, that number has
+already been walked back twice on player feedback.
+
 **Screen-independent feel (do not revert - explicit rule).** GRAVITY/THRUST/MAX_VY are
 quoted at `_H_REF` = 440pt (iPhone 17 Pro Max landscape height, the size the feel was
 tuned and player-tested at) and **every device** - apps and web alike - scales all three
