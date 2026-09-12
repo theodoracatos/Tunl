@@ -27,12 +27,12 @@ function update(dt) {
     }
     if (holding && (phase === 'play' || phase === 'title')) {
         for (const ns of [-1, 1]) {
-            const ey = py + ns * PR * 0.50;
+            const ey = py + ns * PR * SHIP_NOZZLE_Y;
             for (let i = 0; i < 4; i++) {
                 const spread = (Math.random() - 0.5) * PR * 0.13;
                 const blue   = Math.random() < 0.35;
                 thrustParts.push({
-                    x:    PX - PR * 0.74,
+                    x:    PX + PR * SHIP_NOZZLE_X,
                     y:    ey + spread,
                     vx:   -(280 + Math.random() * 480),
                     vy:   spread * 1.8 + (Math.random() - 0.5) * 8,
@@ -46,7 +46,7 @@ function update(dt) {
     // On-fire ember trickle: a light, continuous stream distinct from the thrust burst
     // above -- it has to read during BOTH hold and release (releasing is half the
     // control scheme), so it can't be gated by `holding` the way the burst is. Spawned
-    // from the same exhaust nozzle points as the burst (PX - PR*0.74, py +/- PR*0.50,
+    // from the same exhaust nozzle points as the burst (SHIP_NOZZLE_X/Y in constants.js,
     // one nozzle picked at random each particle) rather than a generic point behind the
     // ship, so it reads as coming out of the ship, not just trailing near it. Sparse
     // (one particle/frame) on purpose: it's ambient texture behind the recolored player
@@ -54,9 +54,9 @@ function update(dt) {
     // thrust burst's 15-60 orange range) so it still reads as "extra" next to it.
     if (onFire && phase === 'play') {
         const ns = Math.random() < 0.5 ? -1 : 1;
-        const ey = py + ns * PR * 0.50;
+        const ey = py + ns * PR * SHIP_NOZZLE_Y;
         thrustParts.push({
-            x:    PX - PR * 0.74 + (Math.random() - 0.5) * PR * 0.15,
+            x:    PX + PR * SHIP_NOZZLE_X + (Math.random() - 0.5) * PR * 0.15,
             y:    ey + (Math.random() - 0.5) * PR * 0.15,
             vx:   -(60 + Math.random() * 90),
             vy:   ns * (10 + Math.random() * 20) + (Math.random() - 0.5) * 10,

@@ -215,6 +215,30 @@ const PX = W * 0.22;   // fixed horizontal position on screen (W capped at 956)
 const PR = W * 0.018;  // radius (≈10.8px at W=600, ≈17.2px at the W=956 cap)
 ```
 
+### Ship rendering (K5 "Facette + Licht", 12.0)
+
+`shipPath()` / `drawShip()` / `drawThrustPlume()` in `draw.js`. The SR-71 silhouette is
+cut into flat facets (`SHIP_FACETS`) lit from above - top half toward white, bottom half
+toward near-black, all mixed from the skin's own colour (`_shipTones`, cached per skin)
+so every ship keeps its paint. Seams are faint light/dark hairlines, never black ink: an
+earlier pass with dark panel lines read as a technical drawing. Emissive details in the
+skin's glow colour (intake rings, wingtip strobes, spine running lights) are switched off
+via `drawShip`'s `fx` argument for the ghost and the wrecked death frame, since a ghost
+with running lights reads as a second live ship. Only the base fill spends `shadowBlur`;
+the glow rings use a wide soft stroke instead, because shadowBlur is the expensive call
+on WKWebView.
+
+**Envelope (do not grow it):** span +-0.98r, nose +1.40r. The old nose reached 1.72r,
+~17.6px ahead of `update.js`'s forward collision probe (+0.7*PR), so it visibly slid
+through stalactites; the old span stopped at 0.92r, so the PR circle killed ~8% before
+the wing visibly touched. `PR` itself is untouched - this is purely visual.
+
+**The thrust plume is tinted with the skin glow** (teardrop, white core, three shock
+diamonds). Normal thrust used to be the same orange as the ON FIRE afterburner; now
+orange-red belongs to ON FIRE alone. Exhaust leaves the nacelles at `SHIP_NOZZLE_X/Y`
+(`constants.js`), shared by the plume, the on-fire cone and `update.js`'s thruster
+particles. The share card's `_shipGlyph` (`share.js`) carries a copy of the outline.
+
 ### Procedural tunnel
 Two overlapping sin waves, amplitude and frequency scale with difficulty (`_prog`).
 `_prog = Math.min(Math.sqrt(scrollX / 14000), 1)` - sqrt easing: fast early ramp, plateau near max. Reaches max difficulty at 14000 world px (~score 233).

@@ -71,27 +71,19 @@ function shareAvailable() {
 // Compact SR-71 silhouette on an *arbitrary* 2D context. draw.js's shipPath() and
 // drawShip() are both hard-bound to the game's `ctx` const, so they can't render onto
 // the share card's offscreen canvas -- this is a trimmed copy (hull fill + a
-// nose-to-tail shading sweep + a canopy glint; no nacelle pods) that takes the context
+// top-lit shading split + a canopy glint; no facets or nacelle pods) that takes the context
 // as an argument. Kept here rather than refactoring draw.js so the card change stays
 // self-contained. `k` scales the glow with the caller's overall scale factor.
 function _shipGlyph(g, x, y, r, color, glow, k) {
     k = k || 1;
+    // Same outline as draw.js SHIP_OUTLINE (the K5 hull), copied for the reason above.
+    const pts = [[1.40,0],[0.95,-0.13],[0.30,-0.20],[-0.60,-0.98],[-0.72,-0.94],[-1.00,-0.24],
+                 [-1.22,-0.38],[-1.04,-0.10],[-0.92,0],[-1.04,0.10],[-1.22,0.38],[-1.00,0.24],
+                 [-0.72,0.94],[-0.60,0.98],[0.30,0.20],[0.95,0.13]];
     const hull = () => {
         g.beginPath();
-        g.moveTo(x + r*1.72, y);
-        g.lineTo(x + r*1.12, y - r*0.17);
-        g.lineTo(x + r*0.38, y - r*0.22);
-        g.lineTo(x - r*0.65, y - r*0.92);
-        g.lineTo(x - r*1.08, y - r*0.22);
-        g.lineTo(x - r*1.22, y - r*0.32);
-        g.lineTo(x - r*1.05, y - r*0.08);
-        g.lineTo(x - r*0.92, y);
-        g.lineTo(x - r*1.05, y + r*0.08);
-        g.lineTo(x - r*1.22, y + r*0.32);
-        g.lineTo(x - r*1.08, y + r*0.22);
-        g.lineTo(x - r*0.65, y + r*0.92);
-        g.lineTo(x + r*0.38, y + r*0.22);
-        g.lineTo(x + r*1.12, y + r*0.17);
+        g.moveTo(x + r*pts[0][0], y + r*pts[0][1]);
+        for (let i = 1; i < pts.length; i++) g.lineTo(x + r*pts[i][0], y + r*pts[i][1]);
         g.closePath();
     };
     g.save();
@@ -102,10 +94,12 @@ function _shipGlyph(g, x, y, r, color, glow, k) {
     g.fill();
     g.shadowBlur = 0;
     hull();
-    const bg = g.createLinearGradient(x + r*1.72, y, x - r*1.22, y);
-    bg.addColorStop(0,   'rgba(255,255,255,0.16)');
-    bg.addColorStop(0.5, 'rgba(0,0,0,0)');
-    bg.addColorStop(1,   'rgba(0,0,0,0.42)');
+    // Top lit, bottom in shadow - the flat-shaded read of draw.js's facets.
+    const bg = g.createLinearGradient(x, y - r*0.98, x, y + r*0.98);
+    bg.addColorStop(0,    'rgba(255,255,255,0.22)');
+    bg.addColorStop(0.49, 'rgba(255,255,255,0.10)');
+    bg.addColorStop(0.51, 'rgba(0,0,0,0.20)');
+    bg.addColorStop(1,    'rgba(0,0,0,0.48)');
     g.fillStyle = bg;
     g.fill();
     // Thin dark outline so the hull keeps its silhouette against any background --
@@ -116,7 +110,7 @@ function _shipGlyph(g, x, y, r, color, glow, k) {
     g.lineJoin = 'round';
     g.stroke();
     g.beginPath();
-    g.ellipse(x + r*1.10, y - r*0.05, r*0.22, r*0.085, -0.10, 0, Math.PI*2);
+    g.ellipse(x + r*0.86, y - r*0.02, r*0.24, r*0.07, 0, 0, Math.PI*2);
     g.fillStyle = 'rgba(210,240,255,0.55)';
     g.fill();
     g.restore();

@@ -100,6 +100,10 @@ let SAFE_L = 0, SAFE_R = 0;
 
 const PX      = W  * 0.22;
 const PR      = W  * 0.018;
+// Ship exhaust nozzles in PR units (draw.js drawShip's nacelles). Shared by the thrust
+// plume and on-fire cone (draw.js) and the thruster particles (update.js), so exhaust
+// always leaves the nacelles whatever the hull geometry does.
+const SHIP_NOZZLE_X = -0.92, SHIP_NOZZLE_Y = 0.50;
 // SCREEN-INDEPENDENT FEEL (CLAUDE.md rule). GRAVITY/THRUST/MAX_VY are quoted at
 // _H_REF - the landscape height the feel was tuned and player-tested at, an iPhone 17
 // Pro Max (~956x440pt) - and EVERY device (apps and web alike) scales them by

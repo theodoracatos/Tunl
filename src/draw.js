@@ -147,83 +147,280 @@ function drawCoinIcon(cx, cy, type, r) {
 
 // ── Draw helpers ──────────────────────────────────────────────────────
 
-function shipPath(x, y, r) {
-    // SR-71 Blackbird: needle nose, slim chined fuselage blending into large
-    // 60-deg delta, outward-canted twin tails (nacelles drawn separately in drawShip)
-    ctx.beginPath();
-    ctx.moveTo(x + r*1.72,  y);               // needle nose (very long)
-    ctx.lineTo(x + r*1.12,  y - r*0.17);      // forward chine
-    ctx.lineTo(x + r*0.38,  y - r*0.22);      // chine / delta blend
-    ctx.lineTo(x - r*0.65,  y - r*0.92);      // top wing tip
-    ctx.lineTo(x - r*1.08,  y - r*0.22);      // top trailing edge
-    ctx.lineTo(x - r*1.22,  y - r*0.32);      // top tail fin tip (canted outboard)
-    ctx.lineTo(x - r*1.05,  y - r*0.08);      // top tail base
-    ctx.lineTo(x - r*0.92,  y);               // tail center notch
-    ctx.lineTo(x - r*1.05,  y + r*0.08);      // bottom tail base
-    ctx.lineTo(x - r*1.22,  y + r*0.32);      // bottom tail fin tip
-    ctx.lineTo(x - r*1.08,  y + r*0.22);      // bottom trailing edge
-    ctx.lineTo(x - r*0.65,  y + r*0.92);      // bottom wing tip
-    ctx.lineTo(x + r*0.38,  y + r*0.22);      // chine / delta blend
-    ctx.lineTo(x + r*1.12,  y + r*0.17);      // forward chine
+// ── Ship (K5 "Facette + Licht", 12.0) ──────────────────────────────────
+// SR-71 silhouette, cut into flat facets lit from above, plus a few emissive
+// details in the skin's own glow colour. See CLAUDE.md "Ship rendering".
+//
+// Envelope (do not grow it): span +-0.98r, nose +1.40r. The span sits just inside
+// the PR hitbox circle (it used to stop at 0.92r, so you died ~8% before the wing
+// visibly touched), and the nose was cut from 1.72r because everything ahead of
+// update.js's forward collision probe (+0.7*PR) visibly slid through rock.
+//
+// Facet points are in r units for the TOP half (y <= 0); the bottom half is the
+// same list mirrored. top/bot are tone() amounts: >0 mixes toward white, <0 toward
+// near-black, so every skin keeps its own paint and only the lighting is shared.
+const SHIP_OUTLINE = (() => {
+    const top = [[1.40,0],[0.95,-0.13],[0.30,-0.20],[-0.60,-0.98],[-0.72,-0.94],
+                 [-1.00,-0.24],[-1.22,-0.38],[-1.04,-0.10],[-0.92,0]];
+    return top.concat(top.slice(1, -1).reverse().map(p => [p[0], -p[1]]));
+})();
+const SHIP_FACETS = [
+    { p: [[1.40,0],[0.95,-0.13],[0.95,0]],                          top: 0.46, bot: -0.04 }, // nose cone
+    { p: [[0.95,0],[0.95,-0.13],[0.30,-0.20],[0.30,0]],             top: 0.30, bot: -0.20 }, // forward chine
+    { p: [[0.30,0],[0.30,-0.20],[-1.00,-0.24],[-1.04,-0.10],[-0.92,0]], top: 0.16, bot: -0.32 }, // rear fuselage
+    { p: [[0.30,-0.20],[-0.15,-0.59],[-0.86,-0.59],[-1.00,-0.24]],  top: 0.06, bot: -0.40 }, // inner wing
+    { p: [[0.30,-0.20],[-0.60,-0.98],[-0.50,-0.72],[0.12,-0.26]],   top: 0.26, bot: -0.22 }, // leading-edge strip
+    { p: [[-0.15,-0.59],[-0.60,-0.98],[-0.72,-0.94],[-0.86,-0.59]], top: -0.08, bot: -0.54 }, // outer wing
+    { p: [[-1.00,-0.24],[-1.22,-0.38],[-1.04,-0.10]],               top: 0.22, bot: -0.26 }, // canted fin
+];
+
+const _SHIP_DARK = [6, 8, 16], _SHIP_WHITE = [255, 255, 255];
+const _shipToneCache = new Map();
+// Facet colours per (colour, glow) pair, computed once - drawShip runs every frame
+// for the player, ghost, hero and every shop cell.
+function _shipTones(color, sr, sg, sb) {
+    const key = color + sr + ',' + sg + ',' + sb;
+    let t = _shipToneCache.get(key);
+    if (t) return t;
+    const base  = [parseInt(color.substr(1,2),16), parseInt(color.substr(3,2),16), parseInt(color.substr(5,2),16)];
+    const light = lerpClr(_SHIP_WHITE, [sr, sg, sb], 0.15);
+    const tone  = k => rgb(k >= 0 ? lerpClr(base, light, k) : lerpClr(base, _SHIP_DARK, -k));
+    t = {
+        base:   rgb(base),
+        top:    SHIP_FACETS.map(f => tone(f.top)),
+        bot:    SHIP_FACETS.map(f => tone(f.bot)),
+        podUp:  tone(0.24),
+        podDn:  tone(-0.42),
+        podSh:  rgb(lerpClr(base, _SHIP_DARK, 0.75), 0.45),
+        intake: rgb(lerpClr(base, _SHIP_DARK, 0.62), 0.9),
+        spike:  rgb(lerpClr(base, light, 0.5), 0.9),
+    };
+    _shipToneCache.set(key, t);
+    return t;
+}
+
+function _shipPoly(x, y, r, pts, sy) {
+    ctx.moveTo(x + pts[0][0]*r, y + pts[0][1]*r*sy);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(x + pts[i][0]*r, y + pts[i][1]*r*sy);
     ctx.closePath();
 }
 
-function drawShip(x, y, r, color, sr, sg, sb, blur) {
-    blur = blur === undefined ? 20 : blur;
+function shipPath(x, y, r) {
+    ctx.beginPath();
+    _shipPoly(x, y, r, SHIP_OUTLINE, 1);
+}
 
-    // Base fill with glow
+// `fx` (default true) enables the emissive details (intake rings, wingtip strobes,
+// spine lights). The ghost and the wrecked death-frame ship pass false - a ghost
+// with running lights reads as a second live ship.
+function drawShip(x, y, r, color, sr, sg, sb, blur, fx) {
+    blur = blur === undefined ? 20 : blur;
+    fx   = fx === undefined ? true : fx;
+    const T = _shipTones(color, sr, sg, sb);
+    const lw = Math.max(r * 0.016, 0.45);
+
+    // Base fill with glow (the one shadowBlur this function spends)
     shipPath(x, y, r);
-    ctx.fillStyle   = color;
-    ctx.shadowColor = `rgba(${sr},${sg},${sb},0.95)`;
+    ctx.fillStyle   = T.base;
+    ctx.shadowColor = `rgba(${sr},${sg},${sb},0.9)`;
     ctx.shadowBlur  = blur;
     ctx.fill();
     ctx.shadowBlur  = 0;
 
-    // Shading overlay: bright at nose, darker at tail
-    shipPath(x, y, r);
-    const bodyGrd = ctx.createLinearGradient(x + r*1.72, y, x - r*1.22, y);
-    bodyGrd.addColorStop(0,   'rgba(255,255,255,0.13)');
-    bodyGrd.addColorStop(0.5, 'rgba(0,0,0,0)');
-    bodyGrd.addColorStop(1,   'rgba(0,0,0,0.40)');
-    ctx.fillStyle = bodyGrd;
-    ctx.fill();
+    // Facets: top half lit, bottom half in shadow
+    for (const sy of [-1, 1]) {
+        const tones = sy < 0 ? T.top : T.bot;
+        for (let i = 0; i < SHIP_FACETS.length; i++) {
+            ctx.beginPath();
+            _shipPoly(x, y, r, SHIP_FACETS[i].p, -sy);
+            ctx.fillStyle = tones[i];
+            ctx.fill();
+        }
+        // Seams as a single faint light/dark hairline pass per half - never black
+        // ink lines, which read as a technical drawing instead of a hull.
+        ctx.beginPath();
+        for (const f of SHIP_FACETS) _shipPoly(x, y, r, f.p, -sy);
+        ctx.strokeStyle = sy < 0 ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.09)';
+        ctx.lineWidth   = lw;
+        ctx.lineJoin    = 'round';
+        ctx.stroke();
+    }
 
-    // Leading edge highlight: long needle nose along chine to wing tip
+    // Spine ridge + lit leading edge
     ctx.beginPath();
-    ctx.moveTo(x + r*1.72, y);
-    ctx.lineTo(x + r*1.12, y - r*0.17);
-    ctx.lineTo(x + r*0.38, y - r*0.22);
-    ctx.lineTo(x - r*0.65, y - r*0.92);
-    ctx.strokeStyle = 'rgba(255,255,255,0.28)';
-    ctx.lineWidth   = Math.max(r * 0.09, 1);
-    ctx.lineJoin    = 'round';
+    ctx.moveTo(x + r*1.40, y - r*0.004);
+    ctx.lineTo(x - r*0.92, y - r*0.004);
+    ctx.strokeStyle = 'rgba(255,255,255,0.42)';
+    ctx.lineWidth   = Math.max(r * 0.028, 0.6);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + r*1.40, y);
+    ctx.lineTo(x + r*0.95, y - r*0.13);
+    ctx.lineTo(x + r*0.30, y - r*0.20);
+    ctx.lineTo(x - r*0.60, y - r*0.98);
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.lineWidth   = Math.max(r * 0.035, 0.7);
     ctx.lineCap     = 'round';
     ctx.stroke();
 
-    // Engine nacelle pods - elongated ovals aligned to fuselage axis
+    // Engine nacelles: two-tone faceted pods, a cheap offset shadow on the wing (no
+    // blur), a shock-cone inlet, and a hot nozzle
+    const now = gtime;
     for (const s of [-1, 1]) {
-        const nx = x - r*0.32, ny = y + s * r*0.50;
+        const cy = y + s * r * SHIP_NOZZLE_Y;
+        const x0 = x + SHIP_NOZZLE_X * r, x1 = x + r * 0.12, xm = x + r * 0.02, xr = x - r * 0.80;
+        const h = r * 0.09;
         ctx.beginPath();
-        ctx.ellipse(nx, ny, r*0.42, r*0.115, 0, 0, Math.PI*2);
-        ctx.fillStyle = 'rgba(0,0,0,0.28)';
+        ctx.moveTo(x1, cy + r*0.03); ctx.lineTo(xm, cy - h + r*0.03); ctx.lineTo(xr, cy - h + r*0.03);
+        ctx.lineTo(x0, cy + r*0.03); ctx.lineTo(xr, cy + h + r*0.03); ctx.lineTo(xm, cy + h + r*0.03);
+        ctx.closePath();
+        ctx.fillStyle = T.podSh;
         ctx.fill();
-        // Inlet cone: bright circle at forward end of nacelle
         ctx.beginPath();
-        ctx.arc(nx + r*0.30, ny, r*0.075, 0, Math.PI*2);
-        ctx.fillStyle = 'rgba(255,255,255,0.22)';
+        ctx.moveTo(x1, cy); ctx.lineTo(xm, cy - h); ctx.lineTo(xr, cy - h);
+        ctx.lineTo(x0, cy - h*0.45); ctx.lineTo(x0, cy); ctx.closePath();
+        ctx.fillStyle = T.podUp;
         ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x1, cy); ctx.lineTo(xm, cy + h); ctx.lineTo(xr, cy + h);
+        ctx.lineTo(x0, cy + h*0.45); ctx.lineTo(x0, cy); ctx.closePath();
+        ctx.fillStyle = T.podDn;
+        ctx.fill();
+
+        const ix = x + r * 0.03;
+        ctx.beginPath();
+        ctx.ellipse(ix, cy, r*0.03, r*0.062, 0, 0, Math.PI*2);
+        ctx.fillStyle = T.intake;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(ix + r*0.10, cy); ctx.lineTo(ix, cy - r*0.03); ctx.lineTo(ix, cy + r*0.03);
+        ctx.closePath();
+        ctx.fillStyle = T.spike;
+        ctx.fill();
+
+        const ng = ctx.createRadialGradient(x0, cy, 0, x0, cy, r*0.12);
+        ng.addColorStop(0,   'rgba(255,250,225,0.95)');
+        ng.addColorStop(0.5, `rgba(${sr},${sg},${sb},0.6)`);
+        ng.addColorStop(1,   `rgba(${sr},${sg},${sb},0)`);
+        ctx.beginPath();
+        ctx.ellipse(x0, cy, r*0.05, r*0.095, 0, 0, Math.PI*2);
+        ctx.fillStyle = ng;
+        ctx.fill();
+
+        if (fx) {
+            // Skin-coloured intake ring: a wide soft stroke under a thin bright one
+            // instead of shadowBlur, which is the expensive call on WKWebView
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.beginPath();
+            ctx.ellipse(ix, cy, r*0.045, r*0.075, 0, 0, Math.PI*2);
+            ctx.strokeStyle = `rgba(${sr},${sg},${sb},0.16)`;
+            ctx.lineWidth   = Math.max(r * 0.06, 1.2);
+            ctx.stroke();
+            ctx.strokeStyle = `rgba(${sr},${sg},${sb},0.75)`;
+            ctx.lineWidth   = Math.max(r * 0.022, 0.7);
+            ctx.stroke();
+            ctx.restore();
+        }
     }
 
-    // Cockpit canopy (slim, well forward on the long fuselage)
-    const cpx = x + r*1.10, cpy = y - r*0.05;
-    const cpg = ctx.createRadialGradient(cpx - r*0.08, cpy - r*0.10, 0, cpx, cpy, r*0.36);
-    cpg.addColorStop(0,   'rgba(255,255,255,0.72)');
-    cpg.addColorStop(0.4, 'rgba(190,235,255,0.38)');
-    cpg.addColorStop(1,   'rgba(120,210,255,0.04)');
+    // Cockpit canopy: two glass facets and a glint
     ctx.beginPath();
-    ctx.ellipse(cpx, cpy, r*0.22, r*0.085, -0.10, 0, Math.PI*2);
-    ctx.fillStyle = cpg;
+    ctx.moveTo(x + r*1.12, y); ctx.lineTo(x + r*0.93, y - r*0.078);
+    ctx.lineTo(x + r*0.66, y - r*0.052); ctx.lineTo(x + r*0.60, y); ctx.closePath();
+    ctx.fillStyle = 'rgba(175,225,250,0.97)';
     ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x + r*1.12, y); ctx.lineTo(x + r*0.60, y);
+    ctx.lineTo(x + r*0.66, y + r*0.052); ctx.lineTo(x + r*0.93, y + r*0.078); ctx.closePath();
+    ctx.fillStyle = 'rgba(14,34,62,0.96)';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x + r*0.98, y - r*0.052);
+    ctx.lineTo(x + r*0.76, y - r*0.046);
+    ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+    ctx.lineWidth   = Math.max(r * 0.022, 0.5);
+    ctx.stroke();
+
+    if (!fx) return;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    // Spine running lights, chasing nose-to-tail
+    for (let i = 0; i < 4; i++) {
+        const u = (now * 0.9 + i / 4) % 1;
+        const a = Math.sin(u * Math.PI) * 0.9;
+        ctx.beginPath();
+        ctx.ellipse(x + r*(0.52 - u*1.36), y, r*0.06, r*0.022, 0, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(${(sr+255)>>1},${(sg+255)>>1},${(sb+255)>>1},${a})`;
+        ctx.fill();
+    }
+    // Wingtip strobes
+    const strobe = ((now * 0.85) % 1) < 0.07 ? 0.85 : 0.10;
+    for (const s of [-1, 1]) {
+        const lx = x - r*0.66, ly = y + s * r * 0.955;
+        const sg2 = ctx.createRadialGradient(lx, ly, 0, lx, ly, r*0.16);
+        sg2.addColorStop(0,   `rgba(255,255,255,${strobe})`);
+        sg2.addColorStop(0.3, `rgba(${sr},${sg},${sb},${strobe * 0.7})`);
+        sg2.addColorStop(1,   `rgba(${sr},${sg},${sb},0)`);
+        ctx.beginPath();
+        ctx.arc(lx, ly, r*0.16, 0, Math.PI*2);
+        ctx.fillStyle = sg2;
+        ctx.fill();
+    }
+    ctx.restore();
+}
+
+// Thrust plume: teardrop with a white core and three shock diamonds, its mid colour
+// taken from the skin glow. Normal thrust used to be the same orange as the ON FIRE
+// afterburner; tinting it leaves orange-red to ON FIRE alone.
+function drawThrustPlume(x, y, r, sr, sg, sb) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const tr = (sr + 90) >> 1, tg = (sg + 40) >> 1, tb = (sb + 230) >> 1;
+    for (const ns of [-1, 1]) {
+        const nx = x + SHIP_NOZZLE_X * r, ny = y + ns * r * SHIP_NOZZLE_Y;
+        const pulse = 0.84 + 0.16 * Math.sin(gtime * 23 + ns);
+        const L = r * 5.0 * pulse, w = r * 0.15;
+        const drop = (len, wd) => {
+            ctx.beginPath();
+            ctx.moveTo(nx, ny - wd);
+            ctx.bezierCurveTo(nx - len*0.22, ny - wd*1.3, nx - len*0.6, ny - wd*0.55, nx - len, ny);
+            ctx.bezierCurveTo(nx - len*0.6, ny + wd*0.55, nx - len*0.22, ny + wd*1.3, nx, ny + wd);
+            ctx.closePath();
+        };
+        drop(L, w);
+        let g = ctx.createLinearGradient(nx, ny, nx - L, ny);
+        g.addColorStop(0,    'rgba(255,245,215,0.85)');
+        g.addColorStop(0.12, `rgba(${sr},${sg},${sb},0.75)`);
+        g.addColorStop(0.45, `rgba(${sr},${sg},${sb},0.32)`);
+        g.addColorStop(0.8,  `rgba(${tr},${tg},${tb},0.10)`);
+        g.addColorStop(1,    `rgba(${tr},${tg},${tb},0)`);
+        ctx.fillStyle = g;
+        ctx.fill();
+        drop(L * 0.5, w * 0.42);
+        g = ctx.createLinearGradient(nx, ny, nx - L*0.5, ny);
+        g.addColorStop(0,    'rgba(255,255,255,0.95)');
+        g.addColorStop(0.45, 'rgba(255,240,190,0.55)');
+        g.addColorStop(1,    'rgba(255,220,150,0)');
+        ctx.fillStyle = g;
+        ctx.fill();
+        for (let k = 1; k <= 3; k++) {
+            const a = (0.62 / k) * (0.72 + 0.28 * Math.sin(gtime * 38 + k * 2 + ns));
+            ctx.beginPath();
+            ctx.ellipse(nx - L*(0.10 + 0.115*k), ny, w*0.62, w*0.34, 0, 0, Math.PI*2);
+            ctx.fillStyle = `rgba(255,255,236,${a})`;
+            ctx.fill();
+        }
+        const b = ctx.createRadialGradient(nx, ny, 0, nx, ny, r*0.5);
+        b.addColorStop(0,    'rgba(255,255,245,0.9)');
+        b.addColorStop(0.35, `rgba(${sr},${sg},${sb},0.35)`);
+        b.addColorStop(1,    `rgba(${sr},${sg},${sb},0)`);
+        ctx.beginPath();
+        ctx.arc(nx, ny, r*0.5, 0, Math.PI*2);
+        ctx.fillStyle = b;
+        ctx.fill();
+    }
+    ctx.restore();
 }
 
 // ── Draw ──────────────────────────────────────────────────────────────
@@ -1476,7 +1673,7 @@ function drawWorld() {
         ctx.translate(PX, ghostY);
         ctx.rotate(ghostPitch);
         ctx.translate(-PX, -ghostY);
-        drawShip(PX, ghostY, PR, '#8fb4ec', 120, 165, 235, 8);
+        drawShip(PX, ghostY, PR, '#8fb4ec', 120, 165, 235, 8, false);
         ctx.restore();
     }
 
@@ -1493,33 +1690,7 @@ function drawWorld() {
         ctx.translate(-PX, -py);
 
         if ((holding || startRamp < 1) && (phase === 'play' || phase === 'title')) {
-            const pulse = 0.75 + 0.25 * Math.sin(gtime * 22);
-            for (const ns of [-1, 1]) {
-                const nx = PX - PR * 0.74, ny = py + ns * PR * 0.50;
-                const cLen = PR * 5.0 * pulse, cW = PR * 0.14;
-                // Afterburner cone: white-hot at nozzle -> orange -> blue-purple
-                ctx.beginPath();
-                ctx.moveTo(nx,        ny - cW);
-                ctx.lineTo(nx - cLen, ny);
-                ctx.lineTo(nx,        ny + cW);
-                ctx.closePath();
-                const lg = ctx.createLinearGradient(nx, ny, nx - cLen, ny);
-                lg.addColorStop(0,    'rgba(255,255,210,1.0)');
-                lg.addColorStop(0.12, 'rgba(255,175,30,0.90)');
-                lg.addColorStop(0.42, 'rgba(255,50,0,0.55)');
-                lg.addColorStop(0.74, 'rgba(80,30,220,0.22)');
-                lg.addColorStop(1,    'rgba(40,10,180,0)');
-                ctx.fillStyle = lg;
-                ctx.fill();
-                // Hot nozzle ring
-                const hg = ctx.createRadialGradient(nx, ny, 0, nx, ny, PR * 0.55);
-                hg.addColorStop(0, 'rgba(255,255,240,0.95)');
-                hg.addColorStop(1, 'rgba(255,150,20,0)');
-                ctx.beginPath();
-                ctx.arc(nx, ny, PR * 0.55, 0, Math.PI * 2);
-                ctx.fillStyle = hg;
-                ctx.fill();
-            }
+            drawThrustPlume(PX, py, PR, sr, sg, sb);
         }
 
         // On-fire afterburner: bigger than the ordinary thrust cone above and, unlike
@@ -1532,7 +1703,7 @@ function drawWorld() {
         if (onFire && phase === 'play') {
             const pulse = 0.85 + 0.15 * Math.sin(gtime * 9);
             for (const ns of [-1, 1]) {
-                const nx = PX - PR * 0.74, ny = py + ns * PR * 0.50;
+                const nx = PX + PR * SHIP_NOZZLE_X, ny = py + ns * PR * SHIP_NOZZLE_Y;
                 const cLen = PR * 8.0 * pulse, cW = PR * 0.30;
                 ctx.beginPath();
                 ctx.moveTo(nx,        ny - cW);
@@ -1578,7 +1749,7 @@ function drawWorld() {
         // drawTitleScreen() (dim, in the tunnel, part of the "world"; the hero
         // is a bright foreground portrait), not a confusing duplicate.
         ctx.globalAlpha = invulnAlpha;
-        drawShip(PX, py, PR, phase === 'dead' ? '#ff4040' : sk.color, sr, sg, sb, 20);
+        drawShip(PX, py, PR, phase === 'dead' ? '#ff4040' : sk.color, sr, sg, sb, 20, phase !== 'dead');
         ctx.globalAlpha = 1;
         ctx.restore();
     }
