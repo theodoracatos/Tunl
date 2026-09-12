@@ -177,6 +177,50 @@ function boulderSpacing(wx = scrollX) {
     return Math.max(3400 - 250 * Math.max(prog2At(wx) - 1.75, 0), 2400);
 }
 
+// Warp portal ring (systems.js makePortal/maintainPortals): a reward set-piece,
+// rarer than a boulder on purpose - it hands out a real speed boost plus free
+// gold, so it shouldn't be common enough to lean on for score. Floor well above
+// every hazard spacing floor (all sub-300px deep), similar order of magnitude to
+// a cannon's floor. Doesn't scale with day archetype (DAY_ARCHETYPES only nudges
+// hazard/coin density, not this reward).
+//
+// Retuned 2026-09-12 (was lerp(5200, 2800, progAt) floor 2000) after a replay
+// audit measured the shipped 11.0 curve delivering the exact opposite of the
+// intent above: one ring every 1-4 REAL seconds past score 100, i.e. denser than
+// boulders at every depth and 8-13x more frequent than the warp coin's own 40s
+// clock. The shape was the error, not just the scale - spacing TIGHTENED with
+// depth while scrollSpd() climbs, so the real-time gap collapsed twice over
+// exactly where it hurts. Three things compounded it. (1) The ring needs no aim:
+// portalHitTol (update.js) is wider than the ring's own +/-25%-of-halfGap jitter
+// at every depth, so a player simply holding the corridor centreline logged 0
+// misses in 42.3 crossings. (2) One full-length warp sweeps 1900-4300 world-px
+// while spacing deep was 2100-3500, so a warp routinely carried the player PAST
+// the next ring and re-triggered before it ended (185 re-triggers per run).
+// (3) Every warp exit grants HIT_INVULN_SEC on top. Net measured at a 100% hit
+// rate: warp live 54.6% of the run, hazard-immune 75.1%, and score 2400 reached
+// in 92s instead of 145s - a 1.58x distance-score rate on the one metric the
+// shared daily leaderboard is made of. That is the same failure the blue coin was
+// retuned for on 2026-09-11 ("slow-time active 38-85% of the run ... makes the
+// blue coin the baseline pace rather than a rescue"), and it also breaks the
+// "mines are the only thing that guarantees no run survives forever" pillar in
+// CLAUDE.md, since a warped player cannot be hit by one.
+//
+// The growth is keyed to prog2At, NOT progAt, and that is load-bearing. progAt
+// saturates at score 233, so any curve that does its growing on progAt has spent
+// itself before real players arrive - every flat-widened candidate measured a
+// dead zone with ring #1 at score 47 and ring #2 past score 250, and per the
+// leaderboard audit (median daily best 70, highest ever 169) that means most
+// players would see exactly one ring ever. Same "don't push content past where
+// players actually get" rule that moved boulders 84000 -> 5100. Measured now:
+// one ring per 11s / 12s / 19s / 28s / 44s / 46s across the score bands, rings at
+// score ~47/161/274/455 (so a median run still gets one and a good run two),
+// warp live 5.7% of the run, hazard-immune 11.0% - back in the blue coin's
+// post-retune band. Re-measure the DUTY CYCLE, not the world-px number, before
+// moving this again.
+function portalSpacing(wx = scrollX) {
+    return lerp(6500, 10000, progAt(wx)) * (1 + 4 * Math.min(prog2At(wx), 1));
+}
+
 // Onboarding corridor widen (score 0-~200, do not revert without re-auditing):
 // a brand-new player's first runs are where the "hold to climb, release to
 // fall" control model gets learned, and the base curve's wx=0 half-gap
@@ -273,6 +317,27 @@ function worldPxForSec(sec, wx = scrollX) { return scrollSpdBase(wx) * (W_REF_SP
 function slowScrollFactor() {
     if (!(slowTime > 0) || !(slowTimeMax > 0)) return 1.0;
     return lerp(0.60, 1.0, 1 - slowTime / slowTimeMax);
+}
+
+// Warp portal's speed factor - the mirror image of slowScrollFactor() above: a
+// SURGE instead of a sag. Ramps 1.0 -> warpMult over WARP_RAMP_SEC, holds at
+// warpMult, then glides back down to 1.0 over the last WARP_RECOVER_FRAC of the
+// window so the exit isn't an abrupt cut. warpMult (state.js) is rolled once at
+// trigger time from the player's _prog2 (constants.js WARP_MULT_MIN/MAX doc) -
+// read here as a fixed value for the whole warp, never re-sampled mid-flight, so
+// a warp that starts just before the plateau doesn't shift speed partway through
+// as _prog2 keeps climbing underneath it. Folded into the same five places
+// slowScrollFactor() already is (scroll, bullet timer/speed, cannon shots, the
+// speed-line intensity in draw.js) so nothing streaks through a warped tunnel at
+// the wrong speed - see constants.js's "Warp portal" doc for why this is real
+// seconds, not a world-px distance.
+function warpScrollFactor() {
+    if (!(warpTime > 0) || !(warpMax > 0)) return 1.0;
+    const elapsed  = warpMax - warpTime;
+    const recoverAt = warpMax * (1 - WARP_RECOVER_FRAC);
+    if (elapsed < WARP_RAMP_SEC) return lerp(1.0, warpMult, elapsed / WARP_RAMP_SEC);
+    if (elapsed > recoverAt)     return lerp(warpMult, 1.0, (elapsed - recoverAt) / (warpMax - recoverAt));
+    return warpMult;
 }
 // Nudges stal/coin/mine density and chicane odds per day, on top of the
 // existing _prog/_prog2 curves - see seedDailyVariety. Classic is the
@@ -421,7 +486,11 @@ function halfGapAt(wx) {
 // collision benefit from collected coins.
 function boundsAt(wx) {
     const cy = centerAt(wx);
-    const hg = _halfGap + gapBonusVisual;
+    // warpWidenVisual (update.js, constants.js WARP_GAP_MULT doc) only ever
+    // applies here, never in boundsBase() - same rule as gapBonusVisual (CLAUDE.md
+    // "boundsBase for coin placement"): nothing that decides where an object gets
+    // PLACED may depend on whether a warp happens to be live for this player.
+    const hg = _halfGap + gapBonusVisual + warpWidenVisual;
     return { top: cy - hg, bot: cy + hg };
 }
 

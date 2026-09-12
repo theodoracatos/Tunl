@@ -1,0 +1,64 @@
+{
+  "_note": "Lifetime near-miss / 'Ausweichen' achievements (src/constants.js DODGE_ACHIEVEMENTS) - a near-miss is wall clearance < PR*2.0, see update.js's near-miss check. Same array shape as ach_translations_flight.json: [title, post-earned description, pre-earned description]. Play Console has ONE description field - use the pre-earned string there. Icons: achievement-icons/dodge_100.png, dodge_1000.png (512x512 RGB, no alpha, not yet generated). Points: 15/30 - same escalation as flight_1min/flight_2min, since both are skill-driven (not pure grind) 2-tier achievements. Hidden: No. Incremental: No.",
+
+  "en-US": {
+    "tunl_ach_dodge_100": ["100 Near Misses", "You have racked up 100 near misses across all your runs.", "Rack up 100 near misses across all your runs."],
+    "tunl_ach_dodge_1000": ["1000 Near Misses", "You have racked up 1000 near misses across all your runs.", "Rack up 1000 near misses across all your runs."]
+  },
+  "de-DE": {
+    "tunl_ach_dodge_100": ["100 Beinahe-Treffer", "Du hast über alle Läufe hinweg 100 Beinahe-Treffer gesammelt.", "Sammle über alle Läufe hinweg 100 Beinahe-Treffer."],
+    "tunl_ach_dodge_1000": ["1000 Beinahe-Treffer", "Du hast über alle Läufe hinweg 1000 Beinahe-Treffer gesammelt.", "Sammle über alle Läufe hinweg 1000 Beinahe-Treffer."]
+  },
+  "fr-FR": {
+    "tunl_ach_dodge_100": ["100 Frôlements", "Vous avez accumulé 100 frôlements sur l'ensemble de vos parties.", "Accumulez 100 frôlements sur l'ensemble de vos parties."],
+    "tunl_ach_dodge_1000": ["1000 Frôlements", "Vous avez accumulé 1000 frôlements sur l'ensemble de vos parties.", "Accumulez 1000 frôlements sur l'ensemble de vos parties."]
+  },
+  "it": {
+    "tunl_ach_dodge_100": ["100 Quasi Collisioni", "Hai accumulato 100 quasi collisioni in tutte le tue partite.", "Accumula 100 quasi collisioni in tutte le tue partite."],
+    "tunl_ach_dodge_1000": ["1000 Quasi Collisioni", "Hai accumulato 1000 quasi collisioni in tutte le tue partite.", "Accumula 1000 quasi collisioni in tutte le tue partite."]
+  },
+  "es-ES": {
+    "tunl_ach_dodge_100": ["100 Casi Choques", "Has acumulado 100 casi choques en todas tus partidas.", "Acumula 100 casi choques en todas tus partidas."],
+    "tunl_ach_dodge_1000": ["1000 Casi Choques", "Has acumulado 1000 casi choques en todas tus partidas.", "Acumula 1000 casi choques en todas tus partidas."]
+  },
+  "pt-BR": {
+    "tunl_ach_dodge_100": ["100 Quase Colisões", "Você acumulou 100 quase colisões em todas as suas partidas.", "Acumule 100 quase colisões em todas as suas partidas."],
+    "tunl_ach_dodge_1000": ["1000 Quase Colisões", "Você acumulou 1000 quase colisões em todas as suas partidas.", "Acumule 1000 quase colisões em todas as suas partidas."]
+  },
+  "ru": {
+    "tunl_ach_dodge_100": ["100 близких промахов", "Вы набрали 100 близких промахов за все свои забеги.", "Наберите 100 близких промахов за все свои забеги."],
+    "tunl_ach_dodge_1000": ["1000 близких промахов", "Вы набрали 1000 близких промахов за все свои забеги.", "Наберите 1000 близких промахов за все свои забеги."]
+  },
+  "ja": {
+    "tunl_ach_dodge_100": ["ニアミス100回", "全プレイ通算でニアミスを100回記録しました。", "全プレイ通算でニアミスを100回記録する。"],
+    "tunl_ach_dodge_1000": ["ニアミス1000回", "全プレイ通算でニアミスを1000回記録しました。", "全プレイ通算でニアミスを1000回記録する。"]
+  },
+  "ko": {
+    "tunl_ach_dodge_100": ["니어미스 100회", "모든 플레이 통틀어 니어미스를 100회 기록했습니다.", "모든 플레이 통틀어 니어미스를 100회 기록하세요."],
+    "tunl_ach_dodge_1000": ["니어미스 1000회", "모든 플레이 통틀어 니어미스를 1000회 기록했습니다.", "모든 플레이 통틀어 니어미스를 1000회 기록하세요."]
+  },
+  "zh-Hant": {
+    "tunl_ach_dodge_100": ["擦身而過100次", "你在所有遊玩中累積了100次擦身而過。", "在所有遊玩中累積100次擦身而過。"],
+    "tunl_ach_dodge_1000": ["擦身而過1000次", "你在所有遊玩中累積了1000次擦身而過。", "在所有遊玩中累積1000次擦身而過。"]
+  },
+  "tr": {
+    "tunl_ach_dodge_100": ["100 Yakın Temas", "Tüm oyunlarında toplam 100 yakın temas biriktirdin.", "Tüm oyunlarında toplam 100 yakın temas biriktir."],
+    "tunl_ach_dodge_1000": ["1000 Yakın Temas", "Tüm oyunlarında toplam 1000 yakın temas biriktirdin.", "Tüm oyunlarında toplam 1000 yakın temas biriktir."]
+  },
+  "pl": {
+    "tunl_ach_dodge_100": ["100 Bliskich Minięć", "Zebrałeś 100 bliskich minięć we wszystkich swoich przelotach.", "Zbierz 100 bliskich minięć we wszystkich swoich przelotach."],
+    "tunl_ach_dodge_1000": ["1000 Bliskich Minięć", "Zebrałeś 1000 bliskich minięć we wszystkich swoich przelotach.", "Zbierz 1000 bliskich minięć we wszystkich swoich przelotach."]
+  },
+  "id": {
+    "tunl_ach_dodge_100": ["100 Hampir Tabrakan", "Kamu telah mengumpulkan 100 hampir tabrakan di semua permainanmu.", "Kumpulkan 100 hampir tabrakan di semua permainanmu."],
+    "tunl_ach_dodge_1000": ["1000 Hampir Tabrakan", "Kamu telah mengumpulkan 1000 hampir tabrakan di semua permainanmu.", "Kumpulkan 1000 hampir tabrakan di semua permainanmu."]
+  },
+  "hi": {
+    "tunl_ach_dodge_100": ["100 निकट चूक", "आपने अपने सभी राउंड में 100 निकट चूक जमा की हैं।", "अपने सभी राउंड में 100 निकट चूक जमा करें।"],
+    "tunl_ach_dodge_1000": ["1000 निकट चूक", "आपने अपने सभी राउंड में 1000 निकट चूक जमा की हैं।", "अपने सभी राउंड में 1000 निकट चूक जमा करें।"]
+  },
+  "ar-SA": {
+    "tunl_ach_dodge_100": ["100 اقتراب من الاصطدام", "لقد جمعت 100 حالة اقتراب من الاصطدام عبر جميع جولاتك.", "اجمع 100 حالة اقتراب من الاصطدام عبر جميع جولاتك."],
+    "tunl_ach_dodge_1000": ["1000 اقتراب من الاصطدام", "لقد جمعت 1000 حالة اقتراب من الاصطدام عبر جميع جولاتك.", "اجمع 1000 حالة اقتراب من الاصطدام عبر جميع جولاتك."]
+  }
+}

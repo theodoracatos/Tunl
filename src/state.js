@@ -26,6 +26,15 @@ let bestSX        = parseInt(localStorage.getItem('tunnel_best_sx') || '0');
 // the title screen under REKORD. Displayed as lifetimeDist/60, the same "distance"
 // unit the live score uses (score = floor(scrollX/60) + bonus).
 let lifetimeDist  = parseFloat(localStorage.getItem('tunnel_lifetime_dist') || '0') || 0;
+// Lifetime runs played, summed across every run ever started (incremented in
+// lifecycle.js startPlay(), same "every started run counts" definition as the
+// daily-reset `dailyRuns` above). Never spent, never resets - backs
+// RUNS_ACHIEVEMENTS (constants.js).
+let totalRuns = parseInt(localStorage.getItem('tunnel_total_runs') || '0');
+// Lifetime near-misses (wall clearance < PR*2.0), summed across every run ever
+// (each run's `runNearMisses` banked in commitDeath(), same source
+// dailyMissionStats.nearMisses reads). Backs DODGE_ACHIEVEMENTS (constants.js).
+let lifetimeNearMisses = parseInt(localStorage.getItem('tunnel_lifetime_near_misses') || '0');
 let runsWithoutPB = parseInt(localStorage.getItem('tunnel_no_pb')   || '0');
 let top5 = _savedLastDay === _initToday ? JSON.parse(localStorage.getItem('tunnel_top5') || '[]') : [];
 let dailyBest = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tunnel_daily_best') || '0') : 0;
@@ -318,6 +327,24 @@ let cannons, nextCannonWx;
 // 84000 (~score 1400) in startPlay, 99999 on the title screen.
 let boulders, nextBoulderWx;
 let cannonShots;
+// Warp portal ring in the corridor (constants.js "Warp portal" doc, systems.js
+// makePortal/maintainPortals) - a rare reward set-piece, not a hazard. From
+// PORTAL_START_WX (~score 50) in startPlay, 99999 on the title screen.
+let portals, nextPortalWx;
+// Warp state (update.js triggerWarp()/the warp block, world.js warpScrollFactor()).
+// warpTime counts down real seconds from warpMax (set fresh by either entry point,
+// never stacked - see constants.js WARP_DUR_MIN_SEC doc); warpWidenVisual chases its
+// target through the same GAP_EASE_RATE-style channel gapBonusVisual already uses,
+// so the corridor widens/narrows smoothly instead of snapping.
+// warpMult is the scrollSpd() multiplier rolled once per warp from the player's
+// own _prog2 at the moment of trigger (constants.js WARP_MULT_MIN/MAX doc,
+// systems.js triggerWarp()) - captured here the same way slowTimeMax captures
+// its window, so warpScrollFactor() (world.js) reads a fixed value for the
+// whole warp instead of re-sampling a live, still-climbing _prog2 mid-flight.
+let warpTime, warpMax, warpWidenVisual, warpMult;
+// Warp coin real-time-clock cursor, same model as nextPoisonWx/nextBombWx/nextDrainWx
+// just above (constants.js WARP_COIN_INTERVAL_SEC doc).
+let nextWarpWx;
 // Poison/bomb: real-time clocks (see constants.js POISON_INTERVAL_SEC doc), not
 // per-coin-candidate probabilities. poisonClock/bombClock accumulate play seconds
 // (update.js); once one passes its jittered next*At target, the next coin that
@@ -350,6 +377,13 @@ let flightClock, flightAchIdx;
 let notifs;
 let bonusScore, milestoneNext, nearMissTimer, coinCombo, coinComboTimer;
 let runCoins, runNearMisses, runMaxCombo;
+// Backing state for the 4 skill achievements (constants.js SPRINT_ACH_*/NO_HIT_ACH_*/
+// NO_BONUS_ACH_*/BOULDER_MEISTER_*), all reset per-run in lifecycle.js:
+// - runHitCount: every die() call this run counts (shield/grace-absorbed or fatal).
+// - sprintAchFired/noHitAchFired/noBonusAchFired: one-shot guards so a live per-frame
+//   check (update.js) doesn't re-fire every frame its condition stays true.
+// - runBoulderNarrowPasses: count of boulders cleanly threaded via their narrow side.
+let runHitCount, sprintAchFired, noHitAchFired, noBonusAchFired, runBoulderNarrowPasses;
 let prevRunScore, lastRunScore;
 // Where the last run ended, in world-x and screen-y. Only the share card reads these
 // (share.js), which needs the exact death point to mark on the run profile -- die()'s
@@ -414,6 +448,12 @@ window._tunlBackfillAchievements = function backfillAchievements() {
     const _distNow = Math.floor(lifetimeDist / 60);
     for (const da of DIST_ACHIEVEMENTS) {
         if (_distNow >= da.at) report(da.id);
+    }
+    for (const ra of RUNS_ACHIEVEMENTS) {
+        if (totalRuns >= ra.at) report(ra.id);
+    }
+    for (const dga of DODGE_ACHIEVEMENTS) {
+        if (lifetimeNearMisses >= dga.at) report(dga.id);
     }
     if (best >= 1000)   report('tunl_ach_score_1000');
     if (best >= 10000)  report('tunl_ach_score_10000');

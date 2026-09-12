@@ -271,6 +271,139 @@ placeStalW`), not the flat 140px both-walls test it started as - see the
 never be satisfied past the plateau, and why the wall (`isTop`) is now drawn before the
 retry loop rather than inside the winning branch.
 
+### Warp portal ("Sog")
+
+Reward set-piece added in 11.0, not a hazard - the game's answer to "reacting" and
+"committing" (stalactites, boulders) is joined by a third verb, "escaping". Two entry
+points both funnel into one shared `triggerWarp()` (`src/systems.js`): a ring hanging
+in the corridor (`makePortal`/`maintainPortals`/`_makePortalAt`, from world-x
+`PORTAL_START_WX` = 3000, ~score 50) or a violet double-ring warp coin on its own
+real-time clock (`WARP_COIN_INTERVAL_SEC` = 40s, same clock model as
+poison/bomb/drain - **not** folded into the weighted gold/blue/red/orange/green roll,
+so that carefully-tuned split never needed re-deriving; its clock is checked
+**first** in `makeCoin`, so a ready poison/drain/bomb still overrides it - it sat
+last until 2026-09-12, which silently ate 5.9% of bombs and 5.0% of drains).
+
+**The ring's cadence is a DUTY CYCLE, not a world-px number** (`portalSpacing()`,
+`world.js` - retuned 2026-09-12, do not revert to a progAt-keyed curve). Shipped
+11.0 ran `lerp(5200, 2800, progAt)`, and an audit measured it at **one ring every
+1-4 real seconds** past score 100 - denser than boulders at every depth, 8-13x more
+frequent than the warp coin's own 40s clock, and the opposite of the "rarer than a
+boulder" intent in its own doc comment. The shape was the error, not just the
+scale: spacing *tightened* with depth while `scrollSpd()` climbs, collapsing the
+real-time gap twice over. Three things compounded. (1) **The ring needs no aim** -
+`portalHitTol` (`update.js`, `PR*3.2`) is wider than the ring's own
++/-25%-of-halfGap jitter at *every* depth, so a player holding the corridor
+centreline logged **0 misses in 42.3 crossings**, and the accuracy-based duration
+added the same day is therefore near-inert. (2) One full-length warp sweeps
+1900-4300 world-px against a 2100-3500 spacing, so a warp carried the player *past*
+the next ring and re-triggered before it ended - 185 re-triggers per run. (3) Every
+warp exit grants `HIT_INVULN_SEC` on top. Net at a 100% hit rate: **warp live 54.6%
+of the run, hazard-immune 75.1%**, and score 2400 reached in 92s instead of 145s - a
+**1.58x distance-score rate** on the one metric the shared daily leaderboard is made
+of. Same failure the blue coin was retuned for on 2026-09-11, and it breaks the
+"mines are the only thing that guarantees no run survives forever" pillar below,
+since a warped player cannot be hit by one. The curve is now
+`lerp(6500, 10000, progAt) * (1 + 4*prog2At)`: growth keyed to **`prog2At`, not
+`progAt`**, because `progAt` saturates at score 233 and every flat-widened candidate
+therefore left ring #2 past score 250 - which per the leaderboard audit (median
+daily best 70, highest ever 169) means most players would see exactly one ring ever,
+the same mistake that had boulders at 84000. Measured now: one ring per
+11s/12s/19s/28s/44s/46s across the score bands, rings at score ~47/161/274/455,
+warp live 5.7%, hazard-immune 11.0%. Re-measure the duty cycle, never the world-px
+number, before moving this again.
+
+Two follow-ups from the same audit. **The ring's hit window is its own drawn radius**
+(`update.js`, `Math.max(p.r, PR*1.6)`, was a flat `PR*3.2`): 55px of window against a
+~39px ring meant you could take a warp while visibly outside it, and `accuracy`
+measured off a phantom circle - a rim graze scored ~0.7. Keying it to `p.r` makes the
+window the picture and the accuracy gradient span it honestly. Measured a balance
+no-op (0 centreline misses before or after, floor never binds at any shipped H) -
+forcing a *real* aim would need a smaller ring plus a much wider jitter, which is a
+look-and-feel redesign for a playtest, not an audit fix. **A warp-vacuumed coin banks
+in full but does not raise the combo** (`systems.js`, the `warpVacuum` branch): one
+ring auto-collects every gold coin on screen, and letting those increment normally let
+the combo's quadratic term manufacture 11-54 bonus points per warp - worst at LOW
+score, where gold's share is 76%. Against a median daily best of 70 the first ring
+alone (score ~47, which every player reaches) was worth about as much as the whole
+rest of a typical run. Now 17 points cold, and a combo you *earned* before arriving
+still pays on every vacuumed coin - that part is skill and is kept deliberately.
+
+For `WARP_DUR_MIN..MAX_SEC`
+(~1.1-1.6s) real seconds: `scrollSpd()` is multiplied by `warpMult` (`state.js`,
+rolled once at trigger time from `WARP_MULT_MIN..MAX` (2.2-2.8x) against the
+player's own live `_prog2` and held fixed for the whole warp - deeper run, stronger
+sog, same "never just endurance at a fixed pace" philosophy `scrollSpd()` itself
+follows, capped at `_prog2 >= 1` like most per-run knobs since `scrollSpd()`
+underneath it keeps climbing forever regardless of where this ratio caps).
+`world.js warpScrollFactor()` is the mirror image of `slowScrollFactor()`, folded
+into the identical five call sites. The corridor widens (`WARP_GAP_MULT`, eased through
+the same `gapBonusVisual`-style channel, `boundsAt()` only, never `boundsBase()` -
+same "no placement decision may depend on a player state" rule gapBonus already
+follows), every stalactite/mine/boulder/cannon-shot is skipped entirely (drawn ghosted
+at `warpFade` opacity, `src/draw.js`), and every gold coin on screen is auto-collected
+into the combo (`checkCoinCollection`'s `warpVacuum` check, systems.js) - power-up
+coins still have to be flown to and hit normally. The background music surges with it
+(`audio.js bgmSetWarp`, the mirror image of `bgmSetSlow` - same `_bgmNode.playbackRate`
+rate, so the two are mutually exclusive in practice, which is fine since both are
+short and rare): a quick ramp to 1.35x on trigger, gliding back to 1.0x as the window
+runs out. Deliberately far under the warp's own 2.2-2.8x - that range is a gameplay
+scroll speed, not an audio pitch target, and a whole track played back that fast stops
+reading as "faster" and starts reading as a chipmunked mess.
+
+**Exiting a warp grants `HIT_INVULN_SEC` of the same grace window a shield-absorbed
+hit or a revive already gets** (`update.js`, the `warpTime` falling edge) - `Math.max`
+against whatever's already running, never a shortening. Coming out of a warp drops the
+player back into full collision at whatever speed/position the surge left them at,
+with the corridor still easing back in from `WARP_GAP_MULT`-wide (`warpWidenVisual`) -
+a hazard could already be uncomfortably close the instant collision solidifies again,
+so the same clamp-not-kill/pass-through convention the shield window uses covers the
+transition. This is the reuse `constants.js`'s own `HIT_INVULN_SEC` doc comment
+already anticipated ("a future rewarded continue reuses the same timer") - not a new
+constant.
+
+**Deliberately real seconds, not a world-px distance.** Nothing about a warp is a
+placement decision - no `rng()` draw, nothing any other player's cave depends on - so
+it is exactly the same category of per-player effect the blue coin's `slowTime`
+already is, not a cross-device-fairness concern. `scrollX` still advances one `dt` at
+a time through the ordinary `maintain*()` while-loops; a warp is just a few real
+seconds of a bigger step per frame; the loops already have to backfill an arbitrary
+jump (a backgrounded tab does the same thing) so nothing about them changes for this.
+
+**The wall is never a warp-caused death, by construction, not by tuning.** At the
+corridor wave's peak slope, the warp's faster drift can in theory outrun `MAX_VY`
+(a measured ~45% of `MAX_VY` already at the difficulty plateau, unwarped, before even
+`WARP_MULT_MIN` is applied). Rather than hand-tuning `WARP_GAP_MULT` against a moving
+target (wave amplitude/frequency both still climb with `_prog2`, and now `warpMult`
+does too), `update.js`'s wall-collision check treats `warpTime > 0`
+exactly like `invulnT > 0` (the shield-absorbed grace window): clamp the ship back
+inside the corridor instead of killing it. `WARP_GAP_MULT` only decides how much of
+that clamping the player actually feels, never whether a warp can end in a wall death.
+
+**Portal placement reuses the coin contract, not a bespoke geometric veto.** The
+ring's *drawn* radius (`PORTAL_R_FRAC` of the corridor's halfGap at that wx) is
+spectacle; only its centre point has to be provably flyable, and that question is
+already answered for every coin in the game by `coinBlockedByStal()` - reused directly
+in `_makePortalAt` rather than reinventing per-spike chord math. A bespoke flat/
+geometric veto is exactly the mistake that nearly wiped out boulders and cannons (see
+the `SPAWN_AHEAD_*` discussion above); reusing the coin contract sidesteps it because
+coins already place successfully at every difficulty without one. `PORTAL_RETRY_OFFSETS`
+follows the same retry-on-veto pattern as mines/cannons/boulders regardless.
+
+The portal ring itself triggers on an **x-crossing test**, not a circle-overlap test -
+same reasoning as the falling-stalactite landed check and the cannon fire lead: a
+fast-scrolling frame can jump the player's world-x past a thin ring in one step, a risk
+that only grows once `warpScrollFactor()` itself can be live.
+
+**Flying the ring's centre is rewarded with a longer warp** (`update.js`'s
+x-crossing check, `triggerWarp(accuracy)`) - a dead-centre pass earns the full
+`WARP_DUR_MAX_SEC`, a graze along the hit tolerance's edge only `WARP_DUR_MIN_SEC`,
+linearly in between. The warp coin has no aim to reward (a coin is touched, not
+threaded) so it keeps the old random roll across the same range - `accuracy` is
+simply omitted for that entry point, and `triggerWarp` falls back to `Math.random()`.
+This reuses `WARP_DUR_MIN..MAX_SEC` rather than adding a new constant pair; only
+*where in the range* a given warp lands changed, not the range itself.
+
 ### Coin system
 Coins collect into `gapBonus` (extra halfGap px, capped, decays over time):
 ```javascript
@@ -411,7 +544,7 @@ stays locked. `_deepVarietyOn` (default true) is the master kill switch for all 
 Coins are staged by `_prog` so power-ups introduce gradually:
 - score 0-11 (_prog < 0.22): gold only (gap bonus)
 - score 11-33 (_prog 0.22-0.38): + blue (slow time: scroll sags to 0.6x on pickup then ramps back to full over ~4s - see slowScrollFactor)
-- score 34-70 (_prog 0.38-0.55): + red (shield, absorbs 1 hit) + orange (bullet ammo) + the clock-driven poison / bomb / drain coins (see their sections below)
+- score 34-70 (_prog 0.38-0.55): + red (shield, absorbs 1 hit) + orange (bullet ammo) + the clock-driven poison / bomb / drain / warp coins (see their sections below)
 - score 71+ (_prog >= 0.55): + green (magnet, pulls coins)
 
 **Power-up SUPPLY is paced in real seconds, not just by weighted share**
@@ -844,7 +977,7 @@ project memory) held after re-checking.
 - Multiple difficulty modes
 - Mobile fullscreen on iOS/Android
 - Level theming (lava/ice/neon)
-- Additional coin types beyond the current eight (gold/blue/red/orange/green/bomb + the two hazards poison/drain)
+- Additional coin types beyond the current nine (gold/blue/red/orange/green/bomb/warp + the two hazards poison/drain)
 - Friend ghosts carried inside a share link (see Ghost run below - the local ghost is
   already only a few hundred bytes, so a shared one is mostly a transport problem)
 - A playable web build. Deliberately NOT on the roadmap right now: the user decided

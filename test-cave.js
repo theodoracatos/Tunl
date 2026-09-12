@@ -26,6 +26,7 @@ const STUBS = `
     function sfxBulletPickup(){} function sfxBomb(){} function sfxPoison(){} function sfxDrain(){}
     function sfxCombo(){} function sfxBulletFire(){} function sfxStalCrack(){} function sfxMineBoom(){}
     function bgmSetSlow(){} function magnetLoopOn(){} function magnetLoopOff(){}
+    function sfxWarpEnter(){} function warpLoopOn(){} function warpLoopOff(){} function bgmSetWarp(){}
 `;
 
 // Mirrors lifecycle.js _seedSpawnStreams + the spawn-cursor block of startPlay().
@@ -44,16 +45,18 @@ const START_RUN = `
         mines = []; nextMineWx = 1800;
         cannons = []; nextCannonWx = 6000; cannonShots = [];
         boulders = []; nextBoulderWx = 5100;
+        portals = []; nextPortalWx = PORTAL_START_WX;
         nextPoisonWx = worldPxForSec(POISON_INTERVAL_SEC * (0.7 + rngCoin() * 0.6), 0);
         nextBombWx   = worldPxForSec(BOMB_INTERVAL_SEC   * (0.7 + rngCoin() * 0.6), 0);
         nextDrainWx  = worldPxForSec(DRAIN_INTERVAL_SEC  * (0.7 + rngCoin() * 0.6), 0);
+        nextWarpWx   = worldPxForSec(WARP_COIN_INTERVAL_SEC * (0.7 + rngCoin() * 0.6), 0);
         lastBlueWx = 0; lastRedWx = 0; lastGreenWx = 0;
         refreshWave();
     };
     this.step = function () {
         refreshWave();
         maintainStalactites(); maintainCoins(); maintainMines();
-        maintainCannons(); maintainBoulders();
+        maintainCannons(); maintainBoulders(); maintainPortals();
         scrollX += scrollSpd() * (1 / 120);
         return scrollX;
     };
@@ -65,6 +68,7 @@ const START_RUN = `
             mine:    mines.map(o => [o.wx, o.baseY, o.bobAmp]),
             cannon:  cannons.map(o => [o.wx, o.isTop]),
             boulder: boulders.map(o => [o.wx, o.y, o.r]),
+            portal:  portals.map(o => [o.wx, o.y, o.r]),
         };
     };
     this.H = H; this.W = W;
@@ -102,13 +106,14 @@ function normalise(snap, H) {
         mine:    snap.mine.map(([wx, y, b]) => [+wx.toFixed(9), vy(y), vy(b)]),
         cannon:  snap.cannon.map(([wx, t]) => [+wx.toFixed(9), t]),
         boulder: snap.boulder.map(([wx, y, r]) => [+wx.toFixed(9), vy(y), vy(r)]),
+        portal:  snap.portal.map(([wx, y, r]) => [+wx.toFixed(9), vy(y), vy(r)]),
     });
 }
 
 function replay(innerWidth, innerHeight, dayInt, untilWx) {
     const w = makeWorld(innerWidth, innerHeight);
     w.startRun(dayInt);
-    const seen = { stal: [], coin: [], chic: [], mine: [], cannon: [], boulder: [] };
+    const seen = { stal: [], coin: [], chic: [], mine: [], cannon: [], boulder: [], portal: [] };
     const ids = new Set();
     let x = 0, guard = 0;
     while (x < untilWx && guard++ < 2_000_000) {
@@ -170,7 +175,8 @@ for (const day of DAYS) {
     const n = Object.values(ref.snap).reduce((a, v) => a + v.length, 0);
     check(`reference replay is actually populated (${n} objects)`, n > 200 &&
         ref.snap.stal.length > 50 && ref.snap.coin.length > 20 &&
-        ref.snap.mine.length > 10 && ref.snap.boulder.length > 0);
+        ref.snap.mine.length > 10 && ref.snap.boulder.length > 0 &&
+        ref.snap.portal.length > 0);
 }
 
 // ── Spawn-horizon budget ──────────────────────────────────────────────
@@ -196,6 +202,10 @@ for (const day of DAYS) {
         ['mines',   g('SPAWN_AHEAD_MINE'),    Math.max(...g('MINE_RETRY_OFFSETS')),    300],
         ['cannons', g('SPAWN_AHEAD_CANNON'),  Math.max(...g('CANNON_RETRY_OFFSETS')),  REF_STAL_W + g('PLACE_CANNON_R')],
         ['boulder', g('SPAWN_AHEAD_BOULDER'), Math.max(...g('BOULDER_RETRY_OFFSETS')), REF_STAL_W + MAX_BOULDER_R_REF],
+        // Portal placement inspects exactly the same window coinBlockedByStal already
+        // does for every coin (systems.js _makePortalAt doc) - own-wall clearance
+        // (PLACE_PR + PLACE_COIN_R) on each side of the widest stalactite it has to see.
+        ['portal',  g('SPAWN_AHEAD_PORTAL'),  Math.max(...g('PORTAL_RETRY_OFFSETS')),   REF_STAL_W + (g('PLACE_PR') + g('PLACE_COIN_R')) * 2],
     ];
     const stalAhead = g('SPAWN_AHEAD_STAL');
     for (const [name, ahead, retry, inspect] of budget) {
@@ -237,6 +247,43 @@ for (const day of DAYS) {
     }
     check(`every boulder keeps a pass open (${checked} boulders, ${sealed} sealed, worst best-pass ${worst.toFixed(2)} player diameters)`,
         checked > 10 && sealed === 0 && worst >= 1.0);
+}
+
+// ── Portals keep their contract ─────────────────────────────────────────
+// _makePortalAt's whole flyability contract is "this exact (wx, y) point passes
+// coinBlockedByStal" (systems.js doc) - re-run that same test independently against
+// every portal a real replay actually placed, rather than trusting the placement
+// code to have applied its own rule correctly. Also checks the drawn ring (r +
+// its seeded centre jitter, both PORTAL_R_FRAC-bounded) never reaches the wall,
+// since only the centre point - not the ring's visual extent - is load-bearing.
+{
+    const w = makeWorld(956, 440);
+    const coinBlockedByStal = vm.runInContext('coinBlockedByStal', w);
+    const boundsBase        = vm.runInContext('boundsBase', w);
+    let checked = 0, blocked = 0, worstMargin = Infinity;
+    for (const day of DAYS) {
+        const { snap } = replay(956, 440, day, UNTIL_WX);
+        w.startRun(day);   // coinBlockedByStal reads the live `stalactites` array
+        for (const [pwx, py, pr] of snap.portal) {
+            // maintainStalactites() only ever looks at its own while-condition
+            // (scrollX + SPAWN_W + SPAWN_AHEAD_STAL), not at how it got there, and
+            // rngStal() is a pure sequential stream - jumping scrollX straight to
+            // this portal's wx and calling it once reproduces exactly the
+            // stalactite set placement time saw, same as the "a background tab
+            // catches up in one burst" case the real game already relies on.
+            vm.runInContext(`scrollX = ${pwx}; maintainStalactites();`, w);
+            checked++;
+            if (coinBlockedByStal(pwx, py)) blocked++;
+            const bb = boundsBase(pwx);
+            const hg = (bb.bot - bb.top) / 2;
+            const margin = hg - (Math.abs(py - (bb.top + bb.bot) / 2) + pr);
+            worstMargin = Math.min(worstMargin, margin / hg);
+        }
+    }
+    check(`every portal's centre independently clears coinBlockedByStal (${checked} portals, ${blocked} blocked)`,
+        checked > 5 && blocked === 0);
+    check(`every portal ring stays inside the corridor with margin (worst ${(worstMargin*100).toFixed(0)}% of halfGap spare)`,
+        worstMargin > 0);
 }
 
 if (failed) {

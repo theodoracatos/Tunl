@@ -129,9 +129,9 @@ function _paintStonePattern(scrollX) {
 }
 
 function drawCoinIcon(cx, cy, type, r) {
-    const isBlu = type === 'blue', isRed = type === 'red', isGrn = type === 'green', isOrng = type === 'orange', isPsn = type === 'poison', isBmb = type === 'bomb', isDrn = type === 'drain';
-    const bodyClr = isBlu ? '#4dd9ff' : isRed ? '#ff4444' : isGrn ? '#44ff88' : isOrng ? '#ff5500' : isPsn ? '#5fbf00' : isBmb ? '#b833ff' : isDrn ? '#7a2f4f' : '#ffe040';
-    const [gr, gg, gb] = isBlu ? [60,200,255] : isRed ? [255,60,60] : isGrn ? [50,255,120] : isOrng ? [255,85,0] : isPsn ? [110,200,20] : isBmb ? [190,50,255] : isDrn ? [170,55,95] : [255,225,50];
+    const isBlu = type === 'blue', isRed = type === 'red', isGrn = type === 'green', isOrng = type === 'orange', isPsn = type === 'poison', isBmb = type === 'bomb', isDrn = type === 'drain', isWrp = type === 'warp';
+    const bodyClr = isBlu ? '#4dd9ff' : isRed ? '#ff4444' : isGrn ? '#44ff88' : isOrng ? '#ff5500' : isPsn ? '#5fbf00' : isBmb ? '#b833ff' : isDrn ? '#7a2f4f' : isWrp ? '#6a5cff' : '#ffe040';
+    const [gr, gg, gb] = isBlu ? [60,200,255] : isRed ? [255,60,60] : isGrn ? [50,255,120] : isOrng ? [255,85,0] : isPsn ? [110,200,20] : isBmb ? [190,50,255] : isDrn ? [170,55,95] : isWrp ? [130,110,255] : [255,225,50];
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI*2);
     ctx.fillStyle   = bodyClr;
@@ -247,6 +247,17 @@ function drawWorld() {
         theme.wallBase = lerpClr(theme.wallBase, [92, 122, 208], d);
         theme.stalEdge = lerpClr(theme.stalEdge, [110, 140, 220], d * 0.8);
     }
+    // Warp portal ("Sog", constants.js "Warp portal" doc): every hazard fades to a
+    // ghostly, near-transparent version of itself for the same duration update.js
+    // skips their collision - "phased out", not just invisible-but-still-solid.
+    // The wall/stalactite glow drifts violet too, same technique as the deep-run
+    // palette drift just above, triggered by a player state instead of a depth
+    // threshold.
+    const warpFade = warpTime > 0 ? 0.22 : 1.0;
+    if (warpTime > 0) {
+        theme.wallBase = lerpClr(theme.wallBase, [140, 95, 255], 0.34);
+        theme.stalEdge = lerpClr(theme.stalEdge, [160, 115, 255], 0.30);
+    }
     const bgStr = rgb(theme.bg);
     // backgroundColor, not the background shorthand: the shorthand resets
     // background-image too, which would blank out the web build's letterbox
@@ -297,7 +308,7 @@ function drawWorld() {
             wobX = Math.sin(gtime * 27 + s.wx * 0.05) * lerp(0.7, 3.6, wobT);
         }
         if (fallY || wobX) { ctx.save(); ctx.translate(wobX, fallY); }
-        if (s.fade < 1.0) ctx.globalAlpha = s.fade;
+        if (s.fade < 1.0 || warpFade < 1.0) ctx.globalAlpha = s.fade * warpFade;
         const b = boundsAt(s.wx), hw = s.width / 2;
         const len = s.length;
         const dir = s.isTop ? 1 : -1;
@@ -394,7 +405,7 @@ function drawWorld() {
         ctx.lineWidth = 2.5;
         ctx.stroke();
 
-        if (s.fade < 1.0) ctx.globalAlpha = 1.0;
+        if (s.fade < 1.0 || warpFade < 1.0) ctx.globalAlpha = 1.0;
         if (fallY || wobX) ctx.restore();
     }
 
@@ -535,10 +546,51 @@ function drawWorld() {
         }
     }
 
+    // Warp portal ring - reward set-piece (constants.js "Warp portal" doc), never
+    // a hazard: two counter-rotating rings around a shared violet glow. Fades out
+    // over usedFade once flown through instead of vanishing outright, so the
+    // moment reads as "consumed" rather than "disappeared".
+    for (const p of portals) {
+        const sx = p.wx - scrollX;
+        if (sx < -p.r - 30 || sx > W + p.r + 30) continue;
+        if (p.used && p.usedFade <= 0) continue;
+        const pAlpha = p.used ? p.usedFade : 1;
+        ctx.save();
+        ctx.globalAlpha = pAlpha;
+        ctx.translate(sx, p.y);
+        const pulse = 0.90 + 0.10 * Math.sin(gtime * 3.4 + p.wx * 0.01);
+        const pgrd = ctx.createRadialGradient(0, 0, p.r * 0.2, 0, 0, p.r * 1.9);
+        pgrd.addColorStop(0,    'rgba(150,110,255,0.32)');
+        pgrd.addColorStop(0.55, 'rgba(120,80,255,0.12)');
+        pgrd.addColorStop(1,    'transparent');
+        ctx.beginPath();
+        ctx.arc(0, 0, p.r * 1.9 * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = pgrd;
+        ctx.fill();
+        for (const dir of [1, -1]) {
+            ctx.save();
+            ctx.rotate(gtime * 0.8 * dir + (dir < 0 ? 0.6 : 0));
+            ctx.beginPath();
+            // Flattened rather than circular - a 2D game reads a wide oval as a
+            // gateway more readily than a perfect ring (user feedback 2026-09-12).
+            ctx.ellipse(0, 0, p.r * pulse, p.r * pulse * 0.52, 0, 0, Math.PI * 2);
+            ctx.strokeStyle = dir > 0 ? 'rgba(190,150,255,0.85)' : 'rgba(140,100,255,0.55)';
+            ctx.lineWidth   = dir > 0 ? 2.4 : 1.5;
+            ctx.shadowColor = 'rgba(150,110,255,0.75)';
+            ctx.shadowBlur  = 10;
+            ctx.stroke();
+            ctx.restore();
+        }
+        ctx.shadowBlur = 0;
+        ctx.restore();
+    }
+
     // Boulders - solid rounded rock, same stone treatment as the walls/stalactites
     for (const bo of boulders) {
         const sx = bo.wx - scrollX;
         if (sx < -bo.r - 30 || sx > W + bo.r + 30) continue;
+        ctx.save();
+        ctx.globalAlpha = warpFade;   // ghosted while phased through (constants.js "Warp portal" doc)
         const bgrd = ctx.createRadialGradient(sx - bo.r * 0.35, bo.y - bo.r * 0.4, bo.r * 0.1, sx, bo.y, bo.r);
         bgrd.addColorStop(0,   rgb(lerpClr(theme.stal, theme.stalEdge, 0.35)));
         bgrd.addColorStop(0.6, rgb(theme.stal));
@@ -559,12 +611,15 @@ function drawWorld() {
         ctx.lineWidth   = 2;
         ctx.stroke();
         ctx.shadowBlur = 0;
+        ctx.restore();
     }
 
     // Mines
     for (const m of mines) {
         const sx = m.wx - scrollX;
         if (sx < -60 || sx > W + 60) continue;
+        ctx.save();
+        ctx.globalAlpha = warpFade;   // ghosted while phased through (constants.js "Warp portal" doc)
         const my = m.baseY + m.bobAmp * Math.sin(gtime * 1.8 + m.phase);
         const pulse = 0.85 + 0.15 * Math.sin(gtime * 4.5 + m.phase);
 
@@ -610,6 +665,7 @@ function drawWorld() {
         ctx.arc(sx, my, MINE_R, 0, Math.PI * 2);
         ctx.fillStyle = core;
         ctx.fill();
+        ctx.restore();
     }
 
     // Cannons - military artillery bolted to the wall: gunmetal carriage + barrel,
@@ -624,7 +680,7 @@ function drawWorld() {
         const dir   = c.isTop ? 1 : -1;
         const barrelLen = CANNON_R * 2.2, barrelW = CANNON_R * 0.60;
         ctx.save();
-        ctx.globalAlpha = c.fired ? 0.45 : 1.0;
+        ctx.globalAlpha = (c.fired ? 0.45 : 1.0) * warpFade;   // ghosted while phased through
         ctx.translate(sx, wallY);
 
         // Barrel, angled into the corridor toward its firing direction
@@ -679,7 +735,10 @@ function drawWorld() {
     for (const s of cannonShots) {
         const sx = s.wx - scrollX;
         if (sx < -20 || sx > W + 20) continue;
+        ctx.save();
+        ctx.globalAlpha = warpFade;   // ghosted while phased through
         drawProjectile(sx, s.y, Math.atan2(s.vy, s.vx));
+        ctx.restore();
     }
 
     // Ambient motes - subtle dust drifting through the tunnel
@@ -861,9 +920,9 @@ function drawWorld() {
 
         ctx.globalAlpha = coin.fade;
 
-        const isBlu = coin.type === 'blue', isRed = coin.type === 'red', isGrn = coin.type === 'green', isOrng = coin.type === 'orange', isPsn = coin.type === 'poison', isBmb = coin.type === 'bomb', isDrn = coin.type === 'drain';
-        const bodyClr = isBlu ? '#4dd9ff' : isRed ? '#ff4444' : isGrn ? '#44ff88' : isOrng ? '#ff5500' : isPsn ? '#5fbf00' : isBmb ? '#b833ff' : isDrn ? '#7a2f4f' : '#ffe040';
-        const [gr, gg, gb] = isBlu ? [60,200,255] : isRed ? [255,60,60] : isGrn ? [50,255,120] : isOrng ? [255,85,0] : isPsn ? [110,200,20] : isBmb ? [190,50,255] : isDrn ? [170,55,95] : [255,225,50];
+        const isBlu = coin.type === 'blue', isRed = coin.type === 'red', isGrn = coin.type === 'green', isOrng = coin.type === 'orange', isPsn = coin.type === 'poison', isBmb = coin.type === 'bomb', isDrn = coin.type === 'drain', isWrp = coin.type === 'warp';
+        const bodyClr = isBlu ? '#4dd9ff' : isRed ? '#ff4444' : isGrn ? '#44ff88' : isOrng ? '#ff5500' : isPsn ? '#5fbf00' : isBmb ? '#b833ff' : isDrn ? '#7a2f4f' : isWrp ? '#6a5cff' : '#ffe040';
+        const [gr, gg, gb] = isBlu ? [60,200,255] : isRed ? [255,60,60] : isGrn ? [50,255,120] : isOrng ? [255,85,0] : isPsn ? [110,200,20] : isBmb ? [190,50,255] : isDrn ? [170,55,95] : isWrp ? [130,110,255] : [255,225,50];
         const darkR = Math.floor(gr * 0.28), darkG = Math.floor(gg * 0.28), darkB = Math.floor(gb * 0.28);
 
         if (isPsn) {
@@ -1003,6 +1062,41 @@ function drawWorld() {
             ctx.lineJoin = 'round'; ctx.lineCap = 'round';
             ctx.stroke();
             ctx.lineJoin = 'miter'; ctx.lineCap = 'butt';
+            ctx.restore();
+        } else if (isWrp) {
+            // Reward coin - a small twin of the portal ring itself (drawWorld's
+            // portal block), so the two entry points into a warp read as the same
+            // object at two scales. Two counter-rotating rings, no gem/rune/burst
+            // silhouette shared with any other coin.
+            const jag = coin.wx * 0.014;
+            const pr  = COIN_R * 1.10 * (0.94 + 0.10 * Math.sin(gtime * 4.5 + jag));
+            const grdW = ctx.createRadialGradient(sx, coin.y, pr * 0.3, sx, coin.y, pr * 3.0);
+            grdW.addColorStop(0,   `rgba(${gr},${gg},${gb},0.30)`);
+            grdW.addColorStop(0.5, `rgba(${gr},${gg},${gb},0.10)`);
+            grdW.addColorStop(1,   'transparent');
+            ctx.beginPath(); ctx.arc(sx, coin.y, pr * 3.0, 0, Math.PI * 2);
+            ctx.fillStyle = grdW; ctx.fill();
+
+            ctx.save();
+            ctx.translate(sx, coin.y);
+            for (const dir of [1, -1]) {
+                ctx.save();
+                ctx.rotate(gtime * 2.2 * dir + (dir < 0 ? 0.9 : 0));
+                ctx.beginPath();
+                // Same flattened oval as the full-size portal ring, not a circle.
+                ctx.ellipse(0, 0, pr * (dir > 0 ? 1.0 : 0.62), pr * (dir > 0 ? 0.52 : 0.32), 0, 0, Math.PI * 2);
+                ctx.strokeStyle = dir > 0 ? `rgba(${Math.min(255,gr+60)},${Math.min(255,gg+60)},255,0.92)` : `rgba(${gr},${gg},${gb},0.60)`;
+                ctx.lineWidth   = dir > 0 ? 2.0 : 1.3;
+                ctx.shadowColor = `rgba(${gr},${gg},${gb},0.80)`;
+                ctx.shadowBlur  = 7;
+                ctx.stroke();
+                ctx.restore();
+            }
+            ctx.shadowBlur = 0;
+            ctx.beginPath();
+            ctx.arc(0, 0, pr * 0.22, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.90)';
+            ctx.fill();
             ctx.restore();
         } else {
         const pulse = 1 + 0.18 * Math.sin(gtime * 5.5 + coin.wx * 0.013);
@@ -1173,7 +1267,7 @@ function drawWorld() {
         // the streaks start at the same relative vy on every screen, not the same absolute.
         const vyFloor   = 300 * _FEEL_SCALE;
         const vyFrac    = Math.max(0, (Math.abs(vy) - vyFloor) / (MAX_VY - vyFloor));
-        const actualSpd = scrollSpd() * slowScrollFactor();
+        const actualSpd = scrollSpd() * slowScrollFactor() * warpScrollFactor();
         const normSpd   = actualSpd * 600 / W;
         const spdFrac   = Math.max(0, (normSpd - 380) / (560 - 380));
         const speedFrac = Math.max(vyFrac, spdFrac);

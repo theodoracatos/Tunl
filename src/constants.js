@@ -6,7 +6,7 @@
 // it exists so a build can identify itself: window.TUNL_VERSION for a DevTools check,
 // and build-play.mjs stamps it into /play as <meta name="tunl:version"> so the live
 // web build's version is greppable without diffing the bundle.
-const TUNL_VERSION = '10.5';
+const TUNL_VERSION = '11.0';
 if (typeof window !== 'undefined') window.TUNL_VERSION = TUNL_VERSION;
 
 const cv  = document.getElementById('c');
@@ -149,7 +149,7 @@ const COIN_HIT_R      = W  * 0.032;   // collection radius (generous)
 // COIN_SIZE_MAX_MULT is the placement code's (systems.js makeCoin) worst-case
 // clearance buffer -- type isn't known yet when a coin's corridor position is
 // picked, so it has to reserve room for the largest possible coin, not the average.
-const COIN_SIZE_MULT     = { gold: 1.0, blue: 1.0, red: 1.15, orange: 1.15, green: 1.35, bomb: 1.35 };
+const COIN_SIZE_MULT     = { gold: 1.0, blue: 1.0, red: 1.15, orange: 1.15, green: 1.35, bomb: 1.35, warp: 1.2 };
 const COIN_SIZE_MAX_MULT = 1.35;
 const GAP_PER_COIN    = H  * 0.075;   // bonus halfGap added per coin
 const GAP_BONUS_MAX   = H  * 0.19;    // cap: max halfGap bonus
@@ -268,6 +268,83 @@ const FLIGHT_ACHIEVEMENTS = [
     { id: 'tunl_ach_flight_1min', at: 60 },
     { id: 'tunl_ach_flight_2min', at: 120 },
 ];
+
+// Lifetime-runs-played achievements: fired from lifecycle.js startPlay() the run that
+// pushes the all-time total (state.js `totalRuns`, same "every started run counts"
+// definition as the daily-mission `dailyRuns` counter) past each mark. A single run can
+// only ever advance the counter by 1, so the same before/after crossing idiom as
+// DIST_ACHIEVEMENTS fires each exactly once. Persisted stat -> backfilled in state.js's
+// _tunlBackfillAchievements, unlike the per-run FLIGHT_ACHIEVEMENTS above.
+const RUNS_ACHIEVEMENTS = [
+    { id: 'tunl_ach_runs_10',   at: 10 },
+    { id: 'tunl_ach_runs_100',  at: 100 },
+    { id: 'tunl_ach_runs_1000', at: 1000 },
+];
+
+// Lifetime near-miss ("Ausweichen") achievements: fired from update.js's commitDeath()
+// the run that pushes the all-time total (state.js `lifetimeNearMisses`, summed from
+// each run's `runNearMisses` -- the same source dailyMissionStats.nearMisses reads) past
+// each mark. Same crossing idiom and same backfill treatment as DIST_ACHIEVEMENTS /
+// RUNS_ACHIEVEMENTS above.
+const DODGE_ACHIEVEMENTS = [
+    { id: 'tunl_ach_dodge_100',  at: 100 },
+    { id: 'tunl_ach_dodge_1000', at: 1000 },
+];
+
+// "Pacifist" achievement: reach the difficulty plateau (score >= 233, the corridor-
+// narrowing curve's _prog=1 point, see world.js) in a single run while collecting ZERO
+// coins of any type. Checked against `runCoins` (state.js), which only ever increments
+// on a real coin pickup - poison/drain hazard "coins" hit an early `continue` in
+// checkCoinCollection (systems.js) before that increment, so touching one doesn't cost
+// the achievement, matching the "no REWARD coin collected" reading of "pacifist" rather
+// than "touched nothing coin-shaped." Fired from commitDeath() in update.js once score
+// is final. Per-run, not a persisted lifetime stat -- like FLIGHT_ACHIEVEMENTS,
+// deliberately NOT backfilled since a past run's coin-free-ness can't be reconstructed
+// after the fact.
+const PACIFIST_ACH_SCORE = 233;
+const PACIFIST_ACH_ID = 'tunl_ach_pacifist';
+
+// "Perfect Sprint" achievement: reach SPRINT_ACH_SCORE within SPRINT_ACH_MAX_SEC of real
+// play time in a single run (state.js `flightClock`, the same real-seconds accumulator
+// FLIGHT_ACHIEVEMENTS reads). Checked live in update.js's play-phase block, guarded by
+// `sprintAchFired` (state.js, reset each run) since `flightClock` only ever grows so the
+// condition would otherwise re-fire every frame it stays true. 30s for score 300 sits at
+// the tight end of a "good run" (see CLAUDE.md's POISON_INTERVAL_SEC doc: a good run is
+// normally 20-36s) - a real pace achievement, not a grind one. Per-run, not backfilled.
+const SPRINT_ACH_SCORE = 300;
+const SPRINT_ACH_MAX_SEC = 30;
+const SPRINT_ACH_ID = 'tunl_ach_sprint';
+
+// "No-Hit Run" achievement: reach NO_HIT_ACH_SCORE in a single run without ever
+// triggering die() (state.js `runHitCount`, incremented at the very top of die() in
+// update.js, before the shield-absorb / grace-window early-outs - a hit silently eaten
+// by a shield or the post-hit invuln window still counts as a hit here, since the ship
+// still got hit). Checked live, guarded by `noHitAchFired` (state.js) for the same
+// re-fire reason as SPRINT_ACH above. Per-run, not backfilled.
+const NO_HIT_ACH_SCORE = 233;
+const NO_HIT_ACH_ID = 'tunl_ach_no_hit';
+
+// "Ohne Bonus" (no-bonus run) achievement: reach NO_BONUS_ACH_SCORE in a single run
+// without ever collecting a GOLD coin - the only coin type that feeds `gapBonus`
+// (constants.js GAP_PER_COIN, systems.js checkCoinCollection), so this is "the corridor
+// was never widened," not PACIFIST_ACH's "no coins of any type" - other power-up coins
+// (blue/red/orange/green/bomb) are still fair game. Checked against
+// `runCoinsByType.gold` (state.js), live, guarded by `noBonusAchFired`. Per-run, not
+// backfilled.
+const NO_BONUS_ACH_SCORE = 233;
+const NO_BONUS_ACH_ID = 'tunl_ach_no_bonus';
+
+// "Boulder Meister" achievement: thread BOULDER_MEISTER_TARGET boulders' NARROW
+// ("squeeze") pass, clean (no collision with that boulder), within a single run.
+// Every boulder's centre is nudged toward one wall (_makeBoulderAt, systems.js) so
+// there's always an easy pass and a tighter one - `narrowTop` (set at spawn) records
+// which side is tighter. update.js's boulder-collision loop credits a pass the first
+// frame the boulder's screen-x reaches the player's fixed PX without a collision having
+// happened, same x-crossing idiom the warp portal ring uses. `runBoulderNarrowPasses`
+// (state.js) only ever advances by 1, so a plain `=== target` check fires it exactly
+// once. Per-run, not backfilled.
+const BOULDER_MEISTER_TARGET = 5;
+const BOULDER_MEISTER_ID = 'tunl_ach_boulder_meister';
 
 // ── Ship mastery ──────────────────────────────────────────────────────
 // Per-ship XP (state.js `skinXP`, one coin collected while that ship is active
@@ -443,6 +520,7 @@ const SPAWN_W = 956;
 //   mines   200 +  135 + 300 =  635 <= 1550  OK  (_makeMineAt tip push)
 //   cannons 300 +  600 +  48 =  948 <= 1550  OK  (makeCannon overlap)
 //   boulder 300 + 1000 + 108 = 1408 <= 1550  OK  (makeBoulder overlap)
+//   portal  300 + 1040 +  81 = 1421 <= 1550  OK  (coinBlockedByStal window)
 // Raising the stalactite horizon rather than clamping the offsets is deliberate:
 // clamping boulders to the ~226px that fit inside the old 600 would have dropped 15
 // of 18 boulders, i.e. re-created the near-extinction the retry loops were added to
@@ -495,6 +573,104 @@ const CANNON_SHOT_TRAVEL = 1.15;
 // spike shakes on screen ~0.6s before it lets go; FALL_SPAN a quick drop.
 const FALL_LEAD = W * 0.44;
 const FALL_SPAN = W * 0.26;
+
+// ── Warp portal ("Sog") ───────────────────────────────────────────────
+// Reward set-piece, not a hazard: a ring hangs in the corridor (systems.js
+// makePortal/maintainPortals) or a violet warp coin arrives on its own real-time
+// clock (WARP_COIN_INTERVAL_SEC below, same pattern as poison/bomb/drain). Either
+// one triggers the identical warp state (update.js triggerWarp()) -- for
+// WARP_DUR_MIN..MAX real seconds, scrollSpd() is multiplied by a per-warp
+// multiplier rolled from WARP_MULT_MIN..MAX at trigger time (world.js
+// warpScrollFactor(), the mirror image of slowScrollFactor()), the
+// corridor widens (see WARP_GAP_MULT below), every wall-rooted/free-floating
+// hazard is passed through harmlessly (same convention HIT_INVULN_SEC already
+// uses: solid terrain still blocks, hazards don't), and every gold coin the
+// player draws level with is auto-collected into the combo (update.js, the
+// "Sog" pulling gold in). Deliberately real-seconds, not a fixed world-px
+// distance: nothing here is a placement decision (no rng() draw, nothing any
+// other player's cave depends on), so it's exactly the same category of
+// per-player effect the blue coin's slowTime already is, not a cross-device
+// fairness concern - see CLAUDE.md's reply to "why not a hard teleport".
+//
+// scrollX still advances one dt at a time through the ordinary maintain*()
+// while-loops (systems.js) - a warp is simply a few real seconds of a bigger
+// step per frame, not a value assigned to scrollX. Those loops already have to
+// backfill an arbitrary jump (a backgrounded tab / a slow frame does the same
+// thing, unrelated to warp), so nothing about them changes for this. Worst
+// case at the dt clamp (main.js, 0.05s) and WARP_MULT_MAX below, a single frame
+// advances scrollX by scrollSpd() * WARP_MULT_MAX * 0.05 - a few hundred
+// world-px even at a very high deep-run scrollSpd(), nowhere near
+// SPAWN_AHEAD_STAL (1550, see the budget doc above SPAWN_AHEAD_STAL).
+const PORTAL_START_WX      = 3000;    // ~score 50, generous per the leaderboard audit
+// Fraction of halfGapAt(wx) used for the portal ring's DRAWN radius only - always
+// comfortably inside the corridor (r + max centre jitter stays well under
+// halfGap, see _makePortalAt, systems.js), so an oversized ring can't visually
+// clip the wall by construction. This is spectacle, not the flyability contract:
+// only the ring's centre point has to be provably reachable, and that's proven
+// the same way a coin's placement already is (coinBlockedByStal, systems.js) -
+// deliberately NOT a bespoke geometric veto against nearby stalactites. See the
+// SPAWN_AHEAD_* budget doc above SPAWN_AHEAD_STAL for why a flat/bespoke veto is
+// exactly the mistake that nearly wiped out boulders and cannons; reusing the
+// coin contract sidesteps it because coins already place successfully at every
+// difficulty without one.
+const PORTAL_R_FRAC        = 0.40;
+// Per-spawner horizon offset (constants.js SPAWN_AHEAD_* budget doc above
+// SPAWN_AHEAD_STAL). Portal placement only inspects the same narrow window
+// coinBlockedByStal already does - same shape budget as a coin, just with
+// retries (a coin has none; losing an occasional coin slot is a non-event, but a
+// portal is rare enough that PORTAL_RETRY_OFFSETS, systems.js, is worth it).
+const SPAWN_AHEAD_PORTAL   = 300;
+// scrollSpd() multiplier while a warp is live, scaled by the player's OWN _prog2
+// at the moment of trigger (systems.js triggerWarp(), rolled into state.js
+// warpMult once per warp - never re-rolled mid-warp). Capped at _prog2 >= 1
+// (score ~900) like most other per-run difficulty knobs (CLAUDE.md: scrollSpd()
+// itself is the one thing that must never plateau; a multiplier layered ON TOP
+// of it is fine to cap, and scrollSpd()'s own uncapped climb still means the
+// ABSOLUTE warp speed keeps growing forever even once this ratio caps). Reading
+// the player's live _prog2 rather than a placement wx is deliberate and safe
+// here - see the doc above PORTAL_START_WX for why a warp is a per-player
+// effect, not a cave-identity concern, so there is no "sample at placement wx"
+// obligation the way a spawner curve would have.
+const WARP_MULT_MIN        = 2.2;
+const WARP_MULT_MAX        = 2.8;
+// Warp duration range. The warp coin rolls randomly across it (no aim to reward -
+// a coin is touched, not threaded); the portal ring instead lands on a specific
+// point in it based on how centred the flythrough was (update.js's x-crossing
+// check, systems.js triggerWarp() doc) - dead-centre earns the full
+// WARP_DUR_MAX_SEC, a graze along the ring's hit tolerance only WARP_DUR_MIN_SEC.
+const WARP_DUR_MIN_SEC     = 1.1;
+const WARP_DUR_MAX_SEC     = 1.6;
+// Fraction of ramp-in-then-hold time within the duration before warpScrollFactor()
+// starts gliding back down to 1.0x, so the exit isn't an abrupt cut (world.js).
+const WARP_RAMP_SEC        = 0.15;
+const WARP_RECOVER_FRAC    = 0.30;
+// Corridor widen while a warp is live, applied through the SAME easing channel as
+// gapBonusVisual (update.js) so it ramps and recovers smoothly instead of
+// snapping - boundsAt() only, never boundsBase(), so no placement decision
+// anywhere ever depends on whether a warp happens to be live (CLAUDE.md
+// "boundsBase for coin placement" rule, same reasoning extended here).
+//
+// This is breathing room, not the safety guarantee: at the wave's peak slope,
+// the warp's faster corridor drift CAN in theory outrun MAX_VY for a moment
+// (peak vertical corridor speed is roughly (wA1*wF1 + wA2*wF2) * scrollSpd() -
+// at the difficulty plateau that's already ~45% of MAX_VY unwarped, so even
+// WARP_MULT_MIN alone would clear it, and WARP_MULT_MAX more so). Rather than
+// hand-tuning this constant against a moving target (wave amplitude/frequency
+// both still climb with _prog2, and now the warp multiplier itself does too),
+// the actual guarantee is a clamp: update.js's wall-collision check
+// treats warpTime > 0 exactly like invulnT > 0 (the shield-absorbed grace
+// window) - push the ship back inside the corridor instead of killing it. A
+// warp can therefore never end in a wall death; this constant just decides how
+// much of that clamping the player actually feels.
+const WARP_GAP_MULT        = 1.7;
+const WARP_GAP_EASE_RATE   = H * 1.6;
+// Warp coin (violet double ring): real-time-clock cadence, exactly like
+// poison/bomb/drain (constants.js POISON_INTERVAL_SEC doc for why a clock and
+// not a per-candidate percentage) - NOT folded into the weighted gold/blue/red/
+// orange/green roll, so none of that carefully-tuned split needs re-deriving.
+// Same score-34 gate, same magnet exemption as poison/drain (a reward you have
+// to fly to, not one that gets pulled to you).
+const WARP_COIN_INTERVAL_SEC = 40;
 
 // Bomb coin (purple): blast radius for the "destroy nearby obstacles" pickup effect --
 // see systems.js triggerBombExplosion(). "Small" on purpose -- clears immediate danger,

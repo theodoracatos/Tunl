@@ -162,7 +162,7 @@ function update(dt) {
         // practice (the ramp covers ~100 world-px and the first boulder sits at 5100,
         // far outside the spawn horizon), but leaving it out was only safe while
         // boulders started at 84000 -- don't reintroduce that coupling.
-        maintainStalactites(); maintainCoins(); maintainMines(); maintainCannons(); maintainBoulders();
+        maintainStalactites(); maintainCoins(); maintainMines(); maintainCannons(); maintainBoulders(); maintainPortals();
         return;
     }
 
@@ -222,9 +222,40 @@ function update(dt) {
     if (_slowWas && slowTime <= 0)   bgmSetSlow(false);
     if (_magWas  && magnetTime <= 0) magnetLoopOff();
 
+    // Warp portal ("Sog", constants.js "Warp portal" doc): warpTime counts down in
+    // real seconds like slowTime/magnetTime above, not world-px - see the doc for
+    // why that's safe here despite scrollX being the one thing every player's cave
+    // has to agree on. warpWidenVisual chases its target through the exact same
+    // GAP_EASE_RATE-style channel gapBonusVisual already uses (WARP_GAP_EASE_RATE
+    // is just a faster rate, since the whole window is ~1.5s), so the corridor
+    // widens/narrows smoothly instead of snapping either way.
+    const _warpWas = warpTime > 0;
+    warpTime = Math.max(0, warpTime - dt);
+    if (_warpWas && warpTime <= 0) {
+        warpLoopOff();
+        bgmSetWarp(false);
+        // Coming out of a warp drops the player back into full collision at
+        // whatever speed/position the surge left them at, with the corridor still
+        // easing back in from WARP_GAP_MULT-wide (warpWidenVisual above) - a real
+        // hazard could already be uncomfortably close by the time hazards solidify
+        // again. Same grace window HIT_INVULN_SEC already grants after a shield
+        // absorb or a revive (constants.js doc, "a future rewarded continue reuses
+        // the same timer" - this is that same reuse), not a new constant: clamp
+        // instead of kill on the wall, pass harmlessly through everything else for
+        // one HIT_INVULN_SEC. Math.max, not an overwrite, so this never SHORTENS a
+        // grace window already running for an unrelated reason.
+        invulnT = Math.max(invulnT, HIT_INVULN_SEC);
+    }
+    {
+        const warpTarget = warpTime > 0 ? _halfGap * (WARP_GAP_MULT - 1) : 0;
+        warpWidenVisual += Math.max(-WARP_GAP_EASE_RATE * dt, Math.min(WARP_GAP_EASE_RATE * dt, warpTarget - warpWidenVisual));
+    }
+
     // Scroll + score
-    const spd = scrollSpd() * slowScrollFactor();
+    const prevPlayerWx = scrollX + PX;   // pre-advance world-x, for the portal x-crossing test below
+    const spd = scrollSpd() * slowScrollFactor() * warpScrollFactor();
     scrollX += spd * dt;
+    const playerWx = scrollX + PX;       // post-advance world-x, same test
     refreshWave();
     // Math.max(0, ...): bonusScore can now go negative (drain coin debits it, see
     // systems.js checkCoinCollection). The %-based drain math can't actually reach a
@@ -332,6 +363,22 @@ function update(dt) {
     if (score >= milestoneNext) {
         triggerMilestone(milestoneNext);
         milestoneNext += milestoneStep(milestoneNext);
+    }
+
+    // Skill achievements (constants.js doc comments above each _ACH_ const): all three
+    // are live/per-frame checks with a one-shot guard, since their conditions (score
+    // rising, flightClock rising) would otherwise stay true and re-fire every frame.
+    if (!sprintAchFired && score >= SPRINT_ACH_SCORE && flightClock <= SPRINT_ACH_MAX_SEC) {
+        sprintAchFired = true;
+        window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: SPRINT_ACH_ID });
+    }
+    if (!noHitAchFired && score >= NO_HIT_ACH_SCORE && runHitCount === 0) {
+        noHitAchFired = true;
+        window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: NO_HIT_ACH_ID });
+    }
+    if (!noBonusAchFired && score >= NO_BONUS_ACH_SCORE && runCoinsByType.gold === 0) {
+        noBonusAchFired = true;
+        window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: NO_BONUS_ACH_ID });
     }
 
     // Near-miss bonus (wall proximity)
@@ -447,6 +494,7 @@ function update(dt) {
     maintainMines();
     maintainCannons();
     maintainBoulders();
+    maintainPortals();
 
     // Fade coins that are blocked by a stalactite or have scrolled off the left edge
     for (const arr of [coins, chicaneCoins]) for (const coin of arr) {
@@ -482,27 +530,77 @@ function update(dt) {
     for (const dx of [-cPR * 0.7, 0, cPR * 0.7]) {
         const b = boundsAt(scrollX + PX + dx);
         if (py - cPR < b.top || py + cPR > b.bot) {
-            // Mid-grace-window: the wall is solid geometry, not a hazard, so simply
-            // skipping the check (like stalactites/mines below) would let the ship drift
-            // into the rock for the rest of the window. Clamp back inside instead.
-            if (invulnT > 0) { py = Math.max(b.top + cPR, Math.min(b.bot - cPR, py)); break; }
+            // Mid-grace-window OR mid-warp: the wall is solid geometry, not a hazard,
+            // so simply skipping the check (like stalactites/mines below) would let
+            // the ship drift into the rock for the rest of the window. Clamp back
+            // inside instead. Warp shares this rather than getting its own dedicated
+            // safety margin because the warp's own faster corridor drift can in
+            // theory outrun MAX_VY for a moment at the wave's peak slope (constants.js
+            // WARP_GAP_MULT doc) - the clamp is what actually guarantees "the reward
+            // never kills you," the widened corridor is just breathing room on top.
+            if (invulnT > 0 || warpTime > 0) { py = Math.max(b.top + cPR, Math.min(b.bot - cPR, py)); break; }
             deathCause = (py - cPR < b.top) ? 'wallTop' : 'wallBot';
             if (die()) return;
             break;
         }
     }
     if (py - cPR < 0 || py + cPR > H) {
-        if (invulnT > 0) { py = Math.max(cPR, Math.min(H - cPR, py)); }
+        if (invulnT > 0 || warpTime > 0) { py = Math.max(cPR, Math.min(H - cPR, py)); }
         else { deathCause = (py - cPR < 0) ? 'wallTop' : 'wallBot'; if (die()) return; }
     }
-    for (const s of stalactites) {
+    // Stalactites/mines/boulders/cannon shots all phase through harmlessly while a
+    // warp is live (constants.js "Warp portal" doc) - same convention HIT_INVULN_SEC
+    // already uses for a shield-absorbed hit (solid terrain still blocks above,
+    // hazards just don't hurt you). Skipped outright rather than passed through
+    // die()'s shield-absorb branch, since none of them should be destroyed or
+    // trigger the "blocked" feedback either - the player never touched them.
+    if (warpTime <= 0) for (const s of stalactites) {
         if (s.dying) continue;
         if (stalHit(s, cPR)) { deathCause = s.isTop ? 'wallTop' : 'wallBot'; if (die()) return; break; }
     }
 
+    // Warp portal ring: an x-crossing test (constants.js "Warp portal" doc), not a
+    // circle-overlap test - a fast-scrolling frame can jump the player's world-x
+    // past a thin ring in a single step (same reasoning FALL_LEAD's landed-spike
+    // check and the cannon fire-lead already rely on), and that risk only grows
+    // once warpScrollFactor() itself can be live.
+    //
+    // The tolerance is the ring's OWN DRAWN RADIUS (2026-09-12, was a flat PR*3.2).
+    // PR*3.2 is 55px at the W cap while the ring draws at halfGap*PORTAL_R_FRAC =
+    // ~39px deep, so the window was wider than the picture: you could take a warp
+    // while visibly outside the ring, and `accuracy` below measured off a phantom
+    // circle rather than the one on screen - a rim graze still scored ~0.7. Keying
+    // it to p.r makes the hit window exactly the drawn ring and makes the accuracy
+    // gradient span it honestly. Deliberately NOT a balance change: the ring's own
+    // placement jitter is capped at 0.25*halfGap (systems.js _makePortalAt) against
+    // a 0.40*halfGap radius, so a player on the corridor centreline still clears
+    // every ring either way - forcing a real aim would need a smaller ring plus a
+    // much wider jitter, which is a look-and-feel redesign for a playtest, not an
+    // audit fix. Floored at PR*1.6 so the window can never be tighter than a fair
+    // shot on a short screen (a no-op at every shipped H, where p.r already exceeds
+    // it - a safety net, not the active value).
+    for (const p of portals) {
+        if (p.used || p.wx <= prevPlayerWx || p.wx > playerWx) continue;
+        const portalHitTol = Math.max(p.r, PR * 1.6);
+        const offCentre = Math.abs(py - p.y);
+        if (offCentre < portalHitTol) {
+            p.used = true;
+            // Reward threading the middle: a dead-centre flythrough (offCentre 0)
+            // gets the full-length warp, a graze along the tolerance's edge gets
+            // the shortest one (systems.js triggerWarp() doc) - flying the ring
+            // well is worth more than just clipping it.
+            triggerWarp(1 - offCentre / portalHitTol);
+        }
+        break; // at most one portal wx per frame in practice; keeps this O(1) typical
+    }
+    // A used ring fades out over ~0.5s (draw.js) rather than vanishing outright, so
+    // the moment reads as "consumed". maintainPortals() (systems.js) culls it once
+    // usedFade reaches 0, same pattern as a coin's own fade-then-cull.
+    for (const p of portals) { if (p.used) p.usedFade = Math.max(0, p.usedFade - dt * 2); }
+
     // Mine collision (same trade-off hitbox as walls/stalactites above)
     const mineHitR2 = (cPR + MINE_R) * (cPR + MINE_R);
-    for (let mi = 0; mi < mines.length; mi++) {
+    if (warpTime <= 0) for (let mi = 0; mi < mines.length; mi++) {
         const m  = mines[mi];
         const sx = m.wx - scrollX;
         if (sx < -80 || sx > W + 80) continue;
@@ -522,7 +620,7 @@ function update(dt) {
     }
 
     // Boulder collision (circle-circle, same trade-off hitbox + shield-absorb as a mine).
-    for (let bi = 0; bi < boulders.length; bi++) {
+    if (warpTime <= 0) for (let bi = 0; bi < boulders.length; bi++) {
         const bo = boulders[bi];
         const sx = bo.wx - scrollX;
         if (sx < -bo.r - 40 || sx > W + bo.r + 40) continue;
@@ -540,13 +638,26 @@ function update(dt) {
             window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
             break;
         }
+        // "Boulder Meister" (constants.js BOULDER_MEISTER_TARGET/ID doc): the first
+        // frame this boulder's screen-x reaches the player's fixed PX without a
+        // collision above having fired, credit a clean pass if it was the narrow side -
+        // same x-crossing idiom the warp portal ring uses.
+        if (!bo.scored && sx <= PX) {
+            bo.scored = true;
+            if ((py < bo.y) === bo.narrowTop) {
+                runBoulderNarrowPasses++;
+                if (runBoulderNarrowPasses === BOULDER_MEISTER_TARGET) {
+                    window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: BOULDER_MEISTER_ID });
+                }
+            }
+        }
     }
 
     // Cannon shot collision (same trade-off hitbox as walls/mines above). Firing +
     // movement live in updateCannonShots below, called after this so a shot that
     // fires this frame can't also hit the player on the same frame it spawns.
     const cannonHitR2 = (cPR + CANNON_SHOT_R) * (cPR + CANNON_SHOT_R);
-    for (let ci = 0; ci < cannonShots.length; ci++) {
+    if (warpTime <= 0) for (let ci = 0; ci < cannonShots.length; ci++) {
         const s  = cannonShots[ci];
         const sx = s.wx - scrollX;
         if (sx < -100 || sx > W + 100) continue;
@@ -568,11 +679,13 @@ function update(dt) {
     // (poison, drain) are exempt -- they're hazards, not pickups, and magnet is a
     // reward the player earned; pulling one in would turn a power-up into a trap the
     // instant one's on screen, punishing exactly the players who worked for the buff.
+    // Warp is exempt too, for the opposite reason (constants.js WARP_COIN_INTERVAL_SEC
+    // doc): it's a reward you fly to, not one that gets pulled to you.
     if (magnetTime > 0) {
         const playerWx = scrollX + PX;
         const pullSpeed = W * 1.4;
         for (const arr of [coins, chicaneCoins]) for (const coin of arr) {
-            if (coin.collected || coin.fade <= 0 || coin.type === 'poison' || coin.type === 'drain') continue;
+            if (coin.collected || coin.fade <= 0 || coin.type === 'poison' || coin.type === 'drain' || coin.type === 'warp') continue;
             const csx = coin.wx - scrollX;
             if (csx < -20 || csx > W + 60) continue;
             const dx = playerWx - coin.wx, dy = py - coin.y;
@@ -613,6 +726,10 @@ function update(dt) {
 
 function die(bypassShield = false) {
     if (DEV_INVINCIBLE) return false;
+    // "No-Hit Run" (constants.js NO_HIT_ACH_ID doc): counts every real collision this
+    // run, including one a shield or the post-hit grace window goes on to absorb -- the
+    // ship still got hit, so it still costs the achievement.
+    runHitCount++;
     // Mid-grace-window: absorb silently, no reposition/clear -- that already happened
     // once, at the hit that started the window (see the shield branch below). A second
     // shield charge is never spent on a hit that lands inside someone else's window.
@@ -639,8 +756,10 @@ function die(bypassShield = false) {
     thrustOff();
     onFireLoopOff();
     magnetLoopOff();
+    warpLoopOff();
     sfxBulletFireStop();
     bgmSetSlow(false);
+    bgmSetWarp(false);
     phase = 'dead'; deadT = 0; flashA = 1.0; shake = 14; holding = false;
     _shareCopiedT = 0;
     _homeBtnRect = null; _playBtnRect = null; _shareBtnRect = null; _continueBtnRect = null;
@@ -700,6 +819,11 @@ function commitDeath() {
     // must never trigger a rating prompt.
     const _hadPriorBest = best > 0;
     if (!_hadPriorBest) window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: 'tunl_ach_first_flight' });
+    // "Pacifist" (constants.js PACIFIST_ACH_SCORE/PACIFIST_ACH_ID): reached the
+    // difficulty plateau this run without collecting a single coin.
+    if (score >= PACIFIST_ACH_SCORE && runCoins === 0) {
+        window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: PACIFIST_ACH_ID });
+    }
     if (newBest) { best = score; localStorage.setItem('tunnel_best', best); }
     if (newBest) maybeRequestReview(score, _hadPriorBest);
     // Referral reward (constants.js REFERRAL_REWARD doc block): the inverse of
@@ -751,6 +875,20 @@ function commitDeath() {
         for (const da of DIST_ACHIEVEMENTS) {
             if (_distBefore < da.at && _distNow >= da.at) {
                 window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: da.id });
+            }
+        }
+    }
+    // Lifetime near-misses ("Ausweichen"): this run's near-miss count, added to the
+    // all-time total (state.js lifetimeNearMisses). Mirrors the lifetimeDist crossing
+    // check above; runNearMisses is the same per-run tally dailyMissionStats.nearMisses
+    // reads below.
+    if (runNearMisses > 0) {
+        const _dodgeBefore = lifetimeNearMisses;
+        lifetimeNearMisses += runNearMisses;
+        localStorage.setItem('tunnel_lifetime_near_misses', String(lifetimeNearMisses));
+        for (const dga of DODGE_ACHIEVEMENTS) {
+            if (_dodgeBefore < dga.at && lifetimeNearMisses >= dga.at) {
+                window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: dga.id });
             }
         }
     }

@@ -1,0 +1,49 @@
+{
+  "_note": "\"Pacifist\" achievement (src/constants.js PACIFIST_ACH_SCORE/PACIFIST_ACH_ID) - reach score 233 (the difficulty plateau) in a single run without collecting a single coin. Same array shape as ach_translations_flight.json: [title, post-earned description, pre-earned description]. Play Console has ONE description field - use the pre-earned string there. Icon: achievement-icons/pacifist.png (512x512 RGB, no alpha, not yet generated). Points: 40 - a genuine skill-only run, harder than any single grind tier since it forgoes gapBonus entirely for the whole plateau climb. Hidden: No. Incremental: No.",
+
+  "en-US": {
+    "tunl_ach_pacifist": ["Pacifist", "You reached score 233 without collecting a single coin.", "Reach score 233 in a single run without collecting a single coin."]
+  },
+  "de-DE": {
+    "tunl_ach_pacifist": ["Pazifist", "Du hast einen Score von 233 erreicht, ohne eine einzige Münze einzusammeln.", "Erreiche in einem einzigen Lauf einen Score von 233, ohne eine einzige Münze einzusammeln."]
+  },
+  "fr-FR": {
+    "tunl_ach_pacifist": ["Pacifiste", "Vous avez atteint un score de 233 sans ramasser une seule pièce.", "Atteignez un score de 233 en une seule partie sans ramasser une seule pièce."]
+  },
+  "it": {
+    "tunl_ach_pacifist": ["Pacifista", "Hai raggiunto un punteggio di 233 senza raccogliere nemmeno una moneta.", "Raggiungi un punteggio di 233 in una singola partita senza raccogliere nemmeno una moneta."]
+  },
+  "es-ES": {
+    "tunl_ach_pacifist": ["Pacifista", "Alcanzaste una puntuación de 233 sin recoger ni una sola moneda.", "Alcanza una puntuación de 233 en una sola partida sin recoger ni una sola moneda."]
+  },
+  "pt-BR": {
+    "tunl_ach_pacifist": ["Pacifista", "Você alcançou uma pontuação de 233 sem coletar uma única moeda.", "Alcance uma pontuação de 233 em uma única partida sem coletar uma única moeda."]
+  },
+  "ru": {
+    "tunl_ach_pacifist": ["Пацифист", "Вы набрали счёт 233, не собрав ни одной монеты.", "Наберите счёт 233 за один забег, не собрав ни одной монеты."]
+  },
+  "ja": {
+    "tunl_ach_pacifist": ["平和主義者", "コインを1枚も取らずにスコア233に到達しました。", "1回のプレイでコインを1枚も取らずにスコア233に到達する。"]
+  },
+  "ko": {
+    "tunl_ach_pacifist": ["평화주의자", "코인을 하나도 모으지 않고 점수 233에 도달했습니다.", "한 번의 플레이에서 코인을 하나도 모으지 않고 점수 233에 도달하세요."]
+  },
+  "zh-Hant": {
+    "tunl_ach_pacifist": ["和平主義者", "你在沒有收集任何一枚金幣的情況下達到233分。", "在單次遊玩中不收集任何一枚金幣達到233分。"]
+  },
+  "tr": {
+    "tunl_ach_pacifist": ["Pasifist", "Tek bir para bile toplamadan 233 skoruna ulaştın.", "Tek bir oyunda hiç para toplamadan 233 skoruna ulaş."]
+  },
+  "pl": {
+    "tunl_ach_pacifist": ["Pacyfista", "Osiągnąłeś wynik 233, nie zbierając ani jednej monety.", "Osiągnij wynik 233 podczas jednego przelotu, nie zbierając ani jednej monety."]
+  },
+  "id": {
+    "tunl_ach_pacifist": ["Pasifis", "Kamu mencapai skor 233 tanpa mengumpulkan satu koin pun.", "Capai skor 233 dalam satu permainan tanpa mengumpulkan satu koin pun."]
+  },
+  "hi": {
+    "tunl_ach_pacifist": ["शांतिवादी", "आपने एक भी सिक्का इकट्ठा किए बिना 233 स्कोर हासिल किया।", "एक ही राउंड में बिना कोई सिक्का इकट्ठा किए 233 स्कोर हासिल करें।"]
+  },
+  "ar-SA": {
+    "tunl_ach_pacifist": ["مسالم", "لقد وصلت إلى نتيجة 233 دون جمع عملة واحدة.", "صل إلى نتيجة 233 في جولة واحدة دون جمع عملة واحدة."]
+  }
+}

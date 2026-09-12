@@ -134,6 +134,21 @@ class MainActivity : ComponentActivity() {
         // Flight-duration milestones (src/constants.js FLIGHT_ACHIEVEMENTS).
         "tunl_ach_flight_1min"    to R.string.achievement_flight_1min,
         "tunl_ach_flight_2min"    to R.string.achievement_flight_2min,
+        // Lifetime-runs-played milestones (src/constants.js RUNS_ACHIEVEMENTS).
+        "tunl_ach_runs_10"        to R.string.achievement_runs_10,
+        "tunl_ach_runs_100"       to R.string.achievement_runs_100,
+        "tunl_ach_runs_1000"      to R.string.achievement_runs_1000,
+        // Lifetime near-miss / "Ausweichen" milestones (src/constants.js DODGE_ACHIEVEMENTS).
+        "tunl_ach_dodge_100"      to R.string.achievement_dodge_100,
+        "tunl_ach_dodge_1000"     to R.string.achievement_dodge_1000,
+        // "Pacifist" (src/constants.js PACIFIST_ACH_SCORE/PACIFIST_ACH_ID).
+        "tunl_ach_pacifist"       to R.string.achievement_pacifist,
+        // 4 more skill achievements (src/constants.js SPRINT_ACH_*/NO_HIT_ACH_*/
+        // NO_BONUS_ACH_*/BOULDER_MEISTER_*).
+        "tunl_ach_sprint"           to R.string.achievement_sprint,
+        "tunl_ach_no_hit"           to R.string.achievement_no_hit,
+        "tunl_ach_no_bonus"         to R.string.achievement_no_bonus,
+        "tunl_ach_boulder_meister"  to R.string.achievement_boulder_meister,
     )
 
     // Shims window.webkit.messageHandlers.{gameCenter,iap,ads,haptic} so the game's

@@ -388,6 +388,21 @@ function makeCoin(wx) {
     // rare coin where both clocks happen to be ready at once; each resets/rerolls
     // independently regardless of which one wins that tie.
     if (progAt(wx) >= 0.38) {
+        // Warp coin: same real-time-clock model. Checked FIRST so a ready
+        // poison/drain/bomb still wins a coin where several clocks are ready at
+        // once - the later blocks below override this one, and "last assignment
+        // wins" is how that whole ladder works. It sat last until 2026-09-12,
+        // which meant it won every tie instead of losing it, silently eating a
+        // measured 5.9% of bombs and 5.0% of drains (their clocks had already
+        // reset by then, so those events were skipped outright, not deferred).
+        // Each still resets/rerolls independently regardless of who wins the tie,
+        // same rule as the others. Never folded into the weighted gold/blue/red/
+        // orange/green roll above (constants.js WARP_COIN_INTERVAL_SEC doc) -
+        // that split is tuned to itself and doesn't need a ninth share.
+        if (wx >= nextWarpWx) {
+            type = 'warp';
+            nextWarpWx = wx + worldPxForSec(WARP_COIN_INTERVAL_SEC * (0.7 + rngCoin() * 0.6), wx);
+        }
         if (wx >= nextPoisonWx) {
             type = 'poison';
             nextPoisonWx = wx + worldPxForSec(POISON_INTERVAL_SEC * (0.7 + rngCoin() * 0.6), wx);
@@ -459,7 +474,13 @@ function checkCoinCollection() {
         const hitR = baseHitR * (COIN_SIZE_MULT[coin.type] || 1.0);
         const r2 = (PR + hitR) * (PR + hitR);
         const dx = PX - sx, dy = py - coin.y;
-        if (dx*dx + dy*dy < r2) {
+        // Warp's "Sog": every gold coin on screen is pulled in and banked, no
+        // aiming required (constants.js "Warp portal" doc - the reward is real
+        // score/combo, not just a visual effect). Power-up and hazard coins stay
+        // on the normal hit-radius test - a reward you fly to remains something
+        // you have to fly to.
+        const warpVacuum = warpTime > 0 && coin.type === 'gold';
+        if (warpVacuum || dx*dx + dy*dy < r2) {
             coin.collected = true;
             if (coin.type === 'poison') {
                 // Hazard coin: breaks any active combo and claws back a percentage of
@@ -502,7 +523,22 @@ function checkCoinCollection() {
                 window.webkit?.messageHandlers?.haptic?.postMessage('warning');
                 continue;
             }
-            if (coinComboTimer > 0) coinCombo++; else coinCombo = 1;
+            // A warp-vacuumed coin (warpVacuum above) BANKS in full -- points at the
+            // current multiplier, runCoins, shards, mastery XP, missions, gap bonus --
+            // but does not RAISE the multiplier, and never breaks it either. Touching
+            // one ring auto-collects every gold coin on screen, and letting those
+            // increment normally made the combo's own quadratic term manufacture the
+            // score: measured 2-5 coins per warp chaining to ~11-54 bonus points, worst
+            // at LOW score where gold's share is 76%. Against a median daily best of 70
+            // (the real leaderboard, see the 2026-09-11 balance pass) the first ring
+            // alone -- at score ~47, which every player reaches -- was worth roughly as
+            // much as the entire rest of a typical run, turning `score` into "did you
+            // touch the portal" rather than "how far did you fly". bonusScore is
+            // supposed to come from flying well (near-misses, combos you actually
+            // chained), so a combo you earned before arriving still pays on every
+            // vacuumed coin - that part is skill and is deliberately kept.
+            if (warpVacuum) { if (coinCombo < 1) coinCombo = 1; }
+            else if (coinComboTimer > 0) coinCombo++; else coinCombo = 1;
             // ELECTRIC trades a shorter combo window for its slow-time buff below; mastery
             // eases it toward, but deliberately never all the way to, the 2.0s baseline --
             // see the "never fully erase the drawback" doc above SKINS in constants.js.
@@ -566,6 +602,15 @@ function checkCoinCollection() {
                 pushNotif(sx, coin.y - 34, 1.1, T.notifAmmo, [255,85,0]);
                 sfxBulletPickup();
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
+            } else if (coin.type === 'warp') {
+                // Reward set-piece pickup - joins the combo like any other power-up
+                // (the shared combo/points block above already ran), then triggers
+                // the identical warp state the portal ring does (constants.js
+                // "Warp portal" doc, update.js triggerWarp()).
+                triggerWarp();
+                burstCoin(sx, coin.y, 245, 30);
+                pushNotif(sx, coin.y - 34, 1.2, T.notifWarp, [140, 120, 255]);
+                window.webkit?.messageHandlers?.haptic?.postMessage('success');
             } else if (coin.type === 'bomb') {
                 // Explosive power-up: small blast around the pickup point that clears
                 // nearby hazards (see triggerBombExplosion). Sfx lives here, not inside
@@ -600,9 +645,10 @@ function checkCoinCollection() {
 
 function updateBullets(dt) {
     if (bulletAmmo > 0) {
-        // Same slowScrollFactor() clock as bullet travel/scroll/music below, so the
-        // fire rate itself sags and recovers with bullet-time instead of staying real-time.
-        bulletFireTimer = Math.max(0, bulletFireTimer - dt * slowScrollFactor());
+        // Same slowScrollFactor()/warpScrollFactor() clock as bullet travel/scroll/music
+        // below, so the fire rate itself sags/surges with bullet-time or a warp instead
+        // of staying real-time.
+        bulletFireTimer = Math.max(0, bulletFireTimer - dt * slowScrollFactor() * warpScrollFactor());
         if (bulletFireTimer <= 0) {
             bulletAmmo--;
             bulletFireTimer = 0.32;
@@ -610,10 +656,10 @@ function updateBullets(dt) {
             sfxBulletFire();
         }
     }
-    // slowScrollFactor() folds the blue-coin slow (and its glide back to full) into
-    // the bullet's travel too, so during bullet-time the player's own fire crawls with
-    // the rest of the world instead of streaking through a slowed tunnel.
-    const bulletSpd = (scrollSpd() + 480) * slowScrollFactor();
+    // slowScrollFactor()/warpScrollFactor() fold the blue-coin slow and the warp surge
+    // into the bullet's travel too, so the player's own fire never streaks through a
+    // slowed tunnel or crawls through a warped one relative to everything else.
+    const bulletSpd = (scrollSpd() + 480) * slowScrollFactor() * warpScrollFactor();
     for (let i = bullets.length - 1; i >= 0; i--) {
         const b = bullets[i];
         b.wx += bulletSpd * dt;
@@ -913,10 +959,13 @@ function updateCannonShots(dt) {
         burst(c.wx - scrollX, muzzleY, 10);
         sfxCannonFire();
     }
-    // Same slowScrollFactor() scaling as the player's bullets and the scroll itself:
-    // an enemy shot fired just before (or during) a blue-coin slow decelerates with
-    // everything else, then speeds back up along the glide as the effect wears off.
-    const shotSlowF = slowScrollFactor();
+    // Same slowScrollFactor()/warpScrollFactor() scaling as the player's bullets and
+    // the scroll itself: an enemy shot fired just before (or during) a blue-coin slow
+    // or a warp moves with everything else instead of looking frozen against a
+    // rushing or crawling tunnel. Harmless either way while warpTime > 0 (update.js
+    // skips cannon-shot collision for that duration), this is purely so it still
+    // reads as part of the same world.
+    const shotSlowF = slowScrollFactor() * warpScrollFactor();
     for (let i = cannonShots.length - 1; i >= 0; i--) {
         const s = cannonShots[i];
         s.wx += s.vx * shotSlowF * dt;
@@ -997,7 +1046,11 @@ function _makeBoulderAt(wx) {
         if (s.isTop) { if ((y - chord) - (sb.top + s.length) < need) return null; }
         else         { if ((sb.bot - s.length) - (y + chord) < need) return null; }
     }
-    return { wx, y, r };
+    // narrowTop/scored back the "Boulder Meister" achievement (constants.js
+    // BOULDER_MEISTER_TARGET doc, update.js's boulder-collision loop): narrowTop
+    // records which of the two passes is the tighter squeeze, scored guards against
+    // crediting the same boulder's pass twice.
+    return { wx, y, r, narrowTop: (y - r - b.top) < (b.bot - (y + r)), scored: false };
 }
 
 function maintainBoulders() {
@@ -1007,6 +1060,95 @@ function maintainBoulders() {
         nextBoulderWx += boulderSpacing(nextBoulderWx) * (0.75 + _deepHash(Math.floor(nextBoulderWx / 300) + 0x3003) * 0.5);
     }
     while (boulders.length && boulders[0].wx < scrollX - 200) boulders.shift();
+}
+
+// ── Warp portal ──────────────────────────────────────────────────────
+// Reward set-piece (constants.js "Warp portal" doc): a ring hanging in the
+// corridor that triggers the same warp state a warp coin does (update.js
+// triggerWarp()). Draws NO rng() - seeded purely from _deepHash like a boulder,
+// so the shared daily cave is unaffected by whether this feature exists at all.
+const PORTAL_RETRY_OFFSETS = [0, 260, 520, 780, 1040];
+
+function makePortal(wx) {
+    for (const off of PORTAL_RETRY_OFFSETS) {
+        const p = _makePortalAt(wx + off);
+        if (p) return p;
+    }
+    return null;
+}
+
+function _makePortalAt(wx) {
+    const b  = boundsBase(wx);
+    const hg = (b.bot - b.top) / 2;
+    const cy = (b.top + b.bot) / 2;
+    // Seeded vertical jitter so every ring isn't dead-centre - capped at 25% of
+    // halfGap so even the jittered edge (r + jitter, both PORTAL_R_FRAC-bounded)
+    // stays well inside the corridor regardless of where coinBlockedByStal below
+    // ends up accepting it.
+    const jitter = (_deepHash(Math.floor(wx / 300) + 0x4001) - 0.5) * 2 * hg * 0.25;
+    const y = cy + jitter;
+    // The ring's DRAWN radius (constants.js PORTAL_R_FRAC doc) is spectacle, not
+    // the flyability contract - only this centre point has to be provably
+    // reachable, and that's the exact same question coinBlockedByStal already
+    // answers for every coin placed in the game, at every difficulty, without a
+    // bespoke geometric veto (see the doc at PORTAL_R_FRAC for why not).
+    if (coinBlockedByStal(wx, y)) return null;
+    return { wx, y, r: hg * PORTAL_R_FRAC, used: false, usedFade: 1.0 };
+}
+
+function maintainPortals() {
+    while (nextPortalWx < scrollX + SPAWN_W + SPAWN_AHEAD_PORTAL) {
+        const p = makePortal(nextPortalWx);
+        if (p) portals.push(p);
+        nextPortalWx += portalSpacing(nextPortalWx) * (0.75 + _deepHash(Math.floor(nextPortalWx / 300) + 0x4000) * 0.5);
+    }
+    while (portals.length && (portals[0].wx < scrollX - 200 || (portals[0].used && portals[0].usedFade <= 0))) {
+        portals.shift();
+    }
+}
+
+// Shared entry point for both ways into a warp (the portal ring above and the
+// warp coin in makeCoin()/checkCoinCollection below) - constants.js "Warp
+// portal" doc for the full mechanic. Resets rather than stacks: a portal and a
+// coin close together restart the window instead of compounding it, same
+// "simplest safe choice" call as the mine/cannon retry offsets not scaling with
+// anything either. `accuracy` (0..1, how centred the portal flythrough was;
+// omitted by the coin pickup) decides where in WARP_DUR_MIN..MAX_SEC the
+// duration lands - see the doc at its use below.
+function triggerWarp(accuracy) {
+    // A warp is a speed-UP; an active blue-coin slow-time is a speed-DOWN
+    // (world.js slowScrollFactor()), and warpScrollFactor() multiplies straight
+    // into the same scrollSpd() term - the two would partially cancel into a
+    // muddled "not really fast, not really slow" scroll, which reads as neither
+    // effect doing anything. Clear the slow outright rather than let them fight
+    // (user feedback 2026-09-12): you are now fast, not fast-and-slow-at-once.
+    // bgmSetSlow(false) matches - otherwise its still-scheduled ramp would race
+    // bgmSetWarp's below on the same _bgmNode.playbackRate.
+    if (slowTime > 0) { slowTime = 0; slowTimeMax = 0; bgmSetSlow(false); }
+    // Duration rewards a well-aimed portal flythrough (user feedback 2026-09-12):
+    // `accuracy` is 1.0 dead-centre through the ring, fading to 0 at the edge of
+    // its hit tolerance (update.js's x-crossing check) - a centred pass gets the
+    // full WARP_DUR_MAX_SEC, a graze along the rim only WARP_DUR_MIN_SEC. Reusing
+    // the same MIN..MAX range the warp coin already rolls randomly from (not a new
+    // constant), just landing on a specific point in it instead of a random one.
+    // The warp coin has no "aim" to reward - a coin is touched, not threaded - so
+    // it's left at undefined and keeps the random roll.
+    const dur = accuracy === undefined
+        ? lerp(WARP_DUR_MIN_SEC, WARP_DUR_MAX_SEC, Math.random())
+        : lerp(WARP_DUR_MIN_SEC, WARP_DUR_MAX_SEC, accuracy);
+    warpMax = dur; warpTime = dur;
+    // Deeper run, stronger sog - scrollSpd() itself never plateaus (CLAUDE.md), and
+    // this rides that same "never just endurance at a fixed pace" philosophy: a warp
+    // late in a marathon run should feel like a bigger event than the first one at
+    // score 50. Rolled once here from the player's live _prog2, then held fixed for
+    // the whole warp (world.js warpScrollFactor() doc) - capped at _prog2 >= 1
+    // (score ~900) like most per-run difficulty knobs, see constants.js
+    // WARP_MULT_MIN/MAX doc for why capping this ratio doesn't reintroduce a
+    // plateau (scrollSpd() underneath it keeps climbing regardless).
+    warpMult = lerp(WARP_MULT_MIN, WARP_MULT_MAX, Math.min(_prog2, 1));
+    sfxWarpEnter();
+    warpLoopOn();
+    bgmSetWarp(true, dur);   // music surges then glides back down with the effect (audio.js)
 }
 
 // ── Bomb explosion ────────────────────────────────────────────────────

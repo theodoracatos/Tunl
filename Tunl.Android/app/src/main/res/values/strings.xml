@@ -51,6 +51,26 @@
     <string name="achievement_flight_1min" translatable="false">CgkI_MyGndIBEAIQHg</string>
     <string name="achievement_flight_2min" translatable="false">CgkI_MyGndIBEAIQHw</string>
 
+    <!-- Lifetime-runs-played achievements (src/constants.js RUNS_ACHIEVEMENTS). -->
+    <string name="achievement_runs_10" translatable="false">CgkI_MyGndIBEAIQKA</string>
+    <string name="achievement_runs_100" translatable="false">CgkI_MyGndIBEAIQIA</string>
+    <string name="achievement_runs_1000" translatable="false">CgkI_MyGndIBEAIQJg</string>
+
+    <!-- Lifetime near-miss / "Ausweichen" achievements (src/constants.js
+         DODGE_ACHIEVEMENTS). -->
+    <string name="achievement_dodge_100" translatable="false">CgkI_MyGndIBEAIQJA</string>
+    <string name="achievement_dodge_1000" translatable="false">CgkI_MyGndIBEAIQIQ</string>
+
+    <!-- "Pacifist" achievement (src/constants.js PACIFIST_ACH_SCORE/PACIFIST_ACH_ID). -->
+    <string name="achievement_pacifist" translatable="false">CgkI_MyGndIBEAIQKQ</string>
+
+    <!-- 4 more skill achievements (src/constants.js SPRINT_ACH_*/NO_HIT_ACH_*/
+         NO_BONUS_ACH_*/BOULDER_MEISTER_*). -->
+    <string name="achievement_sprint" translatable="false">CgkI_MyGndIBEAIQIg</string>
+    <string name="achievement_no_hit" translatable="false">CgkI_MyGndIBEAIQJQ</string>
+    <string name="achievement_no_bonus" translatable="false">CgkI_MyGndIBEAIQIw</string>
+    <string name="achievement_boulder_meister" translatable="false">CgkI_MyGndIBEAIQJw</string>
+
     <!-- AdMob console -> Apps -> TUNL (Android) -> App ID. Separate from the iOS app ID. -->
     <string name="admob_app_id" translatable="false">ca-app-pub-4882203470005029~3522958941</string>
     <!-- AdMob console -> Apps -> TUNL (Android) -> Ad units -> Interstitial -> Ad unit ID. -->

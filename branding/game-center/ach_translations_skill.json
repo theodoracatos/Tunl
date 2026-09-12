@@ -1,0 +1,94 @@
+{
+  "_note": "4 skill achievements (src/constants.js SPRINT_ACH_*/NO_HIT_ACH_*/NO_BONUS_ACH_*/BOULDER_MEISTER_*), added alongside ach_translations_pacifist.json in the same batch. Same array shape: [title, post-earned description, pre-earned description]. Play Console has ONE description field - use the pre-earned string there. Icons: achievement-icons/sprint.png, no_hit.png, no_bonus.png, boulder_meister.png (512x512 RGB, no alpha, not yet generated). Suggested points: sprint 30 (pace skill), no_hit 35 (survival skill, matches no_bonus), no_bonus 35, boulder_meister 30 (5-of-5 commitment). Hidden: No. Incremental: No (boulder_meister could be Incremental=Yes with steps=5 instead if the console prefers a progress bar over a single unlock - either works with the same live report() call).",
+
+  "en-US": {
+    "tunl_ach_sprint": ["Perfect Sprint", "You reached a score of 300 within 30 seconds in a single run.", "Reach a score of 300 within 30 seconds in a single run."],
+    "tunl_ach_no_hit": ["No-Hit Run", "You reached a score of 233 without ever being hit.", "Reach a score of 233 in a single run without ever being hit."],
+    "tunl_ach_no_bonus": ["No Bonus", "You reached a score of 233 without collecting a single gold coin.", "Reach a score of 233 in a single run without collecting a single gold coin."],
+    "tunl_ach_boulder_meister": ["Boulder Meister", "You threaded 5 boulders through their narrow side in a single run.", "Thread 5 boulders through their narrow side in a single run."]
+  },
+  "de-DE": {
+    "tunl_ach_sprint": ["Perfekter Sprint", "Du hast in einem einzigen Lauf innerhalb von 30 Sekunden einen Score von 300 erreicht.", "Erreiche in einem einzigen Lauf innerhalb von 30 Sekunden einen Score von 300."],
+    "tunl_ach_no_hit": ["Unberührt", "Du hast einen Score von 233 erreicht, ohne jemals getroffen zu werden.", "Erreiche in einem einzigen Lauf einen Score von 233, ohne jemals getroffen zu werden."],
+    "tunl_ach_no_bonus": ["Ohne Bonus", "Du hast einen Score von 233 erreicht, ohne eine einzige Goldmünze einzusammeln.", "Erreiche in einem einzigen Lauf einen Score von 233, ohne eine einzige Goldmünze einzusammeln."],
+    "tunl_ach_boulder_meister": ["Boulder-Meister", "Du hast in einem einzigen Lauf 5 Felsbrocken über ihre enge Seite durchflogen.", "Durchfliege in einem einzigen Lauf 5 Felsbrocken über ihre enge Seite."]
+  },
+  "fr-FR": {
+    "tunl_ach_sprint": ["Sprint Parfait", "Vous avez atteint un score de 300 en moins de 30 secondes au cours d'une seule partie.", "Atteignez un score de 300 en moins de 30 secondes au cours d'une seule partie."],
+    "tunl_ach_no_hit": ["Sans Contact", "Vous avez atteint un score de 233 sans jamais être touché.", "Atteignez un score de 233 en une seule partie sans jamais être touché."],
+    "tunl_ach_no_bonus": ["Sans Bonus", "Vous avez atteint un score de 233 sans ramasser une seule pièce d'or.", "Atteignez un score de 233 en une seule partie sans ramasser une seule pièce d'or."],
+    "tunl_ach_boulder_meister": ["Maître des Rochers", "Vous avez franchi 5 rochers par leur côté étroit au cours d'une seule partie.", "Franchissez 5 rochers par leur côté étroit au cours d'une seule partie."]
+  },
+  "it": {
+    "tunl_ach_sprint": ["Scatto Perfetto", "Hai raggiunto un punteggio di 300 entro 30 secondi in una singola partita.", "Raggiungi un punteggio di 300 entro 30 secondi in una singola partita."],
+    "tunl_ach_no_hit": ["Nessun Colpo", "Hai raggiunto un punteggio di 233 senza mai essere colpito.", "Raggiungi un punteggio di 233 in una singola partita senza mai essere colpito."],
+    "tunl_ach_no_bonus": ["Senza Bonus", "Hai raggiunto un punteggio di 233 senza raccogliere nemmeno una moneta d'oro.", "Raggiungi un punteggio di 233 in una singola partita senza raccogliere nemmeno una moneta d'oro."],
+    "tunl_ach_boulder_meister": ["Maestro dei Massi", "Hai attraversato 5 massi dal lato stretto in una singola partita.", "Attraversa 5 massi dal lato stretto in una singola partita."]
+  },
+  "es-ES": {
+    "tunl_ach_sprint": ["Sprint Perfecto", "Alcanzaste una puntuación de 300 en menos de 30 segundos en una sola partida.", "Alcanza una puntuación de 300 en menos de 30 segundos en una sola partida."],
+    "tunl_ach_no_hit": ["Sin Impacto", "Alcanzaste una puntuación de 233 sin ser golpeado ni una sola vez.", "Alcanza una puntuación de 233 en una sola partida sin ser golpeado ni una sola vez."],
+    "tunl_ach_no_bonus": ["Sin Bonificación", "Alcanzaste una puntuación de 233 sin recoger ni una sola moneda de oro.", "Alcanza una puntuación de 233 en una sola partida sin recoger ni una sola moneda de oro."],
+    "tunl_ach_boulder_meister": ["Maestro de Rocas", "Atravesaste 5 rocas por su lado estrecho en una sola partida.", "Atraviesa 5 rocas por su lado estrecho en una sola partida."]
+  },
+  "pt-BR": {
+    "tunl_ach_sprint": ["Sprint Perfeito", "Você alcançou uma pontuação de 300 em até 30 segundos em uma única partida.", "Alcance uma pontuação de 300 em até 30 segundos em uma única partida."],
+    "tunl_ach_no_hit": ["Sem Impacto", "Você alcançou uma pontuação de 233 sem nunca ser atingido.", "Alcance uma pontuação de 233 em uma única partida sem nunca ser atingido."],
+    "tunl_ach_no_bonus": ["Sem Bônus", "Você alcançou uma pontuação de 233 sem coletar uma única moeda de ouro.", "Alcance uma pontuação de 233 em uma única partida sem coletar uma única moeda de ouro."],
+    "tunl_ach_boulder_meister": ["Mestre das Rochas", "Você atravessou 5 rochas pelo lado estreito em uma única partida.", "Atravesse 5 rochas pelo lado estreito em uma única partida."]
+  },
+  "ru": {
+    "tunl_ach_sprint": ["Идеальный Спринт", "Вы набрали счёт 300 менее чем за 30 секунд за один забег.", "Наберите счёт 300 менее чем за 30 секунд за один забег."],
+    "tunl_ach_no_hit": ["Без Единого Удара", "Вы набрали счёт 233, ни разу не получив удар.", "Наберите счёт 233 за один забег, ни разу не получив удар."],
+    "tunl_ach_no_bonus": ["Без Бонуса", "Вы набрали счёт 233, не собрав ни одной золотой монеты.", "Наберите счёт 233 за один забег, не собрав ни одной золотой монеты."],
+    "tunl_ach_boulder_meister": ["Мастер Валунов", "Вы прошли 5 валунов через их узкую сторону за один забег.", "Пройдите 5 валунов через их узкую сторону за один забег."]
+  },
+  "ja": {
+    "tunl_ach_sprint": ["パーフェクトスプリント", "1回のプレイで30秒以内にスコア300に到達しました。", "1回のプレイで30秒以内にスコア300に到達する。"],
+    "tunl_ach_no_hit": ["ノーヒット", "一度も被弾せずにスコア233に到達しました。", "1回のプレイで一度も被弾せずにスコア233に到達する。"],
+    "tunl_ach_no_bonus": ["ノーボーナス", "金コインを1枚も取らずにスコア233に到達しました。", "1回のプレイで金コインを1枚も取らずにスコア233に到達する。"],
+    "tunl_ach_boulder_meister": ["ボルダーマイスター", "1回のプレイで5個の岩を狭い側から通過しました。", "1回のプレイで5個の岩を狭い側から通過する。"]
+  },
+  "ko": {
+    "tunl_ach_sprint": ["퍼펙트 스프린트", "한 번의 플레이에서 30초 이내에 점수 300에 도달했습니다.", "한 번의 플레이에서 30초 이내에 점수 300에 도달하세요."],
+    "tunl_ach_no_hit": ["노히트 런", "한 번도 피격당하지 않고 점수 233에 도달했습니다.", "한 번의 플레이에서 한 번도 피격당하지 않고 점수 233에 도달하세요."],
+    "tunl_ach_no_bonus": ["노 보너스", "금 코인을 하나도 모으지 않고 점수 233에 도달했습니다.", "한 번의 플레이에서 금 코인을 하나도 모으지 않고 점수 233에 도달하세요."],
+    "tunl_ach_boulder_meister": ["볼더 마이스터", "한 번의 플레이에서 바위 5개를 좁은 쪽으로 통과했습니다.", "한 번의 플레이에서 바위 5개를 좁은 쪽으로 통과하세요."]
+  },
+  "zh-Hant": {
+    "tunl_ach_sprint": ["完美衝刺", "你在單次遊玩中於30秒內達到300分。", "在單次遊玩中於30秒內達到300分。"],
+    "tunl_ach_no_hit": ["零受擊", "你在從未被擊中的情況下達到233分。", "在單次遊玩中從未被擊中的情況下達到233分。"],
+    "tunl_ach_no_bonus": ["無加成", "你在沒有收集任何一枚金幣的情況下達到233分。", "在單次遊玩中不收集任何一枚金幣達到233分。"],
+    "tunl_ach_boulder_meister": ["巨石大師", "你在單次遊玩中從狹窄側穿過了5顆巨石。", "在單次遊玩中從狹窄側穿過5顆巨石。"]
+  },
+  "tr": {
+    "tunl_ach_sprint": ["Mükemmel Sprint", "Tek bir oyunda 30 saniye içinde 300 skoruna ulaştın.", "Tek bir oyunda 30 saniye içinde 300 skoruna ulaş."],
+    "tunl_ach_no_hit": ["Darbe Almadan", "Hiç darbe almadan 233 skoruna ulaştın.", "Tek bir oyunda hiç darbe almadan 233 skoruna ulaş."],
+    "tunl_ach_no_bonus": ["Bonussuz", "Tek bir altın para bile toplamadan 233 skoruna ulaştın.", "Tek bir oyunda hiç altın para toplamadan 233 skoruna ulaş."],
+    "tunl_ach_boulder_meister": ["Kaya Ustası", "Tek bir oyunda 5 kayayı dar taraftan geçtin.", "Tek bir oyunda 5 kayayı dar taraftan geç."]
+  },
+  "pl": {
+    "tunl_ach_sprint": ["Idealny Sprint", "Osiągnąłeś wynik 300 w ciągu 30 sekund podczas jednego przelotu.", "Osiągnij wynik 300 w ciągu 30 sekund podczas jednego przelotu."],
+    "tunl_ach_no_hit": ["Bez Trafienia", "Osiągnąłeś wynik 233, nigdy nie zostając trafionym.", "Osiągnij wynik 233 podczas jednego przelotu, nigdy nie zostając trafionym."],
+    "tunl_ach_no_bonus": ["Bez Bonusu", "Osiągnąłeś wynik 233, nie zbierając ani jednej złotej monety.", "Osiągnij wynik 233 podczas jednego przelotu, nie zbierając ani jednej złotej monety."],
+    "tunl_ach_boulder_meister": ["Mistrz Głazów", "Przeleciałeś przez 5 głazów ich wąską stroną podczas jednego przelotu.", "Przeleć przez 5 głazów ich wąską stroną podczas jednego przelotu."]
+  },
+  "id": {
+    "tunl_ach_sprint": ["Sprint Sempurna", "Kamu mencapai skor 300 dalam 30 detik dalam satu permainan.", "Capai skor 300 dalam 30 detik dalam satu permainan."],
+    "tunl_ach_no_hit": ["Tanpa Terkena", "Kamu mencapai skor 233 tanpa pernah terkena.", "Capai skor 233 dalam satu permainan tanpa pernah terkena."],
+    "tunl_ach_no_bonus": ["Tanpa Bonus", "Kamu mencapai skor 233 tanpa mengumpulkan satu koin emas pun.", "Capai skor 233 dalam satu permainan tanpa mengumpulkan satu koin emas pun."],
+    "tunl_ach_boulder_meister": ["Ahli Batu Besar", "Kamu melewati 5 batu besar dari sisi sempitnya dalam satu permainan.", "Lewati 5 batu besar dari sisi sempitnya dalam satu permainan."]
+  },
+  "hi": {
+    "tunl_ach_sprint": ["परफेक्ट स्प्रिंट", "आपने एक ही राउंड में 30 सेकंड के भीतर 300 स्कोर हासिल किया।", "एक ही राउंड में 30 सेकंड के भीतर 300 स्कोर हासिल करें।"],
+    "tunl_ach_no_hit": ["नो-हिट रन", "आपने कभी टकराए बिना 233 स्कोर हासिल किया।", "एक ही राउंड में कभी टकराए बिना 233 स्कोर हासिल करें।"],
+    "tunl_ach_no_bonus": ["बिना बोनस", "आपने एक भी सोने का सिक्का इकट्ठा किए बिना 233 स्कोर हासिल किया।", "एक ही राउंड में बिना कोई सोने का सिक्का इकट्ठा किए 233 स्कोर हासिल करें।"],
+    "tunl_ach_boulder_meister": ["बोल्डर मेस्टर", "आपने एक ही राउंड में 5 चट्टानों को उनकी संकरी तरफ से पार किया।", "एक ही राउंड में 5 चट्टानों को उनकी संकरी तरफ से पार करें।"]
+  },
+  "ar-SA": {
+    "tunl_ach_sprint": ["اندفاعة مثالية", "لقد وصلت إلى نتيجة 300 خلال 30 ثانية في جولة واحدة.", "صل إلى نتيجة 300 خلال 30 ثانية في جولة واحدة."],
+    "tunl_ach_no_hit": ["بلا إصابة", "لقد وصلت إلى نتيجة 233 دون أن تُصاب أبدًا.", "صل إلى نتيجة 233 في جولة واحدة دون أن تُصاب أبدًا."],
+    "tunl_ach_no_bonus": ["بلا مكافأة", "لقد وصلت إلى نتيجة 233 دون جمع عملة ذهبية واحدة.", "صل إلى نتيجة 233 في جولة واحدة دون جمع عملة ذهبية واحدة."],
+    "tunl_ach_boulder_meister": ["أستاذ الصخور", "لقد عبرت 5 صخور من جانبها الضيق في جولة واحدة.", "اعبر 5 صخور من جانبها الضيق في جولة واحدة."]
+  }
+}

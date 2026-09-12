@@ -4,6 +4,7 @@
 let _ac = null, _tVoice = null;
 let _fNode = null, _fGain = null;
 let _mNode = null, _mGain = null, _mOsc = null;
+let _wNode = null, _wGain = null, _wOsc = null;
 // Last-fired bullet-fire voices, so a death mid-burst can cut them off instead of
 // letting the tail ring on into sfxDie (see sfxBulletFireStop below).
 let _bfVoices = [];
@@ -76,6 +77,38 @@ function bgmSetSlow(on, duration) {
             const dur = Math.max(duration || 0, 0.6);
             rate.linearRampToValueAtTime(0.6, t + 0.22);   // gentle sag on pickup
             rate.linearRampToValueAtTime(1.0, t + dur);    // then ease back up over the effect
+        } else {
+            rate.linearRampToValueAtTime(1.0, t + 0.15);
+        }
+    } catch (e) {}
+}
+
+// Warp portal (constants.js "Warp portal" doc) - the mirror image of bgmSetSlow
+// above: a quick SURGE instead of a sag, then a glide back down to normal as the
+// window runs out, so the soundtrack visibly speeds up with the tunnel instead of
+// just the scroll doing it silently. Capped well under the warp's own 2.2-2.8x
+// scrollSpd() multiplier (constants.js WARP_MULT_MIN/MAX - a gameplay scroll
+// speed, not an audio pitch target, and one that now scales with depth) - a
+// whole track played back at that speed stops reading as "faster" and starts
+// reading as a chipmunked mess, the same
+// reason bgmSetSlow's own floor (0.6x) is a moderate sag, not a near-stop. Same
+// rate property as bgmSetSlow (_bgmNode.playbackRate), so the two are mutually
+// exclusive in practice - whichever fires last wins the schedule - which is fine
+// since both are short, rare, one-shot state changes, not something that needs
+// composing. `on=false` (falling edge in update.js, belt-and-braces in
+// startPlay/die) just snaps the rate home in case the glide and the gameplay
+// timer ever drift apart, identical to bgmSetSlow's own off-path.
+function bgmSetWarp(on, duration) {
+    if (!_ac || !_bgmNode) return;
+    const t    = _ac.currentTime;
+    const rate = _bgmNode.playbackRate;
+    try {
+        rate.cancelScheduledValues(t);
+        rate.setValueAtTime(rate.value, t);
+        if (on) {
+            const dur = Math.max(duration || 0, 0.4);
+            rate.linearRampToValueAtTime(1.35, t + 0.12);  // quick surge on entry
+            rate.linearRampToValueAtTime(1.0,  t + dur);   // glide back down over the window
         } else {
             rate.linearRampToValueAtTime(1.0, t + 0.15);
         }
@@ -230,6 +263,7 @@ function _reviveAudioContext() {
     // on the _ac !== ctx check; clear the guards so the fresh context can load again.
     _bgmLoading = false; _titleBgmLoading = false;
     _mNode = null; _mGain = null; _mOsc = null;  // magnet shimmer belonged to the closed context
+    _wNode = null; _wGain = null; _wOsc = null;  // warp whoosh belonged to the closed context
     _initAC();
 }
 // visibilitychange is the fallback path - WKWebView doesn't always fire it
@@ -517,6 +551,38 @@ function sfxBomb() {
     g2.gain.exponentialRampToValueAtTime(0.001, tBoom + 0.44);
     src.connect(flt); flt.connect(g2); g2.connect(_ac.destination);
     src.start(tBoom); src.stop(tBoom + 0.46);
+}
+
+// Warp portal entry (constants.js "Warp portal" doc): a rising sweep chord + a
+// bandpassed noise "whoosh", the mirror image of sfxSlow's descending one. Fires
+// from either entry point (the portal ring or the warp coin) via triggerWarp().
+function sfxWarpEnter() {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    [340, 460, 620].forEach((freq, i) => {
+        const o = _ac.createOscillator(), g = _ac.createGain();
+        o.connect(g); g.connect(_ac.destination);
+        o.type = 'sine';
+        const t0 = t + i * 0.05;
+        o.frequency.setValueAtTime(freq, t0);
+        o.frequency.exponentialRampToValueAtTime(freq * 2.2, t0 + 0.32);
+        g.gain.setValueAtTime(0.15, t0);   // P6b-hot: rare, run-defining pickup
+        g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.38);
+        o.start(t0); o.stop(t0 + 0.39);
+    });
+    const src = _ac.createBufferSource();
+    src.buffer = _noiseBuf(0.4);
+    const flt = _ac.createBiquadFilter();
+    flt.type = 'bandpass';
+    flt.Q.value = 4;
+    flt.frequency.setValueAtTime(600, t);
+    flt.frequency.exponentialRampToValueAtTime(4200, t + 0.30);
+    const g3 = _ac.createGain();
+    g3.gain.setValueAtTime(0.001, t);
+    g3.gain.linearRampToValueAtTime(0.24, t + 0.06);
+    g3.gain.exponentialRampToValueAtTime(0.001, t + 0.34);
+    src.connect(flt); flt.connect(g3); g3.connect(_ac.destination);
+    src.start(t); src.stop(t + 0.36);
 }
 
 // The cannon's own muzzle blast (not the impact when its shot lands - see
@@ -1448,4 +1514,51 @@ function magnetLoopOff() {
         try { n.stop(); } catch(e){}
         oscs.forEach(o => { try { o.stop(); } catch(e){} });
     }, 260);
+}
+
+// Ambient warp whoosh - runs for the whole warpTime > 0 window (constants.js "Warp
+// portal" doc), same "a power state should be audible for its duration" reasoning
+// as magnetLoopOn above: a rising-pitch filtered noise bed plus two detuned sines,
+// distinct from magnet's high shimmer by sitting lower and sweeping upward with the
+// warp's own speed ramp instead of holding a fixed frequency. Started from
+// triggerWarp() (systems.js), stopped from update.js the frame warpTime hits 0,
+// with the same belt-and-braces stop in the AudioContext-recycle path above.
+function warpLoopOn() {
+    if (!_ac || _wNode || !fxOn) return;
+    _wGain = _ac.createGain();
+    _wGain.gain.setValueAtTime(0.0001, _ac.currentTime);
+    _wGain.gain.linearRampToValueAtTime(0.09, _ac.currentTime + 0.12);
+    _wGain.connect(_ac.destination);
+
+    const src = _ac.createBufferSource();
+    src.buffer = _noiseBuf(0.5); src.loop = true;
+    const flt = _ac.createBiquadFilter();
+    flt.type = 'bandpass'; flt.Q.value = 3.5;
+    flt.frequency.setValueAtTime(700, _ac.currentTime);
+    flt.frequency.linearRampToValueAtTime(2200, _ac.currentTime + 1.4);
+    src.connect(flt); flt.connect(_wGain);
+    src.start(); _wNode = src;
+
+    _wOsc = [220, 330].map((f, i) => {
+        const o = _ac.createOscillator(), og = _ac.createGain();
+        o.type = 'sawtooth'; o.frequency.value = f * (1 + i * 0.006);
+        og.gain.value = 0.018;
+        o.connect(og); og.connect(_wGain);
+        o.start();
+        return o;
+    });
+}
+
+function warpLoopOff() {
+    if (!_wNode) return;
+    const t = _ac.currentTime;
+    _wGain.gain.cancelScheduledValues(t);
+    _wGain.gain.setValueAtTime(_wGain.gain.value, t);
+    _wGain.gain.linearRampToValueAtTime(0.0001, t + 0.18);
+    const n = _wNode, oscs = _wOsc || [];
+    _wNode = null; _wGain = null; _wOsc = null;
+    setTimeout(() => {
+        try { n.stop(); } catch(e){}
+        oscs.forEach(o => { try { o.stop(); } catch(e){} });
+    }, 220);
 }

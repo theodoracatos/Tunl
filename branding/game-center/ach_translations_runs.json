@@ -1,0 +1,79 @@
+{
+  "_note": "Lifetime-runs-played achievements (src/constants.js RUNS_ACHIEVEMENTS). Same array shape as ach_translations_dist.json / ach_translations_flight.json: [title, post-earned description, pre-earned description]. Play Console has ONE description field - use the pre-earned string there. Icons: achievement-icons/runs_10.png, runs_100.png, runs_1000.png (512x512 RGB, no alpha, not yet generated). Points: 10 runs 10, 100 runs 25, 1000 runs 50 - x10-per-tier escalation, same shape as the score_1000/10000/100000 ladder. Hidden: No. Incremental: No. Title style follows the existing 'Four Digits'/'One Minute'/numeric-tier convention rather than an evocative name.",
+
+  "en-US": {
+    "tunl_ach_runs_10": ["10 Runs", "You have started 10 runs.", "Start 10 runs."],
+    "tunl_ach_runs_100": ["100 Runs", "You have started 100 runs.", "Start 100 runs."],
+    "tunl_ach_runs_1000": ["1000 Runs", "You have started 1000 runs.", "Start 1000 runs."]
+  },
+  "de-DE": {
+    "tunl_ach_runs_10": ["10 Läufe", "Du hast 10 Läufe gestartet.", "Starte 10 Läufe."],
+    "tunl_ach_runs_100": ["100 Läufe", "Du hast 100 Läufe gestartet.", "Starte 100 Läufe."],
+    "tunl_ach_runs_1000": ["1000 Läufe", "Du hast 1000 Läufe gestartet.", "Starte 1000 Läufe."]
+  },
+  "fr-FR": {
+    "tunl_ach_runs_10": ["10 Parties", "Vous avez commencé 10 parties.", "Commencez 10 parties."],
+    "tunl_ach_runs_100": ["100 Parties", "Vous avez commencé 100 parties.", "Commencez 100 parties."],
+    "tunl_ach_runs_1000": ["1000 Parties", "Vous avez commencé 1000 parties.", "Commencez 1000 parties."]
+  },
+  "it": {
+    "tunl_ach_runs_10": ["10 Partite", "Hai iniziato 10 partite.", "Inizia 10 partite."],
+    "tunl_ach_runs_100": ["100 Partite", "Hai iniziato 100 partite.", "Inizia 100 partite."],
+    "tunl_ach_runs_1000": ["1000 Partite", "Hai iniziato 1000 partite.", "Inizia 1000 partite."]
+  },
+  "es-ES": {
+    "tunl_ach_runs_10": ["10 Partidas", "Has iniciado 10 partidas.", "Inicia 10 partidas."],
+    "tunl_ach_runs_100": ["100 Partidas", "Has iniciado 100 partidas.", "Inicia 100 partidas."],
+    "tunl_ach_runs_1000": ["1000 Partidas", "Has iniciado 1000 partidas.", "Inicia 1000 partidas."]
+  },
+  "pt-BR": {
+    "tunl_ach_runs_10": ["10 Partidas", "Você iniciou 10 partidas.", "Inicie 10 partidas."],
+    "tunl_ach_runs_100": ["100 Partidas", "Você iniciou 100 partidas.", "Inicie 100 partidas."],
+    "tunl_ach_runs_1000": ["1000 Partidas", "Você iniciou 1000 partidas.", "Inicie 1000 partidas."]
+  },
+  "ru": {
+    "tunl_ach_runs_10": ["10 забегов", "Вы начали 10 забегов.", "Начните 10 забегов."],
+    "tunl_ach_runs_100": ["100 забегов", "Вы начали 100 забегов.", "Начните 100 забегов."],
+    "tunl_ach_runs_1000": ["1000 забегов", "Вы начали 1000 забегов.", "Начните 1000 забегов."]
+  },
+  "ja": {
+    "tunl_ach_runs_10": ["10回プレイ", "10回プレイを開始しました。", "10回プレイを開始する。"],
+    "tunl_ach_runs_100": ["100回プレイ", "100回プレイを開始しました。", "100回プレイを開始する。"],
+    "tunl_ach_runs_1000": ["1000回プレイ", "1000回プレイを開始しました。", "1000回プレイを開始する。"]
+  },
+  "ko": {
+    "tunl_ach_runs_10": ["10회 플레이", "10회 플레이를 시작했습니다.", "10회 플레이를 시작하세요."],
+    "tunl_ach_runs_100": ["100회 플레이", "100회 플레이를 시작했습니다.", "100회 플레이를 시작하세요."],
+    "tunl_ach_runs_1000": ["1000회 플레이", "1000회 플레이를 시작했습니다.", "1000회 플레이를 시작하세요."]
+  },
+  "zh-Hant": {
+    "tunl_ach_runs_10": ["10次遊玩", "你已經開始了10次遊玩。", "開始10次遊玩。"],
+    "tunl_ach_runs_100": ["100次遊玩", "你已經開始了100次遊玩。", "開始100次遊玩。"],
+    "tunl_ach_runs_1000": ["1000次遊玩", "你已經開始了1000次遊玩。", "開始1000次遊玩。"]
+  },
+  "tr": {
+    "tunl_ach_runs_10": ["10 Oyun", "10 oyuna başladın.", "10 oyuna başla."],
+    "tunl_ach_runs_100": ["100 Oyun", "100 oyuna başladın.", "100 oyuna başla."],
+    "tunl_ach_runs_1000": ["1000 Oyun", "1000 oyuna başladın.", "1000 oyuna başla."]
+  },
+  "pl": {
+    "tunl_ach_runs_10": ["10 Przelotów", "Rozpocząłeś 10 przelotów.", "Rozpocznij 10 przelotów."],
+    "tunl_ach_runs_100": ["100 Przelotów", "Rozpocząłeś 100 przelotów.", "Rozpocznij 100 przelotów."],
+    "tunl_ach_runs_1000": ["1000 Przelotów", "Rozpocząłeś 1000 przelotów.", "Rozpocznij 1000 przelotów."]
+  },
+  "id": {
+    "tunl_ach_runs_10": ["10 Permainan", "Kamu telah memulai 10 permainan.", "Mulai 10 permainan."],
+    "tunl_ach_runs_100": ["100 Permainan", "Kamu telah memulai 100 permainan.", "Mulai 100 permainan."],
+    "tunl_ach_runs_1000": ["1000 Permainan", "Kamu telah memulai 1000 permainan.", "Mulai 1000 permainan."]
+  },
+  "hi": {
+    "tunl_ach_runs_10": ["10 राउंड", "आपने 10 राउंड शुरू किए हैं।", "10 राउंड शुरू करें।"],
+    "tunl_ach_runs_100": ["100 राउंड", "आपने 100 राउंड शुरू किए हैं।", "100 राउंड शुरू करें।"],
+    "tunl_ach_runs_1000": ["1000 राउंड", "आपने 1000 राउंड शुरू किए हैं।", "1000 राउंड शुरू करें।"]
+  },
+  "ar-SA": {
+    "tunl_ach_runs_10": ["10 جولات", "لقد بدأت 10 جولات.", "ابدأ 10 جولات."],
+    "tunl_ach_runs_100": ["100 جولة", "لقد بدأت 100 جولة.", "ابدأ 100 جولة."],
+    "tunl_ach_runs_1000": ["1000 جولة", "لقد بدأت 1000 جولة.", "ابدأ 1000 جولة."]
+  }
+}

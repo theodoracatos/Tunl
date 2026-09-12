@@ -49,13 +49,16 @@ function titleScreen() {
     mines = []; nextMineWx = 99999;
     cannons = []; nextCannonWx = 99999; cannonShots = [];
     boulders = []; nextBoulderWx = 99999;
+    portals = []; nextPortalWx = 99999;
+    warpTime = 0; warpMax = 0; warpWidenVisual = 0; warpMult = WARP_MULT_MIN;
     // Coins never spawn on the title screen (nextCoinWx = 99999 above), so these are
     // never actually consulted here -- just kept defined to avoid stray undefineds.
-    nextPoisonWx = 0; nextBombWx = 0; nextDrainWx = 0;
+    nextPoisonWx = 0; nextBombWx = 0; nextDrainWx = 0; nextWarpWx = 0;
     lastBlueWx = 0; lastRedWx = 0; lastGreenWx = 0;
     flightClock = 0; flightAchIdx = 0;
     prevRunScore = 0; lastRunScore = 0; milestoneFlash = 0; milestoneText = '';
     runCoins = 0; runNearMisses = 0; runMaxCombo = 0; skinUnlockIdx = -1;
+    runHitCount = 0; sprintAchFired = false; noHitAchFired = false; noBonusAchFired = false; runBoulderNarrowPasses = 0;
     runCoinsByType = { gold: 0, blue: 0, red: 0, green: 0, orange: 0 };
     missionRewardWon = 0;
     levelIntroT = 0;
@@ -74,7 +77,9 @@ function startPlay() {
     thrustOff();
     onFireLoopOff();
     magnetLoopOff();
+    warpLoopOff();
     bgmSetSlow(false);
+    bgmSetWarp(false);
     _fadeTitleMusic();
     // Web leaderboard: wall-clock start of this run, read at death for the
     // score/play-time sanity check. Harmless (unused) in the app builds.
@@ -122,8 +127,14 @@ function startPlay() {
     // corridor, so at score 85 the narrow pass measures 1.74 player diameters versus
     // 1.11 at score 1400. boulderSpacing() keeps it a sparse set-piece either way.
     boulders = []; nextBoulderWx = 5100;
+    // Warp portal ring: rare reward set-piece, from PORTAL_START_WX (~score 50, see
+    // constants.js "Warp portal" doc) - well before boulders/cannons so a new player
+    // can meet the reward before the first real hazard set-piece.
+    portals = []; nextPortalWx = PORTAL_START_WX;
+    warpTime = 0; warpMax = 0; warpWidenVisual = 0; warpMult = WARP_MULT_MIN;
     bonusScore = 0; milestoneNext = 50; nearMissTimer = 0; coinCombo = 0; coinComboTimer = 0;
     runCoins = 0; runNearMisses = 0; runMaxCombo = 0; skinUnlockIdx = -1;
+    runHitCount = 0; sprintAchFired = false; noHitAchFired = false; noBonusAchFired = false; runBoulderNarrowPasses = 0;
     skinMasteryUpIdx = -1; missionRewardWon = 0;
     runStartMasteryLevel = masteryLevel(activeSkin);
     runCoinsByType = { gold: 0, blue: 0, red: 0, green: 0, orange: 0 };
@@ -166,6 +177,17 @@ function startPlay() {
     }
     dailyRuns++;
     localStorage.setItem('tunnel_daily_runs', dailyRuns);
+    // Lifetime-runs-played achievements (constants.js RUNS_ACHIEVEMENTS): this counter
+    // only ever advances by 1 per call, so a plain before/after threshold check is
+    // enough - same crossing idiom as the DIST_ACHIEVEMENTS check in update.js.
+    const _runsBefore = totalRuns;
+    totalRuns++;
+    localStorage.setItem('tunnel_total_runs', totalRuns);
+    for (const ra of RUNS_ACHIEVEMENTS) {
+        if (_runsBefore < ra.at && totalRuns >= ra.at) {
+            window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: ra.id });
+        }
+    }
     // A ghost carried in on a ?g= share link (state.js _webGhostPlay) has to
     // survive the daily-rollover reset above, which clears the local ghost -
     // racing that shared ghost is the whole point of opening the link.
@@ -191,6 +213,7 @@ function startPlay() {
     nextPoisonWx = worldPxForSec(POISON_INTERVAL_SEC * (0.7 + rngCoin() * 0.6), 0);
     nextBombWx   = worldPxForSec(BOMB_INTERVAL_SEC   * (0.7 + rngCoin() * 0.6), 0);
     nextDrainWx  = worldPxForSec(DRAIN_INTERVAL_SEC  * (0.7 + rngCoin() * 0.6), 0);
+    nextWarpWx   = worldPxForSec(WARP_COIN_INTERVAL_SEC * (0.7 + rngCoin() * 0.6), 0);
     // Power-up supply floors: 0 = "as if one just landed at the start line". They only
     // apply past the score-34 gate in makeCoin() anyway, well beyond any floor width.
     lastBlueWx = 0; lastRedWx = 0; lastGreenWx = 0;
