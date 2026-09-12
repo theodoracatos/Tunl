@@ -50,22 +50,22 @@
     "ja": "ボタンひとつの洞窟フライヤー。押して上昇、離して下降。トンネルが閉じる前に、どこまで暗闇へ進めるか。"
   },
   "hero.newTag": {
-    "en": "New in 10.5",
-    "de": "Neu in 10.5",
-    "fr": "Nouveau dans la 10.5",
-    "it": "Novità nella 10.5",
-    "es": "Novedad en la 10.5",
-    "pt": "Novo na 10.5",
-    "ja": "10.5の新機能"
+    "en": "New in 11.0",
+    "de": "Neu in 11.0",
+    "fr": "Nouveau dans la 11.0",
+    "it": "Novità nella 11.0",
+    "es": "Novedad en la 11.0",
+    "pt": "Novo na 11.0",
+    "ja": "11.0の新機能"
   },
   "hero.newBody": {
-    "en": "Boulders and falling stalactites now show up much earlier in a run, so you'll meet them in the first minute instead of hundreds of runs deep. Retuned the coin economy, fixed a couple of placement bugs, and every screen size now flies the exact same daily cave.",
-    "de": "Felsbrocken und fallende Stalaktiten tauchen jetzt viel früher in einem Lauf auf, du triffst sie schon in der ersten Minute statt erst tief im Spiel. Die Münzökonomie wurde nachjustiert, ein paar Platzierungsfehler behoben, und jede Bildschirmgröße fliegt jetzt exakt dieselbe Tageshöhle.",
-    "fr": "Les rochers et les stalactites tombantes apparaissent désormais bien plus tôt dans une partie, dès la première minute au lieu de très en profondeur. Économie des pièces réajustée, quelques bugs de placement corrigés, et chaque taille d'écran vole désormais exactement la même grotte du jour.",
-    "it": "Massi e stalattiti cadenti compaiono ora molto prima in una partita, già nel primo minuto invece che in profondità. Economia delle monete riequilibrata, corretti un paio di bug di posizionamento, e ogni dimensione di schermo vola ora esattamente la stessa grotta del giorno.",
-    "es": "Las rocas y las estalactitas que caen aparecen ahora mucho antes en una partida, ya en el primer minuto en lugar de muy en profundidad. Se reajustó la economía de monedas, se corrigieron un par de errores de colocación, y ahora cada tamaño de pantalla vuela exactamente la misma cueva del día.",
-    "pt": "Rochas e estalactites que caem agora aparecem bem mais cedo em uma partida, já no primeiro minuto em vez de bem no fundo. Reequilibramos a economia de moedas, corrigimos alguns bugs de posicionamento, e agora cada tamanho de tela voa exatamente a mesma caverna do dia.",
-    "ja": "岩と落下する鍾乳石が、プレイのかなり早い段階、最初の1分以内に登場するようになりました。コイン経済も再調整し、配置に関するバグをいくつか修正。さらに、どの画面サイズでも同じ「今日の洞窟」を飛ぶようになりました。"
+    "en": "The Warp arrives. Fly through a portal ring, or grab a rare violet coin, for a speed surge, a wider tunnel, and every gold coin pulled into your combo. Plus 10 new achievements for near misses, total runs, and skill runs like Pacifist and Boulder Meister.",
+    "de": "Der Sog ist da. Fliege durch einen Portalring oder schnapp dir eine seltene violette Münze für einen Geschwindigkeitsschub, eine breitere Höhle und jede Goldmünze direkt in deinem Combo. Außerdem neu: 10 Erfolge für Beinahe-Treffer, Gesamtläufe und reine Können-Läufe wie Pacifist und Boulder Meister.",
+    "fr": "Le Sog arrive. Traverse un anneau-portail, ou attrape une rare pièce violette, pour une poussée de vitesse, un tunnel élargi et toutes les pièces d'or aspirées dans ton combo. Aussi nouveaux : 10 succès pour les frôlements, le nombre total de parties et les parcours de pure adresse comme Pacifist et Boulder Meister.",
+    "it": "Arriva il Varco (Sog). Vola attraverso un anello portale, o prendi una rara moneta viola, per una scarica di velocità, un tunnel più largo e ogni moneta d'oro aspirata nella tua combo. Novità anche: 10 obiettivi per le quasi collisioni, il numero totale di partite e corse di pura abilità come Pacifist e Boulder Meister.",
+    "es": "Llega el Warp. Vuela a través de un anillo portal, o atrapa una rara moneda violeta, para un impulso de velocidad, un túnel más ancho y todas las monedas de oro absorbidas en tu combo. También nuevo: 10 logros por casi colisiones, partidas totales y carreras de pura habilidad como Pacifist y Boulder Meister.",
+    "pt": "Chegou o Warp. Voe por um anel-portal, ou pegue uma rara moeda violeta, para um surto de velocidade, um túnel mais largo e todas as moedas de ouro puxadas para o seu combo. Também novo: 10 conquistas por quase colisões, corridas totais e corridas de pura habilidade como Pacifist e Boulder Meister.",
+    "ja": "「ワープ」登場。ポータルリングを通過するか、レアな紫のコインを取ると、速度が急上昇し、トンネルが広がり、視界内の金貨がすべてコンボに吸い込まれる。さらに、ニアミス、総プレイ回数、Pacifist や Boulder Meister のような純粋な腕前を試す10個の新実績も追加。"
   },
   "hero.playCta": {
     "en": "Play in your browser",
