@@ -13,7 +13,7 @@ function makeStal(wx, isTop) {
 }
 
 function maintainStalactites() {
-    // First stalactite is at STAL_START_WX (score ~25, set in startPlay) -- the opening
+    // First stalactite is at STAL_START_WX (score ~107, set in startPlay) -- the opening
     // stretch is a clean, obstacle-free intro on every run. It is a fixed world position,
     // so the spawn horizon below always creates it off the right edge and it scrolls into
     // view; it never pops in mid-screen.
@@ -950,31 +950,38 @@ function updateCannonShots(dt) {
         // Crosses most (not all) of the corridor diagonally -- a rngCannon()-picked span so
         // successive cannons don't all draw the exact same line across the tunnel.
         const spanY = (b.bot - b.top) * (0.55 + rngCannon() * 0.35) * (c.isTop ? 1 : -1);
-        // Unit vector of the shot's travel ON SCREEN. The shot closes CANNON_FIRE_LEAD
-        // horizontally (the player sits still at PX while the world scrolls past) while
-        // crossing spanY vertically, both over CANNON_SHOT_TRAVEL - so this, not the
-        // stored world-x vx, is the direction the thing visibly moves in. draw.js aims
-        // the barrel along it and rotates the projectile sprite to match; before 12.0
-        // the barrel was pinned at a hardcoded 0.55rad (44 degrees off the real line)
-        // and the sprite was rotated by atan2(vy, vx) on the WORLD velocity, which
-        // pointed it down-RIGHT while the shot travelled LEFT - 129 degrees wrong.
-        const shotLen = Math.hypot(CANNON_FIRE_LEAD, spanY);
-        c.aimUX = -CANNON_FIRE_LEAD / shotLen;
-        c.aimUY = spanY / shotLen;
-        // Spawn at the barrel's MUZZLE rather than at the pivot, so the shot leaves the
-        // end of the barrel instead of appearing beside it. Shortening the remaining
-        // travel by exactly the barrel length (k) keeps both the arrival time
-        // (CANNON_SHOT_TRAVEL) and the endpoint identical to spawning at the pivot -
-        // the start just slides along the same line, so nothing about the tuned warning
-        // window moves.
+        // Pivot-launched velocity, in WORLD (tunnel) coordinates - the gameplay: the shot
+        // closes CANNON_FIRE_LEAD on the player while crossing spanY, over
+        // CANNON_SHOT_TRAVEL.
+        const vx0 = scrollSpd() - CANNON_FIRE_LEAD / CANNON_SHOT_TRAVEL;
+        const vy0 = spanY / CANNON_SHOT_TRAVEL;
+        // The barrel, the sprite and the direction the shell leaves the gun are all
+        // expressed in the TUNNEL frame, i.e. along this world velocity. The cannon is
+        // bolted to the tunnel and scrolls with it, so relative to the gun a shell really
+        // does move along (vx0, vy0). An earlier 12.0 pass used the SCREEN velocity
+        // instead (vx0 - scrollSpd()): on its own that points left like the shell's
+        // on-screen drift, but the gun scrolls left FASTER than its shell, so the shell
+        // visibly peeled away from the muzzle almost broadside to its own nose (~118
+        // degrees off, reported from play). World frame keeps muzzle, nose and exit line
+        // on one axis. Because scrollSpd() outruns the closing speed at every depth a
+        // cannon exists at, that axis leans back down-and-away from the player - the
+        // player flies into the falling shell, which is exactly what happens.
+        const vLen = Math.hypot(vx0, vy0);
+        c.aimUX = vx0 / vLen;
+        c.aimUY = vy0 / vLen;
+        // Spawn at the barrel's MUZZLE, sliding the start along the same world line and
+        // slowing the shell by exactly the barrel length over the flight, so the
+        // endpoint and arrival time (CANNON_SHOT_TRAVEL, the tuned warning window) are
+        // identical to launching from the pivot. vLen*T >= the span (> 78px at the
+        // narrowest corridor) against a ~42px barrel, so the factor stays well above 0.
         const barrelLen = CANNON_R * CANNON_BARREL_LEN;
-        const k = 1 - barrelLen / shotLen;
+        const k = 1 - barrelLen / (vLen * CANNON_SHOT_TRAVEL);
         const muzzleX = c.wx   + c.aimUX * barrelLen;
         const muzzleY = wallY  + c.aimUY * barrelLen;
         cannonShots.push({
             wx: muzzleX, y: muzzleY,
-            vx: scrollSpd() - (CANNON_FIRE_LEAD * k) / CANNON_SHOT_TRAVEL,
-            vy: (spanY * k) / CANNON_SHOT_TRAVEL,
+            vx: vx0 * k,
+            vy: vy0 * k,
         });
         burst(muzzleX - scrollX, muzzleY, 10);
         sfxCannonFire();
@@ -1010,7 +1017,7 @@ function updateCannonShots(dt) {
 // telegraphed by sheer size from far off and it does NOT span the corridor -
 // there is always a pass above AND below, so it asks "commit up or down" rather
 // than "react". Radius is bounded so both gaps clear the player
-// (R <= halfGap - 2*PR), and the centre is nudged a seeded amount toward one
+// (R <= min(halfGap - 2.6*PR, 0.30*halfGap)), and the centre is nudged a seeded amount toward one
 // wall so one route is the easy one and the other is the squeeze. Circle-circle
 // collision (update.js), same shield-absorb behaviour as a mine. Bombs clear
 // them; bullets just spark off (it is solid rock, not a destructible hazard).
@@ -1032,11 +1039,11 @@ function _makeBoulderAt(wx) {
     // PLACE_* throughout (constants.js PLACE_PR doc): this sets the boulder's actual
     // radius, so a W-derived margin against an H-derived corridor made the rock a
     // different size - and sometimes made it not exist at all - per device.
-    const maxR = Math.min(hg - (PLACE_PR * 2 + 6) * _REF_TO_H, hg * 0.42);
+    const maxR = Math.min(hg - (PLACE_PR * 2.6 + 6) * _REF_TO_H, hg * 0.30);
     if (maxR * _H_TO_REF < PLACE_PR) return null;      // corridor too tight for one
     const r    = maxR * (0.82 + _deepHash(Math.floor(wx / 260) + 0x3000) * 0.18);
     const cy   = (b.top + b.bot) / 2;
-    const room = hg - r - PLACE_PR * 2 * _REF_TO_H;     // how far the centre can shift
+    const room = hg - r - PLACE_PR * 2.6 * _REF_TO_H;   // how far the centre can shift
     const side = _deepHash(Math.floor(wx / 260) + 0x3001) < 0.5 ? -1 : 1;
     const off  = side * room * (0.35 + _deepHash(Math.floor(wx / 260) + 0x3002) * 0.5);
     const y    = cy + off;
@@ -1055,7 +1062,7 @@ function _makeBoulderAt(wx) {
     // which the proxy could not tell apart from a spike through its middle.
     // Mixed axes throughout, so the horizontal half-chord is computed in reference
     // space (s.wx is world-px; r is H-derived device-px) and converted back.
-    const need = PLACE_PR * 2.2 * _REF_TO_H;            // ~1.1 player diameters per pass
+    const need = PLACE_PR * 2.6 * _REF_TO_H;            // ~1.3 player diameters per pass
     const rRef = r * _H_TO_REF;
     for (const s of stalactites) {
         const dx = Math.abs(s.wx - wx);

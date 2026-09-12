@@ -311,9 +311,9 @@ let slowTime, slowTimeMax, shieldCount, shieldFlash, magnetTime;
 // Grace/invulnerability window after an absorbed hit (constants.js HIT_INVULN_SEC doc).
 let invulnT;
 // Safe opening zone (constants.js SAFE_START_WX doc): world-x where the walls turn
-// lethal this run, how long the corridor takes to close before it, whether this is a
-// training run, and the bump-feedback cooldown. 0 on the title screen = no zone.
-let safeEndWx = 0, safeCloseWx = 1, trainingRun = false, safeBumpT = 0, wallsLiveShown = false;
+// lethal this run, how long the corridor takes to close before it, the bump-feedback
+// cooldown, and whether the one-shot walls-live hint has fired. 0 on the title screen = no zone.
+let safeEndWx = 0, safeCloseWx = 1, safeBumpT = 0, wallsLiveShown = false;
 // Rewarded continue, run-scoped (constants.js CONTINUE_MIN_SCORE doc). continueOfferPending
 // is true while the offer icon is up and death's real bookkeeping (commitDeath) is on
 // hold; continueAdPending is true only while native has a rewarded ad on screen, and

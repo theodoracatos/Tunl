@@ -1,11 +1,9 @@
 // TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch
-// World-x of the first stalactite on every run (see maintainStalactites). No stalactites
-// or stalagmites at all before this -- the opening ~4-9s (score 0-25) is a clean stretch
-// so a new player's first lesson is the feel of thrust-vs-gravity, not the death screen.
-// The player sits at PX so they actually reach it a hair before score 25 (scrollX/60).
-// It is a fixed world position, so the first one is always born off the right edge and
+// World-x of the first stalactite on every run (see maintainStalactites). Nothing before
+// it: the first ~100 points are the safe opening flight (constants.js SAFE_START_WX).
+// A fixed world position, so the first one is always born off the right edge and
 // scrolls in -- it never pops into view mid-screen.
-const STAL_START_WX = 1500;
+const STAL_START_WX = HAZARD_START_WX;   // was 1500 (~score 25) until the 2026-09-13 safe opening flight
 
 // One rng stream per spawner, all derived from the day (constants.js makeRngStream).
 // Distinct salts so the streams are independent of each other, not phase-shifted
@@ -40,7 +38,7 @@ function titleScreen() {
     chicaneCoins = []; lastChicaneCoinWx = -Infinity;
     gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
     invulnT = 0; deathCause = null;
-    safeEndWx = 0; safeCloseWx = 1; trainingRun = false; safeBumpT = 0; wallsLiveShown = false;
+    safeEndWx = 0; safeCloseWx = 1; safeBumpT = 0; wallsLiveShown = false;
     continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;
     reviveCountdownT = 0;
     bullets = []; bulletAmmo = 0; bulletFireTimer = 0;
@@ -89,10 +87,8 @@ function startPlay() {
     score = 0; newBest = false; newDailyBest = false;
     parts = []; thrustParts = []; deadT = 0; flashA = 0; shake = 0; trailY = [];
     skinFx = []; skinFxT = 0; shipPitch = -Math.PI / 2;
-    // No stalactites/stalagmites before score ~25 (STAL_START_WX) on any run -- a clean
-    // opening stretch so a new player's first lesson is the feel of thrust-vs-gravity,
-    // not the death screen. Coins are deliberately left at their normal start distance --
-    // they teach collection and can't kill anyone.
+    // No stalactites/stalagmites before STAL_START_WX (~score 107) on any run -- see
+    // constants.js SAFE_START_WX. Coins start at their normal distance; they can't kill.
     stalactites = []; nextStalWx = STAL_START_WX;
     // Falling stalactites: none before world-x 7800 (~score 130) -- a fresh player
     // learns plain stalactites first (see updateFallingStals / fallSpacing). Was
@@ -115,10 +111,10 @@ function startPlay() {
     ghostTrack = []; ghostY = null; ghostPitch = 0; ghostPassed = false;
     onFire = false; onFireFlash = 0;
     pbPassed = false; pbFlash = 0;
-    mines = []; nextMineWx = 1800;
+    mines = []; nextMineWx = HAZARD_START_WX;   // was 1800, see constants.js SAFE_START_WX
     // Cannons start much later than mines (score ~100) and are spaced far apart -- a
     // rare hazard, not a constant one (see world.js cannonSpacing()).
-    cannons = []; nextCannonWx = 6000; cannonShots = [];
+    cannons = []; nextCannonWx = CANNON_START_WX; cannonShots = [];   // was 6000
     // Boulders: routing obstacle ("commit up or down"), from world-x 5100 (~score
     // 85) -- just past the magnet gate (score 71), before the first cannon (100).
     // Was 84000 (~score 1400, ~109 real seconds of flawless flight) until
@@ -127,7 +123,7 @@ function startPlay() {
     // FORGIVING direction, not the harsh one - makeBoulder() bounds the radius by the
     // corridor, so at score 85 the narrow pass measures 1.74 player diameters versus
     // 1.11 at score 1400. boulderSpacing() keeps it a sparse set-piece either way.
-    boulders = []; nextBoulderWx = 5100;
+    boulders = []; nextBoulderWx = BOULDER_START_WX;   // was 5100
     // Warp portal ring: rare reward set-piece, from PORTAL_START_WX (~score 50, see
     // constants.js "Warp portal" doc) - well before boulders/cannons so a new player
     // can meet the reward before the first real hazard set-piece.
@@ -189,10 +185,8 @@ function startPlay() {
             window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: ra.id });
         }
     }
-    // Safe opening zone / training flight (constants.js SAFE_START_WX doc).
-    trainingRun = _runsBefore < TRAINING_RUNS && best < TRAINING_MAX_BEST;
-    safeEndWx   = trainingRun ? TRAINING_SAFE_WX : SAFE_START_WX;
-    safeCloseWx = trainingRun ? TRAINING_CLOSE_WX : SAFE_CLOSE_WX;
+    // Safe opening flight (constants.js SAFE_START_WX doc).
+    safeEndWx = SAFE_START_WX; safeCloseWx = SAFE_CLOSE_WX;
     safeBumpT = 0; wallsLiveShown = false;
     // A ghost carried in on a ?g= share link (state.js _webGhostPlay) has to
     // survive the daily-rollover reset above, which clears the local ghost -

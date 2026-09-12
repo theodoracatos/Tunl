@@ -737,32 +737,29 @@ const BOMB_RADIUS = W * 0.30;
 // (see die()'s bypassShield branch); a future rewarded "continue" reuses the same timer.
 const HIT_INVULN_SEC = 1.4;
 
-// ── Onboarding: safe opening + training flights ──────────────────────
+// ── Onboarding: safe opening flight (score 0-100, every run) ─────────
 // Beginner feedback (2026-09-13, several players): "too hard, frustrating, deleted".
 // The measured cause is the control scheme, not the obstacles - a beginner's median
-// run was 1.0s of flight, i.e. they die to the ceiling/floor before the first
-// stalactite ever arrives. So the opening of every run is a safe zone: the corridor
-// opens up to the screen edges (world.js safeOpenAt, boundsAt only - placement via
-// boundsBase is untouched, so the shared daily cave is unchanged) and the walls bump
-// the ship back instead of killing it (update.js). Hazards stay lethal throughout.
-//
-// SAFE_START_WX applies to EVERY run, so it is fair by construction on the shared
-// leaderboard. A TRAINING run (a new player's first TRAINING_RUNS runs, while their
-// all-time best is still under TRAINING_MAX_BEST) stretches the zone to
-// TRAINING_SAFE_WX (~score 300) so the first minutes end in real distance instead of
-// the death screen - and in exchange a training run is kept out of every record:
-// no leaderboard submit, no best/daily best/top list/ghost, no score achievements or
-// score missions (update.js commitDeath). Shards and collected-coin missions still pay.
-// The best guard matters because totalRuns only exists since 11.0: an established
-// player's counter restarted at 0, but their best did not.
-// The corridor eases back over the last *_CLOSE_WX of the zone and the walls stay
-// soft until it has fully closed, so the handover can never kill on its own.
-const SAFE_START_WX          = 3000;   // ~score 50, every run
-const SAFE_CLOSE_WX          = 1200;
-const TRAINING_SAFE_WX       = 18000;  // ~score 300, training runs only
-const TRAINING_CLOSE_WX      = 2400;
-const TRAINING_RUNS          = 3;
-const TRAINING_MAX_BEST      = 100;
+// run was 1.0s of flight, i.e. they died to the ceiling/floor before learning the feel.
+// So the first ~100 points of EVERY run are a plain flight:
+// - the corridor opens up to the screen edges (world.js safeOpenAt, boundsAt only -
+//   placement via boundsBase is untouched) and the walls bump the ship back instead of
+//   killing it (update.js safeWallBump), easing shut over the last SAFE_CLOSE_WX;
+// - no stalactites, mines, boulders or cannon fire until HAZARD_START_WX, which leaves
+//   SAFE_HAZARD_GAP_WX (~1s) between the walls turning lethal and the first hazard.
+//   Coins and the warp portal still appear.
+// It applies identically to every player and every screen, so the shared daily cave and
+// leaderboard stay fair (test-cave.js mirrors these start cursors). All hazard offsets
+// here are fixed world-px, never W/H-derived, or the cave would fork per device.
+// Briefly (same day, never shipped) this was a 3-run off-record "training flight" with
+// normal runs safe only to score 50; unified on request once both had the same rules.
+const SAFE_START_WX       = 6000;   // ~score 100: walls turn lethal here
+const SAFE_CLOSE_WX       = 1800;
+const SAFE_HAZARD_GAP_WX  = 400;
+const HAZARD_START_WX     = SAFE_START_WX + SAFE_HAZARD_GAP_WX;   // first stalactite + mine
+const BOULDER_START_WX    = HAZARD_START_WX + 220;
+const CANNON_START_WX     = HAZARD_START_WX + 600;   // > CANNON_FIRE_LEAD at the W cap, so no shot inside the zone
+const WALLS_LIVE_HINT_RUNS = 3;     // "walls now deadly" notif only on a player's first runs
 const SAFE_OPEN_PAD          = H * (10 / _H_REF);   // wall sliver left at each screen edge
 
 // ── Onboarding: teaching RELEASE ─────────────────────────────────────
@@ -1016,9 +1013,12 @@ const HOLD_GATE_MAX_SEC = 2.25;
 // death-to-death loop was time they could act in (1.3s ramp + 1.0s flight + 0.9s
 // DEATH_INTERACTIVE_SEC). Strong players are unaffected either way -- at a 17.7s median
 // run the ramp is noise -- so this is purely a first-minutes fix.
+// Restored to 1.3s on 2026-09-13 on explicit request: the longer launch animation looked
+// better, and that was judged worth the lower interactive share for beginners. Don't cut
+// it again without asking.
 // Keep it a named constant: the ramp also gates scrollX (the lf*lf term below it) and
 // is the window the boot audio plays under, so a future change wants one place to edit.
-const START_RAMP_SEC = 0.5;
+const START_RAMP_SEC = 1.3;
 
 // Shards banked per calendar day are capped so unlocks track *days played*, not just
 // *coins collected* -- without this a single long grind session could bank enough shards

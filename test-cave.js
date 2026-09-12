@@ -40,11 +40,11 @@ const START_RUN = `
         rngMine   = makeRngStream(Math.imul(dayInt ^ 0x4D19, 0x85EBCA6B));
         rngCannon = makeRngStream(Math.imul(dayInt ^ 0xCA77, 0xC2B2AE35));
         scrollX = 0; gapBonus = 0; gapBonusVisual = 0; activeSkin = 0;
-        stalactites = []; nextStalWx = 1500; nextFallWx = 7800;
+        stalactites = []; nextStalWx = HAZARD_START_WX; nextFallWx = 7800;
         coins = []; nextCoinWx = 500; chicaneCoins = []; lastChicaneCoinWx = -Infinity;
-        mines = []; nextMineWx = 1800;
-        cannons = []; nextCannonWx = 6000; cannonShots = [];
-        boulders = []; nextBoulderWx = 5100;
+        mines = []; nextMineWx = HAZARD_START_WX;
+        cannons = []; nextCannonWx = CANNON_START_WX; cannonShots = [];
+        boulders = []; nextBoulderWx = BOULDER_START_WX;
         portals = []; nextPortalWx = PORTAL_START_WX;
         nextPoisonWx = worldPxForSec(POISON_INTERVAL_SEC * (0.7 + rngCoin() * 0.6), 0);
         nextBombWx   = worldPxForSec(BOMB_INTERVAL_SEC   * (0.7 + rngCoin() * 0.6), 0);
@@ -193,9 +193,9 @@ for (const day of DAYS) {
     const g = name => vm.runInContext(name, w);
     const REF_STAL_W = 956 * 0.030;      // placeStalW at its widest (progAt 0)
     // Widest a boulder can ever be, in reference-y px: _makeBoulderAt caps r at
-    // 0.42 * halfGap, and halfGap peaks at the wx=0 onboarding widen (0.34 + 0.09),
+    // 0.30 * halfGap, and halfGap peaks at the wx=0 onboarding widen (0.34 + 0.09),
     // wider than any deep chamber (2.1 * 0.163 = 0.342).
-    const MAX_BOULDER_R_REF = 0.42 * g('_H_REF') * 0.43;
+    const MAX_BOULDER_R_REF = 0.30 * g('_H_REF') * 0.43;
     const budget = [
         // [name, own horizon, largest retry offset, inspection radius]
         ['coins',   g('SPAWN_AHEAD_COIN'),    0,                                   REF_STAL_W + 956 * 0.009 * 2],

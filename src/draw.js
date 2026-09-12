@@ -925,17 +925,17 @@ function drawWorld() {
         ctx.globalAlpha = (c.fired ? 0.45 : 1.0) * warpFade;   // ghosted while phased through
         ctx.translate(sx, wallY);
 
-        // Barrel, aimed along the line the shot actually travels ON SCREEN. Until 12.0
-        // this was a hardcoded `dir * 0.55`, which put the barrel 58 degrees below
-        // horizontal while the shot leaves at roughly 14 - the gun visibly pointed
-        // somewhere the shell never went. systems.js stores the real unit vector on the
-        // cannon when it fires; before that we aim at the mid-span shot it is going to
-        // take (the rngCannon() span only swings the result by about 4 degrees, so the
-        // pre-fire aim is honest rather than decorative).
+        // Barrel, aimed along the shell's WORLD velocity - the tunnel frame the gun is
+        // bolted into, so muzzle, shell nose and exit line share one axis (systems.js
+        // updateCannonShots explains why the screen velocity looked broadside). The real
+        // vector is stored on the cannon when it fires; before that, aim at the mid-span
+        // shot it is about to take (rngCannon() only swings the span a little).
         const spanNom = (b.bot - b.top) * 0.725 * dir;
-        const lenNom  = Math.hypot(CANNON_FIRE_LEAD, spanNom);
-        const aimUX = c.aimUX !== undefined ? c.aimUX : -CANNON_FIRE_LEAD / lenNom;
-        const aimUY = c.aimUY !== undefined ? c.aimUY : spanNom / lenNom;
+        const vxNom   = scrollSpd() - CANNON_FIRE_LEAD / CANNON_SHOT_TRAVEL;
+        const vyNom   = spanNom / CANNON_SHOT_TRAVEL;
+        const lenNom  = Math.hypot(vxNom, vyNom);
+        const aimUX = c.aimUX !== undefined ? c.aimUX : vxNom / lenNom;
+        const aimUY = c.aimUY !== undefined ? c.aimUY : vyNom / lenNom;
         // The barrel is drawn along local +y scaled by dir, so rotate by the angle that
         // maps (0, dir) onto the aim vector.
         ctx.save();
@@ -991,11 +991,8 @@ function drawWorld() {
         if (sx < -20 || sx > W + 20) continue;
         ctx.save();
         ctx.globalAlpha = warpFade;   // ghosted while phased through
-        // Screen velocity, not the stored world-x one: the player is fixed at PX while
-        // the world scrolls past, so a shot whose world vx is POSITIVE still crosses the
-        // screen leftward. Rotating by atan2(s.vy, s.vx) pointed the sprite ~129 degrees
-        // away from the direction it was visibly moving (fixed in 12.0).
-        drawProjectile(sx, s.y, Math.atan2(s.vy, s.vx - scrollSpd()));
+        // World velocity, same frame as the barrel (see the cannon block above).
+        drawProjectile(sx, s.y, Math.atan2(s.vy, s.vx));
         ctx.restore();
     }
 
@@ -1967,19 +1964,6 @@ function drawHUD() {
         ctx.fillText(`${T.best}  ${best}`, W/2, hudY);
         ctx.shadowBlur  = 0;
         hudY += bestFsz * 0.85 + H * 0.01;
-    }
-
-    // Training flight tag (constants.js SAFE_START_WX doc), so a new player knows why
-    // this run's score won't show up on the leaderboard.
-    if (trainingRun && phase === 'play') {
-        const trFsz = FS * 0.025;
-        ctx.font        = `bold ${trFsz}px 'Courier New',monospace`;
-        ctx.fillStyle   = 'rgba(120,230,170,0.92)';
-        ctx.shadowColor = 'rgba(0,0,0,0.85)';
-        ctx.shadowBlur  = 4;
-        ctx.fillText(T.training, W/2, hudY);
-        ctx.shadowBlur  = 0;
-        hudY += trFsz * 0.85 + H * 0.01;
     }
 
     // Next skin nudge - faint pulsing hint when this run's banked-so-far shards would
@@ -3963,11 +3947,6 @@ function drawDeathScreen() {
         // each time the slot below happened to hold something else. Dropping the
         // redundant line removes the whole collision class instead of chasing it
         // banner by banner.
-    } else if (trainingRun) {
-        sh(4, `rgba(40,140,90,${a * 0.45})`);
-        ctx.font      = `bold ${FS*0.030}px 'Courier New',monospace`;
-        ctx.fillStyle = `rgba(130,235,175,${a * 0.95})`;
-        ctx.fillText(T.training, LC, H * 0.495);
     } else if (best > 0) {
         sh(4, `rgba(60,90,180,${a * 0.45})`);
         ctx.font      = `bold ${FS*0.026}px 'Courier New',monospace`;

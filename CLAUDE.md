@@ -170,7 +170,7 @@ Three fixes, all load-bearing:
   rng stream no longer depends on how many offsets were rejected.
 - `_makeBoulderAt` **tests the contract instead of a proxy for it**: both passes must
   survive the stalactites that actually overlap the rock, measured against the circle's
-  half-chord at each spike's own x, requiring >= 1.1 player diameters each. A spike near
+  half-chord at each spike's own x, requiring >= 1.3 player diameters each (1.1 before the 2026-09-13 shrink). A spike near
   the rock's edge barely eats into a pass, which the old proxy could not tell apart from
   a spike through its middle. Measured after: **0 sealed passes** (was 12 of 18), first
   boulder back at score 85 on 7 of 8 day-seeds, cannon density unchanged (27.5 per 60000
@@ -282,8 +282,8 @@ collision and render always agree. Bullets/bombs kill a falling one like any sta
 
 ### Boulders
 Large static rounded rock (`src/systems.js` `makeBoulder`/`maintainBoulders`, from
-world-x 5100 / ~score 85, `boulderSpacing()` in `world.js` - a sparse set-piece cadence,
-floor 2400px). Unlike a mine it is telegraphed by sheer size and **never spans the corridor**: radius is bounded (`R <= halfGap - 2*PR`)
+world-x 6620 / ~score 110 since the 2026-09-13 safe opening flight (was 5100 / ~85), `boulderSpacing()` in `world.js` - a sparse set-piece cadence,
+floor 2400px). Unlike a mine it is telegraphed by sheer size and **never spans the corridor**: radius is bounded (`R <= min(halfGap - 2.6*PR, 0.30*halfGap)`)
 and the centre is nudged a seeded amount toward one wall, so there is always a pass above
 AND below - one easy, one a squeeze. It asks "commit up or down" rather than "react".
 Circle-circle collision (`update.js`), same shield-absorb + shove-clear as a mine. Bombs
@@ -301,9 +301,15 @@ by score 150 on the last. Same reasoning moved falling stalactites 12000 -> 7800
 **Don't push this content back out past ~score 170 without new leaderboard data showing
 players actually get there.**
 
+**Shrunk 2026-09-13 on player feedback ("verdammt schwer zu umfliegen")**: radius cap
+0.42 -> 0.30 of halfGap, pass margin 2 -> 2.6 PR (placement and stalactite veto alike).
+Measured over 8 day-seeds to wx 40000: rock diameter 1.91 -> 1.36 player diameters,
+narrow pass 1.22 -> 1.52, wide pass 1.92 -> 2.20, count 64 -> 71. A 3.0 PR margin was
+tried and rejected - it dropped the count to 29 (deep boulders stopped fitting).
+
 ### Cannons
 Rare wall-mounted artillery turret (`src/systems.js` `makeCannon`/`maintainCannons`/
-`updateCannonShots`), first appearing at wx=6000 (score ~100) and spaced far apart
+`updateCannonShots`), first appearing at wx=7000 (score ~117, was 6000 before the 2026-09-13 safe opening flight) and spaced far apart
 (`cannonSpacing()` in `src/world.js`, floor 1200px vs. every other obstacle's sub-300px
 floor) - a rare set-piece, not a recurring hazard. Each cannon is inert (not solid, can't
 be flown into) until the player closes to within `CANNON_FIRE_LEAD` world-px, at which
@@ -314,28 +320,24 @@ angle (vs. the player's always-horizontal bullets) tells them apart. Same hitbox
 trade-offs and shield-absorb behavior as mine collision; player bullets destroy a shot
 in flight the same way they destroy a mine.
 
-**The barrel aims where the shot actually goes** (12.0). Two separate bugs made it
-point somewhere else entirely, both visual only:
-- The barrel was pinned at a hardcoded `dir * 0.55` rad, i.e. 58 degrees below
-  horizontal, while the shot leaves at roughly 14 - the gun pointed steeply down-left
-  and the shell went nearly straight left. It now aims along the shot's real on-screen
-  unit vector, which `updateCannonShots` stores on the cannon (`c.aimUX/aimUY`) when it
-  fires; before firing it aims at the mid-span shot it is about to take, which the
-  `rngCannon()` span only swings by ~4 degrees.
-- The projectile sprite was rotated by `atan2(s.vy, s.vx)` on the stored **world-x**
-  velocity. The player is fixed at `PX` while the world scrolls past, so a shot whose
-  world `vx` is positive still crosses the screen leftward: the sprite pointed
-  down-RIGHT while the shot travelled LEFT, 129 degrees wrong. It now uses the screen
-  velocity (`s.vx - scrollSpd()`), which is also correct during slow-time/warp since
-  both terms scale by the same factor.
+**Barrel, shell nose and exit line share one axis - the TUNNEL frame** (12.0, do not
+switch to screen velocity). The barrel used to be pinned at a hardcoded `dir * 0.55`
+rad while the sprite rotated by world velocity, so gun and shell disagreed. A first
+fix aimed both along the shot's **screen** velocity (`s.vx - scrollSpd()`): each looked
+right in isolation, but the gun is bolted to the tunnel and scrolls left faster than its
+own shell, so the shell visibly peeled away from the muzzle almost broadside to its nose
+(~118 degrees off, reported from play). Now `updateCannonShots` aims everything along the
+shell's **world** velocity (`c.aimUX/aimUY`, sprite `atan2(s.vy, s.vx)`); before firing,
+`draw.js` aims at the nominal mid-span shot. Since `scrollSpd()` outruns the closing
+speed at every cannon depth, that axis leans down-and-away from the player - the player
+flies into the falling shell. Measured: barrel = nose = motion relative to the gun at
+every sampled cannon (49/-32/23/20 degrees).
 
-The shot also spawns at the barrel's **muzzle** rather than at the wall pivot, so it
-leaves the end of the barrel instead of appearing beside it. The remaining travel is
-shortened by exactly the barrel length (`CANNON_BARREL_LEN`, shared between `draw.js`
-and `systems.js` so they cannot drift), which slides the start along the same line and
-leaves both the arrival time (`CANNON_SHOT_TRAVEL`) and the endpoint untouched -
-verified at 1.448s against a 1.45 target, so the warning window tuned just above does
-not move.
+The shot spawns at the barrel's **muzzle** (`CANNON_BARREL_LEN`, shared between
+`draw.js` and `systems.js`), sliding the start along that same world line and slowing
+the shell by exactly the barrel length over the flight, so the endpoint and arrival time
+(`CANNON_SHOT_TRAVEL`) match a pivot launch - measured 1.43-1.45s to reach the player
+against the 1.45 target, so the tuned warning window does not move.
 
 One invariant this relies on, checked rather than assumed: `rngCannon()` is drawn both
 by `makeCannon` (at the spawn horizon) and by `updateCannonShots` (at fire time) on the
@@ -776,7 +778,7 @@ The values are FLOORS, not the resulting cadence - the type still has to win the
 weighted roll afterwards, which adds ~4-6s deep. Pick a floor by subtracting that from
 the cadence you want, then re-measure.
 
-Mines (bombs) first spawn at wx=1800 (score ~30); shield coins unlock at score ~34 so the player faces mines briefly without protection - intentional.
+Mines (bombs) first spawn at wx=6400 (score ~107, after the safe opening flight - was 1800 / ~30). Shield coins unlock at score ~34, so a player now has shields available before meeting the first mine.
 
 Gold's share isn't just "whatever's left after the other types' shares" - it also
 gets an explicit extra cut as a run goes deeper (`GOLD_DEEP_DECAY` in
@@ -1074,29 +1076,27 @@ the live ship on every pitch change.
 
 ### Onboarding
 
-Every run has **no stalactites or stalagmites before score ~25**: `startPlay` sets
-`nextStalWx = STAL_START_WX` (`lifecycle.js`, world-x 1500 = ~4-9s of clean tunnel
-depending on screen width), and `maintainStalactites()` (`systems.js`) does nothing until
-the scroll reaches it. Because it is a fixed world position the first one is always born
-off the right edge and scrolls into view - it never pops in mid-screen. The opening
-stretch is where a new player's first lesson is the feel of thrust-vs-gravity rather than
-the death screen. (Coins still start at their normal distance - they teach collection and
-can't kill anyone. Mines start at world-x 1800, just after the first stalactite.)
+**The first ~100 points of every run are a plain, safe flight** (2026-09-13, from
+beginner feedback "too hard, frustrating, deleted it"; `SAFE_START_WX` doc block in
+`constants.js`, `safeOpenAt()`/`wallsSafe()` in `world.js`, `safeWallBump()` in
+`update.js`). Until world-x 6000 the corridor is pushed out to the screen edges
+(`boundsAt()` only, never `boundsBase()`) and **walls bump the ship back instead of
+killing it**, easing shut over the last 1800px. **No stalactites, mines, boulders or
+cannon fire** until `HAZARD_START_WX` (6400, ~1s after the walls turn lethal); boulders
+from 6620, cannons from 7000 so no shot lands inside the zone. Coins and the warp portal
+still appear. The "walls now deadly" notif fires as the corridor closes, only on a
+player's first `WALLS_LIVE_HINT_RUNS` runs. Near-miss bonus and the red danger flash are
+off while walls are soft (no wall-riding bonus farm). Every run counts normally.
 
-**Safe opening zone + training flights (2026-09-13, beginner "too hard, deleted it"
-feedback)** (`SAFE_START_WX` doc block in `constants.js`, `safeOpenAt()`/`wallsSafe()`
-in `world.js`, `safeWallBump()` in `update.js`). Every run opens with the corridor
-pushed out to the screen edges (`boundsAt()` only, never `boundsBase()`, so the shared
-cave and `test-cave.js` are untouched) and **walls that bump instead of kill** until
-world-x 3000 (~score 50), closing over the last 1200px. Hazards stay lethal. A
-**training run** - a player's first 3 runs while their all-time `best` < 100 (the best
-guard exists because `totalRuns` only started counting in 11.0) - stretches that to
-world-x 18000 (~score 300, ~32s) with a "walls now deadly" notif as it closes, and is
-kept out of every record: no leaderboard submit, no best/daily best/top list/ghost, no
-score achievements or score missions. Shards and coin missions still pay. Near-miss
-bonus and the red danger flash are off while walls are soft (no wall-riding farm).
+Fair by construction: identical for every player and screen, all offsets are fixed
+world-px, and `test-cave.js` mirrors the start cursors. Consequences worth knowing:
+every score now starts with ~100 nearly-free points, so the leaderboard baseline shifted
+up, and hazard content that sat below score 100 (first stalactite 25, mine 30, boulder
+85, cannon 100) moved just past it - the old leaderboard audit numbers (median daily best
+70) predate this. The same day it was briefly a 3-run off-record "training flight" with
+normal runs safe only to score 50; unified on request once both had the same rules.
 
-**The launch ramp is 0.5s** (`START_RAMP_SEC`, `constants.js`, applied in `update.js`).
+**The launch ramp is 1.3s** (`START_RAMP_SEC`, `constants.js`, applied in `update.js`).
 The run opens with the ship flying up into frame and levelling out, with `py`/`vy`/
 `shipPitch` driven by the ramp rather than by the player - so it is time the player
 cannot act in. Held at 1.3s through 11.0; cut in 12.0 after the same red-team replay
@@ -1104,8 +1104,10 @@ measured what that costs the audience the onboarding exists for. A beginner's me
 is **1.0s of flight**, so the ramp was longer than the game, and the full death-to-death
 loop (1.3s ramp + 1.0s flight + 0.9s `DEATH_INTERACTIVE_SEC`) was only **31%** time the
 player could act in. At 0.5s that is ~42%. Strong players are unaffected either way - at
-a 17.7s median run the ramp is noise - so this is purely a first-minutes fix. Don't push
-it back up without re-measuring the interactive share, not the animation's own look.
+a 17.7s median run the ramp is noise - so this is purely a first-minutes fix. **Restored
+to 1.3s on 2026-09-13 on the user's explicit request** - the longer launch animation looked
+better, and that was chosen over the ~42% interactive share. Don't cut it again without
+asking.
 
 On top of that, **every run opens with a level glide**: gravity is withheld until the
 player's first hold press or `HOLD_GATE_MAX_SEC` (`constants.js`, 2.25s), so the ship

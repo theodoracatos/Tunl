@@ -386,10 +386,11 @@ function update(dt) {
         }
     }
 
-    // Training flight: say it out loud when the corridor starts closing in, since
-    // the walls turning lethal ~300 points into the run would otherwise be a surprise.
+    // Safe opening flight: on a player's first few runs, say it out loud when the
+    // corridor starts closing in - walls turning lethal ~100 points in would otherwise
+    // be a surprise. Veterans know, so it stays quiet for them.
     safeBumpT = Math.max(0, safeBumpT - dt);
-    if (trainingRun && !wallsLiveShown && scrollX + PX >= safeEndWx - safeCloseWx) {
+    if (totalRuns <= WALLS_LIVE_HINT_RUNS && !wallsLiveShown && scrollX + PX >= safeEndWx - safeCloseWx) {
         wallsLiveShown = true;
         pushNotif(PX + PR * 3, py - H * 0.10, 1.8, T.wallsLive, [255, 120, 70]);
         window.webkit?.messageHandlers?.haptic?.postMessage('medium');
@@ -404,15 +405,15 @@ function update(dt) {
     // Skill achievements (constants.js doc comments above each _ACH_ const): all three
     // are live/per-frame checks with a one-shot guard, since their conditions (score
     // rising, flightClock rising) would otherwise stay true and re-fire every frame.
-    if (!trainingRun && !sprintAchFired && score >= SPRINT_ACH_SCORE && flightClock <= SPRINT_ACH_MAX_SEC) {
+    if (!sprintAchFired && score >= SPRINT_ACH_SCORE && flightClock <= SPRINT_ACH_MAX_SEC) {
         sprintAchFired = true;
         window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: SPRINT_ACH_ID });
     }
-    if (!trainingRun && !noHitAchFired && score >= NO_HIT_ACH_SCORE && runHitCount === 0) {
+    if (!noHitAchFired && score >= NO_HIT_ACH_SCORE && runHitCount === 0) {
         noHitAchFired = true;
         window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: NO_HIT_ACH_ID });
     }
-    if (!trainingRun && !noBonusAchFired && score >= NO_BONUS_ACH_SCORE && runCoinsByType.gold === 0) {
+    if (!noBonusAchFired && score >= NO_BONUS_ACH_SCORE && runCoinsByType.gold === 0) {
         noBonusAchFired = true;
         window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: NO_BONUS_ACH_ID });
     }
@@ -893,10 +894,7 @@ function maybeRequestReview(runScore, hadPriorBest) {
 function commitDeath() {
     prevRunScore = lastRunScore;
     lastRunScore = score;
-    // Training flight (constants.js SAFE_START_WX doc): the long safe zone makes its
-    // score incomparable, so it stays out of every record and leaderboard below.
-    const _counts = !trainingRun;
-    newBest = _counts && score > best;
+    newBest = score > best;
     // Capture whether a *prior* best existed before this run overwrites it below --
     // maybeRequestReview() needs to tell "beat an existing record" from "this is
     // literally the player's first completed run" (best still 0 going in), which
@@ -905,7 +903,7 @@ function commitDeath() {
     if (!_hadPriorBest) window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: 'tunl_ach_first_flight' });
     // "Pacifist" (constants.js PACIFIST_ACH_SCORE/PACIFIST_ACH_ID): reached the
     // difficulty plateau this run without collecting a single coin.
-    if (_counts && score >= PACIFIST_ACH_SCORE && runCoins === 0) {
+    if (score >= PACIFIST_ACH_SCORE && runCoins === 0) {
         window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: PACIFIST_ACH_ID });
     }
     if (newBest) { best = score; localStorage.setItem('tunnel_best', best); }
@@ -918,11 +916,11 @@ function commitDeath() {
     // rather than a fresh constant, same floor REVIEW_MIN_SCORE reuses it
     // for - the worker re-checks this independently regardless (never trust
     // the client on something that grants value).
-    if (_counts && !_hadPriorBest && score >= CONTINUE_MIN_SCORE && typeof submitReferral === 'function') {
+    if (!_hadPriorBest && score >= CONTINUE_MIN_SCORE && typeof submitReferral === 'function') {
         submitReferral(score);
     }
     runsWithoutPB = newBest ? 0 : runsWithoutPB + 1;
-    newDailyBest = _counts && score > dailyBest;
+    newDailyBest = score > dailyBest;
     if (newDailyBest) { dailyBest = score; localStorage.setItem('tunnel_daily_best', dailyBest); }
     // Ghost: today's best run becomes the thing the next run races. Keyed to the day the
     // run was actually played (recomputed here, not read from state.js's page-load
@@ -976,7 +974,7 @@ function commitDeath() {
             }
         }
     }
-    if (_counts && score > 0) {
+    if (score > 0) {
         top5 = [...top5, score].sort((a, b) => b - a).slice(0, 5);
         localStorage.setItem('tunnel_top5', JSON.stringify(top5));
         window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'submit', score });
@@ -1059,10 +1057,10 @@ function commitDeath() {
     dailyMissionStats.green      += runCoinsByType.green;
     dailyMissionStats.orange     += runCoinsByType.orange;
     dailyMissionStats.bomb       += runCoinsByType.bomb || 0;
-    dailyMissionStats.dist       += _counts ? score : 0;
+    dailyMissionStats.dist       += score;
     dailyMissionStats.nearMisses += runNearMisses;
     dailyMissionStats.bestCombo   = Math.max(dailyMissionStats.bestCombo, runMaxCombo);
-    if (_counts) dailyMissionStats.bestScore = Math.max(dailyMissionStats.bestScore, score);
+    dailyMissionStats.bestScore   = Math.max(dailyMissionStats.bestScore, score);
     dailyMissionStats.runs        = dailyRuns;
     missionRewardWon = 0;
     for (let m = 0; m < dailyMissionIdx.length; m++) {
@@ -1109,7 +1107,7 @@ function commitDeath() {
     // (draw.js) -- not the real date, so a web ?d= replay of a past day's cave
     // still counts for that day's world. Native-only in effect (the bridge is a
     // no-op on web); the localStorage write is harmless there.
-    if (_counts && score >= CONTINUE_MIN_SCORE) {
+    if (score >= CONTINUE_MIN_SCORE) {
         const _planetIdx = weekdayIndex(_tunlActiveDate());
         if (!(planetsFlown & (1 << _planetIdx))) {
             planetsFlown |= (1 << _planetIdx);
