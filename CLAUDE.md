@@ -1184,7 +1184,11 @@ because `ACTION_SEND` requires a `content://` URI, not raw bytes.
 The death screen's right column leads with the player's standing on the daily
 leaderboard plus the movement since their last run, and the local list below it shrinks
 to 3 rows to pay for it. With no rank available (offline, no Game Center / Play Games
-session, first submit still in flight) the old 5-row layout renders unchanged.
+session, first submit still in flight) the slot takes the all-time best instead. The list
+is three rows either way since 13.0: five rows plus that BEST block is the tallest this
+column gets, and it overlapped the button row on a real 17 Pro Max. When this run placed
+outside the three, the last row is given to it with its real rank number, so "where did I
+land" still has an answer.
 
 **Hidden below `WORLD_RANK_MIN_FIELD` participants** (`constants.js`, currently 50, via
 the shared `worldRankWorthShowing()` used by both the death screen and the title
@@ -1204,6 +1208,64 @@ at auth to prime the first death of a session. The delta is computed in
 That local list is `top5`, which is **wiped at the UTC day boundary** (`lifecycle.js`),
 so it is labelled `T.todayTop`, never "TOP 5" - the old label made it look like lost data
 every morning.
+
+### Death screen ("Debriefing", 13.0 - do not revert to the 12.0 layout)
+
+Rebuilt 2026-09-13 on the report that the screen had looked the same since version 1 and
+read as dated. It was not ugly, it was **systemless**: 491 lines setting 13 font sizes and
+39 hand-mixed colours at 27 hardcoded H-fractions, every line individually centred on its
+own column anchor (so both edges of both columns frayed with text length), with nine
+`measureText` shrink-to-fit escapes papering over the missing grid. Five rules replace
+that, and each is load-bearing:
+
+1. **Five type steps** (`DS_HERO`/`DS_BIG`/`DS_ROW`/`DS_TXT`/`DS_LBL`), not thirteen.
+2. **One accent, and it is the day's own rock** (`getTheme().wallBase`). The panel used to
+   be hardcoded blue on all seven days - the one screen that closes out the daily run was
+   the only surface in the game that did not know which day it was, while world, title
+   screen and share card all tint from `WEEKDAY_PALETTES`. Gold stays reserved for shards,
+   green for a positive rank delta, and **red is now only the death marker**: the old red
+   "TOT" headline was the largest thing on screen while saying the one thing the player had
+   just watched happen, and it competed with `drawDeathFreeze()`'s reticle, which is what
+   actually points at the cause. The headline is gone and the score is the hero. A record
+   pulses in the day accent rather than cycling the whole hue wheel (that treatment stays
+   on the title screen, where it does not have to belong to a palette).
+3. **Left-aligned to two column rules** (L = the run, RX = the world); numbers sharing a
+   column are right-aligned to R so they form a column instead of drifting with digit count.
+4. **Buttons inside the card** (it used to end at `H*0.82` with the row floating at
+   `H*0.905`, which is why it read as something pasted over the game), with PLAY AGAIN
+   filled in the day colour and MENU/SHARE as quiet ghosts.
+5. **The score gets a scale.** A bare number never answered "was that good?" - the rail
+   under it runs to the all-time best, or, when the run is nowhere near it, to the next
+   milestone (`milestoneStep()`), which is the bar a short run is actually playing against.
+   Median real run is ~22 points, so that is the common case, not an edge case. Whichever
+   of the two the rail is not naming, the right column or the stats line still names.
+
+**Every vertical step is `max(H-fraction, type-derived)`** (the `step()` helper). This is
+the one structural hazard of this screen and it is not defensive padding: `FS` is keyed to
+`UI_H`, which has a **floor of 600** (`constants.js`), so on a short landscape phone
+(H = 371 on a 12 mini) every font stays full size while every H-fraction shrinks by 15%.
+Pure H-fractions put a 25px list row into a 17px slot at that size - measured, not
+hypothetical, and it is the same collision class that produced report after report on the
+old layout. Anything added here must follow the same rule.
+
+**The flight-profile band yields when space runs out.** `drawRunProfile()` (share.js) was
+once tried here as a faint full-panel backdrop and correctly rejected - as wallpaper behind
+text it is noise. Framed, in the left column under the chips, it is the opposite: the only
+thing on the screen that belongs to this run alone. It sits in the left column and not
+across the full width because the right column (rank + three rows + stats) reaches `H*0.67`
+at 952x436 and would leave it 0px. It degrades in three steps - full band, band without its
+label, no band - so a run that earns every reward at once pushes the band out instead of
+overlapping it.
+
+**Empty state:** only list rows that exist are drawn, and the row count is additionally
+clamped against the button row's top edge, which is computed before either column draws. The old layout always drew five, so
+the common case rendered as four placeholder dashes under one number - an emptied-out full
+state rather than a designed empty one.
+
+**Zero new i18n strings**: the rebuild reuses keys the screen or the share card already had
+(`T.level`/`T.planet`/`T.flown`/`T.best`/`T.todayTop`/`T.worldRank`). Two shrink-to-fit
+checks survive on purpose - world rank and button labels, the two strings that genuinely
+vary without bound.
 
 ### Ghost run
 
@@ -1350,11 +1412,13 @@ the forced interstitial, not a video the player actively taps):
 - **boundsBase for coin placement**: Coins placed ignoring current bonus so they're always reachable even without a bonus. Never use `boundsAt()` for coin placement.
 - **Triangle-circle collision**: Stalactites use proper geometric collision matching the visual triangle, not AABB. Changing to AABB would make invisible collisions at the edges.
 - **No em dashes (-)** anywhere in code, comments, or UI text. Use hyphen-minus (-) instead.
-- **The death screen's left-column banner is one merged line, not three branches**: ship
-  unlock, mastery level-up and the shard payout used to be three `if`s all targeting
-  `H*0.78` and all suppressing each other, so a good run could earn all three and be shown
-  one. There is genuinely only one slot there (panel edge below, button row below that),
-  so the parts concatenate onto that line and shrink to fit. Don't split them back out.
+- **The death screen's rewards are a wrapping chip row, not stacked lines**: ship unlock,
+  mastery level-up, mission payout and shards used to be three `if`s all targeting `H*0.78`
+  and all suppressing each other, so a good run could earn all three and be shown one; the
+  fix after that concatenated them onto one shrink-to-fit line. Since the 13.0 rebuild they
+  are chips that wrap within the left column, so every reward a run earned is visible at
+  once. Ship unlock still outranks a mastery level-up (two ship-coloured chips at once reads
+  as a glitch); nothing else suppresses anything.
 - **XML comments can't contain `--`**: the no-em-dash rule means `--` is used constantly
   in JS comments, but it is illegal inside an XML comment. `AndroidManifest.xml` and
   `res/xml/*.xml` use single hyphens or a colon instead.

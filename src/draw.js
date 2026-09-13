@@ -4030,494 +4030,515 @@ function drawTitleScreen() {
     }
 }
 
+// ── Death screen ("Debriefing", 13.0) ─────────────────────────────────────────
+// Rebuilt 2026-09-13 on the report that this screen had looked the same since
+// version 1 and read as dated. It was not ugly, it was SYSTEMLESS: 491 lines
+// setting 13 font sizes and 39 hand-mixed colours at 27 hardcoded H-fractions,
+// with every line individually centred on its own column anchor (so both edges of
+// both columns frayed as text lengths changed) and nine measureText shrink-to-fit
+// escapes papering over the missing grid. Five rules replace that, and each one is
+// load-bearing -- reintroducing any single one brings the old look back:
+//
+//  1. FIVE type steps (DS_HERO..DS_LBL), not thirteen. Hierarchy comes from size
+//     AND role, never from size alone.
+//  2. ONE accent, and it is the DAY'S OWN ROCK (getTheme().wallBase). The panel
+//     used to be hardcoded blue (rgba(80,110,190)) on all seven days: the one
+//     screen that closes out the daily run was the only surface in the game that
+//     did not know which day it was, while the world, the title screen and the
+//     share card all tint themselves from WEEKDAY_PALETTES. Gold stays reserved for
+//     shards, green for a positive rank delta, and red is now used ONLY by the
+//     death marker inside the flight profile -- the old red "TOT" headline was the
+//     largest thing on screen while telling the player the one thing they had just
+//     watched happen, and it competed with drawDeathFreeze()'s reticle, which is
+//     what actually points at the cause. The headline is gone; the score is the
+//     hero, which is what the player is here for.
+//  3. Text is LEFT-aligned to two column rules (L for the run, RX for the world),
+//     never centred per line. Numbers that share a column are RIGHT-aligned to R so
+//     they form a real column instead of drifting with digit count.
+//  4. The buttons live INSIDE the card. They used to float below it (card ended at
+//     H*0.82, the row sat at H*0.905), which is the main reason the card read as
+//     something pasted over the game rather than as the screen itself. The primary
+//     action is filled in the day colour; MENU/SHARE are quiet ghosts.
+//  5. The score gets a SCALE. A bare number never answered "was that good?" -- the
+//     rail under it runs to the all-time best, or, for a run nowhere near it, to
+//     the next milestone (milestoneStep(), the bar a weak run is actually playing
+//     against). Median real run is ~22 points, so that second case is the common
+//     one, not an edge case.
+//
+// Two shrink-to-fit checks survive on purpose (world rank, button labels): those
+// two strings genuinely vary without bound (rank grows with the player base,
+// translations run long). The other seven are gone because the grid now owns the
+// widths.
+//
+// Deliberately NOT changed: every piece of data shown, the fade timing, the
+// deadT > 0.75 button gate, _homeBtnRect/_shareBtnRect/_playBtnRect, and the i18n
+// surface -- this redesign adds ZERO new strings, it only reuses keys this screen
+// or the share card already had (T.level/T.planet/T.flown/T.pb from the card).
 function drawDeathScreen() {
-    ctx.textBaseline = 'middle';
-    ctx.textAlign    = 'center'; // was implicitly inherited via the now-removed
-                                  // run-profile block's cleanup; set explicitly here
-                                  // instead of relying on whatever the previous
-                                  // frame happened to leave it as
-    // Offset by the freeze frame (constants.js DEATH_REPLAY_SEC). The button row below
-    // (deadT > 0.75) and input.js's DEATH_INTERACTIVE_SEC gate are deliberately NOT
-    // offset: 0.40 + the 0.15s fade still lands well inside the 0.9s the death screen
-    // was already unskippable for, so this beat is free -- it costs the player no extra
-    // wait and no extra tap, it just stops the panel painting over the fatal frame.
-    const a  = Math.min(1, Math.max(0, deadT - DEATH_REPLAY_SEC) * 6.5);
-    const sh = (blur, col = 'rgba(0,0,0,0.90)') => { ctx.shadowColor = col; ctx.shadowBlur = blur; };
+    // Offset by the freeze frame (constants.js DEATH_REPLAY_SEC). The button row
+    // below (deadT > 0.75) and input.js's DEATH_INTERACTIVE_SEC gate are deliberately
+    // NOT offset: 0.40 + the 0.15s fade still lands well inside the 0.9s the death
+    // screen was already unskippable for, so this beat costs the player no extra wait
+    // and no extra tap, it just stops the panel painting over the fatal frame.
+    const a = Math.min(1, Math.max(0, deadT - DEATH_REPLAY_SEC) * 6.5);
     if (a <= 0) return;
 
-    // Dark overlay
+    // ── tokens ────────────────────────────────────────────────────────────────
+    const DS_HERO = FS * 0.115;   // the score, and nothing else
+    const DS_BIG  = FS * 0.046;   // world rank
+    const DS_ROW  = FS * 0.036;   // list values
+    const DS_TXT  = FS * 0.026;   // body, buttons
+    const DS_LBL  = FS * 0.020;   // uppercase labels, letterspaced
+
+    const day  = getTheme().wallBase;
+    const DAY  = al => `rgba(${day[0]},${day[1]},${day[2]},${a * al})`;
+    const INK  = al => `rgba(232,238,255,${a * (al === undefined ? 1    : al)})`;
+    const DIM  = al => `rgba(168,180,212,${a * (al === undefined ? 0.82 : al)})`;
+    const FNT  = al => `rgba(132,146,184,${a * (al === undefined ? 0.62 : al)})`;
+
+    const sh   = (blur, col) => { ctx.shadowColor = col || 'rgba(0,0,0,0.90)'; ctx.shadowBlur = blur; };
+    const font = (sz, w) => { ctx.font = `${w || 'bold'} ${sz}px 'Courier New',monospace`; };
+    const lbl  = (s, x, y, col, align) => {
+        font(DS_LBL);
+        // Letterspacing is what makes an all-caps label read as a label rather than as
+        // shouted body text. Guarded: ctx.letterSpacing is unsupported on older
+        // WKWebView, where it degrades to normal tracking rather than throwing.
+        try { ctx.letterSpacing = `${Math.max(1, DS_LBL * 0.11)}px`; } catch (e) {}
+        ctx.textAlign = align || 'left';
+        ctx.fillStyle = col || FNT();
+        sh(0);
+        ctx.fillText(s, x, y);
+        try { ctx.letterSpacing = '0px'; } catch (e) {}
+        ctx.textAlign = 'left';
+    };
+    const hair = (x, y, w, al) => {
+        sh(0);
+        ctx.fillStyle = `rgba(255,255,255,${a * (al === undefined ? 0.07 : al)})`;
+        ctx.fillRect(x, y, w, 1);
+    };
+
+    // Every vertical step on this screen is max(H-fraction, type-derived). That is not
+    // belt-and-braces: FS is keyed to UI_H, which has a FLOOR of 600 (constants.js), so
+    // on a short landscape phone (H = 371 on a 12 mini) the type stays full size while
+    // every H-fraction shrinks by 15%. Pure H-fractions put a 25px list row into a 17px
+    // slot at that size -- measured, not hypothetical -- and that is the same collision
+    // class that produced report after report on the old layout. The fraction sets the
+    // rhythm on a tall screen, the type floor keeps it legible on a short one.
+    const step = (frac, sz, mul) => Math.max(H * frac, sz * mul);
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+
+    // ── panel ─────────────────────────────────────────────────────────────────
+    sh(0);
     ctx.fillStyle = `rgba(4,4,14,${a * 0.82})`;
     ctx.fillRect(0, 0, W, H);
 
-    // Panel card backdrop. Margins were 0.07/0.07 on every side (14% of W and H spent
-    // on empty margin, on top of the LC/RC columns' own inset from the panel edge) --
-    // direct feedback that there was too much unused space top/left. Tightened to
-    // 0.03/0.04; LC/RC shift outward by the same amount reclaimed on each side so the
-    // content actually uses the extra room instead of just sitting in a bigger frame.
+    const PX0 = W * 0.030, PY0 = H * 0.048, PW = W * 0.940, PH = H * 0.904;
+    const L   = PX0 + W * 0.028, R = PX0 + PW - W * 0.028;
+    const RX  = PX0 + PW * 0.575;          // second column rule
+    // The button row's top edge is the floor for BOTH columns, so it is computed before
+    // either of them draws. Nothing above may cross it: the right column clamps its row
+    // count against it and the flight band shrinks or disappears against it.
+    const bhBtn  = Math.max(H * 0.120, DS_TXT * 2.2);
+    const btnTop = PY0 + PH - H * 0.040 - bhBtn;
+    const bandGap = step(0.026, DS_LBL, 0.9);
+
+    ctx.fillStyle = `rgba(6,8,20,${a * 0.74})`;
+    ctx.beginPath(); ctx.roundRect(PX0, PY0, PW, PH, 12); ctx.fill();
+    sh(12, DAY(0.26));
+    ctx.strokeStyle = DAY(0.40);
+    ctx.lineWidth   = 1.5;
+    ctx.beginPath(); ctx.roundRect(PX0, PY0, PW, PH, 12); ctx.stroke();
     sh(0);
-    ctx.fillStyle = `rgba(6,8,22,${a * 0.64})`;
-    ctx.beginPath();
-    ctx.roundRect(W * 0.03, H * 0.04, W * 0.94, H * 0.78, 10);
-    ctx.fill();
-    // Soft glow on the border instead of a flat 1px line -- the rest of the game's
-    // panels/buttons all carry a shadowBlur, so a bare stroke here was the one panel
-    // that looked printed rather than lit.
-    sh(10, `rgba(90,130,230,${a * 0.35})`);
-    ctx.strokeStyle = `rgba(80,110,190,${a * 0.65})`;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    sh(0);
 
-    // The run-profile backdrop (share.js drawRunProfile) used to render faintly
-    // across the panel here -- removed per feedback that it read as a strange
-    // background overlay (its lit/dark corridor fill sits as a box-shaped tint
-    // right behind the WELT/HEUTE TOP text), not as texture.
+    // ── eyebrow: which cave this was ──────────────────────────────────────────
+    const yEye = PY0 + step(0.060, DS_LBL, 1.9);
+    lbl(`${T.level} ${LEVEL_NUM}  ·  ${WORLD_NAME.toUpperCase()}`, L, yEye, DAY(0.90));
+    lbl(`${WEEKDAY_PALETTES[weekdayIndex(_tunlActiveDate())].planet.toUpperCase()}  ·  ${T.runs} ${dailyRuns}`,
+        R, yEye, FNT(), 'right');
+    const yHair = yEye + step(0.020, DS_LBL, 0.85);
+    hair(L, yHair, R - L, 0.08);
 
-    const LC = W * 0.2425;
-    const RC = W * 0.71;
-
-    // Vertical separator
-    const sepGrd = ctx.createLinearGradient(0, H * 0.09, 0, H * 0.82);
-    sepGrd.addColorStop(0,   `rgba(55,75,140,0)`);
-    sepGrd.addColorStop(0.2, `rgba(70,95,170,${a * 0.50})`);
-    sepGrd.addColorStop(0.8, `rgba(70,95,170,${a * 0.50})`);
-    sepGrd.addColorStop(1,   `rgba(55,75,140,0)`);
-    ctx.fillStyle = sepGrd;
-    ctx.fillRect(W * 0.455, H * 0.07, 1, H * 0.76);
-
-    // Left column: DEAD + score
-    sh(5, `rgba(200,30,30,${a * 0.55})`);
-    ctx.font      = `bold ${FS*0.095}px 'Courier New',monospace`;
-    ctx.fillStyle = `rgba(255,70,70,${a})`;
-    ctx.fillText(T.dead, LC, H * 0.185);
-
-    // Accent underline
-    sh(0);
-    ctx.fillStyle = `rgba(255,80,80,${a * 0.75})`;
-    const deadW = ctx.measureText(T.dead).width;
-    ctx.fillRect(LC - deadW * 0.5, H * 0.252, deadW, 2);
-
-    // Score with pulsing glow. Sized down from 0.140 so a 6-digit score (a long
-    // run can clear 100000+ once bonusScore compounds via streaks/milestones)
-    // still fits between the panel edge and the divider. At 0.140, "123456" at
-    // the narrow reference device used elsewhere in this file (iPhone 12 mini
-    // landscape, 812x375) measured ~352px against ~345px available -- a real
-    // overflow, not a hypothetical one. 0.115 brings that to ~289px.
-    // Any new record -- daily or all-time -- gets the same hue-cycling rainbow
-    // glow as the title screen's LEVEL line (same gtime clock, same formula)
-    // instead of a flat gold, and the label right under it shares the exact same
-    // hue each frame so the two read as one glowing unit, not a coloured number
-    // over a separately-coloured caption.
+    // ── hero: the score ───────────────────────────────────────────────────────
+    // A record used to cycle through the whole hue wheel here (the same gtime formula
+    // the title screen's LEVEL line uses). That treatment stays on the title screen,
+    // but it cannot survive rule 2: a score running through every colour in the wheel
+    // means the loudest element on the panel is a different colour every frame and
+    // belongs to no palette at all. A record now pulses in the DAY's own accent, which
+    // is the same colour the rail, the panel edge and PLAY AGAIN already carry, so the
+    // record reads as this cave's record rather than as a rainbow.
     const isRecord = (newBest || newDailyBest) && score > 0;
-    const recordHue = (gtime * 24) % 360;
-    const scorePulse = isRecord ? 18 + 5 * Math.sin(deadT * 3.5) : 4;
-    let scoreGlow, scoreFill;
+    const yScore   = yHair + step(0.200, DS_HERO, 0.98);
+
+    font(DS_HERO);
     if (isRecord) {
-        scoreGlow = `hsla(${recordHue}, 90%, 60%, ${a * 0.75})`;
-        scoreFill = `hsla(${recordHue}, 85%, 72%, ${a})`;
+        sh(16 + 6 * Math.sin(deadT * 3.5), DAY(0.75));
+        ctx.fillStyle = DAY(1);
     } else {
-        scoreGlow = 'rgba(0,0,0,0.90)';
-        scoreFill = `rgba(225,240,255,${a})`;
+        sh(4);
+        ctx.fillStyle = INK();
     }
-    sh(scorePulse, scoreGlow);
-    ctx.font      = `bold ${FS*0.115}px 'Courier New',monospace`;
-    ctx.fillStyle = scoreFill;
-    ctx.fillText(score, LC, H * 0.395);
+    ctx.textAlign = 'left';
+    ctx.fillText(score, L, yScore);
+    const scoreW = ctx.measureText(String(score)).width;
+    sh(0);
 
-    // Label sits directly under the score now (closer than before -- 0.495, not
-    // 0.545, per explicit request), with RUNS moved below it instead of wedged in
-    // between -- score and "what just happened" read as one beat, RUNS is a
-    // separate, cooler stat.
-    if (newBest && score > 0) {
-        sh(6, `hsla(${recordHue}, 90%, 60%, ${a * 0.7})`);
-        ctx.font      = `bold ${FS*0.036}px 'Courier New',monospace`;
-        ctx.fillStyle = `hsla(${recordHue}, 90%, 78%, ${a})`;
-        ctx.fillText(T.newBest, LC, H * 0.495);
-    } else if (newDailyBest && score > 0) {
-        sh(6, `hsla(${recordHue}, 90%, 60%, ${a * 0.7})`);
-        ctx.font      = `bold ${FS*0.036}px 'Courier New',monospace`;
-        ctx.fillStyle = `hsla(${recordHue}, 90%, 78%, ${a})`;
-        ctx.fillText(T.newDailyBest, LC, H * 0.495 + 5);
-        // No "previous best" sub-line here (there used to be one): "new daily best!"
-        // already implies it beat the old number, and the H*0.78 slot further below
-        // is shared with the skin-unlock/mastery/shards line -- whichever of those
-        // draws there, the sub-line kept colliding with it on short landscape phones
-        // (H well under 600, where FS = sqrt(W*H) still stays large), first with the
-        // mastery banner ("PEARL LV UP 1"), then with the shards line -- a new report
-        // each time the slot below happened to hold something else. Dropping the
-        // redundant line removes the whole collision class instead of chasing it
-        // banner by banner.
-    } else if (best > 0) {
-        sh(4, `rgba(60,90,180,${a * 0.45})`);
-        ctx.font      = `bold ${FS*0.026}px 'Courier New',monospace`;
-        ctx.fillStyle = `rgba(175,205,255,${a * 0.95})`;
-        ctx.fillText(`${T.best}  ${best}`, LC, H * 0.545);
-    }
+    // ── chips ─────────────────────────────────────────────────────────────────
+    // Everything that used to be a stack of differently-coloured full-width lines --
+    // and, worse, three `if` branches that suppressed each other so a run could earn a
+    // ship, a mission and a shard payout and be shown exactly one of them -- is now one
+    // wrapping row of chips. Ship unlock still outranks a mastery level-up (two
+    // ship-coloured chips at once reads as a glitch), but mission and shards no longer
+    // compete with either: they simply sit next to it.
+    const chipH = Math.max(H * 0.056, DS_LBL * 2.2);
+    const chipW = txt => { font(DS_LBL); return ctx.measureText(txt).width + chipH * 0.88; };
+    const chip  = (txt, x, y, clr, solid) => {
+        const w = chipW(txt);
+        sh(0);
+        ctx.fillStyle = solid ? `rgba(${clr[0]},${clr[1]},${clr[2]},${a * 0.15})`
+                              : `rgba(255,255,255,${a * 0.05})`;
+        ctx.beginPath(); ctx.roundRect(x, y, w, chipH, chipH / 2); ctx.fill();
+        ctx.strokeStyle = `rgba(${clr[0]},${clr[1]},${clr[2]},${a * (solid ? 0.42 : 0.20)})`;
+        ctx.lineWidth   = 1;
+        ctx.beginPath(); ctx.roundRect(x, y, w, chipH, chipH / 2); ctx.stroke();
+        ctx.fillStyle    = `rgba(${clr[0]},${clr[1]},${clr[2]},${a * 0.95})`;
+        ctx.textBaseline = 'middle';
+        ctx.textAlign    = 'left';
+        ctx.fillText(txt, x + chipH * 0.44, y + chipH / 2);
+        ctx.textBaseline = 'alphabetic';
+        return w;
+    };
 
-    sh(4, `rgba(60,90,180,${a * 0.45})`);
-    ctx.font      = `bold ${FS*0.026}px 'Courier New',monospace`;
-    ctx.fillStyle = `rgba(175,205,255,${a * 0.95})`;
-    ctx.fillText(`${T.runs} ${dailyRuns}`, LC, H * 0.613);
-
-    // Skin-unlock banner (+ shards line below/beside it) sits in the left column's
-    // empty space below the best/streak line; the right column is already packed
-    // (top5 + stats) and collides with the HOME/PLAY AGAIN buttons if it
-    // lands there -- confirmed by measuring text width at common viewport sizes, so
-    // don't move this back to the right column.
-    // These used to be three separate `if` branches (ship unlock / mastery-up /
-    // shards) all targeting H*0.78 and all suppressing each other by priority, so a
-    // good run could earn a ship unlock, a mastery level *and* a shard payout and be
-    // shown exactly one of them -- the two most motivating outcomes in the game
-    // hidden by draw order. They were then joined onto one shared, shrink-to-fit
-    // line -- but a ship name plus a full shard line is wide enough that the combined
-    // text could still overflow past the shrink floor, reading as a broken/misaligned
-    // version of the plain shard-only line one row above it. Each part now gets its
-    // own line, at the plain single-line case's usual size, when both are present.
-    {
-        let bannerLine = null, bannerClr = null;
-        // Ship unlock still outranks a mastery level-up when both land in one run:
-        // both are ship-coloured and showing two ship banners at once reads as a
-        // glitch, not a double reward.
-        if (skinUnlockIdx >= 0) {
-            const sk = SKINS[skinUnlockIdx];
-            bannerLine = `${sk.name} ${T.unlocked}`;
-            bannerClr = sk.shadow;
-        } else if (missionRewardWon > 0) {
-            // Ranks below a ship unlock (rarest/biggest moment, and two ship-coloured
-            // banners at once reads as a glitch) but above a mastery level-up -- a
-            // finished mission is a concrete shard payout, a mastery tick already shows
-            // on the XP bar. Green to match the mission block's own completed-row colour.
-            bannerLine = `${T.missionDone}  +${missionRewardWon} ⧫`;
-            bannerClr = [120, 255, 150];
-        } else if (skinMasteryUpIdx >= 0) {
-            const sk = SKINS[skinMasteryUpIdx];
-            bannerLine = `${sk.name} ${T.masteryUp} ${masteryLevel(skinMasteryUpIdx)}`;
-            bannerClr = sk.shadow;
-        }
-
-        let shardLine = null;
-        if (runCoins > 0) {
-            // The banked total (`shards`) has no upper bound (grinding never stops
-            // once every ship is owned), so past 10000 it's shown rounded to the
-            // nearest thousand ("13k") rather than full digits.
-            const shardsDisp = shards >= 10000 ? Math.round(shards / 1000) + 'k' : shards;
-            shardLine = `+${runShardsBanked}\u200A\u29eb \u00b7 ${shardsDisp}\u200A\u29eb`;
-            // Used to be dropped whenever a banner shared the line with it (the first
-            // thing cut when space was tight) -- now that the shard line always gets
-            // its own row with the same room as the shard-only case, it can stay.
-            if (runShardsBanked < runCoins) shardLine += `  (${T.dailyCap})`;
-        }
-
-        // Shrink an individual line to fit rather than overflow. The binding
-        // constraint is the panel's left edge, not the divider: this line is centred
-        // on LC (W*0.2425) and the panel starts at W*0.03, so there is only ~0.17*W
-        // of half-width available on the left even though the divider at W*0.455 is
-        // further away. Measured this way across all 15 languages.
-        const availW = (LC - W * 0.045) * 2;
-        const drawFitLine = (text, y, fillClr, glowClr) => {
-            let fsz = FS * 0.024;
-            ctx.font = `bold ${fsz}px 'Courier New',monospace`;
-            const lineW = ctx.measureText(text).width;
-            if (lineW > availW) {
-                fsz = Math.max(fsz * availW / lineW, FS * 0.014); // legibility floor
-                ctx.font = `bold ${fsz}px 'Courier New',monospace`;
-            }
-            ctx.fillStyle   = fillClr;
-            ctx.shadowColor = glowClr;
-            ctx.shadowBlur  = 8;
-            ctx.fillText(text, LC, y);
-            ctx.shadowBlur  = 0;
-            return fsz;
-        };
-
-        const shardClr = `rgba(255,225,110,${a * 0.95})`;
-        const shardGlow = `rgba(255,205,60,${a * 0.62})`;
-        if (bannerLine && shardLine) {
-            // Gap between the two lines is derived from the banner's own rendered
-            // size (not a fixed H-fraction) so it can't desync on a short-but-wide
-            // screen the way fixed-fraction gaps did before the death screen's
-            // score/BEST cascade fix -- see that fix's comment further up.
-            const [br, bg, bb] = bannerClr;
-            const fsz1 = drawFitLine(bannerLine, H * 0.688,
-                `rgba(${br},${bg},${bb},${a * 0.95})`, `rgba(${br},${bg},${bb},${a * 0.62})`);
-            drawFitLine(shardLine, H * 0.688 + fsz1 * 1.35, shardClr, shardGlow);
-        } else if (bannerLine) {
-            const [br, bg, bb] = bannerClr;
-            drawFitLine(bannerLine, H * 0.705, `rgba(${br},${bg},${bb},${a * 0.95})`, `rgba(${br},${bg},${bb},${a * 0.62})`);
-        } else if (shardLine) {
-            drawFitLine(shardLine, H * 0.705, shardClr, shardGlow);
-        }
+    // The record chip sits on the score's own baseline, not on a line below it: score
+    // and "what just happened" are one beat. It only stays there while it FITS there:
+    // a six-digit score plus a long translation ("NUEVO RECORD DIARIO") runs straight
+    // through the column rule and over the world rank, measured at 808x371. When it
+    // does not fit it falls through to the reward row below instead, which is a row
+    // that already knows how to wrap.
+    let recordChip = null;
+    if (isRecord) {
+        const t  = (newBest ? T.newBest : T.newDailyBest).toUpperCase();
+        const cw = chipW(t);
+        const cxr = L + scoreW + W * 0.020;
+        if (cxr + cw <= RX - W * 0.020) chip(t, cxr, yScore - chipH * 0.76, day, true);
+        else recordChip = { t: t, c: day };
     }
 
-    // Right column: world rank (when known) + today's local list + stats
-    let ry = H * 0.155;
+    // ── the scale under the score ─────────────────────────────────────────────
+    const railW = Math.max(W * 0.20, Math.min(RX - L - W * 0.055, W * 0.33));
+    const railY = yScore + step(0.050, DS_HERO, 0.22);
+    const railH = Math.max(3, H * 0.011);
+    let target = best, targetTxt = `${T.best} ${best}`;
+    if (best <= 0 || score < best * 0.55) {
+        // Nowhere near the record: show the next milestone instead, which is the bar a
+        // short run is actually playing against. Bare number, no label -- a tick at the
+        // end of a filling bar reads as "the goal" without a new string.
+        const step = milestoneStep(score);
+        target    = Math.max(step, (Math.floor(score / step) + 1) * step);
+        targetTxt = String(target);
+    }
+    const frac = target > 0 ? Math.max(0.012, Math.min(1, score / target)) : 0;
+    sh(0);
+    ctx.fillStyle = `rgba(255,255,255,${a * 0.10})`;
+    ctx.beginPath(); ctx.roundRect(L, railY, railW, railH, railH / 2); ctx.fill();
+    ctx.fillStyle = DAY(0.95);
+    ctx.beginPath(); ctx.roundRect(L, railY, railW * frac, railH, railH / 2); ctx.fill();
+    ctx.fillStyle = `rgba(255,255,255,${a * 0.45})`;
+    ctx.fillRect(L + railW, railY - railH * 0.9, 1.5, railH * 2.8);
+    const yRailLbl = railY + railH + step(0.042, DS_LBL, 1.45);
+    lbl(targetTxt, L + railW, yRailLbl, FNT(0.75), 'right');
 
-    // The moment a player cares about their standing is the instant they die, and
-    // until now this column spent its best space on a local top-5 of the player's
-    // *own* scores from today -- the least emotionally charged data available -- while
-    // the real leaderboard sat behind a title-screen button they only see once
-    // they've already stopped playing. When the native layer has reported a rank
-    // (state.js worldRank), it takes the top of the column and the local list shrinks
-    // to 3 rows to pay for it. With no rank available (offline, no Game Center /
-    // Play Games session, or the first submit still in flight) the old 5-row layout
-    // is kept exactly as it was -- and the same fallback now also covers a day whose
-    // field is too small for a standing to mean anything (constants.js
-    // WORLD_RANK_MIN_FIELD: "#1 / 2" reads as "nobody plays this", not as a rank).
+    // Reward chips, wrapping inside the left column.
+    const rewards = [];
+    if (recordChip) rewards.push(recordChip);
+    if (skinUnlockIdx >= 0) {
+        rewards.push({ t: `${SKINS[skinUnlockIdx].name} ${T.unlocked}`, c: SKINS[skinUnlockIdx].shadow });
+    } else if (skinMasteryUpIdx >= 0) {
+        rewards.push({ t: `${SKINS[skinMasteryUpIdx].name} ${T.masteryUp} ${masteryLevel(skinMasteryUpIdx)}`,
+                       c: SKINS[skinMasteryUpIdx].shadow });
+    }
+    if (missionRewardWon > 0) rewards.push({ t: `${T.missionDone} +${missionRewardWon}`, c: [120, 255, 150] });
+    if (runCoins > 0) {
+        // The banked total has no upper bound, so past 10000 it is rounded to "13k".
+        const disp = shards >= 10000 ? Math.round(shards / 1000) + 'k' : shards;
+        let s = `+${runShardsBanked} ⧫  ·  ${disp} ⧫`;
+        if (runShardsBanked < runCoins) s += `  (${T.dailyCap})`;
+        rewards.push({ t: s, c: [255, 200, 97] });
+    }
+    const chipMaxW = RX - L - W * 0.030;
+    let cx = L, cy = yRailLbl + step(0.020, DS_LBL, 0.75);
+    for (const rw of rewards) {
+        const w = chipW(rw.t);
+        if (cx > L && cx + w > L + chipMaxW) { cx = L; cy += chipH + step(0.016, DS_LBL, 0.45); }
+        chip(rw.t, cx, cy, rw.c, true);
+        cx += w + W * 0.010;
+    }
+    const leftBottom = rewards.length ? cy + chipH : yRailLbl;
+
+    // ── right column: the world ───────────────────────────────────────────────
+    let ry = PY0 + step(0.125, DS_LBL, 3.6);
     const hasRank = worldRankWorthShowing();
-    const LB_N    = hasRank ? 3 : 5;
-    const LB_STEP = hasRank ? H * 0.080 : H * 0.095;
-
+    // With no rank to show (offline, no Game Center / Play Games session, first submit
+    // still in flight, or a field too small for a standing to mean anything --
+    // WORLD_RANK_MIN_FIELD) this slot takes the all-time best instead of collapsing.
+    // That also covers the case the rail introduced: when the rail is pointing at the
+    // next milestone rather than at the record, the record is not on screen anywhere
+    // else, and it used to be.
+    if (!hasRank && best > 0) {
+        lbl(T.best, RX, ry, FNT());
+        ry += step(0.075, DS_BIG, 1.02);
+        font(DS_BIG);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = DIM(0.92);
+        sh(0);
+        ctx.fillText(best, RX, ry);
+        ry += step(0.062, DS_BIG, 0.90);
+    }
     if (hasRank) {
-        const rankStr  = worldRankTotal > 0
-            ? `#${worldRank.toLocaleString()} / ${worldRankTotal.toLocaleString()}`
-            : `#${worldRank.toLocaleString()}`;
-        sh(2);
-        ctx.font      = `bold ${FS*0.022}px 'Courier New',monospace`;
-        ctx.fillStyle = `rgba(170,195,240,${a * 0.90})`;
-        ctx.fillText(T.worldRank, RC, ry - 4);
-        ry += H * 0.058;
-
-        // Shrink to fit rather than overflow: rank strings grow with the player
-        // base ("#128,455 / 2,100,388" is a lot wider than "#42 / 900"), and this
-        // column is bounded by the panel edge on one side and the divider on the
-        // other.
-        let rankFsz = FS * 0.046;
-        ctx.font = `bold ${rankFsz}px 'Courier New',monospace`;
-        const rankAvailW = Math.min(RC - W * 0.475, W * 0.955 - RC) * 2;
+        lbl(T.worldRank, RX, ry, FNT());
+        ry += step(0.075, DS_BIG, 1.02);
+        // Shrink to fit kept here on purpose: "#128,455" is a lot wider than "#42" and
+        // the column is bounded on both sides.
+        const rankStr = `#${worldRank.toLocaleString()}`;
+        let rf = DS_BIG;
+        font(rf);
+        const availW = (R - RX) * 0.62;
+        const rankW0 = ctx.measureText(rankStr).width;
+        if (rankW0 > availW) { rf = Math.max(rf * availW / rankW0, FS * 0.024); font(rf); }
+        sh(5, DAY(0.30));
+        ctx.fillStyle = INK();
+        ctx.textAlign = 'left';
+        ctx.fillText(rankStr, RX, ry);
         const rankW = ctx.measureText(rankStr).width;
-        if (rankW > rankAvailW) {
-            rankFsz = Math.max(rankFsz * rankAvailW / rankW, FS * 0.024);
-            ctx.font = `bold ${rankFsz}px 'Courier New',monospace`;
+        sh(0);
+        if (worldRankTotal > 0) {
+            font(DS_LBL);
+            ctx.fillStyle = FNT(0.70);
+            ctx.fillText(`/ ${worldRankTotal.toLocaleString()}`, RX + rankW + W * 0.012, ry);
         }
-        // Orange, not gold -- yellow/gold is reserved for shard figures
-        // elsewhere in the game, and the world rank isn't one.
-        sh(6, `rgba(255,130,40,${a*0.45})`);
-        ctx.fillStyle = `rgba(255,160,80,${a})`;
-        ctx.fillText(rankStr, RC, ry);
-        ry += H * 0.052;
-
-        // Rank movement since the previous submit -- this is what turns a standing
-        // into a loop rather than a stat, so it gets the colour treatment.
+        // Movement since the previous submit -- what turns a standing into a loop.
         if (worldRankDelta !== 0) {
-            sh(3);
-            ctx.font      = `bold ${FS*0.024}px 'Courier New',monospace`;
-            ctx.fillStyle = worldRankDelta > 0
-                ? `rgba(140,230,140,${a})`
-                : `rgba(220,140,140,${a})`;
-            ctx.fillText(`${worldRankDelta > 0 ? '\u25B2' : '\u25BC'} ${Math.abs(worldRankDelta).toLocaleString()}`, RC, ry);
+            font(DS_LBL);
+            ctx.fillStyle = worldRankDelta > 0 ? `rgba(127,230,161,${a})` : `rgba(224,142,142,${a})`;
+            ctx.fillText(`${worldRankDelta > 0 ? '▲' : '▼'} ${Math.abs(worldRankDelta).toLocaleString()}`,
+                         RX + rankW + W * 0.012, ry - DS_BIG * 0.52);
         }
-        ry += H * 0.062;
+        ry += step(0.062, DS_BIG, 0.90);
     }
 
-    // Left-align the rank/score column to a shared start X instead of centering each
-    // line independently -- centering per-line let the numbers drift left/right with
-    // digit count so they didn't read as a column. The column itself is still
-    // centered as a block around RC (measured against the widest of the possible
-    // lines, in whichever font that line would actually use).
-    let listW = 0;
-    for (let i = 0; i < LB_N; i++) {
-        const entry = top5[i];
-        ctx.font = entry !== undefined ? `bold ${FS*0.040}px 'Courier New',monospace` : `${FS*0.032}px 'Courier New',monospace`;
-        listW = Math.max(listW, ctx.measureText(entry !== undefined ? `#${i + 1}  ${entry}` : `#${i + 1}  -`).width);
+    // Today's local list. T.todayTop, not "TOP 5": it is wiped at the UTC day boundary
+    // (lifecycle.js), so the old label made it look like lost data every morning.
+    // Only rows that EXIST are drawn now. The old layout always drew five, so the
+    // common case (median real run ~22, first run of the day) rendered as four
+    // placeholder dashes under one number -- an emptied-out full state instead of a
+    // designed empty one.
+    const myRank = top5.findIndex(s => s === score);
+    // Three rows, with or without a world rank. It used to be five whenever no rank was
+    // available, and that is the variant that overlapped the button row on a real
+    // 17 Pro Max (reported 2026-09-13): five rows plus the BEST block above them is the
+    // tallest this column can get, and nothing was stopping it. Three is also simply
+    // enough - this is today's local list, not a leaderboard, and the space buys the
+    // left column's flight band room to exist.
+    const lbStep = step(0.070, DS_ROW, 1.34);
+    lbl(T.todayTop, RX, ry, FNT());
+    ry += step(0.046, DS_ROW, 1.00);
+    // Hard clamp against the button row. Same principle as the band: a column that can
+    // grow is measured against the floor it must not cross, never trusted to fit. On a
+    // short screen (12 mini, H = 371) the type does not shrink with H, so this is the
+    // difference between three rows and two, not a theoretical guard.
+    const statsGap  = step(0.008, DS_TXT, 0.30) + DS_TXT * 0.9;
+    const rowsRoom  = Math.floor((btnTop - bandGap - statsGap - ry) / lbStep);
+    const rowsAvail = Math.max(1, Math.min(3, top5.length, rowsRoom));
+    // Which ranks to show. Normally the first `rowsAvail`, but if THIS run landed
+    // outside them the last visible row is given to it instead, keeping its real rank
+    // number. Cutting the list from five rows to three is what made this necessary: a
+    // run that places #4 is exactly the case in the report that prompted the cut, and
+    // "where did I land" is the one question this column exists to answer.
+    const shownRanks = [];
+    for (let i = 0; i < rowsAvail; i++) shownRanks.push(i);
+    if (myRank >= rowsAvail) shownRanks[rowsAvail - 1] = myRank;
+
+    for (const idx of shownRanks) {
+        const entry = top5[idx];
+        hair(RX, ry + H * 0.020, R - RX, 0.05);
+        font(DS_TXT);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = FNT(0.75);
+        ctx.fillText(`#${idx + 1}`, RX, ry);
+        if (entry !== undefined) {
+            const isMe = idx === myRank;
+            font(DS_ROW);
+            ctx.textAlign = 'right';
+            sh(isMe ? 6 : 0, DAY(0.45));
+            ctx.fillStyle = isMe ? DAY(1) : DIM();
+            ctx.fillText(entry, R, ry);
+            sh(0);
+            if (isMe) { ctx.fillStyle = DAY(0.85); ctx.fillRect(RX - W * 0.013, ry - DS_ROW * 0.70, 2, DS_ROW * 0.92); }
+        }
+        ry += lbStep;
     }
-    const listX = RC - listW / 2;
     ctx.textAlign = 'left';
 
-    sh(4, `rgba(60,90,180,${a * 0.45})`);
-    ctx.font      = `bold ${FS*0.024}px 'Courier New',monospace`;
-    ctx.fillStyle = `rgba(180,205,255,${a * 0.90})`;
-    // T.todayTop, not the old T.top5: this list is wiped at the UTC day boundary
-    // (lifecycle.js), so labelling it "TOP 5" made it look like lost data every
-    // morning. The label now says what it actually is.
-    ctx.fillText(T.todayTop, listX, ry);
-    ry += H * 0.072;
-
-    const myRank = top5.findIndex(s => s === score);
-    for (let i = 0; i < LB_N; i++) {
-        const entry = top5[i];
-        const isMe  = i === myRank && entry === score;
-        if (entry !== undefined) {
-            sh(isMe ? (newBest ? 10 : 4) : 2,
-               isMe && newBest ? `rgba(255,190,0,${a*0.7})` : 'rgba(0,0,0,0.90)');
-            ctx.font      = `bold ${FS*0.040}px 'Courier New',monospace`;
-            ctx.fillStyle = isMe
-                ? (newBest ? `rgba(255,225,65,${a})` : `rgba(210,235,255,${a})`)
-                : `rgba(175,200,240,${a * 0.90})`;
-            ctx.fillText(`#${i + 1}  ${entry}`, listX, ry);
-        } else {
-            sh(2);
-            ctx.font      = `${FS*0.032}px 'Courier New',monospace`;
-            ctx.fillStyle = `rgba(100,120,165,${a * 0.55})`;
-            ctx.fillText(`#${i + 1}  -`, listX, ry);
-        }
-        ry += LB_STEP;
-    }
-    ctx.textAlign = 'center'; // restore -- stats/buttons below expect centered text
-
-    // A "+264 vs. last" line used to sit here (score minus prevRunScore). Dropped:
-    // it pushed the stats block down and widened with score magnitude/diff sign
-    // unpredictably, so it was the one line in this column liable to bump into
-    // neighbouring rows on a real device, for a number that's just this run's score
-    // restated as a delta -- low value for the layout risk it carried.
-
+    // Run stats. These used to carry three separate accent colours (blue powerups,
+    // cyan near-misses, orange combo) competing with the score and the rank above
+    // them; they are the quietest thing on the screen, so they are now drawn as
+    // value + label pairs with no hue of their own.
     {
-        // Each stat gets its own colour instead of one flat grey-blue line -- the
-        // run's actual highlights (a good combo, a close call survived) were
-        // reading as filler text under the flashier score/rank numbers above.
-        // Gold matches the reward/shard theme used everywhere else in the game,
-        // and the near-miss cyan and combo orange are new but distinct from each
-        // other.
-        //
-        // Two lines, not one: run-total counts (powerups, near misses) on the first,
-        // run-highlight stats (combo) on the second -- four parts packed onto one
-        // row read as a cramped data dump.
-        // Default (non-yellow) colour -- yellow/gold is reserved for shard figures
-        // elsewhere in the game, and a powerup count isn't one.
-        const line1 = [{ text: `${runCoins} ${runCoins !== 1 ? T.powerups : T.powerup}`, clr: [175, 205, 255] }];
-        if (runNearMisses > 0) line1.push({ text: `${runNearMisses} ${T.close}`, clr: [110, 210, 255] });
-        const line2 = [];
-        if (runMaxCombo > 1) line2.push({ text: `x${runMaxCombo} ${T.combo}`, clr: [255, 150, 110] });
-        // The ghost target (T.ghost/ghostScore) used to also appear here, but the
-        // score it names is just the day's best, already shown in the left column
-        // -- redundant, so it was dropped from the death screen.
+        const parts = [{ v: String(runCoins), k: runCoins !== 1 ? T.powerups : T.powerup }];
+        if (runNearMisses > 0) parts.push({ v: String(runNearMisses), k: T.close });
+        if (runMaxCombo  > 1)  parts.push({ v: `x${runMaxCombo}`,     k: T.combo });
+        // Same reasoning as the block at the top of this column: if neither the rail
+        // nor that block is currently naming the all-time best, it still belongs on
+        // the screen, just quietly.
+        if (hasRank && best > 0 && target !== best) parts.push({ v: String(best), k: T.best });
+        // Drop trailing parts rather than run past the panel edge: this line is
+        // left-aligned from RX and grows with every optional stat, and at 808x371 with
+        // all of them present it overflowed R by the width of the combo. Powerups is
+        // first because it is the one stat every run has.
+        const sepW0 = (font(DS_LBL), ctx.measureText('  \u00b7  ').width);
+        const widthOf = ps => ps.reduce((t, p, i) => {
+            font(DS_TXT); let w = ctx.measureText(p.v).width + W * 0.006;
+            font(DS_LBL); w += ctx.measureText(p.k).width;
+            return t + w + (i ? sepW0 : 0);
+        }, 0);
+        while (parts.length > 1 && widthOf(parts) > R - RX) parts.pop();
 
-        // Extra breathing room before this block -- it used to sit right under the
-        // top5 block with no more gap than any other row in that list, which read
-        // as one more line of the same table rather than its own moment.
-        ry += H * 0.025 - 4;
-        ctx.font = `bold ${FS*0.023}px 'Courier New',monospace`;
-        // Dot separator between parts, matching the shard banner's own "+X * Y"
-        // format (src/draw.js's shardLine, ` · `) instead of a blank gap.
-        const sep  = ' · ';
-        const sepW = ctx.measureText(sep).width;
-        const drawStatLine = (parts, y) => {
-            if (!parts.length) return;
-            const widths = parts.map(p => ctx.measureText(p.text).width);
-            const totalW = widths.reduce((s, w) => s + w, 0) + sepW * (parts.length - 1);
-            ctx.textAlign = 'left';
-            let sx = RC - totalW / 2;
-            parts.forEach((p, i) => {
-                const [r, g, b] = p.clr;
-                sh(4, `rgba(${r},${g},${b},${a * 0.45})`);
-                ctx.fillStyle = `rgba(${r},${g},${b},${a * 0.92})`;
-                ctx.fillText(p.text, sx, y);
-                sx += widths[i];
-                if (i < parts.length - 1) {
-                    sh(0);
-                    ctx.fillStyle = `rgba(140,155,190,${a * 0.55})`;
-                    ctx.fillText(sep, sx, y);
-                    sx += sepW;
-                }
-            });
-            sh(0);
-            ctx.textAlign = 'center';
-        };
-        drawStatLine(line1, ry);
-        if (line2.length) {
-            ry += H * 0.048;
-            drawStatLine(line2, ry);
-        }
-        ry += H * 0.088;
-    }
-
-    // Bottom row: HOME | (SHARE) | PLAY AGAIN, centered as a group. SHARE only
-    // appears on a run actually worth showing someone (share.js shareWorthy) and
-    // only where there's somewhere to send it (shareAvailable) -- a share button on
-    // every death is a nag, on a personal best it's a reward. The row re-centers
-    // around whichever buttons are present rather than leaving a gap.
-    if (deadT > 0.75) {
-        const b      = Math.min(1, (deadT - 0.75) * 6);
-        const botY   = H * 0.905;
-        const btnH   = H * 0.13;
-        const showShare = shareWorthy() && shareAvailable();
-        const btnW   = showShare ? W * 0.155 : W * 0.17;
-        const gap    = W * 0.035;
-        const nBtn   = showShare ? 3 : 2;
-        const rowW   = nBtn * btnW + (nBtn - 1) * gap;
-        let   bx     = W * 0.50 - rowW * 0.5;
-        const homeCX = bx + btnW * 0.5;  bx += btnW + gap;
-        const shareCX = showShare ? bx + btnW * 0.5 : 0;
-        if (showShare) bx += btnW + gap;
-        const playCX = bx + btnW * 0.5;
-
-        // HOME button. Rounded corners now, matching every other button in the
-        // game (title screen, settings panel) -- this row was the one place still
-        // drawing sharp-cornered fillRect/strokeRect boxes, which read as flat and
-        // out of place next to the rest of the UI's soft-cornered, glowing style.
-        ctx.font = `bold ${FS*0.028}px 'Courier New',monospace`;
-        const homeX = homeCX - btnW * 0.5, homeY = botY - btnH * 0.5;
-        _homeBtnRect = { x: homeX, y: homeY, w: btnW, h: btnH };
-        sh(5, `rgba(80,105,180,${b * 0.35})`);
-        ctx.fillStyle = `rgba(18,24,44,${b * 0.90})`;
-        ctx.beginPath(); ctx.roundRect(homeX, homeY, btnW, btnH, 8); ctx.fill();
-        ctx.strokeStyle = `rgba(80,105,180,${b * 0.70})`;
-        ctx.lineWidth   = 1;
-        ctx.beginPath(); ctx.roundRect(homeX, homeY, btnW, btnH, 8); ctx.stroke();
-        // Shrink to fit: same reasoning as SHARE below -- some locales run much
-        // longer than English ("JOGAR DE NOVO" for PLAY AGAIN, "AJUSTES"-style
-        // words for HOME) and this row's buttons never had SHARE's headroom check.
-        let homeFsz = FS * 0.028;
-        const homeW = ctx.measureText(T.home).width;
-        if (homeW > btnW * 0.86) {
-            homeFsz = Math.max(homeFsz * (btnW * 0.86) / homeW, FS * 0.015);
-            ctx.font = `bold ${homeFsz}px 'Courier New',monospace`;
-        }
-        sh(2); ctx.fillStyle = `rgba(130,155,230,${b * 0.90})`;
-        ctx.fillText(T.home, homeCX, botY);
-
-        // SHARE button -- gold, matching the shard/personal-best treatment used
-        // everywhere else for "this was a good run", so it reads as a reward rather
-        // than a third piece of navigation.
-        _shareBtnRect = null;
-        if (showShare) {
-            const shareX = shareCX - btnW * 0.5, shareY = botY - btnH * 0.5;
-            _shareBtnRect = { x: shareX, y: shareY, w: btnW, h: btnH };
-            sh(6, `rgba(255,190,0,${b * 0.45})`);
-            ctx.fillStyle = `rgba(42,32,10,${b * 0.90})`;
-            ctx.beginPath(); ctx.roundRect(shareX, shareY, btnW, btnH, 8); ctx.fill();
-            ctx.strokeStyle = `rgba(255,205,80,${b * 0.80})`;
-            ctx.lineWidth   = 1.5;
-            ctx.beginPath(); ctx.roundRect(shareX, shareY, btnW, btnH, 8); ctx.stroke();
-            // Shrink to fit: SHARE is one short word in English but a long one in
-            // several locales (COMPARTILHAR, ПОДЕЛИТЬСЯ), and this button is the
-            // narrowest of the three. After a desktop copy-link fallback the label
-            // flips to T.linkCopied for ~1.8s (share.js _shareCopiedT).
-            const shareLbl = _shareCopiedT > 0 ? T.linkCopied : T.share;
-            let shFsz = FS * 0.028;
-            ctx.font = `bold ${shFsz}px 'Courier New',monospace`;
-            const shW = ctx.measureText(shareLbl).width;
-            if (shW > btnW * 0.86) {
-                shFsz = Math.max(shFsz * (btnW * 0.86) / shW, FS * 0.015);
-                ctx.font = `bold ${shFsz}px 'Courier New',monospace`;
+        let sx = RX;
+        ry += step(0.008, DS_TXT, 0.30);
+        // Last line of defence: with one row left and a tall button, even the clamp
+        // above can leave no room for this line. Dropping it beats drawing it under
+        // HOME/SHARE, which is exactly what the 17 Pro Max report showed.
+        if (ry + DS_TXT * 0.3 > btnTop - bandGap) parts.length = 0;
+        for (let i = 0; i < parts.length; i++) {
+            font(DS_TXT);
+            ctx.fillStyle = DIM(0.95);
+            ctx.fillText(parts[i].v, sx, ry);
+            sx += ctx.measureText(parts[i].v).width + W * 0.006;
+            font(DS_LBL);
+            ctx.fillStyle = FNT();
+            ctx.fillText(parts[i].k, sx, ry);
+            sx += ctx.measureText(parts[i].k).width;
+            if (i < parts.length - 1) {
+                const sep = '  ·  ';
+                ctx.fillStyle = FNT(0.45);
+                ctx.fillText(sep, sx, ry);
+                sx += ctx.measureText(sep).width;
             }
-            sh(5, `rgba(255,200,60,${b * 0.55})`);
-            ctx.fillStyle = `rgba(255,228,130,${b * 0.95})`;
-            ctx.fillText(shareLbl, shareCX, botY);
-            ctx.font = `bold ${FS*0.028}px 'Courier New',monospace`;
+        }
+    }
+
+    // ── the run itself ───────────────────────────────────────────────────────
+    // drawRunProfile (share.js) has existed for the share card all along and was once
+    // tried HERE as a faint full-panel backdrop -- correctly rejected, because as
+    // wallpaper behind text it is noise. Framed and given its own band it is the
+    // opposite: the only thing on this screen that belongs to this run alone. The
+    // marker objection from that attempt ("landmarks land wherever the run ended, on
+    // top of whatever text is there") no longer applies, because nothing else is
+    // inside the band.
+    //
+    // It sits in the LEFT column, under the chips, not across the full width. Two
+    // reasons, one editorial and one measured. Editorial: this column is the run and
+    // the profile is the run, while the right column is the world. Measured: a
+    // full-width band has to start below BOTH columns, and the right one (rank block +
+    // three list rows + stats) reaches H*0.67 at 952x436, which leaves the band 0px.
+    // Under the chips it has the whole empty half of the card to itself.
+    //
+    // The band is placed from the content above it and is the element that YIELDS when
+    // space runs out. That is not defensive padding, it is the one structural hazard
+    // of this screen: FS is keyed to UI_H, which has a floor of 600 (constants.js), so
+    // on a short landscape phone (H = 371 on a 12 mini) every font here stays full size
+    // while every H-fraction shrinks by 15%. Three steps: full band, band without its
+    // label, no band at all.
+    const yBandLbl = leftBottom + step(0.030, DS_LBL, 1.1);
+    const bandTop  = yBandLbl + step(0.012, DS_LBL, 0.45);
+    const bandW    = RX - W * 0.020 - L;
+    const bandH    = Math.min(Math.max(H * 0.145, 30), btnTop - bandGap - bandTop);
+    if (bandH >= Math.max(H * 0.080, 22) && lastRunWx > 0 && typeof drawRunProfile === 'function') {
+        // The label is the first thing to go: it is a nicety, the band is the content.
+        if (yBandLbl - DS_LBL * 0.8 >= leftBottom) lbl(T.flown, L, yBandLbl, FNT());
+        ctx.save();
+        ctx.beginPath(); ctx.roundRect(L, bandTop, bandW, bandH, 5); ctx.clip();
+        // Inset by a few px: when bestSX is what sets drawRunProfile's own wxMax (a run
+        // that died short of the all-time best), the gold PB tick lands exactly on the
+        // right edge and the clip above would eat it.
+        drawRunProfile(ctx, L + 3, bandTop, bandW - 6, bandH, {
+            scale:     Math.max(0.30, bandH / 150),
+            alpha:     a * 0.80,
+            accent:    day,
+            pbLabel:   false,   // no room under the band
+            smoothMul: 1.15     // slightly wider window than the card's, not more
+        });
+        ctx.restore();
+        sh(0);
+        ctx.strokeStyle = `rgba(255,255,255,${a * 0.09})`;
+        ctx.lineWidth   = 1;
+        ctx.beginPath(); ctx.roundRect(L, bandTop, bandW, bandH, 5); ctx.stroke();
+    }
+
+    // ── buttons, inside the card ──────────────────────────────────────────────
+    // Same deadT > 0.75 gate and the same three rects input.js hit-tests; what changed
+    // is that the row sits inside the panel and that PLAY AGAIN is filled rather than
+    // being a third equally-weighted outline. SHARE only appears on a run worth showing
+    // someone (share.js shareWorthy) and only where there is somewhere to send it.
+    _shareBtnRect = null;
+    if (deadT > 0.75) {
+        const b    = Math.min(1, (deadT - 0.75) * 6);
+        const bh   = bhBtn;
+        const byT  = btnTop;
+        const gap  = W * 0.016;
+        const pw   = Math.max(W * 0.175, DS_TXT * 6.2);
+        const gw   = Math.max(W * 0.130, DS_TXT * 4.6);
+
+        const btnLabel = (txt, cxp, cyp, maxW, col, size) => {
+            let f = size;
+            font(f);
+            const tw = ctx.measureText(txt).width;
+            // Kept: translations run long (JOGAR DE NOVO, ПОДЕЛИТЬСЯ) and the row is fixed.
+            if (tw > maxW) { f = Math.max(f * maxW / tw, FS * 0.015); font(f); }
+            ctx.textAlign    = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle    = col;
+            ctx.fillText(txt, cxp, cyp);
+            ctx.textAlign    = 'left';
+            ctx.textBaseline = 'alphabetic';
+        };
+
+        // PLAY AGAIN -- primary, filled in the day colour.
+        let bx = R - pw;
+        _playBtnRect = { x: bx, y: byT, w: pw, h: bh };
+        sh(14, DAY(b * 0.45));
+        ctx.fillStyle = `rgba(${day[0]},${day[1]},${day[2]},${b * 0.92})`;
+        ctx.beginPath(); ctx.roundRect(bx, byT, pw, bh, 8); ctx.fill();
+        sh(0);
+        btnLabel(T.playAgain, bx + pw / 2, byT + bh / 2, pw * 0.84, `rgba(8,10,20,${b * 0.95})`, DS_TXT);
+
+        // SHARE -- gold ghost, the game's reward language.
+        if (shareWorthy() && shareAvailable()) {
+            bx -= gw + gap;
+            _shareBtnRect = { x: bx, y: byT, w: gw, h: bh };
+            sh(0);
+            ctx.strokeStyle = `rgba(255,205,80,${b * 0.55})`;
+            ctx.lineWidth   = 1.5;
+            ctx.beginPath(); ctx.roundRect(bx, byT, gw, bh, 8); ctx.stroke();
+            btnLabel(_shareCopiedT > 0 ? T.linkCopied : T.share, bx + gw / 2, byT + bh / 2,
+                     gw * 0.84, `rgba(255,222,130,${b * 0.95})`, DS_TXT);
         }
 
-        // PLAY AGAIN button
-        ctx.font = `bold ${FS*0.028}px 'Courier New',monospace`;
-        const playX = playCX - btnW * 0.5, playY = botY - btnH * 0.5;
-        _playBtnRect = { x: playX, y: playY, w: btnW, h: btnH };
-        sh(6, `rgba(80,120,255,${b * 0.55})`);
-        ctx.fillStyle = `rgba(16,28,65,${b * 0.90})`;
-        ctx.beginPath(); ctx.roundRect(playX, playY, btnW, btnH, 8); ctx.fill();
-        ctx.strokeStyle = `rgba(110,150,255,${b * 0.85})`;
-        ctx.lineWidth   = 1.5;
-        ctx.beginPath(); ctx.roundRect(playX, playY, btnW, btnH, 8); ctx.stroke();
-        // Shrink to fit -- PLAY AGAIN's translations run long in several locales
-        // (JOGAR DE NOVO, TEKRAR OYNA, فيها مجدداً), same fix as SHARE/HOME above.
-        let playFsz = FS * 0.028;
-        const playW = ctx.measureText(T.playAgain).width;
-        if (playW > btnW * 0.86) {
-            playFsz = Math.max(playFsz * (btnW * 0.86) / playW, FS * 0.015);
-            ctx.font = `bold ${playFsz}px 'Courier New',monospace`;
-        }
-        sh(6, `rgba(100,150,255,${b * 0.60})`);
-        ctx.fillStyle   = `rgba(180,210,255,${b * 0.95})`;
-        ctx.fillText(T.playAgain, playCX, botY);
+        // HOME -- quiet ghost.
+        bx -= gw + gap;
+        _homeBtnRect = { x: bx, y: byT, w: gw, h: bh };
+        sh(0);
+        ctx.strokeStyle = `rgba(255,255,255,${b * 0.16})`;
+        ctx.lineWidth   = 1;
+        ctx.beginPath(); ctx.roundRect(bx, byT, gw, bh, 8); ctx.stroke();
+        btnLabel(T.home, bx + gw / 2, byT + bh / 2, gw * 0.84, `rgba(168,180,212,${b * 0.90})`, DS_TXT);
     }
+
+    // Leave the context the way the rest of draw() expects to find it.
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    sh(0);
 }
 
 // Death freeze frame (constants.js DEATH_REPLAY_SEC, state.js deathHitX/Y/R).
