@@ -427,6 +427,10 @@ let deathCause = null;
 // Like deathCause these are also written on hits that a shield or invulnT absorbs; that
 // is harmless (they are only ever read in the 'dead' phase) and keeps the two in step.
 let deathHitX = 0, deathHitY = 0, deathHitR = 0;
+// Run scenes (constants.js SCENE_* doc, draw.js captureRunScenes): one { k, cv } snapshot
+// per sector reached this run, in sector order, and the frozen death frame. Reset in
+// startPlay(); a rewarded continue drops only the death frame.
+let runScenes = [], runDeathScene = null;
 let bestMarker = null;   // { wx, side } of all-time best run's death spot
 
 // ── Achievement backfill ──────────────────────────────────────────────

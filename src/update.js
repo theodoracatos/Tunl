@@ -1173,6 +1173,8 @@ function grantRevive() {
     continueOfferPending = false;
     continueAdPending = false;
     continuesUsedThisRun++;
+    // The run goes on, so its frozen death frame is not the last scene any more.
+    dropDeathScene();
     const b = boundsAt(scrollX + PX);
     py = (b.top + b.bot) / 2;
     vy = 0;

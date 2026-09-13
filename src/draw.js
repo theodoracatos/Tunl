@@ -10,6 +10,55 @@ function getTheme() {
     return { bg: WEEKDAY_BG, wall: p.wall, stal: p.stal, stalEdge: p.stalEdge, wallBase: p.wallBase };
 }
 
+// Depth light (constants.js DEPTH_LIGHT_* doc): how far the background is lifted toward
+// the day's rock, and how strong the cave-mouth light is, at a world-x. Keyed to sectors,
+// so it is the same on every device; nothing but drawWorld reads it.
+function depthLightAt(wx) {
+    const k = sectorAt(wx), n = DEPTH_LIGHT_STEPS.length;
+    let level = k < n ? DEPTH_LIGHT_STEPS[k] : 0;
+    if (k > 0 && k <= n) {
+        const e = Math.max(0, (wx - sectorStartWx(k)) / DEPTH_STEP_EASE_WX);
+        if (e < 1) level = lerp(DEPTH_LIGHT_STEPS[k - 1], level, e * e * (3 - 2 * e));
+    }
+    const u = Math.min(Math.max(wx / sectorStartWx(DEPTH_MOUTH_END_SECTOR), 0), 1);
+    const t = u * u * (3 - 2 * u);
+    return { lift: DEPTH_LIFT * level, mouth: DEPTH_MOUTH_ALPHA * (1 - t), mouthR: W * lerp(1.05, 0.45, t) };
+}
+
+// Run scenes (constants.js SCENE_* doc). Small canvases, pooled across runs so a session
+// of quick restarts allocates a handful once instead of a few per run.
+const _scenePool = [];
+function _grabScene() {
+    const c  = _scenePool.pop() || document.createElement('canvas');
+    const rs = Math.min(_RASTER_SCALE, 2);
+    const h  = Math.max(1, Math.round(H * SCENE_THUMB_H * rs));
+    const w  = Math.max(1, Math.round(h * (SCENE_CROP_X1 - SCENE_CROP_X0) * W / H));
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+    c.getContext('2d').drawImage(cv, W * SCENE_CROP_X0 * _RASTER_SCALE, 0,
+        W * (SCENE_CROP_X1 - SCENE_CROP_X0) * _RASTER_SCALE, H * _RASTER_SCALE, 0, 0, w, h);
+    return c;
+}
+function captureRunScenes() {
+    if (phase === 'play') {
+        // A warp or a backgrounded tab can jump a whole sector; that one is simply skipped.
+        const k = sectorAt(scrollX), lastK = runScenes.length ? runScenes[runScenes.length - 1].k : -1;
+        if (k > lastK && scrollX >= sectorStartWx(k) + SCENE_CAPTURE_LEAD_WX) {
+            if (runScenes.length >= SCENE_MAX_KEPT) _scenePool.push(runScenes.splice(1, 1)[0].cv);
+            runScenes.push({ k: k, cv: _grabScene() });
+        }
+    } else if (phase === 'dead' && !runDeathScene && deadT >= SCENE_DEATH_CAPTURE_SEC) {
+        runDeathScene = { k: sectorAt(scrollX), cv: _grabScene() };
+    }
+}
+function dropDeathScene() {
+    if (runDeathScene) { _scenePool.push(runDeathScene.cv); runDeathScene = null; }
+}
+function resetRunScenes() {
+    for (const s of runScenes) _scenePool.push(s.cv);
+    runScenes.length = 0;
+    dropDeathScene();
+}
+
 // Rough-rock silhouette noise for the wall's rendered edge (draw()'s "Wall
 // arrays" block). A first version summed a few sine waves -- smooth by
 // construction, so it only ever read as small ripples, never as an actual
@@ -535,6 +584,7 @@ function drawWorld() {
     ctx.translate(ox, oy);
 
     const theme = getTheme();
+    const dayRock = theme.wallBase;   // the day's own rock, before the drift/warp tints below
     // Deep-run palette drift: nudge the wall / stalactite GLOW toward a cooler
     // deep tint the further in you get - "it looks different down here" fights
     // monotony even when the mechanics hold steady. Subtle, capped, and only the
@@ -555,13 +605,28 @@ function drawWorld() {
         theme.wallBase = lerpClr(theme.wallBase, [140, 95, 255], 0.34);
         theme.stalEdge = lerpClr(theme.stalEdge, [160, 115, 255], 0.30);
     }
-    const bgStr = rgb(theme.bg);
+    // Depth light (constants.js DEPTH_LIGHT_* doc). The title screen sits at the mouth.
+    const depth = depthLightAt(phase === 'title' ? 0 : scrollX);
+    const bgStr = rgb(lerpClr(theme.bg, dayRock, depth.lift));
     // backgroundColor, not the background shorthand: the shorthand resets
     // background-image too, which would blank out the web build's letterbox
-    // starfield (tunl.html's body.web-bg) on every theme change.
+    // starfield (tunl.html's body.web-bg) on every theme change. The lift only moves
+    // during a sector step, so this still writes a few dozen times per run, not per frame.
     if (bgStr !== _lastBgStr) { document.body.style.backgroundColor = bgStr; _lastBgStr = bgStr; }
     ctx.fillStyle = bgStr;
     ctx.fillRect(-20, -20, W+40, H+40);
+    if (depth.mouth > 0.004) {
+        // Behind the ship, off the left edge: hazards arrive from the right, and that side
+        // stays dark. One gradient fill, no shadowBlur.
+        const mx = -W * 0.08, my = H * 0.5;
+        const mc = lerpClr(DEPTH_MOUTH_WARM, dayRock, DEPTH_MOUTH_TINT);
+        const mg = ctx.createRadialGradient(mx, my, 0, mx, my, depth.mouthR);
+        mg.addColorStop(0,    rgb(mc, depth.mouth));
+        mg.addColorStop(0.45, rgb(mc, depth.mouth * 0.45));
+        mg.addColorStop(1,    rgb(mc, 0));
+        ctx.fillStyle = mg;
+        ctx.fillRect(-20, -20, W+40, H+40);
+    }
 
     // Wall arrays. topArr/botArr get a small cosmetic jag added on top of the
     // real boundsAt() curve (_wallJagged, below) so the rendered edge reads as
@@ -2069,6 +2134,10 @@ function drawWorld() {
         ctx.fillStyle = `hsla(${p.h},90%,65%,${Math.max(p.life,0)})`;
         ctx.fill();
     }
+
+    // Run scenes: grab the frame here, before notifs and the shield/death flashes paint
+    // over it (constants.js SCENE_* doc).
+    captureRunScenes();
 
     // Floating notifications
     ctx.textAlign = 'center';
@@ -4047,7 +4116,7 @@ function drawTitleScreen() {
 //     did not know which day it was, while the world, the title screen and the
 //     share card all tint themselves from WEEKDAY_PALETTES. Gold stays reserved for
 //     shards, green for a positive rank delta, and red is now used ONLY by the
-//     death marker inside the flight profile -- the old red "TOT" headline was the
+//     death marker (the run band's death frame) -- the old red "TOT" headline was the
 //     largest thing on screen while telling the player the one thing they had just
 //     watched happen, and it competed with drawDeathFreeze()'s reticle, which is
 //     what actually points at the cause. The headline is gone; the score is the
@@ -4429,18 +4498,10 @@ function drawDeathScreen() {
     }
 
     // ── the run itself ───────────────────────────────────────────────────────
-    // drawRunProfile (share.js) has existed for the share card all along and was once
-    // tried HERE as a faint full-panel backdrop -- correctly rejected, because as
-    // wallpaper behind text it is noise. Framed and given its own band it is the
-    // opposite: the only thing on this screen that belongs to this run alone. The
-    // marker objection from that attempt ("landmarks land wherever the run ended, on
-    // top of whatever text is there") no longer applies, because nothing else is
-    // inside the band.
-    //
-    // It sits in the LEFT column, under the chips, not across the full width. Two
-    // reasons, one editorial and one measured. Editorial: this column is the run and
-    // the profile is the run, while the right column is the world. Measured: a
-    // full-width band has to start below BOTH columns, and the right one (rank block +
+    // A band that belongs to this run alone. It sits in the LEFT column, under the
+    // chips, not across the full width. Two reasons, one editorial and one measured.
+    // Editorial: this column is the run, while the right column is the world. Measured:
+    // a full-width band has to start below BOTH columns, and the right one (rank block +
     // three list rows + stats) reaches H*0.67 at 952x436, which leaves the band 0px.
     // Under the chips it has the whole empty half of the card to itself.
     //
@@ -4454,7 +4515,70 @@ function drawDeathScreen() {
     const bandTop  = yBandLbl + step(0.012, DS_LBL, 0.45);
     const bandW    = RX - W * 0.020 - L;
     const bandH    = Math.min(Math.max(H * 0.145, 30), btnTop - bandGap - bandTop);
-    if (bandH >= Math.max(H * 0.080, 22) && lastRunWx > 0 && typeof drawRunProfile === 'function') {
+    const bandOk   = bandH >= Math.max(H * 0.080, 22);
+    if (bandOk && runDeathScene) {
+        // Run scenes (constants.js SCENE_* doc): one real frame per sector reached, the
+        // frozen death frame last, then a dashed slot naming the next sector. With the
+        // depth light the strip goes from the lit mouth into the dark, which says "how
+        // deep did I get" faster than any number, and the empty slot is the next goal.
+        // Replaced drawRunProfile here (it stays on the share card): the corridor
+        // profile answered the same question in a form that needed reading.
+        const dk   = runDeathScene.k;
+        const fw   = bandH * runDeathScene.cv.width / runDeathScene.cv.height;
+        const fgap = W * 0.008;
+        const fits = Math.max(1, Math.floor((bandW + fgap) / (fw + fgap)));
+        // Short of room, frames go in this order of importance: the death frame, the next
+        // sector's slot, the lit mouth (S0), then the deepest sectors reached. Drawn in
+        // sector order either way.
+        const entries = runScenes.filter(s => s.k < dk);
+        const pick = [{ k: dk, cv: runDeathScene.cv, death: true }];
+        if (pick.length < fits) pick.push({ k: dk + 1, next: true });
+        if (pick.length < fits && entries.length && entries[0].k === 0) pick.push(entries.shift());
+        while (pick.length < fits && entries.length) pick.push(entries.pop());
+        pick.sort((p, q) => p.k - q.k);
+
+        if (yBandLbl - DS_LBL * 0.8 >= leftBottom) lbl(`${T.flown}  ·  ${T.sector} ${dk}`, L, yBandLbl, FNT());
+        const rr = Math.min(5, bandH * 0.08);
+        let fx = L;
+        for (const s of pick) {
+            sh(0);
+            if (s.next) {
+                ctx.save();
+                ctx.setLineDash([4, 4]);
+                ctx.strokeStyle = `rgba(255,255,255,${a * 0.18})`;
+                ctx.lineWidth   = 1;
+                ctx.beginPath(); ctx.roundRect(fx + 0.5, bandTop + 0.5, fw - 1, bandH - 1, rr); ctx.stroke();
+                ctx.restore();
+                font(DS_TXT);
+                ctx.textAlign    = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle    = DAY(0.60);
+                ctx.fillText(`S${s.k}`, fx + fw / 2, bandTop + bandH / 2);
+                ctx.textAlign    = 'left';
+                ctx.textBaseline = 'alphabetic';
+            } else {
+                ctx.save();
+                ctx.beginPath(); ctx.roundRect(fx, bandTop, fw, bandH, rr); ctx.clip();
+                ctx.globalAlpha = a;
+                ctx.drawImage(s.cv, fx, bandTop, fw, bandH);
+                // A scrim under the label only, so the frame itself stays true to the run.
+                const sg = ctx.createLinearGradient(0, bandTop + bandH * 0.55, 0, bandTop + bandH);
+                sg.addColorStop(0, 'rgba(4,4,14,0)');
+                sg.addColorStop(1, 'rgba(4,4,14,0.78)');
+                ctx.fillStyle = sg;
+                ctx.fillRect(fx, bandTop, fw, bandH);
+                ctx.restore();
+                lbl(`S${s.k}`, fx + Math.max(4, fw * 0.09), bandTop + bandH - Math.max(4, bandH * 0.11), INK(0.88));
+                // Red stays the death marker (rule 2 above): only the frame the run ended in.
+                ctx.strokeStyle = s.death ? `rgba(255,86,86,${a * 0.85})` : `rgba(255,255,255,${a * 0.10})`;
+                ctx.lineWidth   = s.death ? 1.5 : 1;
+                ctx.beginPath(); ctx.roundRect(fx, bandTop, fw, bandH, rr); ctx.stroke();
+            }
+            fx += fw + fgap;
+        }
+    } else if (bandOk && lastRunWx > 0 && typeof drawRunProfile === 'function') {
+        // Fallback when no death frame was captured: the corridor profile the band held
+        // before the scenes.
         // The label is the first thing to go: it is a nicety, the band is the content.
         if (yBandLbl - DS_LBL * 0.8 >= leftBottom) lbl(T.flown, L, yBandLbl, FNT());
         ctx.save();

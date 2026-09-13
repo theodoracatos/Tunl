@@ -189,6 +189,7 @@ function startPlay() {
     // Safe opening flight (constants.js SAFE_START_WX doc).
     safeEndWx = SAFE_START_WX; safeCloseWx = SAFE_CLOSE_WX;
     hullScratches = HULL_SCRATCHES; lastSectorShown = 1;   // constants.js flight plan
+    resetRunScenes();                                       // constants.js SCENE_* doc
     safeBumpT = 0; wallsLiveShown = false; safeBumps = [];
     // A ghost carried in on a ?g= share link (state.js _webGhostPlay) has to
     // survive the daily-rollover reset above, which clears the local ghost -

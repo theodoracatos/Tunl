@@ -881,6 +881,54 @@ const SAFE_BUMP_DENT_AMP     = 0.60;  // dent depth, in player radii
 const SAFE_BUMP_DENT_W       = 2.40;  // dent half-width, in player radii
 const SAFE_BUMP_RING_SEC     = 0.45;  // ring lifetime
 
+// ── Depth light: bright cave mouth, dark depths (2026-09-13) ──────────
+// Through 13.0 the void behind the walls was WEEKDAY_BG at every depth, so nothing but
+// the HUD number said how far into the cave a run had got. Now the background carries
+// it, in two layers, both draw-only (draw.js depthLightAt, drawWorld):
+// - A LIFT: WEEKDAY_BG mixed toward the day's own wallBase by DEPTH_LIFT times a level
+//   that steps down at each sector boundary (DEPTH_LIGHT_STEPS, eased over
+//   DEPTH_STEP_EASE_WX) and reaches plain WEEKDAY_BG at the start of S4. STEPS, not a
+//   continuous fade: a fade over ~30 seconds is below what a player notices while
+//   dodging spikes, a step at a sector boundary is not.
+// - A MOUTH: warm daylight (DEPTH_MOUTH_WARM, tinted DEPTH_MOUTH_TINT toward the day's
+//   rock so every day keeps its identity) falling in from behind the ship, off the left
+//   edge, shrinking and fading out over the same S0-S4 stretch. It sits BEHIND the ship
+//   on purpose: hazards arrive from the right, and that side stays as dark as it was.
+// Chosen from a 4-variant study (literal light->dark was rejected: the near-white PEARL
+// ship, gold coins, the white score and every additive 'lighter' glow lost most of their
+// contrast exactly where beginners fly):
+// https://claude.ai/code/artifact/ea963ae1-1c8b-4bf4-9587-c2f90286d666
+// Deliberately capped low (DEPTH_LIFT, DEPTH_MOUTH_ALPHA) so every glow keeps dark ground
+// to light up. Keyed to world-x through sectorAt/sectorStartWx, so it is identical on every
+// device, and it touches no gameplay value. The title screen shows the mouth (wx = 0).
+const DEPTH_LIGHT_STEPS      = [1, 0.62, 0.34, 0.14];   // lift level in S0..S3, 0 from S4
+const DEPTH_LIFT             = 0.15;  // max mix of WEEKDAY_BG toward the day's wallBase
+const DEPTH_STEP_EASE_WX     = 540;   // world-px a step takes to settle (~1.3 ref s)
+const DEPTH_MOUTH_ALPHA      = 0.30;  // mouth light strength at wx = 0
+const DEPTH_MOUTH_END_SECTOR = 4;     // the mouth is gone by the start of this sector
+const DEPTH_MOUTH_WARM       = [255, 246, 228];
+const DEPTH_MOUTH_TINT       = 0.35;  // how far the daylight leans toward the day's rock
+
+// ── Run scenes: the death screen's filmstrip (2026-09-13) ─────────────
+// One small snapshot of the real frame per sector the run reached, plus the frozen death
+// frame, shown on the death screen in the band that used to hold drawRunProfile (share.js
+// still draws that on the card). With the depth light above, the strip reads as the run
+// going from the lit mouth into the dark, and the dashed slot after the death frame names
+// the next sector, which is the "how far can I get" the plain number never answered.
+// Captured inside drawWorld() just before the floating notifs, so no notif, HUD, red
+// death flash or panel is in the picture, and cropped around the ship (SCENE_CROP_*) so a
+// frame stays readable at band height. SCENE_CAPTURE_LEAD_WX after each boundary lets the
+// lift step settle and the sector's first hazards scroll into view. The death frame waits
+// SCENE_DEATH_CAPTURE_SEC for the impact shake to settle (still inside DEATH_REPLAY_SEC,
+// so before the panel fades in). Canvases are pooled and reused across runs; a deep run keeps S0 plus the latest
+// SCENE_MAX_KEPT - 1 sectors.
+const SCENE_CAPTURE_LEAD_WX   = 900;
+const SCENE_DEATH_CAPTURE_SEC = 0.30;
+const SCENE_CROP_X0           = 0.06;  // crop, as fractions of W
+const SCENE_CROP_X1           = 0.58;
+const SCENE_THUMB_H           = 0.20;  // backing height as a fraction of H (x raster scale)
+const SCENE_MAX_KEPT          = 8;
+
 // ── Onboarding: teaching RELEASE ─────────────────────────────────────
 // The obstacle-free opening stretch (lifecycle.js STAL_START_WX) teaches thrust, but
 // nothing in the game ever teaches that RELEASING is the other half of the control

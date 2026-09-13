@@ -253,6 +253,28 @@ favicon size: the shadow-side facet tones are damped (a 54%-toward-black facet
 disappears into the `#04040e` icon ground) and the animated spine running lights are
 dropped. See `branding/README.md`.
 
+### Depth light (background, 2026-09-13)
+
+`constants.js` `DEPTH_LIGHT_*` doc, `draw.js` `depthLightAt()` / `drawWorld()`. The void
+behind the walls is no longer a flat `WEEKDAY_BG` at every depth: it is **lifted toward the
+day's own `wallBase` and steps darker at each sector boundary** (S0 15%, then 62% / 34% / 14%
+of that, plain `WEEKDAY_BG` from S4, each step eased over `DEPTH_STEP_EASE_WX`), and a
+**warm cave-mouth light** (warm white tinted 35% toward the day's rock) falls in from behind
+the ship off the left edge, fading out by S4. The title screen shows the mouth (wx = 0).
+Three rules, each from the variant study
+(https://claude.ai/code/artifact/ea963ae1-1c8b-4bf4-9587-c2f90286d666):
+- **Never literally bright.** A light-to-dark ground was measured and rejected: the
+  near-white PEARL ship, gold coins, the white score and every additive `'lighter'` glow
+  lost most of their contrast exactly where beginners fly. `DEPTH_LIFT` and
+  `DEPTH_MOUTH_ALPHA` are capped low on purpose.
+- **Steps, not a fade.** A continuous fade over ~30s is below what a player notices while
+  dodging; a step at a sector boundary is not.
+- **Light behind the ship, never ahead.** Hazards arrive from the right, and that side
+  stays as dark as it was.
+Pure function of world-x via `sectorAt`, draw-only, no gameplay value touched, same on every
+device and not `isWeb()`-gated. `document.body.style.backgroundColor` follows the lift, which
+only changes during a step (a few dozen writes per run, not per frame).
+
 ### Procedural tunnel
 Two overlapping sin waves, amplitude and frequency scale with difficulty (`_prog`).
 `_prog = Math.min(Math.sqrt(scrollX / 14000), 1)` - sqrt easing: fast early ramp, plateau near max. Reaches max difficulty at 14000 world px (~score 233).
@@ -1248,14 +1270,24 @@ Pure H-fractions put a 25px list row into a 17px slot at that size - measured, n
 hypothetical, and it is the same collision class that produced report after report on the
 old layout. Anything added here must follow the same rule.
 
-**The flight-profile band yields when space runs out.** `drawRunProfile()` (share.js) was
-once tried here as a faint full-panel backdrop and correctly rejected - as wallpaper behind
-text it is noise. Framed, in the left column under the chips, it is the opposite: the only
-thing on the screen that belongs to this run alone. It sits in the left column and not
-across the full width because the right column (rank + three rows + stats) reaches `H*0.67`
-at 952x436 and would leave it 0px. It degrades in three steps - full band, band without its
-label, no band - so a run that earns every reward at once pushes the band out instead of
-overlapping it.
+**The run band yields when space runs out.** It sits in the left column under the chips,
+the only thing on the screen that belongs to this run alone, and not across the full width
+because the right column (rank + three rows + stats) reaches `H*0.67` at 952x436 and would
+leave it 0px. It degrades in three steps - full band, band without its label, no band - so a
+run that earns every reward at once pushes the band out instead of overlapping it.
+
+**The band holds the run's scenes** (2026-09-13, `constants.js` `SCENE_*` doc,
+`draw.js` `captureRunScenes`): one real frame per sector reached (captured
+`SCENE_CAPTURE_LEAD_WX` after each boundary, inside `drawWorld()` before notifs and
+flashes, cropped around the ship), the frozen death frame last with a red edge (red stays
+the death marker), then a dashed slot naming the next sector - the "how far can I get" the
+score alone never answered. Short of room, frames drop in this order: deepest reached
+sectors first, then S0, then the next-sector slot; the death frame always stays. Label is
+`T.flown · T.sector n`, no new strings. Canvases are pooled across runs; a rewarded continue
+drops only the death frame (`dropDeathScene()` in `grantRevive`). `drawRunProfile()` held
+this band before and is still the fallback when no death frame exists; it remains the share
+card's picture. (It was also once tried as a faint full-panel backdrop here and rejected - as
+wallpaper behind text it is noise.)
 
 **Empty state:** only list rows that exist are drawn, and the row count is additionally
 clamped against the button row's top edge, which is computed before either column draws. The old layout always drew five, so
