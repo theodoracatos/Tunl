@@ -423,6 +423,52 @@ function drawThrustPlume(x, y, r, sr, sg, sb) {
     ctx.restore();
 }
 
+// Warp streak count for drawWorld's full-tunnel speed lines during a warp.
+const WARP_STREAKS = 26;
+
+// One half of the warp portal's hoop band (drawWorld's portal block). `front`
+// false = the far (left) arc, drawn behind the ship at reduced alpha; true = the
+// near (right) arc plus the chase light, drawn over it. Three stacked strokes
+// (wide soft violet, violet body, near-white core) stand in for shadowBlur, and
+// the white core is what keeps the hoop legible on the violet Ianthe rock. Once
+// flown through, the hoop widens as usedFade runs out instead of just dimming.
+function _portalBand(p, sx, alpha, front) {
+    const flare = p.used ? 1 - p.usedFade : 0;
+    const s  = 1 + flare * 0.6;
+    const ry = Math.max(p.r, PR * 1.6) * s;   // = update.js portalHitTol
+    const rx = p.r * 0.30 * s;
+    const a0 = front ? -Math.PI * 0.5 : Math.PI * 0.5;
+    const a1 = a0 + Math.PI;
+    const a  = alpha * (front ? 1 : 0.55);
+    ctx.save();
+    ctx.translate(sx, p.y);
+    ctx.lineCap = 'round';
+    const band = (w, clr) => {
+        ctx.beginPath();
+        ctx.ellipse(0, 0, rx, ry, 0, a0, a1);
+        ctx.strokeStyle = clr;
+        ctx.lineWidth   = w;
+        ctx.stroke();
+    };
+    band(Math.max(6, p.r * 0.25),   `rgba(140,115,255,${0.16 * a})`);
+    band(Math.max(2.5, p.r * 0.08), `rgba(150,120,255,${0.85 * a})`);
+    band(Math.max(1.2, p.r * 0.025), `rgba(255,244,226,${0.95 * a})`);
+    if (front) {
+        // Chase light: three bright dashes running over the near arc, top to
+        // bottom, so the hoop reads as live energy rather than a static frame.
+        ctx.lineWidth = Math.max(2.5, p.r * 0.07);
+        for (let k = 0; k < 3; k++) {
+            const ph  = (gtime * 0.9 + k / 3) % 1;
+            const ang = -Math.PI * 0.5 + ph * Math.PI;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, rx, ry, 0, ang - 0.10, ang + 0.10);
+            ctx.strokeStyle = `rgba(255,244,226,${a * (0.9 - 0.5 * Math.abs(ph - 0.5))})`;
+            ctx.stroke();
+        }
+    }
+    ctx.restore();
+}
+
 // ── Draw ──────────────────────────────────────────────────────────────
 
 let _lastBgStr = '';
@@ -788,71 +834,111 @@ function drawWorld() {
         }
     }
 
-    // Warp portal ring - reward set-piece (constants.js "Warp portal" doc), never
-    // a hazard: two counter-rotating rings around a shared violet glow. Fades out
-    // over usedFade once flown through instead of vanishing outright, so the
-    // moment reads as "consumed" rather than "disappeared".
+    // Warp speed streaks: white horizontal lines sweeping the whole tunnel while a
+    // warp is live, alpha riding warpScrollFactor() so they swell with the surge and
+    // thin out over the recovery glide. Purely cosmetic and stateless - positions
+    // come from scrollX plus a per-streak hash (_rockHash), re-rolled each time a
+    // streak wraps, so no rng() draw and no per-frame array to maintain.
+    if (warpTime > 0 && warpMult > 1) {
+        const wa = Math.max(0, Math.min(1, (warpScrollFactor() - 1) / (warpMult - 1)));
+        if (wa > 0.02) {
+            ctx.fillStyle = `rgba(228,222,255,${0.35 * wa})`;
+            const lw = Math.max(1, H * 0.0028);
+            for (let i = 0; i < WARP_STREAKS; i++) {
+                const len  = W * (0.045 + 0.08 * (0.5 + 0.5 * _rockHash(i * 3.1 + 0.7)));
+                const span = W + len;
+                const u    = scrollX * 2.5 + (0.5 + 0.5 * _rockHash(i * 5.3 + 1.9)) * span;
+                const lap  = Math.floor(u / span);
+                const x    = W - (u - lap * span);
+                const y    = H * (0.09 + 0.82 * (0.5 + 0.5 * _rockHash(i * 7.7 + lap * 13.1)));
+                ctx.fillRect(x, y, len, lw);
+            }
+        }
+    }
+
+    // Warp portal - reward set-piece (constants.js "Warp portal" doc), never a
+    // hazard. A tall hoop seen in slight perspective (design pass 2026-09-13,
+    // "Reif"; replaced the flat counter-rotating ovals, which read as a disc you
+    // fly OVER). Split into two passes so the ship visibly threads it: this pass
+    // draws the glow, the flow lines through the aperture and the far half of the
+    // band BEHIND the ship; drawPortalFront() draws the near half after the player.
+    // The band's height is the hit window itself (update.js portalHitTol), so the
+    // picture and the collision agree - the old oval was drawn at half that height.
+    // No shadowBlur: wide soft strokes instead, same rule as drawShip.
     for (const p of portals) {
         const sx = p.wx - scrollX;
-        if (sx < -p.r - 30 || sx > W + p.r + 30) continue;
+        if (sx < -p.r * 2 || sx > W + p.r * 2) continue;
         if (p.used && p.usedFade <= 0) continue;
         const pAlpha = p.used ? p.usedFade : 1;
         ctx.save();
         ctx.globalAlpha = pAlpha;
         ctx.translate(sx, p.y);
-        const pulse = 0.90 + 0.10 * Math.sin(gtime * 3.4 + p.wx * 0.01);
-        const pgrd = ctx.createRadialGradient(0, 0, p.r * 0.2, 0, 0, p.r * 1.9);
-        pgrd.addColorStop(0,    'rgba(150,110,255,0.32)');
-        pgrd.addColorStop(0.55, 'rgba(120,80,255,0.12)');
-        pgrd.addColorStop(1,    'transparent');
+        const glowR = p.r * 1.3;
+        const pgrd = ctx.createRadialGradient(0, 0, 0, 0, 0, glowR);
+        pgrd.addColorStop(0, 'rgba(140,115,255,0.20)');
+        pgrd.addColorStop(1, 'rgba(140,115,255,0)');
         ctx.beginPath();
-        ctx.arc(0, 0, p.r * 1.9 * pulse, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, p.r * 0.9, glowR, 0, 0, Math.PI * 2);
         ctx.fillStyle = pgrd;
         ctx.fill();
-        for (const dir of [1, -1]) {
-            ctx.save();
-            ctx.rotate(gtime * 0.8 * dir + (dir < 0 ? 0.6 : 0));
+        // Flow lines pulled through the opening in flight direction, pinched toward
+        // the centre as they pass the band - the "Sog" in motion.
+        ctx.lineWidth = Math.max(1, p.r * 0.022);
+        for (let k = 0; k < 9; k++) {
+            const yy  = (k / 8 - 0.5) * p.r * 1.5;
+            const ph  = (gtime * 1.4 + k * 0.37) % 1;
+            const x0  = -p.r * 1.6 + ph * p.r * 2.6;
+            const len = p.r * 0.5 * (1 - Math.abs(yy) / (p.r * 0.9));
+            const pinch = x => 0.35 + 0.65 * Math.min(1, Math.abs(x) / p.r);
             ctx.beginPath();
-            // Flattened rather than circular - a 2D game reads a wide oval as a
-            // gateway more readily than a perfect ring (user feedback 2026-09-12).
-            ctx.ellipse(0, 0, p.r * pulse, p.r * pulse * 0.52, 0, 0, Math.PI * 2);
-            ctx.strokeStyle = dir > 0 ? 'rgba(190,150,255,0.85)' : 'rgba(140,100,255,0.55)';
-            ctx.lineWidth   = dir > 0 ? 2.4 : 1.5;
-            ctx.shadowColor = 'rgba(150,110,255,0.75)';
-            ctx.shadowBlur  = 10;
+            ctx.moveTo(x0, yy * pinch(x0));
+            ctx.lineTo(x0 + len, yy * pinch(x0 + len));
+            ctx.strokeStyle = `rgba(198,180,240,${0.35 * Math.sin(ph * Math.PI)})`;
             ctx.stroke();
-            ctx.restore();
         }
-        ctx.shadowBlur = 0;
         ctx.restore();
+        _portalBand(p, sx, pAlpha, false);
     }
 
-    // Boulders - solid rounded rock, same stone treatment as the walls/stalactites
+    // Boulders - rock islands, same stone treatment as the walls/stalactites. The path
+    // is the exact polygon systems.js boulderHit collides against.
+    const islandPath = (bo, sx) => {
+        ctx.beginPath();
+        for (let i = 0; i <= BOULDER_PROF_N; i++) ctx.lineTo(sx + BOULDER_U[i] * bo.hl, bo.y - bo.up[i]);
+        for (let i = BOULDER_PROF_N - 1; i > 0; i--) ctx.lineTo(sx + BOULDER_U[i] * bo.hl, bo.y + bo.dn[i]);
+        ctx.closePath();
+    };
     for (const bo of boulders) {
         const sx = bo.wx - scrollX;
-        if (sx < -bo.r - 30 || sx > W + bo.r + 30) continue;
+        if (sx < -bo.hl - 30 || sx > W + bo.hl + 30) continue;
         ctx.save();
         ctx.globalAlpha = warpFade;   // ghosted while phased through (constants.js "Warp portal" doc)
-        const bgrd = ctx.createRadialGradient(sx - bo.r * 0.35, bo.y - bo.r * 0.4, bo.r * 0.1, sx, bo.y, bo.r);
-        bgrd.addColorStop(0,   rgb(lerpClr(theme.stal, theme.stalEdge, 0.35)));
-        bgrd.addColorStop(0.6, rgb(theme.stal));
-        bgrd.addColorStop(1,   rgb(lerpClr(theme.stal, [0, 0, 0], 0.35)));
+        // Lit from above like the ship: light top face, dark underside.
+        const bgrd = ctx.createLinearGradient(0, bo.y - bo.upMax, 0, bo.y + bo.dnMax);
+        bgrd.addColorStop(0,    rgb(lerpClr(theme.stal, theme.stalEdge, 0.35)));
+        bgrd.addColorStop(0.55, rgb(theme.stal));
+        bgrd.addColorStop(1,    rgb(lerpClr(theme.stal, [0, 0, 0], 0.4)));
         ctx.save();
-        ctx.beginPath();
-        ctx.arc(sx, bo.y, bo.r, 0, Math.PI * 2);
+        islandPath(bo, sx);
         ctx.fillStyle = bgrd;
         ctx.fill();
         ctx.clip();
         _paintStonePattern(scrollX);
         ctx.restore();
-        ctx.beginPath();
-        ctx.arc(sx, bo.y, bo.r, 0, Math.PI * 2);
+        islandPath(bo, sx);
+        ctx.lineJoin    = 'round';
         ctx.shadowColor = rgb(theme.stalEdge, 0.5);
         ctx.shadowBlur  = 12;
         ctx.strokeStyle = rgb(theme.stalEdge, 0.7);
         ctx.lineWidth   = 2;
         ctx.stroke();
         ctx.shadowBlur = 0;
+        // Faint highlight along the upper face
+        ctx.beginPath();
+        for (let i = 2; i <= BOULDER_PROF_N - 2; i++) ctx.lineTo(sx + BOULDER_U[i] * bo.hl, bo.y - bo.up[i] + 2.5);
+        ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+        ctx.lineWidth   = 1.5;
+        ctx.stroke();
         ctx.restore();
     }
 
@@ -1319,10 +1405,11 @@ function drawWorld() {
             ctx.lineJoin = 'miter'; ctx.lineCap = 'butt';
             ctx.restore();
         } else if (isWrp) {
-            // Reward coin - a small twin of the portal ring itself (drawWorld's
-            // portal block), so the two entry points into a warp read as the same
-            // object at two scales. Two counter-rotating rings, no gem/rune/burst
-            // silhouette shared with any other coin.
+            // Reward coin - a small twin of the portal hoop itself (drawWorld's
+            // portal block / _portalBand), so the two entry points into a warp
+            // read as the same object at two scales: tall violet band, near-white
+            // core, one chase-light dash. No gem/rune/burst silhouette shared with
+            // any other coin.
             const jag = coin.wx * 0.014;
             const pr  = COIN_R * 1.10 * (0.94 + 0.10 * Math.sin(gtime * 4.5 + jag));
             const grdW = ctx.createRadialGradient(sx, coin.y, pr * 0.3, sx, coin.y, pr * 3.0);
@@ -1334,24 +1421,21 @@ function drawWorld() {
 
             ctx.save();
             ctx.translate(sx, coin.y);
-            for (const dir of [1, -1]) {
-                ctx.save();
-                ctx.rotate(gtime * 2.2 * dir + (dir < 0 ? 0.9 : 0));
-                ctx.beginPath();
-                // Same flattened oval as the full-size portal ring, not a circle.
-                ctx.ellipse(0, 0, pr * (dir > 0 ? 1.0 : 0.62), pr * (dir > 0 ? 0.52 : 0.32), 0, 0, Math.PI * 2);
-                ctx.strokeStyle = dir > 0 ? `rgba(${Math.min(255,gr+60)},${Math.min(255,gg+60)},255,0.92)` : `rgba(${gr},${gg},${gb},0.60)`;
-                ctx.lineWidth   = dir > 0 ? 2.0 : 1.3;
-                ctx.shadowColor = `rgba(${gr},${gg},${gb},0.80)`;
-                ctx.shadowBlur  = 7;
-                ctx.stroke();
-                ctx.restore();
-            }
-            ctx.shadowBlur = 0;
-            ctx.beginPath();
-            ctx.arc(0, 0, pr * 0.22, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(255,255,255,0.90)';
-            ctx.fill();
+            ctx.lineCap = 'round';
+            const hrx = pr * 0.42, hry = pr * 1.15;
+            ctx.beginPath(); ctx.ellipse(0, 0, hrx, hry, 0, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(150,120,255,0.90)';
+            ctx.lineWidth   = Math.max(2, pr * 0.34);
+            ctx.stroke();
+            ctx.strokeStyle = 'rgba(255,244,226,0.95)';
+            ctx.lineWidth   = Math.max(1, pr * 0.12);
+            ctx.stroke();
+            const hAng = -Math.PI * 0.5 + ((gtime * 0.9 + jag) % 1) * Math.PI;
+            ctx.beginPath(); ctx.ellipse(0, 0, hrx, hry, 0, hAng - 0.3, hAng + 0.3);
+            ctx.strokeStyle = 'rgba(255,244,226,1)';
+            ctx.lineWidth   = Math.max(1.8, pr * 0.30);
+            ctx.stroke();
+            ctx.lineCap = 'butt';
             ctx.restore();
         } else {
         const pulse = 1 + 0.18 * Math.sin(gtime * 5.5 + coin.wx * 0.013);
@@ -1751,6 +1835,14 @@ function drawWorld() {
         ctx.restore();
     }
 
+    // Near half of every warp portal, over the ship (see the portal block above).
+    for (const p of portals) {
+        const sx = p.wx - scrollX;
+        if (sx < -p.r * 2 || sx > W + p.r * 2) continue;
+        if (p.used && p.usedFade <= 0) continue;
+        _portalBand(p, sx, p.used ? p.usedFade : 1, true);
+    }
+
     // Idle-hold hint: the player pressed nothing at all after launch (see
     // hasHeldThisRun/idleHoldTimer, state.js + update.js). Gravity is withheld until
     // their first press, so they aren't in danger yet, but they still don't know what
@@ -2043,6 +2135,31 @@ function drawHUD() {
         ctx.textBaseline = 'middle';
         ctx.fillStyle    = 'rgba(255,175,60,0.85)';
         ctx.fillText(T.ammo, startX + bulletAmmo * dotR * 2.8 + W * 0.010, dotY);
+        ctx.restore();
+    }
+
+    // Hull scratches (bottom right, mirrors the ammo row): only while they still apply.
+    if (phase === 'play' && hullScratches > 0 && scrollX + PX < HULL_END_WX && !wallsSafe()) {
+        const s      = 5;
+        const dotY   = H * 0.910;
+        const endX   = W * 0.775;
+        ctx.save();
+        ctx.shadowColor = 'rgba(255,170,90,0.7)';
+        ctx.shadowBlur  = 6;
+        ctx.fillStyle   = 'rgba(255,190,120,0.85)';
+        for (let i = 0; i < hullScratches; i++) {
+            const cx = endX - i * (s * 3);
+            ctx.beginPath();
+            ctx.moveTo(cx, dotY - s); ctx.lineTo(cx + s, dotY); ctx.lineTo(cx, dotY + s); ctx.lineTo(cx - s, dotY);
+            ctx.closePath();
+            ctx.fill();
+        }
+        ctx.shadowBlur   = 0;
+        ctx.font         = `bold ${FS*0.016}px 'Courier New',monospace`;
+        ctx.textAlign    = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle    = 'rgba(255,200,140,0.85)';
+        ctx.fillText(T.hull, endX - hullScratches * s * 3 - W * 0.004, dotY);
         ctx.restore();
     }
 

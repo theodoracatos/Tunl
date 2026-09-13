@@ -40,15 +40,15 @@ const START_RUN = `
         rngMine   = makeRngStream(Math.imul(dayInt ^ 0x4D19, 0x85EBCA6B));
         rngCannon = makeRngStream(Math.imul(dayInt ^ 0xCA77, 0xC2B2AE35));
         scrollX = 0; gapBonus = 0; gapBonusVisual = 0; activeSkin = 0;
-        stalactites = []; nextStalWx = HAZARD_START_WX; nextFallWx = 7800;
+        stalactites = []; nextStalWx = HAZARD_START_WX; nextFallWx = FALL_START_WX;
         coins = []; nextCoinWx = 500; chicaneCoins = []; lastChicaneCoinWx = -Infinity;
-        mines = []; nextMineWx = HAZARD_START_WX;
+        mines = []; nextMineWx = MINE_START_WX;
         cannons = []; nextCannonWx = CANNON_START_WX; cannonShots = [];
         boulders = []; nextBoulderWx = BOULDER_START_WX;
         portals = []; nextPortalWx = PORTAL_START_WX;
-        nextPoisonWx = worldPxForSec(POISON_INTERVAL_SEC * (0.7 + rngCoin() * 0.6), 0);
-        nextBombWx   = worldPxForSec(BOMB_INTERVAL_SEC   * (0.7 + rngCoin() * 0.6), 0);
-        nextDrainWx  = worldPxForSec(DRAIN_INTERVAL_SEC  * (0.7 + rngCoin() * 0.6), 0);
+        nextPoisonWx = POISON_START_WX + worldPxForSec(POISON_INTERVAL_SEC * (0.15 + rngCoin() * 0.5), POISON_START_WX);
+        nextBombWx   = BOMB_START_WX   + worldPxForSec(BOMB_INTERVAL_SEC   * (0.15 + rngCoin() * 0.5), BOMB_START_WX);
+        nextDrainWx  = DRAIN_START_WX  + worldPxForSec(DRAIN_INTERVAL_SEC  * (0.15 + rngCoin() * 0.5), DRAIN_START_WX);
         nextWarpWx   = worldPxForSec(WARP_COIN_INTERVAL_SEC * (0.7 + rngCoin() * 0.6), 0);
         lastBlueWx = 0; lastRedWx = 0; lastGreenWx = 0;
         refreshWave();
@@ -67,7 +67,7 @@ const START_RUN = `
             chic:    chicaneCoins.map(o => [o.wx, o.y]),
             mine:    mines.map(o => [o.wx, o.baseY, o.bobAmp]),
             cannon:  cannons.map(o => [o.wx, o.isTop]),
-            boulder: boulders.map(o => [o.wx, o.y, o.r]),
+            boulder: boulders.map(o => [o.wx, o.y, o.r, o.hl, o.up, o.dn]),
             portal:  portals.map(o => [o.wx, o.y, o.r]),
         };
     };
@@ -105,7 +105,7 @@ function normalise(snap, H) {
         chic:    snap.chic.map(([wx, y]) => [+wx.toFixed(9), vy(y)]),
         mine:    snap.mine.map(([wx, y, b]) => [+wx.toFixed(9), vy(y), vy(b)]),
         cannon:  snap.cannon.map(([wx, t]) => [+wx.toFixed(9), t]),
-        boulder: snap.boulder.map(([wx, y, r]) => [+wx.toFixed(9), vy(y), vy(r)]),
+        boulder: snap.boulder.map(([wx, y, r, hl, up, dn]) => [+wx.toFixed(9), vy(y), vy(r), +hl.toFixed(6), up.map(vy), dn.map(vy)]),
         portal:  snap.portal.map(([wx, y, r]) => [+wx.toFixed(9), vy(y), vy(r)]),
     });
 }
@@ -121,6 +121,10 @@ function replay(innerWidth, innerHeight, dayInt, untilWx) {
         const snap = w.snapshot();
         for (const k of Object.keys(seen)) {
             for (const row of snap[k]) {
+                // Only what lies inside the flown stretch: past untilWx the spawn horizon
+                // is reached on a device-sized final step, so whether one more object got
+                // created there is an artifact of where the replay stops, not of the cave.
+                if (row[0] >= untilWx) continue;
                 const id = k + '|' + row[0].toFixed(6);
                 if (!ids.has(id)) { ids.add(id); seen[k].push(row); }
             }
@@ -173,9 +177,9 @@ for (const day of DAYS) {
 {
     const ref = replay(956, 440, DAYS[0], UNTIL_WX);
     const n = Object.values(ref.snap).reduce((a, v) => a + v.length, 0);
-    check(`reference replay is actually populated (${n} objects)`, n > 200 &&
+    check(`reference replay is actually populated (${n} objects)`, n > 120 &&
         ref.snap.stal.length > 50 && ref.snap.coin.length > 20 &&
-        ref.snap.mine.length > 10 && ref.snap.boulder.length > 0 &&
+        ref.snap.mine.length > 5 && ref.snap.boulder.length > 0 &&   // mines only from score ~200, sparse (2026-09-13)
         ref.snap.portal.length > 0);
 }
 
@@ -192,10 +196,9 @@ for (const day of DAYS) {
     const w = makeWorld(956, 440);
     const g = name => vm.runInContext(name, w);
     const REF_STAL_W = 956 * 0.030;      // placeStalW at its widest (progAt 0)
-    // Widest a boulder can ever be, in reference-y px: _makeBoulderAt caps r at
-    // 0.30 * halfGap, and halfGap peaks at the wx=0 onboarding widen (0.34 + 0.09),
-    // wider than any deep chamber (2.1 * 0.163 = 0.342).
-    const MAX_BOULDER_R_REF = 0.30 * g('_H_REF') * 0.43;
+    // Widest a boulder can ever reach horizontally: an island's half-length is r times
+    // its stretch, hard-capped at BOULDER_MAX_HALF_LEN world-px (systems.js).
+    const MAX_BOULDER_R_REF = g('BOULDER_MAX_HALF_LEN');
     const budget = [
         // [name, own horizon, largest retry offset, inspection radius]
         ['coins',   g('SPAWN_AHEAD_COIN'),    0,                                   REF_STAL_W + 956 * 0.009 * 2],
@@ -223,12 +226,12 @@ for (const day of DAYS) {
 {
     const w = makeWorld(956, 440);
     const PR         = vm.runInContext('PR', w);
-    const H_TO_REF   = vm.runInContext('_H_TO_REF', w);
     const boundsBase = vm.runInContext('boundsBase', w);
     const placeStalW = vm.runInContext('placeStalW', w);
-    let checked = 0, sealed = 0, worst = Infinity;
+    const U          = vm.runInContext('BOULDER_U', w);
+    let checked = 0, sealed = 0, worst = Infinity, lenMax = 0, lenSum = 0;
     for (const day of DAYS) {
-        // snapshot() rows: stal [wx, isTop, length, falls], boulder [wx, y, r]
+        // snapshot() rows: stal [wx, isTop, length, falls], boulder [wx, y, r, hl, up[], dn[]]
         const { snap } = replay(956, 440, day, 40000);
         // boundsBase/placeStalW close over this sandbox's per-day wave phase/jitter/
         // archetype/deep-hash state (world.js seedDailyVariety), which only ever gets
@@ -237,23 +240,32 @@ for (const day of DAYS) {
         // day actually being checked. PR/H_TO_REF are pure W/H constants and don't
         // need this. Mirrors the portal check below, which already re-seeds per day.
         w.startRun(day);
-        for (const [bwx, by, br] of snap.boulder) {
-            const bb = boundsBase(bwx);
-            let top = bb.top, bot = bb.bot;
-            for (const [swx, sTop, slen] of snap.stal) {
-                if (Math.abs(swx - bwx) >= br * H_TO_REF + placeStalW(swx)) continue;
-                const sb = boundsBase(swx);
-                if (sTop) top = Math.max(top, sb.top + slen);
-                else      bot = Math.min(bot, sb.bot - slen);
+        // An island spans a stretch of corridor, so each pass is its narrowest point
+        // along the whole outline, measured against the bounds and spikes at that x.
+        for (const [bwx, by, , hl, up, dn] of snap.boulder) {
+            let above = Infinity, below = Infinity;
+            for (let i = 0; i < U.length; i++) {
+                const x = bwx + U[i] * hl, bb = boundsBase(x);
+                let top = bb.top, bot = bb.bot;
+                for (const [swx, sTop, slen] of snap.stal) {
+                    if (Math.abs(swx - x) >= placeStalW(swx)) continue;
+                    const sb = boundsBase(swx);
+                    if (sTop) top = Math.max(top, sb.top + slen);
+                    else      bot = Math.min(bot, sb.bot - slen);
+                }
+                above = Math.min(above, ((by - up[i]) - top) / (2 * PR));
+                below = Math.min(below, (bot - (by + dn[i])) / (2 * PR));
             }
-            const above = ((by - br) - top) / (2 * PR), below = (bot - (by + br)) / (2 * PR);
             checked++;
+            lenMax = Math.max(lenMax, 2 * hl); lenSum += 2 * hl;
             worst = Math.min(worst, Math.max(above, below));
             if (above < 0.25 && below < 0.25) sealed++;
         }
     }
     check(`every boulder keeps a pass open (${checked} boulders, ${sealed} sealed, worst best-pass ${worst.toFixed(2)} player diameters)`,
         checked > 10 && sealed === 0 && worst >= 1.0);
+    check(`boulder islands stay short (mean length ${(lenSum / checked / (2 * PR)).toFixed(1)}, max ${(lenMax / (2 * PR)).toFixed(1)} player diameters)`,
+        lenMax <= 2 * vm.runInContext('BOULDER_MAX_HALF_LEN', w) + 1e-9);
 }
 
 // ── Portals keep their contract ─────────────────────────────────────────

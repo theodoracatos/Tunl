@@ -737,11 +737,12 @@ const BOMB_RADIUS = W * 0.30;
 // (see die()'s bypassShield branch); a future rewarded "continue" reuses the same timer.
 const HIT_INVULN_SEC = 1.4;
 
-// ── Onboarding: safe opening flight (score 0-100, every run) ─────────
+// ── Onboarding: safe opening flight (score 0-50, every run) ─────────
 // Beginner feedback (2026-09-13, several players): "too hard, frustrating, deleted".
 // The measured cause is the control scheme, not the obstacles - a beginner's median
 // run was 1.0s of flight, i.e. they died to the ceiling/floor before learning the feel.
-// So the first ~100 points of EVERY run are a plain flight:
+// So the first ~50 points of EVERY run are a plain flight (was ~100 until the same
+// day, cut to 50 on request):
 // - the corridor opens up to the screen edges (world.js safeOpenAt, boundsAt only -
 //   placement via boundsBase is untouched) and the walls bump the ship back instead of
 //   killing it (update.js safeWallBump), easing shut over the last SAFE_CLOSE_WX;
@@ -753,12 +754,99 @@ const HIT_INVULN_SEC = 1.4;
 // here are fixed world-px, never W/H-derived, or the cave would fork per device.
 // Briefly (same day, never shipped) this was a 3-run off-record "training flight" with
 // normal runs safe only to score 50; unified on request once both had the same rules.
-const SAFE_START_WX       = 6000;   // ~score 100: walls turn lethal here
+const SAFE_START_WX       = 3000;   // ~score 50: walls turn lethal here (was 6000 / ~100)
 const SAFE_CLOSE_WX       = 1800;
 const SAFE_HAZARD_GAP_WX  = 400;
-const HAZARD_START_WX     = SAFE_START_WX + SAFE_HAZARD_GAP_WX;   // first stalactite + mine
-const BOULDER_START_WX    = HAZARD_START_WX + 220;
-const CANNON_START_WX     = HAZARD_START_WX + 600;   // > CANNON_FIRE_LEAD at the W cap, so no shot inside the zone
+const HAZARD_START_WX     = SAFE_START_WX + SAFE_HAZARD_GAP_WX;   // first stalactite
+
+// ── Flight plan: sectors (2026-09-13) ────────────────────────────────
+// A run is a sequence of SECTORS of SECTOR_SEC reference seconds each. Sector 0 is the
+// safe opening flight (ends at SAFE_START_WX); every later sector introduces at most one
+// or two new things and runs a small density sawtooth (world.js sectorEnvelope). Why:
+// a measured replay (4 bot skill tiers, 24 day-seeds) found 7 new elements in the first
+// 9 seconds, none between 9s and 22s, five between 23s and 37s and nothing new after
+// that - and hazard rates per second DOUBLING twice between score 300 and 1150, which
+// ended 93-100% of expert runs inside one score band. Sectors spread the novelty evenly
+// and let every rate grow by a fixed factor per sector instead. See CLAUDE.md "Flight plan".
+//
+// Reference seconds, not real seconds: refSpdTrend() is scrollSpdBase()'s trend at the
+// W cap (no deep pulse, no slow/warp), so a sector boundary is a pure function of world-x
+// and identical for every player and screen (cross-device fairness, test-cave.js).
+const SECTOR_SEC = 7;
+function refSpdTrend(wx) {
+    // scrollSpdBase's trend (world.js calls this - one formula, not two copies).
+    const p  = Math.min(Math.sqrt(Math.max(wx, 0) / 14000), 1);
+    const p2 = Math.max(wx - 14000, 0) / 40000;
+    return lerp(lerp(230, 400, p), 560, Math.min(p2, 1)) + Math.sqrt(Math.max(p2 - 1, 0)) * 90;
+}
+const _sectorWx = [0];
+function _extendSectors(untilWx, untilIdx) {
+    // Integrates reference flight time in 1/50 s steps from SAFE_START_WX; grows lazily
+    // and deterministically, so a deep run only pays for the sectors it reaches.
+    if (_sectorWx.length === 1) _sectorWx.push(SAFE_START_WX);
+    let wx = _sectorWx[_sectorWx.length - 1];
+    while (_sectorWx[_sectorWx.length - 1] <= untilWx || _sectorWx.length <= untilIdx) {
+        let t = 0;
+        while (t < SECTOR_SEC) {
+            const v = refSpdTrend(wx) * 956 / 600;
+            wx += v / 50; t += 1 / 50;
+        }
+        _sectorWx.push(Math.round(wx));
+        wx = _sectorWx[_sectorWx.length - 1];
+    }
+}
+function sectorStartWx(k) { _extendSectors(-1, k); return _sectorWx[k]; }
+function sectorAt(wx) {
+    _extendSectors(wx, 0);
+    let lo = 0, hi = _sectorWx.length - 1;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (_sectorWx[mid] <= wx) lo = mid; else hi = mid - 1; }
+    return lo;
+}
+// 0 at a sector's start, 1 at its end.
+function sectorPhase(wx) {
+    const k = sectorAt(wx);
+    const a = _sectorWx[k], b = sectorStartWx(k + 1);
+    return Math.min(Math.max((wx - a) / (b - a), 0), 1);
+}
+// What each sector introduces (score is approximate, distance only):
+//   S0  0-50    safe flight: gold, blue
+//   S1  50-111  walls lethal + HULL_SCRATCHES, first stalactites, red shield coin
+//   S2  111-178 orange ammo, green magnet
+//   S3  178-252 first mine (alone, centred), bomb coin
+//   S4  252-328 boulders
+//   S5  328-408 chicanes (faded in over CHICANE_FADE_WX)
+//   S6  408-493 cannons
+//   S7  493-583 falling stalactites
+//   S8  583-677 poison coin
+//   S9  677-773 drain coin
+//   S10+        nothing new - every rate keeps growing per sector (world.js)
+// Tools arrive before the threat they answer. They are not pushed later than S2 on
+// purpose: the daily missions ("5 ammo", "2 magnets", "3 bombs") must stay reachable for
+// casual players, whose runs end around S2-S3.
+const RED_START_WX        = sectorStartWx(1);
+const ORANGE_START_WX     = sectorStartWx(2);
+const GREEN_START_WX      = sectorStartWx(2);
+const MINE_START_WX       = sectorStartWx(3);
+const BOMB_START_WX       = sectorStartWx(3);
+const BOULDER_START_WX    = sectorStartWx(4);
+const CHICANE_START_WX    = sectorStartWx(5);
+const CHICANE_FADE_WX     = 6000;   // chicaneProb ramps 0 -> full over this after CHICANE_START_WX
+const CANNON_START_WX     = sectorStartWx(6);
+const FALL_START_WX       = sectorStartWx(7);
+const POISON_START_WX     = sectorStartWx(8);
+const DRAIN_START_WX      = sectorStartWx(9);
+// Soft hand-over from the safe flight (update.js wall collision): when the walls turn
+// lethal the ship carries HULL_SCRATCHES wall-only "scratches" until the end of sector 2.
+// A wall hit spends one (bounce + HIT_INVULN_SEC grace) instead of the run. Measured with
+// 2 scratches until score 150: runs dying within 8 points of the walls turning lethal
+// 41% -> 4% (beginner tier), share reaching score 100 4% -> 40% (beginner) and 32% -> 66%
+// (average, the tier real players match). A plain shield at the same moment was tried
+// and rejected: it mostly helped the good tier (+72% median) by eating a stalactite later.
+const HULL_SCRATCHES      = 2;
+const HULL_END_WX         = sectorStartWx(3);
+// Hazard LENGTH pace (world.js stalLenFrac/cannonSpacing): the old 14000/40000 two-leg
+// shape, starting at HAZARD_START_WX and stretched. Densities use the sector rates.
+const HAZ_RAMP_WX         = 30000;
 const WALLS_LIVE_HINT_RUNS = 3;     // "walls now deadly" notif only on a player's first runs
 const SAFE_OPEN_PAD          = H * (10 / _H_REF);   // wall sliver left at each screen edge
 
@@ -961,12 +1049,12 @@ const POWERUP_MIN_GAP_SEC = { blue: 8, red: 9, green: 8 };
 // Minimum real seconds between two chicane gold coins (systems.js
 // maintainStalactites). Same "cadence in seconds, not pixels" reasoning as the
 // floors above - see the full argument at the call site and in the GAP_DECAY_FRAC doc.
+// Flat at every depth since 2026-09-13. It used to be scaled by a 0.45 early multiplier
+// so it stayed a no-op below score ~233, where chicanes then began; chicanes now only
+// start at CHICANE_START_WX (~score 300), where that multiplier just let nearly every
+// new chicane drop a free centreline coin (measured 5.1/10s at score 300-500).
 const CHICANE_GOLD_GAP_SEC = 2.2;
-// ...scaled by this at/below the _prog2 ramp start and lerped to 1.0 by score ~900,
-// so the gate is a no-op for the whole stretch real players actually reach. Same
-// "never make the early game harder" rule as POWERUP_GAP_EARLY_MULT.
-const CHICANE_GOLD_EARLY_MULT = 0.45;
-// Multiplier on the values above at/below the _prog2 ramp start, lerped to 1.0 by
+// Multiplier on POWERUP_MIN_GAP_SEC at/below the _prog2 ramp start, lerped to 1.0 by
 // _prog2 = 1 (score ~900). See the "no-op early" argument in the doc block above.
 const POWERUP_GAP_EARLY_MULT = 0.30;
 

@@ -314,6 +314,10 @@ let invulnT;
 // lethal this run, how long the corridor takes to close before it, the bump-feedback
 // cooldown, and whether the one-shot walls-live hint has fired. 0 on the title screen = no zone.
 let safeEndWx = 0, safeCloseWx = 1, safeBumpT = 0, wallsLiveShown = false;
+// Flight plan (constants.js sector table): wall-only scratches left this run
+// (HULL_SCRATCHES at start, spent by update.js hullScratch until HULL_END_WX), and the
+// highest sector whose "SECTOR n" notif has already fired this run.
+let hullScratches = 0, lastSectorShown = 0;
 // Rewarded continue, run-scoped (constants.js CONTINUE_MIN_SCORE doc). continueOfferPending
 // is true while the offer icon is up and death's real bookkeeping (commitDeath) is on
 // hold; continueAdPending is true only while native has a rewarded ad on screen, and

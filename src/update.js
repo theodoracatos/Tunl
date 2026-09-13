@@ -387,13 +387,24 @@ function update(dt) {
     }
 
     // Safe opening flight: on a player's first few runs, say it out loud when the
-    // corridor starts closing in - walls turning lethal ~100 points in would otherwise
+    // corridor starts closing in - walls turning lethal ~50 points in would otherwise
     // be a surprise. Veterans know, so it stays quiet for them.
     safeBumpT = Math.max(0, safeBumpT - dt);
     if (totalRuns <= WALLS_LIVE_HINT_RUNS && !wallsLiveShown && scrollX + PX >= safeEndWx - safeCloseWx) {
         wallsLiveShown = true;
         pushNotif(PX + PR * 3, py - H * 0.10, 1.8, T.wallsLive, [255, 120, 70]);
         window.webkit?.messageHandlers?.haptic?.postMessage('medium');
+    }
+
+    // Flight plan: announce each new sector from sector 2 on (sector 1 already has the
+    // walls-live hint). Keyed to the player's world-x, so it fires at the same spot for
+    // everyone - it is the sector boundary, not a score.
+    {
+        const sec = sectorAt(scrollX + PX);
+        if (sec > lastSectorShown) {
+            lastSectorShown = sec;
+            pushNotif(PX + PR * 3, py - H * 0.12, 1.6, `${T.sector} ${sec}`, [170, 150, 255]);
+        }
     }
 
     // Milestone check
@@ -581,6 +592,8 @@ function update(dt) {
             // WARP_GAP_MULT doc) - the clamp is what actually guarantees "the reward
             // never kills you," the widened corridor is just breathing room on top.
             if (invulnT > 0 || warpTime > 0) { py = Math.max(b.top + cPR, Math.min(b.bot - cPR, py)); break; }
+            // Flight plan: early wall mistakes cost a scratch, not the run (constants.js HULL_SCRATCHES).
+            if (hullScratches > 0 && scrollX + PX < HULL_END_WX) { hullScratch(b.top, b.bot, cPR); break; }
             deathCause = (py - cPR < b.top) ? 'wallTop' : 'wallBot';
             markDeathHit(PX + dx, (py - cPR < b.top) ? b.top : b.bot, cPR);
             if (die()) return;
@@ -590,6 +603,7 @@ function update(dt) {
     if (py - cPR < 0 || py + cPR > H) {
         if (_wallsSafe) safeWallBump(0, H, cPR);
         else if (invulnT > 0 || warpTime > 0) { py = Math.max(cPR, Math.min(H - cPR, py)); }
+        else if (hullScratches > 0 && scrollX + PX < HULL_END_WX) hullScratch(0, H, cPR);
         else {
             deathCause = (py - cPR < 0) ? 'wallTop' : 'wallBot';
             markDeathHit(PX, (py - cPR < 0) ? 0 : H, cPR);
@@ -674,19 +688,22 @@ function update(dt) {
         }
     }
 
-    // Boulder collision (circle-circle, same trade-off hitbox + shield-absorb as a mine).
+    // Boulder collision (circle vs the island outline, systems.js boulderHit - same
+    // trade-off hitbox + shield-absorb as a mine).
     if (warpTime <= 0) for (let bi = 0; bi < boulders.length; bi++) {
         const bo = boulders[bi];
         const sx = bo.wx - scrollX;
-        if (sx < -bo.r - 40 || sx > W + bo.r + 40) continue;
-        const dx = PX - sx, dy = py - bo.y, rr = cPR + bo.r;
-        if (dx*dx + dy*dy < rr*rr) {
+        if (sx < -bo.hl - 40 || sx > W + bo.hl + 40) continue;
+        const dx = PX - sx, dy = py - bo.y;
+        if (boulderHit(bo, dx, dy, cPR)) {
             deathCause = 'open';
-            markDeathHit(sx, bo.y, bo.r);
+            markDeathHit(Math.max(sx - bo.hl, Math.min(sx + bo.hl, PX)), bo.y, bo.r);
             if (die()) return;
-            // Shield absorbed - shove the ship clear of the rock so it can't re-hit.
-            const d = Math.max(1, Math.hypot(dx, dy));
-            py = bo.y + (dy / d) * (rr + 2);
+            // Shield absorbed - shove the ship clear of the rock, out over whichever
+            // face of the island is closer, so it can't re-hit.
+            const span = boulderSpan(bo, dx - cPR, dx + cPR);
+            const upY = bo.y - span.up - cPR - 2, dnY = bo.y + span.dn + cPR + 2;
+            py = (py - upY) < (dnY - py) ? upY : dnY;
             vy = 0;
             shake += 12;
             burst(sx, bo.y);
@@ -736,13 +753,11 @@ function update(dt) {
     // (poison, drain) are exempt -- they're hazards, not pickups, and magnet is a
     // reward the player earned; pulling one in would turn a power-up into a trap the
     // instant one's on screen, punishing exactly the players who worked for the buff.
-    // Warp is exempt too, for the opposite reason (constants.js WARP_COIN_INTERVAL_SEC
-    // doc): it's a reward you fly to, not one that gets pulled to you.
     if (magnetTime > 0) {
         const playerWx = scrollX + PX;
         const pullSpeed = W * 1.4;
         for (const arr of [coins, chicaneCoins]) for (const coin of arr) {
-            if (coin.collected || coin.fade <= 0 || coin.type === 'poison' || coin.type === 'drain' || coin.type === 'warp') continue;
+            if (coin.collected || coin.fade <= 0 || coin.type === 'poison' || coin.type === 'drain') continue;
             const csx = coin.wx - scrollX;
             if (csx < -20 || csx > W + 60) continue;
             const dx = playerWx - coin.wx, dy = py - coin.y;
@@ -800,6 +815,24 @@ function safeWallBump(top, bot, r) {
         shake = Math.max(shake, 3);
         window.webkit?.messageHandlers?.haptic?.postMessage('light');
     }
+}
+
+// Flight plan (constants.js HULL_SCRATCHES): a lethal-wall contact while scratches
+// remain. Same clamp-and-bounce as the safe zone's bump, plus the HIT_INVULN_SEC grace a
+// shield-absorbed hit gets, so the ship cannot scrape the same wall twice in a row. It
+// counts as a hit for the No-Hit achievement like every other absorbed collision.
+function hullScratch(top, bot, r) {
+    hullScratches--;
+    runHitCount++;
+    invulnT = Math.max(invulnT, HIT_INVULN_SEC);
+    const hitTop = py - r < top;
+    py = Math.max(top + r, Math.min(bot - r, py));
+    if (hitTop ? vy < 0 : vy > 0) vy = -vy * 0.35;
+    burst(PX, hitTop ? top : bot, 22);
+    shake = Math.max(shake, 8);
+    pushNotif(PX + PR * 3, py - H * 0.08, 1.3, T.notifScratch, [255, 170, 90]);
+    sfxShieldBreak();
+    window.webkit?.messageHandlers?.haptic?.postMessage('medium');
 }
 
 function markDeathHit(x, y, r) {

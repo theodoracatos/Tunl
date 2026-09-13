@@ -45,6 +45,10 @@ function makeWorld(innerWidth, innerHeight) {
         this.halfGapAt = halfGapAt; this.boundsBase = boundsBase; this.refreshWave = refreshWave;
         this.scrollSpd = scrollSpd; this.stalSpacing = stalSpacing; this.coinSpacing = coinSpacing;
         this.mineSpacing = mineSpacing; this.cannonSpacing = cannonSpacing; this.milestoneStep = milestoneStep;
+        this.MINE_START_WX = MINE_START_WX; this.CHICANE_START_WX = CHICANE_START_WX; this.chicaneProb = chicaneProb;
+        this.SAFE_START_WX = SAFE_START_WX; this.SECTOR_SEC = SECTOR_SEC; this.refSpdTrend = refSpdTrend;
+        this.sectorAt = sectorAt; this.sectorStartWx = sectorStartWx; this.HULL_END_WX = HULL_END_WX;
+        for (const n of ['RED_START_WX','ORANGE_START_WX','GREEN_START_WX','BOMB_START_WX','BOULDER_START_WX','CANNON_START_WX','FALL_START_WX','POISON_START_WX','DRAIN_START_WX']) this[n] = eval(n);
         this.setDayArchetype = function(i) { _dayArchetype = i; };
         this.deepMorphAt = deepMorphAt; this.deepChamberAt = deepChamberAt;
         this.fallSpacing = fallSpacing; this.boulderSpacing = boulderSpacing;
@@ -59,9 +63,10 @@ function makeWorld(innerWidth, innerHeight) {
         this.GAP_BONUS_MAX_FRAC = GAP_BONUS_MAX_FRAC; this.DEEP_DECAY_PEAK = DEEP_DECAY_PEAK;
         this.gapPerCoin = gapPerCoin; this.gapBonusMax = gapBonusMax; this.gapDecay = gapDecay;
         this.worldPxForSec = worldPxForSec; this.scrollSpdBase = scrollSpdBase;
-        this.CHICANE_GOLD_GAP_SEC = CHICANE_GOLD_GAP_SEC; this.CHICANE_GOLD_EARLY_MULT = CHICANE_GOLD_EARLY_MULT;
+        this.CHICANE_GOLD_GAP_SEC = CHICANE_GOLD_GAP_SEC;
         this.POWERUP_MIN_GAP_SEC = POWERUP_MIN_GAP_SEC; this.POWERUP_GAP_EARLY_MULT = POWERUP_GAP_EARLY_MULT;
         this.DEEP_APEX_WX = DEEP_APEX_WX;
+        this.gapProgAt = gapProgAt; this.GAP_EASY_WX = GAP_EASY_WX; this.GAP_RAMP_WX = GAP_RAMP_WX;
     `, sandbox, { filename: 'export' });
     return sandbox;
 }
@@ -115,17 +120,23 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
     const H = w.H;
 
     check(`[${iw}x${ih}] halfGapAt(0) == H*0.34 + early-widen bonus (H*0.09)`, Math.abs(w.halfGapAt(0) - H * 0.43) < 1e-9);
-    check(`[${iw}x${ih}] early-widen bonus is gone by wx=12000 (rejoins base curve)`, Math.abs(w.halfGapAt(12000) - w.lerp(H * 0.34, H * 0.163, Math.min(Math.sqrt(12000 / 14000), 1))) < 1e-9);
-    check(`[${iw}x${ih}] halfGapAt(14000+) == H*0.163 (max difficulty plateau)`, Math.abs(w.halfGapAt(14000) - H * 0.163) < 1e-9 && w.halfGapAt(20000) === w.halfGapAt(14000));
+    // Corridor-width pace (2026-09-13): stays at its easiest (gapProgAt == 0) until
+    // score 50 (wx=3000), then narrows over GAP_RAMP_WX - 3x the old 14000 total
+    // ramp - so the plateau now lands at wx=42000 (~score 700) instead of ~233.
+    const GAP_PLATEAU_WX = w.GAP_EASY_WX + w.GAP_RAMP_WX;
+    check(`[${iw}x${ih}] corridor stays at its widest through score 50 (wx<=3000)`, w.gapProgAt(0) === 0 && w.gapProgAt(w.GAP_EASY_WX) === 0 && w.gapProgAt(w.GAP_EASY_WX + 1) > 0);
+    check(`[${iw}x${ih}] corridor narrows much slower than before (barely started by the old wx=14000 plateau)`, w.gapProgAt(14000) < 0.6);
+    check(`[${iw}x${ih}] early-widen bonus is gone by wx=24000 (rejoins base curve)`, Math.abs(w.halfGapAt(24000) / w.deepChamberAt(24000) - w.lerp(H * 0.34, H * 0.163, w.gapProgAt(24000))) < 1e-9);
+    check(`[${iw}x${ih}] halfGapAt(plateau+) == H*0.163 (max difficulty plateau)`, Math.abs(w.halfGapAt(GAP_PLATEAU_WX) - H * 0.163) < 1e-9 && w.halfGapAt(GAP_PLATEAU_WX + 6000) === w.halfGapAt(GAP_PLATEAU_WX));
     // Monotonic: corridor only ever narrows as wx grows, never widens back out.
     let prevHg = w.halfGapAt(0);
     let monotonic = true;
-    for (let wx = 500; wx <= 14000; wx += 500) {
-        const hg = w.halfGapAt(wx);
+    for (let wx = 500; wx <= GAP_PLATEAU_WX; wx += 500) {
+        const hg = w.halfGapAt(wx) / w.deepChamberAt(wx);   // chambers are a deliberate transient widening
         if (hg > prevHg + 1e-9) monotonic = false;
         prevHg = hg;
     }
-    check(`[${iw}x${ih}] halfGapAt is monotonically non-increasing 0->14000`, monotonic);
+    check(`[${iw}x${ih}] halfGapAt is monotonically non-increasing 0->plateau`, monotonic);
 
     // boundsBase: top must stay above bot, and the gap must equal 2x halfGapAt(wx)
     // regardless of screen width/height, at every stage of the difficulty ramp.
@@ -155,37 +166,85 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
     check('scrollSpd keeps climbing indefinitely past the _prog2 ramp (no plateau)', sRamp < sFar && sFar < sFarther);
 }
 
-// ── Spacing floors (obstacle/coin/mine/cannon density never goes below its floor) ──
+// ── Flight plan: sectors + densities as rates (constants.js SECTOR_SEC, world.js) ──
 {
     const w = makeWorld(600, 600);
-    w.scrollX = 10_000_000; // deep into every ramp, Classic (default) day archetype
-    w.refreshWave();
-    // CLAUDE.md's documented curve endpoints (260->145->70, 600->320->230, etc.) are
-    // the plateau this actually reaches on a Classic day -- the "(floor N)" in that
-    // same doc is a lower hard safety net (Math.max(..., N)) that only Coin Rush's
-    // reduced multiplier can dip into, exercised separately below.
-    check('stalSpacing plateaus at 70px (Classic day)',  Math.abs(w.stalSpacing() - 70)  < 1e-9);
-    check('coinSpacing plateaus at 230px (Classic day)', Math.abs(w.coinSpacing() - 230) < 1e-9);
-    check('mineSpacing plateaus at 200px (Classic day)', Math.abs(w.mineSpacing() - 200) < 1e-9);
-    check('cannonSpacing plateaus at 1500px (no day-archetype multiplier)', Math.abs(w.cannonSpacing() - 1500) < 1e-9);
+    const at = (fn, wx) => { w.scrollX = wx; w.refreshWave(); return w[fn](wx); };
+    // Sectors: SECTOR_SEC reference seconds each, sector 1 starting exactly where the
+    // walls turn lethal, boundaries strictly increasing, each ~7s at the reference speed.
+    let secOk = w.sectorStartWx(1) === w.SAFE_START_WX;
+    for (let k = 1; k < 40; k++) {
+        const a = w.sectorStartWx(k), b = w.sectorStartWx(k + 1);
+        if (!(b > a)) secOk = false;
+        const mid = (a + b) / 2, sec = (b - a) / (w.refSpdTrend(mid) * 956 / 600);
+        if (Math.abs(sec - w.SECTOR_SEC) > 0.25) secOk = false;
+        if (w.sectorAt(a) !== k || w.sectorAt(b - 1) !== k) secOk = false;
+    }
+    check('sectors are SECTOR_SEC reference seconds long and start at the safe-zone exit', secOk);
+    // One formula for the speed trend: scrollSpdBase must equal refSpdTrend wherever the
+    // deep pulse is off, or the sector clock and the real scroll speed drift apart.
+    w.setDeepVariety(false);
+    let trendOk = true;
+    for (let wx = 0; wx < 300000; wx += 1500) if (Math.abs(w.scrollSpdBase(wx) - w.refSpdTrend(wx)) > 1e-9) trendOk = false;
+    w.setDeepVariety(true);
+    check('scrollSpdBase trend and the sector clock share one formula (refSpdTrend)', trendOk);
 
-    // Hard safety floors: whatever a day archetype's multiplier is, spacing must
-    // never actually go below its documented floor.
+    // Novelty order: every tool before the threat it answers, one new hazard per sector.
+    const k = n => w.sectorAt(w[n]);
+    check('flight plan order: shield S1, ammo+magnet S2, mine+bomb S3, boulder S4, chicane S5, cannon S6, falling S7, poison S8, drain S9',
+        k('RED_START_WX') === 1 && k('ORANGE_START_WX') === 2 && k('GREEN_START_WX') === 2 &&
+        k('MINE_START_WX') === 3 && k('BOMB_START_WX') === 3 && k('BOULDER_START_WX') === 4 &&
+        k('CHICANE_START_WX') === 5 && k('CANNON_START_WX') === 6 && k('FALL_START_WX') === 7 &&
+        k('POISON_START_WX') === 8 && k('DRAIN_START_WX') === 9 && w.HULL_END_WX === w.sectorStartWx(3));
+
+    // Hazard rates per reference second: at the same phase of consecutive sectors they grow
+    // by exactly the per-sector factor - never a doubling between neighbours (the 12.0
+    // expert wall) - and the breather at a sector's start is below the previous peak.
+    const rateAt = (fn, wx) => w.worldPxForSec(1, wx) / at(fn, wx);   // objects per reference second
+    let growOk = true, sawOk = true;
+    for (let s = 4; s < 14; s++) {
+        const a = w.sectorStartWx(s), b = w.sectorStartWx(s + 1), c = w.sectorStartWx(s + 2);
+        const midA = a + (b - a) * 0.6, midB = b + (c - b) * 0.6;
+        for (const fn of ['stalSpacing', 'mineSpacing']) {
+            const r = rateAt(fn, midB) / rateAt(fn, midA);
+            if (r > 1.25 || r < 1.04) growOk = false;
+        }
+        const peakA = rateAt('stalSpacing', b - 1), breathB = rateAt('stalSpacing', b + (c - b) * 0.05);
+        if (!(breathB < peakA)) sawOk = false;
+    }
+    check('stalactite and mine rates grow 4-25% per sector (no doubling between neighbours)', growOk);
+    check('each sector opens with a breather below the previous sector\'s peak', sawOk);
+    check('no mines before MINE_START_WX, and the first mines are sparse (>= 1500px apart)',
+        at('mineSpacing', w.MINE_START_WX + 10) >= 1500);
+
+    // Floors hold at any depth and any day archetype (rates grow without limit).
     let floorsHeld = true;
     for (let i = 0; i < 4; i++) {
         w.setDayArchetype(i);
-        if (w.stalSpacing() < 50 || w.coinSpacing() < 175 || w.mineSpacing() < 200) floorsHeld = false;
+        if (at('stalSpacing', 10_000_000) < 50 || at('coinSpacing', 10_000_000) < 175 || at('mineSpacing', 10_000_000) < 200) floorsHeld = false;
     }
     w.setDayArchetype(0);
-    check('stal/coin/mineSpacing never dip below their documented floors, across all day archetypes', floorsHeld);
+    check('stal/coin/mine spacing never dip below their floors, across all day archetypes', floorsHeld);
+    check('deep stalactites and mines end on their floors (50 / 200 px)',
+        at('stalSpacing', 10_000_000) === 50 && at('mineSpacing', 10_000_000) === 200);
+    // Coins: candidates per reference second stay within a sane band at every depth.
+    let coinOk = true;
+    for (let wx = 500; wx < 2_000_000; wx += 7919) {
+        const r = rateAt('coinSpacing', wx);
+        if (r > 1.5 || r < 0.55) coinOk = false;
+    }
+    check('coin candidates stay between 0.55 and 1.5 per reference second at every depth', coinOk);
+    let chicOk = at('chicaneProb', w.CHICANE_START_WX) === 0;
+    for (let wx = w.CHICANE_START_WX; wx < w.CHICANE_START_WX + 8000; wx += 250) {
+        if (at('chicaneProb', wx + 250) < at('chicaneProb', wx)) chicOk = false;
+    }
+    check('chicaneProb fades in from 0 at CHICANE_START_WX instead of switching on at full odds', chicOk);
 
-    // CLAUDE.md: cannons should read as "an occasional set-piece ambush, not a
-    // recurring hazard type" -- guard the plateau staying an order of magnitude
-    // above every other obstacle's, not just numerically above it.
+    // Cannons stay a set-piece: an order of magnitude above the recurring hazards.
+    w.scrollX = 10_000_000; w.refreshWave();
+    check('cannonSpacing plateaus at 1500px (no day-archetype multiplier)', Math.abs(w.cannonSpacing() - 1500) < 1e-9);
     check('cannonSpacing stays an order of magnitude above every other obstacle spacing',
-        w.cannonSpacing() > w.stalSpacing() * 10 &&
-        w.cannonSpacing() > w.coinSpacing() * 5 &&
-        w.cannonSpacing() > w.mineSpacing() * 5);
+        w.cannonSpacing() > w.stalSpacing() * 10 && w.cannonSpacing() > w.mineSpacing() * 5);
 }
 
 // ── Milestone step (world.js milestoneStep, tiers documented in CLAUDE.md) ──
@@ -366,9 +425,9 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
 
     // Boulders (Phase 3): rare - spacing floors well above every recurring hazard.
     const bsAt = (wx) => { w.scrollX = wx; w.refreshWave(); return w.boulderSpacing(); };
-    check('boulderSpacing stays a sparse set-piece cadence (>= 2400, above mine/coin spacing)',
+    check('boulderSpacing stays a sparse set-piece cadence (>= 2400, above mine spacing)',
         bsAt(84000) >= 2400 && bsAt(5_000_000) >= 2400 &&
-        bsAt(5_000_000) > w.mineSpacing() * 5 && bsAt(5_000_000) > w.coinSpacing() * 5);
+        bsAt(5_000_000) > w.mineSpacing() * 5);
 }
 
 // ── Supply pacing (2026-09-11 balance pass) ─────────────────────────────────
@@ -399,8 +458,7 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
     // is quoted for.
     const rateAt = (wx) => {
         w.scrollX = wx; w.refreshWave();
-        const sec  = w.CHICANE_GOLD_GAP_SEC * w.lerp(w.CHICANE_GOLD_EARLY_MULT, 1, Math.min(Math.max(wx - 14000, 0) / 40000, 1));
-        const gate = Math.max(w.worldPxForSec(sec), w.coinSpacing() * 0.85);
+        const gate = Math.max(w.worldPxForSec(w.CHICANE_GOLD_GAP_SEC), w.coinSpacing() * 0.85);
         return w.scrollSpd() / gate;                       // chicane gold coins per second
     };
     // Deep: bounded above (the cap this exists for) and bounded below (it must not
@@ -425,21 +483,19 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
 
     // Both gates must be inert where real runs actually end. Highest daily best ever
     // recorded is 169 (D1 tunl_scores, 2026-09-11), so "early" here is score <= 233.
-    // The gate is inert if it permits far more chicane gold per second than the
-    // chicane cadence itself ever delivers there (measured 0.19-0.46/s across bands).
-    let earlyNoop = true, earlyMinRate = Infinity;
+    // The chicane gate is flat since 2026-09-13 (no early multiplier) - it stays inert
+    // early because there are no chicanes at all before CHICANE_START_WX (~score 300).
+    let earlyNoop = w.CHICANE_START_WX > 14000;
     for (let wx = 2100; wx <= 14000; wx += 250) {
         w.scrollX = wx; w.refreshWave();
-        if (Math.max(wx - 14000, 0) !== 0) earlyNoop = false;   // the ramp term must be 0 here
-        earlyMinRate = Math.min(earlyMinRate, rateAt(wx));
+        if (w.chicaneProb(wx) !== 0) earlyNoop = false;
         // Power-up floors below the measured natural gaps at this depth (4.3s red,
         // ~6.7s blue/green) so they cannot thin the early coin line.
         for (const k of Object.keys(w.POWERUP_MIN_GAP_SEC)) {
             if (w.POWERUP_MIN_GAP_SEC[k] * w.POWERUP_GAP_EARLY_MULT > 4.3) earlyNoop = false;
         }
     }
-    if (earlyMinRate < 0.9) earlyNoop = false;
-    check(`chicane gate and power-up floors are no-ops below score 233 (early gate allows ${earlyMinRate.toFixed(2)}/s vs a ~0.2-0.5/s natural cadence)`, earlyNoop);
+    check('chicane gate and power-up floors are no-ops below score 233 (no chicanes there, floors under the natural gaps)', earlyNoop);
 
     // Orange deliberately has no floor: bullets auto-fire every 0.32s, so a 5-shot
     // pickup drains itself in 1.6s and there is no stock that can sit pinned.
@@ -587,7 +643,7 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
     //     and would only dilute the comparison.
     const OLD_CAP = H * 0.19;
     w.scrollX = 0;     w.refreshWave(); const capEarly = w.gapBonusMax();
-    w.scrollX = 60000; w.refreshWave(); const capDeep  = w.gapBonusMax();
+    w.scrollX = 90000; w.refreshWave(); const capDeep  = w.gapBonusMax();
     check(`maxed bonus is unchanged early and materially smaller deep (${(capEarly/OLD_CAP).toFixed(2)}x -> ${(capDeep/OLD_CAP).toFixed(2)}x of the old flat cap)`,
         Math.abs(capEarly - OLD_CAP) < 1e-9 && capDeep / OLD_CAP > 0.30 && capDeep / OLD_CAP < 0.45);
 

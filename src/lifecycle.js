@@ -1,6 +1,6 @@
 // TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch
 // World-x of the first stalactite on every run (see maintainStalactites). Nothing before
-// it: the first ~100 points are the safe opening flight (constants.js SAFE_START_WX).
+// it: the first ~50 points are the safe opening flight (constants.js SAFE_START_WX).
 // A fixed world position, so the first one is always born off the right edge and
 // scrolls in -- it never pops into view mid-screen.
 const STAL_START_WX = HAZARD_START_WX;   // was 1500 (~score 25) until the 2026-09-13 safe opening flight
@@ -39,6 +39,7 @@ function titleScreen() {
     gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
     invulnT = 0; deathCause = null;
     safeEndWx = 0; safeCloseWx = 1; safeBumpT = 0; wallsLiveShown = false;
+    hullScratches = 0; lastSectorShown = 0;
     continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;
     reviveCountdownT = 0;
     bullets = []; bulletAmmo = 0; bulletFireTimer = 0;
@@ -98,7 +99,7 @@ function startPlay() {
     // points of plain-stalactite schooling first and still lands inside the reach of
     // a good run. The loose spike shakes and trickles dust before it lets go, so the
     // tell is readable the first time it happens.
-    nextFallWx = 7800;
+    nextFallWx = FALL_START_WX;   // 7800 until 2026-09-13, see constants.js
     coins = [];     nextCoinWx = 500;
     chicaneCoins = []; lastChicaneCoinWx = -Infinity;
     gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
@@ -111,7 +112,7 @@ function startPlay() {
     ghostTrack = []; ghostY = null; ghostPitch = 0; ghostPassed = false;
     onFire = false; onFireFlash = 0;
     pbPassed = false; pbFlash = 0;
-    mines = []; nextMineWx = HAZARD_START_WX;   // was 1800, see constants.js SAFE_START_WX
+    mines = []; nextMineWx = MINE_START_WX;   // was 1800, then HAZARD_START_WX; see constants.js
     // Cannons start much later than mines (score ~100) and are spaced far apart -- a
     // rare hazard, not a constant one (see world.js cannonSpacing()).
     cannons = []; nextCannonWx = CANNON_START_WX; cannonShots = [];   // was 6000
@@ -187,6 +188,7 @@ function startPlay() {
     }
     // Safe opening flight (constants.js SAFE_START_WX doc).
     safeEndWx = SAFE_START_WX; safeCloseWx = SAFE_CLOSE_WX;
+    hullScratches = HULL_SCRATCHES; lastSectorShown = 1;   // constants.js flight plan
     safeBumpT = 0; wallsLiveShown = false;
     // A ghost carried in on a ?g= share link (state.js _webGhostPlay) has to
     // survive the daily-rollover reset above, which clears the local ghost -
@@ -210,9 +212,13 @@ function startPlay() {
     // jitter still comes from the same seeded rng(), so a given calendar day plays out
     // identically for every player - which is now literally true rather than
     // approximately, since these no longer depend on how fast the device scrolls.
-    nextPoisonWx = worldPxForSec(POISON_INTERVAL_SEC * (0.7 + rngCoin() * 0.6), 0);
-    nextBombWx   = worldPxForSec(BOMB_INTERVAL_SEC   * (0.7 + rngCoin() * 0.6), 0);
-    nextDrainWx  = worldPxForSec(DRAIN_INTERVAL_SEC  * (0.7 + rngCoin() * 0.6), 0);
+    // Flight plan (constants.js sector table): bomb unlocks in sector 3 with the first
+    // mine, poison in sector 8, drain in sector 9. The first one of each lands a short,
+    // jittered 15-65% of its interval after unlock, so it shows up in (or just after)
+    // the sector that introduces it; every later one uses the normal interval.
+    nextPoisonWx = POISON_START_WX + worldPxForSec(POISON_INTERVAL_SEC * (0.15 + rngCoin() * 0.5), POISON_START_WX);
+    nextBombWx   = BOMB_START_WX   + worldPxForSec(BOMB_INTERVAL_SEC   * (0.15 + rngCoin() * 0.5), BOMB_START_WX);
+    nextDrainWx  = DRAIN_START_WX  + worldPxForSec(DRAIN_INTERVAL_SEC  * (0.15 + rngCoin() * 0.5), DRAIN_START_WX);
     nextWarpWx   = worldPxForSec(WARP_COIN_INTERVAL_SEC * (0.7 + rngCoin() * 0.6), 0);
     // Power-up supply floors: 0 = "as if one just landed at the start line". They only
     // apply past the score-34 gate in makeCoin() anyway, well beyond any floor width.

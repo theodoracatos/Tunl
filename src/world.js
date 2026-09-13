@@ -265,11 +265,11 @@ function portalSpacing(wx = scrollX) {
 // who hasn't found the feel yet. This adds extra half-gap on top of the base
 // curve, biggest at wx=0 (walls reduced to a sliver each side) and
 // smoothstepped down to 0 by EARLY_WIDEN_WX so the ramp rejoins the
-// hand-tuned base curve exactly, with no kink, in time for the difficulty
-// plateau at wx=14000 (score ~233). Both refreshWave and halfGapAt add it, so
-// rendering/collision (boundsAt) and placement (boundsBase, via halfGapAt)
+// hand-tuned base curve exactly, with no kink, well before the corridor
+// finishes narrowing (see gapProgAt/GAP_RAMP_WX below). Both refreshWave and
+// halfGapAt add it, so rendering/collision (boundsAt) and placement (boundsBase, via halfGapAt)
 // agree - same pattern as deepChamberAt.
-const EARLY_WIDEN_WX   = 12000;  // ~score 200 - fully rejoins the base curve
+const EARLY_WIDEN_WX   = 24000;  // ~score 400 - fully rejoins the base curve (was 12000; stretched so the post-safe-zone narrowing is gentle)
 const EARLY_WIDEN_FRAC = 0.09;   // extra half-gap at wx=0, as a fraction of H
 function earlyWidenAt(wx) {
     if (wx >= EARLY_WIDEN_WX) return 0;
@@ -278,10 +278,29 @@ function earlyWidenAt(wx) {
     return H * EARLY_WIDEN_FRAC * bl;
 }
 
+// Corridor-width-only difficulty pace (2026-09-13, user request: keep the tunnel
+// simple until score 50, then narrow it at a much smaller pace than before so a
+// run tends to go further). This governs ONLY the corridor half-gap (_gapBase /
+// halfGapAt) - "verengen" (narrow) is what the request actually names. _prog/
+// _prog2 themselves are UNCHANGED and still drive everything else on their
+// original schedule (wave amplitude/frequency, stalactite/coin/mine/cannon
+// spacing, coin-type unlock gates, chicane probability, poison/drain %) - none
+// of that was asked to move, and a wider-but-still-tuned corridor is enough on
+// its own to make runs survive longer.
+// Second pass the same day ("still far too hard, the walls may narrow much slower"):
+// flat until the safe flight ends (score 50), then LINEAR (a sqrt ease front-loads most of the narrowing into
+// its first few thousand px, which is exactly the "narrows too fast" complaint) over
+// 90000 px, so the corridor only reaches its tightest at wx=93000 (~score 1550). The
+// wave AMPLITUDES follow the same pace (waveAmpProg), so the bends stay gentle too;
+// frequencies stay on progAt, since re-pacing sin(wx*f) at large wx scrambles phase.
+const GAP_EASY_WX = SAFE_START_WX;   // ~score 50 - corridor stays at its widest (H*0.34) until here
+const GAP_RAMP_WX = 90000;  // linear, plateau at wx=93000 (~score 1550; was ~233 before 2026-09-13)
+function gapProgAt(wx) { return Math.min(Math.max(wx - GAP_EASY_WX, 0) / GAP_RAMP_WX, 1); }
+
 function refreshWave() {
     _prog    = Math.min(Math.sqrt(scrollX / 14000), 1);
     _prog2   = Math.max(scrollX - 14000, 0) / 40000;          // no cap - escalates forever
-    const _gapBase = lerp(H * 0.34,  H * 0.163, _prog);
+    const _gapBase = lerp(H * 0.34,  H * 0.163, gapProgAt(scrollX));
     _gapRef  = _gapBase + earlyWidenAt(scrollX);
     _halfGap = _gapBase * deepChamberAt(scrollX) + earlyWidenAt(scrollX);
     // Wave amplitude/frequency keep growing with _prog2 (capped at 2x to stay navigable)
@@ -292,8 +311,8 @@ function refreshWave() {
     // approximation the _prog2 boost already relies on. boundsBase() samples per-wx
     // for placement accuracy.
     const dm = deepMorphAt(scrollX);
-    _wA1     = lerp(H * 0.07,  H * 0.12,  _prog) * wMult * _waveJitterA * dm.a1;
-    _wA2     = lerp(H * 0.035, H * 0.055, _prog) * wMult * _waveJitterA * dm.a2;
+    _wA1     = lerp(H * 0.07,  H * 0.12,  gapProgAt(scrollX)) * wMult * _waveJitterA * dm.a1;
+    _wA2     = lerp(H * 0.035, H * 0.055, gapProgAt(scrollX)) * wMult * _waveJitterA * dm.a2;
     _wF1     = lerp(0.0025,    0.0048,    _prog) * wFMult * _waveJitterF;
     _wF2     = lerp(0.0060,    0.0115,    _prog) * wFMult * _waveJitterF;
 }
@@ -317,13 +336,12 @@ function gapDecay()    { return _gapRef * GAP_DECAY_FRAC; }
 // than a small one. See the chicane-gold gate in systems.js maintainStalactites for
 // the one caller that needs this, and how it converts back to seconds.
 function scrollSpdBase(wx = scrollX) {
-    const _p = progAt(wx), _p2 = prog2At(wx);
-    const base = lerp(lerp(230, 400, _p), 560, Math.min(_p2, 1));
+    const _p2 = prog2At(wx);
     // Past the _prog2 ramp (score ~900), speed never plateaus - it keeps
     // creeping up forever (sqrt eased, like _prog's ramp) instead of the other
     // difficulty knobs, which stay capped so the corridor stays navigable.
-    const beyond = Math.max(_p2 - 1, 0);
-    let spd = base + Math.sqrt(beyond) * 90;
+    // The trend itself lives in constants.js refSpdTrend (the sector clock reads it too).
+    let spd = refSpdTrend(wx);
     // Deep-run speed pulse (score ~900+): a slow seeded swell of up to +DEEP_PULSE_AMP
     // ABOVE the trend, so the deep game surges and eases back instead of being one
     // flat acceleration - but it never dips *below* the trend, so the deep run can
@@ -415,17 +433,85 @@ const DAY_ARCHETYPES = [
 function progAt(wx)  { return Math.min(Math.sqrt(Math.max(wx, 0) / 14000), 1); }
 function prog2At(wx) { return Math.max(wx - 14000, 0) / 40000; }   // uncapped, like _prog2
 
-function stalSpacing(wx = scrollX) { return Math.max(lerp(lerp(260,  145, progAt(wx)),  70,  prog2At(wx)) * DAY_ARCHETYPES[_dayArchetype].stal, 50); }
-function stalLenFrac(wx = scrollX) { return Math.min(lerp(lerp(0.46, 0.64, progAt(wx)), 0.76, prog2At(wx)), 0.80); }
-function coinSpacing(wx = scrollX) { return Math.max(lerp(lerp(600,  320, progAt(wx)), 230,  prog2At(wx)) * DAY_ARCHETYPES[_dayArchetype].coin, 175); }
-function mineSpacing(wx = scrollX) { return Math.max(lerp(lerp(900, 340, progAt(wx)), 200, prog2At(wx)) * DAY_ARCHETYPES[_dayArchetype].mine, 200); }
-// Chicane odds, same story - rolled per placement, not per player position.
-function chicaneProb(wx = scrollX) { return Math.min(lerp(0.24, 0.42, prog2At(wx)) * DAY_ARCHETYPES[_dayArchetype].chic, 0.62); }
+// Hazard density pace (constants.js HAZ_RAMP_WX): same two-leg shape as progAt/prog2At,
+// starting at the first hazard instead of wx=0 and stretched.
+function hazProgAt(wx)  { return Math.min(Math.sqrt(Math.max(wx - HAZARD_START_WX, 0) / HAZ_RAMP_WX), 1); }
+function hazProg2At(wx) { return Math.max(wx - HAZARD_START_WX - HAZ_RAMP_WX, 0) / 40000; }
+
+// Coins and mines were never thinned by their spacing curves alone - the stalactite
+// vetoes (coinBlockedByStal, _makeMineAt's chicane/tip checks) silently rejected most
+// candidates, and that rejection rate was part of the tuned density. The 2026-09-13
+// hazard re-pacing made stalactites sparse, the vetoes stopped biting and the SAME curves
+// emitted 3x the mines and ~40% more coins. So densities are now authored as a RATE PER
+// REFERENCE SECOND per sector (constants.js SECTOR_SEC) and converted to world-px with
+// worldPxForSec; the vetoes only decide geometry. Re-measure the rate, never the spacing.
+// Coins use the same model: candidates per reference second, flat through sector 3, then
+// thinning a little every sector down to a floor (deep runs lean on skill, not supply),
+// and boosted inside a sector's breather so the pause pays out.
+const COIN_RATE_SAFE     = 0.75;   // sector 0, the safe flight
+const COIN_RATE_EARLY    = 0.95;   // sectors 1-3
+const COIN_DECAY         = 0.985;  // per sector after 3
+const COIN_RATE_FLOOR    = 0.8;
+const COIN_BREATHER_MULT = 1.5;
+function coinSpacing(wx = scrollX) {
+    const k    = sectorAt(wx);
+    let rate   = k === 0 ? COIN_RATE_SAFE : Math.max(COIN_RATE_EARLY * Math.pow(COIN_DECAY, Math.max(k - 3, 0)), COIN_RATE_FLOOR);
+    if (k >= 1 && sectorPhase(wx) < SECTOR_BREATHER_FRAC) rate *= COIN_BREATHER_MULT;
+    return Math.max(worldPxForSec(1 / rate, wx) * DAY_ARCHETYPES[_dayArchetype].coin, 175);
+}
+
+// Sector sawtooth: each sector opens with a short breather at reduced density, then
+// ramps to its peak at the sector's end. The next sector's LEVEL is higher, so both the
+// trough and the peak climb - tension and release without the curve ever sagging overall.
+const SECTOR_BREATHER_FRAC    = 0.2;    // first 20% of a sector (~1.4 s)
+const SECTOR_BREATHER_DENSITY = 0.55;
+const SECTOR_RAMP_LO          = 0.8;
+const SECTOR_RAMP_HI          = 1.15;
+function sectorEnvelope(wx) {
+    const ph = sectorPhase(wx);
+    if (ph < SECTOR_BREATHER_FRAC) return SECTOR_BREATHER_DENSITY;
+    return lerp(SECTOR_RAMP_LO, SECTOR_RAMP_HI, (ph - SECTOR_BREATHER_FRAC) / (1 - SECTOR_BREATHER_FRAC));
+}
+// Rate at `startSector`, times `growth` for every sector after it up to SECTOR_GROWTH_TAPER,
+// then times `lateGrowth`. The taper is what spreads long runs out: with one constant
+// factor, expert bot runs still piled up and died inside two sectors (57% then 100% at
+// S10/S11) once the cadence crossed their reaction limit. Rates never stop growing, so
+// every run still ends. Sector counts are capped only so Math.pow can never overflow;
+// the floors in the callers bind long before that.
+const SECTOR_GROWTH_TAPER = 8;
+function sectorRate(wx, base, growth, startSector, lateGrowth) {
+    const k     = Math.min(sectorAt(wx), 2000);
+    const early = Math.max(Math.min(k, SECTOR_GROWTH_TAPER) - startSector, 0);
+    const late  = Math.max(k - Math.max(SECTOR_GROWTH_TAPER, startSector), 0);
+    return base * Math.pow(growth, early) * Math.pow(lateGrowth, late) * sectorEnvelope(wx);
+}
+// Stalactite slots (a chicane pair is one slot) per reference second.
+const STAL_RATE_S1      = 2.0;
+const STAL_GROWTH       = 1.14;
+const STAL_GROWTH_LATE  = 1.08;
+function stalSpacing(wx = scrollX) {
+    return Math.max(worldPxForSec(1 / sectorRate(wx, STAL_RATE_S1, STAL_GROWTH, 1, STAL_GROWTH_LATE), wx) * DAY_ARCHETYPES[_dayArchetype].stal, 50);
+}
+function stalLenFrac(wx = scrollX) { return Math.min(lerp(lerp(0.46, 0.64, hazProgAt(wx)), 0.76, hazProg2At(wx)), 0.80); }
+// Mines per reference second from their first sector. Floor 200 is load-bearing
+// (MINE_RETRY_OFFSETS must stay under 200 x the 0.70 jitter low end).
+const MINE_RATE_S3      = 0.28;
+const MINE_GROWTH       = 1.2;
+const MINE_GROWTH_LATE  = 1.1;
+function mineSpacing(wx = scrollX) {
+    return Math.max(worldPxForSec(1 / sectorRate(wx, MINE_RATE_S3, MINE_GROWTH, sectorAt(MINE_START_WX), MINE_GROWTH_LATE), wx) * DAY_ARCHETYPES[_dayArchetype].mine, 200);
+}
+// Chicane odds, same story - rolled per placement, not per player position. Fades in
+// over CHICANE_FADE_WX after CHICANE_START_WX so paired spikes don't switch on at full odds.
+function chicaneProb(wx = scrollX) {
+    const fadeIn = (wx - CHICANE_START_WX) / CHICANE_FADE_WX;
+    return Math.min(lerp(0.24, 0.42, prog2At(wx)) * DAY_ARCHETYPES[_dayArchetype].chic, 0.62) * Math.min(Math.max(fadeIn, 0), 1);
+}
 // Cannons: rare on purpose, so the spacing floor stays far above every other
 // obstacle's (stalSpacing/coinSpacing/mineSpacing all bottom out well under
 // 1000) even at max difficulty -- this should read as an occasional set-piece
 // ambush, not a recurring hazard type.
-function cannonSpacing(wx = scrollX) { return Math.max(lerp(lerp(4200, 2400, progAt(wx)), 1500, prog2At(wx)), 1200); }
+function cannonSpacing(wx = scrollX) { return Math.max(lerp(lerp(4200, 2400, hazProgAt(wx)), 1500, hazProg2At(wx)), 1200); }
 
 // Milestone spacing (50/100/etc. step added to milestoneNext each time one fires --
 // see update.js). Widens in stages so milestones stay a frequent early-game reward but
@@ -535,10 +621,10 @@ function centerAt(wx) {
 }
 
 // halfGapAt predicts the corridor half-gap when the player reaches world x.
-// Uses the same sqrt(wx/14000) progression as refreshWave (and the same deep-run
+// Uses the same gapProgAt(wx) progression as refreshWave (and the same deep-run
 // chamber factor) so bounds are accurate for placement up to ~900px ahead.
 function halfGapAt(wx) {
-    return lerp(H * 0.34, H * 0.163, Math.min(Math.sqrt(wx / 14000), 1)) * deepChamberAt(wx) + earlyWidenAt(wx);
+    return lerp(H * 0.34, H * 0.163, gapProgAt(wx)) * deepChamberAt(wx) + earlyWidenAt(wx);
 }
 
 // boundsAt uses base _halfGap + current bonus so both rendering and
@@ -581,8 +667,8 @@ function boundsBase(wx) {
     const wMult  = 1 + 0.12 * Math.min(p2, 2);
     const wFMult = 1 + 0.14 * Math.min(p2, 2);
     const dm  = deepMorphAt(wx);   // deep-run shape morph, per-wx for placement accuracy
-    const wA1 = lerp(H * 0.07,  H * 0.12,  p) * wMult * _waveJitterA * dm.a1;
-    const wA2 = lerp(H * 0.035, H * 0.055, p) * wMult * _waveJitterA * dm.a2;
+    const wA1 = lerp(H * 0.07,  H * 0.12,  gapProgAt(wx)) * wMult * _waveJitterA * dm.a1;
+    const wA2 = lerp(H * 0.035, H * 0.055, gapProgAt(wx)) * wMult * _waveJitterA * dm.a2;
     const wF1 = lerp(0.0025,    0.0048,    p) * wFMult * _waveJitterF;
     const wF2 = lerp(0.0060,    0.0115,    p) * wFMult * _waveJitterF;
     const hg  = halfGapAt(wx);

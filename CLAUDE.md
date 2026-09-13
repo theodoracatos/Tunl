@@ -244,12 +244,105 @@ Two overlapping sin waves, amplitude and frequency scale with difficulty (`_prog
 `_prog = Math.min(Math.sqrt(scrollX / 14000), 1)` - sqrt easing: fast early ramp, plateau near max. Reaches max difficulty at 14000 world px (~score 233).
 
 ```javascript
-_halfGap = lerp(H * 0.34,  H * 0.163, _prog);  // 204→98px half-gap (rendering/collision)
 _wA1     = lerp(H * 0.07,  H * 0.12,  _prog);   // wave amplitude 1
 _wA2     = lerp(H * 0.035, H * 0.055, _prog);   // wave amplitude 2
 _wF1     = lerp(0.0025,    0.0048,    _prog);    // wave frequency 1
 _wF2     = lerp(0.0060,    0.0115,    _prog);    // wave frequency 2
 ```
+
+**Easier pacing: corridor, bends and hazards each have their own slower clock
+(2026-09-13, two passes on player feedback "the game is far too hard" - do not merge
+back into `_prog`).**
+- **Corridor width + wave amplitude** use `gapProgAt(wx)` (`world.js`): flat at 0
+  (widest, `H*0.34`) through `GAP_EASY_WX` = `SAFE_START_WX` = 3000 (~score 50, where the safe flight ends), then **linear** (a sqrt
+  ease front-loads the narrowing, which was the complaint) over `GAP_RAMP_WX` = 90000,
+  so `H*0.163` is only reached at wx=93000 (~score 1550, was ~233). Half-gap
+  old -> new: score 200 0.176 -> 0.328, 500 0.163 -> 0.293, 800 0.163 -> 0.257.
+  `EARLY_WIDEN_WX` 12000 -> 24000. Wave *frequencies* stay on `_prog` (re-pacing
+  `sin(wx*f)` at large wx scrambles phase).
+- **Hazard and coin DENSITY, and every hazard's start point, now come from the flight
+  plan** - see "Flight plan (sectors)" right below. `hazProgAt`/`hazProg2At` survive only
+  for `stalLenFrac` and `cannonSpacing`.
+`_prog`/`_prog2` themselves (blue-coin gate, red's share ramp, scroll speed, poison/drain %,
+deep variety) are unchanged. `test-math.js` guards the flat zone, plateau and monotonicity;
+`test-cave.js` mirrors the start cursors and still shows an identical cave on all
+device sizes with 0 sealed boulder passes.
+
+### Flight plan (sectors) - 2026-09-13, do not revert to per-hazard world-px curves
+
+A run is a sequence of **sectors of `SECTOR_SEC` = 7 reference seconds** (`constants.js`
+`refSpdTrend` / `sectorAt` / `sectorStartWx` / `sectorPhase`). Sector 0 is the safe
+flight and ends exactly at `SAFE_START_WX`; later boundaries are integrated from
+`refSpdTrend`, which is `scrollSpdBase`'s trend at the W cap with no deep pulse - one
+formula, called by both (`test-math.js` asserts they agree). Sector boundaries are
+therefore pure world-x and identical on every device.
+
+**Why.** A replay audit (real spawners + physics, 4 bot tiers x 100 runs, 24 day-seeds)
+measured the 12.0 working tree as: 7 new elements in the first 9 s, none between 9 s and
+22 s, five between 23 s and 37 s, nothing new after that; **41% of beginner runs dying
+within 8 points of the walls turning lethal** (91% of beginner deaths are walls, and the
+safe zone only bumps, so it cannot teach them); stalactites per second doubling twice
+between score 300 and 1150, which ended 100% of expert runs inside score 500-900; and 3x
+the 11.0 mine count because sparse stalactites stopped the placement vetoes from
+thinning mines and coins. Concept + evidence:
+https://claude.ai/code/artifact/9c713c80-e348-46fc-b6ee-f66af5bb9be4
+
+**What each sector introduces** (`constants.js` `*_START_WX = sectorStartWx(n)`):
+
+| sector | score | new |
+|--------|-------|-----|
+| S0 | 0-50 | safe flight; gold, blue |
+| S1 | 50-111 | walls lethal + 2 hull scratches, first stalactites, red shield coin |
+| S2 | 111-178 | orange ammo, green magnet |
+| S3 | 178-252 | first mine (alone, centred in its band), bomb coin; scratches expire |
+| S4 | 252-328 | boulders |
+| S5 | 328-408 | chicanes (faded in over `CHICANE_FADE_WX`) |
+| S6 | 408-493 | cannons |
+| S7 | 493-583 | falling stalactites |
+| S8 | 583-677 | poison coin |
+| S9 | 677-773 | drain coin |
+| S10+ | 773+ | nothing new; rates keep growing |
+
+Tools come before the threat they answer, but **not later than S2**: the daily missions
+("5 ammo", "2 magnets", "3 bombs") are cumulative per day and must stay reachable for
+casual players, whose runs end around S2-S3. Check `MISSION_DEFS` before moving a coin gate.
+Bomb/poison/drain clocks start at their sector (`lifecycle.js`), first one 15-65% of the
+interval after unlock. Warp coin and portal ring are unchanged.
+
+**Densities are rates per reference second, not world-px spacings** (`world.js`
+`sectorRate` / `sectorEnvelope`): `spacing = worldPxForSec(1 / rate)`. Stalactite slots
+`STAL_RATE_S1` 2.0/s x `STAL_GROWTH` 1.14 per sector, 1.08 from `SECTOR_GROWTH_TAPER` (S8);
+mines `MINE_RATE_S3` 0.28/s x 1.2, then 1.1; floors 50 / 200 px unchanged, so rates grow
+without limit and every run still ends ("mines guarantee an eventual death" holds). Each
+sector is a **sawtooth**: the first 20% runs at 55% density (the breather, with 1.5x coin
+candidates as the payout), then ramps 80% -> 115%. Coins: `COIN_RATE_SAFE` 0.75/s in S0,
+0.95/s in S1-S3, x0.985 per sector after, floor 0.8/s. The placement vetoes still apply
+but only decide geometry - **retune by the measured rate** (the replay harness method in
+the audit), never by the spacing number; that coupling is exactly how 12.0 tripled mines.
+
+**Hull scratches** (`HULL_SCRATCHES` = 2 until `HULL_END_WX` = start of S3, `update.js`
+`hullScratch`): a lethal-wall contact spends one - clamp, bounce, `HIT_INVULN_SEC` grace,
+"SCRAPE!" notif, HUD diamonds bottom-right - instead of ending the run. Counts as a hit
+for the No-Hit achievement. A plain shield at the same moment was measured and rejected
+(it mostly boosted the good tier, +72% median, by eating a stalactite later).
+"SECTOR n" notif fires at each boundary from S2 on (`update.js`, i18n key `sector`).
+
+**Measured result** (bot tiers; average = the tier real players matched in 11.0):
+
+| tier | median before -> after | reaches 100 | dies within 8 pts of walls lethal |
+|------|------------------------|-------------|-----------------------------------|
+| beginner | 65 -> 95 | 4% -> 39% | 41% -> 3% |
+| average | 107 -> 155 | 32% -> 70% | 16% -> 2% |
+| good | 205 -> 401 | 80% -> 91% | 1% -> 1% |
+| expert | 715 -> 928 (p90 1328) | 100% | 0% |
+
+Average-tier death rate per sector is now a ramp (S1 38%, S2 60%, S3 68%) instead of a
+cliff. Per 10 real seconds at W956: stalactites 17 / 20 / 23 / 26 / 33 / 44 / 53 / 62 / 68 /
+78 / 96 across S1..S11+ (was 20 -> 188 with two doublings), mines 2.6 in S3 rising to 10
+by score ~1000, coins 7-9 through S4 then thinning to ~4 (+ chicane gold ~4).
+**Known residual:** experts still hit a reaction-time wall at S10-S11 (death 63% / 77% per
+sector, was 100% at S7-S8). A slower `stalLenFrac` leg and a slower chicane-probability
+ramp were both tried and measured as no-ops, so the lever left is speed itself.
 
 Two bounds functions:
 - `boundsAt(wx)` - includes coin bonus - used for rendering AND collision
@@ -283,7 +376,7 @@ collision and render always agree. Bullets/bombs kill a falling one like any sta
 ### Boulders
 Large static rounded rock (`src/systems.js` `makeBoulder`/`maintainBoulders`, from
 world-x 6620 / ~score 110 since the 2026-09-13 safe opening flight (was 5100 / ~85), `boulderSpacing()` in `world.js` - a sparse set-piece cadence,
-floor 2400px). Unlike a mine it is telegraphed by sheer size and **never spans the corridor**: radius is bounded (`R <= min(halfGap - 2.6*PR, 0.30*halfGap)`)
+floor 2400px). Unlike a mine it is telegraphed by sheer size and **never spans the corridor**: radius is bounded (`R <= min(halfGap - 2.6*PR, 0.26*halfGap)`)
 and the centre is nudged a seeded amount toward one wall, so there is always a pass above
 AND below - one easy, one a squeeze. It asks "commit up or down" rather than "react".
 Circle-circle collision (`update.js`), same shield-absorb + shove-clear as a mine. Bombs
@@ -306,6 +399,25 @@ players actually get there.**
 Measured over 8 day-seeds to wx 40000: rock diameter 1.91 -> 1.36 player diameters,
 narrow pass 1.22 -> 1.52, wide pass 1.92 -> 2.20, count 64 -> 71. A 3.0 PR margin was
 tried and rejected - it dropped the count to 29 (deep boulders stopped fitting).
+Same day, shrunk once more on request: radius cap 0.30 -> **0.26** of halfGap.
+
+**Rock islands, not balls (2026-09-13, on request).** `r` is now the vertical
+half-THICKNESS bound only; the horizontal half-length `hl` = r x a seeded stretch
+(1.7-2.6), hard-capped at `BOULDER_MAX_HALF_LEN` = 100 world-px (`systems.js`), so the
+narrow-pass guarantees above are unchanged. Four seeded outline families
+(`_islandProfile`): lens, teardrop, peanut, shelf - top and bottom generated separately,
+so none is mirror-symmetric. Shelf gets a smaller slice of the roll because its thin face
+survives placement far more often (an even roll made it 43% of islands). The outline is a
+polygon on Chebyshev samples (`BOULDER_U`), and that exact polygon is both drawn
+(`draw.js`) and collided against (`boulderHit`, shared by ship, bullets and bombs) -
+verified to agree within 1px. `hl` is world-px keyed off the REFERENCE radius, so the
+island covers the same world-x on every device. Placement (`_fitIsland`) checks both
+passes at every outline sample against that sample's own bounds and every overlapping
+spike, falling back to a shorter island (`BOULDER_STRETCH_FALLBACK`) before giving up.
+Measured over 8 day-seeds to wx 60000, circle -> island: count 109 -> 108, narrow pass
+median 1.89 -> 1.93 / min 1.48 -> 1.46 player diameters, length median 1.7 -> 3.4 / max
+3.8 -> 5.8 diameters; 70% of islands get their full stretch. `test-cave.js` re-checks
+both passes along the whole outline.
 
 ### Cannons
 Rare wall-mounted artillery turret (`src/systems.js` `makeCannon`/`maintainCannons`/
@@ -383,7 +495,7 @@ Reward set-piece added in 11.0, not a hazard - the game's answer to "reacting" a
 "committing" (stalactites, boulders) is joined by a third verb, "escaping". Two entry
 points both funnel into one shared `triggerWarp()` (`src/systems.js`): a ring hanging
 in the corridor (`makePortal`/`maintainPortals`/`_makePortalAt`, from world-x
-`PORTAL_START_WX` = 3000, ~score 50) or a violet double-ring warp coin on its own
+`PORTAL_START_WX` = 3000, ~score 50) or a violet mini-hoop warp coin on its own
 real-time clock (`WARP_COIN_INTERVAL_SEC` = 40s, same clock model as
 poison/bomb/drain - **not** folded into the weighted gold/blue/red/orange/green roll,
 so that carefully-tuned split never needed re-deriving; its clock is checked
@@ -418,6 +530,21 @@ the same mistake that had boulders at 84000. Measured now: one ring per
 11s/12s/19s/28s/44s/46s across the score bands, rings at score ~47/161/274/455,
 warp live 5.7%, hazard-immune 11.0%. Re-measure the duty cycle, never the world-px
 number, before moving this again.
+
+**Look: a tall hoop the ship threads ("Reif", 2026-09-13, do not go back to flat
+ovals).** The 11.0 ring was two wide, flat, counter-rotating ovals drawn entirely
+before the ship: it read as a spinning disc you fly *over*, had no direction, sank
+into the violet Ianthe (Friday) rock, spent two `shadowBlur`s, and was drawn at only
+0.52x the height of its own hit window. Now `draw.js` draws a tall ellipse (height =
+`Math.max(p.r, PR*1.6)`, exactly `portalHitTol`) in two passes: glow, flow lines and
+the far arc before the player, the near arc plus a chase light after it
+(`_portalBand`), so the ship visibly flies through. Stacked soft strokes with a
+near-white core replace `shadowBlur`; the core is what keeps it legible on violet
+rock. A used hoop widens as `usedFade` runs out. The warp coin is the same hoop at
+coin size. While a warp is live, white speed streaks sweep the whole tunnel
+(`WARP_STREAKS`, alpha riding `warpScrollFactor()`), placed from `scrollX` plus
+`_rockHash` - stateless, no `rng()`. Design proposals:
+https://claude.ai/code/artifact/7fab90a9-4ad8-4729-a1d6-04d56d49ddd8
 
 Two follow-ups from the same audit. **The ring's hit window is its own drawn radius**
 (`update.js`, `Math.max(p.r, PR*1.6)`, was a flat `PR*3.2`): 55px of window against a
@@ -511,6 +638,14 @@ This reuses `WARP_DUR_MIN..MAX_SEC` rather than adding a new constant pair; only
 *where in the range* a given warp lands changed, not the range itself.
 
 ### Coin system
+**Gold coins bank no `gapBonus` during the safe opening zone** (score < 50,
+`SAFE_START_WX`, `checkCoinCollection`'s gold branch in `systems.js`, 2026-09-13 on
+request) - walls there are already pushed to the screen edges (`safeOpenAt`), so a
+gold pickup widening the corridor further is invisible in the moment and only pays
+off as a bonus already sitting near its cap the instant the zone ends and hazards
+start (`HAZARD_START_WX`). Points, combo and shard banking are unaffected - only the
+`gapBonus +=` is skipped while `scrollX < SAFE_START_WX`.
+
 Coins collect into `gapBonus` (extra halfGap px, capped, decays over time). Since 12.0
 all three magnitudes are **fractions of the corridor's own half-gap, not of `H`**
 (`constants.js`, accessors `gapPerCoin()` / `gapBonusMax()` / `gapDecay()` in
@@ -565,8 +700,8 @@ at all: coin **supply** refills the bar far faster than any of those rates drain
 decay is no longer the binding constraint, the cap is. Left at 2.5 rather than re-tuned
 on a guess. If the deep run needs tightening again, the lever is supply or
 `GAP_BONUS_MAX_FRAC`, not that ramp.
-**Chicane gold is gated in SECONDS, not world-px** (`CHICANE_GOLD_GAP_SEC` /
-`CHICANE_GOLD_EARLY_MULT` in `constants.js`, `worldPxForSec()` in `world.js`, applied in
+**Chicane gold is gated in SECONDS, not world-px** (`CHICANE_GOLD_GAP_SEC`, flat at
+every depth since `CHICANE_GOLD_EARLY_MULT` was deleted on 2026-09-13, in `constants.js`, `worldPxForSec()` in `world.js`, applied in
 `maintainStalactites`). Deep, `stalSpacing()` sits on its 50px floor at a 0.62 chicane
 probability, so nearly every chicane wants to drop a centred gold coin right on the line
 the player threads anyway. A flat 30px gate gave ~7/sec; the 340px gate that replaced it
@@ -623,12 +758,12 @@ given day runs a bit denser or sparser than the base curve.
 
 ```javascript
 scrollSpd()    // 230 → 400 → 560 px/s at W=600, scaled by W/600 (W capped at 956), then an uncapped sqrt tail
-stalSpacing()  // 260 → 145 → 70 px between stalactites (floor 50)
+stalSpacing()  // rate per ref second per sector, see Flight plan (floor 50)
 stalLenFrac()  // 0.46 → 0.64 → 0.76 fraction of halfGap (hard cap 0.80)
-coinSpacing()  // 600 → 320 → 230 px between coins (floor 175)
-mineSpacing()  // 900 → 340 → 200 px between mines (floor 200)
+coinSpacing()  // rate per ref second per sector, see Flight plan (floor 175)
+mineSpacing()  // rate per ref second from S3, see Flight plan (floor 200)
 cannonSpacing()// 4200 → 2400 → 1500 px between cannons (floor 1200)
-chicaneProb    // 0.24 → 0.42 once _prog > 0.40 (hard cap 0.62)
+chicaneProb    // 0 from CHICANE_START_WX, faded in over 6000px, 0.24 → 0.42 (hard cap 0.62)
 ```
 
 At score 233 (`_prog` = 1) the full corridor is `2 * H * 0.163`. A maxed `gapBonus`
@@ -748,8 +883,11 @@ stays locked. `_deepVarietyOn` (default true) is the master kill switch for all 
 Coins are staged by `_prog` so power-ups introduce gradually:
 - score 0-11 (_prog < 0.22): gold only (gap bonus)
 - score 11-33 (_prog 0.22-0.38): + blue (slow time: scroll sags to 0.6x on pickup then ramps back to full over ~4s - see slowScrollFactor)
-- score 34-70 (_prog 0.38-0.55): + red (shield, absorbs 1 hit) + orange (bullet ammo) + the clock-driven poison / bomb / drain / warp coins (see their sections below)
-- score 71+ (_prog >= 0.55): + green (magnet, pulls coins)
+- score 34+ (_prog >= 0.38): the weighted ladder and the warp coin clock switch on
+- score 50+ (S1, `RED_START_WX`): + red (shield, absorbs 1 hit)
+- score 111+ (S2, `ORANGE_START_WX` / `GREEN_START_WX`): + orange (bullet ammo) + green (magnet)
+- score 178+ (S3): bomb clock; S8 (583+) poison; S9 (677+) drain - see "Flight plan (sectors)"
+  (red was 34, orange 34, green 71, bomb/poison/drain 34 until 2026-09-13)
 
 **Power-up SUPPLY is paced in real seconds, not just by weighted share**
 (`POWERUP_MIN_GAP_SEC` / `POWERUP_GAP_EARLY_MULT` in `constants.js`, enforced in
@@ -765,7 +903,7 @@ with them. Three rules, all load-bearing:
   the corridor bonus (below).
 - The floor **scales in with depth**, so it is a measured no-op below score 233. That
   band is where real runs actually end; this pass is only allowed to make the deep run
-  harder. Same rule governs `CHICANE_GOLD_EARLY_MULT` and the `makeMine` retry.
+  harder. Same rule governs the `makeMine` retry.
 - The check sits **after** the poison/bomb/drain overrides, so a ready hazard is never
   delayed by an unrelated shield veto and the hazard `rng()` stream is untouched.
 - **Orange (ammo) is deliberately exempt.** Bullets auto-fire every 0.32s
@@ -778,7 +916,7 @@ The values are FLOORS, not the resulting cadence - the type still has to win the
 weighted roll afterwards, which adds ~4-6s deep. Pick a floor by subtracting that from
 the cadence you want, then re-measure.
 
-Mines (bombs) first spawn at wx=6400 (score ~107, after the safe opening flight - was 1800 / ~30). Shield coins unlock at score ~34, so a player now has shields available before meeting the first mine.
+Mines first spawn at `MINE_START_WX` = start of sector 3 (score ~178; was 1800 / ~30, then 6400, then 12000 on 2026-09-13). Shield coins unlock in sector 1, so a player has shields available before meeting the first mine.
 
 Gold's share isn't just "whatever's left after the other types' shares" - it also
 gets an explicit extra cut as a run goes deeper (`GOLD_DEEP_DECAY` in
@@ -827,7 +965,8 @@ falling edge of `magnetTime`, and `bgmSetSlow(false)` fires there too (plus
 gameplay timer drift.
 
 **Poison/bomb/drain rarity**: all three unlock at score ~34+ (`_prog >= 0.38`, same
-gate as red/orange) and are driven by a real-time clock (`drainClock` mirrors
+gate as red/orange; since 2026-09-13 their first clock target also counts from
+`HAZARD_START_WX`, so in practice none lands inside the safe opening flight) and are driven by a real-time clock (`drainClock` mirrors
 `poisonClock`/`bombClock` exactly; see the Drain coin section below), not a
 per-coin-candidate percentage
 (`poisonClock`/`bombClock`, `state.js`, incremented every play-frame in `update.js`).
@@ -1076,13 +1215,13 @@ the live ship on every pitch change.
 
 ### Onboarding
 
-**The first ~100 points of every run are a plain, safe flight** (2026-09-13, from
+**The first ~50 points of every run are a plain, safe flight** (was ~100, cut to 50 on request the same day) (2026-09-13, from
 beginner feedback "too hard, frustrating, deleted it"; `SAFE_START_WX` doc block in
 `constants.js`, `safeOpenAt()`/`wallsSafe()` in `world.js`, `safeWallBump()` in
-`update.js`). Until world-x 6000 the corridor is pushed out to the screen edges
+`update.js`). Until world-x 3000 the corridor is pushed out to the screen edges
 (`boundsAt()` only, never `boundsBase()`) and **walls bump the ship back instead of
 killing it**, easing shut over the last 1800px. **No stalactites, mines, boulders or
-cannon fire** until `HAZARD_START_WX` (6400, ~1s after the walls turn lethal); boulders
+cannon fire** until `HAZARD_START_WX` (3400, ~1s after the walls turn lethal); boulders
 from 6620, cannons from 7000 so no shot lands inside the zone. Coins and the warp portal
 still appear. The "walls now deadly" notif fires as the corridor closes, only on a
 player's first `WALLS_LIVE_HINT_RUNS` runs. Near-miss bonus and the red danger flash are
@@ -1090,7 +1229,7 @@ off while walls are soft (no wall-riding bonus farm). Every run counts normally.
 
 Fair by construction: identical for every player and screen, all offsets are fixed
 world-px, and `test-cave.js` mirrors the start cursors. Consequences worth knowing:
-every score now starts with ~100 nearly-free points, so the leaderboard baseline shifted
+every score now starts with ~50 nearly-free points, so the leaderboard baseline shifted
 up, and hazard content that sat below score 100 (first stalactite 25, mine 30, boulder
 85, cannon 100) moved just past it - the old leaderboard audit numbers (median daily best
 70) predate this. The same day it was briefly a 3-run off-record "training flight" with

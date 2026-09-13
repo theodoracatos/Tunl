@@ -19,7 +19,7 @@ function maintainStalactites() {
     // view; it never pops in mid-screen.
     while (nextStalWx < scrollX + SPAWN_W + SPAWN_AHEAD_STAL) {
         const spacing = stalSpacing(nextStalWx) * (0.65 + rngStal() * 0.70);
-        if (progAt(nextStalWx) > 0.40 && rngStal() < chicaneProb(nextStalWx)) {
+        if (nextStalWx >= CHICANE_START_WX && rngStal() < chicaneProb(nextStalWx)) {
             stalactites.push(makeStal(nextStalWx,       true));
             stalactites.push(makeStal(nextStalWx + 65, false));
             const coinWx = nextStalWx - 85;
@@ -36,9 +36,7 @@ function maintainStalactites() {
             // the entire run -- the whole 0.34->0.163 narrowing cancelled out.
             // A time gate is flat in coins/sec at every depth by construction:
             // 2.2s => at most ~0.45/sec forever, just above the hold-at-cap rate, so
-            // the bonus hovers and dips instead of pinning. It is a no-op below score
-            // ~230 (the natural chicane cadence there is already slower than this),
-            // which is deliberate - the early game must not get harder.
+            // the bonus hovers and dips instead of pinning.
             // worldPxForSec (world.js) is used rather than scrollSpd() because the
             // cave must stay pixel-identical in world-x across devices; scrollSpd()
             // carries a W/600 term and would fork the cave by screen width.
@@ -51,13 +49,9 @@ function maintainStalactites() {
             // straight through -- capping the real gate at the array's lifetime no
             // matter what value was asked for. A plain high-water mark has no such
             // ceiling.
-            // Depth-scaled for the same reason the power-up floors are
-            // (POWERUP_GAP_EARLY_MULT): at full strength this gate is ~3x the old
-            // 340px one early, which measurably narrowed the score 25-233 corridor -
-            // the wrong direction, since that is the band real runs end in. Scaled in
-            // over _prog2 it is a no-op below score 233 and full strength past ~900.
-            const chicSec  = CHICANE_GOLD_GAP_SEC * lerp(CHICANE_GOLD_EARLY_MULT, 1, Math.min(prog2At(coinWx), 1));
-            const chicGate = Math.max(worldPxForSec(chicSec, coinWx), coinSpacing(coinWx) * 0.85);
+            // Full strength at every depth (constants.js CHICANE_GOLD_GAP_SEC doc for
+            // why the old early multiplier went away with the late chicane start).
+            const chicGate = Math.max(worldPxForSec(CHICANE_GOLD_GAP_SEC, coinWx), coinSpacing(coinWx) * 0.85);
             if (coinWx > 0 && coinWx - lastChicaneCoinWx >= chicGate) {
                 // y from boundsBase(coinWx), NOT centerAt(coinWx). centerAt reads the
                 // wave params for the PLAYER's current scrollX, but this coin is being
@@ -310,8 +304,10 @@ function makeCoin(wx) {
         // goldCutP2 split below.
         const t     = Math.min((progAt(wx) - 0.38) / 0.62, 1); // 0 at score ~34, 1 at score ~233
         let wBlue   = 0.17;
-        let wRed    = lerp(0.09, 0.21, t);
-        let wOrange = 0.14;
+        // Flight plan (constants.js sector table): shield from sector 1, ammo from
+        // sector 2. Before that their share simply stays with gold.
+        let wRed    = wx >= RED_START_WX    ? lerp(0.09, 0.21, t) : 0;
+        let wOrange = wx >= ORANGE_START_WX ? 0.14 : 0;
         // Magnet unlocks at score 71 same as before. Its base share (greenBase below)
         // grows with _prog2 (3% -> 6% from score ~233 to ~900) instead of being pinned
         // at a flat 3% forever -- a long marathon run is exactly where a magnet is most
@@ -328,7 +324,7 @@ function makeCoin(wx) {
         // average gap between green pickups at the score-900+ coin cadence), so a
         // bigger share doesn't leave pickups going to waste the way excess red did.
         let wGreen = 0;
-        if (progAt(wx) >= 0.55) {
+        if (wx >= GREEN_START_WX) {   // sector 2 (was progAt >= 0.55, score ~71)
             const greenBase   = lerp(0.03, 0.06, prog2At(wx));
             const droughtBias = Math.min(1 + (wx - lastGreenWx) / worldPxForSec(GREEN_DROUGHT_SOFT_SEC, wx), GREEN_DROUGHT_CAP);
             wGreen = greenBase * droughtBias;
@@ -622,7 +618,16 @@ function checkCoinCollection() {
                 sfxBomb();
                 window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
             } else {
-                gapBonus = Math.min(gapBonusMax(), gapBonus + gapPerCoin() * (activeSkin === 4 ? masteryLerp(4, 2.0, 2.5) : 1));
+                // No gap bonus during the safe opening zone (score < 100, constants.js
+                // SAFE_START_WX doc) - on request: those walls are already pushed to
+                // the screen edges (safeOpenAt), so a gold coin banking a gapBonus
+                // there does nothing visible yet, only to hand a maxed-out bonus for
+                // free the instant the zone ends and hazards actually start
+                // (HAZARD_START_WX). Everything else about the pickup (points, combo,
+                // shard banking) is unaffected - only the widening is suppressed.
+                if (scrollX >= SAFE_START_WX) {
+                    gapBonus = Math.min(gapBonusMax(), gapBonus + gapPerCoin() * (activeSkin === 4 ? masteryLerp(4, 2.0, 2.5) : 1));
+                }
                 burstCoin(sx, coin.y, 44);
                 // Stack offset computed once and shared by both notifs below: they
                 // belong to the same pickup, so they keep their tight fixed 32px gap
@@ -695,8 +700,7 @@ function updateBullets(dt) {
         }
         if (!hit) {
             for (const bo of boulders) {
-                const dx = b.wx - bo.wx, dy = b.y - bo.y;
-                if (dx*dx + dy*dy < (bo.r + 3.5) * (bo.r + 3.5)) {
+                if (boulderHit(bo, b.wx - bo.wx, b.y - bo.y, 3.5)) {
                     burstStalCrack(bsx, b.y);   // sparks off - solid rock, not destroyed
                     sfxStalCrack();
                     window.webkit?.messageHandlers?.haptic?.postMessage('light');
@@ -862,6 +866,11 @@ function _makeMineAt(wx) {
 
     if (hi - lo < PLACE_MINE_R * 2 * _REF_TO_H) return null;
     let baseY = lo + rngMine() * (hi - lo);
+    // Flight plan, sector 3: the very first mine of a run is a readable showcase - it
+    // sits in the middle of its free band instead of a random spot. rngMine() is still
+    // drawn, so the stream downstream is unchanged. Only a candidate within the retry
+    // reach of MINE_START_WX can be the first (mineSpacing's floor is wider than that).
+    if (wx - MINE_START_WX <= MINE_RETRY_OFFSETS[MINE_RETRY_OFFSETS.length - 1]) baseY = (lo + hi) / 2;
     // Apex bias (deep only, flagged): at a genuine bend apex - where the corridor
     // shape already forces the player onto the centreline - most mines snap toward
     // that centreline instead of scattering. Same count, same speed; it just puts
@@ -1013,17 +1022,124 @@ function updateCannonShots(dt) {
 }
 
 // ── Boulders ──────────────────────────────────────────────────────────
-// A large static rounded rock parked in the deep corridor. Unlike a mine it is
+// A large static rock island parked in the deep corridor. Unlike a mine it is
 // telegraphed by sheer size from far off and it does NOT span the corridor -
 // there is always a pass above AND below, so it asks "commit up or down" rather
-// than "react". Radius is bounded so both gaps clear the player
-// (R <= min(halfGap - 2.6*PR, 0.30*halfGap)), and the centre is nudged a seeded amount toward one
-// wall so one route is the easy one and the other is the squeeze. Circle-circle
-// collision (update.js), same shield-absorb behaviour as a mine. Bombs clear
+// than "react". Half-thickness is bounded so both gaps clear the player
+// (R <= min(halfGap - 2.6*PR, 0.26*halfGap)), and the centre is nudged a seeded amount toward one
+// wall so one route is the easy one and the other is the squeeze. Circle-vs-outline
+// collision (update.js, boulderHit), same shield-absorb behaviour as a mine. Bombs clear
 // them; bullets just spark off (it is solid rock, not a destructible hazard).
 // Offsets stay under the 1800px minimum gap between consecutive boulders
 // (boulderSpacing floor 2400 x the 0.75 jitter low end), keeping the array ordered.
 const BOULDER_RETRY_OFFSETS = [0, 200, 400, 600, 800, 1000];
+
+// Island shape (2026-09-13, was a plain circle). `r` is still the rock's vertical
+// half-THICKNESS bound - no point of the island reaches further than r above or below
+// its centre line - so every pass-width guarantee above is exactly as strong as it was
+// for the ball. What changed is the horizontal half-LENGTH `hl`: r * a seeded stretch,
+// capped at BOULDER_MAX_HALF_LEN world-px (~6 player diameters of rock end to end at
+// W956, ~0.3s of scroll at score 250) so threading a pass never turns into a tunnel.
+// The outline is sampled at BOULDER_U (Chebyshev spacing, dense at the rounded tips),
+// a top and a bottom thickness per sample; the SAME polygon is drawn (draw.js) and
+// collided against (boulderHit), so render and hitbox cannot disagree.
+// hl is world-px keyed off the reference radius, not the device radius: world-x is
+// the one axis every device shares, so the island covers the same stretch of the daily
+// cave everywhere and the placement sampling below sees the same bounds on every screen.
+const BOULDER_PROF_N        = 24;
+const BOULDER_U             = Array.from({ length: BOULDER_PROF_N + 1 }, (_, i) => -Math.cos(Math.PI * i / BOULDER_PROF_N));
+const BOULDER_STRETCH_MIN   = 1.7;
+const BOULDER_STRETCH_MAX   = 2.6;
+const BOULDER_MAX_HALF_LEN  = 100;
+// If the full-length island doesn't fit (a bend or a spike along its length eats a
+// pass), shorten it before giving up on this x - down to a near-round rock.
+const BOULDER_STRETCH_FALLBACK = [1, 0.6, 0.2];
+
+// Seeded outline, as thickness fractions of r per BOULDER_U sample. Four families for
+// variety - lens, teardrop (thick one end, thin tail), peanut (two lumps and a waist)
+// and shelf (one flat face, one domed) - each with its own skew and a little rocky
+// lumpiness, and top and bottom generated separately so no island is mirror-symmetric.
+function _islandProfile(hb) {
+    const h = k => _deepHash(hb + 0x3010 + k);
+    // Shelf gets a smaller slice of the roll: its thin face survives the pass checks
+    // far more often than the other three, so an even roll made it ~43% of islands.
+    const k0 = h(0), kind = k0 < 0.29 ? 0 : k0 < 0.58 ? 1 : k0 < 0.87 ? 2 : 3;
+    const dir  = h(1) < 0.5 ? -1 : 1;
+    let stretch, q, skew, waist = 0, topScale = 1, botScale = 1;
+    if (kind === 0) {        // lens
+        stretch = lerp(1.7, 2.2, h(2)); q = lerp(0.55, 0.75, h(3)); skew = dir * 0.15 * h(4);
+    } else if (kind === 1) { // teardrop
+        stretch = lerp(1.9, 2.6, h(2)); q = lerp(0.5, 0.62, h(3)); skew = dir * lerp(0.45, 0.65, h(4));
+    } else if (kind === 2) { // peanut
+        stretch = lerp(2.2, 2.6, h(2)); q = 0.45; skew = dir * 0.2 * h(4); waist = lerp(0.28, 0.38, h(3));
+    } else {                 // shelf
+        stretch = lerp(1.8, 2.4, h(2)); q = 0.35; skew = dir * 0.3 * h(4);
+        if (h(3) < 0.5) topScale = lerp(0.5, 0.65, h(5)); else botScale = lerp(0.5, 0.65, h(5));
+    }
+    stretch = Math.min(BOULDER_STRETCH_MAX, Math.max(BOULDER_STRETCH_MIN, stretch));
+    const wc = (h(6) - 0.5) * 0.3;
+    const side = (scale, sk, ph) => {
+        const out = new Array(BOULDER_PROF_N + 1);
+        let mx = 0;
+        for (let i = 0; i <= BOULDER_PROF_N; i++) {
+            const u = BOULDER_U[i];
+            const f = Math.max(0, 1 - u * u) ** q * (1 + sk * u)
+                    * (1 - waist * Math.exp(-((u - wc) ** 2) / 0.06))
+                    * (1 + 0.07 * Math.sin(u * Math.PI * 2.5 + ph));
+            out[i] = Math.max(0, f);
+            mx = Math.max(mx, out[i]);
+        }
+        for (let i = 0; i <= BOULDER_PROF_N; i++) out[i] = out[i] / mx * scale;
+        return out;
+    };
+    return {
+        stretch,
+        top: side(topScale, skew + (h(7) - 0.5) * 0.2, h(8) * 6.283),
+        bot: side(botScale, skew + (h(9) - 0.5) * 0.2, h(10) * 6.283),
+    };
+}
+
+// Largest thickness fraction of `prof` anywhere in u-window [u0, u1].
+function _islandMax(prof, u0, u1) {
+    u0 = Math.max(-1, u0); u1 = Math.min(1, u1);
+    if (u0 >= u1) return 0;
+    const at = u => {
+        const i = Math.min(BOULDER_PROF_N - 1, Math.floor(Math.acos(-u) * BOULDER_PROF_N / Math.PI));
+        const t = (u - BOULDER_U[i]) / (BOULDER_U[i + 1] - BOULDER_U[i]);
+        return prof[i] + (prof[i + 1] - prof[i]) * Math.min(1, Math.max(0, t));
+    };
+    let m = Math.max(at(u0), at(u1));
+    for (let i = 0; i <= BOULDER_PROF_N; i++) if (BOULDER_U[i] > u0 && BOULDER_U[i] < u1) m = Math.max(m, prof[i]);
+    return m;
+}
+
+// Does a circle of radius rad at (lx, ly) - world-px / device-px relative to the
+// island's centre - touch the island polygon? Shared by the ship, bullets and bombs.
+function boulderHit(bo, lx, ly, rad) {
+    const hl = bo.hl;
+    if (lx <= -hl - rad || lx >= hl + rad || ly <= -bo.upMax - rad || ly >= bo.dnMax + rad) return false;
+    if (lx > -hl && lx < hl) {
+        const u = lx / hl;
+        const i = Math.min(BOULDER_PROF_N - 1, Math.floor(Math.acos(-u) * BOULDER_PROF_N / Math.PI));
+        const t = Math.min(1, Math.max(0, (u - BOULDER_U[i]) / (BOULDER_U[i + 1] - BOULDER_U[i])));
+        if (ly >= -(bo.up[i] + (bo.up[i + 1] - bo.up[i]) * t) && ly <= bo.dn[i] + (bo.dn[i + 1] - bo.dn[i]) * t) return true;
+    }
+    const r2 = rad * rad;
+    for (let i = 0; i < BOULDER_PROF_N; i++) {
+        const x0 = BOULDER_U[i] * hl, x1 = BOULDER_U[i + 1] * hl;
+        if (x1 < lx - rad || x0 > lx + rad) continue;
+        if (ptSeg2(lx, ly, x0, -bo.up[i], x1, -bo.up[i + 1]) < r2) return true;
+        if (ptSeg2(lx, ly, x0,  bo.dn[i], x1,  bo.dn[i + 1]) < r2) return true;
+    }
+    return false;
+}
+
+// Vertical extent of the island over the horizontal window [lx0, lx1] (world-px
+// relative to its centre) - used to shove a shield-absorbed ship clear.
+function boulderSpan(bo, lx0, lx1) {
+    const hl = bo.hl;
+    return { up: bo.r * _islandMax(bo.fTop, lx0 / hl, lx1 / hl), dn: bo.r * _islandMax(bo.fBot, lx0 / hl, lx1 / hl) };
+}
 
 function makeBoulder(wx) {
     for (const off of BOULDER_RETRY_OFFSETS) {
@@ -1039,14 +1155,37 @@ function _makeBoulderAt(wx) {
     // PLACE_* throughout (constants.js PLACE_PR doc): this sets the boulder's actual
     // radius, so a W-derived margin against an H-derived corridor made the rock a
     // different size - and sometimes made it not exist at all - per device.
-    const maxR = Math.min(hg - (PLACE_PR * 2.6 + 6) * _REF_TO_H, hg * 0.30);
+    const maxR = Math.min(hg - (PLACE_PR * 2.6 + 6) * _REF_TO_H, hg * 0.26);
     if (maxR * _H_TO_REF < PLACE_PR) return null;      // corridor too tight for one
-    const r    = maxR * (0.82 + _deepHash(Math.floor(wx / 260) + 0x3000) * 0.18);
+    const hb   = Math.floor(wx / 260);
+    const r    = maxR * (0.82 + _deepHash(hb + 0x3000) * 0.18);
     const cy   = (b.top + b.bot) / 2;
     const room = hg - r - PLACE_PR * 2.6 * _REF_TO_H;   // how far the centre can shift
-    const side = _deepHash(Math.floor(wx / 260) + 0x3001) < 0.5 ? -1 : 1;
-    const off  = side * room * (0.35 + _deepHash(Math.floor(wx / 260) + 0x3002) * 0.5);
+    const side = _deepHash(hb + 0x3001) < 0.5 ? -1 : 1;
+    const off  = side * room * (0.35 + _deepHash(hb + 0x3002) * 0.5);
     const y    = cy + off;
+    const prof = _islandProfile(hb);
+    const rRef = r * _H_TO_REF;
+    for (const m of BOULDER_STRETCH_FALLBACK) {
+        const hl = Math.min(rRef * (1 + (prof.stretch - 1) * m), BOULDER_MAX_HALF_LEN);
+        const bo = _fitIsland(wx, y, r, hl, prof);
+        if (bo) return bo;
+    }
+    return null;
+}
+
+function _fitIsland(wx, y, r, hl, prof) {
+    const need = PLACE_PR * 2.6 * _REF_TO_H;            // ~1.3 player diameters per pass
+    // The centre-x corridor bound in _makeBoulderAt only covers the middle of the
+    // island; a long one spans a stretch of bending corridor, so every outline sample
+    // has to leave both passes open against the bounds at ITS own world-x.
+    let minTop = Infinity, minBot = Infinity;
+    for (let i = 0; i <= BOULDER_PROF_N; i++) {
+        const bb = boundsBase(wx + BOULDER_U[i] * hl);
+        minTop = Math.min(minTop, (y - r * prof.top[i]) - bb.top);
+        minBot = Math.min(minBot, bb.bot - (y + r * prof.bot[i]));
+    }
+    if (minTop < need || minBot < need) return null;
     // Both passes must SURVIVE the stalactites that overlap this rock - that is the
     // boulder's whole contract ("always a pass above AND below"), and the corridor
     // bound above only guarantees it against a bare corridor. This used to be a proxy
@@ -1060,24 +1199,32 @@ function _makeBoulderAt(wx) {
     // stricter where it matters (0 sealed passes, measured, vs. 12 of 18 before) and
     // far less wasteful - a spike near the rock's EDGE barely eats into either pass,
     // which the proxy could not tell apart from a spike through its middle.
-    // Mixed axes throughout, so the horizontal half-chord is computed in reference
-    // space (s.wx is world-px; r is H-derived device-px) and converted back.
-    const need = PLACE_PR * 2.6 * _REF_TO_H;            // ~1.3 player diameters per pass
-    const rRef = r * _H_TO_REF;
+    // For the island this is the outline's own thickness over the spike's width
+    // (_islandMax), the direct successor of the circle's half-chord.
     for (const s of stalactites) {
-        const dx = Math.abs(s.wx - wx);
-        if (dx >= rRef + placeStalW(s.wx)) continue;
-        // Vertical half-extent of the rock where this spike actually crosses it.
-        const chord = Math.sqrt(Math.max(0, rRef * rRef - Math.max(0, dx - placeStalW(s.wx)) ** 2)) * _REF_TO_H;
+        const dx = s.wx - wx, sw = placeStalW(s.wx);
+        if (Math.abs(dx) >= hl + sw) continue;
         const sb = boundsBase(s.wx);
-        if (s.isTop) { if ((y - chord) - (sb.top + s.length) < need) return null; }
-        else         { if ((sb.bot - s.length) - (y + chord) < need) return null; }
+        if (s.isTop) {
+            const pass = (y - r * _islandMax(prof.top, (dx - sw) / hl, (dx + sw) / hl)) - (sb.top + s.length);
+            if (pass < need) return null;
+            minTop = Math.min(minTop, pass);
+        } else {
+            const pass = (sb.bot - s.length) - (y + r * _islandMax(prof.bot, (dx - sw) / hl, (dx + sw) / hl));
+            if (pass < need) return null;
+            minBot = Math.min(minBot, pass);
+        }
     }
     // narrowTop/scored back the "Boulder Meister" achievement (constants.js
     // BOULDER_MEISTER_TARGET doc, update.js's boulder-collision loop): narrowTop
     // records which of the two passes is the tighter squeeze, scored guards against
     // crediting the same boulder's pass twice.
-    return { wx, y, r, narrowTop: (y - r - b.top) < (b.bot - (y + r)), scored: false };
+    const up = prof.top.map(f => f * r), dn = prof.bot.map(f => f * r);
+    return {
+        wx, y, r, hl, up, dn, fTop: prof.top, fBot: prof.bot,
+        upMax: Math.max(...up), dnMax: Math.max(...dn),
+        narrowTop: minTop < minBot, scored: false,
+    };
 }
 
 function maintainBoulders() {
@@ -1215,8 +1362,7 @@ function triggerBombExplosion(cx, cy) {
     }
     for (let bi = boulders.length - 1; bi >= 0; bi--) {
         const bo = boulders[bi];
-        const dx = (bo.wx - scrollX) - cx, dy = bo.y - cy;
-        if (dx*dx + dy*dy < (BOMB_RADIUS + bo.r) * (BOMB_RADIUS + bo.r)) {
+        if (boulderHit(bo, cx - (bo.wx - scrollX), cy - bo.y, BOMB_RADIUS)) {
             boulders.splice(bi, 1);
             burstStalCrack(bo.wx - scrollX, bo.y);
             burst(bo.wx - scrollX, bo.y, 20);
