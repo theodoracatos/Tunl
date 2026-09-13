@@ -1,11 +1,39 @@
 # TUNL brand assets
 
 The icon identity is one motif: the player ship. The exact in-game sprite
-(`shipPath()` / `drawShip()` in `src/draw.js`, the SR-71-style needle-nose
-delta) sits centred, in a ~30-degree climb because the game verb is "hold =
-climb", on the dark cave ground with a soft blue aura and one cool white-blue
-thrust cone. One shape, so the silhouette still reads at a 16px favicon - no
-coin, no tunnel-ring, no particle field.
+(`SHIP_OUTLINE` / `SHIP_FACETS` / `drawShip()` in `src/draw.js` - the faceted
+K5 "Facette + Licht" hull shipped in 12.0) sits centred, in a ~30-degree climb
+because the game verb is "hold = climb", on the dark cave ground with a soft
+blue aura and its own twin nacelle plumes. One shape, so the silhouette still
+reads at a 16px favicon - no coin, no tunnel-ring, no particle field.
+
+## The ship block is generated - `gen-ship-glyph.mjs`
+
+Every master carries the SAME hull, so hand-editing 14 facet polygons in four
+SVG files is how they drift out of sync with the game (which is exactly what
+happened at 12.0: the masters still held the pre-12.0 needle - nose 1.72r,
+span 0.92r, smooth white fill - long after the game stopped drawing it).
+
+`branding/gen-ship-glyph.mjs` mirrors the geometry and the facet tone maths
+from `src/draw.js` and writes the ship into each master between its
+`BEGIN/END generated ship` markers. Everything outside the markers
+(background, aura, placement transform) stays hand-authored per file.
+
+```
+node branding/gen-ship-glyph.mjs --list    # the four masters it writes
+node branding/gen-ship-glyph.mjs --write   # rewrite them in place
+node branding/gen-ship-glyph.mjs --r=130   # print one fragment to stdout
+bash branding/export-icons.sh              # then push the rasters everywhere
+```
+
+Two deliberate deviations from the in-game render, both for icon legibility:
+the shadow-side facet tones are damped (`darkMix`, default 0.62) because a
+facet mixed 54% toward near-black merges into the `#04040e` icon ground and
+the lower wing drops out of the silhouette at favicon size; and the animated
+spine running lights are left out, since a logo is one frame and four chasing
+dots read as dirt on the hull. The plumes ARE the game's (`drawThrustPlume()`
+tints them with the skin glow, and PEARL's glow is already the cool white-blue
+the old hand-picked single cone was reaching for).
 
 The wordmark ("TUNL", with the U drawn as a portal/gem) is a separate asset
 and unchanged by the icon direction; the two are meant to lock up together
@@ -17,7 +45,7 @@ and unchanged by the icon direction; the two are meant to lock up together
   iOS, Android's legacy launcher icon, the Play Store listing icon, and
   favicons. No text.
 - `icon-adaptive-foreground.svg` — same ship, transparent background, shrunk
-  so the sprite plus its thrust cone sits inside Android's 66dp adaptive-icon
+  so the sprite plus its plumes sits inside Android's 66dp adaptive-icon
   safe zone. Pairs with the `tunlBackground` color (`#04040A`) as the
   background layer.
 - `ios-launch-logo.svg` — the ship mark with no background rect (transparent),
@@ -84,6 +112,11 @@ adaptive XMLs point at `@drawable/ic_launcher_foreground` + `@color/tunlBackgrou
   `favicon-512.png`, `apple-touch-icon-180.png`
 - `feature-graphic-1024x500.png` — `og:image` / `twitter:image`
 - `site.webmanifest` — `name`/`icons`/`theme_color` (`#04040a`)
+
+The web build's own copy, `flytunl-site/site/play/branding/web/`, is written by
+`flytunl-site/build-play.mjs` (it mirrors `branding/web/`), so it refreshes on
+the next web build — copy `branding/web/*` over it by hand if you change the
+mark without rebuilding.
 
 ## `web/` — favicon/wordmark exports
 

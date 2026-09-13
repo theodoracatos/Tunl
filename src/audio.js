@@ -555,7 +555,7 @@ function sfxBomb() {
 
 // Warp portal entry (constants.js "Warp portal" doc): a rising sweep chord + a
 // bandpassed noise "whoosh", the mirror image of sfxSlow's descending one. Fires
-// from either entry point (the portal ring or the warp coin) via triggerWarp().
+// on every portal flythrough via triggerWarp().
 function sfxWarpEnter() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;

@@ -59,13 +59,13 @@
     "ja": "11.0の新機能"
   },
   "hero.newBody": {
-    "en": "The Warp arrives. Fly through a portal ring, or grab a rare violet coin, for a speed surge, a wider tunnel, and every gold coin pulled into your combo. Plus 10 new achievements for near misses, total runs, and skill runs like Pacifist and Boulder Meister.",
-    "de": "Der Sog ist da. Fliege durch einen Portalring oder schnapp dir eine seltene violette Münze für einen Geschwindigkeitsschub, eine breitere Höhle und jede Goldmünze direkt in deinem Combo. Außerdem neu: 10 Erfolge für Beinahe-Treffer, Gesamtläufe und reine Können-Läufe wie Pacifist und Boulder Meister.",
-    "fr": "Le Sog arrive. Traverse un anneau-portail, ou attrape une rare pièce violette, pour une poussée de vitesse, un tunnel élargi et toutes les pièces d'or aspirées dans ton combo. Aussi nouveaux : 10 succès pour les frôlements, le nombre total de parties et les parcours de pure adresse comme Pacifist et Boulder Meister.",
-    "it": "Arriva il Varco (Sog). Vola attraverso un anello portale, o prendi una rara moneta viola, per una scarica di velocità, un tunnel più largo e ogni moneta d'oro aspirata nella tua combo. Novità anche: 10 obiettivi per le quasi collisioni, il numero totale di partite e corse di pura abilità come Pacifist e Boulder Meister.",
-    "es": "Llega el Warp. Vuela a través de un anillo portal, o atrapa una rara moneda violeta, para un impulso de velocidad, un túnel más ancho y todas las monedas de oro absorbidas en tu combo. También nuevo: 10 logros por casi colisiones, partidas totales y carreras de pura habilidad como Pacifist y Boulder Meister.",
-    "pt": "Chegou o Warp. Voe por um anel-portal, ou pegue uma rara moeda violeta, para um surto de velocidade, um túnel mais largo e todas as moedas de ouro puxadas para o seu combo. Também novo: 10 conquistas por quase colisões, corridas totais e corridas de pura habilidade como Pacifist e Boulder Meister.",
-    "ja": "「ワープ」登場。ポータルリングを通過するか、レアな紫のコインを取ると、速度が急上昇し、トンネルが広がり、視界内の金貨がすべてコンボに吸い込まれる。さらに、ニアミス、総プレイ回数、Pacifist や Boulder Meister のような純粋な腕前を試す10個の新実績も追加。"
+    "en": "The Warp arrives. Fly through a portal ring for a speed surge, a wider tunnel, and every gold coin pulled into your combo. Plus 10 new achievements for near misses, total runs, and skill runs like Pacifist and Boulder Meister.",
+    "de": "Der Sog ist da. Fliege durch einen Portalring für einen Geschwindigkeitsschub, eine breitere Höhle und jede Goldmünze direkt in deinem Combo. Außerdem neu: 10 Erfolge für Beinahe-Treffer, Gesamtläufe und reine Können-Läufe wie Pacifist und Boulder Meister.",
+    "fr": "Le Sog arrive. Traverse un anneau-portail pour une poussée de vitesse, un tunnel élargi et toutes les pièces d'or aspirées dans ton combo. Aussi nouveaux : 10 succès pour les frôlements, le nombre total de parties et les parcours de pure adresse comme Pacifist et Boulder Meister.",
+    "it": "Arriva il Varco (Sog). Vola attraverso un anello portale per una scarica di velocità, un tunnel più largo e ogni moneta d'oro aspirata nella tua combo. Novità anche: 10 obiettivi per le quasi collisioni, il numero totale di partite e corse di pura abilità come Pacifist e Boulder Meister.",
+    "es": "Llega el Warp. Vuela a través de un anillo portal para un impulso de velocidad, un túnel más ancho y todas las monedas de oro absorbidas en tu combo. También nuevo: 10 logros por casi colisiones, partidas totales y carreras de pura habilidad como Pacifist y Boulder Meister.",
+    "pt": "Chegou o Warp. Voe por um anel-portal para um surto de velocidade, um túnel mais largo e todas as moedas de ouro puxadas para o seu combo. Também novo: 10 conquistas por quase colisões, corridas totais e corridas de pura habilidade como Pacifist e Boulder Meister.",
+    "ja": "「ワープ」登場。ポータルリングを通過すると、速度が急上昇し、トンネルが広がり、視界内の金貨がすべてコンボに吸い込まれる。さらに、ニアミス、総プレイ回数、Pacifist や Boulder Meister のような純粋な腕前を試す10個の新実績も追加。"
   },
   "hero.playCta": {
     "en": "Play in your browser",
@@ -183,40 +183,40 @@
     "ja": "その日のベストがゴースト機となって隣を飛ぶ。追いつき、追い抜けば、次の走りは今出した記録を追いかける。"
   },
   "f4.h": {
-    "en": "Seven power-up coins",
-    "de": "Sieben Power-up-Münzen",
-    "fr": "Sept pièces bonus",
-    "it": "Sette monete potenziamento",
-    "es": "Siete monedas de mejora",
-    "pt": "Sete moedas de power-up",
-    "ja": "7種のパワーアップコイン"
+    "en": "Eight coins and a warp",
+    "de": "Acht Münzen und der Sog",
+    "fr": "Huit pièces et le Sog",
+    "it": "Otto monete e il Varco",
+    "es": "Ocho monedas y el Warp",
+    "pt": "Oito moedas e o Warp",
+    "ja": "8種のコインとワープ"
   },
   "f4.p": {
-    "en": "Gold widens the corridor, blue drops the whole run into slow motion, red shields a hit, orange loads ammo, green pulls coins toward you, and purple detonates a blast that clears nearby danger - each with its own shape and size, so you can tell them apart at a glance, even colorblind.",
-    "de": "Gold weitet den Korridor, Blau versetzt den ganzen Lauf in Zeitlupe, Rot fängt einen Treffer ab, Orange lädt Munition, Grün zieht Münzen zu dir, und Lila zündet eine Explosion, die nahe Gefahren wegräumt - jede mit eigener Form und Größe, damit du sie auf einen Blick unterscheidest, auch mit Farbsehschwäche.",
-    "fr": "L'or élargit le couloir, le bleu passe toute la partie au ralenti, le rouge encaisse un coup, l'orange charge des munitions, le vert attire les pièces vers toi, et le violet déclenche une explosion qui nettoie les dangers proches - chacune avec sa propre forme et sa taille, pour les distinguer d'un coup d'oeil, même daltonien.",
-    "it": "L'oro allarga il corridoio, il blu manda tutta la partita al rallentatore, il rosso para un colpo, l'arancione carica munizioni, il verde attira le monete verso di te e il viola innesca un'esplosione che ripulisce i pericoli vicini - ognuna con forma e dimensione proprie, per distinguerle a colpo d'occhio, anche da daltonici.",
-    "es": "El oro ensancha el pasillo, el azul pone toda la partida a cámara lenta, el rojo bloquea un golpe, el naranja carga munición, el verde atrae las monedas hacia ti, y el morado detona una explosión que limpia el peligro cercano - cada una con su forma y tamaño, para distinguirlas de un vistazo, incluso con daltonismo.",
-    "pt": "O ouro alarga o corredor, o azul põe a partida toda em câmera lenta, o vermelho bloqueia um golpe, o laranja carrega munição, o verde puxa as moedas para você e o roxo detona uma explosão que limpa o perigo por perto - cada uma com formato e tamanho próprios, para diferenciar num relance, mesmo com daltonismo.",
-    "ja": "金は通路を広げ、青は走り全体をスローに、赤は一撃を防ぎ、オレンジは弾を装填、緑はコインを引き寄せ、紫は近くの危険を吹き飛ばす爆発を起こす。それぞれ形もサイズも違うので、色覚に頼らず一目で見分けられる。"
+    "en": "Gold widens the corridor, blue slows the run, red shields a hit, orange loads ammo, green pulls coins in, and purple blasts nearby danger. Two are traps: a toxic green spore costs you shards, a wine-red ring drains your score. Fly through the violet hoop hanging in the tunnel to warp ahead, untouchable. Every coin has its own shape, so you can tell them apart at a glance, even colorblind.",
+    "de": "Gold weitet den Korridor, Blau bremst den Lauf in Zeitlupe, Rot fängt einen Treffer ab, Orange lädt Munition, Grün zieht Münzen an, und Lila sprengt nahe Gefahren weg. Zwei sind Fallen: eine giftgrüne Spore kostet dich Shards, ein weinroter Ring zapft deinen Punktestand an. Und wer durch den violetten Reif im Tunnel fliegt, wird vom Sog nach vorne gerissen, unverwundbar. Jede Münze hat ihre eigene Form, damit du sie auf einen Blick unterscheidest, auch mit Farbsehschwäche.",
+    "fr": "L'or élargit le couloir, le bleu ralentit la partie, le rouge encaisse un coup, l'orange charge des munitions, le vert attire les pièces et le violet fait exploser les dangers proches. Deux sont des pièges : une spore vert toxique te coûte des shards, un anneau bordeaux draine ton score. Traverse l'arceau violet suspendu dans le tunnel et le Sog te propulse en avant, intouchable. Chaque pièce a sa propre forme, pour les distinguer d'un coup d'oeil, même daltonien.",
+    "it": "L'oro allarga il corridoio, il blu rallenta la partita, il rosso para un colpo, l'arancione carica munizioni, il verde attira le monete e il viola fa esplodere i pericoli vicini. Due sono trappole: una spora verde tossica ti costa shard, un anello rosso vinaccia prosciuga il punteggio. Attraversa il cerchio viola sospeso nel tunnel e il Varco ti scaglia in avanti, intoccabile. Ogni moneta ha la sua forma, per distinguerle a colpo d'occhio, anche da daltonici.",
+    "es": "El oro ensancha el pasillo, el azul ralentiza la partida, el rojo bloquea un golpe, el naranja carga munición, el verde atrae las monedas y el morado hace estallar el peligro cercano. Dos son trampas: una espora verde tóxica te cuesta esquirlas, un anillo rojo vino drena tu puntuación. Cruza el aro violeta que cuelga en el túnel y el Warp te lanza hacia delante, intocable. Cada moneda tiene su propia forma, para distinguirlas de un vistazo, incluso con daltonismo.",
+    "pt": "O ouro alarga o corredor, o azul desacelera a partida, o vermelho bloqueia um golpe, o laranja carrega munição, o verde puxa as moedas e o roxo explode o perigo por perto. Duas são armadilhas: um esporo verde tóxico custa fragmentos, um anel vermelho-vinho drena sua pontuação. Atravesse o aro violeta no túnel e o Warp te lança para a frente, intocável. Cada moeda tem formato próprio, para diferenciar num relance, mesmo com daltonismo.",
+    "ja": "金は通路を広げ、青は走りをスローに、赤は一撃を防ぎ、オレンジは弾を装填、緑はコインを引き寄せ、紫は近くの危険を吹き飛ばす。残る2種は罠 - 毒々しい緑の胞子はシャードを奪い、ワインレッドの輪はスコアを削る。トンネルに浮かぶ紫のゲートをくぐれば、ワープで無敵のまま一気に前へ。どのコインも形が違うので、色覚に頼らず一目で見分けられる。"
   },
   "f5.h": {
-    "en": "Stalactites, mines, and cannons",
-    "de": "Stalaktiten, Minen und Kanonen",
-    "fr": "Stalactites, mines et canons",
-    "it": "Stalattiti, mine e cannoni",
-    "es": "Estalactitas, minas y cañones",
-    "pt": "Estalactites, minas e canhões",
-    "ja": "鍾乳石、機雷、砲台"
+    "en": "Stalactites, mines, boulders, cannons",
+    "de": "Stalaktiten, Minen, Felsbrocken, Kanonen",
+    "fr": "Stalactites, mines, rochers, canons",
+    "it": "Stalattiti, mine, massi, cannoni",
+    "es": "Estalactitas, minas, rocas, cañones",
+    "pt": "Estalactites, minas, rochas, canhões",
+    "ja": "鍾乳石、機雷、岩、砲台"
   },
   "f5.p": {
-    "en": "Sharp obstacles, paired chicanes, and rare wall-mounted cannons that open fire as you close in force split-second calls as the run speeds up. Watch out for two hazard coins too - a toxic green one that costs you shards, and a wine-red one that drains your score - both look like ordinary pickups.",
-    "de": "Scharfe Hindernisse, doppelte Schikanen und seltene wandmontierte Kanonen, die das Feuer eröffnen, sobald du näher kommst - während der Lauf schneller wird, zählen Sekundenbruchteile. Achte auch auf zwei Gefahren-Münzen: eine giftgrüne, die dich Shards kostet, und eine weinrote, die deinen Punktestand anzapft - beide sehen aus wie normale Bonusmünzen.",
-    "fr": "Des obstacles pointus, des chicanes doubles et de rares canons muraux qui ouvrent le feu dès que tu approches : quand la partie accélère, tout se joue au dixième de seconde. Méfie-toi aussi de deux pièces dangereuses - une vert toxique qui te coûte des shards, et une rouge bordeaux qui draine ton score - toutes deux ressemblent à des bonus ordinaires.",
-    "it": "Ostacoli affilati, chicane doppie e rari cannoni a muro che aprono il fuoco quando ti avvicini: mentre la partita accelera, contano le frazioni di secondo. Occhio anche a due monete pericolose - una verde tossica che ti costa shard, e una rosso vinaccia che prosciuga il punteggio - entrambe sembrano bonus normali.",
-    "es": "Obstáculos afilados, chicanas dobles y raros cañones montados en la pared que abren fuego cuando te acercas: según se acelera la partida, todo se juega en fracciones de segundo. Cuidado también con dos monedas peligrosas - una verde tóxica que te cuesta esquirlas, y una roja vino que drena tu puntuación - ambas parecen bonus normales.",
-    "pt": "Obstáculos afiados, chicanes duplas e raros canhões na parede que abrem fogo quando você se aproxima: conforme a partida acelera, tudo se decide em frações de segundo. Cuidado também com duas moedas perigosas - uma verde tóxica que custa fragmentos, e uma vermelho-vinho que drena sua pontuação - ambas parecem itens normais.",
-    "ja": "鋭い障害物、左右から迫るシケイン、そして接近すると火を噴く珍しい壁掛け砲台。走りが速くなるほど、判断はコンマ数秒。危険なコインにも2種類注意 - シャードを失う毒々しい緑のコインと、スコアを削るワインレッドのコイン。どちらも普通のボーナスに見える。"
+    "en": "Sharp stalactites, paired chicanes, spikes that shake loose and fall, boulders that make you commit up or down, and rare wall-mounted cannons that open fire as you close in. Each new stretch of cave brings a new threat, and the run keeps speeding up.",
+    "de": "Spitze Stalaktiten, doppelte Schikanen, Spitzen, die sich lösen und herabstürzen, Felsbrocken, bei denen du dich für oben oder unten entscheiden musst, und seltene wandmontierte Kanonen, die das Feuer eröffnen, sobald du näher kommst. Jeder neue Abschnitt der Höhle bringt eine neue Gefahr, und der Lauf wird immer schneller.",
+    "fr": "Des stalactites pointues, des chicanes doubles, des pics qui se détachent et tombent, des rochers qui t'obligent à choisir entre haut et bas, et de rares canons muraux qui ouvrent le feu dès que tu approches. Chaque nouveau tronçon de grotte apporte une nouvelle menace, et la partie ne cesse d'accélérer.",
+    "it": "Stalattiti affilate, chicane doppie, punte che si staccano e cadono, massi che ti costringono a scegliere tra sopra e sotto, e rari cannoni a muro che aprono il fuoco quando ti avvicini. Ogni nuovo tratto di grotta porta una nuova minaccia, e la partita continua ad accelerare.",
+    "es": "Estalactitas afiladas, chicanas dobles, puntas que se sueltan y caen, rocas que te obligan a elegir entre arriba y abajo, y raros cañones montados en la pared que abren fuego cuando te acercas. Cada nuevo tramo de cueva trae una nueva amenaza, y la partida no deja de acelerar.",
+    "pt": "Estalactites afiadas, chicanes duplas, pontas que se soltam e caem, rochas que obrigam você a escolher entre cima e baixo, e raros canhões na parede que abrem fogo quando você se aproxima. Cada novo trecho da caverna traz uma nova ameaça, e a partida não para de acelerar.",
+    "ja": "鋭い鍾乳石、左右から迫るシケイン、揺れて落ちてくるトゲ、上か下かの決断を迫る岩、そして接近すると火を噴く珍しい壁掛け砲台。洞窟を進むたびに新たな脅威が加わり、走りはどんどん速くなる。"
   },
   "f6.h": {
     "en": "One more run after you crash",

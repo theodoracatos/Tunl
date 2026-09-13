@@ -38,7 +38,7 @@ function titleScreen() {
     chicaneCoins = []; lastChicaneCoinWx = -Infinity;
     gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
     invulnT = 0; deathCause = null;
-    safeEndWx = 0; safeCloseWx = 1; safeBumpT = 0; wallsLiveShown = false;
+    safeEndWx = 0; safeCloseWx = 1; safeBumpT = 0; wallsLiveShown = false; safeBumps = [];
     hullScratches = 0; lastSectorShown = 0;
     continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;
     reviveCountdownT = 0;
@@ -53,7 +53,7 @@ function titleScreen() {
     warpTime = 0; warpMax = 0; warpWidenVisual = 0; warpMult = WARP_MULT_MIN;
     // Coins never spawn on the title screen (nextCoinWx = 99999 above), so these are
     // never actually consulted here -- just kept defined to avoid stray undefineds.
-    nextPoisonWx = 0; nextBombWx = 0; nextDrainWx = 0; nextWarpWx = 0;
+    nextPoisonWx = 0; nextBombWx = 0; nextDrainWx = 0;
     lastBlueWx = 0; lastRedWx = 0; lastGreenWx = 0;
     flightClock = 0; flightAchIdx = 0;
     prevRunScore = 0; lastRunScore = 0; milestoneFlash = 0; milestoneText = '';
@@ -189,7 +189,7 @@ function startPlay() {
     // Safe opening flight (constants.js SAFE_START_WX doc).
     safeEndWx = SAFE_START_WX; safeCloseWx = SAFE_CLOSE_WX;
     hullScratches = HULL_SCRATCHES; lastSectorShown = 1;   // constants.js flight plan
-    safeBumpT = 0; wallsLiveShown = false;
+    safeBumpT = 0; wallsLiveShown = false; safeBumps = [];
     // A ghost carried in on a ?g= share link (state.js _webGhostPlay) has to
     // survive the daily-rollover reset above, which clears the local ghost -
     // racing that shared ghost is the whole point of opening the link.
@@ -219,7 +219,6 @@ function startPlay() {
     nextPoisonWx = POISON_START_WX + worldPxForSec(POISON_INTERVAL_SEC * (0.15 + rngCoin() * 0.5), POISON_START_WX);
     nextBombWx   = BOMB_START_WX   + worldPxForSec(BOMB_INTERVAL_SEC   * (0.15 + rngCoin() * 0.5), BOMB_START_WX);
     nextDrainWx  = DRAIN_START_WX  + worldPxForSec(DRAIN_INTERVAL_SEC  * (0.15 + rngCoin() * 0.5), DRAIN_START_WX);
-    nextWarpWx   = worldPxForSec(WARP_COIN_INTERVAL_SEC * (0.7 + rngCoin() * 0.6), 0);
     // Power-up supply floors: 0 = "as if one just landed at the start line". They only
     // apply past the score-34 gate in makeCoin() anyway, well beyond any floor width.
     lastBlueWx = 0; lastRedWx = 0; lastGreenWx = 0;

@@ -314,6 +314,11 @@ let invulnT;
 // lethal this run, how long the corridor takes to close before it, the bump-feedback
 // cooldown, and whether the one-shot walls-live hint has fired. 0 on the title screen = no zone.
 let safeEndWx = 0, safeCloseWx = 1, safeBumpT = 0, wallsLiveShown = false;
+// Soft-wall bump feedback (constants.js SAFE_BUMP_DENT_SEC doc): one entry per bump the
+// cooldown above let through, { wx, isTop, t }, aged in update.js and culled once the
+// dent has died out. Purely visual - draw.js bends the RENDERED wall edge around wx and
+// runs a ring out of it; boundsAt() and the collision code never see these.
+let safeBumps = [];
 // Flight plan (constants.js sector table): wall-only scratches left this run
 // (HULL_SCRATCHES at start, spent by update.js hullScratch until HULL_END_WX), and the
 // highest sector whose "SECTOR n" notif has already fired this run.
@@ -340,8 +345,8 @@ let cannonShots;
 // PORTAL_START_WX (~score 50) in startPlay, 99999 on the title screen.
 let portals, nextPortalWx;
 // Warp state (update.js triggerWarp()/the warp block, world.js warpScrollFactor()).
-// warpTime counts down real seconds from warpMax (set fresh by either entry point,
-// never stacked - see constants.js WARP_DUR_MIN_SEC doc); warpWidenVisual chases its
+// warpTime counts down real seconds from warpMax (set fresh on every portal
+// flythrough, never stacked - see constants.js WARP_DUR_MIN_SEC doc); warpWidenVisual chases its
 // target through the same GAP_EASE_RATE-style channel gapBonusVisual already uses,
 // so the corridor widens/narrows smoothly instead of snapping.
 // warpMult is the scrollSpd() multiplier rolled once per warp from the player's
@@ -350,9 +355,6 @@ let portals, nextPortalWx;
 // its window, so warpScrollFactor() (world.js) reads a fixed value for the
 // whole warp instead of re-sampling a live, still-climbing _prog2 mid-flight.
 let warpTime, warpMax, warpWidenVisual, warpMult;
-// Warp coin real-time-clock cursor, same model as nextPoisonWx/nextBombWx/nextDrainWx
-// just above (constants.js WARP_COIN_INTERVAL_SEC doc).
-let nextWarpWx;
 // Poison/bomb: real-time clocks (see constants.js POISON_INTERVAL_SEC doc), not
 // per-coin-candidate probabilities. poisonClock/bombClock accumulate play seconds
 // (update.js); once one passes its jittered next*At target, the next coin that

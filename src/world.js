@@ -224,8 +224,8 @@ function boulderSpacing(wx = scrollX) {
 // Retuned 2026-09-12 (was lerp(5200, 2800, progAt) floor 2000) after a replay
 // audit measured the shipped 11.0 curve delivering the exact opposite of the
 // intent above: one ring every 1-4 REAL seconds past score 100, i.e. denser than
-// boulders at every depth and 8-13x more frequent than the warp coin's own 40s
-// clock. The shape was the error, not just the scale - spacing TIGHTENED with
+// boulders at every depth and 8-13x more frequent than the (since removed) warp
+// coin's own 40s clock. The shape was the error, not just the scale - spacing TIGHTENED with
 // depth while scrollSpd() climbs, so the real-time gap collapsed twice over
 // exactly where it hurts. Three things compounded it. (1) The ring needs no aim:
 // portalHitTol (update.js) is wider than the ring's own +/-25%-of-halfGap jitter

@@ -60,6 +60,60 @@ function _wallJagged(wx, seedOffset) {
          * _rockRoughness();
 }
 
+// Runs fn with drawing clipped to a vertical slab of the canvas. The safe opening zone
+// paints the walls twice through this - soft field before the world-x where they turn
+// lethal, full rock after it (constants.js SAFE_FIELD_ALPHA doc).
+function _clipX(x0, x1, fn) {
+    if (x1 <= x0) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x0, -20, x1 - x0, H + 40);
+    ctx.clip();
+    fn();
+    ctx.restore();
+}
+
+// Contour lines riding just inside a soft wall's edge, drifting outward so the field
+// reads as live rather than as a flat wash. Clipped to the wall itself, so nothing
+// spills into the corridor even where the wall is only a sliver at the screen edge.
+function _paintSoftField(xs, arr, atTop, traceWall, clr) {
+    ctx.save();
+    traceWall();
+    ctx.clip();
+    ctx.lineWidth = 1;
+    const step  = PR * 0.8;
+    const drift = (gtime * 9) % step;
+    for (let k = 0; k < SAFE_FIELD_LINES; k++) {
+        const off = (k * step + drift) * (atTop ? -1 : 1);
+        ctx.strokeStyle = rgb(clr, 0.20 * (1 - k / SAFE_FIELD_LINES));
+        ctx.beginPath();
+        for (let i = 0; i < xs.length; i++) {
+            if (i) ctx.lineTo(xs[i], arr[i] + off);
+            else   ctx.moveTo(xs[i], arr[i] + off);
+        }
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+
+// Soft-wall bump dent (constants.js SAFE_FIELD_ALPHA doc): how far the RENDERED wall
+// edge at world-x wx is pushed away from the corridor by the bumps recorded in
+// state.js safeBumps. A damped spring per bump - it gives, springs back past the resting
+// line once, and settles - falling off as a gaussian along the wall, so the edge flexes
+// locally like a membrane instead of denting as a block. Returns an outward offset in
+// px; the caller subtracts it from the ceiling and adds it to the floor. Purely visual,
+// like _wallJagged above: collision reads boundsAt(), never these arrays.
+function _softBumpDent(wx, isTop) {
+    let d = 0;
+    for (const b of safeBumps) {
+        if (b.isTop !== isTop) continue;
+        const g = (wx - b.wx) / (PR * SAFE_BUMP_DENT_W);
+        if (g < -4 || g > 4) continue;
+        d += PR * SAFE_BUMP_DENT_AMP * Math.exp(-b.t * 5) * Math.cos(b.t * 24) * Math.exp(-g * g);
+    }
+    return d;
+}
+
 // Same rough-rock treatment as the walls, applied to a stalactite's own
 // silhouette (draw()'s stalactite loop). Walks the same two cubic beziers
 // the smooth silhouette used, but as a jagged polyline instead of a single
@@ -118,10 +172,10 @@ const _stonePatternCanvas = _buildStonePattern();
 // Paints the tiled stone pattern into the current clip region, scrolling in
 // sync with scrollX. Caller is responsible for clipping to the wall shape
 // first (ctx.save()/clip()) and restoring afterward.
-function _paintStonePattern(scrollX) {
+function _paintStonePattern(scrollX, alpha = 0.5) {
     const pat = ctx.createPattern(_stonePatternCanvas, 'repeat');
     ctx.save();
-    ctx.globalAlpha = 0.5;
+    ctx.globalAlpha = alpha;
     ctx.translate(-(scrollX % STONE_TILE), 0);
     ctx.fillStyle = pat;
     ctx.fillRect(scrollX % STONE_TILE - 4, -8, W + 8, H + 16);
@@ -129,9 +183,9 @@ function _paintStonePattern(scrollX) {
 }
 
 function drawCoinIcon(cx, cy, type, r) {
-    const isBlu = type === 'blue', isRed = type === 'red', isGrn = type === 'green', isOrng = type === 'orange', isPsn = type === 'poison', isBmb = type === 'bomb', isDrn = type === 'drain', isWrp = type === 'warp';
-    const bodyClr = isBlu ? '#4dd9ff' : isRed ? '#ff4444' : isGrn ? '#44ff88' : isOrng ? '#ff5500' : isPsn ? '#5fbf00' : isBmb ? '#b833ff' : isDrn ? '#7a2f4f' : isWrp ? '#6a5cff' : '#ffe040';
-    const [gr, gg, gb] = isBlu ? [60,200,255] : isRed ? [255,60,60] : isGrn ? [50,255,120] : isOrng ? [255,85,0] : isPsn ? [110,200,20] : isBmb ? [190,50,255] : isDrn ? [170,55,95] : isWrp ? [130,110,255] : [255,225,50];
+    const isBlu = type === 'blue', isRed = type === 'red', isGrn = type === 'green', isOrng = type === 'orange', isPsn = type === 'poison', isBmb = type === 'bomb', isDrn = type === 'drain';
+    const bodyClr = isBlu ? '#4dd9ff' : isRed ? '#ff4444' : isGrn ? '#44ff88' : isOrng ? '#ff5500' : isPsn ? '#5fbf00' : isBmb ? '#b833ff' : isDrn ? '#7a2f4f' : '#ffe040';
+    const [gr, gg, gb] = isBlu ? [60,200,255] : isRed ? [255,60,60] : isGrn ? [50,255,120] : isOrng ? [255,85,0] : isPsn ? [110,200,20] : isBmb ? [190,50,255] : isDrn ? [170,55,95] : [255,225,50];
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI*2);
     ctx.fillStyle   = bodyClr;
@@ -515,12 +569,13 @@ function drawWorld() {
     // boundsAt()/boundsBase() directly (update.js/systems.js), never these
     // arrays, so the jag is purely visual.
     const topArr = [], botArr = [], xs = [];
+    const _dents = safeBumps.length > 0;   // constants.js SAFE_FIELD_ALPHA doc
     for (let sx = -RSTEP; sx <= W + RSTEP*2; sx += RSTEP) {
         const wx = scrollX + sx;
         const b = boundsAt(wx);
         xs.push(sx);
-        topArr.push(b.top + _wallJagged(wx, 0));
-        botArr.push(b.bot + _wallJagged(wx, 5000));
+        topArr.push(b.top + _wallJagged(wx, 0) - (_dents ? _softBumpDent(wx, true)  : 0));
+        botArr.push(b.bot + _wallJagged(wx, 5000) + (_dents ? _softBumpDent(wx, false) : 0));
     }
     const n = xs.length;
 
@@ -660,19 +715,6 @@ function drawWorld() {
         ctx.lineTo(xs[n-1], -2);
         ctx.closePath();
     };
-    traceTopWall();
-    const topGrd = ctx.createLinearGradient(0, -2, 0, topMax);
-    topGrd.addColorStop(0,    rgb(theme.wall));
-    topGrd.addColorStop(0.72, rgb(theme.wall));
-    topGrd.addColorStop(1,    rgb(edgeClrInner));
-    ctx.fillStyle = topGrd;
-    ctx.fill();
-    ctx.save();
-    traceTopWall();
-    ctx.clip();
-    _paintStonePattern(scrollX);
-    ctx.restore();
-
     // Bottom wall - accent-tinted at corridor edge, dark at canvas bottom
     const traceBotWall = () => {
         ctx.beginPath();
@@ -681,18 +723,53 @@ function drawWorld() {
         ctx.lineTo(xs[n-1], H+2);
         ctx.closePath();
     };
-    traceBotWall();
-    const botGrd = ctx.createLinearGradient(0, botMin, 0, H+2);
-    botGrd.addColorStop(0,    rgb(edgeClrInner));
-    botGrd.addColorStop(0.28, rgb(theme.wall));
-    botGrd.addColorStop(1,    rgb(theme.wall));
-    ctx.fillStyle = botGrd;
-    ctx.fill();
-    ctx.save();
-    traceBotWall();
-    ctx.clip();
-    _paintStonePattern(scrollX);
-    ctx.restore();
+    // Both walls at one opacity. A function because the safe opening zone paints the
+    // same rock twice per frame at two strengths (constants.js SAFE_FIELD_ALPHA doc).
+    const paintWalls = (alpha) => {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        traceTopWall();
+        const topGrd = ctx.createLinearGradient(0, -2, 0, topMax);
+        topGrd.addColorStop(0,    rgb(theme.wall));
+        topGrd.addColorStop(0.72, rgb(theme.wall));
+        topGrd.addColorStop(1,    rgb(edgeClrInner));
+        ctx.fillStyle = topGrd;
+        ctx.fill();
+        ctx.save();
+        traceTopWall();
+        ctx.clip();
+        _paintStonePattern(scrollX, 0.5 * alpha);
+        ctx.restore();
+
+        traceBotWall();
+        const botGrd = ctx.createLinearGradient(0, botMin, 0, H+2);
+        botGrd.addColorStop(0,    rgb(edgeClrInner));
+        botGrd.addColorStop(0.28, rgb(theme.wall));
+        botGrd.addColorStop(1,    rgb(theme.wall));
+        ctx.fillStyle = botGrd;
+        ctx.fill();
+        ctx.save();
+        traceBotWall();
+        ctx.clip();
+        _paintStonePattern(scrollX, 0.5 * alpha);
+        ctx.restore();
+        ctx.restore();
+    };
+    // Screen x where the soft wall ends and lethal rock begins. Off the left of the
+    // canvas (the whole run after the safe opening zone, and the title screen, where
+    // safeEndWx is 0) means one plain full-strength pass, exactly as before.
+    const softX   = safeEndWx > 0 ? safeEndWx - scrollX : -Infinity;
+    const softOn  = softX > xs[0];
+    const fieldClr = lerpClr(theme.wallBase, [255, 255, 255], 0.45);
+    if (!softOn) paintWalls(1);
+    else {
+        _clipX(softX, W + RSTEP * 3, () => paintWalls(1));
+        _clipX(xs[0] - RSTEP, softX, () => {
+            paintWalls(SAFE_FIELD_ALPHA);
+            _paintSoftField(xs, topArr, true,  traceTopWall, fieldClr);
+            _paintSoftField(xs, botArr, false, traceBotWall, fieldClr);
+        });
+    }
 
     // Bullets
     drawBullets();
@@ -721,24 +798,62 @@ function drawWorld() {
         for (let i = loI; i <= hiI; i++) arr[i] = 1;
     }
 
-    ctx.strokeStyle = edgeClr; ctx.lineWidth = 2;
-    let brk = true;
-    ctx.beginPath();
-    for (let i = 0; i < n; i++) {
-        if (topBlocked[i]) { brk = true; continue; }
-        if (brk) { ctx.moveTo(xs[i], topArr[i]); brk = false; }
-        else      ctx.lineTo(xs[i], topArr[i]);
+    const strokeEdges = (style, width) => {
+        ctx.strokeStyle = style; ctx.lineWidth = width;
+        for (const [arr, blocked] of [[topArr, topBlocked], [botArr, botBlocked]]) {
+            let brk = true;
+            ctx.beginPath();
+            for (let i = 0; i < n; i++) {
+                if (blocked[i]) { brk = true; continue; }
+                if (brk) { ctx.moveTo(xs[i], arr[i]); brk = false; }
+                else      ctx.lineTo(xs[i], arr[i]);
+            }
+            ctx.stroke();
+        }
+    };
+    if (!softOn) strokeEdges(edgeClr, 2);
+    else {
+        _clipX(softX, W + RSTEP * 3, () => strokeEdges(edgeClr, 2));
+        // Soft wall: a bright thin edge over a wide soft one (stacked strokes, never
+        // shadowBlur - that is the expensive call on WKWebView), plus a light running
+        // along it. Motion and brightness carry the "not solid" read, not hue.
+        _clipX(xs[0] - RSTEP, softX, () => {
+            strokeEdges(rgb(fieldClr, 0.13), Math.max(4, PR * 0.42));
+            strokeEdges(rgb(fieldClr, 0.80), 1.5);
+            const runX = ((gtime * 420) % (W + 520)) - 260;
+            const runG = ctx.createLinearGradient(runX - PR * 7, 0, runX + PR * 7, 0);
+            runG.addColorStop(0,   rgb(fieldClr, 0));
+            runG.addColorStop(0.5, 'rgba(255,255,255,0.85)');
+            runG.addColorStop(1,   rgb(fieldClr, 0));
+            strokeEdges(runG, 2.5);
+        });
+        // The seam itself: a hairline where the field gives way to lethal rock, so the
+        // boundary is a place on the wall and not just a change of treatment.
+        if (softX < W + RSTEP) {
+            const si = Math.min(n - 1, Math.max(0, Math.round((softX - xs[0]) / RSTEP)));
+            ctx.strokeStyle = rgb(fieldClr, 0.35); ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(softX, -2);          ctx.lineTo(softX, topArr[si]);
+            ctx.moveTo(softX, botArr[si]);  ctx.lineTo(softX, H + 2);
+            ctx.stroke();
+        }
     }
-    ctx.stroke();
 
-    brk = true;
-    ctx.beginPath();
-    for (let i = 0; i < n; i++) {
-        if (botBlocked[i]) { brk = true; continue; }
-        if (brk) { ctx.moveTo(xs[i], botArr[i]); brk = false; }
-        else      ctx.lineTo(xs[i], botArr[i]);
+    // Soft-wall bump rings (constants.js SAFE_BUMP_RING_SEC doc): the field's answer to
+    // being pushed, running out of each contact point. y is resolved live from the
+    // corridor, like the death markers below, so a ring stays on the wall it came from
+    // even as the corridor keeps moving under it.
+    for (const b of safeBumps) {
+        if (b.t > SAFE_BUMP_RING_SEC) continue;
+        const k  = b.t / SAFE_BUMP_RING_SEC;
+        const bb = boundsAt(b.wx);
+        ctx.strokeStyle = rgb(fieldClr, 0.9 * (1 - k));
+        ctx.lineWidth   = 2.2 * (1 - k) + 0.6;
+        ctx.beginPath();
+        ctx.ellipse(b.wx - scrollX, b.isTop ? bb.top : bb.bot,
+                    PR * (0.5 + 4 * k), PR * (0.15 + 0.8 * k), 0, 0, Math.PI * 2);
+        ctx.stroke();
     }
-    ctx.stroke();
 
     // Off-screen wall warning strip (red-team audit, 2026-09-12; see CLAUDE.md's
     // "Coin bonus vs. canvas edge" note). A maxed gapBonusVisual can push topArr[i]
@@ -1261,9 +1376,9 @@ function drawWorld() {
 
         ctx.globalAlpha = coin.fade;
 
-        const isBlu = coin.type === 'blue', isRed = coin.type === 'red', isGrn = coin.type === 'green', isOrng = coin.type === 'orange', isPsn = coin.type === 'poison', isBmb = coin.type === 'bomb', isDrn = coin.type === 'drain', isWrp = coin.type === 'warp';
-        const bodyClr = isBlu ? '#4dd9ff' : isRed ? '#ff4444' : isGrn ? '#44ff88' : isOrng ? '#ff5500' : isPsn ? '#5fbf00' : isBmb ? '#b833ff' : isDrn ? '#7a2f4f' : isWrp ? '#6a5cff' : '#ffe040';
-        const [gr, gg, gb] = isBlu ? [60,200,255] : isRed ? [255,60,60] : isGrn ? [50,255,120] : isOrng ? [255,85,0] : isPsn ? [110,200,20] : isBmb ? [190,50,255] : isDrn ? [170,55,95] : isWrp ? [130,110,255] : [255,225,50];
+        const isBlu = coin.type === 'blue', isRed = coin.type === 'red', isGrn = coin.type === 'green', isOrng = coin.type === 'orange', isPsn = coin.type === 'poison', isBmb = coin.type === 'bomb', isDrn = coin.type === 'drain';
+        const bodyClr = isBlu ? '#4dd9ff' : isRed ? '#ff4444' : isGrn ? '#44ff88' : isOrng ? '#ff5500' : isPsn ? '#5fbf00' : isBmb ? '#b833ff' : isDrn ? '#7a2f4f' : '#ffe040';
+        const [gr, gg, gb] = isBlu ? [60,200,255] : isRed ? [255,60,60] : isGrn ? [50,255,120] : isOrng ? [255,85,0] : isPsn ? [110,200,20] : isBmb ? [190,50,255] : isDrn ? [170,55,95] : [255,225,50];
         const darkR = Math.floor(gr * 0.28), darkG = Math.floor(gg * 0.28), darkB = Math.floor(gb * 0.28);
 
         if (isPsn) {
@@ -1403,39 +1518,6 @@ function drawWorld() {
             ctx.lineJoin = 'round'; ctx.lineCap = 'round';
             ctx.stroke();
             ctx.lineJoin = 'miter'; ctx.lineCap = 'butt';
-            ctx.restore();
-        } else if (isWrp) {
-            // Reward coin - a small twin of the portal hoop itself (drawWorld's
-            // portal block / _portalBand), so the two entry points into a warp
-            // read as the same object at two scales: tall violet band, near-white
-            // core, one chase-light dash. No gem/rune/burst silhouette shared with
-            // any other coin.
-            const jag = coin.wx * 0.014;
-            const pr  = COIN_R * 1.10 * (0.94 + 0.10 * Math.sin(gtime * 4.5 + jag));
-            const grdW = ctx.createRadialGradient(sx, coin.y, pr * 0.3, sx, coin.y, pr * 3.0);
-            grdW.addColorStop(0,   `rgba(${gr},${gg},${gb},0.30)`);
-            grdW.addColorStop(0.5, `rgba(${gr},${gg},${gb},0.10)`);
-            grdW.addColorStop(1,   'transparent');
-            ctx.beginPath(); ctx.arc(sx, coin.y, pr * 3.0, 0, Math.PI * 2);
-            ctx.fillStyle = grdW; ctx.fill();
-
-            ctx.save();
-            ctx.translate(sx, coin.y);
-            ctx.lineCap = 'round';
-            const hrx = pr * 0.42, hry = pr * 1.15;
-            ctx.beginPath(); ctx.ellipse(0, 0, hrx, hry, 0, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(150,120,255,0.90)';
-            ctx.lineWidth   = Math.max(2, pr * 0.34);
-            ctx.stroke();
-            ctx.strokeStyle = 'rgba(255,244,226,0.95)';
-            ctx.lineWidth   = Math.max(1, pr * 0.12);
-            ctx.stroke();
-            const hAng = -Math.PI * 0.5 + ((gtime * 0.9 + jag) % 1) * Math.PI;
-            ctx.beginPath(); ctx.ellipse(0, 0, hrx, hry, 0, hAng - 0.3, hAng + 0.3);
-            ctx.strokeStyle = 'rgba(255,244,226,1)';
-            ctx.lineWidth   = Math.max(1.8, pr * 0.30);
-            ctx.stroke();
-            ctx.lineCap = 'butt';
             ctx.restore();
         } else {
         const pulse = 1 + 0.18 * Math.sin(gtime * 5.5 + coin.wx * 0.013);
@@ -3742,14 +3824,15 @@ function drawTitleScreen() {
 
         const panW = Math.min(W * 0.72, 460);
         // Bullet colour matches each item's own in-game colour (gold wallet, pale
-        // stardust glint, the gold coin's own colour for the coin legend line, the
-        // bomb coin's purple for the hazard line) so the dot itself is a second,
-        // wordless cue.
+        // stardust glint, the gold coin for the six helpful coins, the poison
+        // spore's green for the two hazard coins, the portal hoop's violet) so the
+        // dot itself is a second, wordless cue.
         const rows = [
             { dot: 'rgba(255,225,110,1)', text: T.shardsInfo },
             { dot: 'rgba(200,210,255,1)', text: T.stardustInfo },
             { dot: 'rgba(255,224,64,1)',  text: T.coinsInfo },
-            { dot: 'rgba(184,51,255,1)',  text: T.hazardsInfo },
+            { dot: 'rgba(95,191,0,1)',    text: T.hazardsInfo },
+            { dot: 'rgba(150,120,255,1)', text: T.portalInfo },
         ];
 
         // Greedy wrap at whatever font is currently set on ctx. Tokenises CJK/

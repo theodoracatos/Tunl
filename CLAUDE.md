@@ -239,6 +239,20 @@ orange-red belongs to ON FIRE alone. Exhaust leaves the nacelles at `SHIP_NOZZLE
 (`constants.js`), shared by the plume, the on-fire cone and `update.js`'s thruster
 particles. The share card's `_shipGlyph` (`share.js`) carries a copy of the outline.
 
+**The brand marks are generated from this same geometry** (2026-09-13).
+`branding/gen-ship-glyph.mjs` mirrors `SHIP_OUTLINE` / `SHIP_FACETS` and the facet
+tone maths and writes the ship into the four SVG masters (app icon, Android adaptive
+foreground, iOS launch logo, Play feature graphic) between `BEGIN/END generated ship`
+markers; `branding/export-icons.sh` then pushes the rasters into iOS, Android, the
+Play listing icon and the site. Run both after any hull change - hand-maintained
+copies are why the icon, both splash screens and every favicon still showed the
+pre-12.0 needle (nose 1.72r, span 0.92r) after the game had stopped drawing it. The
+homepage's eight ship chips (`flytunl-site/home.src.html`) carry a flat silhouette of
+the same outline. Two deliberate deviations in the marks, both for legibility at
+favicon size: the shadow-side facet tones are damped (a 54%-toward-black facet
+disappears into the `#04040e` icon ground) and the animated spine running lights are
+dropped. See `branding/README.md`.
+
 ### Procedural tunnel
 Two overlapping sin waves, amplitude and frequency scale with difficulty (`_prog`).
 `_prog = Math.min(Math.sqrt(scrollX / 14000), 1)` - sqrt easing: fast early ramp, plateau near max. Reaches max difficulty at 14000 world px (~score 233).
@@ -307,7 +321,7 @@ Tools come before the threat they answer, but **not later than S2**: the daily m
 ("5 ammo", "2 magnets", "3 bombs") are cumulative per day and must stay reachable for
 casual players, whose runs end around S2-S3. Check `MISSION_DEFS` before moving a coin gate.
 Bomb/poison/drain clocks start at their sector (`lifecycle.js`), first one 15-65% of the
-interval after unlock. Warp coin and portal ring are unchanged.
+interval after unlock. The portal ring is unchanged.
 
 **Densities are rates per reference second, not world-px spacings** (`world.js`
 `sectorRate` / `sectorEnvelope`): `spacing = worldPxForSec(1 / rate)`. Stalactite slots
@@ -484,29 +498,33 @@ world-x as before (verified live: fires ~587-593 world-px out, matching
 `closingSpd = CANNON_FIRE_LEAD / CANNON_SHOT_TRAVEL`. Cannon rarity/density is
 unaffected (`cannonSpacing()` untouched; the pooled sample's cannon-death count, n=31 vs
 n=34 out of 800 runs, moved by sampling noise alone, same source as every other
-hazard's small day-to-day swing - the game's one unseeded gameplay `Math.random()` call
-is the warp coin's duration roll (`triggerWarp`'s `accuracy === undefined` fallback,
-see the Warp portal section below), which compounds enough over a long run to shift
-exactly which runs land in each rare-death bucket from one sample to the next).
+hazard's small day-to-day swing - at the time, the game's one unseeded gameplay
+`Math.random()` call was the warp coin's duration roll, which compounded enough over a
+long run to shift exactly which runs landed in each rare-death bucket from one sample
+to the next. The warp coin and that roll were removed on 2026-09-13).
 
 ### Warp portal ("Sog")
 
 Reward set-piece added in 11.0, not a hazard - the game's answer to "reacting" and
-"committing" (stalactites, boulders) is joined by a third verb, "escaping". Two entry
-points both funnel into one shared `triggerWarp()` (`src/systems.js`): a ring hanging
-in the corridor (`makePortal`/`maintainPortals`/`_makePortalAt`, from world-x
-`PORTAL_START_WX` = 3000, ~score 50) or a violet mini-hoop warp coin on its own
-real-time clock (`WARP_COIN_INTERVAL_SEC` = 40s, same clock model as
-poison/bomb/drain - **not** folded into the weighted gold/blue/red/orange/green roll,
-so that carefully-tuned split never needed re-deriving; its clock is checked
-**first** in `makeCoin`, so a ready poison/drain/bomb still overrides it - it sat
-last until 2026-09-12, which silently ate 5.9% of bombs and 5.0% of drains).
+"committing" (stalactites, boulders) is joined by a third verb, "escaping". The one
+way in is a hoop hanging in the corridor (`makePortal`/`maintainPortals`/
+`_makePortalAt`, from world-x `PORTAL_START_WX` = 3000, ~score 50), which calls
+`triggerWarp()` (`src/systems.js`) when flown through.
+
+**There is no warp coin any more (removed 2026-09-13, on request).** 11.0 shipped a
+second entry point, a violet warp coin on its own 40s real-time clock. After the hoop
+redesign its coin-size twin read as an unidentifiable "pill", and the user chose the
+hoop alone over redesigning it. Removing it deleted `WARP_COIN_INTERVAL_SEC`,
+`nextWarpWx`, its `rngCoin()` draws (so the day's coin stream differs from 11.0, still
+identical across devices - `test-cave.js` mirrors it), `T.notifWarp`, and the
+`Math.random()` duration fallback in `triggerWarp`. Don't reintroduce it as a coin
+without a silhouette that reads at `COIN_R`.
 
 **The ring's cadence is a DUTY CYCLE, not a world-px number** (`portalSpacing()`,
 `world.js` - retuned 2026-09-12, do not revert to a progAt-keyed curve). Shipped
 11.0 ran `lerp(5200, 2800, progAt)`, and an audit measured it at **one ring every
 1-4 real seconds** past score 100 - denser than boulders at every depth, 8-13x more
-frequent than the warp coin's own 40s clock, and the opposite of the "rarer than a
+frequent than the (since removed) warp coin's own 40s clock, and the opposite of the "rarer than a
 boulder" intent in its own doc comment. The shape was the error, not just the
 scale: spacing *tightened* with depth while `scrollSpd()` climbs, collapsing the
 real-time gap twice over. Three things compounded. (1) **The ring needs no aim** -
@@ -540,8 +558,7 @@ into the violet Ianthe (Friday) rock, spent two `shadowBlur`s, and was drawn at 
 the far arc before the player, the near arc plus a chase light after it
 (`_portalBand`), so the ship visibly flies through. Stacked soft strokes with a
 near-white core replace `shadowBlur`; the core is what keeps it legible on violet
-rock. A used hoop widens as `usedFade` runs out. The warp coin is the same hoop at
-coin size. While a warp is live, white speed streaks sweep the whole tunnel
+rock. A used hoop widens as `usedFade` runs out. While a warp is live, white speed streaks sweep the whole tunnel
 (`WARP_STREAKS`, alpha riding `warpScrollFactor()`), placed from `scrollX` plus
 `_rockHash` - stateless, no `rng()`. Design proposals:
 https://claude.ai/code/artifact/7fab90a9-4ad8-4729-a1d6-04d56d49ddd8
@@ -631,10 +648,7 @@ that only grows once `warpScrollFactor()` itself can be live.
 **Flying the ring's centre is rewarded with a longer warp** (`update.js`'s
 x-crossing check, `triggerWarp(accuracy)`) - a dead-centre pass earns the full
 `WARP_DUR_MAX_SEC`, a graze along the hit tolerance's edge only `WARP_DUR_MIN_SEC`,
-linearly in between. The warp coin has no aim to reward (a coin is touched, not
-threaded) so it keeps the old random roll across the same range - `accuracy` is
-simply omitted for that entry point, and `triggerWarp` falls back to `Math.random()`.
-This reuses `WARP_DUR_MIN..MAX_SEC` rather than adding a new constant pair; only
+linearly in between. This reuses `WARP_DUR_MIN..MAX_SEC` rather than adding a new constant pair; only
 *where in the range* a given warp lands changed, not the range itself.
 
 ### Coin system
@@ -883,7 +897,7 @@ stays locked. `_deepVarietyOn` (default true) is the master kill switch for all 
 Coins are staged by `_prog` so power-ups introduce gradually:
 - score 0-11 (_prog < 0.22): gold only (gap bonus)
 - score 11-33 (_prog 0.22-0.38): + blue (slow time: scroll sags to 0.6x on pickup then ramps back to full over ~4s - see slowScrollFactor)
-- score 34+ (_prog >= 0.38): the weighted ladder and the warp coin clock switch on
+- score 34+ (_prog >= 0.38): the weighted ladder switches on
 - score 50+ (S1, `RED_START_WX`): + red (shield, absorbs 1 hit)
 - score 111+ (S2, `ORANGE_START_WX` / `GREEN_START_WX`): + orange (bullet ammo) + green (magnet)
 - score 178+ (S3): bomb clock; S8 (583+) poison; S9 (677+) drain - see "Flight plan (sectors)"
@@ -1227,6 +1241,30 @@ still appear. The "walls now deadly" notif fires as the corridor closes, only on
 player's first `WALLS_LIVE_HINT_RUNS` runs. Near-miss bonus and the red danger flash are
 off while walls are soft (no wall-riding bonus farm). Every run counts normally.
 
+**A soft wall looks soft (2026-09-13, do not revert to "identical rock").** Through
+12.0 a non-lethal wall was pixel-identical to a lethal one, and bumping it fired
+`burst()`'s orange sparks plus a shake - the vocabulary every real hit uses - so the one
+stretch that cannot kill you looked like the one that just did. Two draw-only halves
+(`SAFE_FIELD_ALPHA` doc block in `constants.js`):
+- **Field vs rock, split at the world-x, not at a timer.** `draw.js` paints the walls
+  twice per frame while `safeEndWx - scrollX` is on screen: full rock past that column,
+  and before it the same rock at `SAFE_FIELD_ALPHA` with contour lines riding inside the
+  edge (`_paintSoftField`), a bright thin edge over a wide soft one, and a light running
+  along it. The lethal rock therefore rolls in from the right and reaches the ship
+  exactly when `wallsSafe()` flips - roughly 1.5s of warning, free, no HUD. A hairline
+  marks the seam. The signal is **opacity and motion, never hue**: the edge colour is the
+  weekday's own (Luna is near-white, Io teal) and `gapBonus` tints it cyan the moment the
+  zone ends, so a colour-coded "soft" would be invisible on 3 of 7 days and ambiguous
+  right after. Measured cost: none (the second pass is cheaper than the stone pattern it
+  replaces, and only runs during the ~7s zone).
+- **A bump bends the wall instead of spraying sparks.** `safeWallBump` only records
+  `{wx, isTop, t}` into `state.js safeBumps`; `draw.js` bends the RENDERED edge around it
+  (`_softBumpDent`, a damped spring that gives and settles) and runs a ring out of the
+  contact point. Cleared in `die()`, since the dents stop aging once the world freezes.
+Both only ever touch `topArr`/`botArr`, the same rendering-only arrays `_wallJagged`
+already offsets - `boundsAt()` and every collision test are untouched, so this is a pure
+look change on every device and needs no `isWeb()` gate.
+
 Fair by construction: identical for every player and screen, all offsets are fixed
 world-px, and `test-cave.js` mirrors the start cursors. Consequences worth knowing:
 every score now starts with ~50 nearly-free points, so the leaderboard baseline shifted
@@ -1385,7 +1423,7 @@ project memory) held after re-checking.
 - Multiple difficulty modes
 - Mobile fullscreen on iOS/Android
 - Level theming (lava/ice/neon)
-- Additional coin types beyond the current nine (gold/blue/red/orange/green/bomb/warp + the two hazards poison/drain)
+- Additional coin types beyond the current eight (gold/blue/red/orange/green/bomb + the two hazards poison/drain)
 - Friend ghosts carried inside a share link (see Ghost run below - the local ghost is
   already only a few hundred bytes, so a shared one is mostly a transport problem)
 - A playable web build. Deliberately NOT on the roadmap right now: the user decided

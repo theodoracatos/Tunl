@@ -390,6 +390,10 @@ function update(dt) {
     // corridor starts closing in - walls turning lethal ~50 points in would otherwise
     // be a surprise. Veterans know, so it stays quiet for them.
     safeBumpT = Math.max(0, safeBumpT - dt);
+    // Age the soft-wall dents and drop the dead ones (constants.js SAFE_BUMP_DENT_SEC).
+    for (let i = safeBumps.length - 1; i >= 0; i--) {
+        if ((safeBumps[i].t += dt) > SAFE_BUMP_DENT_SEC) safeBumps.splice(i, 1);
+    }
     if (totalRuns <= WALLS_LIVE_HINT_RUNS && !wallsLiveShown && scrollX + PX >= safeEndWx - safeCloseWx) {
         wallsLiveShown = true;
         pushNotif(PX + PR * 3, py - H * 0.10, 1.8, T.wallsLive, [255, 120, 70]);
@@ -804,15 +808,18 @@ function update(dt) {
 // second ship outline; for a wall hit there is no object, so the ship radius is passed.
 // Soft wall inside the safe opening zone (constants.js SAFE_START_WX doc): clamp back
 // inside, reflect a fraction of the velocity that was carrying the ship into the wall,
-// and throttle the spark/haptic so riding along the edge doesn't strobe.
+// and throttle the feedback/haptic so riding along the edge doesn't strobe.
+// The feedback is a dent in the rendered wall plus a ring, NOT burst()'s sparks and a
+// shake -- those are what a real hit looks like everywhere else in the game, and this
+// contact is the one kind that cannot hurt (constants.js SAFE_FIELD_ALPHA doc). Only the
+// record is made here; draw.js does the bending, so nothing about the collision moves.
 function safeWallBump(top, bot, r) {
     const hitTop = py - r < top;
     py = Math.max(top + r, Math.min(bot - r, py));
     if (hitTop ? vy < 0 : vy > 0) vy = -vy * 0.35;
     if (safeBumpT <= 0) {
         safeBumpT = 0.25;
-        burst(PX, hitTop ? top : bot, 8);
-        shake = Math.max(shake, 3);
+        safeBumps.push({ wx: scrollX + PX, isTop: hitTop, t: 0 });
         window.webkit?.messageHandlers?.haptic?.postMessage('light');
     }
 }
@@ -876,6 +883,9 @@ function die(bypassShield = false) {
     bgmSetSlow(false);
     bgmSetWarp(false);
     phase = 'dead'; deadT = 0; flashA = 1.0; shake = 14; holding = false;
+    // Soft-wall dents/rings stop aging once the world freezes, so drop them rather than
+    // leave one hanging in the death frame (constants.js SAFE_BUMP_DENT_SEC doc).
+    safeBumps.length = 0;
     _shareCopiedT = 0;
     _homeBtnRect = null; _playBtnRect = null; _shareBtnRect = null; _continueBtnRect = null;
     // Impact feedback fires now, unconditionally -- a hit should always feel like a

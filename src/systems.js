@@ -384,21 +384,6 @@ function makeCoin(wx) {
     // rare coin where both clocks happen to be ready at once; each resets/rerolls
     // independently regardless of which one wins that tie.
     if (progAt(wx) >= 0.38) {
-        // Warp coin: same real-time-clock model. Checked FIRST so a ready
-        // poison/drain/bomb still wins a coin where several clocks are ready at
-        // once - the later blocks below override this one, and "last assignment
-        // wins" is how that whole ladder works. It sat last until 2026-09-12,
-        // which meant it won every tie instead of losing it, silently eating a
-        // measured 5.9% of bombs and 5.0% of drains (their clocks had already
-        // reset by then, so those events were skipped outright, not deferred).
-        // Each still resets/rerolls independently regardless of who wins the tie,
-        // same rule as the others. Never folded into the weighted gold/blue/red/
-        // orange/green roll above (constants.js WARP_COIN_INTERVAL_SEC doc) -
-        // that split is tuned to itself and doesn't need a ninth share.
-        if (wx >= nextWarpWx) {
-            type = 'warp';
-            nextWarpWx = wx + worldPxForSec(WARP_COIN_INTERVAL_SEC * (0.7 + rngCoin() * 0.6), wx);
-        }
         if (wx >= nextPoisonWx) {
             type = 'poison';
             nextPoisonWx = wx + worldPxForSec(POISON_INTERVAL_SEC * (0.7 + rngCoin() * 0.6), wx);
@@ -598,15 +583,6 @@ function checkCoinCollection() {
                 pushNotif(sx, coin.y - 34, 1.1, T.notifAmmo, [255,85,0]);
                 sfxBulletPickup();
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
-            } else if (coin.type === 'warp') {
-                // Reward set-piece pickup - joins the combo like any other power-up
-                // (the shared combo/points block above already ran), then triggers
-                // the identical warp state the portal ring does (constants.js
-                // "Warp portal" doc, update.js triggerWarp()).
-                triggerWarp();
-                burstCoin(sx, coin.y, 245, 30);
-                pushNotif(sx, coin.y - 34, 1.2, T.notifWarp, [140, 120, 255]);
-                window.webkit?.messageHandlers?.haptic?.postMessage('success');
             } else if (coin.type === 'bomb') {
                 // Explosive power-up: small blast around the pickup point that clears
                 // nearby hazards (see triggerBombExplosion). Sfx lives here, not inside
@@ -1238,8 +1214,7 @@ function maintainBoulders() {
 
 // ── Warp portal ──────────────────────────────────────────────────────
 // Reward set-piece (constants.js "Warp portal" doc): a ring hanging in the
-// corridor that triggers the same warp state a warp coin does (update.js
-// triggerWarp()). Draws NO rng() - seeded purely from _deepHash like a boulder,
+// corridor that triggers a warp when flown through (triggerWarp() below). Draws NO rng() - seeded purely from _deepHash like a boulder,
 // so the shared daily cave is unaffected by whether this feature exists at all.
 const PORTAL_RETRY_OFFSETS = [0, 260, 520, 780, 1040];
 
@@ -1281,13 +1256,12 @@ function maintainPortals() {
     }
 }
 
-// Shared entry point for both ways into a warp (the portal ring above and the
-// warp coin in makeCoin()/checkCoinCollection below) - constants.js "Warp
-// portal" doc for the full mechanic. Resets rather than stacks: a portal and a
-// coin close together restart the window instead of compounding it, same
-// "simplest safe choice" call as the mine/cannon retry offsets not scaling with
-// anything either. `accuracy` (0..1, how centred the portal flythrough was;
-// omitted by the coin pickup) decides where in WARP_DUR_MIN..MAX_SEC the
+// Entry point into a warp, called from update.js's portal x-crossing check -
+// constants.js "Warp portal" doc for the full mechanic. (A violet warp coin was a
+// second entry point until 2026-09-13; removed on request, the hoop is the only
+// way in now.) Resets rather than stacks, same "simplest safe choice" call as the
+// mine/cannon retry offsets not scaling with anything either. `accuracy` (0..1,
+// how centred the flythrough was) decides where in WARP_DUR_MIN..MAX_SEC the
 // duration lands - see the doc at its use below.
 function triggerWarp(accuracy) {
     // A warp is a speed-UP; an active blue-coin slow-time is a speed-DOWN
@@ -1302,14 +1276,8 @@ function triggerWarp(accuracy) {
     // Duration rewards a well-aimed portal flythrough (user feedback 2026-09-12):
     // `accuracy` is 1.0 dead-centre through the ring, fading to 0 at the edge of
     // its hit tolerance (update.js's x-crossing check) - a centred pass gets the
-    // full WARP_DUR_MAX_SEC, a graze along the rim only WARP_DUR_MIN_SEC. Reusing
-    // the same MIN..MAX range the warp coin already rolls randomly from (not a new
-    // constant), just landing on a specific point in it instead of a random one.
-    // The warp coin has no "aim" to reward - a coin is touched, not threaded - so
-    // it's left at undefined and keeps the random roll.
-    const dur = accuracy === undefined
-        ? lerp(WARP_DUR_MIN_SEC, WARP_DUR_MAX_SEC, Math.random())
-        : lerp(WARP_DUR_MIN_SEC, WARP_DUR_MAX_SEC, accuracy);
+    // full WARP_DUR_MAX_SEC, a graze along the rim only WARP_DUR_MIN_SEC.
+    const dur = lerp(WARP_DUR_MIN_SEC, WARP_DUR_MAX_SEC, accuracy);
     warpMax = dur; warpTime = dur;
     // Deeper run, stronger sog - scrollSpd() itself never plateaus (CLAUDE.md), and
     // this rides that same "never just endurance at a fixed pace" philosophy: a warp

@@ -160,7 +160,7 @@ const COIN_HIT_R      = W  * 0.032;   // collection radius (generous)
 // COIN_SIZE_MAX_MULT is the placement code's (systems.js makeCoin) worst-case
 // clearance buffer -- type isn't known yet when a coin's corridor position is
 // picked, so it has to reserve room for the largest possible coin, not the average.
-const COIN_SIZE_MULT     = { gold: 1.0, blue: 1.0, red: 1.15, orange: 1.15, green: 1.35, bomb: 1.35, warp: 1.2 };
+const COIN_SIZE_MULT     = { gold: 1.0, blue: 1.0, red: 1.15, orange: 1.15, green: 1.35, bomb: 1.35 };
 const COIN_SIZE_MAX_MULT = 1.35;
 // ── Gap bonus: fractions of the CORRIDOR, not of the screen ───────────
 // Through 12.0 these were absolute (H*0.075 / H*0.19 / H*0.015) - a fixed number of
@@ -624,10 +624,10 @@ const FALL_LEAD = W * 0.44;
 const FALL_SPAN = W * 0.26;
 
 // ── Warp portal ("Sog") ───────────────────────────────────────────────
-// Reward set-piece, not a hazard: a ring hangs in the corridor (systems.js
-// makePortal/maintainPortals) or a violet warp coin arrives on its own real-time
-// clock (WARP_COIN_INTERVAL_SEC below, same pattern as poison/bomb/drain). Either
-// one triggers the identical warp state (update.js triggerWarp()) -- for
+// Reward set-piece, not a hazard: a hoop hangs in the corridor (systems.js
+// makePortal/maintainPortals); flying through it triggers the warp state
+// (systems.js triggerWarp()). The violet warp coin that used to be a second entry
+// point was removed 2026-09-13 on request. For
 // WARP_DUR_MIN..MAX real seconds, scrollSpd() is multiplied by a per-warp
 // multiplier rolled from WARP_MULT_MIN..MAX at trigger time (world.js
 // warpScrollFactor(), the mirror image of slowScrollFactor()), the
@@ -682,10 +682,9 @@ const SPAWN_AHEAD_PORTAL   = 300;
 // obligation the way a spawner curve would have.
 const WARP_MULT_MIN        = 2.2;
 const WARP_MULT_MAX        = 2.8;
-// Warp duration range. The warp coin rolls randomly across it (no aim to reward -
-// a coin is touched, not threaded); the portal ring instead lands on a specific
-// point in it based on how centred the flythrough was (update.js's x-crossing
-// check, systems.js triggerWarp() doc) - dead-centre earns the full
+// Warp duration range. Each flythrough lands on a specific point in it based on
+// how centred it was (update.js's x-crossing check, systems.js triggerWarp()
+// doc) - dead-centre earns the full
 // WARP_DUR_MAX_SEC, a graze along the ring's hit tolerance only WARP_DUR_MIN_SEC.
 const WARP_DUR_MIN_SEC     = 1.1;
 const WARP_DUR_MAX_SEC     = 1.6;
@@ -713,13 +712,6 @@ const WARP_RECOVER_FRAC    = 0.30;
 // much of that clamping the player actually feels.
 const WARP_GAP_MULT        = 1.7;
 const WARP_GAP_EASE_RATE   = H * 1.6;
-// Warp coin (violet double ring): real-time-clock cadence, exactly like
-// poison/bomb/drain (constants.js POISON_INTERVAL_SEC doc for why a clock and
-// not a per-candidate percentage) - NOT folded into the weighted gold/blue/red/
-// orange/green roll, so none of that carefully-tuned split needs re-deriving.
-// Same score-34 gate, same magnet exemption as poison/drain (a reward you have
-// to fly to, not one that gets pulled to you).
-const WARP_COIN_INTERVAL_SEC = 40;
 
 // Bomb coin (purple): blast radius for the "destroy nearby obstacles" pickup effect --
 // see systems.js triggerBombExplosion(). "Small" on purpose -- clears immediate danger,
@@ -849,6 +841,34 @@ const HULL_END_WX         = sectorStartWx(3);
 const HAZ_RAMP_WX         = 30000;
 const WALLS_LIVE_HINT_RUNS = 3;     // "walls now deadly" notif only on a player's first runs
 const SAFE_OPEN_PAD          = H * (10 / _H_REF);   // wall sliver left at each screen edge
+
+// ── Soft walls: how a non-lethal wall looks and answers a bump ───────
+// Through 12.0 a soft wall was pixel-identical to a lethal one, and bumping it fired
+// burst()'s orange spark cloud plus a shake - the exact vocabulary a real hit uses
+// (mines, boulders, cannons all call the same burst()). So the one stretch of the game
+// that cannot kill you looked like the one that just did, and the only thing that ever
+// said otherwise was the "WALLS NOW DEADLY!" notif, which stops after
+// WALLS_LIVE_HINT_RUNS runs. Two halves, both draw-only:
+// - While the wall is soft (world-x < safeEndWx) draw.js renders it as a translucent
+//   FIELD: the rock at SAFE_FIELD_ALPHA, contour lines riding just inside the edge, a
+//   bright thin edge with a light run travelling along it. Past that world-x the same
+//   frame paints full rock - so the lethal wall visibly rolls in from the right and
+//   reaches the ship exactly when world.js wallsSafe() flips. The signal is opacity and
+//   motion, never hue: the edge colour is the weekday's own (WEEKDAY_PALETTES - Luna is
+//   near-white, Io teal) and the coin bonus tints it cyan the moment the zone ends, so a
+//   colour-coded "soft" would be invisible on 3 of 7 days and ambiguous after.
+// - A bump bends the rendered edge instead of spraying sparks: a damped dent that
+//   springs back (SAFE_BUMP_DENT_*), plus a ring running out of the contact point
+//   (SAFE_BUMP_RING_SEC). A field flexes, rock does not.
+// The dent/ring live in state.js safeBumps and only ever touch draw.js's topArr/botArr,
+// the same rendering-only arrays _wallJagged already offsets - boundsAt() and every
+// collision test are untouched, so this changes no gameplay on any device.
+const SAFE_FIELD_ALPHA       = 0.25;  // rock opacity while the wall is still soft
+const SAFE_FIELD_LINES       = 4;     // contour lines drawn inside the soft wall edge
+const SAFE_BUMP_DENT_SEC     = 0.9;   // dent lifetime (also when a bump is culled)
+const SAFE_BUMP_DENT_AMP     = 0.60;  // dent depth, in player radii
+const SAFE_BUMP_DENT_W       = 2.40;  // dent half-width, in player radii
+const SAFE_BUMP_RING_SEC     = 0.45;  // ring lifetime
 
 // ── Onboarding: teaching RELEASE ─────────────────────────────────────
 // The obstacle-free opening stretch (lifecycle.js STAL_START_WX) teaches thrust, but
