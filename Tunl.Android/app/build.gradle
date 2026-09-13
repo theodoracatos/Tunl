@@ -20,7 +20,7 @@ android {
         applicationId 'com.theodoracatos.tunl'
         minSdk 23
         targetSdk 36
-        versionCode 37
+        versionCode 38
         versionName '12.0'
     }
 

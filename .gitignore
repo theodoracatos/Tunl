@@ -41,3 +41,8 @@ flytunl-site/site/ja/
 
 # JetBrains IDE
 .idea/
+
+# Generated store screenshots (Screenshots/make-store-portraits.py output, 180MB+).
+# The generator script is tracked; its raw captures and rendered frames are not -
+# regenerate with: python3 Screenshots/make-store-portraits.py
+Screenshots/iOS_12.0/
