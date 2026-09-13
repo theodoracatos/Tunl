@@ -50,22 +50,22 @@
     "ja": "ボタンひとつの洞窟フライヤー。押して上昇、離して下降。トンネルが閉じる前に、どこまで暗闇へ進めるか。"
   },
   "hero.newTag": {
-    "en": "New in 11.0",
-    "de": "Neu in 11.0",
-    "fr": "Nouveau dans la 11.0",
-    "it": "Novità nella 11.0",
-    "es": "Novedad en la 11.0",
-    "pt": "Novo na 11.0",
-    "ja": "11.0の新機能"
+    "en": "New in 12.0",
+    "de": "Neu in 12.0",
+    "fr": "Nouveau dans la 12.0",
+    "it": "Novità nella 12.0",
+    "es": "Novedad en la 12.0",
+    "pt": "Novo na 12.0",
+    "ja": "12.0の新機能"
   },
   "hero.newBody": {
-    "en": "The Warp arrives. Fly through a portal ring for a speed surge, a wider tunnel, and every gold coin pulled into your combo. Plus 10 new achievements for near misses, total runs, and skill runs like Pacifist and Boulder Meister.",
-    "de": "Der Sog ist da. Fliege durch einen Portalring für einen Geschwindigkeitsschub, eine breitere Höhle und jede Goldmünze direkt in deinem Combo. Außerdem neu: 10 Erfolge für Beinahe-Treffer, Gesamtläufe und reine Können-Läufe wie Pacifist und Boulder Meister.",
-    "fr": "Le Sog arrive. Traverse un anneau-portail pour une poussée de vitesse, un tunnel élargi et toutes les pièces d'or aspirées dans ton combo. Aussi nouveaux : 10 succès pour les frôlements, le nombre total de parties et les parcours de pure adresse comme Pacifist et Boulder Meister.",
-    "it": "Arriva il Varco (Sog). Vola attraverso un anello portale per una scarica di velocità, un tunnel più largo e ogni moneta d'oro aspirata nella tua combo. Novità anche: 10 obiettivi per le quasi collisioni, il numero totale di partite e corse di pura abilità come Pacifist e Boulder Meister.",
-    "es": "Llega el Warp. Vuela a través de un anillo portal para un impulso de velocidad, un túnel más ancho y todas las monedas de oro absorbidas en tu combo. También nuevo: 10 logros por casi colisiones, partidas totales y carreras de pura habilidad como Pacifist y Boulder Meister.",
-    "pt": "Chegou o Warp. Voe por um anel-portal para um surto de velocidade, um túnel mais largo e todas as moedas de ouro puxadas para o seu combo. Também novo: 10 conquistas por quase colisões, corridas totais e corridas de pura habilidade como Pacifist e Boulder Meister.",
-    "ja": "「ワープ」登場。ポータルリングを通過すると、速度が急上昇し、トンネルが広がり、視界内の金貨がすべてコンボに吸い込まれる。さらに、ニアミス、総プレイ回数、Pacifist や Boulder Meister のような純粋な腕前を試す10個の新実績も追加。"
+    "en": "TUNL takes on a new shape. A redesigned ship (its new app icon too), a gentler opening flight that starts every run safe before the walls turn deadly, and a rebuilt Debriefing screen showing exactly what killed you plus your live world rank.",
+    "de": "TUNL bekommt eine neue Form. Ein neu gestaltetes Schiff (samt neuem App-Icon), ein sanfterer Einstieg, der jeden Lauf sicher beginnt, bevor die Wände tödlich werden, und ein neu gebauter Debriefing-Bildschirm, der genau zeigt, was dich erwischt hat - plus deinen aktuellen Weltrang.",
+    "fr": "TUNL change de silhouette. Un vaisseau repensé (avec sa nouvelle icône), un début de partie plus doux où chaque run s'ouvre en sécurité avant que les murs ne deviennent mortels, et un écran de debriefing reconstruit qui montre exactement ce qui t'a eu, plus ton classement mondial en direct.",
+    "it": "TUNL cambia forma. Una nave ridisegnata (con la sua nuova icona), un inizio più dolce che apre ogni corsa al sicuro prima che i muri diventino letali, e una schermata di debriefing ricostruita che mostra esattamente cosa ti ha ucciso, oltre al tuo rango mondiale in tempo reale.",
+    "es": "TUNL cambia de forma. Una nave rediseñada (con su nuevo icono), un comienzo más suave que abre cada partida a salvo antes de que los muros se vuelvan letales, y una pantalla de resumen reconstruida que muestra exactamente qué te atrapó, además de tu clasificación mundial en vivo.",
+    "pt": "O TUNL muda de forma. Uma nave redesenhada (com o novo ícone), um começo mais suave que abre cada corrida em segurança antes de as paredes se tornarem letais, e um ecrã de resumo reconstruído que mostra exatamente o que te apanhou, além da tua classificação mundial em direto.",
+    "ja": "TUNLの姿が変わった。新しくデザインされた機体（新しいアプリアイコンも）、壁が致命的になる前に必ず安全に始まる優しいスタート、そして何にやられたかを正確に示す作り直されたデブリーフィング画面と、リアルタイムの世界ランキング。"
   },
   "hero.playCta": {
     "en": "Play in your browser",
