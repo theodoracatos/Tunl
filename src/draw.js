@@ -3232,8 +3232,8 @@ function drawTitleScreen() {
         // than those panels' own caps since a 4-wide ship grid needs the room,
         // but drawn with real margin on all sides so dimmed background still
         // shows around it like every other panel.
-        const shipPanX = W * 0.15, shipPanY = H * 0.03;
         const shipPanW = W * 0.70, shipPanH = H * 0.88;
+        const shipPanX = W * 0.15, shipPanY = H / 2 - shipPanH / 2;
         ctx.fillStyle = 'rgba(7,10,28,0.97)';
         ctx.beginPath();
         ctx.roundRect(shipPanX, shipPanY, shipPanW, shipPanH, 14);
@@ -3247,7 +3247,7 @@ function drawTitleScreen() {
         ctx.fillStyle   = 'rgba(255,225,110,0.95)';
         ctx.shadowColor = 'rgba(0,0,0,0.9)';
         ctx.shadowBlur  = 5;
-        ctx.fillText(T.ships, W / 2, H * 0.09 + FS * 0.005); // nudged down a touch instead of up like the other submenu titles; see T.missions title note
+        ctx.fillText(T.ships, W / 2, shipPanY + H * 0.06 + FS * 0.005); // nudged down a touch instead of up like the other submenu titles; see T.missions title note
         ctx.shadowBlur  = 0;
 
         // Shard/stardust wallet -- the numbers that matter when choosing a
@@ -3259,7 +3259,7 @@ function drawTitleScreen() {
             const starTxt  = showStar ? `    ${stardust} ✦` : '';
             const shardW = ctx.measureText(shardTxt).width;
             const starW  = starTxt ? ctx.measureText(starTxt).width : 0;
-            const walletY = H * 0.09 + FS * 0.040;
+            const walletY = shipPanY + H * 0.06 + FS * 0.040;
             ctx.textAlign = 'left';
             const startXw = W / 2 - (shardW + starW) / 2;
             ctx.fillStyle = 'rgba(255,225,110,0.95)';
@@ -3281,8 +3281,8 @@ function drawTitleScreen() {
         // together with the panel height shrinking above it, rather than just
         // padding the panel taller, so row 1 and row 2 both get a fair share
         // of the card instead of row 2 alone eating the leftover space.
-        const rowY1     = H * 0.36;
-        const rowY2     = H * 0.66;
+        const rowY1     = shipPanY + H * 0.33;
+        const rowY2     = shipPanY + H * 0.63;
         // Bigger than the base screen's old inline grid ever could afford --
         // this sheet has nothing else competing for the space, so the ships
         // themselves carry the screen instead of the (already-generous) text
