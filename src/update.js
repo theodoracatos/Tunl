@@ -394,7 +394,8 @@ function update(dt) {
     for (let i = safeBumps.length - 1; i >= 0; i--) {
         if ((safeBumps[i].t += dt) > SAFE_BUMP_DENT_SEC) safeBumps.splice(i, 1);
     }
-    if (totalRuns <= WALLS_LIVE_HINT_RUNS && !wallsLiveShown && scrollX + PX >= safeEndWx - safeCloseWx) {
+    if (totalRuns <= WALLS_LIVE_HINT_RUNS && !wallsLiveShown &&
+        scrollX + PX >= safeEndWx - safeCloseWx * WALLS_LIVE_HINT_LEAD_FRAC) {
         wallsLiveShown = true;
         pushNotif(PX + PR * 3, py - H * 0.10, 1.8, T.wallsLive, [255, 120, 70]);
         window.webkit?.messageHandlers?.haptic?.postMessage('medium');

@@ -840,6 +840,17 @@ const HULL_END_WX         = sectorStartWx(3);
 // shape, starting at HAZARD_START_WX and stretched. Densities use the sector rates.
 const HAZ_RAMP_WX         = 30000;
 const WALLS_LIVE_HINT_RUNS = 3;     // "walls now deadly" notif only on a player's first runs
+// How late in the corridor's closing ramp that notif fires, as the fraction of
+// SAFE_CLOSE_WX still left to run. It used to fire at the ramp's first frame (i.e. an
+// implicit 1.0), which is 3.8 reference seconds before the walls actually turn lethal and
+// at a point where safeOpenAt() is still 1.00 - the text said "deadly" while the corridor
+// was still fully open and nothing had begun to move, which read as too early on a
+// playtest. At 0.40 the lead is ~1.5 ref seconds, matching the soft-field visual's own
+// warning window (see the Soft walls block below), and safeOpenAt() is down to ~0.35, so
+// the player can see the walls coming in as they read it. The notif lives 1.8s, so it is
+// still on screen at the moment the walls go live. Measured on refSpdTrend, so the lead
+// is the same on every device.
+const WALLS_LIVE_HINT_LEAD_FRAC = 0.40;
 const SAFE_OPEN_PAD          = H * (10 / _H_REF);   // wall sliver left at each screen edge
 
 // ── Soft walls: how a non-lethal wall looks and answers a bump ───────

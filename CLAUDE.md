@@ -1299,8 +1299,16 @@ beginner feedback "too hard, frustrating, deleted it"; `SAFE_START_WX` doc block
 killing it**, easing shut over the last 1800px. **No stalactites, mines, boulders or
 cannon fire** until `HAZARD_START_WX` (3400, ~1s after the walls turn lethal); boulders
 from 6620, cannons from 7000 so no shot lands inside the zone. Coins and the warp portal
-still appear. The "walls now deadly" notif fires as the corridor closes, only on a
-player's first `WALLS_LIVE_HINT_RUNS` runs. Near-miss bonus and the red danger flash are
+still appear. The "walls now deadly" notif fires only on a player's first
+`WALLS_LIVE_HINT_RUNS` runs, and **at `WALLS_LIVE_HINT_LEAD_FRAC` (0.40) of the closing
+ramp, not at its first frame** - it used to fire the instant the ramp started, which is
+3.8 reference seconds out and at a point where `safeOpenAt()` is still 1.00, so the text
+said "deadly" while the corridor was still fully open and nothing had moved yet (reported
+as too early on a 2026-09-13 playtest). Now the lead is ~1.5 ref seconds, matching the
+soft-field visual's own warning window, with `safeOpenAt()` down to ~0.35 so the walls are
+visibly coming in as the player reads it; the notif's 1.8s life means it is still on
+screen when they actually turn lethal. Measured on `refSpdTrend`, so the lead is
+device-independent. Near-miss bonus and the red danger flash are
 off while walls are soft (no wall-riding bonus farm). Every run counts normally.
 
 **A soft wall looks soft (2026-09-13, do not revert to "identical rock").** Through
