@@ -622,7 +622,14 @@ function drawWorld() {
     // background-image too, which would blank out the web build's letterbox
     // starfield (tunl.html's body.web-bg) on every theme change. The lift only moves
     // during a sector step, so this still writes a few dozen times per run, not per frame.
-    if (bgStr !== _lastBgStr) { document.body.style.backgroundColor = bgStr; _lastBgStr = bgStr; }
+    // Web-only exception (2026-09-14, on request): don't touch body at all here. The
+    // letterbox is meant to read as a fixed black-with-stars page background, not a
+    // day-tinted one - writing even the colour (image already left alone, per the
+    // comment above) was overriding tunl.html's `body.web-bg{background-color:#000}`
+    // with the lifted/day-rock colour the moment the title screen's own depth light
+    // initialised, so the "pure black" fix never actually showed live. Apps are
+    // unaffected (their letterbox, on tablets that get one, keeps following the lift).
+    if (!isWeb() && bgStr !== _lastBgStr) { document.body.style.backgroundColor = bgStr; _lastBgStr = bgStr; }
     ctx.fillStyle = bgStr;
     ctx.fillRect(-20, -20, W+40, H+40);
     if (depth.mouth > 0.004) {
