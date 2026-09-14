@@ -253,6 +253,16 @@ favicon size: the shadow-side facet tones are damped (a 54%-toward-black facet
 disappears into the `#04040e` icon ground) and the animated spine running lights are
 dropped. See `branding/README.md`.
 
+**Rock roughness is switched off, and the code now short-circuits accordingly.**
+`ROCK_ROUGHNESS_MAX` = 0 (`draw.js`), so `_wallJagged` and `_stalOutline`'s `jAmp` both
+resolve to zero - but until 2026-09-14 they computed the full value-noise stack first
+and multiplied it away afterwards. At `RSTEP` 3 that is ~320 wall samples per frame,
+twice each, three `_rockNoise` per call, two `Math.sin` per noise: about 3900 sine calls
+per frame producing 0, plus 12 more per on-screen stalactite. Both now return early on a
+zero amplitude (measured 30.8 -> 2.5 us per frame's worth of wall samples), and the
+returned value is bit-identical at any non-zero roughness, so flipping the constant back
+up still behaves exactly as before.
+
 ### Depth light (background, 2026-09-13)
 
 `constants.js` `DEPTH_LIGHT_*` doc, `draw.js` `depthLightAt()` / `drawWorld()`. The void
@@ -1367,8 +1377,16 @@ stretch that cannot kill you looked like the one that just did. Two draw-only ha
   marks the seam. The signal is **opacity and motion, never hue**: the edge colour is the
   weekday's own (Luna is near-white, Io teal) and `gapBonus` tints it cyan the moment the
   zone ends, so a colour-coded "soft" would be invisible on 3 of 7 days and ambiguous
-  right after. Measured cost: none (the second pass is cheaper than the stone pattern it
-  replaces, and only runs during the ~7s zone).
+  right after. **Cost, corrected 2026-09-14 - the old claim here ("the second pass is
+  cheaper than the stone pattern it replaces") was wrong:** nothing is replaced.
+  `paintWalls(SAFE_FIELD_ALPHA)` runs `_paintStonePattern` itself, so the zone's two
+  clipped passes are ADDITIVE, and `_paintSoftField` adds `SAFE_FIELD_LINES` contour
+  polylines per wall on top. Per frame inside the zone that is 8 wall paths of ~320
+  points instead of 4, 4 stone-pattern fills instead of 2, plus 2 x (1 + 4) contour
+  paths - roughly 4.5x the wall path work of a normal frame. It still only runs during
+  the ~7s zone, but that zone is the first 7s of EVERY run, i.e. the onboarding path and
+  the weakest devices. Left as is (it performs fine); do not re-assert it is free, and
+  if the walls ever need a frame-budget cut, this is the first place to look.
 - **A bump bends the wall instead of spraying sparks.** `safeWallBump` only records
   `{wx, isTop, t}` into `state.js safeBumps`; `draw.js` bends the RENDERED edge around it
   (`_softBumpDent`, a damped spring that gives and settles) and runs a ring out of the

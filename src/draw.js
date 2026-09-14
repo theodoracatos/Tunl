@@ -102,11 +102,18 @@ function _rockRoughness() {
 }
 
 function _wallJagged(wx, seedOffset) {
+    // Bail before the noise, not after multiplying it by zero. This runs twice per
+    // wall sample and there are ~320 samples per frame at RSTEP 3, so with the
+    // treatment switched off (ROCK_ROUGHNESS_MAX = 0, the shipping value) the six
+    // _rockNoise calls per sample were ~3900 Math.sin per frame spent producing 0.
+    // Measured 30.8 -> 2.5 us per frame's worth of wall samples.
+    const r = _rockRoughness();
+    if (r === 0) return 0;
     const x = wx + seedOffset;
     return (_rockNoise(x * 0.033) * 4.5   // big facets, ~30px feature scale
           + _rockNoise(x * 0.11)  * 2.2   // medium chips
           + _rockNoise(x * 0.30)  * 1.0)  // fine grain
-         * _rockRoughness();
+         * r;
 }
 
 // Runs fn with drawing clipped to a vertical slab of the canvas. The safe opening zone
@@ -176,6 +183,9 @@ function _softBumpDent(wx, isTop) {
 function _stalOutline(sx, hw, hw_base, len, dir, tipY, bLwall, bRwall, seed) {
     const STEPS = 6;
     const jAmp = hw * 0.22 * _rockRoughness();
+    // Same early-out as _wallJagged: at jAmp 0 every _rockNoise below is multiplied
+    // away, and this runs 12 times per on-screen stalactite per frame.
+    const jag = jAmp === 0 ? () => 0 : (u) => _rockNoise(u) * jAmp;
     const bez = (p0, p1, p2, p3, t) => {
         const u = 1 - t;
         return u*u*u*p0 + 3*u*u*t*p1 + 3*u*t*t*p2 + t*t*t*p3;
@@ -185,13 +195,13 @@ function _stalOutline(sx, hw, hw_base, len, dir, tipY, bLwall, bRwall, seed) {
         const t = i / STEPS, taper = Math.sin(t * Math.PI);
         const bx = bez(sx + hw_base, sx + hw*0.70, sx + hw*0.12, sx, t);
         const by = bez(bRwall, bRwall + dir*len*0.38, tipY - dir*len*0.18, tipY, t);
-        pts.push({ x: bx + _rockNoise(seed + t * 9) * jAmp * taper, y: by });
+        pts.push({ x: bx + jag(seed + t * 9) * taper, y: by });
     }
     for (let i = 1; i <= STEPS; i++) {
         const t = i / STEPS, taper = Math.sin(t * Math.PI);
         const bx = bez(sx, sx - hw*0.12, sx - hw*0.70, sx - hw_base, t);
         const by = bez(tipY, tipY - dir*len*0.18, bLwall + dir*len*0.38, bLwall, t);
-        pts.push({ x: bx + _rockNoise(seed + 100 + t * 9) * jAmp * taper, y: by });
+        pts.push({ x: bx + jag(seed + 100 + t * 9) * taper, y: by });
     }
     return pts; // [base_R, ...jagged, tip (exact), ...jagged, base_L (exact)]
 }
