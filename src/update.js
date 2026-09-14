@@ -272,6 +272,20 @@ function update(dt) {
         // one HIT_INVULN_SEC. Math.max, not an overwrite, so this never SHORTENS a
         // grace window already running for an unrelated reason.
         invulnT = Math.max(invulnT, HIT_INVULN_SEC);
+        // Release a blue coin banked during the warp (state.js slowPending, systems.js
+        // blue branch), and re-arm the music for a slow that was ALREADY running when
+        // the warp ended. The second half is a plain bug fix: bgmSetSlow and bgmSetWarp
+        // both drive _bgmNode.playbackRate and each calls cancelScheduledValues first,
+        // so the bgmSetWarp(false) above wipes a live sag and ramps back to 1.0 - the
+        // game then genuinely slowed down for the remaining ~2.5-3.5s with the music at
+        // normal speed, which is exactly what a player reported. Ordered after the
+        // release so one bgmSetSlow call covers both cases.
+        if (slowPending > 0) {
+            slowTime    = Math.max(slowTime, slowPending);
+            slowTimeMax = slowTime;
+            slowPending = 0;
+        }
+        if (slowTime > 0) bgmSetSlow(true, slowTime);
     }
     {
         const warpTarget = warpTime > 0 ? _halfGap * (WARP_GAP_MULT - 1) : 0;

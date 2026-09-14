@@ -36,7 +36,7 @@ function titleScreen() {
     stalactites = []; nextStalWx = 420; nextFallWx = 99999;
     coins = [];     nextCoinWx = 99999;
     chicaneCoins = []; lastChicaneCoinWx = -Infinity;
-    gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
+    gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; slowPending = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
     invulnT = 0; deathCause = null;
     safeEndWx = 0; safeCloseWx = 1; safeBumpT = 0; wallsLiveShown = false; safeBumps = [];
     hullScratches = 0; lastSectorShown = 0;
@@ -107,7 +107,7 @@ function startPlay() {
     nextFallWx = FALL_START_WX;   // 7800 until 2026-09-13, see constants.js
     coins = [];     nextCoinWx = 500;
     chicaneCoins = []; lastChicaneCoinWx = -Infinity;
-    gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
+    gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; slowPending = 0; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = [];
     invulnT = 0; deathCause = null;
     continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;
     reviveCountdownT = 0;

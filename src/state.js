@@ -308,6 +308,15 @@ let chicaneCoins;
 let lastChicaneCoinWx;
 let gapBonus, gapBonusVisual;
 let slowTime, slowTimeMax, shieldCount, shieldFlash, magnetTime;
+// Blue-coin slow banked while a warp is live (systems.js blue branch, drained at
+// update.js's warpTime falling edge). A warp already makes the player immune to
+// every hazard, so a slow window spent inside one has no gameplay value at all and
+// simply evaporates - and it is a big share of the window: a warp runs 1.1-1.6s
+// against the coin's 4.0s. Banking it means the pickup is always worth what it says.
+// Same category of per-player effect slowTime itself is: no rng(), no placement
+// decision, nothing another player's cave depends on, so it is not a cross-device
+// fairness concern (see the "Deliberately real seconds" note in CLAUDE.md's warp doc).
+let slowPending;
 // Grace/invulnerability window after an absorbed hit (constants.js HIT_INVULN_SEC doc).
 let invulnT;
 // Safe opening zone (constants.js SAFE_START_WX doc): world-x where the walls turn

@@ -539,13 +539,28 @@ function checkCoinCollection() {
                 // the 0.6x-then-glide-back-to-1.0x swoop is the mechanic and stacking
                 // two coins still buys a real window; what changes is how far a streak
                 // of them can run the window out. See also POWERUP_MIN_GAP_SEC.
-                slowTime = Math.min(slowTime + (activeSkin === 3 ? masteryLerp(3, 6.0, 7.5) : 4.0), activeSkin === 3 ? masteryLerp(3, 9.0, 11.25) : 6.0);
-                slowTimeMax = slowTime;  // capture the window the scroll + music glide ramps over (world.js slowScrollFactor)
+                const _slowAdd = activeSkin === 3 ? masteryLerp(3, 6.0, 7.5) : 4.0;
+                const _slowCap = activeSkin === 3 ? masteryLerp(3, 9.0, 11.25) : 6.0;
+                // Inside a warp the slow is BANKED, not started (state.js slowPending):
+                // warpScrollFactor() runs 2.2-2.8x against this effect's 0.6x, so the
+                // combined scroll is still 1.32-1.68x - faster than normal - and the
+                // player is hazard-immune anyway, so the window would drain having done
+                // nothing. It is released at update.js's warpTime falling edge, next to
+                // the HIT_INVULN_SEC grant already made there. Stacks against the same
+                // cap, so banking can never buy more than flying it normally would.
+                if (warpTime > 0) {
+                    slowPending = Math.min(slowPending + _slowAdd, _slowCap);
+                } else {
+                    slowTime = Math.min(slowTime + _slowAdd, _slowCap);
+                    slowTimeMax = slowTime;  // capture the window the scroll + music glide ramps over (world.js slowScrollFactor)
+                }
                 burstCoin(sx, coin.y, 195, 26);
                 shake += 3;
                 pushNotif(sx, coin.y - 34, 1.1, T.notifSlow, [60,210,255]);
                 sfxSlow();
-                bgmSetSlow(true, slowTime);  // music sags, then glides back up over the effect (audio.js)
+                // Music only sags when the effect actually starts; a banked one would
+                // otherwise sag under a surge and be cancelled again seconds later.
+                if (warpTime <= 0) bgmSetSlow(true, slowTime);  // sags, then glides back up over the effect (audio.js)
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             } else if (coin.type === 'red') {
                 // CRIMSON trades shield capacity away for its slim-hitbox buff below;

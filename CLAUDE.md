@@ -633,6 +633,26 @@ runs out. Deliberately far under the warp's own 2.2-2.8x - that range is a gamep
 scroll speed, not an audio pitch target, and a whole track played back that fast stops
 reading as "faster" and starts reading as a chipmunked mess.
 
+**A blue coin collected DURING a warp is banked, not started** (2026-09-14, from a
+player report that the slow bar appeared but neither the sound nor the speed changed).
+`triggerWarp` already clears a slow that is *already running* ("you are now fast, not
+fast-and-slow-at-once", 2026-09-12); the opposite order was missed. Picked up inside a
+warp, `slowScrollFactor()`'s 0.6x multiplies against `warpScrollFactor()`'s 2.2-2.8x for
+a combined 1.32-1.68x - still faster than normal, so the effect is unfeelable - and the
+player is hazard-immune anyway, so the window drained for nothing: 1.1-1.6s of warp
+against a 4.0s coin is 27-40% of it. The music broke too, because `bgmSetSlow` and
+`bgmSetWarp` share `_bgmNode.playbackRate` and each calls `cancelScheduledValues` first,
+so the `bgmSetWarp(false)` at the warp's end wiped the sag and left the track at normal
+speed while the game actually did slow down. Now `state.js slowPending` holds it (same
+cap, so banking can never buy more than flying it normally) and `update.js`'s warpTime
+falling edge releases it next to the `HIT_INVULN_SEC` grant, arming `bgmSetSlow` there.
+The HUD shows a banked slow as the same cyan bar held full and dimmed, pulsing - a
+draining bar would lie, showing nothing would look like the pickup was swallowed. Pure
+per-player effect, no `rng()`, no placement decision, so no cross-device concern.
+Measured in a browser: banked at 4.00 through the warp at a clean 2.20x surge, released
+the frame warpTime hits 0 with the factor dropping to 0.63, `bgm: warp(false) |
+slow(true,4.00)` in that order.
+
 **Exiting a warp grants `HIT_INVULN_SEC` of the same grace window a shield-absorbed
 hit or a revive already gets** (`update.js`, the `warpTime` falling edge) - `Math.max`
 against whatever's already running, never a shortening. Coming out of a warp drops the

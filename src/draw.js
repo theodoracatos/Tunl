@@ -2252,15 +2252,22 @@ function drawHUD() {
         ctx.fillRect(W*0.225, barY, barW, barH);
     }
 
-    // Slow-time bar (bottom, cyan, just above gap bar)
-    if (phase === 'play' && slowTime > 0) {
-        const ratio = slowTimeMax > 0 ? Math.min(slowTime / slowTimeMax, 1.0) : Math.min(slowTime / 4.0, 1.0);
+    // Slow-time bar (bottom, cyan, just above gap bar). A slow banked during a warp
+    // (state.js slowPending) shows the same bar HELD FULL and dimmed, pulsing gently:
+    // it is not running down yet, so a draining bar would lie, but showing nothing
+    // would read as the pickup having been swallowed - which is the complaint the
+    // banking fixes in the first place. No new string, no new HUD element.
+    if (phase === 'play' && (slowTime > 0 || slowPending > 0)) {
+        const held  = slowTime <= 0 && slowPending > 0;
+        const ratio = held ? 1.0
+                    : (slowTimeMax > 0 ? Math.min(slowTime / slowTimeMax, 1.0) : Math.min(slowTime / 4.0, 1.0));
         const barW  = W * 0.55 * ratio;
         const barY  = H * 0.940;
         const barH  = 4;
+        const a     = held ? 0.28 + 0.12 * Math.sin(gtime * 6) : 0.55 + ratio * 0.35;
         ctx.fillStyle = 'rgba(60,200,255,0.15)';
         ctx.fillRect(W*0.225, barY, W*0.55, barH);
-        ctx.fillStyle = `rgba(60,200,255,${0.55 + ratio*0.35})`;
+        ctx.fillStyle = `rgba(60,200,255,${a})`;
         ctx.fillRect(W*0.225, barY, barW, barH);
     }
 
