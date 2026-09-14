@@ -50,22 +50,22 @@
     "ja": "ボタンひとつの洞窟フライヤー。押して上昇、離して下降。トンネルが閉じる前に、どこまで暗闇へ進めるか。"
   },
   "hero.newTag": {
-    "en": "New in 12.0",
-    "de": "Neu in 12.0",
-    "fr": "Nouveau dans la 12.0",
-    "it": "Novità nella 12.0",
-    "es": "Novedad en la 12.0",
-    "pt": "Novo na 12.0",
-    "ja": "12.0の新機能"
+    "en": "New in 12.1",
+    "de": "Neu in 12.1",
+    "fr": "Nouveau dans la 12.1",
+    "it": "Novità nella 12.1",
+    "es": "Novedad en la 12.1",
+    "pt": "Novo na 12.1",
+    "ja": "12.1の新機能"
   },
   "hero.newBody": {
-    "en": "TUNL takes on a new shape. A redesigned ship (its new app icon too), a gentler opening flight that starts every run safe before the walls turn deadly, and a rebuilt Debriefing screen showing exactly what killed you plus your live world rank.",
-    "de": "TUNL bekommt eine neue Form. Ein neu gestaltetes Schiff (samt neuem App-Icon), ein sanfterer Einstieg, der jeden Lauf sicher beginnt, bevor die Wände tödlich werden, und ein neu gebauter Debriefing-Bildschirm, der genau zeigt, was dich erwischt hat - plus deinen aktuellen Weltrang.",
-    "fr": "TUNL change de silhouette. Un vaisseau repensé (avec sa nouvelle icône), un début de partie plus doux où chaque run s'ouvre en sécurité avant que les murs ne deviennent mortels, et un écran de debriefing reconstruit qui montre exactement ce qui t'a eu, plus ton classement mondial en direct.",
-    "it": "TUNL cambia forma. Una nave ridisegnata (con la sua nuova icona), un inizio più dolce che apre ogni corsa al sicuro prima che i muri diventino letali, e una schermata di debriefing ricostruita che mostra esattamente cosa ti ha ucciso, oltre al tuo rango mondiale in tempo reale.",
-    "es": "TUNL cambia de forma. Una nave rediseñada (con su nuevo icono), un comienzo más suave que abre cada partida a salvo antes de que los muros se vuelvan letales, y una pantalla de resumen reconstruida que muestra exactamente qué te atrapó, además de tu clasificación mundial en vivo.",
-    "pt": "O TUNL muda de forma. Uma nave redesenhada (com o novo ícone), um começo mais suave que abre cada corrida em segurança antes de as paredes se tornarem letais, e um ecrã de resumo reconstruído que mostra exatamente o que te apanhou, além da tua classificação mundial em direto.",
-    "ja": "TUNLの姿が変わった。新しくデザインされた機体（新しいアプリアイコンも）、壁が致命的になる前に必ず安全に始まる優しいスタート、そして何にやられたかを正確に示す作り直されたデブリーフィング画面と、リアルタイムの世界ランキング。"
+    "en": "TUNL sounds and feels sharper. New flight and title music, remastered louder so it doesn't get buried under the sound effects, every menu redesigned with a frosted-glass look, and a fix so a blue coin grabbed mid-warp banks its slow-time instead of wasting it.",
+    "de": "TUNL klingt und wirkt jetzt schärfer. Neue Musik für Flug und Titelbildschirm, lauter abgemischt, damit sie nicht in den Soundeffekten untergeht, jedes Menü im neuen Frosted-Glass-Look, und ein Fix, damit eine während eines Warps eingesammelte blaue Münze ihre Zeitlupe bankt statt sie zu verschwenden.",
+    "fr": "TUNL sonne et se ressent plus net. Nouvelle musique de vol et de titre, remasterisée plus fort pour ne plus disparaître sous les effets sonores, chaque menu repensé avec un look verre dépoli, et une correction pour qu'une pièce bleue récupérée pendant un warp mette son ralenti de côté au lieu de le gâcher.",
+    "it": "TUNL suona e si sente più nitido. Nuova musica di volo e del titolo, rimasterizzata più forte per non sparire sotto gli effetti sonori, ogni menu ridisegnato con un look vetro smerigliato, e una correzione perché una moneta blu raccolta durante un warp conservi il suo rallentamento invece di sprecarlo.",
+    "es": "TUNL suena y se siente más nítido. Nueva música de vuelo y de título, remasterizada más alta para no perderse bajo los efectos de sonido, cada menú rediseñado con un aspecto de vidrio esmerilado, y una corrección para que una moneda azul recogida durante un warp guarde su cámara lenta en vez de desperdiciarla.",
+    "pt": "O TUNL soa e parece mais nítido. Nova música de voo e do título, remasterizada mais alta para não sumir sob os efeitos sonoros, cada menu redesenhado com um visual de vidro fosco, e uma correção para que uma moeda azul apanhada durante um warp guarde o seu tempo lento em vez de o desperdiçar.",
+    "ja": "TUNLの音と手触りがより鋭くなった。効果音に埋もれないようリマスターされた新しい飛行中・タイトル画面の音楽、フロストガラス風に一新されたすべてのメニュー、そしてワープ中に取った青いコインがスロータイムを無駄にせず貯金されるようになった修正。"
   },
   "hero.playCta": {
     "en": "Play in your browser",
