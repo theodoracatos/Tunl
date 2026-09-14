@@ -57,6 +57,34 @@ function shareAvailable() {
             && typeof navigator !== 'undefined' && !!navigator.clipboard);
 }
 
+// The corridor the player actually FLEW, for the card's picture only.
+//
+// boundsBase() alone is no longer that picture. The 12.0 safe opening flight pushes
+// the walls out to the screen edges for the first SAFE_START_WX of every run, and by
+// deliberate design that widening lives in boundsAt() only - never in boundsBase(),
+// because nothing about where an object gets PLACED may depend on it (see world.js).
+// The card kept sampling boundsBase and so drew a normal, narrowing corridor across a
+// stretch where the player had no walls to speak of and could not be killed by them.
+// That is a fixed 3000 world-px, so it dominates exactly the runs that get shared:
+// two thirds of the strip at score 75 (the share floor itself), half at 95, a third at
+// 155. A card of a short run and a card of a middling one told the same story.
+//
+// This mirrors boundsAt()'s safe-zone branch and nothing else - no gapBonus, no warp,
+// no per-player state - so the profile stays a pure function of world-x and renders
+// identically on every device, which is the property the whole card depends on. The
+// constants are read directly rather than through safeOpenAt(), so this does not
+// depend on run state still being set when the death screen draws.
+function _profileBounds(wx) {
+    const bb = boundsBase(wx);
+    if (wx >= SAFE_START_WX) return bb;
+    const t = Math.min(1, (SAFE_START_WX - wx) / SAFE_CLOSE_WX);
+    const o = t * t * (3 - 2 * t);
+    return {
+        top: Math.min(bb.top, lerp(bb.top, SAFE_OPEN_PAD, o)),
+        bot: Math.max(bb.bot, lerp(bb.bot, H - SAFE_OPEN_PAD, o)),
+    };
+}
+
 // ── Run profile ───────────────────────────────────────────────────────
 // Draws the tunnel the player just flew into an arbitrary rect on any 2D context.
 // Currently only the share card draws it (a faint death-screen backdrop version was
@@ -159,7 +187,7 @@ function drawRunProfile(g, x0, y0, w, h, opts) {
         let t = 0, b = 0;
         for (let j = 0; j < SUB; j++) {
             const off = SUB === 1 ? 0 : (j / (SUB - 1) - 0.5) * smoothWin;
-            const bb = boundsBase(Math.max(0, wx + off));
+            const bb = _profileBounds(Math.max(0, wx + off));
             t += bb.top; b += bb.bot;
         }
         tops.push([xOf(wx), yOf(t / SUB)]);

@@ -48,6 +48,8 @@ function makeWorld(innerWidth, innerHeight) {
         this.MINE_START_WX = MINE_START_WX; this.CHICANE_START_WX = CHICANE_START_WX; this.chicaneProb = chicaneProb;
         this.SAFE_START_WX = SAFE_START_WX; this.SECTOR_SEC = SECTOR_SEC; this.refSpdTrend = refSpdTrend;
         this.MIN_REAL_RUN_SCORE = MIN_REAL_RUN_SCORE;
+        this.SAFE_CLOSE_WX = SAFE_CLOSE_WX; this.SAFE_OPEN_PAD = SAFE_OPEN_PAD;
+        this.H = H; this.lerp = lerp;
         this.sectorAt = sectorAt; this.sectorStartWx = sectorStartWx; this.HULL_END_WX = HULL_END_WX;
         for (const n of ['RED_START_WX','ORANGE_START_WX','GREEN_START_WX','BOMB_START_WX','BOULDER_START_WX','CANNON_START_WX','FALL_START_WX','POISON_START_WX','DRAIN_START_WX']) this[n] = eval(n);
         this.setDayArchetype = function(i) { _dayArchetype = i; };
@@ -692,6 +694,71 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
         for (let i = 0; i < 1000; i++) v = ease(v, 0, 1 / 60);
         return Math.abs(v - 0) < 1e-6;
     })());
+}
+
+// -- Share-card run profile (src/share.js _profileBounds) ------------------
+// The card is the one picture of a run that leaves the device, and its whole claim
+// is that it shows the corridor the player FLEW. Since the 12.0 safe opening flight
+// that is no longer boundsBase() - the widening is boundsAt()-only by design, so the
+// card has to mirror it. Extracted from share.js and run in the world sandbox rather
+// than re-implemented here, so this tests the shipped function, not a copy of it.
+{
+    const shareSrc = fs.readFileSync(path.join(__dirname, 'src', 'share.js'), 'utf8');
+    const m = shareSrc.match(/function _profileBounds\(wx\) \{[\s\S]*?\n\}/);
+    check('share.js still defines _profileBounds', !!m);
+    if (m) {
+        for (const [W_, H_] of [[600, 600], [956, 440], [844, 390]]) {
+            const w = makeWorld(W_, H_);
+            vm.runInContext(m[0] + '; this._profileBounds = _profileBounds;', w);
+            const pb = w._profileBounds, bb = w.boundsBase, H = w.H;
+            const tag = `[${W_}x${H_}] `;
+
+            // At the mouth the card must show the corridor pushed to the screen edges,
+            // which is what the player actually had, not the base curve's walls.
+            const at0 = pb(0);
+            check(tag + 'profile at wx=0 is open to the screen edges',
+                Math.abs(at0.top - w.SAFE_OPEN_PAD) < 0.51 && Math.abs(at0.bot - (H - w.SAFE_OPEN_PAD)) < 0.51,
+                JSON.stringify(at0));
+            check(tag + 'and that is genuinely wider than the base curve drew',
+                at0.top < bb(0).top - 1 && at0.bot > bb(0).bot + 1);
+
+            // Past the zone the card is untouched - a deep run's picture must not move.
+            let sameDeep = true;
+            for (let wx = w.SAFE_START_WX; wx <= 60000; wx += 137) {
+                const a = pb(wx), b = bb(wx);
+                if (a.top !== b.top || a.bot !== b.bot) { sameDeep = false; break; }
+            }
+            check(tag + 'profile past SAFE_START_WX is byte-identical to boundsBase', sameDeep);
+
+            // No seam where the zone closes, and it only ever widens.
+            const eps = 1e-9;
+            const before = pb(w.SAFE_START_WX - eps), after = pb(w.SAFE_START_WX);
+            check(tag + 'no kink where the safe zone closes',
+                Math.abs(before.top - after.top) < 0.01 && Math.abs(before.bot - after.bot) < 0.01);
+            let onlyWider = true;
+            for (let wx = 0; wx < w.SAFE_START_WX; wx += 25) {
+                const a = pb(wx), b = bb(wx);
+                if (a.top > b.top + eps || a.bot < b.bot - eps) onlyWider = false;
+            }
+            check(tag + 'the safe stretch only ever widens, never narrows the picture', onlyWider);
+            // Measured as the EXTRA width over the base curve, not as absolute width:
+            // the base corridor's own waves keep oscillating underneath the zone, so the
+            // drawn gap legitimately rises and falls inside it. What has to shrink is the
+            // help the zone is adding.
+            const extra = x => { const a = pb(x), b = bb(x); return (a.bot - a.top) - (b.bot - b.top); };
+            const e0 = extra(0), eMid = extra(w.SAFE_START_WX * 0.5), eLate = extra(w.SAFE_START_WX - 1);
+            check(tag + 'the extra width the safe zone adds shrinks with distance',
+                e0 > eMid && eMid > eLate, `${e0.toFixed(1)} / ${eMid.toFixed(1)} / ${eLate.toFixed(1)}`);
+            check(tag + 'and has fully run out by SAFE_START_WX', Math.abs(eLate) < 0.5, String(eLate));
+
+            // Not asserted here: equality with boundsAt(), which is what the run was
+            // actually collided against. boundsAt reads run state (gapBonusVisual,
+            // warpWidenVisual, _halfGap) that this sandbox deliberately does not set up,
+            // and stubbing it would only compare this code against a copy of itself. The
+            // five properties above pin the shape; world.js's safe branch is the source
+            // the helper mirrors, and its constants are shared, not duplicated.
+        }
+    }
 }
 
 if (failed) {
