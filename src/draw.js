@@ -3051,10 +3051,12 @@ function drawTitleScreen() {
     // first icon, above the logo and nowhere near the ship it opens.
     const dockY      = LAND ? (isWeb() ? H * 0.53 : H * 0.50) : H * 0.50;
     const heroR       = LAND ? Math.min(H * 0.16, UI_H * 0.15) : H * 0.12;
-    // App: ship, ring, pips and chevrons sit heroR*0.30 above the dock anchor while the
+    // Ship, ring, pips and chevrons sit heroR*0.30 above the dock anchor while the
     // name and ALL SHIPS pill stay put, so the ring no longer crowds the name/button
-    // below it (requested after the dock rework). Web unchanged.
-    const shipStageY = (LAND && !isWeb()) ? dockY - heroR * 0.30 : dockY;
+    // below it (app dock rework). Extended to web (2026-09-14, on request) once the
+    // pill moved below the name there too - freed-up headroom above the ring that
+    // would otherwise just sit empty between it and the logo/world line.
+    const shipStageY = LAND ? dockY - heroR * 0.30 : dockY;
     const [hr, hg, hb] = SKINS[activeSkin].shadow;
 
     // Soft pulsing ring around the equipped ship -- a wordless "this is yours"
@@ -3103,10 +3105,13 @@ function drawTitleScreen() {
     ctx.fillStyle   = `rgba(${hr},${hg},${hb},0.95)`;
     ctx.shadowColor = 'rgba(0,0,0,0.85)';
     ctx.shadowBlur  = 6;
-    // App: the name hugs the ring (ring bottom is +1.70R); the pill below keeps its own
-    // anchor (pillAnchorY), so moving the name does not move the button. Web unchanged.
+    // The name hugs the ring (ring bottom is +1.70R); the pill below keeps its own fixed
+    // anchor (pillAnchorY), so moving the name does not move the button. Extended to web
+    // (2026-09-14, on request) alongside the shipStageY shift above - previously the web
+    // name sat at the pill's own anchor, so shifting the ring up (and leaving the name in
+    // place) opened a gap between ring and name that didn't exist before.
     const pillAnchorY = dockY + heroR * 1.98;
-    const heroNameY = (LAND && !isWeb()) ? shipStageY + heroR * 2.05 : pillAnchorY;
+    const heroNameY = LAND ? shipStageY + heroR * 2.05 : pillAnchorY;
     ctx.fillText(SKINS[activeSkin].name, shipStageX, heroNameY);
     ctx.shadowBlur  = 0;
 
@@ -3165,12 +3170,16 @@ function drawTitleScreen() {
         // H=375 (12 mini) put it at 10% of the screen height - the topmost element on
         // screen, above the logo, and read as a stray control rather than the ship's.
         let linkY;
-        if (LAND && isWeb()) {
-            // Web build: the 3-icon rail (no Game Center / Challenge) sits centred
-            // enough that the rail-aligned pill below would land inside the ship
-            // ring. Park it just above the ring instead, clear of the circle.
-            linkY = shipStageY - heroR * 1.7 - pillH / 2 - FS * 0.014;
-        } else if (LAND) {
+        if (LAND) {
+            // Web used to park this above the ring (shipStageY - heroR*1.7) on the
+            // theory that the rail-aligned position below would land inside it -
+            // but the ring itself was never the actual conflict there. The mastery
+            // pips (above) sit at shipStageY - heroR*1.9, almost the same offset as
+            // that old heroR*1.7 pill position, so the pill was drawn right on top
+            // of them (reported 2026-09-14, visible as the pips' rims clipped by the
+            // pill's rounded border). Below-name (pillAnchorY, same anchor the app
+            // already uses) clears both the ring and the pips, with room to spare
+            // above the canvas bottom edge.
             linkY = pillAnchorY + FS * 0.026 + pillH / 2 - fsz / 2;
         } else {
             linkY = heroNameY + FS * 0.030 + pillH / 2 - fsz / 2;
