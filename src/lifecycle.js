@@ -84,6 +84,11 @@ function startPlay() {
     // Web leaderboard: wall-clock start of this run, read at death for the
     // score/play-time sanity check. Harmless (unused) in the app builds.
     _webRunStartMs = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    // Web analytics: half of the /play funnel (loaded -> actually played). The
+    // global is defined only by the snippet build-play.mjs injects into the web
+    // head, so this is inert in the iOS/Android builds by construction - see
+    // FIREBASE_HEAD there for the session/attribution contract.
+    if (typeof window !== 'undefined' && window._tunlGA) window._tunlGA('run_start');
     phase = 'play'; py = H + PR * 4; vy = 0; holding = false; hasHeldThisRun = false; idleHoldTimer = 0; scrollX = 0; startRamp = 0;
     score = 0; newBest = false; newDailyBest = false;
     parts = []; thrustParts = []; deadT = 0; flashA = 0; shake = 0; trailY = [];
@@ -130,7 +135,15 @@ function startPlay() {
     // can meet the reward before the first real hazard set-piece.
     portals = []; nextPortalWx = PORTAL_START_WX;
     warpTime = 0; warpMax = 0; warpWidenVisual = 0; warpMult = WARP_MULT_MIN;
-    bonusScore = 0; milestoneNext = 25;   // first band is 25 below score 100 (world.js milestoneStep) nearMissTimer = 0; coinCombo = 0; coinComboTimer = 0;
+    // 75: the 25 and 50 rungs are free since the safe flight (constants.js MIN_REAL_RUN_SCORE).
+    // The three resets below used to sit AFTER this comment on the same line, i.e. inside
+    // it, so they never ran - a run began with the previous run's combo state. Mostly
+    // masked, because update.js clears the combo the frame its timer expires, but the
+    // timer freezes at death (the dead branch advances only deadT), so a combo still had
+    // up to ~0.7s of the next run's launch ramp to survive into and pay out on its first
+    // coin. Keep these on their own line.
+    bonusScore = 0; milestoneNext = MIN_REAL_RUN_SCORE;
+    nearMissTimer = 0; coinCombo = 0; coinComboTimer = 0;
     runCoins = 0; runNearMisses = 0; runMaxCombo = 0; skinUnlockIdx = -1;
     runHitCount = 0; sprintAchFired = false; noHitAchFired = false; noBonusAchFired = false; runBoulderNarrowPasses = 0;
     skinMasteryUpIdx = -1; missionRewardWon = 0;

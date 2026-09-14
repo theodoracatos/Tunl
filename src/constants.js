@@ -969,21 +969,64 @@ function worldRankWorthShowing() {
     return worldRank !== null && worldRank > 0 && worldRankTotal >= WORLD_RANK_MIN_FIELD;
 }
 
+// ── "This was a real run" floor ──────────────────────────────────────
+// The one number every "was this run worth reacting to" gate in the game shares:
+// the ad cadence, the rewarded continue, the referral reward, shard banking, the
+// share button and the first milestone.
+//
+// **It became 75 on 2026-09-14; it must never drop to or below 50 again.** It was
+// 25 everywhere, which stopped being a floor at all when the 12.0 safe opening
+// flight shipped: no death is possible before SAFE_START_WX (both wall-collision
+// paths in update.js bump instead of killing, and no hazard exists before
+// HAZARD_START_WX), so **the minimum score of any completed run is now 50**.
+// Every gate below that was silently passing every run, including the instant
+// faceplants each one was written to exclude - an interstitial after a 1-second
+// tutorial death, a 30-second rewarded-video offer on the same, a share button on
+// a score of 50 the player did not earn. Note that 50 itself would be no better
+// than 25 for the same reason; 75 is the first value that means "left the safe
+// zone and kept flying", i.e. the first score that is evidence of anything.
+//
+// Any NEW score threshold has to clear 50 by construction, not by taste. When
+// SAFE_START_WX moves, this moves with it.
+const MIN_REAL_RUN_SCORE   = 75;
+
 // ── Rewarded continue ────────────────────────────────────────────────
 // Offered at most once per run, only past this score -- same floor as the
 // interstitial's MIN_SCORE_FOR_AD (AdsManager.swift/.kt), for the same reason:
 // runs below it are instant faceplants, not worth a 15-30s video either way.
-const CONTINUE_MIN_SCORE   = 25;
+const CONTINUE_MIN_SCORE   = MIN_REAL_RUN_SCORE;
 const MAX_CONTINUES_PER_RUN = 1;
 
 // ── Store rating prompt ─────────────────────────────────────────────
 // Native review sheet (SKStoreReviewController on iOS, Play In-App Review on
 // Android - see the "review" bridge, update.js maybeRequestReview()). Fired on a
-// new all-time best, the same "this was worth celebrating, not a nag" gate
-// shareWorthy() (share.js) already uses. Same score floor as CONTINUE_MIN_SCORE
-// above, reused rather than a fresh number, for the same reason: a rating
-// prompt right after an instant-faceplant "personal best" of 9 reads as absurd.
-const REVIEW_MIN_SCORE = CONTINUE_MIN_SCORE;
+// run that is good news (new all-time best, or today's best), the same "this was
+// worth celebrating, not a nag" gate shareWorthy() (share.js) already uses.
+//
+// **Retuned 2026-09-14; do not put the old gate back.** It used to be
+// `newBest && best > 0 && score >= CONTINUE_MIN_SCORE`, which was simultaneously
+// too eager and dead:
+//  - Too eager for a new player. `best` climbs on nearly every early run, so the
+//    sheet landed on run #2 or #3, ~30 seconds into someone's lifetime with the
+//    game. Excluding only the very first completed run (the old `hadPriorBest`)
+//    is not the same as excluding "hasn't decided whether they like this yet",
+//    which is exactly what Apple's and Google's own guidelines ask for.
+//  - Dead for the players worth asking. Someone sitting on a best of 400 will
+//    not beat it again inside REVIEW_COOLDOWN_MS, so the one cohort with a real
+//    opinion never saw the sheet at all. The 2026-09-10 funnel measurement found
+//    zero Google Play ratings, which is what this gate produces by construction.
+// The commitment test is now `stardust`, which is already exactly "calendar days
+// this player opened the game" (see the Stardust doc block) - the signal the old
+// gate was reaching for and missing. It is strictly stronger than the old
+// first-run exclusion, since REVIEW_MIN_STARDUST days implies returning across
+// that many separate days, and it costs no new state.
+const REVIEW_MIN_STARDUST = 3;
+// Score floor. Deliberately its own number and stricter than the shared
+// MIN_REAL_RUN_SCORE above: a rating prompt is the single most expensive thing
+// the game can spend a player's goodwill on, so it asks for more than "this was
+// a real run". 100 is ~50 points of real flight past the safe zone, comfortably
+// inside sector S1, and still well under the median good run.
+const REVIEW_MIN_SCORE = 100;
 // Local cooldown between prompts, generous relative to Apple's own system-wide
 // limit (max 3 SKStoreReviewController prompts per 365 days, silently a no-op
 // beyond that) and Android's equivalent per-app throttling, so this gate is

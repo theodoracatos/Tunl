@@ -102,24 +102,69 @@ const ADS_HEAD = `\n<!-- Google AdSense (site verification + ad serving) -->
 // posture as the old cookieless Consent-Mode setup, still no banner needed.
 const WEB_ANALYTICS_RELAY = 'https://tunl-scores.theodoracatos.workers.dev/ga';
 
+// This snippet defines window._tunlGA(name, params), which the GAME calls for
+// run_start / run_end (src/lifecycle.js, src/update.js). It exists ONLY in the
+// /play head, so in the iOS and Android builds the global is simply undefined
+// and those call sites are inert - the web/app isolation rule holds without an
+// isWeb() branch doing the work.
+//
+// Three things here are deliberate and were the whole point of the 2026-09-14
+// rework; do not simplify them away:
+//  - session_id persists for GA_SESSION_GAP_MS of inactivity instead of being
+//    minted per page load. It used to be Date.now() at load, so every reload was
+//    a fresh session and no engagement metric on the stream meant anything.
+//  - engagement_time_msec is real elapsed time since load, not a constant 1.
+//  - source/medium/campaign/referrer ride along on the first event of a session,
+//    which is what stops every web session landing under "Unassigned". utm_* wins
+//    over the referrer when both are present, same precedence gtag.js uses.
 const FIREBASE_HEAD = WEB_ANALYTICS_RELAY
   ? `\n<!-- Web analytics (relayed server-to-server via the tunl-scores Worker - see build-play.mjs) -->
 <script>
 (function(){
   try {
-    var KEY = 'tunl_ga_cid';
-    var cid = localStorage.getItem(KEY);
+    var URL_ = ${JSON.stringify(WEB_ANALYTICS_RELAY)};
+    var GAP = 1800000;           // GA4's own 30-minute session window
+    var t0 = Date.now();
+    var cid = localStorage.getItem('tunl_ga_cid');
     if (!cid) {
       cid = (crypto.randomUUID ? crypto.randomUUID() : (Date.now() + '.' + Math.random().toString(36).slice(2)));
-      localStorage.setItem(KEY, cid);
+      localStorage.setItem('tunl_ga_cid', cid);
     }
-    var sid = String(Math.floor(Date.now() / 1000));
-    fetch(${JSON.stringify(WEB_ANALYTICS_RELAY)}, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ cid: cid, sid: sid, dl: location.href, dt: document.title }),
-      keepalive: true,
-    }).catch(function(){});
+    // {id, last}: id survives reloads, a gap longer than GAP starts a new one.
+    var ses = {};
+    try { ses = JSON.parse(localStorage.getItem('tunl_ga_ses') || '{}') || {}; } catch (e) {}
+    var fresh = !ses.id || !(Date.now() - (ses.last || 0) < GAP);
+    if (fresh) ses = { id: String(Math.floor(Date.now() / 1000)) };
+    var q = new URLSearchParams(location.search);
+    var src = {};
+    if (fresh) {
+      var utm = q.get('utm_source');
+      if (utm) {
+        src.source = utm;
+        src.medium = q.get('utm_medium') || '';
+        src.campaign = q.get('utm_campaign') || '';
+        src.term = q.get('utm_term') || '';
+        src.content = q.get('utm_content') || '';
+      }
+      if (document.referrer && document.referrer.indexOf(location.origin) !== 0) src.dr = document.referrer;
+    }
+    window._tunlGA = function(name, extra) {
+      try {
+        ses.last = Date.now();
+        try { localStorage.setItem('tunl_ga_ses', JSON.stringify(ses)); } catch (e) {}
+        var b = { cid: cid, sid: ses.id, en: name, dl: location.href, dt: document.title, ms: Date.now() - t0 };
+        for (var k in src) if (src[k]) b[k] = src[k];
+        for (var k2 in (extra || {})) b[k2] = extra[k2];
+        fetch(URL_, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(b),
+          keepalive: true,
+        }).catch(function(){});
+        src = {};   // source rides the first event of a session only
+      } catch (e) {}
+    };
+    window._tunlGA('page_view');
   } catch (e) {}
 })();
 </script>`

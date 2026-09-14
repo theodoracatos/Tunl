@@ -47,6 +47,7 @@ function makeWorld(innerWidth, innerHeight) {
         this.mineSpacing = mineSpacing; this.cannonSpacing = cannonSpacing; this.milestoneStep = milestoneStep;
         this.MINE_START_WX = MINE_START_WX; this.CHICANE_START_WX = CHICANE_START_WX; this.chicaneProb = chicaneProb;
         this.SAFE_START_WX = SAFE_START_WX; this.SECTOR_SEC = SECTOR_SEC; this.refSpdTrend = refSpdTrend;
+        this.MIN_REAL_RUN_SCORE = MIN_REAL_RUN_SCORE;
         this.sectorAt = sectorAt; this.sectorStartWx = sectorStartWx; this.HULL_END_WX = HULL_END_WX;
         for (const n of ['RED_START_WX','ORANGE_START_WX','GREEN_START_WX','BOMB_START_WX','BOULDER_START_WX','CANNON_START_WX','FALL_START_WX','POISON_START_WX','DRAIN_START_WX']) this[n] = eval(n);
         this.setDayArchetype = function(i) { _dayArchetype = i; };
@@ -252,25 +253,36 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
     const w = makeWorld(600, 600);
     // 25-point band below 100 (restored in 12.0 -- see the milestoneStep doc comment
     // in src/world.js for why the earlier removal was calibrated against the wrong
-    // audience), then the bands that were always there.
+    // audience), then the bands that were always there. The band SHAPE is unchanged;
+    // only where the ladder is seeded moved, see below.
     check('milestoneStep < 100 is 25',    w.milestoneStep(1)    === 25 && w.milestoneStep(25) === 25 && w.milestoneStep(99) === 25);
     check('milestoneStep 100-299 is 50',  w.milestoneStep(100)  === 50 && w.milestoneStep(299) === 50);
     check('milestoneStep 300-999 is 100', w.milestoneStep(300)  === 100 && w.milestoneStep(999) === 100);
     check('milestoneStep 1000-2999 is 250', w.milestoneStep(1000) === 250 && w.milestoneStep(2999) === 250);
     check('milestoneStep 3000-9999 is 500', w.milestoneStep(3000) === 500 && w.milestoneStep(9999) === 500);
     check('milestoneStep >= 10000 is 1000, uncapped', w.milestoneStep(10000) === 1000 && w.milestoneStep(1_000_000) === 1000);
-    // The ladder a real run actually walks (lifecycle.js seeds milestoneNext = 25 and
-    // update.js adds milestoneStep each time one fires). Asserted as a whole sequence
-    // because the per-band checks above can all pass while the seed is wrong.
+    // The ladder a real run actually walks (lifecycle.js seeds milestoneNext =
+    // MIN_REAL_RUN_SCORE and update.js adds milestoneStep each time one fires).
+    // Asserted as a whole sequence because the per-band checks above can all pass
+    // while the seed is wrong.
+    //
+    // The seed moved 25 -> 75 on 2026-09-14. The 12.0 restoration of the 25-point band
+    // was calibrated on "median real run is 22, only 13% of runs reach 50" - numbers
+    // the SAME release invalidated, since the safe opening flight means every completed
+    // run scores at least 50. The 25 and 50 rungs were therefore fired by 100% of runs,
+    // for free, before the player had done anything, which is the opposite of what a
+    // first milestone is for. 75 is the first rung a player can actually miss.
     {
         const ladder = [];
-        for (let n = 25; ladder.length < 12; n += w.milestoneStep(n)) ladder.push(n);
-        check('milestone ladder starts 25/50/75 then rejoins the old 50-point band',
-            ladder.join(',') === '25,50,75,100,150,200,250,300,400,500,600,700');
+        for (let n = w.MIN_REAL_RUN_SCORE; ladder.length < 11; n += w.milestoneStep(n)) ladder.push(n);
+        check('milestone ladder starts at the first earnable rung, then rejoins the old band',
+            ladder.join(',') === '75,100,150,200,250,300,400,500,600,700,800');
+        check('no milestone rung is reachable without leaving the safe zone',
+            ladder[0] > 50 && w.MIN_REAL_RUN_SCORE > 50 && w.MIN_REAL_RUN_SCORE > Math.floor(w.SAFE_START_WX / 60));
         // The point of the 12.0 change is that it is a FIRST-MINUTES fix only. Anything
         // a competent run reaches has to be exactly where it was before.
         check('milestone ladder is unchanged at and above score 100',
-            ladder.filter(n => n >= 100).join(',') === '100,150,200,250,300,400,500,600,700');
+            ladder.filter(n => n >= 100).join(',') === '100,150,200,250,300,400,500,600,700,800');
     }
 }
 

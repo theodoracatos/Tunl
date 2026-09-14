@@ -39,7 +39,9 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
     private static let minInterval: TimeInterval = 120
     // Runs scoring below this are instant faceplants (common in this fast-death
     // game) and shouldn't burn through the cadence counter or interrupt with an ad.
-    private static let minScoreForAd = 25
+    // Mirrors src/constants.js MIN_REAL_RUN_SCORE. Was 25, which the 12.0 safe
+    // opening flight turned into a no-op: no completed run scores under 50.
+    private static let minScoreForAd = 75
 
     private var interstitial: InterstitialAd?
     private var rewarded: RewardedAd?

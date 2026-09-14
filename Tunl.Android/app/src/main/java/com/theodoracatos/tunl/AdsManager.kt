@@ -41,7 +41,9 @@ class AdsManager(private val activity: Activity) {
         private const val MIN_INTERVAL_MS = 120_000L
         // Runs scoring below this are instant faceplants (common in this fast-death
         // game) and shouldn't burn through the cadence counter or interrupt with an ad.
-        private const val MIN_SCORE_FOR_AD = 25
+        // Mirrors src/constants.js MIN_REAL_RUN_SCORE. Was 25, which the 12.0 safe
+        // opening flight turned into a no-op: no completed run scores under 50.
+        private const val MIN_SCORE_FOR_AD = 75
         private const val TAG = "TunlAds"
     }
 

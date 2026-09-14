@@ -33,9 +33,10 @@ const SHARE_W = 1200, SHARE_H = 630; // link-preview proportions; reads well in 
 // button (draw.js) and the tap handler (input.js) can never disagree about it.
 // SHARE_MIN_SCORE guards the personal-best path: a player's first-ever run is a "new
 // best" by definition, and offering to broadcast a score of 9 is embarrassing rather
-// than rewarding. Same "that was an instant faceplant" threshold the ad cadence uses
-// (AdsManager minScoreForAd).
-const SHARE_MIN_SCORE = 25;
+// than rewarding. Reuses the game-wide MIN_REAL_RUN_SCORE (constants.js) rather than
+// carrying its own copy of the number - it was a hardcoded 25, which the 12.0 safe
+// opening flight turned into a no-op, since no completed run scores under 50.
+const SHARE_MIN_SCORE = MIN_REAL_RUN_SCORE;
 function shareWorthy() {
     // The web build is an acquisition funnel: every shared run is a tap-to-play
     // link for someone new, so drop the "was this a good run" gate the app uses

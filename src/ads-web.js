@@ -58,7 +58,10 @@ const AD_UNIT_REWARDED_SHARDS   = `/${ADS_WEB_NETWORK_CODE}/tunl_web_rewarded_sh
 // installs anyway).
 const AD_DEATHS_PER_AD    = 3;
 const AD_MIN_INTERVAL_SEC = 120;
-const AD_MIN_SCORE        = 25;
+// Mirrors constants.js MIN_REAL_RUN_SCORE (a literal, because this file is loaded
+// independently of constants.js on the web). Was 25, i.e. a no-op since the 12.0
+// safe flight made 50 the minimum score of any completed run - keep the two in sync.
+const AD_MIN_SCORE        = 75;
 
 function _adsDeathCount()  { return +(localStorage.getItem('tunnel_web_death_count') || 0); }
 function _adsLastAdTime()  { return +(localStorage.getItem('tunnel_web_last_ad_time') || 0); }

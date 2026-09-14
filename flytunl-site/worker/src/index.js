@@ -245,6 +245,21 @@ async function handleReferralClaim(request, db) {
 // in localStorage by the page - see FIREBASE_HEAD in build-play.mjs), not
 // tied to any cookie GA4 sets itself, so this needs no consent banner any
 // more than the gtag.js path it replaces did.
+// Events this relay will forward. An allowlist, not a passthrough: this is a
+// public unauthenticated endpoint, so anything not named here would let a
+// stranger inject arbitrary event names into the property and make the reports
+// useless. Adding an event means adding it here AND in build-play.mjs's sender.
+const GA_EVENTS = new Set(['page_view', 'run_start', 'run_end']);
+
+// Coerce an untrusted value to an integer inside [lo, hi], falling back to
+// `dflt` for anything non-numeric. Every number this endpoint forwards to GA4
+// comes from a public POST, so none of them are trusted.
+function clampInt(v, lo, hi, dflt) {
+  const n = Math.floor(Number(v));
+  if (!Number.isFinite(n)) return dflt;
+  return Math.max(lo, Math.min(hi, n));
+}
+
 async function handleGA(request, measurementId, apiSecret) {
   if (!apiSecret) return json({ error: 'not_configured' }, 501);
 
@@ -257,18 +272,41 @@ async function handleGA(request, measurementId, apiSecret) {
   const dt = String(body.dt || 'TUNL').slice(0, 100);
   if (!/^[a-zA-Z0-9.-]{6,64}$/.test(cid)) return json({ error: 'cid' }, 400);
 
-  const payload = {
-    client_id: cid,
-    events: [{
-      name: 'page_view',
-      params: {
-        page_location: dl,
-        page_title: dt,
-        session_id: sid,
-        engagement_time_msec: 1,
-      },
-    }],
+  // `en` is optional so a page served before this change (a cached /play still
+  // posting the old {cid,sid,dl,dt} shape) keeps reporting page views instead
+  // of silently 400ing.
+  const en = String(body.en || 'page_view');
+  if (!GA_EVENTS.has(en)) return json({ error: 'event' }, 400);
+
+  const params = {
+    page_location: dl,
+    page_title: dt,
+    session_id: sid,
+    // Real elapsed time on the page, not the hardcoded 1 this used to send.
+    // GA4 derives engaged sessions and average engagement time from this, so a
+    // constant made every engagement metric on the stream meaningless.
+    engagement_time_msec: clampInt(body.ms, 1, 1800000, 1),
   };
+
+  // Traffic source. Without these every web session landed under "Unassigned",
+  // which is why this stream could not measure a listing or campaign change -
+  // the one job it exists for. GA4's Measurement Protocol reads source/medium/
+  // campaign off the event itself, and page_referrer for plain referrals.
+  const dr = String(body.dr || '').slice(0, 300);
+  if (dr) params.page_referrer = dr;
+  for (const k of ['source', 'medium', 'campaign', 'term', 'content']) {
+    const v = body[k];
+    if (typeof v === 'string' && v) params[k] = v.slice(0, 100);
+  }
+
+  // run_end carries the score, the only number that answers "did this visitor
+  // actually play". Clamped rather than trusted: same posture as /score.
+  if (en === 'run_end') {
+    params.score = clampInt(body.score, 0, 9999999, 0);
+    params.run_index = clampInt(body.run, 1, 9999, 1);
+  }
+
+  const payload = { client_id: cid, events: [{ name: en, params }] };
 
   const mpUrl = `https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`;
   try {

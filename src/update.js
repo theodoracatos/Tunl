@@ -912,18 +912,25 @@ function die(bypassShield = false) {
 }
 
 // Store rating prompt (constants.js REVIEW_MIN_SCORE/REVIEW_COOLDOWN_MS doc block).
-// Called only from commitDeath()'s newBest branch -- a beaten record is the one
-// moment in the loop that's unambiguously good news, the same reasoning
-// shareWorthy() (share.js) already uses for the share button. `hadPriorBest`
-// excludes a brand new player's very first completed run (best was still 0
-// going in): every score is trivially "a new best" then, and asking someone to
-// rate an app they opened five seconds ago is exactly what Apple's and Google's
-// own review guidelines warn against. The cooldown lives in localStorage rather
-// than being re-derived from `best`/`stardust` so it survives independently of
-// either -- a player who never beats their record again should still only ever
-// see this once.
-function maybeRequestReview(runScore, hadPriorBest) {
-    if (!hadPriorBest || runScore < REVIEW_MIN_SCORE) return;
+// Called from commitDeath() once both record flags are known. Two independent
+// halves, and both are load-bearing (constants.js REVIEW_MIN_STARDUST doc block
+// has the measured argument for why the old single-condition gate produced zero
+// Play ratings):
+//  - `goodNews` is the MOMENT: a beaten record, all-time or today's. Today's
+//    best is included so an engaged player who is nowhere near their all-time
+//    best still has a reachable celebration to be asked on - that cohort was
+//    unreachable before, which is the half that mattered.
+//  - `stardust` is the COMMITMENT: calendar days this player has opened the
+//    game. It replaces the old `hadPriorBest` check outright rather than sitting
+//    next to it - returning on REVIEW_MIN_STARDUST separate days already implies
+//    a prior completed run, and it is the condition the old one was standing in
+//    for badly.
+// The cooldown lives in localStorage rather than being re-derived from
+// `best`/`stardust` so it survives independently of either -- a player who never
+// beats a record again should still only ever see this once.
+function maybeRequestReview(runScore, goodNews) {
+    if (!goodNews || runScore < REVIEW_MIN_SCORE) return;
+    if (stardust < REVIEW_MIN_STARDUST) return;
     let lastAskMs = 0;
     try { lastAskMs = parseInt(localStorage.getItem('tunnel_review_last_ts') || '0'); } catch (e) { /* ignore */ }
     if (Date.now() - lastAskMs < REVIEW_COOLDOWN_MS) return;
@@ -951,21 +958,32 @@ function commitDeath() {
         window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: PACIFIST_ACH_ID });
     }
     if (newBest) { best = score; localStorage.setItem('tunnel_best', best); }
-    if (newBest) maybeRequestReview(score, _hadPriorBest);
     // Referral reward (constants.js REFERRAL_REWARD doc block): the inverse of
-    // the review gate just above - fires only on what reads as this player's
+    // the review gate below - fires only on what reads as this player's
     // own first real run (no prior best going in), which is also the one
     // point in a player's lifetime this condition can ever be true, so this
     // naturally never re-submits on a later run. Reuses CONTINUE_MIN_SCORE
-    // rather than a fresh constant, same floor REVIEW_MIN_SCORE reuses it
-    // for - the worker re-checks this independently regardless (never trust
-    // the client on something that grants value).
+    // rather than a fresh constant (REVIEW_MIN_SCORE stopped sharing that floor
+    // on 2026-09-14, see its doc block) - the worker re-checks this
+    // independently regardless (never trust the client on something that
+    // grants value).
     if (!_hadPriorBest && score >= CONTINUE_MIN_SCORE && typeof submitReferral === 'function') {
         submitReferral(score);
+    }
+    // Web analytics: the other half of the /play funnel. Sent from commitDeath
+    // rather than die() so a rewarded continue does not count as a finished run,
+    // matching every other end-of-run bookkeeping here. `run` is the lifetime run
+    // count, which is what separates "bounced after one go" from "kept playing".
+    // Inert outside the web build - see startPlay's run_start hook.
+    if (typeof window !== 'undefined' && window._tunlGA) {
+        window._tunlGA('run_end', { score: score, run: totalRuns });
     }
     runsWithoutPB = newBest ? 0 : runsWithoutPB + 1;
     newDailyBest = score > dailyBest;
     if (newDailyBest) { dailyBest = score; localStorage.setItem('tunnel_daily_best', dailyBest); }
+    // Rating prompt: deliberately sits AFTER newDailyBest is resolved, since a
+    // daily best is half of what now counts as a moment worth asking on.
+    maybeRequestReview(score, newBest || newDailyBest);
     // Ghost: today's best run becomes the thing the next run races. Keyed to the day the
     // run was actually played (recomputed here, not read from state.js's page-load
     // _initToday) so a session left open across UTC midnight can't file a run under the

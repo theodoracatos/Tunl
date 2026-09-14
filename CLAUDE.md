@@ -1082,11 +1082,21 @@ distinct from poison's sour sawtooth squelch so the two punishers sound differen
 **Score formula**: `score = Math.floor(scrollX / 60) + bonusScore`
 `bonusScore` accumulates from coin collection and near-miss bonuses; resets each run.
 
-**Milestone moments**: Triggers at 25, 50, 75, 100, 150, 200, 250, 300, 400, 500, 600...
+**Milestone moments**: Triggers at 75, 100, 150, 200, 250, 300, 400, 500, 600...
 Step size widens with score via `milestoneStep()` (`world.js`): 25 up to 100, 50 up to
 300, 100 up to 1000, 250 up to 3000, 500 up to 10000, 1000 beyond - uncapped, keeps
 growing forever rather than settling into a fixed step (same "never just endurance at a
 fixed pace" philosophy as `scrollSpd()`, see its own doc comment).
+
+**The ladder is seeded at `MIN_REAL_RUN_SCORE` (75), not at 25 (2026-09-14).** The band
+SHAPE below 100 is still 25 points; only the starting rung moved. The 12.0 restoration
+below was calibrated on "median real run is 22, only 13% of runs reach 50" - numbers the
+same release invalidated, since the safe opening flight makes 50 the minimum score of any
+completed run. The 25 and 50 rungs were therefore fired by 100% of runs, for free, before
+the player had done anything. 75 is the first rung a player can actually miss. Everything
+at and above 100 is untouched, as it was in 12.0. See the `MIN_REAL_RUN_SCORE` doc block
+in `constants.js` - **no score gate anywhere in the game may sit at or below 50**, and
+that number moves with `SAFE_START_WX`.
 
 The 25-point band below 100 was **dropped once and restored in 12.0** - don't drop it
 again without new data. The removal argued it "fired 3 milestones before a weak run even
@@ -1419,8 +1429,11 @@ exist.
 
 ### Ad cadence
 
-Every 4th death **and** at most once per 120s of wall clock, above score 25, never with
-Remove Ads. The wall-clock floor is the rule that actually matters: a good run lasts only
+Every 4th death **and** at most once per 120s of wall clock, above `MIN_REAL_RUN_SCORE`
+(75, `constants.js`; mirrored as `minScoreForAd` in `AdsManager.swift`/`.kt` and
+`AD_MIN_SCORE` in `ads-web.js` - keep all four in sync), never with Remove Ads. That
+floor was 25 everywhere until 2026-09-14, which the 12.0 safe opening flight had silently
+turned into a no-op - see the `MIN_REAL_RUN_SCORE` doc block. The wall-clock floor is the rule that actually matters: a good run lasts only
 20-36 real seconds, so a pure every-Nth-death rule put a full-screen ad in front of
 engaged players roughly every 90 seconds. When the floor blocks, the death counter is
 rolled back one so the two rules don't compound into a much longer gap than intended.
