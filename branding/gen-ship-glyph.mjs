@@ -21,7 +21,7 @@
 // Android and the site.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -212,8 +212,15 @@ function writeTargets() {
     }
 }
 
-const argv = process.argv.slice(2);
-if (argv.includes('--list')) {
+// Only act as a CLI when this file IS the entry point. Without this guard a plain
+// `import { shipGlyph }` from another generator ran the block below and dumped a
+// full PEARL glyph to stdout - found 2026-09-14 when game-center/
+// gen-ship-achievement-icons.mjs became the first importer.
+const _isMain = process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url;
+const argv = _isMain ? process.argv.slice(2) : [];
+if (!_isMain) {
+    // imported as a module: expose shipGlyph and do nothing else
+} else if (argv.includes('--list')) {
     for (const t of TARGETS) console.log(t.file);
 } else if (argv.includes('--write')) {
     writeTargets();

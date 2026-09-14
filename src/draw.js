@@ -2876,9 +2876,12 @@ function drawTitleScreen() {
     // default (Cockpit-Kritik observation 6: that gap used to sit empty on wide
     // devices while the right column was crammed; it's the whole stage now).
     const shipStageX = LAND ? W * 0.60 : W / 2;
-    // Web build only: nudged up from H*0.58 so the stage sits more centred on a
-    // desktop letterbox. The app keeps H*0.58 (tuned against the phone layout).
-    const shipStageY = LAND ? (isWeb() ? H * 0.53 : H * 0.58) : H * 0.50;
+    // Web build: H*0.53, parked to sit centred on a desktop letterbox. App: H*0.50
+    // (was 0.58) so the dock - ship, name, ALL SHIPS pill stacked under it - fits
+    // above the bottom edge on a 375pt-tall iPhone 12 mini / SE. At 0.58 the name
+    // alone already sat at 336 of 375, which is what forced the pill up to the rail's
+    // first icon, above the logo and nowhere near the ship it opens.
+    const shipStageY = LAND ? (isWeb() ? H * 0.53 : H * 0.50) : H * 0.50;
     const heroR       = LAND ? Math.min(H * 0.16, UI_H * 0.15) : H * 0.12;
     const [hr, hg, hb] = SKINS[activeSkin].shadow;
 
@@ -2982,10 +2985,10 @@ function drawTitleScreen() {
         const linkW    = ctx.measureText(linkText).width;
         const padX     = fsz * 0.85, padY = fsz * 0.62;
         const pillW    = linkW + padX * 2, pillH = fsz + padY * 2;
-        // In landscape, sit the pill above the ship, lined up with the first rail icon
-        // (Missions) so it reads as part of that control row -- specifically so the
-        // pill's BOTTOM edge matches that icon's bottom edge. This mirrors the rail
-        // layout math in the "Icon rail" block below -- keep the two in sync.
+        // App: the pill hangs under the ship name, as part of the ship dock. It used to
+        // align its bottom edge with the rail's first icon, which on a 5-icon rail at
+        // H=375 (12 mini) put it at 10% of the screen height - the topmost element on
+        // screen, above the logo, and read as a stray control rather than the ship's.
         let linkY;
         if (LAND && isWeb()) {
             // Web build: the 3-icon rail (no Game Center / Challenge) sits centred
@@ -2993,13 +2996,7 @@ function drawTitleScreen() {
             // ring. Park it just above the ring instead, clear of the circle.
             linkY = shipStageY - heroR * 1.7 - pillH / 2 - FS * 0.014;
         } else if (LAND) {
-            const _hasGC   = !!window.webkit?.messageHandlers?.gameCenter;
-            const _hasChal = _hasGC && !!window._tunlChallengeSupported;
-            const _railN   = 3 + (_hasGC ? 1 : 0) + (_hasChal ? 1 : 0); // missions [+lb][+chal] + shop + settings
-            const _iconR   = Math.min(UI_H * 0.040, 27);
-            const _iconGap = _iconR * 3.3;
-            const _icon0Cy = H / 2 - ((_railN - 1) * _iconGap) / 2; // first rail icon cy
-            linkY = _icon0Cy + _iconR - pillH / 2; // align pill bottom to icon bottom
+            linkY = heroNameY + FS * 0.026 + pillH / 2 - fsz / 2;
         } else {
             linkY = heroNameY + FS * 0.030 + pillH / 2 - fsz / 2;
         }
@@ -3058,10 +3055,18 @@ function drawTitleScreen() {
         // real hardware (only ever visible on an actual device/Simulator, a
         // desktop browser has no island to hide it).
         const railCX  = LAND ? W - Math.max(W * 0.06, 46) - SAFE_R : W / 2;
-        const iconR   = LAND ? Math.min(UI_H * 0.040, 27) : Math.min(H * 0.036, 22);
-        const iconGap = iconR * 3.3;
-        // LAND: first icon cy == railY0. The ALL SHIPS pill above re-derives this same
-        // value to line up with it -- keep both in sync if the rail layout changes.
+        // App landscape: iconR and the gap both key off UI_H, which never drops below
+        // 600, so a 5-icon rail is 365px tall on every device - 5px of margin top and
+        // bottom at H=375 (12 mini / SE), with the last icon under the home indicator
+        // (SAFE_L/SAFE_R are horizontal only). Cap the gap so a real margin survives.
+        // Never binds at H>=440 (17 Pro Max, Android tablet): those render as before.
+        // Web is left alone (web/app isolation; its rail is 3 icons anyway).
+        const _railFit = LAND && !isWeb();
+        const railPad  = Math.max(H * 0.06, 20);
+        const iconR   = LAND ? Math.min(UI_H * 0.040, 27, _railFit ? H * 0.062 : Infinity) : Math.min(H * 0.036, 22);
+        const iconGap = _railFit && items.length > 1
+            ? Math.min(iconR * 3.3, (H - 2 * railPad - 2 * iconR) / (items.length - 1))
+            : iconR * 3.3;
         const railY0  = LAND ? H / 2 - ((items.length - 1) * iconGap) / 2 : H - iconR * 2.4;
 
         _missionsBtnRect    = null;
