@@ -904,7 +904,10 @@ const LANGS = {
     },
 };
 
-const LANG_ORDER = ['en', 'de', 'fr', 'it', 'es', 'pt', 'ja', 'ko', 'zh', 'ru', 'ar', 'tr', 'id', 'pl', 'hi'];
+// Settings grid order: Latin-script languages alphabetically by their own name, then
+// the non-Latin scripts (Cyrillic, Arabic, Devanagari, CJK). With 3 columns that is
+// exactly 3 Latin rows over 2 non-Latin rows.
+const LANG_ORDER = ['de', 'en', 'es', 'fr', 'id', 'it', 'pl', 'pt', 'tr', 'ru', 'ar', 'hi', 'ja', 'ko', 'zh'];
 
 function detectLang() {
     const nav = ((navigator.language || navigator.userLanguage) || 'en').slice(0, 2).toLowerCase();

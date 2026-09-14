@@ -14,6 +14,16 @@ let _bgmActive = false, _bgmPending = false;
 let _titleBgmBuf = null, _titleBgmNode = null, _titleBgmGain = null;
 let _titleBgmActive = false, _titleBgmPending = false;
 
+// Music bed gains, one per track, calibrated so each track sits where the SFX mix was
+// tuned against: the pre-2026-09-14 the_mountain.mp3 (-6.7 LUFS) at gain 0.10. The
+// replacement tracks are mastered far quieter (in-game -15.9 LUFS, i.e. -9.2 dB; title
+// -15.9 vs -15.5 LUFS) and left at 0.10 they sank under every one-shot. Measured with
+// ffmpeg ebur128 on the .mp3 and the .web.m4a encodes alike. If a track is replaced
+// again, re-measure and rescale here: gain = 0.10 * 10^((-6.7 - newLUFS) / 20) for the
+// in-game track. Output peaks stay near -16 dBFS, no clipping risk on the bare bus.
+const BGM_GAIN       = 0.288;
+const TITLE_BGM_GAIN = 0.105;
+
 function _startBgMusic() {
     if (!musicOn) return;
     if (_bgmActive) return;  // already playing - don't restart
@@ -21,7 +31,7 @@ function _startBgMusic() {
     // Reset gain in case it was faded to near-zero during death
     if (_bgmGain && _ac) {
         _bgmGain.gain.cancelScheduledValues(_ac.currentTime);
-        _bgmGain.gain.setValueAtTime(0.10, _ac.currentTime);
+        _bgmGain.gain.setValueAtTime(BGM_GAIN, _ac.currentTime);
     }
     if (_bgmBuf) { _playBgmBuffer(); return; }
     // Not loaded yet - mark pending and kick the loader (no-op if already in flight);
@@ -33,7 +43,7 @@ function _startBgMusic() {
 function _playBgmBuffer() {
     if (!_ac || !_bgmBuf || !_bgmActive) return;
     _bgmGain = _bgmGain || (() => {
-        const g = _ac.createGain(); g.gain.value = 0.10; g.connect(_ac.destination); return g;
+        const g = _ac.createGain(); g.gain.value = BGM_GAIN; g.connect(_ac.destination); return g;
     })();
     _bgmNode = _ac.createBufferSource();
     _bgmNode.buffer = _bgmBuf;
@@ -121,7 +131,7 @@ function _startTitleMusic() {
     _titleBgmActive = true;
     if (_titleBgmGain && _ac) {
         _titleBgmGain.gain.cancelScheduledValues(_ac.currentTime);
-        _titleBgmGain.gain.setValueAtTime(0.10, _ac.currentTime);
+        _titleBgmGain.gain.setValueAtTime(TITLE_BGM_GAIN, _ac.currentTime);
     }
     if (_titleBgmBuf) { _playTitleBgmBuffer(); return; }
     // Not loaded yet - mark pending and kick the loader (no-op if already in flight);
@@ -133,7 +143,7 @@ function _startTitleMusic() {
 function _playTitleBgmBuffer() {
     if (!_ac || !_titleBgmBuf || !_titleBgmActive) return;
     _titleBgmGain = _titleBgmGain || (() => {
-        const g = _ac.createGain(); g.gain.value = 0.10; g.connect(_ac.destination); return g;
+        const g = _ac.createGain(); g.gain.value = TITLE_BGM_GAIN; g.connect(_ac.destination); return g;
     })();
     _titleBgmNode = _ac.createBufferSource();
     _titleBgmNode.buffer = _titleBgmBuf;
@@ -935,8 +945,8 @@ function sfxStalCrack() {
 // it ever reaches that gain node, and each voice narrows a different amount, so
 // two voices with similar "master gain" numbers can differ wildly in actual
 // output. Measured by offline-rendering every voice in isolation (OfflineAudioContext,
-// steady-state RMS over its hold texture) against the real the_mountain.mp3 bed at
-// its actual in-game gain (0.10): every single ship measured *quieter* than the
+// steady-state RMS over its hold texture) against the real (pre-2026-09-14) the_mountain.mp3 bed at
+// its then in-game gain (0.10; see BGM_GAIN for the recalibrated track): every single ship measured *quieter* than the
 // music (-33 to -41.5 dB RMS vs the bed's -32 dB), and the spread between ships
 // was 8.4 dB despite being "tuned to the same range". Retuned so every voice's
 // master gain lands within ~1 dB of -28 dB RMS (about 4 dB above the music bed,

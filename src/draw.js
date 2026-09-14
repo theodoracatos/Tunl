@@ -2493,6 +2493,135 @@ function drawRailIcon(key, cx, cy, r, color, lineW) {
     ctx.restore();
 }
 
+// Shared submenu look (Missions, Ships, Settings, Shop, currency info, notif prompt).
+// Frosted glass, the way iOS materials and Alto's Odyssey do it: the scene behind the
+// menu is blurred and tinted, and the card itself stays quiet - a translucent body, a
+// light rim that fades down, one bright hairline on top. No painted gloss.
+//
+// The blur is a SNAPSHOT, not a per-frame filter: the first backdrop frame of a menu
+// shrinks the canvas to ~1/8 size by repeated halving (each 2x step averages cleanly;
+// one big drawImage step in WebKit just drops pixels, which rendered as blocky mosaic
+// on iOS), then box-blurs that small image in JS once. ctx.filter is deliberately not
+// used: WKWebView does not support it on canvas, so the look would differ per device.
+// Every later frame just stretches the small image. A menu that was not drawn for
+// 250ms re-captures, so reopening shows the current scene. Slots are counted per frame
+// (reset in draw()), so a menu opened over another menu blurs the menu below it
+// instead of reusing the first one's snapshot.
+const _menuBlur = [];
+let _menuBlurSlot = 0;
+function _boxBlurRGBA(px, w, h, rad) {
+    const tmp = new Uint8ClampedArray(px.length);
+    const pass = (src, dst, horiz) => {
+        const n = horiz ? w : h, m = horiz ? h : w, span = rad * 2 + 1;
+        for (let j = 0; j < m; j++) {
+            for (let c = 0; c < 4; c++) {
+                let acc = 0;
+                for (let i = -rad; i <= rad; i++) {
+                    const ii = Math.min(n - 1, Math.max(0, i));
+                    acc += src[(horiz ? (j * w + ii) : (ii * w + j)) * 4 + c];
+                }
+                for (let i = 0; i < n; i++) {
+                    dst[(horiz ? (j * w + i) : (i * w + j)) * 4 + c] = acc / span;
+                    const add = Math.min(n - 1, i + rad + 1), sub = Math.max(0, i - rad);
+                    acc += src[(horiz ? (j * w + add) : (add * w + j)) * 4 + c]
+                         - src[(horiz ? (j * w + sub) : (sub * w + j)) * 4 + c];
+                }
+            }
+        }
+    };
+    for (let k = 0; k < 2; k++) { pass(px, tmp, true); pass(tmp, px, false); }
+}
+function _captureMenuBlur(entry) {
+    const sw = Math.max(1, Math.ceil(W / 8)), sh = Math.max(1, Math.ceil(H / 8));
+    entry.steps = entry.steps || [];
+    let src = cv, srcW = cv.width, srcH = cv.height, si = 0;
+    while (srcW / 2 >= sw * 1.5) {
+        const c = entry.steps[si] || (entry.steps[si] = document.createElement('canvas'));
+        c.width = Math.max(1, Math.round(srcW / 2)); c.height = Math.max(1, Math.round(srcH / 2));
+        const g = c.getContext('2d');
+        g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+        g.drawImage(src, 0, 0, srcW, srcH, 0, 0, c.width, c.height);
+        src = c; srcW = c.width; srcH = c.height; si++;
+    }
+    const out = entry.cv || document.createElement('canvas');
+    out.width = sw; out.height = sh;
+    const g = out.getContext('2d');
+    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    g.drawImage(src, 0, 0, srcW, srcH, 0, 0, sw, sh);
+    try {
+        const img = g.getImageData(0, 0, sw, sh);
+        _boxBlurRGBA(img.data, sw, sh, 3);
+        g.putImageData(img, 0, 0);
+    } catch (e) { /* tainted canvas: keep the averaged downscale, still soft */ }
+    entry.cv = out;
+}
+
+function drawMenuBackdrop(alpha) {
+    const k = alpha == null ? 1 : alpha;
+    const now = performance.now();
+    const slot = _menuBlurSlot++;
+    const entry = _menuBlur[slot] || (_menuBlur[slot] = { cv: null, steps: null, last: -1e9 });
+    if (!entry.cv || now - entry.last > 250) _captureMenuBlur(entry);
+    entry.last = now;
+
+    ctx.save();
+    ctx.globalAlpha = k;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(entry.cv, 0, 0, W, H);
+    ctx.restore();
+
+    const acc = getTheme().wallBase;
+    ctx.fillStyle = `rgba(4,6,18,${0.52 * k})`;
+    ctx.fillRect(0, 0, W, H);
+    const g = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.hypot(W, H) * 0.6);
+    g.addColorStop(0,   rgb(acc, 0.08 * k));
+    g.addColorStop(0.55, 'rgba(0,0,0,0)');
+    g.addColorStop(1,   `rgba(0,0,0,${0.50 * k})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+}
+
+function drawMenuPanel(x, y, w, h, r) {
+    const acc = lerpClr(getTheme().wallBase, [255, 255, 255], 0.30);
+
+    ctx.save();
+    ctx.shadowColor   = 'rgba(0,0,0,0.45)';
+    ctx.shadowBlur    = 24;
+    ctx.shadowOffsetY = 8;
+    const fill = ctx.createLinearGradient(0, y, 0, y + h);
+    fill.addColorStop(0, 'rgba(26,32,64,0.62)');
+    fill.addColorStop(1, 'rgba(10,12,30,0.74)');
+    ctx.fillStyle = fill;
+    ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fill();
+    ctx.restore();
+
+    // A faint lift of the day colour at the top, so the glass picks up the day's light.
+    ctx.save();
+    ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.clip();
+    const lift = ctx.createLinearGradient(0, y, 0, y + Math.min(h, 140));
+    lift.addColorStop(0, rgb(acc, 0.10));
+    lift.addColorStop(1, rgb(acc, 0));
+    ctx.fillStyle = lift;
+    ctx.fillRect(x, y, w, Math.min(h, 140));
+    ctx.restore();
+
+    const edge = ctx.createLinearGradient(0, y, 0, y + h);
+    edge.addColorStop(0,    'rgba(255,255,255,0.30)');
+    edge.addColorStop(0.25, 'rgba(255,255,255,0.10)');
+    edge.addColorStop(1,    'rgba(255,255,255,0.05)');
+    ctx.strokeStyle = edge;
+    ctx.lineWidth   = 1;
+    ctx.beginPath(); ctx.roundRect(x + 0.5, y + 0.5, w - 1, h - 1, r); ctx.stroke();
+
+    const hl = ctx.createLinearGradient(x + r, 0, x + w - r, 0);
+    hl.addColorStop(0,   'rgba(255,255,255,0)');
+    hl.addColorStop(0.5, 'rgba(255,255,255,0.40)');
+    hl.addColorStop(1,   'rgba(255,255,255,0)');
+    ctx.fillStyle = hl;
+    ctx.fillRect(x + r, y + 0.5, w - 2 * r, 1);
+}
+
 function drawTitleScreen() {
     // In landscape (W > H*1.15) use a two-column layout to avoid vertical crowding.
     // In portrait keep a centered stack but anchor the skin picker to the bottom.
@@ -2846,28 +2975,67 @@ function drawTitleScreen() {
         // the old 0.70H slot so it tucks up close under the planet line. Lands
         // around 0.51H, overlapping the idle ship's glow -- accepted per the
         // repeated "still a little up" feedback.
-        ctx.font        = `bold ${FS * 0.038}px 'Courier New',monospace`;
-        ctx.fillStyle   = `rgba(190,212,255,${a * 0.98})`;
-        ctx.shadowColor = 'rgba(0,0,0,0.90)';
-        ctx.shadowBlur  = 3;
         const rekordY = LAND ? planetBaselineY + (H * 0.70 - planetBaselineY) * 0.33 : H / 2 - H * 0.038;
-        ctx.fillText(`${T.allTime}  ${best}`, titleX, rekordY);
-        ctx.shadowBlur  = 0;
 
-        // Lifetime distance flown (state.js lifetimeDist, banked in commitDeath).
-        // A slow progression number that ticks up every day you play - deliberately
-        // subordinate to REKORD: smaller, dimmer, tucked right under it, so it reads
-        // as a footnote to the headline stat, not a second competing stat block
-        // (the "Dock & Drawer" audit above kept only one headline stat on screen).
-        if (lifetimeDist > 0) {
-            const flownTxt = String(Math.floor(lifetimeDist / 60));
-            ctx.font      = `${FS * 0.023}px 'Courier New',monospace`;
-            ctx.fillStyle = `rgba(150,170,215,${a * 0.62})`;
+        // Stat plate: a small spaced label over a big number per stat, REKORD and the
+        // lifetime distance (state.js lifetimeDist, banked in commitDeath) side by side,
+        // split by a hairline in the day's own rock colour. Replaces two plain
+        // "LABEL  123" text lines. FLOWN stays subordinate - smaller, dimmer number - so
+        // REKORD is still the one headline stat the "Dock & Drawer" audit kept on screen.
+        const accent  = lerpClr(getTheme().wallBase, [255, 255, 255], 0.35);
+        const hasFlown = lifetimeDist > 0;
+        const cells = [{ lbl: T.allTime, val: best.toLocaleString(), big: true }];
+        if (hasFlown) cells.push({ lbl: T.flown, val: Math.floor(lifetimeDist / 60).toLocaleString(), big: false });
+
+        let lblFsz = FS * 0.016, bigFsz = FS * 0.046, smlFsz = FS * 0.034;
+        const setLbl = () => { ctx.font = `bold ${lblFsz}px 'Courier New',monospace`; try { ctx.letterSpacing = `${lblFsz * 0.22}px`; } catch (e) {} };
+        const setVal = (c) => { ctx.font = `bold ${c.big ? bigFsz : smlFsz}px 'Courier New',monospace`; try { ctx.letterSpacing = '0px'; } catch (e) {} };
+        const gap = FS * 0.034;
+        const measure = () => cells.map(c => {
+            setLbl(); const lw = ctx.measureText(c.lbl).width;
+            setVal(c); return Math.max(lw, ctx.measureText(c.val).width);
+        });
+        let widths = measure();
+        let totalW = widths.reduce((s, w) => s + w, 0) + gap * (cells.length - 1);
+        const availW = LAND ? Math.min(titleX, W * 0.46 - titleX) * 2 - 32 : W - 48;
+        if (totalW > availW) {
+            const k = availW / totalW;
+            lblFsz *= k; bigFsz *= k; smlFsz *= k;
+            widths = measure();
+            totalW = widths.reduce((s, w) => s + w, 0) + gap * k * (cells.length - 1);
+        }
+        const gapUsed = (totalW - widths.reduce((s, w) => s + w, 0)) / Math.max(1, cells.length - 1);
+
+        const lblY = rekordY + FS * 0.002;
+        const valY = rekordY + FS * 0.036;
+        let cx = titleX - totalW / 2;
+        ctx.textAlign = 'center';
+        cells.forEach((c, i) => {
+            const mid = cx + widths[i] / 2;
+            setLbl();
             ctx.shadowColor = 'rgba(0,0,0,0.85)';
             ctx.shadowBlur  = 2;
-            ctx.fillText(`${T.flown}  ${flownTxt}`, titleX, rekordY + FS * 0.036);
+            ctx.fillStyle   = rgb(accent, a * (c.big ? 0.85 : 0.60));
+            ctx.fillText(c.lbl, mid, lblY);
+            setVal(c);
+            ctx.shadowColor = c.big ? rgb(getTheme().wallBase, a * 0.55) : 'rgba(0,0,0,0.85)';
+            ctx.shadowBlur  = c.big ? 10 : 3;
+            ctx.fillStyle   = c.big ? `rgba(236,242,255,${a})` : `rgba(180,196,230,${a * 0.78})`;
+            ctx.fillText(c.val, mid, valY + (c.big ? 0 : (bigFsz - smlFsz) * 0.22));
             ctx.shadowBlur  = 0;
-        }
+            cx += widths[i];
+            if (i < cells.length - 1) {
+                const sx = cx + gapUsed / 2;
+                const grad = ctx.createLinearGradient(0, lblY - lblFsz, 0, valY + bigFsz * 0.5);
+                grad.addColorStop(0,   rgb(accent, 0));
+                grad.addColorStop(0.5, rgb(accent, a * 0.45));
+                grad.addColorStop(1,   rgb(accent, 0));
+                ctx.fillStyle = grad;
+                ctx.fillRect(Math.round(sx) - 0.5, lblY - lblFsz, 1, valY + bigFsz * 0.5 - (lblY - lblFsz));
+                cx += gapUsed;
+            }
+        });
+        try { ctx.letterSpacing = '0px'; } catch (e) {}
     }
 
     // ── Hero ship stage ─────────────────────────────────────────────────
@@ -2881,8 +3049,12 @@ function drawTitleScreen() {
     // above the bottom edge on a 375pt-tall iPhone 12 mini / SE. At 0.58 the name
     // alone already sat at 336 of 375, which is what forced the pill up to the rail's
     // first icon, above the logo and nowhere near the ship it opens.
-    const shipStageY = LAND ? (isWeb() ? H * 0.53 : H * 0.50) : H * 0.50;
+    const dockY      = LAND ? (isWeb() ? H * 0.53 : H * 0.50) : H * 0.50;
     const heroR       = LAND ? Math.min(H * 0.16, UI_H * 0.15) : H * 0.12;
+    // App: ship, ring, pips and chevrons sit heroR*0.30 above the dock anchor while the
+    // name and ALL SHIPS pill stay put, so the ring no longer crowds the name/button
+    // below it (requested after the dock rework). Web unchanged.
+    const shipStageY = (LAND && !isWeb()) ? dockY - heroR * 0.30 : dockY;
     const [hr, hg, hb] = SKINS[activeSkin].shadow;
 
     // Soft pulsing ring around the equipped ship -- a wordless "this is yours"
@@ -2931,7 +3103,10 @@ function drawTitleScreen() {
     ctx.fillStyle   = `rgba(${hr},${hg},${hb},0.95)`;
     ctx.shadowColor = 'rgba(0,0,0,0.85)';
     ctx.shadowBlur  = 6;
-    const heroNameY = shipStageY + heroR * 1.98;
+    // App: the name hugs the ring (ring bottom is +1.70R); the pill below keeps its own
+    // anchor (pillAnchorY), so moving the name does not move the button. Web unchanged.
+    const pillAnchorY = dockY + heroR * 1.98;
+    const heroNameY = (LAND && !isWeb()) ? shipStageY + heroR * 2.05 : pillAnchorY;
     ctx.fillText(SKINS[activeSkin].name, shipStageX, heroNameY);
     ctx.shadowBlur  = 0;
 
@@ -2996,7 +3171,7 @@ function drawTitleScreen() {
             // ring. Park it just above the ring instead, clear of the circle.
             linkY = shipStageY - heroR * 1.7 - pillH / 2 - FS * 0.014;
         } else if (LAND) {
-            linkY = heroNameY + FS * 0.026 + pillH / 2 - fsz / 2;
+            linkY = pillAnchorY + FS * 0.026 + pillH / 2 - fsz / 2;
         } else {
             linkY = heroNameY + FS * 0.030 + pillH / 2 - fsz / 2;
         }
@@ -3105,8 +3280,7 @@ function drawTitleScreen() {
     // Opened from the rail's Missions icon. Same 3-column progress/label/
     // reward rows the old always-visible list used, just inside a panel now.
     if (showMissions) {
-        ctx.fillStyle = 'rgba(0,0,12,0.88)';
-        ctx.fillRect(0, 0, W, H);
+        drawMenuBackdrop();
 
         // Rewarded-ad shard bonus row: only where the ads bridge exists (iOS/Android).
         // The open web build has no ad SDK, so drop the row and the divider entirely.
@@ -3156,11 +3330,7 @@ function drawTitleScreen() {
         const panX = W / 2 - panW / 2, panY = H / 2 - panH / 2;
         _missionsPanelRect = { x: panX, y: panY, w: panW, h: panH };
 
-        ctx.fillStyle = 'rgba(7,10,28,0.97)';
-        ctx.beginPath(); ctx.roundRect(panX, panY, panW, panH, 12); ctx.fill();
-        ctx.strokeStyle = 'rgba(65,88,155,0.55)';
-        ctx.lineWidth   = 1;
-        ctx.stroke();
+        drawMenuPanel(panX, panY, panW, panH, 12);
 
         ctx.textAlign   = 'center';
         ctx.font        = `bold ${FS * 0.030}px 'Courier New',monospace`;
@@ -3245,8 +3415,7 @@ function drawTitleScreen() {
     // its own full-bleed screen with room to breathe instead of squeezed
     // between a stat block and a perk-text gap (Cockpit-Kritik observation 4).
     if (showShipPicker) {
-        ctx.fillStyle = 'rgba(0,0,12,0.88)';
-        ctx.fillRect(0, 0, W, H);
+        drawMenuBackdrop();
 
         // Same dark rounded card every other submenu (Missions/Shop/Settings/
         // currency info) uses -- this one used to be a bare full-bleed dim with
@@ -3256,13 +3425,7 @@ function drawTitleScreen() {
         // shows around it like every other panel.
         const shipPanW = W * 0.70, shipPanH = H * 0.88;
         const shipPanX = W * 0.15, shipPanY = H / 2 - shipPanH / 2;
-        ctx.fillStyle = 'rgba(7,10,28,0.97)';
-        ctx.beginPath();
-        ctx.roundRect(shipPanX, shipPanY, shipPanW, shipPanH, 14);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(65,88,155,0.55)';
-        ctx.lineWidth   = 1;
-        ctx.stroke();
+        drawMenuPanel(shipPanX, shipPanY, shipPanW, shipPanH, 14);
 
         ctx.textAlign   = 'center';
         ctx.font        = `bold ${FS * 0.032}px 'Courier New',monospace`;
@@ -3486,8 +3649,7 @@ function drawTitleScreen() {
     // than fixed fractions of panH, so it never overlaps as content grows
     // (the old fixed-percentage layout broke once a 5th language was added).
     if (showSettings) {
-        ctx.fillStyle = 'rgba(0,0,12,0.88)';
-        ctx.fillRect(0, 0, W, H);
+        drawMenuBackdrop();
 
         const panW = Math.min(W * 0.56, 340);
         // Shared horizontal span for every row in the panel -- the audio row, the
@@ -3568,13 +3730,7 @@ function drawTitleScreen() {
         const panY = Math.max(H * 0.02, Math.min(H * 0.98 - panH, H / 2 - panH / 2));
         _settingsPanelRect = { x: panX, y: panY, w: panW, h: panH };
 
-        ctx.fillStyle = 'rgba(7,10,28,0.97)';
-        ctx.beginPath();
-        ctx.roundRect(panX, panY, panW, panH, 12);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(65,88,155,0.55)';
-        ctx.lineWidth   = 1;
-        ctx.stroke();
+        drawMenuPanel(panX, panY, panW, panH, 12);
 
         ctx.textAlign    = 'center';
         ctx.textBaseline = 'middle';
@@ -3738,8 +3894,7 @@ function drawTitleScreen() {
     // never touch. Same nominal-height-then-scale-down pattern as the settings panel,
     // just for the IAP section instead of the whole settings stack.
     if (showShop) {
-        ctx.fillStyle = 'rgba(0,0,12,0.88)';
-        ctx.fillRect(0, 0, W, H);
+        drawMenuBackdrop();
 
         const panW = Math.min(W * 0.56, 340);
         const hasIAP = !!window.webkit?.messageHandlers?.iap;
@@ -3782,13 +3937,7 @@ function drawTitleScreen() {
         const panY = Math.max(H * 0.02, Math.min(H * 0.98 - panH, H / 2 - panH / 2));
         _shopPanelRect = { x: panX, y: panY, w: panW, h: panH };
 
-        ctx.fillStyle = 'rgba(7,10,28,0.97)';
-        ctx.beginPath();
-        ctx.roundRect(panX, panY, panW, panH, 12);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(65,88,155,0.55)';
-        ctx.lineWidth   = 1;
-        ctx.stroke();
+        drawMenuPanel(panX, panY, panW, panH, 12);
 
         ctx.textAlign    = 'center';
         ctx.textBaseline = 'middle';
@@ -3910,8 +4059,7 @@ function drawTitleScreen() {
     // to close, same as Shop/Settings) rather than a forced hint -- see CLAUDE.md
     // Onboarding for why an unprompted hint was rejected here before.
     if (showCurrencyInfo) {
-        ctx.fillStyle = 'rgba(0,0,12,0.88)';
-        ctx.fillRect(0, 0, W, H);
+        drawMenuBackdrop();
 
         const panW = Math.min(W * 0.72, 460);
         // Bullet colour matches each item's own in-game colour (gold wallet, pale
@@ -3994,11 +4142,7 @@ function drawTitleScreen() {
         const panX = W / 2 - panW / 2, panY = H / 2 - panH / 2;
         _currencyInfoPanelRect = { x: panX, y: panY, w: panW, h: panH };
 
-        ctx.fillStyle = 'rgba(12,14,30,0.95)';
-        ctx.beginPath(); ctx.roundRect(panX, panY, panW, panH, 14); ctx.fill();
-        ctx.strokeStyle = 'rgba(120,140,200,0.35)';
-        ctx.lineWidth   = 1.5;
-        ctx.beginPath(); ctx.roundRect(panX, panY, panW, panH, 14); ctx.stroke();
+        drawMenuPanel(panX, panY, panW, panH, 14);
 
         ctx.textAlign   = 'center';
         ctx.font        = `bold ${titleH}px 'Courier New',monospace`;
@@ -4055,8 +4199,7 @@ function drawTitleScreen() {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        ctx.fillStyle = `rgba(0,0,12,${a * 0.78})`;
-        ctx.fillRect(0, 0, W, H);
+        drawMenuBackdrop(a);
 
         const cpW = Math.min(W * 0.64, 360);
         const cpX = W / 2 - cpW / 2;
@@ -4089,10 +4232,7 @@ function drawTitleScreen() {
                     + btnH + gap * 0.7 + btnH + padV;
         const cpY = Math.max(H * 0.06, H / 2 - cpH / 2);
 
-        ctx.fillStyle = 'rgba(7,10,28,0.98)';
-        ctx.beginPath(); ctx.roundRect(cpX, cpY, cpW, cpH, 12); ctx.fill();
-        ctx.strokeStyle = 'rgba(65,88,155,0.55)';
-        ctx.lineWidth = 1; ctx.stroke();
+        drawMenuPanel(cpX, cpY, cpW, cpH, 12);
 
         let cy = cpY + padV + titleFs * 0.7;
         let cardTitleFs = titleFs;
@@ -4744,6 +4884,7 @@ function drawDeathFreeze() {
 }
 
 function draw() {
+    _menuBlurSlot = 0;
     drawWorld();
     drawHUD();
     if (phase === 'title') drawTitleScreen();
