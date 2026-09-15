@@ -1113,14 +1113,15 @@ function commitDeath() {
     localStorage.setItem('tunnel_skin_xp', JSON.stringify(skinXP));
     // Achievements: "Ace Pilot" fires the run a ship first reaches max mastery; "Master
     // of the Fleet" fires the run that maxing THIS ship happens to complete the set
-    // across every ship currently owned (checked here rather than only at unlock time,
-    // since owning all 8 and mastering the last one can happen in either order).
+    // across ALL 8 ships in the roster (not just the ones currently owned - the name
+    // promises the whole fleet, and a player who owns only a few maxed ships is not
+    // "master of the fleet"). Checked here rather than only at unlock time, since
+    // owning all 8 and mastering the last one can happen in either order.
     if (skinMasteryUpIdx >= 0 && masteryLevel(skinMasteryUpIdx) === MASTERY_XP_THRESHOLDS.length - 1) {
         window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: 'tunl_ach_ace_pilot' });
         let _allMastered = true;
         for (let i = 0; i < SKINS.length; i++) {
-            if (!(unlockedSkins & (1 << i))) continue;
-            if (masteryLevel(i) < MASTERY_XP_THRESHOLDS.length - 1) { _allMastered = false; break; }
+            if (!(unlockedSkins & (1 << i)) || masteryLevel(i) < MASTERY_XP_THRESHOLDS.length - 1) { _allMastered = false; break; }
         }
         if (_allMastered) window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: 'tunl_ach_master_fleet' });
     }

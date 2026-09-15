@@ -3,8 +3,23 @@
 
     <!-- Play Console -> Play Games Services -> Setup -> Configuration -> App ID -->
     <string name="game_services_project_id" translatable="false">56432371324</string>
-    <!-- Play Console -> Play Games Services -> Leaderboards -> "TUNL High Score" -> Leaderboard ID -->
-    <string name="leaderboard_id" translatable="false">CgkI_MyGndIBEAIQAQ</string>
+    <!-- Play Console -> Play Games Services -> Leaderboards -> "TUNL High Score (New)" -> Leaderboard ID.
+         This is the v3 all-time reset (2026-09-15, mirrors iOS's tunl_highscore_alltime_v3 cutover -
+         see GameView.swift's Coordinator.allTimeLeaderboardID doc comment): the 12.0 rebalance made
+         old scores incomparable to the new difficulty curve, so a fresh Play Games leaderboard
+         resource was created rather than reusing the old one. Play has no separate all-time-only
+         resource to swap the way iOS does - Daily/Weekly/All-time are time-span views over one score
+         stream - so a genuine reset needs a brand new leaderboard resource, not an edit of the old
+         one. The new resource is named "TUNL High Score (New)" rather than the canonical "TUNL High
+         Score" ONLY because Play rejects a duplicate name (checked per locale) while the old
+         CgkI_MyGndIBEAIQAQ resource still exists - rename it to drop "(New)" (all 15 locales, see
+         project_leaderboard_v3_reset_2026-09-15 memory for the exact per-locale strings) once the old
+         one is gone. Old resource CgkI_MyGndIBEAIQAQ is NOT deleted and deliberately left orphaned:
+         Play Console's own publish-confirmation dialog states achievements/events/leaderboards
+         "can't be deleted" once published, and the old board has been live since the v1->v2 cutover -
+         so there is likely no delete path at all once a resource is published, unlike the plan this
+         comment's history assumed. Leave it in the console unreferenced; only this string matters. -->
+    <string name="leaderboard_id" translatable="false">CgkI_MyGndIBEAIQKg</string>
 
     <!-- Play Console -> Play Games Services -> Achievements -> each achievement's own Achievement
          ID (server-generated on creation, unlike iOS's self-chosen tunl_ach_* identifiers - see

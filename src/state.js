@@ -492,14 +492,13 @@ window._tunlBackfillAchievements = function backfillAchievements() {
     if (best >= 100000) report('tunl_ach_score_100000');
     if (streak >= 7)  report('tunl_ach_streak_7');
     if (streak >= 30) report('tunl_ach_streak_30');
-    let _anyMaxed = false, _allOwnedMaxed = true, _hasOwned = false;
+    let _anyMaxed = false, _allFleetMaxed = true;
     for (let i = 0; i < SKINS.length; i++) {
-        if (!(unlockedSkins & (1 << i))) continue;
-        _hasOwned = true;
-        if (masteryLevel(i) === MASTERY_XP_THRESHOLDS.length - 1) _anyMaxed = true;
-        else _allOwnedMaxed = false;
+        const _owned = !!(unlockedSkins & (1 << i));
+        if (_owned && masteryLevel(i) === MASTERY_XP_THRESHOLDS.length - 1) _anyMaxed = true;
+        if (!_owned || masteryLevel(i) < MASTERY_XP_THRESHOLDS.length - 1) _allFleetMaxed = false;
     }
     if (_anyMaxed) report('tunl_ach_ace_pilot');
-    if (_hasOwned && _allOwnedMaxed) report('tunl_ach_master_fleet');
+    if (_allFleetMaxed) report('tunl_ach_master_fleet');
 };
 window._tunlBackfillAchievements();

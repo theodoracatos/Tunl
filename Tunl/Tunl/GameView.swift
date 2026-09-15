@@ -123,13 +123,16 @@ struct GameView: UIViewRepresentable {
     class Coordinator: NSObject, WKScriptMessageHandler, WKUIDelegate, WKNavigationDelegate, GKGameCenterControllerDelegate, GKLocalPlayerListener {
 
         static let leaderboardID = "tunl_highscore"
-        // v2: cut over in 9.0 to retire the original tunl_highscore_alltime board, whose
-        // top score was set on a pre-rebalance build significantly easier than the
-        // current difficulty curve - see the corresponding App Store Connect leaderboard
-        // (must be created there before this ships; the old ID stays registered but is
-        // no longer submitted to). Don't cut a v3 lightly - each cut wipes everyone's
-        // legitimately-earned all-time scores, not just the stale one.
-        static let allTimeLeaderboardID = "tunl_highscore_alltime_v2"
+        // v3: cut over in 12.2 to retire the tunl_highscore_alltime_v2 board. v2's own
+        // top scores were set before the entire 12.0 rebalance (safe opening flight,
+        // sector-based flight plan, hull scratches, corridor/coin retuning) - the same
+        // "pre-rebalance, now-too-easy" situation that justified the v1->v2 cut, this
+        // time from a much bigger jump than v1->v2 was. The v3 board (same Classic/Best
+        // Score/Descending config, all 15 locales, current ship-icon art) was created in
+        // App Store Connect before this shipped; v2 stays registered but is no longer
+        // submitted to. Don't cut a v4 lightly - each cut wipes everyone's legitimately-
+        // earned all-time scores, not just the stale one.
+        static let allTimeLeaderboardID = "tunl_highscore_alltime_v3"
 
         weak var webView: WKWebView?
         let iap = IAPManager()
