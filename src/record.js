@@ -174,9 +174,12 @@ function _recShowPanel(blob, type) {
         _recDownload.href = _recUrl;
         _recDownload.download = _recFileBase + '.' + ext;
     }
+    // Mirrors share.js's shareAvailable(): show SHARE whenever ANY sharing path
+    // exists, not only whenever the video file specifically is shareable - see
+    // _recShare()'s fallback chain below, which always has somewhere to land.
     if (_recShareBtn) {
-        _recShareBtn.hidden = !(navigator.share && navigator.canShare
-            && navigator.canShare({ files: [new File([], 'x.' + ext, { type })] }));
+        _recShareBtn.hidden = !(navigator.share
+            || (navigator.clipboard && navigator.clipboard.writeText));
     }
     if (_recPanel) { _recPanel.classList.add('show'); _recPanel.setAttribute('aria-hidden', 'false'); }
 }
@@ -186,15 +189,55 @@ function _recHidePanel() {
     if (_recVideo) { _recVideo.pause(); _recVideo.removeAttribute('src'); _recVideo.load(); }
     if (_recUrl) { URL.revokeObjectURL(_recUrl); _recUrl = null; }
     _recBlob = null;
+    _recShareFlashT = 0;
 }
 
+// Never lets SHARE silently do nothing - same layered fallback share.js's
+// shareRun() already relies on, just with the video file as the preferred
+// payload instead of the score-card PNG: try sharing the file(+text), and if
+// the browser/OS rejects the FILE specifically for any reason (unsupported
+// type, an OS-level size cap, a flaky share-sheet integration - all silent
+// rejections in the wild, never a console error to go on), fall back to the
+// text-only share the death-screen SHARE button already sends successfully,
+// then finally to copying the link like that button's own desktop fallback.
+// A user simply closing the share sheet (AbortError) is not a failure and
+// gets no fallback - only a real rejection or thrown error does.
+let _recShareFlashT = 0;
+function _recCopyLinkFallback() {
+    if (!(navigator.clipboard && navigator.clipboard.writeText)) return;
+    const url = typeof shareRunUrl === 'function' ? shareRunUrl() : location.href;
+    navigator.clipboard.writeText(url).then(() => { _recShareFlashT = 1.8; }).catch(() => {});
+}
 function _recShare() {
-    if (!_recBlob || !navigator.share) return;
+    if (!_recBlob) { _recCopyLinkFallback(); return; }
     const ext = _recFileType.indexOf('mp4') >= 0 ? 'mp4' : 'webm';
-    const file = new File([_recBlob], _recFileBase + '.' + ext, { type: _recFileType });
-    if (navigator.canShare && !navigator.canShare({ files: [file] })) return;
     const text = typeof shareRunText === 'function' ? shareRunText() : 'TUNL';
-    navigator.share({ files: [file], text }).catch(() => {});
+
+    if (!navigator.share) { _recCopyLinkFallback(); return; }
+
+    let file = null;
+    try { file = new File([_recBlob], _recFileBase + '.' + ext, { type: _recFileType }); }
+    catch (e) { file = null; }
+    let canFile = false;
+    if (file && navigator.canShare) {
+        try { canFile = navigator.canShare({ files: [file], text }); } catch (e) { canFile = false; }
+    }
+
+    const send = (payload, isFileAttempt) => {
+        let p;
+        try { p = navigator.share(payload); } catch (e) { p = Promise.reject(e); }
+        // A successful navigator.share() already shows its own OS-level confirmation
+        // (the share sheet's own "Sent"/checkmark) - no flash needed here, same as
+        // shareRun() only flashes _shareCopiedT on the clipboard fallback, never after
+        // a real share() resolves.
+        p.catch(err => {
+            if (err && err.name === 'AbortError') return; // the user closed the sheet - not a failure
+            console.warn('[record] navigator.share rejected' + (isFileAttempt ? ' the video file, retrying text-only' : ', falling back to clipboard') + ':', err);
+            if (isFileAttempt) send({ text }, false);
+            else _recCopyLinkFallback();
+        });
+    };
+    send(canFile ? { files: [file], text } : { text }, canFile);
 }
 
 // ── DOM wiring ───────────────────────────────────────────────────────
@@ -230,9 +273,10 @@ function _recSyncBtn() {
 
 // Called from main.js's loop, same pattern as _syncWebCta: hides the button behind
 // a full-screen menu panel (it would otherwise float on top of the Missions/Shop/
-// Settings/Ship-picker/currency-info overlays) and keeps its label current when the
-// player switches language mid-session.
-function _recTick() {
+// Settings/Ship-picker/currency-info overlays), keeps its label current when the
+// player switches language mid-session, and decays the "link copied" flash the
+// same way state.js's _shareCopiedT does for the death-screen SHARE button.
+function _recTick(dt) {
     if (!_recBtn) return;
     const panelOpen = showShop || showShipPicker || showSettings || showMissions || showCurrencyInfo;
     const show = !panelOpen;
@@ -245,6 +289,11 @@ function _recTick() {
         _recLangShown = T.rec;
         if (_recBtnLbl) _recBtnLbl.textContent = T.rec;
         if (_recDownloadLbl) _recDownloadLbl.textContent = T.download;
-        if (_recShareLbl) _recShareLbl.textContent = T.share;
+        if (!_recShareFlashT && _recShareLbl) _recShareLbl.textContent = T.share;
+    }
+    if (_recShareFlashT > 0) {
+        _recShareFlashT -= (dt || 0);
+        if (_recShareLbl) _recShareLbl.textContent = (typeof T !== 'undefined' && T.linkCopied) || 'LINK COPIED';
+        if (_recShareFlashT <= 0) { _recShareFlashT = 0; if (_recShareLbl && typeof T !== 'undefined') _recShareLbl.textContent = T.share; }
     }
 }
