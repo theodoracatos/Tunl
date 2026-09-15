@@ -287,13 +287,16 @@ function onCancel(e) {
 }
 
 // The web build overlays real DOM on the canvas: the install-CTA pill (#cta,
-// links to the store listings) and the portrait gate (#rot). A pointer event
-// that starts inside either must be left entirely to the browser - calling
-// e.preventDefault() here swallows the CTA link tap, and routing it into
-// onDown/onUp starts a run behind the overlay. In the app builds neither
-// element exists, so this is always false there and nothing changes.
+// links to the store listings), the portrait gate (#rot), and the run-recording
+// button/review panel (#rec-btn, #rec-panel - src/record.js). A pointer event
+// that starts inside any of them must be left entirely to the browser - calling
+// e.preventDefault() here swallows the tap (a link, or a button's own click
+// listener - preventDefault() on pointerdown suppresses the compatibility click
+// event a real touch/mouse tap would otherwise dispatch), and routing it into
+// onDown/onUp starts a run behind the overlay. In the app builds none of these
+// elements exist, so this is always false there and nothing changes.
 function _fromWebOverlay(e) {
-    return !!(e && e.target && e.target.closest && e.target.closest('#cta,#rot'));
+    return !!(e && e.target && e.target.closest && e.target.closest('#cta,#rot,#rec-btn,#rec-panel'));
 }
 
 window.addEventListener('pointerdown',   e => { if (_fromWebOverlay(e)) return; e.preventDefault(); onDown(e); });

@@ -150,19 +150,33 @@ function _recFinish() {
 
 // ── Panel ─────────────────────────────────────────────────────────────
 
+// tunl-<day>-<world/level>-<score>pts.<ext>, e.g. tunl-20260915-w627-342pts.mp4 -
+// a bare "tunl-run.mp4" gave no way to tell two downloaded clips apart later.
+// _tunlActiveDayInt/LEVEL_NUM/score are whatever the game's own state held at the
+// moment recording stopped (mid-run if stopped early, the final run otherwise).
+let _recFileBase = 'tunl-run';
+function _recComputeFileBase() {
+    const day = typeof _tunlActiveDayInt === 'function' ? _tunlActiveDayInt() : 0;
+    const lvl = typeof LEVEL_NUM !== 'undefined' ? LEVEL_NUM : 0;
+    const s = typeof score === 'number' ? Math.max(0, score | 0) : 0;
+    return `tunl-${day || 'run'}-w${lvl}-${s}pts`;
+}
+
 function _recShowPanel(blob, type) {
     if (_recUrl) URL.revokeObjectURL(_recUrl);
     _recBlob = blob;
     _recFileType = type;
+    _recFileBase = _recComputeFileBase();
+    const ext = type.indexOf('mp4') >= 0 ? 'mp4' : 'webm';
     _recUrl = URL.createObjectURL(blob);
     if (_recVideo) _recVideo.src = _recUrl;
     if (_recDownload) {
         _recDownload.href = _recUrl;
-        _recDownload.download = 'tunl-run.' + (type.indexOf('mp4') >= 0 ? 'mp4' : 'webm');
+        _recDownload.download = _recFileBase + '.' + ext;
     }
     if (_recShareBtn) {
         _recShareBtn.hidden = !(navigator.share && navigator.canShare
-            && navigator.canShare({ files: [new File([], 'x.' + (type.indexOf('mp4') >= 0 ? 'mp4' : 'webm'), { type })] }));
+            && navigator.canShare({ files: [new File([], 'x.' + ext, { type })] }));
     }
     if (_recPanel) { _recPanel.classList.add('show'); _recPanel.setAttribute('aria-hidden', 'false'); }
 }
@@ -177,7 +191,7 @@ function _recHidePanel() {
 function _recShare() {
     if (!_recBlob || !navigator.share) return;
     const ext = _recFileType.indexOf('mp4') >= 0 ? 'mp4' : 'webm';
-    const file = new File([_recBlob], 'tunl-run.' + ext, { type: _recFileType });
+    const file = new File([_recBlob], _recFileBase + '.' + ext, { type: _recFileType });
     if (navigator.canShare && !navigator.canShare({ files: [file] })) return;
     const text = typeof shareRunText === 'function' ? shareRunText() : 'TUNL';
     navigator.share({ files: [file], text }).catch(() => {});
