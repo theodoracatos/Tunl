@@ -2,6 +2,12 @@
 // ── Audio ─────────────────────────────────────────────────────────────
 
 let _ac = null, _tVoice = null;
+// Every sfx/bgm node in this file connects to _master (created in _initAC) instead of
+// straight to _ac.destination -- one bus in front of the real output, so record.js can
+// tap it into a MediaStreamAudioDestinationNode (audioRecordStream below) without a
+// second synthesis path. Purely a pass-through node: connecting a second destination
+// off it never mutes or alters the speakers.
+let _master = null;
 let _fNode = null, _fGain = null;
 let _mNode = null, _mGain = null, _mOsc = null;
 let _wNode = null, _wGain = null, _wOsc = null;
@@ -15,14 +21,16 @@ let _titleBgmBuf = null, _titleBgmNode = null, _titleBgmGain = null;
 let _titleBgmActive = false, _titleBgmPending = false;
 
 // Music bed gains, one per track, calibrated so each track sits where the SFX mix was
-// tuned against: the pre-2026-09-14 the_mountain.mp3 (-6.7 LUFS) at gain 0.10. The
-// replacement tracks are mastered far quieter (in-game -15.9 LUFS, i.e. -9.2 dB; title
-// -15.9 vs -15.5 LUFS) and left at 0.10 they sank under every one-shot. Measured with
-// ffmpeg ebur128 on the .mp3 and the .web.m4a encodes alike. If a track is replaced
-// again, re-measure and rescale here: gain = 0.10 * 10^((-6.7 - newLUFS) / 20) for the
-// in-game track. Output peaks stay near -16 dBFS, no clipping risk on the bare bus.
-const BGM_GAIN       = 0.288;
-const TITLE_BGM_GAIN = 0.105;
+// tuned against: the_mountain.mp3 (-6.3 LUFS) at gain 0.10. Both tracks are a single
+// 192kbps stereo encode straight from the 256kbps sources (2026-09-15): the earlier
+// copies were -16 LUFS normalised and transcoded 128kbps twice over, which audibly lost
+// quality. Always encode once from the source, never loudness-normalise the files - set
+// the level here instead. Title track
+// (the_mountain-piano, -10.6 LUFS) sits 4.4 dB under the old -15.0 title bed's mix
+// position once scaled. If a track is replaced, re-measure with ffmpeg ebur128 and
+// rescale: gain = 0.10 * 10^((-6.3 - newLUFS) / 20) for the in-game track.
+const BGM_GAIN       = 0.10;
+const TITLE_BGM_GAIN = 0.058;
 
 function _startBgMusic() {
     if (!musicOn) return;
@@ -43,7 +51,7 @@ function _startBgMusic() {
 function _playBgmBuffer() {
     if (!_ac || !_bgmBuf || !_bgmActive) return;
     _bgmGain = _bgmGain || (() => {
-        const g = _ac.createGain(); g.gain.value = BGM_GAIN; g.connect(_ac.destination); return g;
+        const g = _ac.createGain(); g.gain.value = BGM_GAIN; g.connect(_master); return g;
     })();
     _bgmNode = _ac.createBufferSource();
     _bgmNode.buffer = _bgmBuf;
@@ -143,7 +151,7 @@ function _startTitleMusic() {
 function _playTitleBgmBuffer() {
     if (!_ac || !_titleBgmBuf || !_titleBgmActive) return;
     _titleBgmGain = _titleBgmGain || (() => {
-        const g = _ac.createGain(); g.gain.value = TITLE_BGM_GAIN; g.connect(_ac.destination); return g;
+        const g = _ac.createGain(); g.gain.value = TITLE_BGM_GAIN; g.connect(_master); return g;
     })();
     _titleBgmNode = _ac.createBufferSource();
     _titleBgmNode.buffer = _titleBgmBuf;
@@ -171,6 +179,8 @@ function _initAC() {
     // not just resume a merely-suspended one (see _reviveAudioContext below).
     if (_ac) { _reviveAudioContext(); return; }
     _ac = new (window.AudioContext || window.webkitAudioContext)();
+    _master = _ac.createGain();
+    _master.connect(_ac.destination);
     // WebKit sometimes creates the context in 'suspended' state even inside a
     // user gesture - resume it explicitly now, still within the gesture.
     if (_ac.state === 'suspended') _ac.resume();
@@ -195,8 +205,8 @@ function _initAC() {
 // the context down resolves into nothing instead of installing a buffer built on a dead
 // context -- _reviveAudioContext re-kicks the loaders itself via _initAC above.
 
-// The open web build (isWeb()) pulls a smaller mono AAC encode of each track to
-// roughly halve link-open weight; build-play.mjs copies the .web.m4a files into
+// The open web build (isWeb()) pulls a stereo 128kbps AAC encode of each track
+// (~1/3 lighter than the mp3; the earlier mono ~66kbps encode sounded thin); build-play.mjs copies the .web.m4a files into
 // play/. AAC decodes everywhere decodeAudioData is supported, so there's no
 // fallback path. The app builds keep the full stereo mp3 - gradle's copyGameFiles
 // and the Xcode resource refs list only the .mp3s, so the .m4a is never bundled.
@@ -264,10 +274,15 @@ function _loadTitleBgmBuffer() {
 // active once the fresh context + buffers are ready.
 function _reviveAudioContext() {
     if (!_ac || _ac.state === 'running') return;
+    // A live recording tap (record.js) is a node on the context about to be torn down --
+    // there's no such thing as reconnecting a MediaRecorder's stream to a different
+    // AudioContext's output mid-recording, so finalize whatever was captured instead of
+    // leaving the file to go silent from here on.
+    if (typeof _recOnAudioContextLost === 'function') _recOnAudioContextLost();
     try { _ac.close(); } catch(e){}
     _bgmPending = _bgmActive;
     _titleBgmPending = _titleBgmActive;
-    _ac = null; _bgmBuf = null; _bgmNode = null; _bgmGain = null;
+    _ac = null; _master = null; _bgmBuf = null; _bgmNode = null; _bgmGain = null;
     _titleBgmBuf = null; _titleBgmNode = null; _titleBgmGain = null;
     // Any decode still in flight belongs to the context just closed and will drop itself
     // on the _ac !== ctx check; clear the guards so the fresh context can load again.
@@ -283,6 +298,26 @@ function _reviveAudioContext() {
 // revive logic so whichever fires first wins.
 document.addEventListener('visibilitychange', () => { if (!document.hidden) _reviveAudioContext(); });
 window._tunlResumeAudio = _reviveAudioContext;
+
+// ── Recording tap (web only, record.js) ─────────────────────────────────
+// A MediaStreamAudioDestinationNode fed from _master, in parallel with the real
+// _ac.destination output -- record.js merges its stream's audio track with a
+// canvas.captureStream() video track so a recorded run has actual game audio,
+// not a second guess at what the mix sounds like. Connecting a second
+// destination off _master never touches what the player hears.
+let _recNode = null;
+function audioRecordStream() {
+    if (!_ac || !_master) return null;
+    if (!_recNode) {
+        _recNode = _ac.createMediaStreamDestination();
+        _master.connect(_recNode);
+    }
+    return _recNode.stream;
+}
+function audioRecordStop() {
+    if (_recNode && _master) { try { _master.disconnect(_recNode); } catch (e) {} }
+    _recNode = null;
+}
 
 // Called from native (see AdsManager.swift) around interstitial ad presentation
 // so bgm/sfx don't play under the ad's own audio.
@@ -323,7 +358,7 @@ function sfxCoin(combo) {
     const mul   = Math.pow(2, semis / 12);
     [600 * mul, 900 * mul].forEach((freq, i) => {
         const o = _ac.createOscillator(), g = _ac.createGain();
-        o.connect(g); g.connect(_ac.destination);
+        o.connect(g); g.connect(_master);
         o.type = 'sine'; o.frequency.value = freq;
         const t0 = t + i * 0.10;
         g.gain.setValueAtTime(0.14, t0);
@@ -350,7 +385,7 @@ function sfxEngineSpoolUp() {
     g.gain.linearRampToValueAtTime(0.30, t + 0.12);
     g.gain.linearRampToValueAtTime(0.40, t + dur * 0.9);
     g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-    src.connect(flt); flt.connect(g); g.connect(_ac.destination);
+    src.connect(flt); flt.connect(g); g.connect(_master);
     src.start(t); src.stop(t + dur + 0.05);
     // Mid roar color - broad, low-centered bandpass for engine "growl" texture
     const src2 = _ac.createBufferSource();
@@ -361,7 +396,7 @@ function sfxEngineSpoolUp() {
     g2.gain.setValueAtTime(0.001, t);
     g2.gain.linearRampToValueAtTime(0.14, t + 0.15);
     g2.gain.exponentialRampToValueAtTime(0.001, t + dur);
-    src2.connect(flt2); flt2.connect(g2); g2.connect(_ac.destination);
+    src2.connect(flt2); flt2.connect(g2); g2.connect(_master);
     src2.start(t); src2.stop(t + dur + 0.05);
 }
 
@@ -383,7 +418,7 @@ function sfxDie() {
     g.gain.exponentialRampToValueAtTime(0.40, t + 0.13);
     g.gain.linearRampToValueAtTime(0.30, t + dur - 0.12);
     g.gain.linearRampToValueAtTime(0.001, t + dur);
-    src.connect(flt); flt.connect(g); g.connect(_ac.destination);
+    src.connect(flt); flt.connect(g); g.connect(_master);
     src.start(t); src.stop(t + dur + 0.05);
     // Mid roar color - reversed gain envelope of the spool-up's growl layer
     const src2 = _ac.createBufferSource();
@@ -394,7 +429,7 @@ function sfxDie() {
     g2.gain.setValueAtTime(0.001, t);
     g2.gain.exponentialRampToValueAtTime(0.14, t + dur - 0.15);
     g2.gain.linearRampToValueAtTime(0.001, t + dur);
-    src2.connect(flt2); flt2.connect(g2); g2.connect(_ac.destination);
+    src2.connect(flt2); flt2.connect(g2); g2.connect(_master);
     src2.start(t); src2.stop(t + dur + 0.05);
     // Impact crash near the end - low thump only. Used to also layer a sharp
     // highpass "crack" here, but that's the same short highpass-noise-burst
@@ -410,7 +445,7 @@ function sfxDie() {
     const crashGain = _ac.createGain();
     crashGain.gain.setValueAtTime(0.32, tImpact);
     crashGain.gain.exponentialRampToValueAtTime(0.001, tImpact + 0.26);
-    crash.connect(crashFlt); crashFlt.connect(crashGain); crashGain.connect(_ac.destination);
+    crash.connect(crashFlt); crashFlt.connect(crashGain); crashGain.connect(_master);
     crash.start(tImpact); crash.stop(tImpact + 0.28);
 }
 
@@ -419,7 +454,7 @@ function sfxSlow() {
     const t = _ac.currentTime;
     [480, 360, 270].forEach((freq, i) => {
         const o = _ac.createOscillator(), g = _ac.createGain();
-        o.connect(g); g.connect(_ac.destination);
+        o.connect(g); g.connect(_master);
         o.type = 'sine';
         const t0 = t + i * 0.09;
         o.frequency.setValueAtTime(freq, t0);
@@ -439,7 +474,7 @@ function sfxShield() {
     const t = _ac.currentTime;
     [500, 750, 1000, 1300].forEach((freq, i) => {
         const o = _ac.createOscillator(), g = _ac.createGain();
-        o.connect(g); g.connect(_ac.destination);
+        o.connect(g); g.connect(_master);
         o.type = 'triangle'; o.frequency.value = freq;
         const t0 = t + i * 0.07;
         g.gain.setValueAtTime(0.15, t0);
@@ -447,7 +482,7 @@ function sfxShield() {
         o.start(t0); o.stop(t0 + 0.25);
     });
     const lo = _ac.createOscillator(), lg = _ac.createGain();
-    lo.connect(lg); lg.connect(_ac.destination);
+    lo.connect(lg); lg.connect(_master);
     lo.type = 'sine'; lo.frequency.value = 165;
     lg.gain.setValueAtTime(0.10, t);
     lg.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
@@ -459,7 +494,7 @@ function sfxMagnet() {
     const t = _ac.currentTime;
     [220, 330, 500, 750].forEach((freq, i) => {
         const o = _ac.createOscillator(), g = _ac.createGain();
-        o.connect(g); g.connect(_ac.destination);
+        o.connect(g); g.connect(_master);
         o.type = 'sine';
         const t0 = t + i * 0.07;
         o.frequency.setValueAtTime(freq, t0);
@@ -477,7 +512,7 @@ function sfxPoison() {
     // sine chime, so it reads as a "bad" pickup even before the player sees the notif.
     [400, 340].forEach((freq, i) => {
         const o = _ac.createOscillator(), g = _ac.createGain();
-        o.connect(g); g.connect(_ac.destination);
+        o.connect(g); g.connect(_master);
         o.type = 'sawtooth';
         const t0 = t + i * 0.09;
         o.frequency.setValueAtTime(freq, t0);
@@ -498,7 +533,7 @@ function sfxPoison() {
     const sqG = _ac.createGain();
     sqG.gain.setValueAtTime(0.26, t + 0.02);
     sqG.gain.exponentialRampToValueAtTime(0.001, t + 0.34);
-    sq.connect(sqFlt); sqFlt.connect(sqG); sqG.connect(_ac.destination);
+    sq.connect(sqFlt); sqFlt.connect(sqG); sqG.connect(_master);
     sq.start(t); sq.stop(t + 0.36);
 }
 
@@ -511,7 +546,7 @@ function sfxDrain() {
     // down-thump.
     [220, 208].forEach((freq, i) => {
         const o = _ac.createOscillator(), g = _ac.createGain();
-        o.connect(g); g.connect(_ac.destination);
+        o.connect(g); g.connect(_master);
         o.type = 'triangle';
         const t0 = t + i * 0.04;
         o.frequency.setValueAtTime(freq, t0);
@@ -531,7 +566,7 @@ function sfxDrain() {
     const ng = _ac.createGain();
     ng.gain.setValueAtTime(0.16, t + 0.02);
     ng.gain.exponentialRampToValueAtTime(0.001, t + 0.44);
-    ns.connect(nf); nf.connect(ng); ng.connect(_ac.destination);
+    ns.connect(nf); nf.connect(ng); ng.connect(_master);
     ns.start(t); ns.stop(t + 0.46);
 }
 
@@ -542,7 +577,7 @@ function sfxBomb() {
     // punchy low boom, so the pickup reads as one "charge then detonate" gesture.
     [500, 750, 1100].forEach((freq, i) => {
         const o = _ac.createOscillator(), g = _ac.createGain();
-        o.connect(g); g.connect(_ac.destination);
+        o.connect(g); g.connect(_master);
         o.type = 'triangle'; o.frequency.value = freq;
         const t0 = t + i * 0.045;
         g.gain.setValueAtTime(0.16, t0);   // P6b: rare, run-defining pickup
@@ -559,7 +594,7 @@ function sfxBomb() {
     const g2 = _ac.createGain();
     g2.gain.setValueAtTime(0.44, tBoom);
     g2.gain.exponentialRampToValueAtTime(0.001, tBoom + 0.44);
-    src.connect(flt); flt.connect(g2); g2.connect(_ac.destination);
+    src.connect(flt); flt.connect(g2); g2.connect(_master);
     src.start(tBoom); src.stop(tBoom + 0.46);
 }
 
@@ -571,7 +606,7 @@ function sfxWarpEnter() {
     const t = _ac.currentTime;
     [340, 460, 620].forEach((freq, i) => {
         const o = _ac.createOscillator(), g = _ac.createGain();
-        o.connect(g); g.connect(_ac.destination);
+        o.connect(g); g.connect(_master);
         o.type = 'sine';
         const t0 = t + i * 0.05;
         o.frequency.setValueAtTime(freq, t0);
@@ -591,7 +626,7 @@ function sfxWarpEnter() {
     g3.gain.setValueAtTime(0.001, t);
     g3.gain.linearRampToValueAtTime(0.24, t + 0.06);
     g3.gain.exponentialRampToValueAtTime(0.001, t + 0.34);
-    src.connect(flt); flt.connect(g3); g3.connect(_ac.destination);
+    src.connect(flt); flt.connect(g3); g3.connect(_master);
     src.start(t); src.stop(t + 0.36);
 }
 
@@ -614,7 +649,7 @@ function sfxCannonFire() {
     const g = _ac.createGain();
     g.gain.setValueAtTime(0.32, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
-    src.connect(flt); flt.connect(g); g.connect(_ac.destination);
+    src.connect(flt); flt.connect(g); g.connect(_master);
     src.start(t); src.stop(t + 0.19);
     // Low thump for artillery weight the old single-layer version lacked.
     const src2 = _ac.createBufferSource();
@@ -624,7 +659,7 @@ function sfxCannonFire() {
     const g2 = _ac.createGain();
     g2.gain.setValueAtTime(0.34, t);
     g2.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
-    src2.connect(flt2); flt2.connect(g2); g2.connect(_ac.destination);
+    src2.connect(flt2); flt2.connect(g2); g2.connect(_master);
     src2.start(t); src2.stop(t + 0.15);
     // Muzzle crack: a hair of bright noise on the attack for punch.
     const src3 = _ac.createBufferSource();
@@ -634,7 +669,7 @@ function sfxCannonFire() {
     const g3 = _ac.createGain();
     g3.gain.setValueAtTime(0.18, t);
     g3.gain.exponentialRampToValueAtTime(0.001, t + 0.02);
-    src3.connect(flt3); flt3.connect(g3); g3.connect(_ac.destination);
+    src3.connect(flt3); flt3.connect(g3); g3.connect(_master);
     src3.start(t); src3.stop(t + 0.02);
 }
 
@@ -648,7 +683,7 @@ function sfxShieldBreak() {
     const g = _ac.createGain();
     g.gain.setValueAtTime(0.40, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
-    src.connect(flt); flt.connect(g); g.connect(_ac.destination);
+    src.connect(flt); flt.connect(g); g.connect(_master);
     src.start(t); src.stop(t + 0.30);
 }
 
@@ -658,7 +693,7 @@ function sfxMilestone(n) {
     const base = n >= 1000 ? 780 : n >= 200 ? 660 : n >= 100 ? 550 : 440;
     [base, base*1.25, base*1.5, base*2].forEach((freq, i) => {
         const o = _ac.createOscillator(), g = _ac.createGain();
-        o.connect(g); g.connect(_ac.destination);
+        o.connect(g); g.connect(_master);
         o.type = 'sine'; o.frequency.value = freq;
         const t0 = t + i * 0.06;
         g.gain.setValueAtTime(0.13, t0);
@@ -678,7 +713,7 @@ function sfxMissionDone() {
     const notes = [523.25, 587.33, 698.46, 783.99, 1046.5]; // C5 D5 F5 G5 C6
     notes.forEach((freq, i) => {
         const o = _ac.createOscillator(), g = _ac.createGain();
-        o.connect(g); g.connect(_ac.destination);
+        o.connect(g); g.connect(_master);
         o.type = 'triangle'; o.frequency.value = freq;
         const t0 = t + i * 0.07;
         const peak = i === notes.length - 1 ? 0.16 : 0.12;
@@ -693,7 +728,7 @@ function sfxNearMiss() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
     const o = _ac.createOscillator(), g = _ac.createGain();
-    o.connect(g); g.connect(_ac.destination);
+    o.connect(g); g.connect(_master);
     o.type = 'sine';
     o.frequency.setValueAtTime(880, t);
     o.frequency.exponentialRampToValueAtTime(1760, t + 0.10);
@@ -706,7 +741,7 @@ function sfxCombo(level) {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
     const o = _ac.createOscillator(), g = _ac.createGain();
-    o.connect(g); g.connect(_ac.destination);
+    o.connect(g); g.connect(_master);
     o.type = 'triangle';
     o.frequency.value = Math.min(600 + level * 120, 1400);
     g.gain.setValueAtTime(0.09, t);
@@ -732,13 +767,13 @@ function sfxOnFire() {
     g.gain.setValueAtTime(0.001, t);
     g.gain.linearRampToValueAtTime(0.42, t + 0.06);
     g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-    src.connect(flt); flt.connect(g); g.connect(_ac.destination);
+    src.connect(flt); flt.connect(g); g.connect(_master);
     src.start(t); src.stop(t + dur + 0.05);
     // Bright ascending ping riding on top so the moment reads as a reward, not a hazard --
     // the noise layer alone sits too close to sfxMineExplode's damage texture.
     [880, 1320].forEach((freq, i) => {
         const o = _ac.createOscillator(), og = _ac.createGain();
-        o.connect(og); og.connect(_ac.destination);
+        o.connect(og); og.connect(_master);
         o.type = 'triangle'; o.frequency.value = freq;
         const t0 = t + 0.08 + i * 0.07;
         og.gain.setValueAtTime(0.16, t0);
@@ -757,7 +792,7 @@ function sfxPbPassed() {
     const t = _ac.currentTime;
     [659.25, 987.77, 1318.5].forEach((freq, i) => { // E5 B5 E6
         const o = _ac.createOscillator(), g = _ac.createGain();
-        o.connect(g); g.connect(_ac.destination);
+        o.connect(g); g.connect(_master);
         o.type = 'triangle'; o.frequency.value = freq;
         const t0 = t + i * 0.06;
         g.gain.setValueAtTime(0.0001, t0);
@@ -767,7 +802,7 @@ function sfxPbPassed() {
     });
     // High sine ring that outlasts the arpeggio by a beat -- the "gold" shimmer.
     const r = _ac.createOscillator(), rg = _ac.createGain();
-    r.connect(rg); rg.connect(_ac.destination);
+    r.connect(rg); rg.connect(_master);
     r.type = 'sine'; r.frequency.value = 1975.5; // B6
     const rt = t + 0.14;
     rg.gain.setValueAtTime(0.0001, rt);
@@ -788,7 +823,7 @@ function sfxMineExplode() {
     const g = _ac.createGain();
     g.gain.setValueAtTime(0.42, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.44);
-    src.connect(flt); flt.connect(g); g.connect(_ac.destination);
+    src.connect(flt); flt.connect(g); g.connect(_master);
     src.start(t); src.stop(t + 0.46);
     // Short high crack layered on top
     const src2 = _ac.createBufferSource();
@@ -798,7 +833,7 @@ function sfxMineExplode() {
     const g2 = _ac.createGain();
     g2.gain.setValueAtTime(0.28, t);
     g2.gain.exponentialRampToValueAtTime(0.001, t + 0.10);
-    src2.connect(flt2); flt2.connect(g2); g2.connect(_ac.destination);
+    src2.connect(flt2); flt2.connect(g2); g2.connect(_master);
     src2.start(t); src2.stop(t + 0.12);
 }
 
@@ -807,7 +842,7 @@ function sfxBulletPickup() {
     const t = _ac.currentTime;
     [440, 660, 990].forEach((freq, i) => {
         const o = _ac.createOscillator(), g = _ac.createGain();
-        o.connect(g); g.connect(_ac.destination);
+        o.connect(g); g.connect(_master);
         o.type = 'square';
         const t0 = t + i * 0.055;
         o.frequency.value = freq;
@@ -828,7 +863,7 @@ function sfxBulletFire() {
     // Fires every 0.32s while ammo lasts, so it stays short to avoid fatigue.
     const o = _ac.createOscillator(), g = _ac.createGain();
     const flt = _ac.createBiquadFilter();
-    o.connect(flt); flt.connect(g); g.connect(_ac.destination);
+    o.connect(flt); flt.connect(g); g.connect(_master);
     o.type = 'triangle';
     o.frequency.setValueAtTime(1400, t);
     o.frequency.exponentialRampToValueAtTime(300, t + dur);
@@ -845,7 +880,7 @@ function sfxBulletFire() {
     // two independently-swept pitches can - that drift was part of the old
     // version's "off" quality.
     const o2 = _ac.createOscillator(), g2 = _ac.createGain();
-    o2.connect(g2); g2.connect(_ac.destination);
+    o2.connect(g2); g2.connect(_master);
     o2.type = 'square';
     o2.frequency.setValueAtTime(700, t);
     o2.frequency.exponentialRampToValueAtTime(150, t + dur);
@@ -862,7 +897,7 @@ function sfxBulletFire() {
     const g3 = _ac.createGain();
     g3.gain.setValueAtTime(0.09, t);
     g3.gain.exponentialRampToValueAtTime(0.001, t + 0.015);
-    src.connect(cFlt); cFlt.connect(g3); g3.connect(_ac.destination);
+    src.connect(cFlt); cFlt.connect(g3); g3.connect(_master);
     src.start(t); src.stop(t + 0.015);
     _bfVoices.push({ node: src, gain: g3 });
 }
@@ -906,7 +941,7 @@ function sfxStalCrack() {
     const g = _ac.createGain();
     g.gain.setValueAtTime(0.34, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
-    src.connect(flt); flt.connect(g); g.connect(_ac.destination);
+    src.connect(flt); flt.connect(g); g.connect(_master);
     src.start(t); src.stop(t + 0.16);
     // Transient tick on the attack for a sharp onset - same role as the muzzle
     // crack in sfxBulletFire.
@@ -917,7 +952,7 @@ function sfxStalCrack() {
     const g2 = _ac.createGain();
     g2.gain.setValueAtTime(0.22, t);
     g2.gain.exponentialRampToValueAtTime(0.001, t + 0.015);
-    src2.connect(flt2); flt2.connect(g2); g2.connect(_ac.destination);
+    src2.connect(flt2); flt2.connect(g2); g2.connect(_master);
     src2.start(t); src2.stop(t + 0.015);
     // Low thump underneath so the hit reads with a bit of weight, not pure static.
     const o = _ac.createOscillator(), g3 = _ac.createGain();
@@ -926,7 +961,7 @@ function sfxStalCrack() {
     o.frequency.exponentialRampToValueAtTime(70, t + 0.08);
     g3.gain.setValueAtTime(0.10, t);
     g3.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
-    o.connect(g3); g3.connect(_ac.destination);
+    o.connect(g3); g3.connect(_master);
     o.start(t); o.stop(t + 0.09);
 }
 
@@ -945,8 +980,8 @@ function sfxStalCrack() {
 // it ever reaches that gain node, and each voice narrows a different amount, so
 // two voices with similar "master gain" numbers can differ wildly in actual
 // output. Measured by offline-rendering every voice in isolation (OfflineAudioContext,
-// steady-state RMS over its hold texture) against the real (pre-2026-09-14) the_mountain.mp3 bed at
-// its then in-game gain (0.10; see BGM_GAIN for the recalibrated track): every single ship measured *quieter* than the
+// steady-state RMS over its hold texture) against the real the_mountain.mp3 bed at
+// its actual in-game gain (0.10): every single ship measured *quieter* than the
 // music (-33 to -41.5 dB RMS vs the bed's -32 dB), and the spread between ships
 // was 8.4 dB despite being "tuned to the same range". Retuned so every voice's
 // master gain lands within ~1 dB of -28 dB RMS (about 4 dB above the music bed,
@@ -980,7 +1015,7 @@ function _thrustPearl() {
     const g = _ac.createGain();
     g.gain.setValueAtTime(0.001, _ac.currentTime);
     g.gain.linearRampToValueAtTime(0.719, _ac.currentTime + 0.07);
-    src.connect(flt); flt.connect(g); g.connect(_ac.destination);
+    src.connect(flt); flt.connect(g); g.connect(_master);
     src.start();
     return { stop: () => _thrustRelease(g, [src], [src, flt, g], 0.10) };
 }
@@ -1001,7 +1036,7 @@ function _thrustAmber() {
     const glow = _ac.createOscillator(); glow.type = 'sine'; glow.frequency.value = 340;
     const glowGain = _ac.createGain(); glowGain.gain.value = 0.05;
     glow.connect(glowGain); glowGain.connect(g);
-    src.connect(flt); flt.connect(g); g.connect(_ac.destination);
+    src.connect(flt); flt.connect(g); g.connect(_master);
     src.start(); lfo.start(); glow.start();
     return { stop: () => _thrustRelease(g, [src, lfo, glow], [src, flt, lfo, lfoGain, glow, glowGain, g], 0.12) };
 }
@@ -1029,7 +1064,7 @@ function _thrustCrimson() {
     whineLfo.connect(whineLfoGain); whineLfoGain.connect(whine.frequency);
     const whineGain = _ac.createGain(); whineGain.gain.value = 0.045;
     whine.connect(whineGain); whineGain.connect(g);
-    g.connect(_ac.destination);
+    g.connect(_master);
     roarSrc.start(); chestSrc.start(); whine.start(); whineLfo.start();
     return {
         stop: () => _thrustRelease(
@@ -1058,7 +1093,7 @@ function _thrustElectric() {
     const ringLfoGain = _ac.createGain(); ringLfoGain.gain.value = 0.14;
     ringLfo.connect(ringLfoGain); ringLfoGain.connect(am.gain);
     src.connect(hp); hp.connect(am); am.connect(g);
-    g.connect(_ac.destination);
+    g.connect(_master);
     src.start(); hum.start(); ringLfo.start();
     return { stop: () => _thrustRelease(g, [src, hum, ringLfo], [src, hp, am, ringLfo, ringLfoGain, hum, humGain, g], 0.12) };
 }
@@ -1081,7 +1116,7 @@ function _thrustToxic() {
     vibLfo.connect(vibGain); vibGain.connect(wobble.frequency);
     const wobbleGain = _ac.createGain(); wobbleGain.gain.value = 0.10;
     wobble.connect(wobbleGain); wobbleGain.connect(g);
-    src.connect(lp); lp.connect(g); g.connect(_ac.destination);
+    src.connect(lp); lp.connect(g); g.connect(_master);
     src.start(); sweepLfo.start(); wobble.start(); vibLfo.start();
     return {
         stop: () => _thrustRelease(
@@ -1135,7 +1170,7 @@ function _thrustVoid() {
     delay.connect(fbFilter); fbFilter.connect(fb); fb.connect(delay);
     const wet = _ac.createGain(); wet.gain.value = 0.55;
 
-    src.connect(flt); flt.connect(g); g.connect(_ac.destination);
+    src.connect(flt); flt.connect(g); g.connect(_master);
     g.connect(delay); delay.connect(wet); wet.connect(g);
     src.start(); breathLfo.start(); pull.start();
 
@@ -1176,7 +1211,7 @@ function _thrustNova() {
     const tremGain = _ac.createGain(); tremGain.gain.value = 0.04;
     trem.connect(tremGain); tremGain.connect(chimeGain.gain);
     c1.connect(chimeGain); c2.connect(chimeGain); chimeGain.connect(g);
-    g.connect(_ac.destination);
+    g.connect(_master);
     bedSrc.start(); sparkSrc.start(); c1.start(); c2.start(); trem.start();
     return {
         stop: () => _thrustRelease(
@@ -1228,7 +1263,7 @@ function _thrustSolaris() {
     const panLfoGain = _ac.createGain(); panLfoGain.gain.value = 0.6;
     panLfo.connect(panLfoGain); panLfoGain.connect(panner.pan);
 
-    g.connect(panner); panner.connect(_ac.destination);
+    g.connect(panner); panner.connect(_master);
     rumbleSrc.start(); wind.start(); overtone2.start(); overtone3.start(); windLfo.start(); panLfo.start();
 
     // Crackling pops - real intermittent bursts, not a steady AM texture.
@@ -1326,7 +1361,7 @@ function onFireLoopOn() {
     _fGain = _ac.createGain();
     _fGain.gain.setValueAtTime(0.001, _ac.currentTime);
     _fGain.gain.linearRampToValueAtTime(0.14, _ac.currentTime + 0.15);
-    src.connect(flt); flt.connect(_fGain); _fGain.connect(_ac.destination);
+    src.connect(flt); flt.connect(_fGain); _fGain.connect(_master);
     src.start(); _fNode = src;
 }
 
@@ -1353,7 +1388,7 @@ function magnetLoopOn() {
     _mGain = _ac.createGain();
     _mGain.gain.setValueAtTime(0.0001, _ac.currentTime);
     _mGain.gain.linearRampToValueAtTime(0.05, _ac.currentTime + 0.25);
-    _mGain.connect(_ac.destination);
+    _mGain.connect(_master);
 
     const src = _ac.createBufferSource();
     src.buffer = _noiseBuf(0.5); src.loop = true;
@@ -1385,7 +1420,7 @@ function sfxUiTap() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
     const o = _ac.createOscillator(), g = _ac.createGain();
-    o.connect(g); g.connect(_ac.destination);
+    o.connect(g); g.connect(_master);
     o.type = 'triangle'; o.frequency.value = 720;
     g.gain.setValueAtTime(0.07, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
@@ -1399,7 +1434,7 @@ function sfxUiClose() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
     const o = _ac.createOscillator(), g = _ac.createGain();
-    o.connect(g); g.connect(_ac.destination);
+    o.connect(g); g.connect(_master);
     o.type = 'sine'; o.frequency.value = 480;
     g.gain.setValueAtTime(0.05, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
@@ -1417,7 +1452,7 @@ function sfxUiToggle(on) {
     const freqs = on ? [500, 700] : [700, 500];
     freqs.forEach((freq, i) => {
         const o = _ac.createOscillator(), g = _ac.createGain();
-        o.connect(g); g.connect(_ac.destination);
+        o.connect(g); g.connect(_master);
         o.type = 'triangle'; o.frequency.value = freq;
         const t0 = t + i * 0.05;
         g.gain.setValueAtTime(0.06, t0);
@@ -1442,7 +1477,7 @@ function sfxUiSelect(skinIdx) {
         : 1;
     [660 * mul, 880 * mul].forEach((freq, i) => {
         const o = _ac.createOscillator(), g = _ac.createGain();
-        o.connect(g); g.connect(_ac.destination);
+        o.connect(g); g.connect(_master);
         o.type = 'triangle'; o.frequency.value = freq;
         const t0 = t + i * 0.055;
         g.gain.setValueAtTime(0.08, t0);
@@ -1458,7 +1493,7 @@ function sfxUiDenied() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
     const o = _ac.createOscillator(), g = _ac.createGain();
-    o.connect(g); g.connect(_ac.destination);
+    o.connect(g); g.connect(_master);
     o.type = 'square'; o.frequency.value = 220;
     g.gain.setValueAtTime(0.05, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
@@ -1475,7 +1510,7 @@ function sfxUiPurchaseSuccess() {
     const t = _ac.currentTime;
     [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
         const o = _ac.createOscillator(), g = _ac.createGain();
-        o.connect(g); g.connect(_ac.destination);
+        o.connect(g); g.connect(_master);
         o.type = 'triangle'; o.frequency.value = freq;
         const t0 = t + i * 0.08;
         const peak = i === 3 ? 0.16 : 0.12;
@@ -1502,7 +1537,7 @@ function sfxBoot() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
     const o = _ac.createOscillator(), g = _ac.createGain();
-    o.connect(g); g.connect(_ac.destination);
+    o.connect(g); g.connect(_master);
     o.type = 'sine';
     o.frequency.setValueAtTime(180, t);
     o.frequency.exponentialRampToValueAtTime(900, t + 0.26);
@@ -1538,7 +1573,7 @@ function warpLoopOn() {
     _wGain = _ac.createGain();
     _wGain.gain.setValueAtTime(0.0001, _ac.currentTime);
     _wGain.gain.linearRampToValueAtTime(0.09, _ac.currentTime + 0.12);
-    _wGain.connect(_ac.destination);
+    _wGain.connect(_master);
 
     const src = _ac.createBufferSource();
     src.buffer = _noiseBuf(0.5); src.loop = true;

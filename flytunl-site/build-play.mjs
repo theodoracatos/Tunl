@@ -37,7 +37,7 @@ const outDir = path.join(root, 'flytunl-site/site/play');
 // src load order - MUST match the <script> tags in tunl.html.
 const SCRIPTS = [
   'web', 'i18n', 'constants', 'world', 'state', 'lifecycle', 'systems',
-  'audio', 'input', 'update', 'draw', 'share', 'notify', 'main', 'ads-web',
+  'audio', 'input', 'update', 'draw', 'share', 'record', 'notify', 'main', 'ads-web',
 ];
 
 const BANNER = '/*! TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch */';

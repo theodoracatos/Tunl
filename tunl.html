@@ -75,6 +75,49 @@ canvas { display:block; }
 #cta a:active { background:rgba(120,160,255,0.18); }
 #cta a:focus-visible { outline:2px solid #4fd6e0; outline-offset:2px; }
 @media (max-width:520px) { #cta { font-size:11px; gap:7px; padding:7px 11px; } }
+
+/* Run recording - open web only (src/record.js, gated on isWeb() and on the
+   browser actually supporting canvas.captureStream()+MediaRecorder). Top-left
+   corner: the title screen's icon rail runs down the right edge and the score/
+   best readouts sit top-center, so top-left is the one corner nothing else in
+   the HUD ever claims, in any phase. */
+#rec-btn {
+    position:fixed; top:12px; left:12px; z-index:60;
+    display:none; align-items:center; gap:7px;
+    padding:7px 13px 7px 11px; border-radius:999px;
+    background:rgba(10,12,22,0.74); border:1px solid rgba(255,110,110,0.35);
+    -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    font-size:12px; font-weight:700; letter-spacing:.08em; color:#ffc2c2;
+    pointer-events:auto; cursor:pointer; -webkit-appearance:none; appearance:none;
+}
+#rec-btn.show { display:inline-flex; }
+#rec-btn .dot { width:9px; height:9px; border-radius:50%; background:#ff4b4b; box-shadow:0 0 6px rgba(255,70,70,0.8); }
+#rec-btn.active { border-color:rgba(255,90,90,0.75); color:#fff; }
+#rec-btn.active .dot { animation:recPulse 1.1s ease-in-out infinite; }
+#rec-btn:focus-visible { outline:2px solid #4fd6e0; outline-offset:2px; }
+@keyframes recPulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.4; transform:scale(0.75); } }
+
+/* The post-recording review panel - a modal over the whole canvas, same layer
+   pattern as #rot. */
+#rec-panel {
+    position:fixed; inset:0; z-index:110; background:rgba(2,3,9,0.88);
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    gap:16px; padding:24px;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    color:#d4f0f3;
+}
+#rec-panel.show { display:flex; }
+#rec-panel video { max-width:min(92vw,720px); max-height:52vh; border-radius:10px; border:1px solid rgba(120,160,255,0.32); background:#000; }
+#rec-panel .rec-actions { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; pointer-events:auto; }
+#rec-panel a, #rec-panel button {
+    font:inherit; font-weight:700; letter-spacing:.06em; font-size:13px;
+    padding:10px 22px; border-radius:999px; text-decoration:none;
+    background:rgba(120,160,255,0.16); border:1px solid rgba(120,160,255,0.42);
+    color:#eaf3ff; cursor:pointer; pointer-events:auto; -webkit-appearance:none; appearance:none;
+}
+#rec-panel button.ghost { background:transparent; border-color:rgba(255,255,255,0.24); color:#9fb3d6; }
+#rec-panel a:focus-visible, #rec-panel button:focus-visible { outline:2px solid #4fd6e0; outline-offset:2px; }
 </style>
 </head>
 <body>
@@ -89,6 +132,17 @@ canvas { display:block; }
     <a href="https://apps.apple.com/us/app/tunl-cave-flyer/id6789721765" target="_blank" rel="noopener">App Store</a>
     <a href="https://play.google.com/store/apps/details?id=com.theodoracatos.tunl" target="_blank" rel="noopener">Google Play</a>
 </div>
+<button id="rec-btn" type="button" aria-hidden="true" aria-pressed="false">
+    <span class="dot" id="rec-dot"></span><span id="rec-btn-lbl">REC</span>
+</button>
+<div id="rec-panel" aria-hidden="true">
+    <video id="rec-video" controls playsinline></video>
+    <div class="rec-actions">
+        <a id="rec-download" download>&#8681; <span id="rec-download-lbl">DOWNLOAD</span></a>
+        <button id="rec-share" type="button" hidden><span id="rec-share-lbl">SHARE</span></button>
+        <button id="rec-close" type="button" class="ghost">&times;</button>
+    </div>
+</div>
 <script src="src/web.js"></script>
 <script src="src/i18n.js"></script>
 <script src="src/constants.js"></script>
@@ -101,6 +155,7 @@ canvas { display:block; }
 <script src="src/update.js"></script>
 <script src="src/draw.js"></script>
 <script src="src/share.js"></script>
+<script src="src/record.js"></script>
 <script src="src/notify.js"></script>
 <script src="src/main.js"></script>
 <script src="src/ads-web.js"></script>

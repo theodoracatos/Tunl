@@ -115,6 +115,7 @@ function loop(ts) {
     prev = ts;
     if (!window._freezeDraw) { update(dt); draw(); }
     _syncWebCta();
+    if (typeof _recTick === 'function') _recTick();
     requestAnimationFrame(loop);
 }
 
