@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Google AdSense (site verification + ad serving) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4882203470005029"
+     crossorigin="anonymous"></script>
+<title>How to Play TUNL - Controls, Coins, Hazards and Scoring</title>
+<meta name="description" content="A complete guide to TUNL: the one control, how scoring and coin combos work, what all eight coin types do, every hazard in order of appearance, and the strategy that actually raises your score.">
+<link rel="canonical" href="https://flytunl.ch/how-to-play/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="How to Play TUNL - Controls, Coins, Hazards and Scoring">
+<meta property="og:description" content="The one control, how scoring works, what all eight coins do, every hazard in order, and the strategy that actually raises your score.">
+<meta property="og:url" content="https://flytunl.ch/how-to-play/">
+<meta property="og:image" content="https://flytunl.ch/feature-graphic-1024x500.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png">
+<link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#04040a">
+<style>
+  * { box-sizing:border-box; }
+  body {
+    background:#04040a;
+    color:#ddd;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height:1.7;
+    margin:0;
+    padding:40px 20px 80px;
+  }
+  main { max-width:720px; margin:0 auto; }
+  .brand { display:inline-flex; align-items:center; text-decoration:none; margin-bottom:28px; }
+  .brand img { height:28px; width:auto; }
+  h1 { color:#ffe040; font-size:30px; letter-spacing:1px; margin-bottom:10px; line-height:1.25; }
+  .lead { color:#aaa; font-size:17px; margin-top:0; margin-bottom:34px; }
+  h2 { color:#4dd9ff; font-size:21px; margin-top:44px; margin-bottom:12px; line-height:1.3; }
+  h3 { color:#fff; font-size:16px; margin-top:26px; margin-bottom:8px; }
+  p, li { color:#ccc; font-size:15.5px; }
+  ul, ol { padding-left:22px; }
+  li { margin-bottom:10px; }
+  a { color:#4dd9ff; }
+  strong { color:#fff; }
+  em { color:#ddd; }
+  code {
+    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size:13.5px; color:#ffe040;
+    background:#12121c; border-radius:4px; padding:1px 5px;
+  }
+  .note {
+    background:#0d0d16; border:1px solid #222; border-left:3px solid #4dd9ff;
+    border-radius:0 10px 10px 0; padding:14px 18px; margin:22px 0;
+  }
+  .note p { margin:0; font-size:14.5px; color:#bbb; }
+  .wrap { overflow-x:auto; margin:18px 0; }
+  table { width:100%; border-collapse:collapse; font-size:14.5px; min-width:520px; }
+  th, td { text-align:left; padding:9px 12px; border-bottom:1px solid #222; vertical-align:top; }
+  th { color:#4dd9ff; font-weight:600; }
+  td { color:#ccc; }
+  /* Keep the colour swatch on the same line as the coin name. */
+  td:first-child { white-space:nowrap; }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:7px; vertical-align:middle; }
+  .cta {
+    display:inline-block; background:#ffe040; color:#04040a; font-weight:700;
+    text-decoration:none; padding:12px 24px; border-radius:10px; margin-top:8px;
+  }
+  .cta:hover { background:#fff06a; }
+  footer {
+    margin-top:56px; color:#666; font-size:13px;
+    border-top:1px solid #222; padding-top:16px;
+  }
+  footer a { color:#888; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  "name": "How to Play TUNL",
+  "description": "A complete guide to TUNL: controls, scoring, all eight coin types, every hazard, and strategy.",
+  "author": { "@type": "Person", "name": "Theodoracatos" },
+  "mainEntityOfPage": "https://flytunl.ch/how-to-play/",
+  "image": "https://flytunl.ch/feature-graphic-1024x500.png",
+  "step": [
+    { "@type": "HowToStep", "name": "Hold to climb", "text": "Hold anywhere on screen, or press Space, to thrust upward. Release to let gravity pull you down." },
+    { "@type": "HowToStep", "name": "Collect gold", "text": "Gold coins widen the corridor. The bonus decays, so keep topping it up." },
+    { "@type": "HowToStep", "name": "Avoid the two hazard coins", "text": "Poison and drain look like pickups but cost you. Learn their shapes." },
+    { "@type": "HowToStep", "name": "Chain coins for combo points", "text": "Coins collected within two seconds of each other build a multiplier." }
+  ]
+}
+</script>
+<!-- Cloudflare Web Analytics (cookieless, no consent banner needed) -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "7783839e84374212b7d76f25e1fb8e87"}'></script>
+</head>
+<body>
+<main>
+  <a class="brand" href="/">
+    <img src="/wordmark.svg" alt="TUNL">
+  </a>
+
+  <h1>How to Play TUNL</h1>
+  <p class="lead">One button, a narrowing cave, and eight kinds of coin, two of which are
+  lying to you. Here is everything the game does not stop to explain.</p>
+
+  <h2>The one control</h2>
+
+  <p><strong>Hold to climb. Release to fall.</strong> That is the entire control scheme.
+  Tap and hold anywhere on the screen, or hold Space or the up arrow on a keyboard.</p>
+
+  <p>What matters is that holding is not a jump. It is an <em>acceleration</em>. You are not
+  setting your position, you are setting which direction your speed is changing, and your ship
+  carries its momentum through the switch. Releasing at the top of a climb means you keep
+  rising for a moment before gravity wins. New players almost always react too late and then
+  overcorrect, which is the classic oscillation everyone does on their first few runs.</p>
+
+  <p>The fix is to think one bend ahead rather than reacting to the bend you are in. Short
+  taps hold an altitude. Long holds change it.</p>
+
+  <h2>The opening runway</h2>
+
+  <p>Every run starts with two deliberate mercies.</p>
+
+  <p>First, <strong>gravity does not switch on until you press</strong>. The ship flies dead
+  level until your first hold, or for a couple of seconds, whichever comes first. You never
+  drop before you have acted, including on a restart.</p>
+
+  <p>Second, <strong>the walls are not lethal for roughly the first 50 points</strong>, and
+  there are no stalactites at all in that stretch. You can bump the tunnel and keep flying.
+  This is where you are supposed to get the feel of thrust against gravity, so use it. When
+  the walls go live the game tells you.</p>
+
+  <h2>How scoring works</h2>
+
+  <p>Your score is distance plus bonuses:</p>
+
+  <ul>
+    <li><strong>Distance</strong> is the floor of how far the cave has scrolled. It is the
+    bulk of any score and it is the only part you cannot shortcut.</li>
+    <li><strong>Coin combo</strong>: coins picked up within two seconds of each other build a
+    streak, and each coin is worth three points times the current streak level. A chain of
+    five is worth far more than five separate coins.</li>
+    <li><strong>Near miss</strong>: passing within about two ship-widths of a wall pays a
+    point, with a short cooldown so you cannot farm it by hugging.</li>
+  </ul>
+
+  <p>Two things follow from this. Coin routing genuinely matters, because a tight chain
+  outscores a lazy sweep of the same coins. And flying close to walls is rewarded, which is
+  the game quietly encouraging the exact behaviour that kills you.</p>
+
+  <h2>The eight coins</h2>
+
+  <p>Coins arrive in a fixed order as you go deeper, so early runs are simple and later ones
+  are busy. Gold comes first, then the blue slow-time coin, then shields, then bullets and the
+  magnet, and the two hazard coins appear last.</p>
+
+  <div class="wrap">
+  <table>
+    <tr><th>Coin</th><th>What it does</th><th>How to use it</th></tr>
+    <tr>
+      <td><span class="dot" style="background:#ffe040"></span><strong>Gold</strong></td>
+      <td>Widens the corridor. The bonus decays over a few seconds.</td>
+      <td>The core resource. Top it up constantly rather than banking it.</td>
+    </tr>
+    <tr>
+      <td><span class="dot" style="background:#4dd9ff"></span><strong>Blue</strong></td>
+      <td>Slows the scroll, then ramps back to full speed over several seconds.</td>
+      <td>Best grabbed just <em>before</em> a dense stretch, not inside one.</td>
+    </tr>
+    <tr>
+      <td><span class="dot" style="background:#ff4d5e"></span><strong>Red</strong></td>
+      <td>A shield. Absorbs exactly one hit.</td>
+      <td>Save it for mines. Walls you can dodge; mines you often cannot.</td>
+    </tr>
+    <tr>
+      <td><span class="dot" style="background:#ff9a2e"></span><strong>Orange</strong></td>
+      <td>Bullet ammo. Your ship fires forward.</td>
+      <td>Destroys stalactites, mines, and cannon fire in flight.</td>
+    </tr>
+    <tr>
+      <td><span class="dot" style="background:#44ff88"></span><strong>Green</strong></td>
+      <td>A magnet that pulls nearby coins toward you.</td>
+      <td>It will <strong>not</strong> pull the two hazard coins. They stay where they are.</td>
+    </tr>
+    <tr>
+      <td><span class="dot" style="background:#b833ff"></span><strong>Bomb</strong></td>
+      <td>Detonates on pickup and clears every hazard in a radius.</td>
+      <td>Purple gem with a white spark. Pure upside, always take it.</td>
+    </tr>
+    <tr>
+      <td><span class="dot" style="background:#5fbf00"></span><strong>Poison</strong></td>
+      <td><strong>Hazard.</strong> Breaks your combo and takes a share of the shards you have
+      earned this run.</td>
+      <td>Jagged spore shape, dripping tails, dark X. Never a clean gem.</td>
+    </tr>
+    <tr>
+      <td><span class="dot" style="background:#7a2f4f"></span><strong>Drain</strong></td>
+      <td><strong>Hazard.</strong> Breaks your combo and takes a share of your current score.</td>
+      <td>Broken wine-coloured ring with inward barbs. It bites harder the deeper you are.</td>
+    </tr>
+  </table>
+  </div>
+
+  <div class="note">
+    <p><strong>Learn the two hazard coins by shape, not colour.</strong> Every real coin is a
+    clean faceted gem with a calm pulse. Poison is a jagged spore that strobes irregularly and
+    drips. Drain is a hollow broken ring that contracts inward. At speed you will register the
+    silhouette long before you register the colour, which is exactly why they were drawn that
+    way.</p>
+  </div>
+
+  <h3>Why gold is the whole game</h3>
+
+  <p>The corridor narrows as you go deeper, and past a certain point it stops narrowing and
+  simply stays tight while the scroll speed keeps climbing forever. Gold is the only thing
+  that pushes back. With the bonus topped up, the corridor is dramatically wider than the
+  baseline, which at depth is the difference between a navigable tunnel and a wall.</p>
+
+  <p>Because the bonus decays, it behaves like a fuel gauge rather than a score. A player who
+  collects ten gold coins in one greedy burst and then none for fifteen seconds is in far more
+  trouble than one who takes a coin every few seconds forever.</p>
+
+  <h2>The hazards</h2>
+
+  <p>These also unlock in order, so you meet them one at a time.</p>
+
+  <ul>
+    <li><strong>Stalactites</strong> are triangular spikes rooted in the ceiling or floor.
+    Collision matches the drawn triangle, so the visible shape is the real hitbox.</li>
+    <li><strong>Chicanes</strong> are paired spikes from both walls at once, forcing a
+    weave.</li>
+    <li><strong>Mines</strong> float free anywhere across the corridor rather than being
+    anchored to a wall. They are the one hazard you cannot outgrow, and they are the reason no
+    run can last forever.</li>
+    <li><strong>Boulders</strong> are large rocks that never span the corridor. There is
+    always a way above and a way below, one comfortable and one a squeeze. They ask you to
+    commit early rather than react late.</li>
+    <li><strong>Cannons</strong> are wall turrets that fire a single diagonal shot as you
+    approach, then go quiet. The shot looks like your own bullet, just angled.</li>
+    <li><strong>Falling stalactites</strong> shake and trickle dust before they break loose,
+    then drop the full height of the corridor. The shake is your warning. The answer is
+    almost always to go over the top.</li>
+  </ul>
+
+  <h2>The warp portal</h2>
+
+  <p>A hoop occasionally hangs in the corridor. Fly through it.</p>
+
+  <p>For a couple of seconds you accelerate to well over double speed, the corridor widens,
+  every hazard passes through you harmlessly, and gold coins are vacuumed in automatically and
+  fed straight into your combo. It is not a trap and there is no drawback. It is the single
+  most valuable thing on screen and it is worth a real detour to line up.</p>
+
+  <h2>Strategy that actually works</h2>
+
+  <h3>Fly the middle, not the gap you can see</h3>
+  <p>The corridor's centre is a moving target. Chasing the current gap keeps you permanently
+  half a beat behind. Aiming at where the centre is <em>going</em> costs nothing and gives you
+  room in both directions when something unexpected appears.</p>
+
+  <h3>Spend the shield on the unpredictable thing</h3>
+  <p>A shield burned on a wall you could have dodged is wasted. Mines and cannon fire are what
+  you cannot always plan around, so carrying a shield into a dense stretch is worth more than
+  cashing it early.</p>
+
+  <h3>Treat the two hazard coins as obstacles</h3>
+  <p>They sit in the coin lane and they look approximately like a reward. The habit worth
+  building is a half-beat of checking shape before committing to any pickup, especially once
+  the magnet is active, since the magnet pulling real coins toward you can carry you into a
+  hazard coin it deliberately refuses to pull.</p>
+
+  <h3>Chain, but do not chase</h3>
+  <p>Combo points are real but distance is bigger. A chain you extend along your existing line
+  is free. A chain you cross the corridor for at speed, into a narrowing section, usually is
+  not.</p>
+
+  <h2>Ships, shards and stardust</h2>
+
+  <p>Coins you collect are banked as <strong>shards</strong> at the end of a run, which unlock
+  ships. Ships are not skins: each one trades something away for something else, so picking one
+  is a build choice rather than a cosmetic one.</p>
+
+  <p>The later ships also need <strong>stardust</strong>, which is earned simply by opening the
+  game on a given day, with a bonus for unbroken weekly streaks. Stardust is never spent, only
+  checked as a threshold. It means the deepest unlocks are gated on showing up over time rather
+  than on grinding a single long session.</p>
+
+  <h2>The daily cave</h2>
+
+  <p>Every player flies the <strong>same cave on the same day</strong>, generated from the
+  date. It resets at UTC midnight. That is what makes the daily leaderboard meaningful, and it
+  is also why the ghost of your best run can race alongside you: the cave is reproducible, so a
+  replay only has to remember your altitude.</p>
+
+  <p>The ghost is scoped to the day. Each morning opens with no ghost, and your first good run
+  creates the thing you spend the rest of the day chasing.</p>
+
+  <p>If you want the technical version of how that works, including two bugs that quietly broke
+  it, there is a <a href="/devlog/daily-cave/">devlog post on the daily cave generator</a>.</p>
+
+  <p><a class="cta" href="/play/">Play today's cave</a></p>
+
+  <footer>
+    TUNL &middot; <a href="/">Home</a> &middot; <a href="/play/">Play</a> &middot;
+    <a href="/devlog/daily-cave/">Devlog</a> &middot; <a href="/support">Support</a> &middot;
+    <a href="/privacy">Privacy Policy</a> &middot; &copy; 2026 Theodoracatos
+  </footer>
+</main>
+</body>
+</html>

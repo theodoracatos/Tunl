@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Google AdSense (site verification + ad serving) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4882203470005029"
+     crossorigin="anonymous"></script>
+<title>One Cave, Every Player - How TUNL Builds a Daily Level From a Date</title>
+<meta name="description" content="TUNL generates a pixel-identical daily cave for every player on Earth from nothing but a UTC date. How the seeding works, why it uses four separate random streams, and the two bugs that quietly forked the shared cave.">
+<link rel="canonical" href="https://flytunl.ch/devlog/daily-cave/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="One Cave, Every Player - How TUNL Builds a Daily Level From a Date">
+<meta property="og:description" content="A daily level that is a pure function of the date: the seeding, the four random streams, and the two bugs that quietly forked the shared cave.">
+<meta property="og:url" content="https://flytunl.ch/devlog/daily-cave/">
+<meta property="og:image" content="https://flytunl.ch/feature-graphic-1024x500.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png">
+<link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#04040a">
+<style>
+  * { box-sizing:border-box; }
+  body {
+    background:#04040a;
+    color:#ddd;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height:1.7;
+    margin:0;
+    padding:40px 20px 80px;
+  }
+  main { max-width:720px; margin:0 auto; }
+  .brand { display:inline-flex; align-items:center; text-decoration:none; margin-bottom:28px; }
+  .brand img { height:28px; width:auto; }
+  h1 { color:#ffe040; font-size:30px; letter-spacing:1px; margin-bottom:10px; line-height:1.25; }
+  .lead { color:#aaa; font-size:17px; margin-top:0; margin-bottom:8px; }
+  .meta { color:#666; font-size:13px; margin-bottom:34px; }
+  h2 { color:#4dd9ff; font-size:21px; margin-top:44px; margin-bottom:12px; line-height:1.3; }
+  h3 { color:#fff; font-size:16px; margin-top:28px; margin-bottom:8px; }
+  p, li { color:#ccc; font-size:15.5px; }
+  ul, ol { padding-left:22px; }
+  li { margin-bottom:10px; }
+  a { color:#4dd9ff; }
+  strong { color:#fff; }
+  code {
+    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size:13.5px; color:#ffe040;
+    background:#12121c; border-radius:4px; padding:1px 5px;
+  }
+  pre {
+    background:#0d0d16; border:1px solid #222; border-radius:10px;
+    padding:16px; overflow-x:auto; margin:18px 0;
+  }
+  pre code { background:none; padding:0; color:#cfe8ff; font-size:13px; line-height:1.6; }
+  .note {
+    background:#0d0d16; border:1px solid #222; border-left:3px solid #4dd9ff;
+    border-radius:0 10px 10px 0; padding:14px 18px; margin:22px 0;
+  }
+  .note p { margin:0; font-size:14.5px; color:#bbb; }
+  table { width:100%; border-collapse:collapse; margin:18px 0; font-size:14px; display:block; overflow-x:auto; }
+  th, td { text-align:left; padding:8px 12px; border-bottom:1px solid #222; white-space:nowrap; }
+  th { color:#4dd9ff; font-weight:600; }
+  td { color:#ccc; }
+  .cta {
+    display:inline-block; background:#ffe040; color:#04040a; font-weight:700;
+    text-decoration:none; padding:12px 24px; border-radius:10px; margin-top:8px;
+  }
+  .cta:hover { background:#fff06a; }
+  footer {
+    margin-top:56px; color:#666; font-size:13px;
+    border-top:1px solid #222; padding-top:16px;
+  }
+  footer a { color:#888; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "One Cave, Every Player: How TUNL Builds a Daily Level From a Date",
+  "description": "TUNL generates a pixel-identical daily cave for every player on Earth from nothing but a UTC date. How the seeding works, why it uses four separate random streams, and the two bugs that quietly forked the shared cave.",
+  "author": { "@type": "Person", "name": "Theodoracatos" },
+  "publisher": { "@type": "Organization", "name": "TUNL" },
+  "datePublished": "2026-09-15",
+  "mainEntityOfPage": "https://flytunl.ch/devlog/daily-cave/",
+  "image": "https://flytunl.ch/feature-graphic-1024x500.png"
+}
+</script>
+<!-- Cloudflare Web Analytics (cookieless, no consent banner needed) -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "7783839e84374212b7d76f25e1fb8e87"}'></script>
+</head>
+<body>
+<main>
+  <a class="brand" href="/">
+    <img src="/wordmark.svg" alt="TUNL">
+  </a>
+
+  <h1>One Cave, Every Player</h1>
+  <p class="lead">How TUNL builds a daily level out of nothing but a date, and the two bugs
+  that quietly broke it for months.</p>
+  <p class="meta">Devlog &middot; 15 September 2026</p>
+
+  <p><a href="/play/">TUNL</a> is a hold-to-thrust cave flyer. You hold to climb, release to
+  fall, and try to get further down a narrowing tunnel than you did yesterday. Every player
+  flies the <strong>same cave on the same day</strong>, and at the UTC midnight boundary it
+  becomes a different one.</p>
+
+  <p>There is no level file. No server hands out a map, nothing is downloaded, and the game
+  does not store the tunnel it just generated. The cave is a pure function of the date, and
+  the entire "world" is about forty lines of arithmetic.</p>
+
+  <p>That design buys a surprising amount: a fair global leaderboard, a ghost replay that
+  costs a few hundred bytes, and a shareable picture of your run. It also imposes a
+  constraint that is much harsher than it first looks, and I broke it twice without
+  noticing. This post is about both halves.</p>
+
+  <h2>A level that is a function, not a file</h2>
+
+  <p>Most procedural games generate a world at run start and hold it in memory. TUNL never
+  holds it at all. The corridor's centre and half-width at any world position <code>wx</code>
+  are computed on demand from two overlapping sine waves:</p>
+
+<pre><code>function boundsBase(wx) {
+  const p  = Math.min(Math.sqrt(wx / 14000), 1);   // difficulty ramp, sqrt eased
+  const wA1 = lerp(H * 0.07,  H * 0.12,  p);       // slow wide arc
+  const wA2 = lerp(H * 0.035, H * 0.055, p);       // faster shallow ripple
+  const wF1 = lerp(0.0025,    0.0048,    p);
+  const wF2 = lerp(0.0060,    0.0115,    p);
+  const hg  = lerp(H * 0.34,  H * 0.163, p);       // half-gap: 204px -&gt; 98px
+
+  const raw = H / 2
+    + wA1 * Math.sin(wx * wF1 + _wavePhase1)
+    + wA2 * Math.sin(wx * wF2 + 1.57 + _wavePhase2);
+
+  const cy = clamp(raw, hg + WALL_PAD, H - hg - WALL_PAD);
+  return { top: cy - hg, bot: cy + hg };
+}</code></pre>
+
+  <p>Two waves rather than one, because a single sine is immediately readable as a rhythm
+  and stops being interesting after about ten seconds. A slow wide arc plus a faster shallow
+  ripple at an irrational-ish frequency ratio gives long stretches that never quite repeat.
+  The half-gap narrows from roughly 68% of the screen height down to 33% as you get further
+  in, on a square-root curve so the early ramp is fast and the late game plateaus.</p>
+
+  <p>The important property is not the shape. It is that <code>boundsBase(wx)</code> takes
+  only <code>wx</code>. Ask it about world position 40,000 on the first frame of a run and
+  it answers instantly, identically, on any device, without having generated anything in
+  between.</p>
+
+  <h2>Where the day comes in</h2>
+
+  <p>The date enters through exactly two variables in that snippet: <code>_wavePhase1</code>
+  and <code>_wavePhase2</code>. The UTC date becomes an integer like <code>20260915</code>,
+  which is run through a hash chain:</p>
+
+<pre><code>function seedDailyVariety(dayInt) {
+  let h = Math.imul(dayInt ^ 0x9e3779b9, 0x45d9f3b) &gt;&gt;&gt; 0;
+  h = Math.imul(h ^ (h &gt;&gt;&gt; 16), 0x45d9f3b) &gt;&gt;&gt; 0;
+  h = (h ^ (h &gt;&gt;&gt; 16)) &gt;&gt;&gt; 0;
+  _wavePhase1 = (h % 6283) / 1000;                 // 0 .. 2pi
+
+  h = Math.imul(h ^ (h &gt;&gt;&gt; 13), 0xc2b2ae35) &gt;&gt;&gt; 0;
+  _wavePhase2 = (h % 6283) / 1000;
+
+  _waveJitterA  = 1 + (draw() * 2 - 1) * 0.08;     // +/- 8% amplitude
+  _waveJitterF  = 1 + (draw() * 2 - 1) * 0.08;     // +/- 8% frequency
+  _dayArchetype = Math.floor(draw() * DAY_ARCHETYPES.length);
+}</code></pre>
+
+  <p>Consecutive dates differ by one, so the hash has to scatter hard or today and tomorrow
+  would look like near neighbours. The multiply-xorshift chain does that: <code>20260915</code>
+  and <code>20260916</code> produce completely unrelated phases.</p>
+
+  <p>The jitters are deliberately small. Phase alone changes where the bends fall but not how
+  the day feels, and I wanted each day to have a slightly different character without any day
+  drifting away from a baseline that took a long time to tune. Eight percent is enough to
+  notice across a week and not enough to make a day feel wrong.</p>
+
+  <h2>Four random streams, not one</h2>
+
+  <p>Obstacles are a separate problem from corridor shape. Stalactites, coins, mines and
+  cannons each get their own independent generator, all derived from the same day:</p>
+
+<pre><code>rngStal   = makeRngStream(Math.imul(dayInt ^ 0x5741, 0x2545F491));
+rngCoin   = makeRngStream(Math.imul(dayInt ^ 0xC01D, 0x9E3779B1));
+rngMine   = makeRngStream(Math.imul(dayInt ^ 0x4D19, 0x85EBCA6B));
+rngCannon = makeRngStream(Math.imul(dayInt ^ 0xCA77, 0xC2B2AE35));</code></pre>
+
+  <p>A single shared stream would have been simpler and would have been a mistake. Coin
+  placement can reject a candidate position, for example when it lands too close to a
+  stalactite. On a shared stream every rejection consumes a number and shifts everything
+  drawn afterwards, so a coin that fails placement would silently move the next mine. The
+  separate salts make the four systems genuinely independent rather than phase-shifted copies
+  of one sequence, and they mean I can change how coins are placed without moving a single
+  mine.</p>
+
+  <h2>Day archetypes</h2>
+
+  <p>Phase and jitter change the shape of a day. To change its <em>flavour</em>, the seed also
+  picks one of four archetypes, which scale the spacing curves already in the game:</p>
+
+  <table>
+    <tr><th>Archetype</th><th>Stalactites</th><th>Coins</th><th>Mines</th><th>Chicanes</th></tr>
+    <tr><td>Classic</td><td>1.00</td><td>1.00</td><td>1.00</td><td>1.00</td></tr>
+    <tr><td>Chicane Day</td><td>0.85</td><td>1.00</td><td>1.00</td><td>1.35</td></tr>
+    <tr><td>Mine Gauntlet</td><td>1.00</td><td>1.00</td><td>0.75</td><td>1.00</td></tr>
+    <tr><td>Coin Rush</td><td>1.15</td><td>0.72</td><td>1.15</td><td>0.80</td></tr>
+  </table>
+
+  <p>These are spacing multipliers, so a number below one means <em>closer together</em>. The
+  rule I set for the table was that no row is allowed to be uniformly harder or uniformly
+  easier than Classic. Every archetype pushes one knob and pulls another back. Coin Rush hands
+  you far more coins, which in TUNL widen the corridor, but it pays for that with tighter
+  stalactites and more mines. A day should read as a different day, not as a good or bad roll.</p>
+
+  <h2>The constraint underneath all of this</h2>
+
+  <p>Here is the part that turned out to matter more than the generator itself.</p>
+
+  <p>Because the cave is shared and the leaderboard is global, <strong>anything that decides
+  where an object is placed must be a pure function of world position and the day</strong>.
+  Nothing else is allowed to leak in. Not the player's screen size, not their score, not
+  whether they happen to have a power-up active, not how long they have been playing.</p>
+
+  <p>That sounds obvious written down. In practice it forbids a long list of things that feel
+  completely reasonable while you are writing them, and the violations do not announce
+  themselves. Nothing crashes. The game looks right. The cave has simply, quietly, stopped
+  being the same cave.</p>
+
+  <h2>Bug one: six devices, six caves</h2>
+
+  <p>The spacing functions that decide how far apart obstacles sit are difficulty curves, so
+  naturally they read the current difficulty. The original versions read the
+  <code>_prog</code> global, which is difficulty <em>at the player's current position</em>.</p>
+
+  <p>The spawn loops look like this:</p>
+
+<pre><code>while (nextStalWx &lt; scrollX + W + margin) { ... }</code></pre>
+
+  <p>They place obstacles slightly beyond the right edge of the screen. So the moment a given
+  world position gets its spacing rolled depends on <code>W</code>, the screen width. A wider
+  device reaches forward further, rolls that position earlier in the run, and therefore samples
+  the difficulty curve at a <em>lower</em> <code>_prog</code> than a narrow device does for the
+  exact same piece of world.</p>
+
+  <p>Different spacing. Different cave. I measured it across six device sizes and got six
+  different caves, diverging from world position 938, which is roughly score 15. Everything
+  after that point on the shared daily leaderboard was being compared across tunnels that were
+  not the same tunnel.</p>
+
+  <p>The fix was to pass the position being placed into every curve, so they answer "how hard
+  is it <em>there</em>" instead of "how hard is it <em>here, now</em>":</p>
+
+<pre><code>function progAt(wx)  { return Math.min(Math.sqrt(Math.max(wx, 0) / 14000), 1); }
+function prog2At(wx) { return Math.max(wx - 14000, 0) / 40000; }</code></pre>
+
+  <p>There was a second, smaller instance of the same class of bug hiding in the centreline
+  clamp. <code>WALL_PAD</code>, the margin keeping the corridor off the screen edge, was a flat
+  8 pixels while everything around it scaled with screen height. On a taller screen that flat
+  padding is proportionally smaller, which moved the clamp point slightly, which was enough to
+  flip a single placement rejection, which forked the cave. It is now a fraction of
+  <code>H</code> like everything else.</p>
+
+  <div class="note">
+    <p>Both bugs share a shape worth naming: a value that is <em>almost</em> a pure function of
+    world position, with one contaminant that only matters on hardware you do not own. Neither
+    was findable by playing. Both are now locked down by tests that generate the cave at
+    several screen sizes and assert the results are byte-identical.</p>
+  </div>
+
+  <h2>Bug two: content nobody had ever seen</h2>
+
+  <p>The second failure had nothing to do with determinism and everything to do with not
+  checking my assumptions against reality.</p>
+
+  <p>Past a certain depth all the corridor geometry knobs hit their caps, because pushing them
+  further makes the tunnel genuinely unnavigable. Beyond that point the only thing still
+  changing is scroll speed, so a very long run was one variable getting slowly twitchier
+  against a frozen corridor. To fix that I built a set of deep-run features: a shape morph that
+  redistributes the two waves' amplitudes through a seeded sequence of characters (big clean
+  sweeps, beating chop, near-straight), a speed pulse that makes the pace breathe, wide
+  chambers that arrive as a breather, boulders as rare set pieces.</p>
+
+  <p>I gated all of it at world position 54,000, which is around score 900. That number came
+  from the difficulty curve, where the plateau mathematically begins. It was the right number
+  for the geometry and the wrong number for the players.</p>
+
+  <p>When I finally replayed real leaderboard data against the generator, the answer was
+  blunt: essentially nobody was getting anywhere near it. I had spent weeks building content
+  that had never been seen by a single player, including me.</p>
+
+  <p>So I built a red-team simulation: 2,400 headless runs across four calibrated skill tiers,
+  measuring how far each tier actually reaches. The tier matching real players reached world
+  position 30,000 in <strong>0% of 600 runs</strong>. Not "rarely". Never. Even after I had
+  already moved the gate down once, to 30,000, the content was still unreachable. It was the
+  same mistake, one order of magnitude smaller.</p>
+
+  <p>The gate now sits at 9,000, around score 150, where the simulation says a real share of
+  runs actually arrive:</p>
+
+  <table>
+    <tr><th>Skill tier</th><th>Runs reaching the gate</th></tr>
+    <tr><td>Average</td><td>3.3%</td></tr>
+    <tr><td>Good</td><td>24.7%</td></tr>
+    <tr><td>Expert</td><td>63.5%</td></tr>
+  </table>
+
+  <p>This was safe to do only because every deep-run feature is bounded <em>relative to the
+  same position unmorphed</em>. The morph's amplitude splits are capped against corridor
+  velocity so a morphed stretch never carries more than about 3% more wiggle energy than the
+  unmorphed one, and chambers only ever widen the corridor. None of it can make a given
+  position harder than the hand-tuned baseline, at any depth, which is why moving the gate is
+  a supply decision rather than a difficulty change.</p>
+
+  <p>One piece deliberately did not move. Apex-biased mines, which snap toward the centreline
+  at a bend apex where the corridor already forces you, carry a real risk of reading as the
+  game cheating. That one stays at the old depth until someone actually flies it on a device.
+  Pulling an unproven fairness risk 750 points earlier is not part of a pacing fix.</p>
+
+  <h2>What determinism buys</h2>
+
+  <p>All of that constraint pays for three things that would otherwise be much harder.</p>
+
+  <h3>A ghost that costs almost nothing</h3>
+
+  <p>Racing a replay of your best run normally means recording inputs or obstacle state. Here
+  the cave is reproducible from a date, so a replay needs nothing except the ship's vertical
+  position over time. One byte per 60 world pixels, quantised over the screen height, which
+  makes a full ghost a few hundred bytes and lets a ghost recorded on a phone replay correctly
+  on a tablet.</p>
+
+  <p>It is indexed by distance travelled rather than elapsed time, which matters because one of
+  the coin types slows the scroll and ramps it back over several seconds. A time-indexed ghost
+  would desync from the tunnel the moment anyone picked one up.</p>
+
+  <h3>A share card that is a picture of the run</h3>
+
+  <p>Because the corridor is a pure function of position, the whole flown tunnel can be redrawn
+  after the fact, compressed into a strip, with the death point and personal best marked. The
+  card is a picture of the <em>run</em> rather than a score badge, and generating it needs no
+  recording at all, just the distance reached.</p>
+
+  <h3>A leaderboard that means something</h3>
+
+  <p>Everyone flying an identical cave is the whole basis for comparing scores. It is also why
+  the render width is capped rather than filling the screen: obstacle spacing is fixed in world
+  position, so a much wider device would see the shared cave scroll past proportionally faster
+  and face the same obstacles with less reaction time. Vertical feel is normalised the same
+  way, with gravity and thrust scaled by screen height against a reference, so a trajectory
+  covers the same fraction of the corridor per second on any device.</p>
+
+  <h2>If I were starting again</h2>
+
+  <p>The generator was the easy part. Two waves and a hash is an afternoon. Everything
+  expensive came from the promise wrapped around it, that the cave is <em>the same</em>, which
+  turns every future feature into a question about whether it leaks non-determinism into
+  placement.</p>
+
+  <p>The lesson I would keep is the testing shape. Determinism bugs are invisible by play and
+  trivial by assertion. Generating the first several thousand positions at six screen sizes and
+  diffing them takes milliseconds and would have caught both device bugs the day they were
+  written. The content-gating mistake needed a different tool entirely, a simulation of how far
+  players actually get, and the only real lesson there is that a number derived from your
+  difficulty curve is not a number about your players.</p>
+
+  <p>Today's cave is live and it resets at UTC midnight. It runs in the browser, no install:</p>
+
+  <p><a class="cta" href="/play/">Play today's cave</a></p>
+
+  <footer>
+    TUNL &middot; <a href="/">Home</a> &middot; <a href="/play/">Play</a> &middot;
+    <a href="/how-to-play/">How to play</a> &middot; <a href="/support">Support</a> &middot;
+    <a href="/privacy">Privacy Policy</a> &middot; &copy; 2026 Theodoracatos
+  </footer>
+</main>
+</body>
+</html>
