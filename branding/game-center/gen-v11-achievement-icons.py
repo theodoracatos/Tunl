@@ -108,22 +108,29 @@ def ship(canvas, pos, heading, hue):
     return canvas
 
 
-def diamond_coin(cx, cy, R, color, slash=False):
-    """The game's own coin silhouette: faceted diamond + sparkle rays (draw.js's
-    shared coin render path), optionally crossed out for 'no bonus'/'pacifist'."""
+def gold_coin(cx, cy, R, color, slash=False):
+    """The game's own gold coin (draw.js _coinGold, 13.0): a flat four-facet gem lit
+    from above - top-right facet brightest, bottom-left darkest, same tone maths as
+    the ship - with two chevrons pushing outward above and below it ("the corridor
+    widens"). No sparkle rays: the glossy gem they belonged to is gone from the game.
+    Optionally crossed out for 'no bonus'/'pacifist'."""
     ov = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
     od = ImageDraw.Draw(ov)
-    pts = [(cx, cy - R), (cx + R * 0.62, cy), (cx, cy + R), (cx - R * 0.62, cy)]
-    od.polygon(pts, fill=(color[0], color[1], color[2], 235))
-    inner = mix(color, (255, 255, 255), 0.55)
-    od.polygon([(cx, cy - R * 0.5), (cx + R * 0.30, cy), (cx, cy + R * 0.5), (cx - R * 0.30, cy)],
-               fill=(inner[0], inner[1], inner[2], 220))
-    for a in range(0, 360, 45):
-        rad = math.radians(a)
-        r0, r1 = R * 1.05, R * 1.55
-        x0, y0 = cx + math.cos(rad) * r0, cy + math.sin(rad) * r0
-        x1, y1 = cx + math.cos(rad) * r1, cy + math.sin(rad) * r1
-        od.line([(x0, y0), (x1, y1)], fill=(255, 255, 255, 140), width=3)
+    dh, dw = R * 0.8, R * 0.55
+    top, right, bot, left, mid = (cx, cy - dh), (cx + dw, cy), (cx, cy + dh), (cx - dw, cy), (cx, cy)
+    tone = lambda k: mix(color, (255, 255, 255), k) if k >= 0 else mix(color, (0, 0, 0), -k)
+    for pts, k in (((mid, top, right), 0.55), ((mid, top, left), 0.15),
+                   ((mid, right, bot), -0.28), ((mid, left, bot), -0.50)):
+        c = tone(k)
+        od.polygon(pts, fill=(c[0], c[1], c[2], 255))
+    edge = tone(0.45)
+    od.line([top, right, bot, left, top], fill=(edge[0], edge[1], edge[2], 255), width=max(2, int(R * 0.035)), joint="curve")
+    chev = tone(0.30)
+    w = max(3, int(R * 0.13))
+    off = R * 1.15
+    for d in (-1, 1):
+        od.line([(cx - R * 0.36, cy + d * (off - R * 0.24)), (cx, cy + d * off), (cx + R * 0.36, cy + d * (off - R * 0.24))],
+                fill=(chev[0], chev[1], chev[2], 255), width=w, joint="curve")
     if slash:
         sc = (235, 70, 70, 255)
         od.line([(cx - R * 1.3, cy - R * 1.3), (cx + R * 1.3, cy + R * 1.3)], fill=sc, width=int(R * 0.16))
@@ -196,7 +203,7 @@ def build_pacifist():
     glow_c = (70, 210, 175)
     canvas = base_canvas(glow_c, r=SIZE * 0.34)
     canvas = body_glow(canvas, BODY_C, SIZE * 0.13, glow_c, reach=2.6, strength=0.45, blur=0.07)
-    coin = diamond_coin(BODY_C[0], BODY_C[1], SIZE * 0.135, mix(glow_c, (255, 255, 255), 0.4), slash=True)
+    coin = gold_coin(BODY_C[0], BODY_C[1], SIZE * 0.135, mix(glow_c, (255, 255, 255), 0.4), slash=True)
     coin.putalpha(coin.split()[3].point(lambda p: int(p * 0.55)))  # ghosted / uncollected
     canvas.alpha_composite(coin)
     canvas = add_ship(canvas, (170, 255, 225), ctrl=(0.30, 0.55))  # trajectory passes below the coin
@@ -281,7 +288,7 @@ def build_no_bonus():
     glow_c = (150, 165, 190)
     canvas = base_canvas(glow_c, r=SIZE * 0.30)
     canvas = body_glow(canvas, BODY_C, SIZE * 0.13, glow_c, reach=2.4, strength=0.45, blur=0.06)
-    coin = diamond_coin(BODY_C[0], BODY_C[1], SIZE * 0.135, (255, 205, 70), slash=True)
+    coin = gold_coin(BODY_C[0], BODY_C[1], SIZE * 0.135, (255, 205, 70), slash=True)
     canvas.alpha_composite(coin)
     canvas = add_ship(canvas, (200, 210, 230), ctrl=(0.30, 0.55))
     save(canvas, "no_bonus")

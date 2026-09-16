@@ -50,22 +50,22 @@
     "ja": "ボタンひとつの洞窟フライヤー。押して上昇、離して下降。トンネルが閉じる前に、どこまで暗闇へ進めるか。"
   },
   "hero.newTag": {
-    "en": "New in 12.1",
-    "de": "Neu in 12.1",
-    "fr": "Nouveau dans la 12.1",
-    "it": "Novità nella 12.1",
-    "es": "Novedad en la 12.1",
-    "pt": "Novo na 12.1",
-    "ja": "12.1の新機能"
+    "en": "New in 13.0",
+    "de": "Neu in 13.0",
+    "fr": "Nouveau dans la 13.0",
+    "it": "Novità nella 13.0",
+    "es": "Novedad en la 13.0",
+    "pt": "Novo na 13.0",
+    "ja": "13.0の新機能"
   },
   "hero.newBody": {
-    "en": "TUNL sounds and feels sharper. New flight and title music, remastered louder so it doesn't get buried under the sound effects, every menu redesigned with a frosted-glass look, and a fix so a blue coin grabbed mid-warp banks its slow-time instead of wasting it.",
-    "de": "TUNL klingt und wirkt jetzt schärfer. Neue Musik für Flug und Titelbildschirm, lauter abgemischt, damit sie nicht in den Soundeffekten untergeht, jedes Menü im neuen Frosted-Glass-Look, und ein Fix, damit eine während eines Warps eingesammelte blaue Münze ihre Zeitlupe bankt statt sie zu verschwenden.",
-    "fr": "TUNL sonne et se ressent plus net. Nouvelle musique de vol et de titre, remasterisée plus fort pour ne plus disparaître sous les effets sonores, chaque menu repensé avec un look verre dépoli, et une correction pour qu'une pièce bleue récupérée pendant un warp mette son ralenti de côté au lieu de le gâcher.",
-    "it": "TUNL suona e si sente più nitido. Nuova musica di volo e del titolo, rimasterizzata più forte per non sparire sotto gli effetti sonori, ogni menu ridisegnato con un look vetro smerigliato, e una correzione perché una moneta blu raccolta durante un warp conservi il suo rallentamento invece di sprecarlo.",
-    "es": "TUNL suena y se siente más nítido. Nueva música de vuelo y de título, remasterizada más alta para no perderse bajo los efectos de sonido, cada menú rediseñado con un aspecto de vidrio esmerilado, y una corrección para que una moneda azul recogida durante un warp guarde su cámara lenta en vez de desperdiciarla.",
-    "pt": "O TUNL soa e parece mais nítido. Nova música de voo e do título, remasterizada mais alta para não sumir sob os efeitos sonoros, cada menu redesenhado com um visual de vidro fosco, e uma correção para que uma moeda azul apanhada durante um warp guarde o seu tempo lento em vez de o desperdiçar.",
-    "ja": "TUNLの音と手触りがより鋭くなった。効果音に埋もれないようリマスターされた新しい飛行中・タイトル画面の音楽、フロストガラス風に一新されたすべてのメニュー、そしてワープ中に取った青いコインがスロータイムを無駄にせず貯金されるようになった修正。"
+    "en": "TUNL has a new look. Sharper type on every screen, a title screen that glows in the colour of today's planet, a score that fills toward your record as you fly, a combo counter with its own countdown, and coins that streak into your score.",
+    "de": "TUNL hat einen neuen Look. Schärfere Schrift auf jedem Bildschirm, ein Titelbildschirm in der Farbe des heutigen Planeten, ein Score, der sich im Flug Richtung Rekord füllt, ein Combo-Zähler mit eigenem Countdown und Münzen, die in deinen Score fliegen.",
+    "fr": "TUNL change de look. Une typo plus nette sur chaque écran, un écran titre aux couleurs de la planète du jour, un score qui se remplit vers ton record en plein vol, un compteur de combo avec son propre compte à rebours et des pièces qui filent vers ton score.",
+    "it": "TUNL ha un nuovo look. Caratteri più nitidi su ogni schermata, una schermata del titolo nel colore del pianeta di oggi, un punteggio che in volo si riempie verso il tuo record, un contatore combo con il suo conto alla rovescia e monete che volano nel punteggio.",
+    "es": "TUNL estrena look. Tipografía más nítida en cada pantalla, una pantalla de título con el color del planeta de hoy, una puntuación que se llena hacia tu récord en pleno vuelo, un contador de combo con su propia cuenta atrás y monedas que vuelan a tu puntuación.",
+    "pt": "O TUNL ganhou um visual novo. Tipografia mais nítida em todos os ecrãs, um ecrã de título na cor do planeta de hoje, uma pontuação que enche rumo ao seu recorde durante o voo, um contador de combo com a sua própria contagem decrescente e moedas que voam para a pontuação.",
+    "ja": "TUNLが新しい見た目に。全画面でよりシャープな文字、今日の惑星の色に染まるタイトル画面、飛行中に自己ベストへ向かって満ちていくスコア、専用カウントダウン付きのコンボカウンター、そしてスコアへ飛び込むコイン。"
   },
   "hero.playCta": {
     "en": "Play in your browser",
@@ -192,13 +192,13 @@
     "ja": "8種のコインとワープ"
   },
   "f4.p": {
-    "en": "Gold widens the corridor, blue slows the run, red shields a hit, orange loads ammo, green pulls coins in, and purple blasts nearby danger. Two are traps: a toxic green spore costs you shards, a wine-red ring drains your score. Fly through the violet hoop hanging in the tunnel to warp ahead, untouchable. Every coin has its own shape, so you can tell them apart at a glance, even colorblind.",
-    "de": "Gold weitet den Korridor, Blau bremst den Lauf in Zeitlupe, Rot fängt einen Treffer ab, Orange lädt Munition, Grün zieht Münzen an, und Lila sprengt nahe Gefahren weg. Zwei sind Fallen: eine giftgrüne Spore kostet dich Shards, ein weinroter Ring zapft deinen Punktestand an. Und wer durch den violetten Reif im Tunnel fliegt, wird vom Sog nach vorne gerissen, unverwundbar. Jede Münze hat ihre eigene Form, damit du sie auf einen Blick unterscheidest, auch mit Farbsehschwäche.",
-    "fr": "L'or élargit le couloir, le bleu ralentit la partie, le rouge encaisse un coup, l'orange charge des munitions, le vert attire les pièces et le violet fait exploser les dangers proches. Deux sont des pièges : une spore vert toxique te coûte des shards, un anneau bordeaux draine ton score. Traverse l'arceau violet suspendu dans le tunnel et le Sog te propulse en avant, intouchable. Chaque pièce a sa propre forme, pour les distinguer d'un coup d'oeil, même daltonien.",
-    "it": "L'oro allarga il corridoio, il blu rallenta la partita, il rosso para un colpo, l'arancione carica munizioni, il verde attira le monete e il viola fa esplodere i pericoli vicini. Due sono trappole: una spora verde tossica ti costa shard, un anello rosso vinaccia prosciuga il punteggio. Attraversa il cerchio viola sospeso nel tunnel e il Varco ti scaglia in avanti, intoccabile. Ogni moneta ha la sua forma, per distinguerle a colpo d'occhio, anche da daltonici.",
-    "es": "El oro ensancha el pasillo, el azul ralentiza la partida, el rojo bloquea un golpe, el naranja carga munición, el verde atrae las monedas y el morado hace estallar el peligro cercano. Dos son trampas: una espora verde tóxica te cuesta esquirlas, un anillo rojo vino drena tu puntuación. Cruza el aro violeta que cuelga en el túnel y el Warp te lanza hacia delante, intocable. Cada moneda tiene su propia forma, para distinguirlas de un vistazo, incluso con daltonismo.",
-    "pt": "O ouro alarga o corredor, o azul desacelera a partida, o vermelho bloqueia um golpe, o laranja carrega munição, o verde puxa as moedas e o roxo explode o perigo por perto. Duas são armadilhas: um esporo verde tóxico custa fragmentos, um anel vermelho-vinho drena sua pontuação. Atravesse o aro violeta no túnel e o Warp te lança para a frente, intocável. Cada moeda tem formato próprio, para diferenciar num relance, mesmo com daltonismo.",
-    "ja": "金は通路を広げ、青は走りをスローに、赤は一撃を防ぎ、オレンジは弾を装填、緑はコインを引き寄せ、紫は近くの危険を吹き飛ばす。残る2種は罠 - 毒々しい緑の胞子はシャードを奪い、ワインレッドの輪はスコアを削る。トンネルに浮かぶ紫のゲートをくぐれば、ワープで無敵のまま一気に前へ。どのコインも形が違うので、色覚に頼らず一目で見分けられる。"
+    "en": "Every coin shows what it does. Gold widens the corridor, the hourglass slows the run, the violet shield blocks a hit, the crosshair loads ammo, the magnet pulls coins in, and the red bomb blasts nearby danger. Two are traps: a poison flask costs you shards, a pink whirlpool drains your score. Fly through the violet hoop hanging in the tunnel to warp ahead, untouchable. Every coin is its own object, so you can tell them apart at a glance, even colorblind.",
+    "de": "Jede Münze zeigt, was sie tut. Gold weitet den Korridor, die Sanduhr bremst den Lauf in Zeitlupe, der violette Schild fängt einen Treffer ab, das Fadenkreuz lädt Munition, der Magnet zieht Münzen an, und die rote Bombe sprengt nahe Gefahren weg. Zwei sind Fallen: eine Giftflasche kostet dich Shards, ein pinker Strudel zapft deinen Punktestand an. Und wer durch den violetten Reif im Tunnel fliegt, wird vom Sog nach vorne gerissen, unverwundbar. Jede Münze ist ein eigener Gegenstand, damit du sie auf einen Blick unterscheidest, auch mit Farbsehschwäche.",
+    "fr": "Chaque pièce montre ce qu'elle fait. L'or élargit le couloir, le sablier ralentit la partie, le bouclier violet encaisse un coup, le viseur charge des munitions, l'aimant attire les pièces et la bombe rouge fait exploser les dangers proches. Deux sont des pièges : une fiole de poison te coûte des shards, un tourbillon rose draine ton score. Traverse l'arceau violet suspendu dans le tunnel et le Sog te propulse en avant, intouchable. Chaque pièce est un objet distinct, pour les reconnaître d'un coup d'oeil, même daltonien.",
+    "it": "Ogni moneta mostra cosa fa. L'oro allarga il corridoio, la clessidra rallenta la partita, lo scudo viola para un colpo, il mirino carica munizioni, la calamita attira le monete e la bomba rossa fa esplodere i pericoli vicini. Due sono trappole: una boccetta di veleno ti costa shard, un vortice rosa prosciuga il punteggio. Attraversa il cerchio viola sospeso nel tunnel e il Varco ti scaglia in avanti, intoccabile. Ogni moneta è un oggetto diverso, per distinguerle a colpo d'occhio, anche da daltonici.",
+    "es": "Cada moneda muestra lo que hace. El oro ensancha el pasillo, el reloj de arena ralentiza la partida, el escudo morado bloquea un golpe, la mira carga munición, el imán atrae las monedas y la bomba roja hace estallar el peligro cercano. Dos son trampas: un frasco de veneno te cuesta esquirlas, un remolino rosa drena tu puntuación. Cruza el aro violeta que cuelga en el túnel y el Warp te lanza hacia delante, intocable. Cada moneda es un objeto distinto, para reconocerlas de un vistazo, incluso con daltonismo.",
+    "pt": "Cada moeda mostra o que faz. O ouro alarga o corredor, a ampulheta desacelera a partida, o escudo roxo bloqueia um golpe, a mira carrega munição, o ímã puxa as moedas e a bomba vermelha explode o perigo por perto. Duas são armadilhas: um frasco de veneno custa fragmentos, um redemoinho rosa drena sua pontuação. Atravesse o aro violeta no túnel e o Warp te lança para a frente, intocável. Cada moeda é um objeto diferente, para reconhecer num relance, mesmo com daltonismo.",
+    "ja": "コインは効果そのものの形をしている。金は通路を広げ、砂時計は走りをスローに、紫の盾は一撃を防ぎ、照準は弾を装填、磁石はコインを引き寄せ、赤い爆弾は近くの危険を吹き飛ばす。残る2種は罠 - 毒の小瓶はシャードを奪い、ピンクの渦はスコアを削る。トンネルに浮かぶ紫のゲートをくぐれば、ワープで無敵のまま一気に前へ。どのコインも別々の物の形なので、色覚に頼らず一目で見分けられる。"
   },
   "f5.h": {
     "en": "Stalactites, mines, boulders, cannons",
@@ -451,40 +451,40 @@
     "ja": "TUNLタイトル画面 - ひとつの洞窟、全プレイヤー、毎日"
   },
   "alt2": {
-    "en": "TUNL gameplay - hold to climb, release to fall, one button",
-    "de": "TUNL Gameplay - halten zum Steigen, loslassen zum Fallen, ein Knopf",
-    "fr": "Gameplay de TUNL - maintiens pour monter, relâche pour tomber, un bouton",
-    "it": "Gameplay di TUNL - tieni premuto per salire, rilascia per cadere, un pulsante",
-    "es": "Gameplay de TUNL - mantén para subir, suelta para caer, un botón",
-    "pt": "Gameplay do TUNL - segure para subir, solte para cair, um botão",
-    "ja": "TUNLのゲームプレイ - 押して上昇、離して下降、ボタンひとつ"
+    "en": "TUNL gameplay - hold to climb, let go to fall, one touch is the whole game",
+    "de": "TUNL Gameplay - halten zum Steigen, loslassen zum Fallen, eine Berührung ist das ganze Spiel",
+    "fr": "Gameplay de TUNL - maintiens pour monter, lâche pour tomber, un seul toucher suffit",
+    "it": "Gameplay di TUNL - tieni premuto per salire, lascia per cadere, un tocco è tutto il gioco",
+    "es": "Gameplay de TUNL - mantén para subir, suelta para caer, un toque es todo el juego",
+    "pt": "Gameplay do TUNL - segure para subir, solte para cair, um toque é o jogo inteiro",
+    "ja": "TUNLのゲームプレイ - 押して上昇、離して下降、タッチひとつがゲームのすべて"
   },
   "alt3": {
-    "en": "TUNL power-ups - shield, magnet, slow-time and bombs in a shrinking corridor",
-    "de": "TUNL Power-ups - Schild, Magnet, Zeitlupe und Bomben in einem schrumpfenden Korridor",
-    "fr": "Bonus de TUNL - bouclier, aimant, ralenti et bombes dans un couloir qui rétrécit",
-    "it": "Potenziamenti di TUNL - scudo, calamita, rallentatore e bombe in un corridoio che si restringe",
-    "es": "Mejoras de TUNL - escudo, imán, cámara lenta y bombas en un pasillo que se estrecha",
-    "pt": "Power-ups do TUNL - escudo, ímã, câmera lenta e bombas num corredor que encolhe",
-    "ja": "TUNLのパワーアップ - シールド、マグネット、スロー、爆弾。狭まる通路の中で"
+    "en": "TUNL warp ring - fly through for a pure-speed rush",
+    "de": "TUNL Warp-Reif - durchfliegen für einen reinen Geschwindigkeitsrausch",
+    "fr": "Anneau de warp de TUNL - traverse-le pour une pure poussée de vitesse",
+    "it": "Anello warp di TUNL - attraversalo per una scarica di pura velocità",
+    "es": "Aro de warp de TUNL - atraviésalo para un subidón de pura velocidad",
+    "pt": "Aro de warp do TUNL - atravesse para uma descarga de pura velocidade",
+    "ja": "TUNLのワープリング - くぐれば純粋なスピードの疾走"
   },
   "alt4": {
-    "en": "TUNL death screen - live daily world rank the moment you crash",
-    "de": "TUNL Todesbildschirm - der aktuelle tägliche Weltrang im Moment des Absturzes",
-    "fr": "Écran de mort de TUNL - le classement mondial du jour en direct au moment du crash",
-    "it": "Schermata di morte di TUNL - la classifica mondiale giornaliera in tempo reale nel momento dello schianto",
-    "es": "Pantalla de muerte de TUNL - el ranking mundial diario en vivo en el momento del choque",
-    "pt": "Tela de morte do TUNL - o ranking mundial diário ao vivo no momento da batida",
-    "ja": "TUNLのデス画面 - 墜落した瞬間の、その日の世界ランキング"
+    "en": "TUNL power-ups - shields, ammo, magnets and more, going deeper",
+    "de": "TUNL Power-ups - Schilde, Munition, Magnete und mehr, immer tiefer hinein",
+    "fr": "Bonus de TUNL - boucliers, munitions, aimants et plus encore, toujours plus profond",
+    "it": "Potenziamenti di TUNL - scudi, munizioni, calamite e altro, sempre più in profondità",
+    "es": "Mejoras de TUNL - escudos, munición, imanes y más, cada vez más hondo",
+    "pt": "Power-ups do TUNL - escudos, munição, ímãs e mais, cada vez mais fundo",
+    "ja": "TUNLのパワーアップ - シールド、弾薬、マグネットなど、さらに奥へ"
   },
   "alt5": {
-    "en": "TUNL settings - fifteen languages, no tutorial, just fly",
-    "de": "TUNL Einstellungen - fünfzehn Sprachen, kein Tutorial, einfach fliegen",
-    "fr": "Réglages de TUNL - quinze langues, pas de tutoriel, vole tout simplement",
-    "it": "Impostazioni di TUNL - quindici lingue, nessun tutorial, si vola e basta",
-    "es": "Ajustes de TUNL - quince idiomas, sin tutorial, solo vuela",
-    "pt": "Configurações do TUNL - quinze idiomas, sem tutorial, é só voar",
-    "ja": "TUNLの設定 - 15言語、チュートリアルなし、ただ飛ぶだけ"
+    "en": "TUNL debriefing screen - check your rank, the whole world flies the same cave",
+    "de": "TUNL Debriefing - sieh deinen Rang, die ganze Welt fliegt dieselbe Höhle",
+    "fr": "Écran de débriefing de TUNL - vois ton rang, le monde entier vole dans la même grotte",
+    "it": "Schermata di debriefing di TUNL - guarda il tuo rango, tutto il mondo vola nella stessa grotta",
+    "es": "Pantalla de resumen de TUNL - mira tu rango, todo el mundo vuela la misma cueva",
+    "pt": "Tela de resumo do TUNL - veja seu ranking, o mundo inteiro voa na mesma caverna",
+    "ja": "TUNLのデブリーフィング画面 - 順位をチェック、世界中が同じ洞窟を飛ぶ"
   },
 
   "footer.support": { "en": "Support", "de": "Support", "fr": "Aide", "it": "Assistenza", "es": "Soporte", "pt": "Suporte", "ja": "サポート" },

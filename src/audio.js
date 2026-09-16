@@ -1530,21 +1530,43 @@ function sfxUiPurchaseSuccess() {
 // title music is. Deliberately NOT replayed on every return-to-title after a death;
 // a good run is 20-36 real seconds (see world.js), so a sound played every time would
 // wear out inside the first few runs of a single sitting.
+// Was a single sine sweeping 180Hz->900Hz -- on request (2026-09-16), replaced: it read
+// as a cartoon "boioioing"/fish-flop rather than a power-on. Now a sub thump for weight,
+// a rising two-note stab (the system coming online) and a short high shimmer tail --
+// same triangle-stab-plus-sine-ring shape as sfxPbPassed, just smaller and lower.
 let _bootChimePlayed = false;
 function sfxBoot() {
     if (_bootChimePlayed) return;
     _bootChimePlayed = true;
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
-    const o = _ac.createOscillator(), g = _ac.createGain();
-    o.connect(g); g.connect(_master);
-    o.type = 'sine';
-    o.frequency.setValueAtTime(180, t);
-    o.frequency.exponentialRampToValueAtTime(900, t + 0.26);
-    g.gain.setValueAtTime(0.001, t);
-    g.gain.linearRampToValueAtTime(0.10, t + 0.05);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
-    o.start(t); o.stop(t + 0.3);
+    const sub = _ac.createOscillator(), subG = _ac.createGain();
+    sub.connect(subG); subG.connect(_master);
+    sub.type = 'sine';
+    sub.frequency.setValueAtTime(110, t);
+    sub.frequency.exponentialRampToValueAtTime(55, t + 0.18);
+    subG.gain.setValueAtTime(0.001, t);
+    subG.gain.linearRampToValueAtTime(0.20, t + 0.02);
+    subG.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+    sub.start(t); sub.stop(t + 0.24);
+    [392.00, 659.25].forEach((freq, i) => { // G4, E5
+        const o = _ac.createOscillator(), g = _ac.createGain();
+        o.connect(g); g.connect(_master);
+        o.type = 'triangle'; o.frequency.value = freq;
+        const t0 = t + 0.05 + i * 0.09;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.14, t0 + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.28);
+        o.start(t0); o.stop(t0 + 0.3);
+    });
+    const r = _ac.createOscillator(), rg = _ac.createGain();
+    r.connect(rg); rg.connect(_master);
+    r.type = 'sine'; r.frequency.value = 1318.5; // E6
+    const rt = t + 0.16;
+    rg.gain.setValueAtTime(0.0001, rt);
+    rg.gain.exponentialRampToValueAtTime(0.07, rt + 0.02);
+    rg.gain.exponentialRampToValueAtTime(0.0001, rt + 0.35);
+    r.start(rt); r.stop(rt + 0.4);
 }
 
 function magnetLoopOff() {

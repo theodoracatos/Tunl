@@ -284,7 +284,7 @@ https://claude.ai/artifact/QPvLrDmGiU6przXNwXLV9y
   screenshot via DevTools protocol with real waits instead.
 - **The TUNL wordmark no longer assumes a monospace grid.** `drawTitleScreen` measures cap
   height off 'T', stem width off 'I' and per-letter advances, and strokes the U channel from
-  the real 'U' ink box with chamfered corners, at 0.62x the stem (full stem weight read as
+  the real 'U' ink box with chamfered corners, at 0.51x the stem (full stem weight read as
   too heavy on device). Set `textAlign`/`textBaseline` BEFORE those `measureText` calls -
   bounding boxes are relative to the current alignment.
 - **The title's left column spaces itself by measured ink, not only by H-fractions**
@@ -304,7 +304,7 @@ https://claude.ai/artifact/QPvLrDmGiU6przXNwXLV9y
   a PLAY button (tapping anywhere starts a run, and see Onboarding on title-screen CTAs)
   and rail text labels (no room between the ring and a 5-icon rail at 667x375).
 
-### HUD instrument, parallax rock, web frame (2026-09-16 design pass, proposals 3-6)
+### HUD instrument, web frame (2026-09-16 design pass, proposals 3, 4, 6)
 
 - **HUD** (`drawHUD`, constants.js `HUD_SPARK_*`): under the live score a thin record rail
   fills toward the all-time best (orange once ON FIRE, pulsing gold once `pbPassed`, gold
@@ -313,10 +313,11 @@ https://claude.ai/artifact/QPvLrDmGiU6przXNwXLV9y
   colour to the score, which "swallows" it (`hudBump`, scale + gold tint). A near-miss
   bumps immediately. All presentation: `bonusScore` is still credited at pickup. The world
   intro banner and the milestone flash are both placed below `hudY`, never over the stack.
-- **Parallax rock** (`drawWorld`, constants.js `PARALLAX_*` doc): two far silhouettes from
-  the top and bottom screen edges, pure function of scrollX + LEVEL_NUM, never past 0.32H,
-  colour kept close to the void (a stronger first pass read as a second pair of walls inside
-  the safe flight). `PARALLAX_ON` is the kill switch.
+- **No parallax background - tried and removed the same day (do not re-add).** Two far rock
+  silhouettes scrolling behind the walls (proposal 5) read as "extremely confusing" in
+  playtest, even after their contrast was cut to near the void colour: in a game whose
+  whole skill is reading where the walls are, any second set of wall-shaped edges moving
+  at a different speed competes with the real ones.
 - **Web frame** (`tunl.html` `body.web-framed`, `main.js _syncWebFrame`): hairline + glow in
   the day's rock around the canvas, only with >= 32px of letterbox room, `isWeb()` only.
 
@@ -326,8 +327,10 @@ https://claude.ai/artifact/QPvLrDmGiU6przXNwXLV9y
 behind the walls is no longer a flat `WEEKDAY_BG` at every depth: it is **lifted toward the
 day's own `wallBase` and steps darker at each sector boundary** (S0 15%, then 62% / 34% / 14%
 of that, plain `WEEKDAY_BG` from S4, each step eased over `DEPTH_STEP_EASE_WX`), and a
-**warm cave-mouth light** (warm white tinted 35% toward the day's rock) falls in from behind
-the ship off the left edge, fading out by S4. The title screen shows the mouth (wx = 0).
+**warm cave-mouth light** (warm white tinted 60% toward the day's rock) falls in from behind
+the ship off the left edge, fading out by S4. Softened 2026-09-16 ("too glaring"): alpha
+0.30 -> 0.24, tint 35% -> 60%, gradient centre moved to `DEPTH_MOUTH_X` = -0.30W so its hot
+core is never on screen, and a 6-stop falloff (`DEPTH_MOUTH_STOPS`) instead of a 3-stop cone. The title screen shows the mouth (wx = 0).
 Three rules, each from the variant study
 (https://claude.ai/code/artifact/ea963ae1-1c8b-4bf4-9587-c2f90286d666):
 - **Never literally bright.** A light-to-dark ground was measured and rejected: the
@@ -395,7 +398,7 @@ https://claude.ai/code/artifact/9c713c80-e348-46fc-b6ee-f66af5bb9be4
 | sector | score | new |
 |--------|-------|-----|
 | S0 | 0-50 | safe flight; gold, blue |
-| S1 | 50-111 | walls lethal + 2 hull scratches, first stalactites, red shield coin |
+| S1 | 50-111 | walls lethal + 2 hull scratches, first stalactites, shield coin |
 | S2 | 111-178 | orange ammo, green magnet |
 | S3 | 178-252 | first mine (alone, centred in its band), bomb coin; scratches expire |
 | S4 | 252-328 | boulders |
@@ -1007,7 +1010,7 @@ Coins are staged by `_prog` so power-ups introduce gradually:
 - score 0-11 (_prog < 0.22): gold only (gap bonus)
 - score 11-33 (_prog 0.22-0.38): + blue (slow time: scroll sags to 0.6x on pickup then ramps back to full over ~4s - see slowScrollFactor)
 - score 34+ (_prog >= 0.38): the weighted ladder switches on
-- score 50+ (S1, `RED_START_WX`): + red (shield, absorbs 1 hit)
+- score 50+ (S1, `RED_START_WX`): + red (shield, absorbs 1 hit; type id is `red`, the coin is drawn violet)
 - score 111+ (S2, `ORANGE_START_WX` / `GREEN_START_WX`): + orange (bullet ammo) + green (magnet)
 - score 178+ (S3): bomb clock; S8 (583+) poison; S9 (677+) drain - see "Flight plan (sectors)"
   (red was 34, orange 34, green 71, bomb/poison/drain 34 until 2026-09-13)
@@ -1112,14 +1115,32 @@ original interval meant many runs, especially on wide screens (scroll speed scal
 W), saw literally zero of either. Bomb is deliberately a little more frequent than
 poison - a reward landing at least as often as a punishment reads more generous.
 
-**Poison coin**: hazard coin, deliberately NOT a recolored gem. Every legitimate coin
-shares one render path (faceted diamond, smooth single-sine pulse, bright sparkle rays)
-so poison breaks from it entirely (`isPsn` branch in `src/draw.js`'s coin loop): a
-jagged 7-point spore silhouette with per-point jitter (organic/unstable outline instead
-of a clean facet), an irregularly-strobing glow (two mismatched sine frequencies instead
-of the shared calm pulse), two dripping ooze tails, and a dark X on top - shape and
-motion register before color does, so recoloring alone (its first version) wasn't enough
-even with the X. Also continuously emits a slow ooze-drip particle while sitting
+**Coin rendering ("Gegenstand", 2026-09-16, do not go back to glossy gems or add a frame)**
+(`draw.js` `drawCoin` / `COIN_OBJECTS`). Each coin draws the thing it does: gold = gem with
+two outward chevrons (the corridor widens), blue = a Sanduhr that runs through in 4s (one
+coin's slow-time), red = violet Wappenschild, orange = a Fadenkreuz (crosshair; three cartridges were tried first and read as sticks at ~17pt), green = horseshoe magnet
+with its poles toward the ship and sparks drifting in, bomb = red bomb with a burning fuse,
+poison = Giftflasche, drain = inward Strudel. A player learns the type from the object
+without being told; the old glossy gems used an abstract pictogram per type (a droplet
+for slow time, four strokes for the magnet) that had to be learned, and their gradient +
+white-glint + `shadowBlur` material was the only glossy thing left after the design pass.
+**No frame:** a hexagon / dashed-hazard-ring frame was built the same day and removed on
+the user's call - at ~17pt it shrank the object until you could not tell what it was.
+Objects are drawn at `COIN_OBJECT_SCALE` (1.5) of the hitbox radius, gold a little more
+(`COIN_OBJECT_BOOST`).
+**Shield is violet, bomb is red (swapped 2026-09-16 on request).** The type id is still
+`'red'` for the shield - only colours moved: the coin, its pickup notif and `burstCoin`
+hue (`systems.js`), `HUD_SPARK_COLOR` and the shield bubble around the ship all follow,
+so the effect keeps the coin's colour. Don't "fix" the id/colour mismatch by renaming
+the type - missions, achievements and saves key off it. Gold was asked to move no more than the blue coin - no
+spin, no flip, a slow shallow chevron breathe. Flat facets lit from above, same material
+as the ship; zero `shadowBlur` (the old path spent 5-6 per coin). Purely visual: the
+hitbox is still `COIN_R * COIN_SIZE_MULT` in `systems.js`. Drain is drawn in
+`[215,80,140]` instead of wine `#7a2f4f`, which sank into the void.
+Study: https://claude.ai/artifact/Cqn7gYiN5ZXneyTA2BwTXb (variant 1)
+
+**Poison coin**: hazard coin. Drawn as a Giftflasche (see
+"Coin rendering" above). Also continuously emits a slow ooze-drip particle while sitting
 uncollected on screen (`update.js`'s coin-fade loop), so it visibly reads as "active
 hazard" even at a glance, not a static pickup. Color is toxic/acid green ("giftgrün",
 `#5fbf00`, deliberately different from the magnet coin's mint `#44ff88`). Touching it
@@ -1136,9 +1157,7 @@ of this run's *pending* shard bank (see Score formula below), never the persiste
 `shards` balance directly, so it can only cost progress not yet banked. See
 `checkCoinCollection` in `src/systems.js`.
 
-**Bomb coin**: power-up, the opposite of a hazard. Visually a purple gem (`#b833ff`)
-with a white 8-point spark mark (`isBmb` in `src/draw.js`, distinct from poison's X even
-though both are purple-ish/green-ish). Collecting it triggers a small blast around the
+**Bomb coin**: power-up, the opposite of a hazard. Drawn as a red bomb with a burning fuse (see "Coin rendering" above). Collecting it triggers a small blast around the
 pickup point (`BOMB_RADIUS`, `src/constants.js`) that clears every hazard caught in it:
 stalactites fade out the same way a bullet-destroyed one does, mines and in-flight
 cannon shots are destroyed outright, and any cannon that hasn't fired yet is disabled.
@@ -1146,9 +1165,7 @@ See `triggerBombExplosion` in `src/systems.js`, called from `checkCoinCollection
 `bomb` branch (joins the coin combo and banks toward `runCoins` like any other power-up
 - only the two hazard coins opt out of that shared path).
 
-**Drain coin**: the SECOND hazard coin (`'drain'`, wine `#7a2f4f`, `isDrn` branch in
-`src/draw.js` - a hollow broken ring with inward barbs that *contracts* on the pulse,
-counter-spins, dark punched-out core, heavy downward chevron; poison owns the X). Where
+**Drain coin**: the SECOND hazard coin (`'drain'`, drawn as a pink Strudel, see "Coin rendering" above). Where
 poison debits the *pending shard bank* (`runCoins`, meta progress), drain debits the
 *visible run score*: `checkCoinCollection`'s `drain` branch subtracts
 `ceil(score * lerp(DRAIN_LOSS_PCT_MIN, DRAIN_LOSS_PCT_MAX, _prog))` (5%->8%) from

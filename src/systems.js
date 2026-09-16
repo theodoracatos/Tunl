@@ -584,9 +584,9 @@ function checkCoinCollection() {
                 // ticked above), so it's exactly every 3rd red pickup this run.
                 const shieldGain = (activeSkin === 5 && runCoinsByType.red % 3 === 0) ? 2 : 1;
                 shieldCount = Math.min(shieldCount + shieldGain, shieldCap);
-                burstCoin(sx, coin.y, 0, 26);
+                burstCoin(sx, coin.y, 270, 26);
                 shake += 3;
-                pushNotif(sx, coin.y - 34, 1.1, T.notifShield, [255,90,90]);
+                pushNotif(sx, coin.y - 34, 1.1, T.notifShield, [190,60,255]);
                 sfxShield();
                 window.webkit?.messageHandlers?.haptic?.postMessage('success');
             } else if (coin.type === 'green') {
@@ -624,8 +624,8 @@ function checkCoinCollection() {
                 // that function, so the "ding-then-boom" pickup identity is a
                 // presentation choice, not baked into the explosion logic itself.
                 triggerBombExplosion(sx, coin.y);
-                burstCoin(sx, coin.y, 280, 26);
-                pushNotif(sx, coin.y - 34, 1.1, T.boom, [190,60,255]);
+                burstCoin(sx, coin.y, 0, 26);
+                pushNotif(sx, coin.y - 34, 1.1, T.boom, [255,90,90]);
                 sfxBomb();
                 window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
             } else {

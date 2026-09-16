@@ -6,7 +6,7 @@
 // it exists so a build can identify itself: window.TUNL_VERSION for a DevTools check,
 // and build-play.mjs stamps it into /play as <meta name="tunl:version"> so the live
 // web build's version is greppable without diffing the bundle.
-const TUNL_VERSION = '12.2';
+const TUNL_VERSION = '13.0';
 if (typeof window !== 'undefined') window.TUNL_VERSION = TUNL_VERSION;
 
 const cv  = document.getElementById('c');
@@ -713,7 +713,7 @@ const WARP_RECOVER_FRAC    = 0.30;
 const WARP_GAP_MULT        = 1.7;
 const WARP_GAP_EASE_RATE   = H * 1.6;
 
-// Bomb coin (purple): blast radius for the "destroy nearby obstacles" pickup effect --
+// Bomb coin (red): blast radius for the "destroy nearby obstacles" pickup effect --
 // see systems.js triggerBombExplosion(). "Small" on purpose -- clears immediate danger,
 // not the whole visible screen.
 const BOMB_RADIUS = W * 0.30;
@@ -802,7 +802,7 @@ function sectorPhase(wx) {
 }
 // What each sector introduces (score is approximate, distance only):
 //   S0  0-50    safe flight: gold, blue
-//   S1  50-111  walls lethal + HULL_SCRATCHES, first stalactites, red shield coin
+//   S1  50-111  walls lethal + HULL_SCRATCHES, first stalactites, shield coin
 //   S2  111-178 orange ammo, green magnet
 //   S3  178-252 first mine (alone, centred), bomb coin
 //   S4  252-328 boulders
@@ -904,36 +904,16 @@ const SAFE_BUMP_RING_SEC     = 0.45;  // ring lifetime
 const DEPTH_LIGHT_STEPS      = [1, 0.62, 0.34, 0.14];   // lift level in S0..S3, 0 from S4
 const DEPTH_LIFT             = 0.15;  // max mix of WEEKDAY_BG toward the day's wallBase
 const DEPTH_STEP_EASE_WX     = 540;   // world-px a step takes to settle (~1.3 ref s)
-const DEPTH_MOUTH_ALPHA      = 0.30;  // mouth light strength at wx = 0
+const DEPTH_MOUTH_ALPHA      = 0.24;  // mouth light strength at wx = 0 (0.30 until 2026-09-16, read as glaring)
 const DEPTH_MOUTH_END_SECTOR = 4;     // the mouth is gone by the start of this sector
 const DEPTH_MOUTH_WARM       = [255, 246, 228];
-const DEPTH_MOUTH_TINT       = 0.35;  // how far the daylight leans toward the day's rock
-
-// ── Parallax rock (2026-09-16 design pass, proposal 5) ───────────────────
-// Two far rock silhouettes hang from the top and rise from the bottom of the void behind
-// the walls, scrolling at a fraction of scrollX, so the cave has depth instead of being
-// two walls cut out of a flat backdrop. Rules, all inherited from the depth light above:
-// - Draw-only and a pure function of scrollX + LEVEL_NUM: no rng(), no gameplay value,
-//   identical on every device, and a warp or blue coin moves it exactly as it moves the
-//   walls. Not isWeb()-gated.
-// - Never literally bright. Each layer is the void colour mixed a little toward the day's
-//   rock: `lift` of the depth light's own lift where the void is lifted (so early on the
-//   ridges read as darker silhouettes against the lit mouth), floored at `min` deep in
-//   the run where the void is plain WEEKDAY_BG and a darker shape would be invisible.
-//   Kept close to the void on purpose: at 0.45/0.25 a first pass read as a second pair
-//   of walls inside the safe flight, where the real walls sit off the screen edges.
-// - `reach` is the layer's mean depth from the screen edge as a fraction of H; the three
-//   sines add at most +70%, so the far layer peaks at 0.32H and the near one at 0.22H.
-//   The middle 36% of the screen, where every hazard is read, is never covered. Where
-//   the corridor is narrow the walls hide the ridges entirely - they show in the wide
-//   early sectors, the safe flight and deep chambers, which is where the void is seen.
-// Cost is four solid fills of ~45 points each per frame - no gradients, no shadowBlur,
-// against ~640 wall points - so it is not cached. PARALLAX_ON is the kill switch.
-const PARALLAX_ON = true;
-const PARALLAX_LAYERS = [
-    { speed: 0.12, reach: 0.19, lift: 0.82, min: 0.030, step: 22, f: [0.0041, 0.0113, 0.029], seed: 1.3 },
-    { speed: 0.32, reach: 0.13, lift: 0.68, min: 0.050, step: 20, f: [0.0053, 0.0147, 0.037], seed: 4.1 },
-];
+const DEPTH_MOUTH_TINT       = 0.60;  // how far the daylight leans toward the day's rock (was 0.35: near-white glare)
+// Softened 2026-09-16 on request ("ein wenig zu grell"): the gradient centre sits well off
+// the left edge (DEPTH_MOUTH_X) so its hot core is never on screen, and the falloff runs
+// through DEPTH_MOUTH_STOPS instead of a 3-stop cone, so it reads as scattered light, not a
+// lamp. The radius grows by the same offset so the lit reach on screen is unchanged.
+const DEPTH_MOUTH_X          = -0.30; // gradient centre, as a fraction of W (was -0.08)
+const DEPTH_MOUTH_STOPS      = [[0, 1], [0.25, 0.72], [0.5, 0.40], [0.72, 0.17], [0.88, 0.05], [1, 0]];
 
 // ── Run scenes: the death screen's filmstrip (2026-09-13) ─────────────
 // One small snapshot of the real frame per sector the run reached, plus the frozen death
@@ -1093,8 +1073,8 @@ const HUD_BUMP_SEC  = 0.22;
 const HUD_SPARK_MAX = 14;
 // Spark colour per coin type, matched to each type's pickup notif colour (systems.js).
 const HUD_SPARK_COLOR = {
-    gold: [255, 214, 70], blue: [60, 210, 255], red: [255, 90, 90],
-    green: [80, 255, 130], orange: [255, 120, 30], bomb: [190, 60, 255],
+    gold: [255, 214, 70], blue: [60, 210, 255], red: [190, 60, 255],
+    green: [80, 255, 130], orange: [255, 120, 30], bomb: [255, 90, 90],
 };
 // The continue offer's own timeout -- deliberately NOT reusing DEATH_INTERACTIVE_SEC
 // above. First real-device pass found 0.9s (matched to that *existing* pre-interactive
