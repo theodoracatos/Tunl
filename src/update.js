@@ -230,7 +230,16 @@ function update(dt) {
     // (2.8x by score ~1180) was tried and rejected - it cancelled the coin bonus deep
     // almost entirely, which is the opposite failure to the one being fixed.
     const _deepDecay = lerp(1, DEEP_DECAY_PEAK, Math.min(_prog2 / 3, 1));
-    gapBonus   = Math.max(0, gapBonus   - gapDecay() * _deepDecay * (activeSkin === 4 ? masteryLerp(4, 1.6, 1.2) : 1.0) * dt);
+    // TOXIC's decay-rate drawback re-tuned down 2026-09-16 (ship audit: 1.6x measured
+    // as a wash against its 2x-per-coin buff, since coin supply refills the bar faster
+    // than decay drains it - see DEEP_DECAY_PEAK doc above). ELECTRIC's own decay now
+    // also rides slowScrollFactor(): while its own slow-time buff is live the corridor
+    // scrolls slower, so the bonus built up during it shouldn't bleed off at the same
+    // real-time rate as everyone else's - ties the drawback fix to the buff itself
+    // instead of adding an unrelated number. 1.0 (no slow active) is a no-op.
+    gapBonus   = Math.max(0, gapBonus   - gapDecay() * _deepDecay
+                 * (activeSkin === 4 ? masteryLerp(4, 1.3, 1.1) : 1.0)
+                 * (activeSkin === 3 ? slowScrollFactor() : 1.0) * dt);
     // The cap tracks the corridor, so a bonus banked in a wide stretch has to give
     // ground as the corridor narrows under it. Continuous (the base curve moves
     // slowly) and gapBonusVisual's easing smooths whatever is left.
@@ -598,9 +607,14 @@ function update(dt) {
     // Wall + stalactite collision. CRIMSON has a slimmer hitbox (its buff); AMBER
     // trades a slightly larger one away for its bigger coin-collection radius. Mastery
     // pushes CRIMSON's slimmer further and eases AMBER's back toward neutral.
-    const cPR = activeSkin === 2 ? PR * masteryLerp(2, 0.82, 0.74)
-              : activeSkin === 1 ? PR * masteryLerp(1, 1.10, 1.03)
-              : activeSkin === 7 ? PR * masteryLerp(7, 1.20, 1.10)
+    // Re-tuned 2026-09-16 (ship audit): AMBER's coin-reach buff scaled far harder than
+    // its hitbox drawback (measured +17-40% score at every tier vs. PEARL - the
+    // cheapest ship was strictly the best one), and CRIMSON/SOLARIS's slim/wide
+    // hitboxes were too small to matter until mastery 3 healed them. See constants.js
+    // SKINS doc + skinPerkValue for the matching perk-text numbers.
+    const cPR = activeSkin === 2 ? PR * masteryLerp(2, 0.78, 0.72)
+              : activeSkin === 1 ? PR * masteryLerp(1, 1.10, 1.06)
+              : activeSkin === 7 ? PR * masteryLerp(7, 1.06, 1.03)
               : PR;
     const _wallsSafe = wallsSafe();
     for (const dx of [-cPR * 0.7, 0, cPR * 0.7]) {

@@ -61,7 +61,7 @@ const LANGS = {
         notifTitles: ['Today\'s cave is waiting', 'Same cave for the whole world', 'A new cave just dropped'],
         notifBodies: ['You haven\'t flown today\'s tunnel yet. How far can you get?', 'Everyone on Earth flies the exact same cave today. Go beat it.', 'One run before the day resets and the cave changes?'],
         skinPerks: [null, 'COIN REACH {v}', 'SLIM HITBOX {v}', 'SLOW TIME {v}', '{v} COIN BONUS', 'SHIELD CAP {v}', 'MAGNET TIME {v}', 'NEAR-MISS RANGE {v}'],
-        skinDrawbacks: [null, 'HITBOX +10%', 'SHIELD CAP -1', 'COMBO TIME -25%', 'DECAY +60%', 'CLOSE RANGE -25%', 'AMMO CAP -40%', 'HITBOX +20%'],
+        skinDrawbacks: [null, 'HITBOX +10%', 'SHIELD CAP -1', 'COMBO TIME -5%', 'DECAY +30%', 'CLOSE RANGE -25%', 'AMMO CAP -40%', 'HITBOX +6%'],
     },
     de: {
         name: 'Deutsch',
@@ -122,7 +122,7 @@ const LANGS = {
         notifTitles: ['Die heutige Höhle wartet', 'Für alle dieselbe Höhle', 'Eine neue Höhle ist da'],
         notifBodies: ['Du bist den heutigen Tunnel noch nicht geflogen. Wie weit kommst du?', 'Heute fliegt die ganze Welt genau dieselbe Höhle. Schlag sie.', 'Ein Lauf, bevor der Tag zurücksetzt und die Höhle wechselt?'],
         skinPerks: [null, 'MÜNZREICHWEITE {v}', 'SCHMALE HITBOX {v}', 'ZEITLUPE {v}', '{v} MÜNZBONUS', 'SCHILDKAPAZITÄT {v}', 'MAGNETZEIT {v}', 'NAHVORBEI-ZONE {v}'],
-        skinDrawbacks: [null, 'HITBOX +10%', 'SCHILDKAPAZITÄT -1', 'COMBO-ZEIT -25%', 'VERFALL +60%', 'NAHDISTANZ -25%', 'MUNITION -40%', 'HITBOX +20%'],
+        skinDrawbacks: [null, 'HITBOX +10%', 'SCHILDKAPAZITÄT -1', 'COMBO-ZEIT -5%', 'VERFALL +30%', 'NAHDISTANZ -25%', 'MUNITION -40%', 'HITBOX +6%'],
     },
     fr: {
         name: 'Francais',
@@ -183,7 +183,7 @@ const LANGS = {
         notifTitles: ['La grotte du jour t\'attend', 'La même grotte pour tous', 'Une nouvelle grotte est là'],
         notifBodies: ['Tu n\'as pas encore volé le tunnel du jour. Jusqu\'où iras-tu ?', 'Aujourd\'hui, le monde entier vole exactement la même grotte. Bats-la.', 'Une partie avant que le jour se réinitialise et que la grotte change ?'],
         skinPerks: [null, 'PORTEE PIECES {v}', 'HITBOX FINE {v}', 'RALENTI {v}', 'BONUS PIECES {v}', 'CAPACITE BOUCLIER {v}', 'DUREE AIMANT {v}', 'ZONE QUASI-MISS {v}'],
-        skinDrawbacks: [null, 'HITBOX +10%', 'CAPACITE BOUCLIER -1', 'DUREE COMBO -25%', 'DECLIN +60%', 'PORTEE PRES -25%', 'MUNITIONS -40%', 'HITBOX +20%'],
+        skinDrawbacks: [null, 'HITBOX +10%', 'CAPACITE BOUCLIER -1', 'DUREE COMBO -5%', 'DECLIN +30%', 'PORTEE PRES -25%', 'MUNITIONS -40%', 'HITBOX +6%'],
     },
     it: {
         name: 'Italiano',
@@ -244,7 +244,7 @@ const LANGS = {
         notifTitles: ['La grotta di oggi ti aspetta', 'La stessa grotta per tutto il mondo', 'È arrivata una nuova grotta'],
         notifBodies: ['Non hai ancora volato il tunnel di oggi. Fin dove arrivi?', 'Oggi tutto il mondo vola esattamente la stessa grotta. Battila.', 'Una corsa prima che il giorno si azzeri e la grotta cambi?'],
         skinPerks: [null, 'RAGGIO MONETE {v}', 'HITBOX SOTTILE {v}', 'TEMPO LENTO {v}', 'BONUS MONETE {v}', 'CAPACITA SCUDO {v}', 'DURATA CALAMITA {v}', 'ZONA QUASI-MISS {v}'],
-        skinDrawbacks: [null, 'HITBOX +10%', 'CAPACITA SCUDO -1', 'DURATA COMBO -25%', 'DECADIMENTO +60%', 'RAGGIO VICINO -25%', 'MUNIZIONI -40%', 'HITBOX +20%'],
+        skinDrawbacks: [null, 'HITBOX +10%', 'CAPACITA SCUDO -1', 'DURATA COMBO -5%', 'DECADIMENTO +30%', 'RAGGIO VICINO -25%', 'MUNIZIONI -40%', 'HITBOX +6%'],
     },
     es: {
         name: 'Espanol',
@@ -305,7 +305,7 @@ const LANGS = {
         notifTitles: ['La cueva de hoy te espera', 'La misma cueva para todo el mundo', 'Hay una cueva nueva'],
         notifBodies: ['Aún no has volado el túnel de hoy. ¿Hasta dónde llegas?', 'Hoy el mundo entero vuela exactamente la misma cueva. Supérala.', '¿Una partida antes de que el día se reinicie y cambie la cueva?'],
         skinPerks: [null, 'ALCANCE MONEDAS {v}', 'HITBOX FINA {v}', 'TIEMPO LENTO {v}', 'BONUS MONEDAS {v}', 'CAPACIDAD ESCUDO {v}', 'DURACION IMAN {v}', 'ZONA CASI-MISS {v}'],
-        skinDrawbacks: [null, 'HITBOX +10%', 'CAPACIDAD ESCUDO -1', 'TIEMPO COMBO -25%', 'DECAIMIENTO +60%', 'RANGO CERCANO -25%', 'MUNICION -40%', 'HITBOX +20%'],
+        skinDrawbacks: [null, 'HITBOX +10%', 'CAPACIDAD ESCUDO -1', 'TIEMPO COMBO -5%', 'DECAIMIENTO +30%', 'RANGO CERCANO -25%', 'MUNICION -40%', 'HITBOX +6%'],
     },
     pt: {
         name: 'Portugues',
@@ -366,7 +366,7 @@ const LANGS = {
         notifTitles: ['A caverna de hoje está esperando', 'A mesma caverna para o mundo todo', 'Uma caverna nova apareceu'],
         notifBodies: ['Você ainda não voou o túnel de hoje. Até onde consegue ir?', 'Hoje o mundo inteiro voa exatamente a mesma caverna. Vá superá-la.', 'Uma partida antes de o dia reiniciar e a caverna mudar?'],
         skinPerks: [null, 'ALCANCE MOEDAS {v}', 'HITBOX FINA {v}', 'CAMERA LENTA {v}', 'BONUS MOEDAS {v}', 'CAPACIDADE ESCUDO {v}', 'DURACAO IMA {v}', 'ZONA QUASE-MISS {v}'],
-        skinDrawbacks: [null, 'HITBOX +10%', 'CAPACIDADE ESCUDO -1', 'TEMPO COMBO -25%', 'DECAIMENTO +60%', 'ALCANCE PROXIMO -25%', 'MUNICAO -40%', 'HITBOX +20%'],
+        skinDrawbacks: [null, 'HITBOX +10%', 'CAPACIDADE ESCUDO -1', 'TEMPO COMBO -5%', 'DECAIMENTO +30%', 'ALCANCE PROXIMO -25%', 'MUNICAO -40%', 'HITBOX +6%'],
     },
     ja: {
         name: '日本語',
@@ -427,7 +427,7 @@ const LANGS = {
         notifTitles: ['今日の洞窟が待っている', '世界中が同じ洞窟', '新しい洞窟が登場'],
         notifBodies: ['まだ今日のトンネルを飛んでいません。どこまで行ける？', '今日は世界中がまったく同じ洞窟を飛びます。攻略しよう。', '日付が変わって洞窟が変わる前に、ひと飛びどう？'],
         skinPerks: [null, 'コイン範囲 {v}', 'ヒットボックス縮小 {v}', 'スロー時間 {v}', 'コインボーナス {v}', 'シールド容量 {v}', 'マグネット時間 {v}', 'ニアミス範囲 {v}'],
-        skinDrawbacks: [null, 'ヒットボックス +10%', 'シールド容量 -1', 'コンボ時間 -25%', '減衰速度 +60%', 'ニアミス範囲 -25%', '弾薬容量 -40%', 'ヒットボックス +20%'],
+        skinDrawbacks: [null, 'ヒットボックス +10%', 'シールド容量 -1', 'コンボ時間 -5%', '減衰速度 +30%', 'ニアミス範囲 -25%', '弾薬容量 -40%', 'ヒットボックス +6%'],
     },
     ko: {
         name: '한국어',
@@ -488,7 +488,7 @@ const LANGS = {
         notifTitles: ['오늘의 동굴이 기다립니다', '전 세계가 같은 동굴', '새 동굴이 나왔어요'],
         notifBodies: ['아직 오늘의 터널을 날지 않았어요. 얼마나 갈 수 있을까요?', '오늘은 전 세계가 완전히 같은 동굴을 날아요. 기록을 깨보세요.', '날짜가 바뀌어 동굴이 바뀌기 전에 한 판 어때요?'],
         skinPerks: [null, '코인 범위 {v}', '히트박스 축소 {v}', '슬로우 타임 {v}', '코인 보너스 {v}', '쉴드 용량 {v}', '마그넷 시간 {v}', '아슬아슬 범위 {v}'],
-        skinDrawbacks: [null, '히트박스 +10%', '쉴드 용량 -1', '콤보 시간 -25%', '감쇠 +60%', '근접 범위 -25%', '탄약 용량 -40%', '히트박스 +20%'],
+        skinDrawbacks: [null, '히트박스 +10%', '쉴드 용량 -1', '콤보 시간 -5%', '감쇠 +30%', '근접 범위 -25%', '탄약 용량 -40%', '히트박스 +6%'],
     },
     zh: {
         name: '繁體中文',
@@ -549,7 +549,7 @@ const LANGS = {
         notifTitles: ['今天的洞窟在等你', '全世界同一個洞窟', '新洞窟出現了'],
         notifBodies: ['你今天還沒飛過這條隧道。能飛多遠？', '今天全世界飛的是完全相同的洞窟。去破紀錄吧。', '在換日、洞窟改變之前，來一趟如何？'],
         skinPerks: [null, '金幣範圍 {v}', '碰撞範圍縮小 {v}', '減速時間 {v}', '金幣加成 {v}', '護盾容量 {v}', '磁鐵時間 {v}', '擦身範圍 {v}'],
-        skinDrawbacks: [null, '碰撞範圍 +10%', '護盾容量 -1', '連擊時間 -25%', '衰減 +60%', '擦身範圍 -25%', '彈藥容量 -40%', '碰撞範圍 +20%'],
+        skinDrawbacks: [null, '碰撞範圍 +10%', '護盾容量 -1', '連擊時間 -5%', '衰減 +30%', '擦身範圍 -25%', '彈藥容量 -40%', '碰撞範圍 +6%'],
     },
     ru: {
         name: 'Русский',
@@ -610,7 +610,7 @@ const LANGS = {
         notifTitles: ['Сегодняшняя пещера ждёт', 'Одна пещера на весь мир', 'Появилась новая пещера'],
         notifBodies: ['Вы ещё не пролетели сегодняшний тоннель. Как далеко получится?', 'Сегодня весь мир летит по одной и той же пещере. Побейте её.', 'Один заход, пока день не сбросился и пещера не сменилась?'],
         skinPerks: [null, 'РАДИУС МОНЕТ {v}', 'ХИТБОКС {v}', 'ЗАМЕДЛЕНИЕ {v}', '{v} БОНУС МОНЕТ', 'ЁМКОСТЬ ЩИТА {v}', 'ВРЕМЯ МАГНИТА {v}', 'ЗОНА БЛИЗКО {v}'],
-        skinDrawbacks: [null, 'ХИТБОКС +10%', 'ЩИТ -1', 'ВРЕМЯ КОМБО -25%', 'РАСПАД +60%', 'БЛИЗКИЙ ДИАПАЗОН -25%', 'БОЕЗАПАС -40%', 'ХИТБОКС +20%'],
+        skinDrawbacks: [null, 'ХИТБОКС +10%', 'ЩИТ -1', 'ВРЕМЯ КОМБО -5%', 'РАСПАД +30%', 'БЛИЗКИЙ ДИАПАЗОН -25%', 'БОЕЗАПАС -40%', 'ХИТБОКС +6%'],
     },
     ar: {
         name: 'العربية',
@@ -671,7 +671,7 @@ const LANGS = {
         notifTitles: ['كهف اليوم في انتظارك', 'الكهف نفسه للعالم كله', 'ظهر كهف جديد'],
         notifBodies: ['لم تطر نفق اليوم بعد. إلى أي مدى تصل؟', 'اليوم يطير العالم كله في الكهف نفسه تمامًا. تغلّب عليه.', 'جولة واحدة قبل أن يتغيّر اليوم ويتبدّل الكهف؟'],
         skinPerks: [null, 'مدى العملات {v}', 'صندوق تصادم أصغر {v}', 'إبطاء الزمن {v}', 'مكافأة عملات {v}', 'سعة الدرع {v}', 'مدة المغناطيس {v}', 'نطاق الاقتراب {v}'],
-        skinDrawbacks: [null, 'صندوق تصادم أكبر +10%', 'سعة الدرع -1', 'وقت الكومبو -25%', 'التلاشي +60%', 'نطاق القرب -25%', 'سعة الذخيرة -40%', 'صندوق تصادم أكبر +20%'],
+        skinDrawbacks: [null, 'صندوق تصادم أكبر +10%', 'سعة الدرع -1', 'وقت الكومبو -5%', 'التلاشي +30%', 'نطاق القرب -25%', 'سعة الذخيرة -40%', 'صندوق تصادم أكبر +6%'],
     },
     tr: {
         name: 'Türkçe',
@@ -732,7 +732,7 @@ const LANGS = {
         notifTitles: ['Bugünün mağarası seni bekliyor', 'Tüm dünyaya aynı mağara', 'Yeni bir mağara geldi'],
         notifBodies: ['Bugünün tünelini henüz uçmadın. Nereye kadar gidebilirsin?', 'Bugün tüm dünya tamamen aynı mağarayı uçuyor. Rekoru kır.', 'Gün sıfırlanıp mağara değişmeden bir tur atsana?'],
         skinPerks: [null, 'PARA ÇEKME MENZİLİ {v}', 'İNCE ÇARPIŞMA {v}', 'YAVAŞ ZAMAN {v}', '{v} PARA BONUSU', 'KALKAN KAPASİTESİ {v}', 'MIKNATIS SÜRESİ {v}', 'YAKIN GEÇİŞ {v}'],
-        skinDrawbacks: [null, 'ÇARPIŞMA +10%', 'KALKAN KAPASİTESİ -1', 'KOMBO SÜRESİ -25%', 'AZALMA +60%', 'YAKIN MENZİL -25%', 'CEPHANE -40%', 'ÇARPIŞMA +20%'],
+        skinDrawbacks: [null, 'ÇARPIŞMA +10%', 'KALKAN KAPASİTESİ -1', 'KOMBO SÜRESİ -5%', 'AZALMA +30%', 'YAKIN MENZİL -25%', 'CEPHANE -40%', 'ÇARPIŞMA +6%'],
     },
     id: {
         name: 'Indonesia',
@@ -793,7 +793,7 @@ const LANGS = {
         notifTitles: ['Gua hari ini menantimu', 'Gua yang sama untuk seluruh dunia', 'Gua baru sudah muncul'],
         notifBodies: ['Kamu belum terbang di terowongan hari ini. Sejauh apa kamu bisa?', 'Hari ini seluruh dunia menerbangi gua yang persis sama. Kalahkan.', 'Satu ronde sebelum hari berganti dan gua berubah?'],
         skinPerks: [null, 'JANGKAUAN KOIN {v}', 'HITBOX RAMPING {v}', 'WAKTU LAMBAT {v}', 'BONUS KOIN {v}', 'KAPASITAS PERISAI {v}', 'DURASI MAGNET {v}', 'JANGKAUAN HAMPIR {v}'],
-        skinDrawbacks: [null, 'HITBOX +10%', 'KAPASITAS PERISAI -1', 'WAKTU KOMBO -25%', 'PELURUHAN +60%', 'JANGKAUAN DEKAT -25%', 'AMUNISI -40%', 'HITBOX +20%'],
+        skinDrawbacks: [null, 'HITBOX +10%', 'KAPASITAS PERISAI -1', 'WAKTU KOMBO -5%', 'PELURUHAN +30%', 'JANGKAUAN DEKAT -25%', 'AMUNISI -40%', 'HITBOX +6%'],
     },
     pl: {
         name: 'Polski',
@@ -854,7 +854,7 @@ const LANGS = {
         notifTitles: ['Dzisiejsza jaskinia czeka', 'Ta sama jaskinia dla całego świata', 'Nowa jaskinia właśnie się pojawiła'],
         notifBodies: ['Nie leciałeś jeszcze dzisiejszym tunelem. Jak daleko dolecisz?', 'Dziś cały świat leci dokładnie tą samą jaskinią. Pokonaj ją.', 'Jeszcze jeden lot, zanim dzień się zresetuje i jaskinia się zmieni?'],
         skinPerks: [null, 'ZASIĘG MONET {v}', 'MAŁA HITBOX {v}', 'SPOWOLNIENIE CZASU {v}', 'BONUS MONET {v}', 'POJEMNOŚĆ OSŁONY {v}', 'CZAS MAGNESU {v}', 'ZASIĘG BLISKICH MINIĘĆ {v}'],
-        skinDrawbacks: [null, 'HITBOX +10%', 'POJEMNOŚĆ OSŁONY -1', 'CZAS COMBO -25%', 'ROZPAD +60%', 'BLISKI ZASIĘG -25%', 'AMUNICJA -40%', 'HITBOX +20%'],
+        skinDrawbacks: [null, 'HITBOX +10%', 'POJEMNOŚĆ OSŁONY -1', 'CZAS COMBO -5%', 'ROZPAD +30%', 'BLISKI ZASIĘG -25%', 'AMUNICJA -40%', 'HITBOX +6%'],
     },
     hi: {
         name: 'हिन्दी',
@@ -915,7 +915,7 @@ const LANGS = {
         notifTitles: ['आज की गुफा इंतज़ार कर रही है', 'पूरी दुनिया के लिए एक ही गुफा', 'नई गुफा आ गई है'],
         notifBodies: ['आपने आज की सुरंग अभी तक नहीं उड़ाई। कितनी दूर जा सकते हैं?', 'आज पूरी दुनिया बिलकुल एक ही गुफा उड़ा रही है। इसे मात दें।', 'दिन बदलने और गुफा बदलने से पहले एक दौड़?'],
         skinPerks: [null, 'सिक्का रेंज {v}', 'हिटबॉक्स {v}', 'धीमा समय {v}', '{v} सिक्का बोनस', 'शील्ड क्षमता {v}', 'मैग्नेट समय {v}', 'निकट सीमा {v}'],
-        skinDrawbacks: [null, 'हिटबॉक्स +10%', 'शील्ड क्षमता -1', 'कॉम्बो समय -25%', 'क्षय +60%', 'निकट सीमा -25%', 'गोला-बारूद -40%', 'हिटबॉक्स +20%'],
+        skinDrawbacks: [null, 'हिटबॉक्स +10%', 'शील्ड क्षमता -1', 'कॉम्बो समय -5%', 'क्षय +30%', 'निकट सीमा -25%', 'गोला-बारूद -40%', 'हिटबॉक्स +6%'],
     },
 };
 

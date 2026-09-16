@@ -444,7 +444,7 @@ function maintainCoins() {
 }
 
 function checkCoinCollection() {
-    const baseHitR = activeSkin === 1 ? COIN_HIT_R * masteryLerp(1, 1.5, 1.7) : COIN_HIT_R;
+    const baseHitR = activeSkin === 1 ? COIN_HIT_R * masteryLerp(1, 1.15, 1.2) : COIN_HIT_R;
     for (const arr of [coins, chicaneCoins]) for (const coin of arr) {
         if (coin.collected) continue;
         const sx = coin.wx - scrollX;
@@ -523,7 +523,7 @@ function checkCoinCollection() {
             // ELECTRIC trades a shorter combo window for its slow-time buff below; mastery
             // eases it toward, but deliberately never all the way to, the 2.0s baseline --
             // see the "never fully erase the drawback" doc above SKINS in constants.js.
-            coinComboTimer = activeSkin === 3 ? masteryLerp(3, 1.5, 1.8) : 2.0;
+            coinComboTimer = activeSkin === 3 ? masteryLerp(3, 1.9, 1.95) : 2.0;
             coinComboWindow = coinComboTimer;
             const pts = coinCombo * 3;
             bonusScore += pts;
@@ -576,14 +576,29 @@ function checkCoinCollection() {
                 const shieldCap = activeSkin === 5 ? Math.round(masteryLerp(5, 4, 5))
                                  : activeSkin === 2 ? Math.round(masteryLerp(2, 2, 2.4))
                                  : 3;
-                shieldCount = Math.min(shieldCount + 1, shieldCap);
+                // VOID's own +1 cap was near-inert (2026-09-16 ship audit): the shield
+                // economy rarely fills a 3-cap, let alone a 4/5-cap, so measured effect
+                // was ~0% at every skill tier. Every 3rd red coin now refills 2 shields
+                // instead of 1, so the identity is "shields stack faster", not just a
+                // cap that's rarely reached. Gated on runCoinsByType.red (already
+                // ticked above), so it's exactly every 3rd red pickup this run.
+                const shieldGain = (activeSkin === 5 && runCoinsByType.red % 3 === 0) ? 2 : 1;
+                shieldCount = Math.min(shieldCount + shieldGain, shieldCap);
                 burstCoin(sx, coin.y, 0, 26);
                 shake += 3;
                 pushNotif(sx, coin.y - 34, 1.1, T.notifShield, [255,90,90]);
                 sfxShield();
                 window.webkit?.messageHandlers?.haptic?.postMessage('success');
             } else if (coin.type === 'green') {
-                magnetTime = Math.min(magnetTime + 3.0, activeSkin === 6 ? masteryLerp(6, 8.0, 11.0) : 5.0);
+                // NOVA's buff used to be the cap alone (8.0-11.0 vs baseline 5.0), which
+                // the +3.0-per-coin pickup and POWERUP_MIN_GAP_SEC's 8s floor almost
+                // never let a run actually stack into (2026-09-16 ship audit: ~0%
+                // measured effect at every tier, magnet uptime identical to PEARL's).
+                // The per-coin amount now scales too (5.0-6.0 vs 3.0), so the buff pays
+                // off on the very next green pickup instead of requiring an unlikely
+                // stack.
+                magnetTime = Math.min(magnetTime + (activeSkin === 6 ? masteryLerp(6, 5.0, 6.0) : 3.0),
+                                       activeSkin === 6 ? masteryLerp(6, 8.0, 11.0) : 5.0);
                 burstCoin(sx, coin.y, 120, 26);
                 shake += 3;
                 pushNotif(sx, coin.y - 34, 1.1, T.notifMagnet, [80,255,130]);

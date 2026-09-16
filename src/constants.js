@@ -414,12 +414,12 @@ function masteryLerp(skin, base, maxed) {
 // frozen level-0 number the strings used to hardcode.
 function skinPerkValue(skin) {
     switch (skin) {
-        case 1: return `+${Math.round((masteryLerp(1, 1.5, 1.7) - 1) * 100)}%`;            // AMBER coin reach
-        case 2: return `-${Math.round((1 - masteryLerp(2, 0.82, 0.74)) * 100)}%`;          // CRIMSON slim hitbox
+        case 1: return `+${Math.round((masteryLerp(1, 1.15, 1.2) - 1) * 100)}%`;           // AMBER coin reach
+        case 2: return `-${Math.round((1 - masteryLerp(2, 0.78, 0.72)) * 100)}%`;          // CRIMSON slim hitbox
         case 3: return `+${Math.round((masteryLerp(3, 6.0, 7.5) / 4 - 1) * 100)}%`;        // ELECTRIC slow time
         case 4: { const v = masteryLerp(4, 2.0, 2.5); return `${v % 1 === 0 ? v : v.toFixed(1)}x`; } // TOXIC coin bonus
         case 5: return `+${Math.round(masteryLerp(5, 4, 5)) - 3}`;                          // VOID shield cap
-        case 6: return `+${Math.round((masteryLerp(6, 8.0, 11.0) / 5 - 1) * 100)}%`;       // NOVA magnet time
+        case 6: return `+${Math.round((masteryLerp(6, 5.0, 6.0) / 3 - 1) * 100)}%`;        // NOVA magnet time (per-coin add, the part that actually moves now)
         case 7: return `+${Math.round((masteryLerp(7, 4.0, 5.0) / 2 - 1) * 100)}%`;        // SOLARIS near-miss range
         default: return '';
     }
@@ -1442,17 +1442,29 @@ function pickDailyMissionIndices(dayInt) {
 // Every non-PEARL ship pairs one buff with one nerf -- a build choice, not a strict
 // upgrade ladder. All players were reset to PEARL-only when the shard system shipped
 // (state.js), so this rebalance has no legacy-unlock compatibility to preserve:
-//   AMBER    (systems.js coin pickup, update.js cPR)       +50% coin reach   / +10% hitbox
-//   CRIMSON  (update.js cPR, systems.js shield pickup)      -18% hitbox      / shield cap -1
-//   ELECTRIC (systems.js blue coin, systems.js combo timer) +50% slow time   / -25% combo window
-//   TOXIC    (systems.js gold coin, update.js gap decay)    2x coin bonus    / +60% decay rate
-//   VOID     (systems.js shield pickup, update.js near-miss) shield cap +1  / -25% near-miss window
-//   NOVA     (systems.js green coin, systems.js ammo pickup) +60% magnet    / -40% ammo capacity
+//   AMBER    (systems.js coin pickup, update.js cPR)       +15% coin reach   / +10% hitbox
+//   CRIMSON  (update.js cPR, systems.js shield pickup)      -22% hitbox      / shield cap -1
+//   ELECTRIC (systems.js blue coin, systems.js combo timer) +50% slow time   / -5% combo window
+//   TOXIC    (systems.js gold coin, update.js gap decay)    2x coin bonus    / +30% decay rate
+//   VOID     (systems.js shield pickup, update.js near-miss) every 3rd red = 2 shields (was: cap +1, near-inert) / -25% near-miss window
+//   NOVA     (systems.js green coin, systems.js ammo pickup) +67% magnet per coin (was: cap-only, near-inert) / -40% ammo capacity
+// Re-tuned 2026-09-16 (ship audit, replay-harness measured across 4 skill tiers x
+// 360 runs/config): AMBER's reach buff (+50%) scaled far harder than its own hitbox
+// drawback, so the cheapest ship (240 shards) measured +17-40% score over PEARL at
+// every tier - strictly the best ship in the game. VOID's shield-cap+1 and NOVA's
+// magnet-cap-only buffs measured ~0% at every tier: the shield/magnet economy
+// almost never fills either cap, so the buff was cosmetic text with no real effect
+// (see the drawback-side doc above each's masteryLerp call site for how that was
+// found). CRIMSON/SOLARIS's hitbox shrinks were too small at mastery 0 to move the
+// score outside noise. ELECTRIC and TOXIC's DRAWBACKS were oversized relative to
+// their buffs (ELECTRIC measured net NEGATIVE at good/expert tier - a worse-than-
+// PEARL ship at a real shard cost). Full write-up + the paired-run methodology:
+// see project memory 'ship_balance_audit_2026-09-16'.
 // PEARL stays the neutral baseline with no perk/drawback, just cosmetic FX. Values above
 // are the level-0 (unmastered) numbers -- flying a ship grows its buff and heals its
 // drawback further per masteryLerp() below, see that call site in each file for the
 // level-3 endpoint of every stat.
-//   SOLARIS  (update.js near-miss, update.js cPR)           +100% near-miss range / +20% hitbox
+//   SOLARIS  (update.js near-miss, update.js cPR)           +100% near-miss range / +6% hitbox
 // Shard costs were re-tuned 2026-09-10 after measuring what they actually cost in
 // days (scratchpad sim against the real curves). The old ladder
 // (240/880/2200/4800/12000/32000/50000, cumulative 102120) meant the bindingconstraint
