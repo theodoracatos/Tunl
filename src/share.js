@@ -251,7 +251,7 @@ function drawRunProfile(g, x0, y0, w, h, opts) {
         g.restore();
         if (opts.pbLabel !== false) {
             g.textAlign = 'center';
-            g.font = `bold ${19 * k}px 'Courier New',monospace`;
+            g.font = `bold ${19 * k}px ${FONT_UI}`;
             g.fillStyle = `rgba(255,215,90,${0.85 * A})`;
             g.fillText(T.pb, bx, y0 + h + 32 * k);
         }
@@ -292,7 +292,7 @@ function _shareCardCanvas() {
     c.width = SHARE_W; c.height = SHARE_H;
     const g = c.getContext('2d');
 
-    const F = (sz, bold) => `${bold ? 'bold ' : ''}${sz}px 'Courier New',monospace`;
+    const F = (sz, bold) => `${bold ? 'bold ' : ''}${sz}px ${FONT_UI}`;
 
     // Today's rock palette (constants.js WEEKDAY_PALETTES via draw.js getTheme) -- the
     // card is tinted to the same accent the title screen, run-start banner and in-game
@@ -382,7 +382,7 @@ function _shareCardCanvas() {
     }
 
     g.textAlign = 'left';
-    g.font = F(96, true);
+    g.font = `bold 96px ${FONT_NUM}`;
     g.fillStyle = newBest ? 'rgba(255,225,65,1)' : 'rgba(228,240,255,1)';
     g.shadowColor = newBest ? 'rgba(255,190,0,0.7)' : 'rgba(80,120,255,0.45)';
     g.shadowBlur = newBest ? 26 : 14;

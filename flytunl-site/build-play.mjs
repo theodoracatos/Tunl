@@ -36,7 +36,7 @@ const outDir = path.join(root, 'flytunl-site/site/play');
 
 // src load order - MUST match the <script> tags in tunl.html.
 const SCRIPTS = [
-  'web', 'i18n', 'constants', 'world', 'state', 'lifecycle', 'systems',
+  'web', 'fonts', 'i18n', 'constants', 'world', 'state', 'lifecycle', 'systems',
   'audio', 'input', 'update', 'draw', 'share', 'record', 'notify', 'main', 'ads-web',
 ];
 

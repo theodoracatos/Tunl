@@ -2024,7 +2024,7 @@ function drawWorld() {
             ctx.save();
             ctx.textAlign    = 'center';
             ctx.textBaseline = 'middle';
-            ctx.font         = `bold ${FS*0.026}px 'Courier New',monospace`;
+            ctx.font         = `bold ${FS*0.026}px ${FONT_UI}`;
             ctx.shadowColor  = `rgba(140,190,255,${ia * 0.85 * pulse})`;
             ctx.shadowBlur   = 16;
             ctx.fillStyle    = `rgba(220,235,255,${ia * pulse})`;
@@ -2161,7 +2161,7 @@ function drawWorld() {
     for (const n of notifs) {
         const [nr, ng, nb] = n.color || [255,220,55];
         const a = Math.max(n.life, 0);
-        ctx.font        = `bold ${FS*0.038}px 'Courier New',monospace`;
+        ctx.font        = `bold ${FS*0.038}px ${FONT_UI}`;
         ctx.fillStyle   = `rgba(${nr},${ng},${nb},${a})`;
         ctx.shadowColor = `rgba(${nr},${ng},${nb},${a*0.8})`;
         ctx.shadowBlur  = 8;
@@ -2201,30 +2201,49 @@ function drawHUD() {
     // cascade clears the line above it by construction on any aspect ratio, and also
     // means adding a new line here later can't silently collide with one that already
     // seemed to have a safe fixed offset.
-    const scoreFsz = FS * 0.085;
+    // 0.085 -> 0.072 with the switch to JetBrains Mono (fonts.js): its figures are ~28%
+    // taller than Courier's at the same font size, so this keeps the live score's on-screen
+    // digit height (and the slice of ceiling it covers) about where it was.
+    const scoreFsz = FS * 0.072;
     let hudY = H * 0.03;
 
+    // Score and BEST are placed on the ALPHABETIC baseline from measured ink, never on
+    // textBaseline 'top'. 'top' is the em-box top, and WebKit and Chromium disagree about
+    // where that is for fonts with a tall em box like Chakra Petch / JetBrains Mono
+    // (fonts.js): on an iPhone 12 mini the score's ink started ~15pt lower than in Chrome,
+    // pushing BEST down into the world intro banner (reported 2026-09-16). The alphabetic
+    // baseline and actualBoundingBoxAscent/Descent are defined the same in both engines.
+    // Measured on all digits, so the layout never depends on the live value.
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = `bold ${scoreFsz}px ${FONT_NUM}`;
+    const scoreM    = ctx.measureText('0123456789');
+    const scoreAsc  = scoreM.actualBoundingBoxAscent  || scoreFsz * 0.73;
+    const scoreDesc = scoreM.actualBoundingBoxDescent || 0;
+    const scoreBase = hudY + scoreAsc;
     if (phase === 'play') {
         const nearPB = best > 0 && score >= best - 5;
-        ctx.font        = `bold ${scoreFsz}px 'Courier New',monospace`;
         ctx.fillStyle   = nearPB ? 'rgba(255,230,80,0.96)' : 'rgba(215,235,255,0.96)';
         ctx.shadowColor = nearPB ? 'rgba(255,200,40,0.80)' : 'rgba(0,0,0,0.85)';
         ctx.shadowBlur  = nearPB ? 18 : 5;
-        ctx.fillText(score, W/2, hudY);
+        ctx.fillText(score, W/2, scoreBase);
         ctx.shadowBlur  = 0;
     }
-    hudY += scoreFsz * 0.80 + H * 0.02;
+    hudY = scoreBase + scoreDesc + scoreFsz * 0.16;
 
     if (best > 0 && phase === 'play') {
         const bestFsz = FS * 0.025;
-        ctx.font        = `${bestFsz}px 'Courier New',monospace`;
+        ctx.font        = `${bestFsz}px ${FONT_UI}`;
+        const bestStr   = `${T.best}  ${best}`;
+        const bm        = ctx.measureText(bestStr);
+        const bestBase  = hudY + (bm.actualBoundingBoxAscent || bestFsz * 0.72);
         ctx.fillStyle   = 'rgba(170,195,255,0.90)';
         ctx.shadowColor = 'rgba(0,0,0,0.85)';
         ctx.shadowBlur  = 4;
-        ctx.fillText(`${T.best}  ${best}`, W/2, hudY);
+        ctx.fillText(bestStr, W/2, bestBase);
         ctx.shadowBlur  = 0;
-        hudY += bestFsz * 0.85 + H * 0.01;
+        hudY = bestBase + (bm.actualBoundingBoxDescent || 0) + H * 0.014;
     }
+    ctx.textBaseline = 'top';
 
     // Next skin nudge - faint pulsing hint when this run's banked-so-far shards would
     // cross the next unlock (shards + runCoins, since the actual bank happens at death).
@@ -2240,7 +2259,7 @@ function drawHUD() {
             if (remaining > 0 && remaining <= 15) {
                 const [sr, sg, sb] = nextSkin.shadow;
                 const pulse = 0.28 + 0.18 * Math.sin(gtime * 2.8);
-                ctx.font      = `${FS*0.020}px 'Courier New',monospace`;
+                ctx.font      = `${FS*0.020}px ${FONT_UI}`;
                 ctx.fillStyle = `rgba(${sr},${sg},${sb},${pulse})`;
                 ctx.fillText(`${remaining} ${T.toSkin} ${nextSkin.name}`, W/2, hudY);
             }
@@ -2305,7 +2324,7 @@ function drawHUD() {
         }
         ctx.shadowBlur = 0;
         ctx.save();
-        ctx.font         = `bold ${FS*0.016}px 'Courier New',monospace`;
+        ctx.font         = `bold ${FS*0.016}px ${FONT_UI}`;
         ctx.textAlign    = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillStyle    = 'rgba(255,175,60,0.85)';
@@ -2330,7 +2349,7 @@ function drawHUD() {
             ctx.fill();
         }
         ctx.shadowBlur   = 0;
-        ctx.font         = `bold ${FS*0.016}px 'Courier New',monospace`;
+        ctx.font         = `bold ${FS*0.016}px ${FONT_UI}`;
         ctx.textAlign    = 'right';
         ctx.textBaseline = 'middle';
         ctx.fillStyle    = 'rgba(255,200,140,0.85)';
@@ -2343,12 +2362,20 @@ function drawHUD() {
         const lia = Math.min(1, levelIntroT / LEVEL_INTRO_FADE);
         ctx.save();
         ctx.textAlign    = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.font         = `bold ${FS*0.045}px 'Courier New',monospace`;
+        // Alphabetic baseline from measured ink (see the score cascade above for why not
+        // 'middle'/'top'), centred on the old H*0.30 slot, but never above the HUD stack:
+        // on a 375pt-tall screen that slot sat on top of the BEST line. hudY is the bottom
+        // of the stack; one nudge line's height is kept free in case the skin hint shows.
+        ctx.textBaseline = 'alphabetic';
+        ctx.font         = `bold ${FS*0.045}px ${FONT_UI}`;
+        const introStr   = `${T.level} ${LEVEL_NUM}: ${WORLD_NAME.toUpperCase()}`;
+        const introM     = ctx.measureText(introStr);
+        const introAsc   = introM.actualBoundingBoxAscent || FS * 0.045 * 0.72;
+        const introBase  = Math.max(H * 0.30 + introAsc / 2, hudY + FS * 0.030 + introAsc);
         ctx.shadowColor  = `rgba(90,140,255,${lia * 0.85})`;
         ctx.shadowBlur   = 20;
         ctx.fillStyle    = `rgba(200,222,255,${lia})`;
-        ctx.fillText(`${T.level} ${LEVEL_NUM}: ${WORLD_NAME.toUpperCase()}`, W/2, H * 0.30);
+        ctx.fillText(introStr, W/2, introBase);
         // Planet line -- today's WEEKDAY_PALETTES entry (constants.js) named after a
         // real (mostly) celestial body matching that day's rock color, so the banner
         // reads as "which world is this, and what's it made of" rather than just a
@@ -2357,13 +2384,13 @@ function drawHUD() {
         // itself visually IS the day's rock, not just a caption next to it. Smaller
         // than the level line above and fades on the same `lia` clock, so it still
         // reads as a subtitle, not a second headline.
-        ctx.font        = `${FS*0.024}px 'Courier New',monospace`;
+        ctx.font        = `${FS*0.024}px ${FONT_UI}`;
         // Lightened toward white (matches the title screen's planet line) so the
         // name reads clearly even on the darker-accent days, not just a dim caption.
         ctx.shadowColor = rgb(theme.wallBase, lia * 0.9);
         ctx.shadowBlur  = 12;
         ctx.fillStyle   = rgb(lerpClr(theme.wallBase, [255, 255, 255], 0.4), lia);
-        ctx.fillText(`${T.planet} ${WEEKDAY_PALETTES[weekdayIndex(_tunlActiveDate())].planet.toUpperCase()}`, W/2, H * 0.30 + FS * 0.05);
+        ctx.fillText(`${T.planet} ${WEEKDAY_PALETTES[weekdayIndex(_tunlActiveDate())].planet.toUpperCase()}`, W/2, introBase + (introM.actualBoundingBoxDescent || 0) + FS * 0.042);
         ctx.shadowBlur   = 0;
         ctx.restore();
     }
@@ -2374,7 +2401,7 @@ function drawHUD() {
         ctx.save();
         ctx.textAlign    = 'center';
         ctx.textBaseline = 'middle';
-        ctx.font         = `bold ${FS*0.11}px 'Courier New',monospace`;
+        ctx.font         = `bold ${FS*0.11}px ${FONT_UI}`;
         ctx.fillStyle    = `rgba(255,225,65,${mfa})`;
         ctx.shadowColor  = `rgba(255,180,0,${mfa * 0.9})`;
         ctx.shadowBlur   = 28;
@@ -2674,115 +2701,108 @@ function drawTitleScreen() {
     const GRID_COLS = 4;
     const nGridRows = Math.ceil(SKINS.length / GRID_COLS);
 
+    // Today's rock (WEEKDAY_PALETTES wallBase) is the title screen's one accent - the
+    // same rule the 13.0 debriefing follows. Halo, wordmark glow, the U, its underline
+    // and the world line used to be a fixed blue plus a hue-cycling orange that belonged
+    // to no day at all, so on a Luna day three unrelated colours competed around the
+    // logo (2026-09-16 design pass, https://claude.ai/artifact/QPvLrDmGiU6przXNwXLV9y).
+    const dayAcc  = getTheme().wallBase;
+    const accLite = lerpClr(dayAcc, [255, 255, 255], 0.55);
+    const accU    = lerpClr(dayAcc, [255, 255, 255], 0.20);
+    const inkLogo = lerpClr(accLite, [255, 255, 255], 0.70);
+
     // Radial halo behind TUNL logo
     const haloR  = FS * 0.14;
     const haloPulse = 0.65 + 0.35 * Math.sin(gtime * 1.4);
     const halo = ctx.createRadialGradient(titleX, logoY, 0, titleX, logoY, haloR);
-    halo.addColorStop(0,   `rgba(80,120,255,${a * haloPulse * 0.22})`);
-    halo.addColorStop(0.5, `rgba(60, 90,220,${a * haloPulse * 0.10})`);
-    halo.addColorStop(1,   `rgba(40, 60,180,0)`);
+    halo.addColorStop(0,   rgb(dayAcc, a * haloPulse * 0.20));
+    halo.addColorStop(0.5, rgb(dayAcc, a * haloPulse * 0.08));
+    halo.addColorStop(1,   rgb(dayAcc, 0));
     ctx.fillStyle = halo;
     ctx.fillRect(titleX - haloR, logoY - haloR, haloR * 2, haloR * 2);
 
-    // TUNL logo -- the "U" is drawn as a receding tunnel-ring hole instead of
-    // a glyph, so the wordmark itself depicts the thing you're flying through.
-    // Courier New is monospace, so every char shares one advance width -- that
-    // lets us lay glyphs out by hand and drop the hole into the "U" slot without
-    // breaking alignment with T/N/L.
-    ctx.font = `bold ${FS*0.090}px 'Courier New',monospace`;
-    const fontPx    = FS * 0.090;
-    const charW     = ctx.measureText('T').width;
-    const logoW     = charW * 4;
+    // TUNL wordmark. The "U" is not a glyph: it is stroked as an open channel with a gem
+    // glowing inside, so the mark depicts the thing you fly through. Chakra Petch (fonts.js)
+    // is proportional, so nothing here may assume a shared advance width the way the
+    // Courier version did: cap height comes off 'T', stem width off 'I' (its ink box IS
+    // its stem), and each letter advances by its own measured width. The U's bottom
+    // corners are chamfered to match the typeface's own clipped corners. If the webfont
+    // never loaded, the same measurements simply describe the fallback face.
+    const fontPx = FS * 0.090;
+    ctx.font = `bold ${fontPx}px ${FONT_UI}`;
+    // Alignment first: measureText's bounding boxes are relative to the CURRENT
+    // textAlign/textBaseline, and every offset below assumes left/alphabetic.
+    ctx.textAlign    = 'left';
+    ctx.textBaseline = 'alphabetic';
+    const inkW   = m => (m.actualBoundingBoxLeft || 0) + (m.actualBoundingBoxRight || 0);
+    const capH   = ctx.measureText('T').actualBoundingBoxAscent || fontPx * 0.70;
+    const stem   = Math.max(1.5, inkW(ctx.measureText('I')) || fontPx * 0.13);
+    const track  = fontPx * 0.05;
+    const mU     = ctx.measureText('U');
+    const advT = ctx.measureText('T').width, advU = mU.width;
+    const advN = ctx.measureText('N').width, advL = ctx.measureText('L').width;
+    const logoW  = advT + advU + advN + advL + track * 3;
     const logoPulse = 24 + 14 * Math.sin(gtime * 1.4);
+    // Centre the caps on logoY, which every line below still anchors to.
+    const logoBase = logoY + capH / 2;
 
-    ctx.textAlign = 'left';
     let lx = titleX - logoW / 2;
     const drawGlyph = (ch) => {
-        ctx.shadowColor = `rgba(100,150,255,${a * 0.70})`; ctx.shadowBlur = logoPulse * 1.6;
-        ctx.fillStyle   = `rgba(195,220,255,${a * 0.30})`;
-        ctx.fillText(ch, lx, logoY);
-        ctx.shadowBlur  = logoPulse;
-        ctx.fillStyle   = `rgba(215,232,255,${a * 0.97})`;
-        ctx.fillText(ch, lx, logoY);
+        ctx.shadowColor = rgb(dayAcc, a * 0.60); ctx.shadowBlur = logoPulse * 1.6;
+        ctx.fillStyle   = rgb(accLite, a * 0.30);
+        ctx.fillText(ch, lx, logoBase);
+        ctx.shadowBlur  = logoPulse * 0.5;
+        ctx.fillStyle   = rgb(inkLogo, a * 0.97);
+        ctx.fillText(ch, lx, logoBase);
         ctx.shadowBlur  = 0;
     };
 
     drawGlyph('T');
-    lx += charW;
+    lx += advT + track;
 
-    // Tunnel hole where the "U" sits: the hole is shaped like an actual "U"
-    // (open top, rounded bottom) so the wordmark still reads as TUNL, not
-    // TONL -- nested rim->core gradients are clipped inside it, painted
-    // largest-first so each smaller disc leaves the previous one's bright
-    // rim showing as a ring, reading as a corridor receding into the U.
-    // Proportions below are measured off the real "U" glyph in this exact
-    // font/weight (canvas pixel-scan: stroke edges at cap mid-height, the
-    // counter's deepest point via a center-column scan) rather than
-    // guessed. The previous hand-tuned path sat ~15% short of T/N/L's
-    // actual cap height and was nearly 2x the glyph's true counter width --
-    // round and low instead of tall and narrow -- which is why it read as
-    // a floating blob rather than a U's counter. uHalfW is kept a bit
-    // wider than the raw measurement (0.216*charW) so the rings inside
-    // stay legible at in-game sizes.
-    // uDipY targets the glyph's true OUTER bottom edge (its descent,
-    // ~0.44*charW), not the counter's inner depth (~0.26*charW) that an
-    // earlier pass used -- a real U has solid material between where the
-    // hole ends and where the letter actually sits, so matching the
-    // counter alone left the rim floating ~3px above T/N/L's shared
-    // baseline (confirmed by a pixel-scan of the rendered canvas: T and U
-    // top rows matched exactly, but U's bottom row came up short).
-    // Both ends trimmed back in by ~2px-at-test-scale (holeR*0.15) from
-    // that measurement -- the crisp rim stroke's own small shadowBlur
-    // softens its edge just enough that the visible ink pokes past T/N/L's
-    // hard-edged cap/baseline by a couple px on each side even though the
-    // path coordinates land exactly on them.
-    const holeCX = lx + charW / 2;
-    const holeR  = charW * 0.316;
-    const uHalfW = holeR * 0.95;
-    const uTopY  = logoY - holeR * 1.65;
-    const uSideY = logoY + holeR * 0.54;
-    const uDipY  = logoY + holeR * 1.25;
+    // The U channel, as a centreline path stroked at the font's own stem width. Its ink
+    // box (from the real 'U' glyph) sets the outer edges, so it lines up with T/N/L on cap
+    // height and baseline; butt caps keep the open top ends exactly at cap height.
+    const uL   = lx - (mU.actualBoundingBoxLeft || 0);
+    const uR   = lx + (mU.actualBoundingBoxRight || advU);
+    // Stroked thinner than the font's own stem (0.62x): at full stem weight the hollow U
+    // read as heavier than the solid T/N/L next to it (reported on device 2026-09-16).
+    // The outer ink edges still sit on the real glyph's box, so width and baseline match.
+    const uStroke = stem * 0.62;
+    const xl   = uL + uStroke / 2, xr = uR - uStroke / 2;
+    const yTop = logoBase - capH, yBot = logoBase - uStroke / 2;
+    const cham = Math.min((xr - xl) * 0.30, uStroke * 1.6);
     const buildUPath = () => {
         ctx.beginPath();
-        ctx.moveTo(holeCX - uHalfW, uTopY);
-        ctx.lineTo(holeCX - uHalfW, uSideY);
-        ctx.quadraticCurveTo(holeCX - uHalfW, uDipY, holeCX, uDipY);
-        ctx.quadraticCurveTo(holeCX + uHalfW, uDipY, holeCX + uHalfW, uSideY);
-        ctx.lineTo(holeCX + uHalfW, uTopY);
+        ctx.moveTo(xl, yTop);
+        ctx.lineTo(xl, yBot - cham);
+        ctx.lineTo(xl + cham, yBot);
+        ctx.lineTo(xr - cham, yBot);
+        ctx.lineTo(xr, yBot - cham);
+        ctx.lineTo(xr, yTop);
     };
 
-    // What glows inside the U: a small pulsing gem instead of the old
-    // tunnel-ring portal. Same faceted-diamond + 8-ray sparkle-burst
-    // language the real coin pickups use (see the coin-render loop
-    // above) so the logo's glow reads as the same light the game already
-    // trains the player to want, just recolored out of coin-gold into
-    // the wordmark's own purple/cyan family (the old rings' colors) so
-    // it still reads as part of the mark rather than a pickup icon
-    // pasted on top of it. Drawn unclipped, on purpose: the rays and
-    // aura are sized to sit inside the counter but their soft edges are
-    // free to bleed slightly past it, the same way T/N/L's own glow
-    // bleeds past their ink -- a hard clip here would look like a window
-    // instead of a light.
-    const gemCX    = holeCX;
-    const gemCY    = logoY - charW * 0.07;
+    // What glows inside the U: a small pulsing gem in the coin pickups' faceted-diamond +
+    // 8-ray language, so the logo's light reads as the light the game trains the player
+    // to want. Sized off the counter (the gap between the two stems) and tinted with the
+    // day. Drawn unclipped on purpose - a hard clip reads as a window, not a light.
+    const counterW = Math.max(2, (xr - xl) - uStroke);
+    const gemCX    = (xl + xr) / 2;
+    const gemCY    = yTop + (yBot - uStroke / 2 - yTop) * 0.52;
     const gemPulse = 0.75 + 0.25 * Math.sin(gtime * 1.6);
-    const gemR     = charW * 0.10;
+    const gemR     = counterW * 0.19;
     const gemDH    = gemR * 1.35, gemDW = gemR * 0.90;
 
     const aura = ctx.createRadialGradient(gemCX, gemCY, 0, gemCX, gemCY, gemR * 3.6);
-    aura.addColorStop(0,   `rgba(170,190,255,${a * gemPulse * 0.40})`);
-    aura.addColorStop(0.4, `rgba(120,110,255,${a * gemPulse * 0.16})`);
-    aura.addColorStop(1,   'rgba(80,60,220,0)');
+    aura.addColorStop(0,   rgb(accLite, a * gemPulse * 0.45));
+    aura.addColorStop(0.4, rgb(dayAcc,  a * gemPulse * 0.16));
+    aura.addColorStop(1,   rgb(dayAcc,  0));
     ctx.fillStyle = aura;
     ctx.beginPath(); ctx.arc(gemCX, gemCY, gemR * 3.6, 0, Math.PI * 2); ctx.fill();
 
     ctx.save();
     ctx.translate(gemCX, gemCY);
-
-    // 8 sparkle rays (4 long + 4 short) -- same construction as the coin's
-    // ray-burst, just static (no spin: this is a fixed logo mark, not a
-    // falling pickup) and sized off gemR instead of the coin's own radius.
-    ctx.shadowColor = `rgba(170,190,255,0.7)`;
+    ctx.shadowColor = rgb(accLite, 0.7);
     for (const long of [true, false]) {
         ctx.beginPath();
         for (let i = long ? 0 : 1; i < 8; i += 2) {
@@ -2792,97 +2812,77 @@ function drawTitleScreen() {
             ctx.moveTo(d1 * s, -d1 * c);
             ctx.lineTo(d2 * s, -d2 * c);
         }
-        ctx.strokeStyle = `rgba(190,205,255,${a * (long ? 0.85 : 0.40)})`;
+        ctx.strokeStyle = rgb(inkLogo, a * (long ? 0.85 : 0.40));
         ctx.lineWidth   = Math.max(0.8, gemR * (long ? 0.18 : 0.10));
         ctx.shadowBlur  = long ? 3 : 1.5;
         ctx.stroke();
     }
     ctx.shadowBlur = 0;
 
-    // Faceted diamond body, purple top-half fading to cyan bottom-half --
-    // the same split the old rings used, so the recolor still reads as
-    // the same mark rather than a new one.
     ctx.beginPath();
     ctx.moveTo(0, -gemDH); ctx.lineTo(gemDW, 0); ctx.lineTo(0, gemDH); ctx.lineTo(-gemDW, 0);
     ctx.closePath();
     const gemGrd = ctx.createLinearGradient(0, -gemDH, 0, gemDH);
-    gemGrd.addColorStop(0,    '#e5d4ff');
-    gemGrd.addColorStop(0.45, '#a75bff');
-    gemGrd.addColorStop(0.55, '#3fe0ff');
-    gemGrd.addColorStop(1,    '#0d6a86');
+    gemGrd.addColorStop(0,    rgb(lerpClr(accLite, [255, 255, 255], 0.6), 1));
+    gemGrd.addColorStop(0.45, rgb(accU, 1));
+    gemGrd.addColorStop(0.55, rgb(dayAcc, 1));
+    gemGrd.addColorStop(1,    rgb(lerpClr(dayAcc, [0, 0, 0], 0.55), 1));
     ctx.globalAlpha = a;
     ctx.fillStyle   = gemGrd;
-    ctx.shadowColor = `rgba(170,190,255,0.9)`;
+    ctx.shadowColor = rgb(accLite, 0.9);
     ctx.shadowBlur  = 6;
     ctx.fill();
     ctx.shadowBlur  = 0;
-
-    // Top-right facet highlight + bright core spark
     ctx.beginPath(); ctx.moveTo(0, -gemDH); ctx.lineTo(gemDW, 0); ctx.lineTo(0, 0); ctx.closePath();
     ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fill();
     ctx.beginPath(); ctx.arc(0, 0, gemR * 0.22, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(255,255,255,${a})`;
     ctx.fill();
-
     ctx.globalAlpha = 1;
     ctx.restore();
 
-    // Rim outline, drawn as a glow-then-crisp pair -- the same technique
-    // drawGlyph() uses for T/N/L, just applied to a stroke instead of a
-    // filled glyph. A single stroke pass at drawGlyph's glow-pass blur
-    // (logoPulse*1.6, up to ~60px at this scale) is what made the old rim
-    // unreadable: a filled letter has interior mass a big blur can't
-    // touch, but a ~7px-wide stroke has none, so that blur smeared the
-    // whole outline into a haze instead of leaving a legible U silhouette.
-    // The crisp pass here (near-zero blur, full opacity, drawn last) is
-    // what actually reads as the letter's edge.
-    // lineCap is 'butt', not 'round': buildUPath's two top ends are open
-    // path endpoints sitting exactly at T/N/L's cap height, and a round
-    // cap adds a lineWidth/2 bump beyond them -- enough to visibly poke
-    // the U above the other three letters' baseline.
+    // Rim as a glow-then-crisp pair, like drawGlyph(). A stroke has no interior mass for
+    // a big blur to leave alone, so the crisp pass (near-zero blur, drawn last) is what
+    // actually reads as the letter's edge.
     ctx.save();
-    ctx.lineCap  = 'butt';
-    ctx.lineJoin = 'round';
+    ctx.lineCap    = 'butt';
+    ctx.lineJoin   = 'miter';
     buildUPath();
-    ctx.shadowColor = `rgba(100,150,255,${a * 0.70})`;
-    ctx.shadowBlur   = logoPulse * 1.6;
-    ctx.strokeStyle  = `rgba(215,232,255,${a * 0.45})`;
-    ctx.lineWidth    = Math.max(1, fontPx * 0.14);
+    ctx.shadowColor = rgb(dayAcc, a * 0.70);
+    ctx.shadowBlur  = logoPulse * 1.6;
+    ctx.strokeStyle = rgb(accU, a * 0.40);
+    ctx.lineWidth   = uStroke;
     ctx.stroke();
-    ctx.shadowBlur   = logoPulse * 0.12;
-    ctx.strokeStyle  = `rgba(225,238,255,${a * 0.97})`;
-    ctx.lineWidth    = Math.max(1, fontPx * 0.10);
+    ctx.shadowBlur  = logoPulse * 0.25;
+    ctx.strokeStyle = rgb(accU, a * 0.97);
     ctx.stroke();
     ctx.restore();
-    lx += charW;
+    lx += advU + track;
 
     drawGlyph('N');
-    lx += charW;
+    lx += advN + track;
     drawGlyph('L');
-    lx += charW;
 
-    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign    = 'center';
 
     // Accent underline
     const ulY   = logoY + FS * 0.055;
     const ulGrd = ctx.createLinearGradient(titleX - logoW*0.5, ulY, titleX + logoW*0.5, ulY);
-    ulGrd.addColorStop(0,   `rgba(80,120,255,0)`);
-    ulGrd.addColorStop(0.3, `rgba(120,165,255,${a * 0.80})`);
-    ulGrd.addColorStop(0.7, `rgba(120,165,255,${a * 0.80})`);
-    ulGrd.addColorStop(1,   `rgba(80,120,255,0)`);
+    ulGrd.addColorStop(0,   rgb(dayAcc, 0));
+    ulGrd.addColorStop(0.3, rgb(accU, a * 0.80));
+    ulGrd.addColorStop(0.7, rgb(accU, a * 0.80));
+    ulGrd.addColorStop(1,   rgb(dayAcc, 0));
     ctx.fillStyle = ulGrd;
     ctx.fillRect(titleX - logoW*0.5, ulY, logoW, 1.5);
 
-    // Slow hue-cycling glow instead of a flat colour -- this line changes every
-    // day anyway (LEVEL_NUM/WORLD_NAME), so a shifting glow reads as "today's level
-    // is its own little event" rather than static label text. gtime is the same
-    // free-running animation clock every other ambient pulse in this file already
-    // keys off (coin flicker, mine bob, etc.), so it needs no state of its own.
-    // Slow enough (full hue cycle every 15s) to read as ambient, not distracting.
-    const levelHue = (gtime * 24) % 360;
-    ctx.shadowColor = `hsla(${levelHue}, 90%, 60%, ${a * 0.6})`;
+    // World line in the day accent. It used to cycle the whole hue wheel every 15s, which
+    // put a colour from no palette at all right under the logo; the line still changes
+    // every day through its text, and now through its colour too. A slow breathing glow
+    // keeps the "today's level is its own little event" read.
+    ctx.shadowColor = rgb(dayAcc, a * 0.55);
     ctx.shadowBlur  = 8 + 4 * Math.sin(gtime * 2.2);
-    ctx.fillStyle   = `hsla(${levelHue}, 85%, 72%, ${a * 0.95})`;
+    ctx.fillStyle   = rgb(lerpClr(dayAcc, [255, 255, 255], 0.18), a * 0.97);
     // Prefixed with "WORLD <day-of-year>:" so the world name reads like a world
     // index -- same LEVEL_NUM/T.level pair already used in the run-start banner
     // (see above), just surfaced here too per user request. This line is centered
@@ -2894,7 +2894,7 @@ function drawTitleScreen() {
     // request -- the two used to match exactly (see git history), but this line
     // now deliberately reads larger than that one, not as an inconsistency.
     let levelFsz = FS * 0.025;
-    ctx.font = `bold ${levelFsz}px 'Courier New',monospace`;
+    ctx.font = `bold ${levelFsz}px ${FONT_UI}`;
     if (LAND) {
         // Clamped against the screen edges, not the divider: the divider is a
         // hairline gradient with nothing solid drawn near it at this line's height
@@ -2908,14 +2908,23 @@ function drawTitleScreen() {
         if (levelW / 2 > levelAvailHalfW) {
             levelFsz *= (levelAvailHalfW * 2) / levelW;
             levelFsz = Math.max(levelFsz, FS * 0.015); // legibility floor
-            ctx.font = `bold ${levelFsz}px 'Courier New',monospace`;
+            ctx.font = `bold ${levelFsz}px ${FONT_UI}`;
         }
     }
     // Nudged down from 0.365 -- on a short device (UI_H's 600px floor keeps FS/the
     // logo underline's offset from shrinking with H, iPhone 12 mini landscape being
     // the extreme case) the old position sat only a few px under the logo's
     // underline bar, close enough to visually collide with it.
-    ctx.fillText(levelLine, titleX, LAND ? H * 0.395 - 11 : H/2 - H*0.038);
+    // Left-column lines are pushed down by the ink edge of the line above whenever the
+    // H-fraction slot would put them closer than colGap. Measured in the live browser on
+    // purpose: WebKit and Chromium place textBaseline 'middle' at different heights for
+    // Chakra Petch's tall em box, so a spacing that clears in Chrome overlapped on an
+    // iPhone 12 mini (H=375, UI_H floor keeps every font full size) - reported 2026-09-16.
+    const colGap = Math.max(FS * 0.010, 4);
+    const levelY = Math.max(LAND ? H * 0.395 - 11 : H/2 - H*0.038,
+                            ulY + 1.5 + colGap + (ctx.measureText(levelLine).actualBoundingBoxAscent || levelFsz * 0.5));
+    ctx.fillText(levelLine, titleX, levelY);
+    const levelInkBottom = levelY + (ctx.measureText(levelLine).actualBoundingBoxDescent || levelFsz * 0.5);
     ctx.shadowBlur = 0;
 
     // Planet line -- today's WEEKDAY_PALETTES entry (constants.js), the same
@@ -2927,29 +2936,31 @@ function drawTitleScreen() {
     // elsewhere, so the name itself visually IS the day's rock.
     // Kept in an outer var so the REKORD line below can anchor its gap to this
     // line's actual baseline rather than a hard H fraction.
-    let planetBaselineY = LAND ? H * 0.395 - 11 : H / 2 - H * 0.038;
+    let planetBaselineY = levelY;
+    let planetInkBottom = levelInkBottom;
     {
         const planetLine = `${T.planet} ${WEEKDAY_PALETTES[weekdayIndex(_tunlActiveDate())].planet.toUpperCase()}`;
         let planetFsz = FS * 0.020;
-        ctx.font = `${planetFsz}px 'Courier New',monospace`;
+        ctx.font = `${planetFsz}px ${FONT_UI}`;
         if (LAND) {
             const planetAvailHalfW = Math.min(titleX - 24, W - titleX - 24);
             const planetW = ctx.measureText(planetLine).width;
             if (planetW / 2 > planetAvailHalfW) {
                 planetFsz *= (planetAvailHalfW * 2) / planetW;
                 planetFsz = Math.max(planetFsz, FS * 0.012);
-                ctx.font = `${planetFsz}px 'Courier New',monospace`;
+                ctx.font = `${planetFsz}px ${FONT_UI}`;
             }
         }
-        const dayTheme = getTheme();
-        // Lightened toward white so the name stays clearly legible even on the
-        // darker-accent days (Ceres grey, Io teal) -- the raw wallBase alone read
-        // as too dim next to the level line above it.
-        const planetClr = lerpClr(dayTheme.wallBase, [255, 255, 255], 0.4);
-        ctx.shadowColor = rgb(dayTheme.wallBase, a * 0.9);
-        ctx.shadowBlur  = 8;
-        ctx.fillStyle   = rgb(planetClr, a);
-        planetBaselineY += planetFsz * 1.5;
+        // Neutral since the world line above took the day accent (2026-09-16): two
+        // stacked accent lines with the same glow read as one blurred block, so the
+        // planet steps back to a cool off-white and the hierarchy is logo > world > planet.
+        ctx.shadowColor = 'rgba(0,0,0,0.85)';
+        ctx.shadowBlur  = 4;
+        ctx.fillStyle   = `rgba(206,214,234,${a * 0.88})`;
+        const pm = ctx.measureText(planetLine);
+        planetBaselineY = Math.max(planetBaselineY + planetFsz * 1.5,
+                                   levelInkBottom + colGap + (pm.actualBoundingBoxAscent || planetFsz * 0.5));
+        planetInkBottom = planetBaselineY + (pm.actualBoundingBoxDescent || planetFsz * 0.5);
         ctx.fillText(planetLine, titleX, planetBaselineY);
         ctx.shadowBlur  = 0;
     }
@@ -2995,8 +3006,8 @@ function drawTitleScreen() {
         if (hasFlown) cells.push({ lbl: T.flown, val: Math.floor(lifetimeDist / 60).toLocaleString(), big: false });
 
         let lblFsz = FS * 0.016, bigFsz = FS * 0.046, smlFsz = FS * 0.034;
-        const setLbl = () => { ctx.font = `bold ${lblFsz}px 'Courier New',monospace`; try { ctx.letterSpacing = `${lblFsz * 0.22}px`; } catch (e) {} };
-        const setVal = (c) => { ctx.font = `bold ${c.big ? bigFsz : smlFsz}px 'Courier New',monospace`; try { ctx.letterSpacing = '0px'; } catch (e) {} };
+        const setLbl = () => { ctx.font = `bold ${lblFsz}px ${FONT_UI}`; try { ctx.letterSpacing = `${lblFsz * 0.22}px`; } catch (e) {} };
+        const setVal = (c) => { ctx.font = `bold ${c.big ? bigFsz : smlFsz}px ${FONT_NUM}`; try { ctx.letterSpacing = '0px'; } catch (e) {} };
         const gap = FS * 0.034;
         const measure = () => cells.map(c => {
             setLbl(); const lw = ctx.measureText(c.lbl).width;
@@ -3013,8 +3024,10 @@ function drawTitleScreen() {
         }
         const gapUsed = (totalW - widths.reduce((s, w) => s + w, 0)) / Math.max(1, cells.length - 1);
 
-        const lblY = rekordY + FS * 0.002;
-        const valY = rekordY + FS * 0.036;
+        setLbl();
+        const lblAsc = Math.max(...cells.map(c => ctx.measureText(c.lbl).actualBoundingBoxAscent || lblFsz * 0.5));
+        const lblY = Math.max(rekordY + FS * 0.002, planetInkBottom + colGap * 1.6 + lblAsc);
+        const valY = lblY + FS * 0.034;
         let cx = titleX - totalW / 2;
         ctx.textAlign = 'center';
         cells.forEach((c, i) => {
@@ -3072,6 +3085,24 @@ function drawTitleScreen() {
     // any other empty area -- it's already the selected ship, there's nothing
     // for a tap on it to change.
     const ringPulse = 0.6 + 0.4 * Math.sin(gtime * 1.6);
+
+    // Hangar floor: a flat pool of the day's light under the hero ship, so the ship stands
+    // in today's cave instead of floating inside a reticle. Ring and ship keep the SKIN's
+    // colour (that is the ship's identity); only the floor belongs to the day.
+    {
+        const fy = shipStageY + heroR * 1.05, frx = heroR * 1.45, fry = heroR * 0.30;
+        ctx.save();
+        ctx.translate(shipStageX, fy);
+        ctx.scale(1, fry / frx);
+        const floor = ctx.createRadialGradient(0, 0, 0, 0, 0, frx);
+        floor.addColorStop(0,   rgb(dayAcc, a * (0.22 + 0.06 * ringPulse)));
+        floor.addColorStop(0.6, rgb(dayAcc, a * 0.07));
+        floor.addColorStop(1,   rgb(dayAcc, 0));
+        ctx.fillStyle = floor;
+        ctx.beginPath(); ctx.arc(0, 0, frx, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+    }
+
     ctx.beginPath();
     ctx.arc(shipStageX, shipStageY, heroR * 1.7, 0, Math.PI * 2);
     ctx.strokeStyle = `rgba(${hr},${hg},${hb},${a * 0.30 * ringPulse})`;
@@ -3108,7 +3139,7 @@ function drawTitleScreen() {
         }
     }
 
-    ctx.font        = `bold ${FS * 0.029}px 'Courier New',monospace`;
+    ctx.font        = `bold ${FS * 0.029}px ${FONT_UI}`;
     ctx.fillStyle   = `rgba(${hr},${hg},${hb},0.95)`;
     ctx.shadowColor = 'rgba(0,0,0,0.85)';
     ctx.shadowBlur  = 6;
@@ -3167,7 +3198,7 @@ function drawTitleScreen() {
         // "ALL SHIPS ›" with no border) tested as easy to miss as a tap target, so it
         // now gets an outline + faint fill + brighter text to read as a button.
         const fsz      = FS * 0.019;
-        ctx.font       = `bold ${fsz}px 'Courier New',monospace`;
+        ctx.font       = `bold ${fsz}px ${FONT_UI}`;
         const linkText = `${T.allShips} ›`;
         const linkW    = ctx.measureText(linkText).width;
         const padX     = fsz * 0.85, padY = fsz * 0.62;
@@ -3194,12 +3225,12 @@ function drawTitleScreen() {
         const pillX    = shipStageX - pillW / 2, pillY = linkY - pillH / 2;
         ctx.beginPath();
         ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
-        ctx.fillStyle   = `rgba(120,150,235,${a * 0.16})`;
+        ctx.fillStyle   = rgb(dayAcc, a * 0.12);
         ctx.fill();
-        ctx.strokeStyle = `rgba(150,175,255,${a * 0.55})`;
+        ctx.strokeStyle = rgb(accU, a * 0.50);
         ctx.lineWidth   = 1.4;
         ctx.stroke();
-        ctx.fillStyle   = `rgba(212,224,255,${a * 0.95})`;
+        ctx.fillStyle   = rgb(inkLogo, a * 0.95);
         ctx.shadowColor = 'rgba(0,0,0,0.85)';
         ctx.shadowBlur  = 3;
         ctx.fillText(linkText, shipStageX, linkY);
@@ -3269,14 +3300,14 @@ function drawTitleScreen() {
             const cx = LAND ? railCX : (W / 2 - ((items.length - 1) * iconGap) / 2 + i * iconGap);
             ctx.beginPath();
             ctx.arc(cx, cy, iconR, 0, Math.PI * 2);
-            ctx.fillStyle   = 'rgba(255,255,255,0.06)';
+            ctx.fillStyle   = rgb(dayAcc, 0.06);
             ctx.fill();
-            ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+            ctx.strokeStyle = rgb(accLite, 0.24);
             ctx.lineWidth   = 1;
             ctx.stroke();
             drawRailIcon(it.key, cx, cy, iconR * 0.62, `rgba(225,232,250,${a * 0.92})`, Math.max(1.3, iconR * 0.11));
             if (it.badge && it.showBadge) {
-                ctx.font        = `bold ${iconR * 0.55}px 'Courier New',monospace`;
+                ctx.font        = `bold ${iconR * 0.55}px ${FONT_NUM}`;
                 ctx.fillStyle   = it.badgeDone ? 'rgba(120,255,150,0.95)' : 'rgba(255,225,110,0.95)';
                 ctx.shadowColor = 'rgba(0,0,0,0.85)';
                 ctx.shadowBlur  = 3;
@@ -3311,9 +3342,9 @@ function drawTitleScreen() {
         const adClaimed = shardsAdClaimedToday;
         const adReady   = shardsAdReady && !adClaimed;
         let mFsz = FS * 0.024;
-        const rewFont = () => `bold ${mFsz * 1.12}px 'Courier New',monospace`;
+        const rewFont = () => `bold ${mFsz * 1.12}px ${FONT_UI}`;
         const measureCols = () => {
-            ctx.font = `${mFsz}px 'Courier New',monospace`;
+            ctx.font = `${mFsz}px ${FONT_UI}`;
             let pw = 0, lw = 0;
             for (let m = 0; m < dailyMissionIdx.length; m++) {
                 const d  = MISSION_DEFS[dailyMissionIdx[m]];
@@ -3349,7 +3380,7 @@ function drawTitleScreen() {
         drawMenuPanel(panX, panY, panW, panH, 12);
 
         ctx.textAlign   = 'center';
-        ctx.font        = `bold ${FS * 0.030}px 'Courier New',monospace`;
+        ctx.font        = `bold ${FS * 0.030}px ${FONT_UI}`;
         ctx.fillStyle   = 'rgba(165,190,255,0.95)';
         ctx.shadowColor = 'rgba(0,0,0,0.90)';
         ctx.shadowBlur  = 5;
@@ -3370,7 +3401,7 @@ function drawTitleScreen() {
             const label = (T.missionDesc && T.missionDesc[def.id]) || def.id;
             const done  = dailyMissionsClaimed[m];
             const val   = Math.min(dailyMissionStats[def.stat] || 0, def.target);
-            ctx.font        = `${mFsz}px 'Courier New',monospace`;
+            ctx.font        = `${mFsz}px ${FONT_UI}`;
             ctx.shadowColor = 'rgba(0,0,0,0.85)';
             ctx.shadowBlur  = 2;
             ctx.fillStyle   = done ? `rgba(120,255,150,0.90)` : `rgba(175,190,225,0.80)`;
@@ -3404,7 +3435,7 @@ function drawTitleScreen() {
 
             _shardsAdBtnRect = { x: panX + panW * 0.05, y: rowY - rowH * 0.80, w: panW * 0.90, h: rowH * 1.35 };
 
-            ctx.font        = `${mFsz}px 'Courier New',monospace`;
+            ctx.font        = `${mFsz}px ${FONT_UI}`;
             ctx.shadowColor = 'rgba(0,0,0,0.85)';
             ctx.shadowBlur  = 2;
             ctx.fillStyle   = adClaimed ? `rgba(120,255,150,0.90)` : `rgba(175,190,225,${adReady ? 0.92 : 0.38})`;
@@ -3444,7 +3475,7 @@ function drawTitleScreen() {
         drawMenuPanel(shipPanX, shipPanY, shipPanW, shipPanH, 14);
 
         ctx.textAlign   = 'center';
-        ctx.font        = `bold ${FS * 0.032}px 'Courier New',monospace`;
+        ctx.font        = `bold ${FS * 0.032}px ${FONT_UI}`;
         ctx.fillStyle   = 'rgba(255,225,110,0.95)';
         ctx.shadowColor = 'rgba(0,0,0,0.9)';
         ctx.shadowBlur  = 5;
@@ -3454,7 +3485,7 @@ function drawTitleScreen() {
         // Shard/stardust wallet -- the numbers that matter when choosing a
         // ship, now read here instead of a permanent HUD line.
         {
-            ctx.font = `bold ${FS * 0.024}px 'Courier New',monospace`;
+            ctx.font = `bold ${FS * 0.024}px ${FONT_UI}`;
             const shardTxt = `${shards} ⧫`;
             const showStar = stardust > 0 && !(unlockedSkins & (1 << (SKINS.length - 1)));
             const starTxt  = showStar ? `    ${stardust} ✦` : '';
@@ -3525,12 +3556,12 @@ function drawTitleScreen() {
                 ctx.shadowColor = 'rgba(0,0,0,0.85)';
                 ctx.shadowBlur  = 3;
                 if (SKINS[i].cost) {
-                    ctx.font      = `bold ${FS * 0.018}px 'Courier New',monospace`;
+                    ctx.font      = `bold ${FS * 0.018}px ${FONT_UI}`;
                     ctx.fillStyle = 'rgba(255,225,110,0.95)';
                     ctx.fillText(`${SKINS[i].cost} ⧫`, cx, cy + cellR * 1.35);
                 }
                 if (SKINS[i].stardustGate) {
-                    ctx.font      = `bold ${FS * 0.015}px 'Courier New',monospace`;
+                    ctx.font      = `bold ${FS * 0.015}px ${FONT_UI}`;
                     ctx.fillStyle = 'rgba(120,225,255,0.95)';
                     const gateY = SKINS[i].cost ? cy + cellR * 1.75 : cy + cellR * 1.35;
                     ctx.fillText(`${Math.min(stardust, SKINS[i].stardustGate)}/${SKINS[i].stardustGate} ✦`, cx, gateY);
@@ -3577,7 +3608,7 @@ function drawTitleScreen() {
                     }
                 }
             }
-            ctx.font        = `${FS * 0.020}px 'Courier New',monospace`;
+            ctx.font        = `${FS * 0.020}px ${FONT_UI}`;
             ctx.fillStyle   = selected ? `rgba(${sr},${sg},${sb},0.95)` : 'rgba(160,175,220,0.65)';
             ctx.shadowColor = 'rgba(0,0,0,0.85)';
             ctx.shadowBlur  = selected ? 8 : 3;
@@ -3596,12 +3627,12 @@ function drawTitleScreen() {
         if (activePerk) {
             const [sr, sg, sb] = SKINS[activeSkin].shadow;
             let perkFsz = FS * 0.020;
-            ctx.font = `${perkFsz}px 'Courier New',monospace`;
+            ctx.font = `${perkFsz}px ${FONT_UI}`;
             const maxW = Math.min(W * 0.9, 820) - 40;
             const textW = ctx.measureText(activePerk).width;
             if (textW > maxW) {
                 perkFsz = Math.max(perkFsz * maxW / textW, FS * 0.012);
-                ctx.font = `${perkFsz}px 'Courier New',monospace`;
+                ctx.font = `${perkFsz}px ${FONT_UI}`;
             }
             const perkHalfW = ctx.measureText(activePerk).width / 2;
             const perkX = Math.min(Math.max(selectedCx, 20 + perkHalfW), W - 20 - perkHalfW);
@@ -3621,7 +3652,7 @@ function drawTitleScreen() {
     // CONCEPT A moved those into the icon rail; kept here since the panel
     // still wants the same pill look for its own toggles.
     const btnFontSz = FS * 0.024 - 1;
-    ctx.font = `${btnFontSz}px 'Courier New',monospace`;
+    ctx.font = `${btnFontSz}px ${FONT_UI}`;
     const pad = FS * 0.011;
     const drawBtn = (bCx, bCy, label, active, blue, fixedW, fixedH) => {
         let bw = fixedW, bh = fixedH || H * 0.055;
@@ -3754,7 +3785,7 @@ function drawTitleScreen() {
         let y = panY + padTop;
 
         // Title
-        ctx.font        = `bold ${FS * 0.030}px 'Courier New',monospace`;
+        ctx.font        = `bold ${FS * 0.030}px ${FONT_UI}`;
         ctx.fillStyle   = 'rgba(165,190,255,0.95)';
         ctx.shadowColor = 'rgba(0,0,0,0.90)';
         ctx.shadowBlur  = 5;
@@ -3773,15 +3804,15 @@ function drawTitleScreen() {
             const fxCX       = rowX0 + rowW - halfW / 2;
             const musicLabel = musicOn ? T.musicOn : T.musicOff;
             const fxLabel    = fxOn    ? T.fxOn    : T.fxOff;
-            ctx.font = `${FS*0.022}px 'Courier New',monospace`;
+            ctx.font = `${FS*0.022}px ${FONT_UI}`;
             _btnMusicRect = drawBtn(musicCX, audioBY, musicLabel, musicOn, false, halfW);
-            ctx.font = `${FS*0.022}px 'Courier New',monospace`;   // drawBtn may have shrunk it for musicLabel
+            ctx.font = `${FS*0.022}px ${FONT_UI}`;   // drawBtn may have shrunk it for musicLabel
             _btnFxRect    = drawBtn(fxCX,    audioBY, fxLabel,    fxOn,    false, halfW);
         }
         y += audioRowH + sectionGap;
 
         // Language section label
-        ctx.font        = `bold ${FS * 0.021}px 'Courier New',monospace`;
+        ctx.font        = `bold ${FS * 0.021}px ${FONT_UI}`;
         ctx.fillStyle   = 'rgba(180,200,250,0.95)';
         ctx.shadowColor = 'rgba(0,0,0,0.90)';
         ctx.shadowBlur  = 3;
@@ -3812,12 +3843,12 @@ function drawTitleScreen() {
             // Shrink the label font to fit narrower buttons (3-col grid, long
             // names like "Indonesia" / "Polski") instead of overflowing.
             let langFontPx = FS * 0.023;
-            ctx.font = `${active ? 'bold ' : ''}${langFontPx}px 'Courier New',monospace`;
+            ctx.font = `${active ? 'bold ' : ''}${langFontPx}px ${FONT_UI}`;
             const nameW = ctx.measureText(lang.name).width;
             const maxNameW = lbw * 0.88;
             if (nameW > maxNameW) {
                 langFontPx *= maxNameW / nameW;
-                ctx.font = `${active ? 'bold ' : ''}${langFontPx}px 'Courier New',monospace`;
+                ctx.font = `${active ? 'bold ' : ''}${langFontPx}px ${FONT_UI}`;
             }
             ctx.fillStyle = active ? 'rgba(140,180,255,0.97)' : 'rgba(150,170,220,0.88)';
             if (active) { ctx.shadowColor = 'rgba(80,140,255,0.55)'; ctx.shadowBlur = 10; }
@@ -3842,7 +3873,7 @@ function drawTitleScreen() {
             ctx.strokeStyle = 'rgba(90,120,160,0.50)';
             ctx.lineWidth   = 1;
             ctx.beginPath(); ctx.roundRect(pbx, pby, pbw, privacyBtnH, 7); ctx.stroke();
-            ctx.font      = `${FS * 0.019}px 'Courier New',monospace`;
+            ctx.font      = `${FS * 0.019}px ${FONT_UI}`;
             ctx.fillStyle = 'rgba(180,195,225,0.85)';
             ctx.fillText(T.privacyChoices, W / 2, pby + privacyBtnH / 2);
             _privacyChoicesBtnRect = { x: pbx, y: pby, w: pbw, h: privacyBtnH };
@@ -3865,11 +3896,11 @@ function drawTitleScreen() {
             ctx.beginPath(); ctx.roundRect(nbx, nby, nbw, notifBtnH, 7); ctx.stroke();
             const nLabel = T.notifPromptTitle + (on ? '  ✓' : '');
             let nFs = FS * 0.019;
-            ctx.font = `${nFs}px 'Courier New',monospace`;
+            ctx.font = `${nFs}px ${FONT_UI}`;
             const nLabelW = ctx.measureText(nLabel).width;
             if (nLabelW > nbw * 0.88) {
                 nFs = Math.max(nFs * nbw * 0.88 / nLabelW, FS * 0.013);
-                ctx.font = `${nFs}px 'Courier New',monospace`;
+                ctx.font = `${nFs}px ${FONT_UI}`;
             }
             ctx.fillStyle = on ? 'rgba(120,235,150,0.92)' : 'rgba(180,195,225,0.85)';
             ctx.fillText(nLabel, W / 2, nby + notifBtnH / 2);
@@ -3892,11 +3923,11 @@ function drawTitleScreen() {
             ctx.beginPath(); ctx.roundRect(gbx, gby, gbw, guideBtnH, 7); ctx.stroke();
             const gLabel = `${T.howItWorks}  ?`;
             let gFs = FS * 0.019;
-            ctx.font = `${gFs}px 'Courier New',monospace`;
+            ctx.font = `${gFs}px ${FONT_UI}`;
             const gLabelW = ctx.measureText(gLabel).width;
             if (gLabelW > gbw * 0.88) {
                 gFs = Math.max(gFs * gbw * 0.88 / gLabelW, FS * 0.013);
-                ctx.font = `${gFs}px 'Courier New',monospace`;
+                ctx.font = `${gFs}px ${FONT_UI}`;
             }
             ctx.fillStyle = 'rgba(190,200,240,0.90)';
             ctx.fillText(gLabel, W / 2, gby + guideBtnH / 2);
@@ -3960,7 +3991,7 @@ function drawTitleScreen() {
 
         let y = panY + padTop;
 
-        ctx.font        = `bold ${FS * 0.030}px 'Courier New',monospace`;
+        ctx.font        = `bold ${FS * 0.030}px ${FONT_UI}`;
         ctx.fillStyle   = 'rgba(165,190,255,0.95)';
         ctx.shadowColor = 'rgba(0,0,0,0.90)';
         ctx.shadowBlur  = 5;
@@ -3973,7 +4004,7 @@ function drawTitleScreen() {
         _restoreBtnRect = null;
         if (hasIAP) {
             if (removeAdsOwned) {
-                ctx.font      = `${FS * 0.020}px 'Courier New',monospace`;
+                ctx.font      = `${FS * 0.020}px ${FONT_UI}`;
                 ctx.fillStyle = 'rgba(120,200,150,0.75)';
                 ctx.fillText(T.adsRemoved, W / 2, y + iapBtnH / 2);
                 y += iapBtnH;
@@ -3985,7 +4016,7 @@ function drawTitleScreen() {
                 ctx.strokeStyle = 'rgba(90,160,255,0.55)';
                 ctx.lineWidth   = 1;
                 ctx.beginPath(); ctx.roundRect(abx, aby, abw, iapBtnH, 7); ctx.stroke();
-                ctx.font      = `${FS * 0.023}px 'Courier New',monospace`;
+                ctx.font      = `${FS * 0.023}px ${FONT_UI}`;
                 ctx.fillStyle = 'rgba(150,200,255,0.90)';
                 ctx.fillText(T.removeAds, W / 2, aby + iapBtnH / 2);
                 _removeAdsBtnRect = { x: abx, y: aby, w: abw, h: iapBtnH };
@@ -3999,7 +4030,7 @@ function drawTitleScreen() {
             // everywhere else ship-unlock-related.
             y += shipsGap;
             if (allShipsOwned) {
-                ctx.font      = `${FS * 0.020}px 'Courier New',monospace`;
+                ctx.font      = `${FS * 0.020}px ${FONT_UI}`;
                 ctx.fillStyle = 'rgba(220,190,120,0.80)';
                 ctx.fillText(T.allShipsOwned, W / 2, y + iapBtnH / 2);
                 y += iapBtnH;
@@ -4016,12 +4047,12 @@ function drawTitleScreen() {
                 // is longer than Remove Ads' longest (German, 18 chars vs. 28), so a
                 // flat font size here either clips French or leaves English cramped.
                 let shipsFsz = FS * 0.023;
-                ctx.font = `${shipsFsz}px 'Courier New',monospace`;
+                ctx.font = `${shipsFsz}px ${FONT_UI}`;
                 const shipsTextW = ctx.measureText(T.unlockAllShips).width;
                 const shipsAvailW = sbw * 0.88; // small margin inside the button's own border
                 if (shipsTextW > shipsAvailW) {
                     shipsFsz = Math.max(shipsFsz * shipsAvailW / shipsTextW, FS * 0.014);
-                    ctx.font = `${shipsFsz}px 'Courier New',monospace`;
+                    ctx.font = `${shipsFsz}px ${FONT_UI}`;
                 }
                 ctx.fillStyle = 'rgba(255,220,140,0.92)';
                 ctx.fillText(T.unlockAllShips, W / 2, sby + iapBtnH / 2);
@@ -4038,7 +4069,7 @@ function drawTitleScreen() {
                 ctx.strokeStyle = 'rgba(90,120,160,0.50)';
                 ctx.lineWidth   = 1;
                 ctx.beginPath(); ctx.roundRect(rbx, rby, rbw, restoreH, 7); ctx.stroke();
-                ctx.font      = `${FS * 0.019}px 'Courier New',monospace`;
+                ctx.font      = `${FS * 0.019}px ${FONT_UI}`;
                 ctx.fillStyle = 'rgba(180,200,240,0.92)';
                 ctx.fillText(T.restorePurchases, W / 2, rby + restoreH / 2);
                 _restoreBtnRect = { x: rbx, y: rby, w: rbw, h: restoreH };
@@ -4049,12 +4080,12 @@ function drawTitleScreen() {
             // All Ships button above -- some locales (ru, tr) run these long.
             const fitLine = (text, baseFrac, cy, clr) => {
                 let fsz = FS * baseFrac;
-                ctx.font = `${fsz}px 'Courier New',monospace`;
+                ctx.font = `${fsz}px ${FONT_UI}`;
                 const avail = panW * 0.90;
                 const tw = ctx.measureText(text).width;
                 if (tw > avail) {
                     fsz = Math.max(fsz * avail / tw, FS * 0.012);
-                    ctx.font = `${fsz}px 'Courier New',monospace`;
+                    ctx.font = `${fsz}px ${FONT_UI}`;
                 }
                 ctx.fillStyle = clr;
                 ctx.fillText(text, W / 2, cy);
@@ -4129,7 +4160,7 @@ function drawTitleScreen() {
         let scale = 1, bodyFontSz, dotR2, padSide, textIndent, rowGap2, lineH, titleH, padTop, padBottom, wrappedRows, panH;
         for (let iter = 0; iter < 14; iter++) {
             bodyFontSz = FS * 0.020 * scale;
-            ctx.font   = `${bodyFontSz}px 'Courier New',monospace`;
+            ctx.font   = `${bodyFontSz}px ${FONT_UI}`;
             dotR2      = bodyFontSz * 0.28;
             // Real side margin from the panel border to the dot -- previously the
             // dot sat almost flush against the left edge with no breathing room at
@@ -4161,7 +4192,7 @@ function drawTitleScreen() {
         drawMenuPanel(panX, panY, panW, panH, 14);
 
         ctx.textAlign   = 'center';
-        ctx.font        = `bold ${titleH}px 'Courier New',monospace`;
+        ctx.font        = `bold ${titleH}px ${FONT_UI}`;
         // Shrink to fit -- same reasoning as the death screen's SHARE/HOME/PLAY
         // AGAIN buttons: some locales run long enough to touch the panel's rounded
         // corners edge to edge with zero margin (Hindi measured 455px of 460px
@@ -4172,13 +4203,13 @@ function drawTitleScreen() {
         const titleW = ctx.measureText(T.howItWorks).width;
         if (titleW > titleMaxW) {
             titleFsz = Math.max(titleFsz * titleMaxW / titleW, FS * 0.02);
-            ctx.font = `bold ${titleFsz}px 'Courier New',monospace`;
+            ctx.font = `bold ${titleFsz}px ${FONT_UI}`;
         }
         ctx.fillStyle   = 'rgba(255,225,110,0.95)';
         ctx.fillText(T.howItWorks, W / 2, panY + padTop + FS * 0.005); // nudged down a touch instead of up like the other submenu titles; see T.missions title note
 
         ctx.textAlign = 'left';
-        ctx.font      = `${bodyFontSz}px 'Courier New',monospace`;
+        ctx.font      = `${bodyFontSz}px ${FONT_UI}`;
         let ry        = panY + padTop + titleH + rowGap2 * 0.6;
         const textX   = panX + textIndent;
         wrappedRows.forEach((lines, i) => {
@@ -4222,7 +4253,7 @@ function drawTitleScreen() {
 
         // Wrap the body to the card width.
         const bodyFs = FS * 0.019;
-        ctx.font = `${bodyFs}px 'Courier New',monospace`;
+        ctx.font = `${bodyFs}px ${FONT_UI}`;
         const maxLineW = cpW * 0.84;
         const lines = [];
         let cur = '';
@@ -4252,25 +4283,25 @@ function drawTitleScreen() {
 
         let cy = cpY + padV + titleFs * 0.7;
         let cardTitleFs = titleFs;
-        ctx.font = `bold ${cardTitleFs}px 'Courier New',monospace`;
+        ctx.font = `bold ${cardTitleFs}px ${FONT_UI}`;
         const ttlW = ctx.measureText(T.notifPromptTitle).width;
         if (ttlW > maxLineW) {
             cardTitleFs = Math.max(cardTitleFs * maxLineW / ttlW, FS * 0.017);
-            ctx.font = `bold ${cardTitleFs}px 'Courier New',monospace`;
+            ctx.font = `bold ${cardTitleFs}px ${FONT_UI}`;
         }
         ctx.fillStyle = 'rgba(165,190,255,0.96)';
         ctx.fillText(T.notifPromptTitle, W / 2, cy);
         cy += titleFs * 0.7 + gap;
 
-        ctx.font = `${bodyFs}px 'Courier New',monospace`;
+        ctx.font = `${bodyFs}px ${FONT_UI}`;
         ctx.fillStyle = 'rgba(210,218,240,0.90)';
         for (const ln of lines) { cy += lineH * 0.5; ctx.fillText(ln, W / 2, cy); cy += lineH * 0.5; }
         cy += gap * 1.4;
 
-        ctx.font = `${FS * 0.02}px 'Courier New',monospace`;
+        ctx.font = `${FS * 0.02}px ${FONT_UI}`;
         _notifPromptYesRect = drawBtn(W / 2, cy + btnH / 2, T.notifYes, true, false, cpW * 0.82, btnH);
         cy += btnH + gap * 0.7;
-        ctx.font = `${FS * 0.02}px 'Courier New',monospace`;
+        ctx.font = `${FS * 0.02}px ${FONT_UI}`;
         _notifPromptNoRect = drawBtn(W / 2, cy + btnH / 2, T.notifNo, false, false, cpW * 0.82, btnH);
 
         ctx.restore();
@@ -4344,7 +4375,9 @@ function drawDeathScreen() {
     const FNT  = al => `rgba(132,146,184,${a * (al === undefined ? 0.62 : al)})`;
 
     const sh   = (blur, col) => { ctx.shadowColor = col || 'rgba(0,0,0,0.90)'; ctx.shadowBlur = blur; };
-    const font = (sz, w) => { ctx.font = `${w || 'bold'} ${sz}px 'Courier New',monospace`; };
+    const font = (sz, w) => { ctx.font = `${w || 'bold'} ${sz}px ${FONT_UI}`; };
+    // Numbers that line up or change get the tabular face (fonts.js FONT_NUM).
+    const num  = (sz, w) => { ctx.font = `${w || 'bold'} ${sz}px ${FONT_NUM}`; };
     const lbl  = (s, x, y, col, align) => {
         font(DS_LBL);
         // Letterspacing is what makes an all-caps label read as a label rather than as
@@ -4418,7 +4451,7 @@ function drawDeathScreen() {
     const isRecord = (newBest || newDailyBest) && score > 0;
     const yScore   = yHair + step(0.200, DS_HERO, 0.98);
 
-    font(DS_HERO);
+    num(DS_HERO);
     if (isRecord) {
         sh(16 + 6 * Math.sin(deadT * 3.5), DAY(0.75));
         ctx.fillStyle = DAY(1);
@@ -4535,7 +4568,7 @@ function drawDeathScreen() {
     if (!hasRank && best > 0) {
         lbl(T.best, RX, ry, FNT());
         ry += step(0.075, DS_BIG, 1.02);
-        font(DS_BIG);
+        num(DS_BIG);
         ctx.textAlign = 'left';
         ctx.fillStyle = DIM(0.92);
         sh(0);
@@ -4549,10 +4582,10 @@ function drawDeathScreen() {
         // the column is bounded on both sides.
         const rankStr = `#${worldRank.toLocaleString()}`;
         let rf = DS_BIG;
-        font(rf);
+        num(rf);
         const availW = (R - RX) * 0.62;
         const rankW0 = ctx.measureText(rankStr).width;
-        if (rankW0 > availW) { rf = Math.max(rf * availW / rankW0, FS * 0.024); font(rf); }
+        if (rankW0 > availW) { rf = Math.max(rf * availW / rankW0, FS * 0.024); num(rf); }
         sh(5, DAY(0.30));
         ctx.fillStyle = INK();
         ctx.textAlign = 'left';
@@ -4609,13 +4642,13 @@ function drawDeathScreen() {
     for (const idx of shownRanks) {
         const entry = top5[idx];
         hair(RX, ry + H * 0.020, R - RX, 0.05);
-        font(DS_TXT);
+        num(DS_TXT, 'normal');
         ctx.textAlign = 'left';
         ctx.fillStyle = FNT(0.75);
         ctx.fillText(`#${idx + 1}`, RX, ry);
         if (entry !== undefined) {
             const isMe = idx === myRank;
-            font(DS_ROW);
+            num(DS_ROW);
             ctx.textAlign = 'right';
             sh(isMe ? 6 : 0, DAY(0.45));
             ctx.fillStyle = isMe ? DAY(1) : DIM();
@@ -4930,7 +4963,7 @@ function drawReviveCountdown() {
     ctx.save();
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font         = `bold ${FS * 0.075 * pulse}px 'Courier New',monospace`;
+    ctx.font         = `bold ${FS * 0.075 * pulse}px ${FONT_UI}`;
     ctx.fillStyle    = `rgba(160,230,255,${a})`;
     ctx.shadowColor  = `rgba(120,220,255,${a * 0.75})`;
     ctx.shadowBlur   = 20;
@@ -5018,12 +5051,12 @@ function drawContinueOffer() {
     // tapping it actually does. Shrink-to-fit since translations range from
     // Chinese's 6 characters to Russian's/German's much wider strings.
     let capFsz = FS * 0.020;
-    ctx.font = `bold ${capFsz}px 'Courier New',monospace`;
+    ctx.font = `bold ${capFsz}px ${FONT_UI}`;
     const capAvailW = W * 0.86;
     const capW = ctx.measureText(T.watchAdContinue).width;
     if (capW > capAvailW) {
         capFsz = Math.max(capFsz * capAvailW / capW, FS * 0.012);
-        ctx.font = `bold ${capFsz}px 'Courier New',monospace`;
+        ctx.font = `bold ${capFsz}px ${FONT_UI}`;
     }
     ctx.fillStyle   = `rgba(255,210,90,${a})`;
     ctx.shadowColor = `rgba(255,180,40,${a * 0.5})`;

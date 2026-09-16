@@ -20,7 +20,7 @@ to get the same verdict mid-session before attempting a push.
 ## What is this
 
 TUNL is an HTML5 Canvas hold-to-thrust cave flyer game.
-`tunl.html` is an HTML/CSS shell that loads 15 plain scripts from `src/` in order - no
+`tunl.html` is an HTML/CSS shell that loads 17 plain scripts from `src/` in order - no
 libraries, no modules, no build step, one shared global scope. Run `/map` for the file
 map. Open `tunl.html` in a browser to play.
 
@@ -262,6 +262,47 @@ per frame producing 0, plus 12 more per on-screen stalactite. Both now return ea
 zero amplitude (measured 30.8 -> 2.5 us per frame's worth of wall samples), and the
 returned value is bit-identical at any non-zero roughness, so flipping the constant back
 up still behaves exactly as before.
+
+### Typography and title accent (2026-09-16, do not revert to Courier)
+
+`src/fonts.js` (loaded second, right after `web.js`) defines the only two font stacks the
+canvas uses: `FONT_UI` (Chakra Petch - logo, labels, buttons, body) and `FONT_NUM`
+(JetBrains Mono - numbers that count or line up: live score, death-screen score/best/rank/
+list, title stat values, rail badges, the share card's big score). Every `ctx.font` string
+interpolates one of them; there is no literal family name anywhere else. Until 12.2 all of
+it was `'Courier New',monospace`. Design study with the reasoning:
+https://claude.ai/artifact/QPvLrDmGiU6przXNwXLV9y
+- **The fonts ship as base64 woff2 inside `fonts.js`**, not as files, because a `.js` in
+  `src/` is the one thing iOS (folder reference), Android (`copyGameFiles` copies
+  `src/**/*.js` only) and `build-play.mjs` (script concat) all already carry. Subset with
+  fonttools to Latin/Latin-1/Latin Ext-A/General Punctuation (+ basic Cyrillic for the mono),
+  ~44 KB total. Chakra Petch has no Cyrillic, so Russian falls through to JetBrains Mono per
+  glyph; ja/ko/zh/ar/hi fall through to the system face exactly as they did under Courier.
+  The Medium cuts are registered as weight 400 (the code only ever asks for bold or default).
+- `main.js` holds the first frame on `fontsReady`, capped at `FONT_WAIT_MS` (400ms).
+  Headless Chrome's `--virtual-time-budget` never settles while a FontFace is loading, so
+  screenshot via DevTools protocol with real waits instead.
+- **The TUNL wordmark no longer assumes a monospace grid.** `drawTitleScreen` measures cap
+  height off 'T', stem width off 'I' and per-letter advances, and strokes the U channel from
+  the real 'U' ink box with chamfered corners, at 0.62x the stem (full stem weight read as
+  too heavy on device). Set `textAlign`/`textBaseline` BEFORE those `measureText` calls -
+  bounding boxes are relative to the current alignment.
+- **The title's left column spaces itself by measured ink, not only by H-fractions**
+  (`colGap` in `drawTitleScreen`): world line, planet line and the REKORD plate each move
+  down if the line above would come closer. WebKit and Chromium place `textBaseline
+  'middle'` differently for Chakra Petch, so the world name overlapped REKORD on an iPhone
+  12 mini while Chrome at the same 812x375 looked fine. Test layout on WebKit, not only Chrome.
+- **HUD score is FS*0.072, not 0.085** (JetBrains Mono figures are ~28% taller than
+  Courier's). Score, BEST and the world intro banner are placed on the ALPHABETIC baseline
+  from measured ink, never on `textBaseline 'top'`/`'middle'`: WebKit puts the em-box top
+  of these fonts ~15pt lower than Chromium, which on an iPhone 12 mini pushed BEST into the
+  banner. The banner also never sits above the HUD stack (`hudY`).
+- **Title screen accent = the day's `wallBase`**, same rule as the debriefing: logo halo and
+  glow, the U, underline, world line, the ALL SHIPS pill, rail button rims and a floor light
+  under the hero ship. The hero ring and ship keep the SKIN colour. The planet line went
+  neutral so the order reads logo > world > planet. Deliberately NOT done from the study:
+  a PLAY button (tapping anywhere starts a run, and see Onboarding on title-screen CTAs)
+  and rail text labels (no room between the ring and a 5-icon rail at 667x375).
 
 ### Depth light (background, 2026-09-13)
 
@@ -1289,8 +1330,9 @@ that, and each is load-bearing:
    "TOT" headline was the largest thing on screen while saying the one thing the player had
    just watched happen, and it competed with `drawDeathFreeze()`'s reticle, which is what
    actually points at the cause. The headline is gone and the score is the hero. A record
-   pulses in the day accent rather than cycling the whole hue wheel (that treatment stays
-   on the title screen, where it does not have to belong to a palette).
+   pulses in the day accent rather than cycling the whole hue wheel. (The title screen's
+   world line cycled the hue wheel too until 2026-09-16; it now takes the day accent as
+   well - see "Typography and title accent".)
 3. **Left-aligned to two column rules** (L = the run, RX = the world); numbers sharing a
    column are right-aligned to R so they form a column instead of drifting with digit count.
 4. **Buttons inside the card** (it used to end at `H*0.82` with the row floating at

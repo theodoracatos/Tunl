@@ -205,4 +205,13 @@ _initAC();
 if (typeof checkReferralReward === 'function') checkReferralReward();
 titleScreen();
 _updatePortraitGate();
-requestAnimationFrame(ts => { prev = ts; requestAnimationFrame(loop); });
+// Hold the first frame until the bundled typefaces (fonts.js) are usable, capped at
+// FONT_WAIT_MS so a font that never loads can never hold up the game.
+let _loopStarted = false;
+const _startLoop = () => {
+    if (_loopStarted) return;
+    _loopStarted = true;
+    requestAnimationFrame(ts => { prev = ts; requestAnimationFrame(loop); });
+};
+fontsReady.then(_startLoop, _startLoop);
+setTimeout(_startLoop, FONT_WAIT_MS);
