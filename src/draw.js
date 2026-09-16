@@ -645,6 +645,31 @@ function drawWorld() {
         ctx.fillRect(-20, -20, W+40, H+40);
     }
 
+    // Parallax rock behind the walls (constants.js PARALLAX_* doc). Far layer first.
+    if (PARALLAX_ON) {
+        const sx0 = phase === 'title' ? 0 : scrollX;
+        const ph  = (LEVEL_NUM % 97) * 0.61;
+        for (const L of PARALLAX_LAYERS) {
+            ctx.fillStyle = rgb(lerpClr(theme.bg, dayRock, Math.max(depth.lift * L.lift, L.min)));
+            const off = sx0 * L.speed;
+            for (const top of [true, false]) {
+                const shift = top ? 0 : 1777;
+                ctx.beginPath();
+                ctx.moveTo(-20, top ? -20 : H + 20);
+                for (let x = -20; x <= W + 20 + L.step; x += L.step) {
+                    const u = x + off + shift;
+                    const d = H * L.reach * (1 + 0.42 * Math.sin(u * L.f[0] + ph + L.seed)
+                                               + 0.20 * Math.sin(u * L.f[1] + ph * 1.7 + L.seed)
+                                               + 0.08 * Math.sin(u * L.f[2] + L.seed * 2.3));
+                    ctx.lineTo(x, top ? d : H - d);
+                }
+                ctx.lineTo(W + 20 + L.step, top ? -20 : H + 20);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+    }
+
     // Wall arrays. topArr/botArr get a small cosmetic jag added on top of the
     // real boundsAt() curve (_wallJagged, below) so the rendered edge reads as
     // broken rock instead of a smooth mathematical wave -- collision uses
@@ -2184,6 +2209,11 @@ function drawWorld() {
     ctx.restore();
 }
 
+// HUD instrument scratch state (draw-only): where the score sits this frame, for the coin
+// sparks to aim at, and the last combo value seen, for the chip's pop-in.
+const _hudScoreAnchor = { x: 0, y: 0 };
+let _hudLastCombo = 0, _hudComboPopT = -1;
+
 function drawHUD() {
     const theme = getTheme();
 
@@ -2205,7 +2235,10 @@ function drawHUD() {
     // taller than Courier's at the same font size, so this keeps the live score's on-screen
     // digit height (and the slice of ceiling it covers) about where it was.
     const scoreFsz = FS * 0.072;
-    let hudY = H * 0.03;
+    // Top of the score's INK (not of an em box, see below). 0.03 was a 'top'-baseline
+    // value that included the font's internal leading; as an ink edge it put the digits
+    // on the cave's frame line.
+    let hudY = H * 0.05;
 
     // Score and BEST are placed on the ALPHABETIC baseline from measured ink, never on
     // textBaseline 'top'. 'top' is the em-box top, and WebKit and Chromium disagree about
@@ -2220,15 +2253,91 @@ function drawHUD() {
     const scoreAsc  = scoreM.actualBoundingBoxAscent  || scoreFsz * 0.73;
     const scoreDesc = scoreM.actualBoundingBoxDescent || 0;
     const scoreBase = hudY + scoreAsc;
+    const scoreMidY = scoreBase - scoreAsc / 2;
+    _hudScoreAnchor.x = W / 2; _hudScoreAnchor.y = scoreMidY;
+    let scoreW = 0;
     if (phase === 'play') {
         const nearPB = best > 0 && score >= best - 5;
-        ctx.fillStyle   = nearPB ? 'rgba(255,230,80,0.96)' : 'rgba(215,235,255,0.96)';
-        ctx.shadowColor = nearPB ? 'rgba(255,200,40,0.80)' : 'rgba(0,0,0,0.85)';
-        ctx.shadowBlur  = nearPB ? 18 : 5;
-        ctx.fillText(score, W/2, scoreBase);
+        // Swallow pulse when a coin spark lands or a near-miss pays (update.js hudBump):
+        // 0 -> 1 -> 0 over HUD_BUMP_SEC, scaling the digits about their own centre and
+        // warming them toward gold, so a bonus reads differently from plain distance.
+        const bumpK  = hudBump > 0 ? Math.sin((1 - hudBump) * Math.PI) : 0;
+        const inkClr = nearPB ? [255, 230, 80] : lerpClr([215, 235, 255], [255, 226, 120], bumpK);
+        ctx.fillStyle   = rgb(inkClr, 0.96);
+        ctx.shadowColor = nearPB || bumpK > 0.05 ? `rgba(255,200,40,${nearPB ? 0.80 : 0.6 * bumpK})` : 'rgba(0,0,0,0.85)';
+        ctx.shadowBlur  = nearPB ? 18 : 5 + 10 * bumpK;
+        ctx.save();
+        ctx.translate(W / 2, scoreMidY);
+        ctx.scale(1 + 0.12 * bumpK, 1 + 0.12 * bumpK);
+        ctx.fillText(score, 0, scoreAsc / 2);
+        ctx.restore();
         ctx.shadowBlur  = 0;
+        scoreW = ctx.measureText(String(score)).width;
     }
     hudY = scoreBase + scoreDesc + scoreFsz * 0.16;
+
+    // Record rail: a thin gauge from 0 to the all-time best, so the number has a scale
+    // mid-run (the debriefing already gives it one after death). Fills in the score's own
+    // ink, turns the ON FIRE orange once the day's bar is beaten and gold once the record
+    // itself falls (update.js onFire / pbPassed), with a gold tick marking the record.
+    if (best > 0 && phase === 'play') {
+        const railW = Math.max(scoreFsz * 2.4, W * 0.10);
+        const railH = Math.max(2, FS * 0.0035);
+        const railX = W / 2 - railW / 2;
+        const prog  = Math.min(1, score / best);
+        ctx.fillStyle = 'rgba(255,255,255,0.14)';
+        ctx.fillRect(railX, hudY, railW, railH);
+        if (pbPassed) {
+            const pulse = 0.75 + 0.25 * Math.sin(gtime * 5);
+            ctx.fillStyle   = `rgba(255,214,70,${pulse})`;
+            ctx.shadowColor = 'rgba(255,200,40,0.8)';
+            ctx.shadowBlur  = 8;
+        } else {
+            ctx.fillStyle = onFire ? 'rgba(255,150,50,0.92)' : 'rgba(215,235,255,0.72)';
+        }
+        ctx.fillRect(railX, hudY, railW * prog, railH);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgba(255,214,70,0.95)';
+        ctx.fillRect(railX + railW - 1, hudY - railH * 1.5, 2, railH * 4);
+        hudY += railH + H * 0.014;
+    }
+
+    // Combo chip beside the score: the multiplier plus a bar draining over the combo
+    // window, replacing the "x3" notif that used to float next to the coin (systems.js).
+    // Pops in when the multiplier climbs. Right of the score's live width, centred on the
+    // digits, so it never overlaps them whatever the score's length.
+    if (phase === 'play' && coinCombo > 1 && coinComboTimer > 0) {
+        if (coinCombo !== _hudLastCombo) { _hudLastCombo = coinCombo; _hudComboPopT = gtime; }
+        const popK  = Math.min(1, Math.max(0, (gtime - _hudComboPopT) / 0.18));
+        const scale = 1 + 0.25 * (1 - popK);
+        const cf    = scoreFsz * 0.36;
+        ctx.font    = `bold ${cf}px ${FONT_NUM}`;
+        const txt   = `\u00d7${coinCombo}`;
+        const tm    = ctx.measureText(txt);
+        const tAsc  = tm.actualBoundingBoxAscent || cf * 0.72;
+        const chipH = tAsc + cf * 0.95, chipW = tm.width + cf * 0.9;
+        const chipX = W / 2 + scoreW / 2 + scoreFsz * 0.24;
+        const warn  = coinComboTimer < 0.5 ? 0.55 + 0.45 * Math.sin(gtime * 18) : 1;
+        ctx.save();
+        ctx.translate(chipX + chipW / 2, scoreMidY);
+        ctx.scale(scale, scale);
+        ctx.beginPath();
+        ctx.roundRect(-chipW / 2, -chipH / 2, chipW, chipH, chipH * 0.28);
+        ctx.fillStyle   = 'rgba(255,200,40,0.12)';
+        ctx.fill();
+        ctx.strokeStyle = `rgba(255,214,70,${0.85 * warn})`;
+        ctx.lineWidth   = 1.4;
+        ctx.stroke();
+        ctx.textAlign   = 'center';
+        ctx.fillStyle   = `rgba(255,226,110,${warn})`;
+        ctx.fillText(txt, 0, -chipH / 2 + cf * 0.32 + tAsc);
+        const barW = (chipW - chipH * 0.5) * Math.min(1, coinComboTimer / Math.max(0.01, coinComboWindow));
+        ctx.fillStyle = `rgba(255,214,70,${0.85 * warn})`;
+        ctx.fillRect(-(chipW - chipH * 0.5) / 2, chipH / 2 - cf * 0.24, barW, Math.max(1.5, cf * 0.09));
+        ctx.restore();
+    } else if (coinCombo <= 1) {
+        _hudLastCombo = coinCombo;
+    }
 
     if (best > 0 && phase === 'play') {
         const bestFsz = FS * 0.025;
@@ -2244,6 +2353,30 @@ function drawHUD() {
         hudY = bestBase + (bm.actualBoundingBoxDescent || 0) + H * 0.014;
     }
     ctx.textBaseline = 'top';
+
+    // Coin sparks in flight (constants.js HUD_SPARK_*): a quadratic arc from the pickup
+    // point, lifted above both ends, easing IN so the spark accelerates into the score and
+    // reads as absorbed. Additive dots with a short trail instead of shadowBlur, which is
+    // the expensive call on WKWebView.
+    if (phase === 'play' && hudSparks.length) {
+        const ax = _hudScoreAnchor.x, ay = _hudScoreAnchor.y;
+        const dotR = Math.max(2.5, FS * 0.009);
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (const s of hudSparks) {
+            const cx1 = (s.x + ax) / 2, cy1 = Math.min(s.y, ay) - H * 0.12;
+            const k   = Math.min(1, s.t / HUD_SPARK_SEC);
+            for (let i = 0; i < 5; i++) {
+                const e = Math.max(0, k - i * 0.07); const ee = e * e;
+                const u = 1 - ee;
+                const x = u * u * s.x + 2 * u * ee * cx1 + ee * ee * ax;
+                const y = u * u * s.y + 2 * u * ee * cy1 + ee * ee * ay;
+                ctx.fillStyle = rgb(s.col, 0.9 - i * 0.17);
+                ctx.beginPath(); ctx.arc(x, y, dotR * (1 - i * 0.14), 0, Math.PI * 2); ctx.fill();
+            }
+        }
+        ctx.restore();
+    }
 
     // Next skin nudge - faint pulsing hint when this run's banked-so-far shards would
     // cross the next unlock (shards + runCoins, since the actual bank happens at death).
@@ -2400,12 +2533,16 @@ function drawHUD() {
         const mfa = milestoneFlash;
         ctx.save();
         ctx.textAlign    = 'center';
-        ctx.textBaseline = 'middle';
+        // Same rule as the world banner: measured ink on the alphabetic baseline, centred
+        // on the old H*0.28 slot but never above the HUD stack (hudY), which it covered
+        // on a 375pt-tall screen once the record rail joined the stack.
+        ctx.textBaseline = 'alphabetic';
         ctx.font         = `bold ${FS*0.11}px ${FONT_UI}`;
+        const msAsc      = ctx.measureText(milestoneText).actualBoundingBoxAscent || FS * 0.11 * 0.72;
         ctx.fillStyle    = `rgba(255,225,65,${mfa})`;
         ctx.shadowColor  = `rgba(255,180,0,${mfa * 0.9})`;
         ctx.shadowBlur   = 28;
-        ctx.fillText(milestoneText, W/2, H * 0.28);
+        ctx.fillText(milestoneText, W/2, Math.max(H * 0.28 + msAsc / 2, hudY + FS * 0.03 + msAsc));
         ctx.shadowBlur   = 0;
         ctx.restore();
     }

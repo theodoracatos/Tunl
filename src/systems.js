@@ -524,8 +524,13 @@ function checkCoinCollection() {
             // eases it toward, but deliberately never all the way to, the 2.0s baseline --
             // see the "never fully erase the drawback" doc above SKINS in constants.js.
             coinComboTimer = activeSkin === 3 ? masteryLerp(3, 1.5, 1.8) : 2.0;
+            coinComboWindow = coinComboTimer;
             const pts = coinCombo * 3;
             bonusScore += pts;
+            // Spark to the score (constants.js HUD_SPARK_*), presentation only.
+            if (hudSparks.length < HUD_SPARK_MAX) {
+                hudSparks.push({ x: sx, y: coin.y, t: 0, col: HUD_SPARK_COLOR[coin.type] || HUD_SPARK_COLOR.gold });
+            }
             runCoins++;
             skinXP[activeSkin] = (skinXP[activeSkin] || 0) + 1;
             runCoinsByType[coin.type] = (runCoinsByType[coin.type] || 0) + 1; // daily missions
@@ -626,10 +631,10 @@ function checkCoinCollection() {
                 // pickups are already stacked nearby (see notifStackOffset/pushNotif).
                 const stackY = coin.y - 34 - notifStackOffset(sx);
                 notifs.push({ x: sx, y: stackY, life: 1.1, text: `+${pts}`, color: [255,220,55] });
-                if (coinCombo > 1) {
-                    notifs.push({ x: sx, y: stackY - 32, life: 1.3, text: `x${coinCombo}`, color: [255,255,80] });
-                    sfxCombo(coinCombo);
-                }
+                // The multiplier used to float here as a second "x3" notif; since the
+                // 2026-09-16 HUD pass it lives in a chip beside the live score instead,
+                // with a bar showing how much of the combo window is left (draw.js).
+                if (coinCombo > 1) sfxCombo(coinCombo);
                 sfxCoin(coinCombo);  // pitch climbs with the combo (audio.js)
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             }

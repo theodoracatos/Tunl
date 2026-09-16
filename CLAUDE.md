@@ -304,6 +304,22 @@ https://claude.ai/artifact/QPvLrDmGiU6przXNwXLV9y
   a PLAY button (tapping anywhere starts a run, and see Onboarding on title-screen CTAs)
   and rail text labels (no room between the ring and a 5-icon rail at 667x375).
 
+### HUD instrument, parallax rock, web frame (2026-09-16 design pass, proposals 3-6)
+
+- **HUD** (`drawHUD`, constants.js `HUD_SPARK_*`): under the live score a thin record rail
+  fills toward the all-time best (orange once ON FIRE, pulsing gold once `pbPassed`, gold
+  tick = the record); a combo chip `xN` sits right of the score's live width with a bar
+  draining over `coinComboWindow`; every coin that pays points sends a spark in its type's
+  colour to the score, which "swallows" it (`hudBump`, scale + gold tint). A near-miss
+  bumps immediately. All presentation: `bonusScore` is still credited at pickup. The world
+  intro banner and the milestone flash are both placed below `hudY`, never over the stack.
+- **Parallax rock** (`drawWorld`, constants.js `PARALLAX_*` doc): two far silhouettes from
+  the top and bottom screen edges, pure function of scrollX + LEVEL_NUM, never past 0.32H,
+  colour kept close to the void (a stronger first pass read as a second pair of walls inside
+  the safe flight). `PARALLAX_ON` is the kill switch.
+- **Web frame** (`tunl.html` `body.web-framed`, `main.js _syncWebFrame`): hairline + glow in
+  the day's rock around the canvas, only with >= 32px of letterbox room, `isWeb()` only.
+
 ### Depth light (background, 2026-09-13)
 
 `constants.js` `DEPTH_LIGHT_*` doc, `draw.js` `depthLightAt()` / `drawWorld()`. The void
@@ -1193,7 +1209,7 @@ maxed punctuation every time from 200 to the top.
 1.5s cooldown prevents spam. Shows "+CLOSE" notif + quick ascending ping sfx.
 
 **Coin combo multiplier**: Coins collected within 2s of each other build a streak.
-Score pts = `coinCombo * 3` (so x1=+3, x2=+6, x3=+9...). Shows "x2", "x3" notif above gold coin notif.
+Score pts = `coinCombo * 3` (so x1=+3, x2=+6, x3=+9...). The multiplier shows as a chip beside the live score with a bar draining over the combo window (since 2026-09-16; it used to float as an "x2"/"x3" notif above the gold coin notif) - see "HUD instrument".
 Blue/red/bomb coins join the streak but their notif doesn't change (power-up is the
 reward). Poison breaks the streak outright (`coinCombo` reset to 0) rather than joining
 it - see Poison coin above.
@@ -1616,7 +1632,6 @@ project memory) held after re-checking.
 
 ## Possible future features
 
-- Animated background parallax layers
 - Multiple difficulty modes
 - Mobile fullscreen on iOS/Android
 - Level theming (lava/ice/neon)

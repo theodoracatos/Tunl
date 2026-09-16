@@ -462,6 +462,7 @@ function update(dt) {
                                   : activeSkin === 7 ? masteryLerp(7, 4.0, 5.0)
                                   : 2.0)) {
             bonusScore++;
+            hudBump = 1;   // no spark to wait for: the score swallows the point at once
             nearMissTimer = 1.5;
             runNearMisses++;
             pushNotif(PX + W*0.07, py - H*0.05, 1.0, T.notifClose, [255,160,60]);
@@ -472,6 +473,13 @@ function update(dt) {
     // Coin combo timer decay
     coinComboTimer = Math.max(0, coinComboTimer - dt);
     if (coinComboTimer <= 0) coinCombo = 0;
+
+    // HUD coin sparks (constants.js HUD_SPARK_*): an arrival triggers the score's pulse.
+    for (let i = hudSparks.length - 1; i >= 0; i--) {
+        hudSparks[i].t += dt;
+        if (hudSparks[i].t >= HUD_SPARK_SEC) { hudSparks.splice(i, 1); hudBump = 1; }
+    }
+    hudBump = Math.max(0, hudBump - dt / HUD_BUMP_SEC);
 
     // Milestone flash decay
     milestoneFlash = Math.max(0, milestoneFlash - dt * 1.6);

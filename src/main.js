@@ -184,6 +184,16 @@ if (isWeb()) {
     // Letterbox starfield (tunl.html's body.web-bg) - open web only, see its CSS
     // comment for why.
     document.body.classList.add('web-bg');
+    // Web frame (tunl.html body.web-framed): only with real letterbox room, so a phone
+    // browser filling the screen never gets rounded-off corners on the playfield.
+    document.documentElement.style.setProperty('--tunl-acc', getTheme().wallBase.join(','));
+    const _syncWebFrame = () => {
+        const r = cv.getBoundingClientRect();
+        document.body.classList.toggle('web-framed',
+            window.innerWidth - r.width >= 32 || window.innerHeight - r.height >= 32);
+    };
+    _syncWebFrame();
+    window.addEventListener('resize', _syncWebFrame);
     let _rotoBootW = window.innerWidth, _rotoT = 0;
     const _reloadAfterRotate = () => {
         if (Math.abs(window.innerWidth - _rotoBootW) < 4) return;

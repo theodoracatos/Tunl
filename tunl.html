@@ -38,6 +38,24 @@ body.web-bg {
 }
 canvas { display:block; }
 
+/* Web frame (2026-09-16 design pass, proposal 6) - open web only, and only while
+   there is letterbox room around the canvas (src/main.js _syncWebFrame toggles
+   body.web-framed). Without it a desktop visitor from a shared link saw the game as
+   a hard-edged rectangle floating in black, which reads as an embedded video, not a
+   game. A hairline and a faint glow in the day's rock colour (--tunl-acc, set from
+   getTheme().wallBase at boot) plus a soft pool of the same light behind it. Pure
+   page chrome: the canvas, W/H and input mapping are untouched. */
+body.web-framed::before {
+    content:""; position:fixed; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse 70% 60% at 50% 50%, rgba(var(--tunl-acc,120,160,255),0.08), transparent 70%);
+}
+body.web-framed canvas {
+    position:relative; border-radius:12px;
+    box-shadow:0 0 0 1px rgba(var(--tunl-acc,120,160,255),0.36),
+               0 0 46px rgba(var(--tunl-acc,120,160,255),0.12),
+               0 24px 60px rgba(0,0,0,0.65);
+}
+
 /* Portrait gate - shown only on the open web (src/main.js, gated on isWeb()).
    The iOS/Android wrappers lock orientation and never see this. */
 #rot {

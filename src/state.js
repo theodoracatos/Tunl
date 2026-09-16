@@ -394,6 +394,10 @@ let lastBlueWx, lastRedWx, lastGreenWx;
 // crossing check) is enough.
 let flightClock, flightAchIdx;
 let notifs;
+// HUD instrument (constants.js HUD_SPARK_*): in-flight coin sparks, the score's swallow
+// pulse (1 -> 0), and the full length of the current combo window so the combo chip's
+// timer bar can show how much of it is left (ELECTRIC's window is shorter than 2.0s).
+let hudSparks = [], hudBump = 0, coinComboWindow = 2.0;
 let bonusScore, milestoneNext, nearMissTimer, coinCombo, coinComboTimer;
 let runCoins, runNearMisses, runMaxCombo;
 // Backing state for the 4 skill achievements (constants.js SPRINT_ACH_*/NO_HIT_ACH_*/
