@@ -8,16 +8,22 @@ let _ac = null, _tVoice = null;
 // second synthesis path. Purely a pass-through node: connecting a second destination
 // off it never mutes or alters the speakers.
 let _master = null;
+// Music rides its own bus (2026-09-17 audio audit) so the death sweep, the title/play
+// crossfade and musicDuck() can move ALL music without touching a single sfx, and so the
+// limiter below sees music and sfx as one summed programme the way a real mixer would.
+// _master keeps its name and its role as the sfx bus - every sfx in this file still
+// connects straight to it, which is why none of them needed touching.
+let _musicBus = null, _outGain = null, _limiter = null;
 let _fNode = null, _fGain = null;
 let _mNode = null, _mGain = null, _mOsc = null;
 let _wNode = null, _wGain = null, _wOsc = null;
 // Last-fired bullet-fire voices, so a death mid-burst can cut them off instead of
 // letting the tail ring on into sfxDie (see sfxBulletFireStop below).
 let _bfVoices = [];
-let _bgmBuf = null, _bgmNode = null, _bgmGain = null;
+let _bgmBuf = null, _bgmNode = null, _bgmGain = null, _bgmFlt = null;
 let _bgmLoading = false, _titleBgmLoading = false; // in-flight guards for the lazy loaders
 let _bgmActive = false, _bgmPending = false;
-let _titleBgmBuf = null, _titleBgmNode = null, _titleBgmGain = null;
+let _titleBgmBuf = null, _titleBgmNode = null, _titleBgmGain = null, _titleBgmFlt = null;
 let _titleBgmActive = false, _titleBgmPending = false;
 
 // Music bed gains, one per track, calibrated so each track sits where the SFX mix was
@@ -30,17 +36,89 @@ let _titleBgmActive = false, _titleBgmPending = false;
 // position once scaled. If a track is replaced, re-measure with ffmpeg ebur128 and
 // rescale: gain = 0.10 * 10^((-6.3 - newLUFS) / 20) for the in-game track.
 const BGM_GAIN       = 0.10;
-const TITLE_BGM_GAIN = 0.058;
+// Title bed raised 0.058 -> 0.100 (+4.7 dB) on 2026-09-17. Measured, the title screen
+// sat at ~-35.5 LUFS against the play screen's ~-26.5: a 9 dB step on every single run
+// start, and quiet enough that the UI taps (~-37 dB momentary) were UNDER their own
+// music. Still ~4 dB below the play bed, which is the intent - the title screen is the
+// calm one - but a step, not a cliff, and the crossfade below smooths what's left.
+const TITLE_BGM_GAIN = 0.100;
+
+// ── Master bus: gain then limiter (2026-09-17 audio audit) ───────────────────
+// Until 13.0 _master was a bare pass-through into _ac.destination: no limiter anywhere,
+// so headroom was the only thing between the mix and a clipped output, and every voice
+// in this file had to stay conservatively quiet to guarantee it. That cost twice over.
+// Measured integrated level of a real run was about -24 LUFS while mobile games and,
+// more to the point, the AdMob interstitial that follows a death sit around -14 to -16 -
+// so the ad after every 4th death came in 8-10 dB LOUDER than the game it interrupts.
+// MASTER_GAIN lifts the whole programme and the limiter catches what that pushes over.
+// Peaks before this: the loudest single sfx was sfxMineExplode at -7.5 dBFS, so +6 dB
+// lands it at -1.5 dB, under the threshold as a peak, with the limiter there for the
+// cases where several land on the same frame (mine + crack + thrust + music).
+// DynamicsCompressor is a soft-knee RMS compressor, not a true brickwall, hence the
+// hard knee, the high ratio and the fast attack - it is a safety net on the sum, not a
+// loudness tool, and nothing in this file should be tuned to hit it in normal play.
+// The safety net is a WaveShaper soft clipper, NOT a DynamicsCompressor - measured, and
+// do not swap it back. A compressor was tried first and rejected twice over: it is a
+// broadband gain reducer with a release window, so one loud transient ducks everything
+// around it for the next 150-250ms, and percussive sfx came out of the boost QUIETER
+// than they went in (sfxMineExplode's loudest 50ms measured -26.6 dB through the
+// compressor against -17.3 dB with it bypassed - a 9 dB tax on the exact sounds the
+// boost was for, and it acted well below its own threshold). The shaper instead is
+// EXACTLY linear below LIMIT_KNEE and only rounds off what would otherwise clip, so
+// nothing in normal play is touched at all - verified by rendering each sfx with and
+// without it in the chain and comparing. The saturation it adds on the rare overs is
+// harmonic, which on a phone speaker helps rather than hurts.
+const MASTER_GAIN    = 1.6;    // +4 dB; measures ~-18 LUFS integrated in play
+const LIMIT_KNEE     = 0.70;   // ~-3.1 dBFS: linear below this, soft above
+const LIMIT_CEIL     = 1.00;   // asymptote: the shaper can never output past full scale
+
+// Soft-clip curve: identity up to LIMIT_KNEE, then a tanh shoulder that approaches
+// LIMIT_CEIL without ever reaching it.
+function _limiterCurve() {
+    const n = 8192, c = new Float32Array(n);
+    const span = LIMIT_CEIL - LIMIT_KNEE;
+    for (let i = 0; i < n; i++) {
+        const x = (i * 2) / (n - 1) - 1;
+        const a = Math.abs(x);
+        const y = a <= LIMIT_KNEE ? a : LIMIT_KNEE + span * Math.tanh((a - LIMIT_KNEE) / span);
+        c[i] = x < 0 ? -y : y;
+    }
+    return c;
+}
+
+// Music crossfade / duck timings (seconds).
+const MUSIC_FADE_SEC  = 0.30;  // title <-> play crossfade, and every music fade-in
+const MUSIC_DUCK_DB   = 3.5;   // how far music steps back under a big one-shot
+const MUSIC_DUCK_SEC  = 0.40;  // how long it stays there before gliding back
+
+// Loop points, in seconds into each file (2026-09-17). Both tracks are ordinary
+// masters, not loops: the_mountain fades out over its last ~4.5s and then holds 0.66s of
+// digital silence, the_mountain_documentary fades from ~114.5s, and both open with a
+// short lead-in. Looping the raw buffer therefore played a fade-out, a hole and a
+// fade-in every pass - loudest on the title screen, where the track loops while the
+// player sits there and it reads as "the song ended". BufferSource.loopStart/loopEnd
+// keep the lead-in as a one-time intro and then cycle the body only. Measured from the
+// EBU momentary envelope (full level from ~1.5s / ~0.2s, fade starting ~144s / ~114.5s),
+// NOT by re-encoding the files - see the "always encode once from the source" rule
+// above; the same numbers therefore hold for the .web.m4a encodes.
+const BGM_LOOP_START       = 1.60,  BGM_LOOP_END       = 144.00;
+const TITLE_BGM_LOOP_START = 0.30,  TITLE_BGM_LOOP_END = 114.50;
 
 function _startBgMusic() {
     if (!musicOn) return;
     if (_bgmActive) return;  // already playing - don't restart
     _bgmActive = true;
-    // Reset gain in case it was faded to near-zero during death
+    // Reset gain in case it was faded to near-zero during death. Ramped, not snapped:
+    // the death sweep below takes the music down through a closing lowpass, and a run
+    // restarting has to come back up the same way rather than punching in at full level
+    // (the restart tap is often inside the death fade's own tail).
     if (_bgmGain && _ac) {
-        _bgmGain.gain.cancelScheduledValues(_ac.currentTime);
-        _bgmGain.gain.setValueAtTime(BGM_GAIN, _ac.currentTime);
+        const t = _ac.currentTime;
+        _bgmGain.gain.cancelScheduledValues(t);
+        _bgmGain.gain.setValueAtTime(Math.max(_bgmGain.gain.value, 0.0001), t);
+        _bgmGain.gain.linearRampToValueAtTime(BGM_GAIN, t + MUSIC_FADE_SEC);
     }
+    _bgmOpenFilter();
     if (_bgmBuf) { _playBgmBuffer(); return; }
     // Not loaded yet - mark pending and kick the loader (no-op if already in flight);
     // it starts playback itself once the buffer lands.
@@ -50,29 +128,87 @@ function _startBgMusic() {
 
 function _playBgmBuffer() {
     if (!_ac || !_bgmBuf || !_bgmActive) return;
-    _bgmGain = _bgmGain || (() => {
-        const g = _ac.createGain(); g.gain.value = BGM_GAIN; g.connect(_master); return g;
-    })();
+    // gain -> lowpass -> music bus. The filter is wide open in normal play and only
+    // moves for the death sweep (_fadeBgMusic), which is why it can live here rather
+    // than being built and torn down per death.
+    if (!_bgmGain) {
+        _bgmGain = _ac.createGain(); _bgmGain.gain.value = 0.0001;
+        _bgmFlt  = _ac.createBiquadFilter();
+        _bgmFlt.type = 'lowpass'; _bgmFlt.frequency.value = 20000; _bgmFlt.Q.value = 0.7;
+        _bgmGain.connect(_bgmFlt); _bgmFlt.connect(_musicBus);
+        const t = _ac.currentTime;
+        _bgmGain.gain.setValueAtTime(0.0001, t);
+        _bgmGain.gain.linearRampToValueAtTime(BGM_GAIN, t + MUSIC_FADE_SEC);
+    }
+    _bgmOpenFilter();
     _bgmNode = _ac.createBufferSource();
     _bgmNode.buffer = _bgmBuf;
     _bgmNode.loop = true;
+    // Skip the lead-in and the fade-out on every pass after the first - see the
+    // BGM_LOOP_START doc block.
+    if (_bgmBuf.duration > BGM_LOOP_END) {
+        _bgmNode.loopStart = BGM_LOOP_START;
+        _bgmNode.loopEnd   = BGM_LOOP_END;
+    }
     _bgmNode.connect(_bgmGain);
     _bgmNode.start();
 }
 
+// Snaps the play-music lowpass back open (the death sweep leaves it closed down at
+// DEATH_MUSIC_HZ). Short ramp rather than an assignment so a restart during the sweep
+// does not step.
+function _bgmOpenFilter() {
+    if (!_ac || !_bgmFlt) return;
+    const t = _ac.currentTime;
+    _bgmFlt.frequency.cancelScheduledValues(t);
+    _bgmFlt.frequency.setValueAtTime(_bgmFlt.frequency.value, t);
+    _bgmFlt.frequency.exponentialRampToValueAtTime(20000, t + MUSIC_FADE_SEC);
+}
+
+// Death (update.js die()). Used to be a 50ms ramp to silence - the music simply stopped,
+// on the same frame as the hit, which is the one moment in the game that wants a gesture
+// rather than a cut. Now it collapses: the lowpass closes to DEATH_MUSIC_HZ while the
+// level falls, over DEATH_MUSIC_SEC, which is DEATH_REPLAY_SEC (the freeze frame, before
+// the debriefing panel paints) plus a beat. The world stops, the room closes over it,
+// and sfxDie's own impact lands on frame 0 into the space that opens up. The node is
+// still hard-stopped afterwards, so nothing here changes the restart path.
+const DEATH_MUSIC_SEC = 0.55;
+const DEATH_MUSIC_HZ  = 300;
 function _fadeBgMusic() {
     _bgmActive = false;
     _bgmPending = false;
-    // stop Web Audio bgm (tiny ramp to avoid click, then hard stop)
     if (_bgmGain && _bgmNode) {
         const t = _ac.currentTime;
         _bgmGain.gain.cancelScheduledValues(t);
         _bgmGain.gain.setValueAtTime(_bgmGain.gain.value, t);
-        _bgmGain.gain.linearRampToValueAtTime(0.001, t + 0.05);
+        _bgmGain.gain.setTargetAtTime(0.0001, t + 0.10, 0.16);
+        if (_bgmFlt) {
+            _bgmFlt.frequency.cancelScheduledValues(t);
+            _bgmFlt.frequency.setValueAtTime(_bgmFlt.frequency.value, t);
+            _bgmFlt.frequency.exponentialRampToValueAtTime(DEATH_MUSIC_HZ, t + DEATH_MUSIC_SEC * 0.8);
+        }
         const n = _bgmNode; _bgmNode = null;
         n.onended = null;  // prevent ghost restart from stopped node
-        setTimeout(() => { try { n.stop(); } catch(e){} }, 80);
+        setTimeout(() => { try { n.stop(); } catch(e){} }, DEATH_MUSIC_SEC * 1000 + 80);
     }
+}
+
+// Steps the whole music bus back by MUSIC_DUCK_DB for a moment so a one-shot that
+// matters (a milestone, a record, the shield taking a hit for you) lands in its own
+// space instead of fighting a bed that is only ~2 dB below it. Bus-level, so it works
+// for title and play music alike and never touches an sfx. Overlapping ducks just
+// re-arm the same ramp; the release is a setTargetAtTime glide, not a step.
+function musicDuck(dB, dur) {
+    if (!_ac || !_musicBus) return;
+    const t = _ac.currentTime;
+    const g = _musicBus.gain;
+    const lvl = Math.pow(10, -(dB || MUSIC_DUCK_DB) / 20);
+    try {
+        g.cancelScheduledValues(t);
+        g.setValueAtTime(g.value, t);
+        g.linearRampToValueAtTime(lvl, t + 0.04);
+        g.setTargetAtTime(1.0, t + (dur || MUSIC_DUCK_SEC), 0.12);
+    } catch (e) {}
 }
 
 // Blue coin slows the scroll to 60% for its duration (systems.js). The music follows
@@ -138,8 +274,10 @@ function _startTitleMusic() {
     if (_titleBgmActive) return;  // already playing - don't restart
     _titleBgmActive = true;
     if (_titleBgmGain && _ac) {
-        _titleBgmGain.gain.cancelScheduledValues(_ac.currentTime);
-        _titleBgmGain.gain.setValueAtTime(TITLE_BGM_GAIN, _ac.currentTime);
+        const t = _ac.currentTime;
+        _titleBgmGain.gain.cancelScheduledValues(t);
+        _titleBgmGain.gain.setValueAtTime(Math.max(_titleBgmGain.gain.value, 0.0001), t);
+        _titleBgmGain.gain.linearRampToValueAtTime(TITLE_BGM_GAIN, t + MUSIC_FADE_SEC);
     }
     if (_titleBgmBuf) { _playTitleBgmBuffer(); return; }
     // Not loaded yet - mark pending and kick the loader (no-op if already in flight);
@@ -150,26 +288,38 @@ function _startTitleMusic() {
 
 function _playTitleBgmBuffer() {
     if (!_ac || !_titleBgmBuf || !_titleBgmActive) return;
-    _titleBgmGain = _titleBgmGain || (() => {
-        const g = _ac.createGain(); g.gain.value = TITLE_BGM_GAIN; g.connect(_master); return g;
-    })();
+    if (!_titleBgmGain) {
+        _titleBgmGain = _ac.createGain(); _titleBgmGain.gain.value = 0.0001;
+        _titleBgmGain.connect(_musicBus);
+        const t = _ac.currentTime;
+        _titleBgmGain.gain.setValueAtTime(0.0001, t);
+        _titleBgmGain.gain.linearRampToValueAtTime(TITLE_BGM_GAIN, t + MUSIC_FADE_SEC);
+    }
     _titleBgmNode = _ac.createBufferSource();
     _titleBgmNode.buffer = _titleBgmBuf;
     _titleBgmNode.loop = true;
+    if (_titleBgmBuf.duration > TITLE_BGM_LOOP_END) {
+        _titleBgmNode.loopStart = TITLE_BGM_LOOP_START;
+        _titleBgmNode.loopEnd   = TITLE_BGM_LOOP_END;
+    }
     _titleBgmNode.connect(_titleBgmGain);
     _titleBgmNode.start();
 }
 
-function _fadeTitleMusic() {
+// Leaving the title screen (startPlay, lifecycle). Fades over MUSIC_FADE_SEC against
+// _startBgMusic's matching fade-in, so title and play music cross rather than the old
+// 50ms cut-then-punch-in at a level 9 dB higher.
+function _fadeTitleMusic(dur) {
     _titleBgmActive = false;
     _titleBgmPending = false;
     if (_titleBgmGain && _titleBgmNode) {
         const t = _ac.currentTime;
+        const d = (dur === undefined) ? MUSIC_FADE_SEC : dur;
         _titleBgmGain.gain.cancelScheduledValues(t);
         _titleBgmGain.gain.setValueAtTime(_titleBgmGain.gain.value, t);
-        _titleBgmGain.gain.linearRampToValueAtTime(0.001, t + 0.05);
+        _titleBgmGain.gain.linearRampToValueAtTime(0.0001, t + d);
         const n = _titleBgmNode; _titleBgmNode = null;
-        setTimeout(() => { try { n.stop(); } catch(e){} }, 80);
+        setTimeout(() => { try { n.stop(); } catch(e){} }, d * 1000 + 60);
     }
 }
 
@@ -179,8 +329,20 @@ function _initAC() {
     // not just resume a merely-suspended one (see _reviveAudioContext below).
     if (_ac) { _reviveAudioContext(); return; }
     _ac = new (window.AudioContext || window.webkitAudioContext)();
-    _master = _ac.createGain();
-    _master.connect(_ac.destination);
+    // sfx bus + music bus -> master gain -> limiter -> output. The gain sits BEFORE the
+    // limiter on purpose: it is what pushes the programme up, and the limiter is what
+    // catches the result. See the MASTER_GAIN doc block above.
+    _master   = _ac.createGain();
+    _musicBus = _ac.createGain();
+    _outGain  = _ac.createGain();
+    _outGain.gain.value = MASTER_GAIN;
+    _limiter = _ac.createWaveShaper();
+    _limiter.curve = _limiterCurve();
+    _limiter.oversample = '4x';   // keeps the shoulder's harmonics out of the alias band
+    _master.connect(_outGain);
+    _musicBus.connect(_outGain);
+    _outGain.connect(_limiter);
+    _limiter.connect(_ac.destination);
     // WebKit sometimes creates the context in 'suspended' state even inside a
     // user gesture - resume it explicitly now, still within the gesture.
     if (_ac.state === 'suspended') _ac.resume();
@@ -282,7 +444,8 @@ function _reviveAudioContext() {
     try { _ac.close(); } catch(e){}
     _bgmPending = _bgmActive;
     _titleBgmPending = _titleBgmActive;
-    _ac = null; _master = null; _bgmBuf = null; _bgmNode = null; _bgmGain = null;
+    _ac = null; _master = null; _musicBus = null; _outGain = null; _limiter = null;
+    _bgmFlt = null; _titleBgmFlt = null; _bgmBuf = null; _bgmNode = null; _bgmGain = null;
     _titleBgmBuf = null; _titleBgmNode = null; _titleBgmGain = null;
     // Any decode still in flight belongs to the context just closed and will drop itself
     // on the _ac !== ctx check; clear the guards so the fresh context can load again.
@@ -307,15 +470,17 @@ window._tunlResumeAudio = _reviveAudioContext;
 // destination off _master never touches what the player hears.
 let _recNode = null;
 function audioRecordStream() {
-    if (!_ac || !_master) return null;
+    if (!_ac || !_limiter) return null;
     if (!_recNode) {
+        // Tapped POST-limiter (was post-_master, pre-everything) so a recorded run
+        // carries the same mix, master gain and limiting the player hears.
         _recNode = _ac.createMediaStreamDestination();
-        _master.connect(_recNode);
+        _limiter.connect(_recNode);
     }
     return _recNode.stream;
 }
 function audioRecordStop() {
-    if (_recNode && _master) { try { _master.disconnect(_recNode); } catch (e) {} }
+    if (_recNode && _limiter) { try { _limiter.disconnect(_recNode); } catch (e) {} }
     _recNode = null;
 }
 
@@ -431,22 +596,59 @@ function sfxDie() {
     g2.gain.linearRampToValueAtTime(0.001, t + dur);
     src2.connect(flt2); flt2.connect(g2); g2.connect(_master);
     src2.start(t); src2.stop(t + dur + 0.05);
-    // Impact crash near the end - low thump only. Used to also layer a sharp
-    // highpass "crack" here, but that's the same short highpass-noise-burst
-    // technique the projectile-hit sounds use (see sfxStalCrack), so it read as
-    // the bullet-hit sound playing again at death - dropped on request.
-    const tImpact = t + dur - 0.08;
+    // ── The impact itself, on frame 0 (2026-09-17 audio audit) ──────────────
+    // The crash used to sit at t + dur - 0.08, i.e. 1.22s AFTER the collision: the
+    // reverse-spool roar had to run its length first, so the loudest moment of the death
+    // sound landed once drawDeathFreeze() had already finished and the debriefing panel
+    // was fading in. The hit itself made no sound at all. The roar and its reversal are
+    // kept (that mirror of sfxEngineSpoolUp is the identity of the sound) - what moved
+    // is the impact: hull thump, mid crunch and a bright crack all on the hit frame,
+    // with only a quiet debris settle left at the tail.
+    // Three layers rather than one because the thump alone is a 180->45 Hz sine, which a
+    // phone speaker barely reproduces - the 900 Hz crunch and the crack are what carry
+    // the hit on a device, the sub is what carries it on headphones.
+    const thump = _ac.createOscillator(), thumpG = _ac.createGain();
+    thump.type = 'sine';
+    thump.frequency.setValueAtTime(180, t);
+    thump.frequency.exponentialRampToValueAtTime(45, t + 0.18);
+    thumpG.gain.setValueAtTime(0.28, t);
+    thumpG.gain.exponentialRampToValueAtTime(0.001, t + 0.30);
+    thump.connect(thumpG); thumpG.connect(_master);
+    thump.start(t); thump.stop(t + 0.32);
+    const crunch = _ac.createBufferSource();
+    crunch.buffer = _noiseBuf(0.26);
+    const crunchFlt = _ac.createBiquadFilter();
+    crunchFlt.type = 'bandpass'; crunchFlt.Q.value = 0.8;
+    crunchFlt.frequency.setValueAtTime(1400, t);
+    crunchFlt.frequency.exponentialRampToValueAtTime(420, t + 0.22);
+    const crunchG = _ac.createGain();
+    crunchG.gain.setValueAtTime(0.26, t);
+    crunchG.gain.exponentialRampToValueAtTime(0.001, t + 0.26);
+    crunch.connect(crunchFlt); crunchFlt.connect(crunchG); crunchG.connect(_master);
+    crunch.start(t); crunch.stop(t + 0.28);
+    const snap = _ac.createBufferSource();
+    snap.buffer = _noiseBuf(0.03);
+    const snapFlt = _ac.createBiquadFilter();
+    snapFlt.type = 'highpass'; snapFlt.frequency.value = 2600;
+    const snapG = _ac.createGain();
+    snapG.gain.setValueAtTime(0.18, t);
+    snapG.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+    snap.connect(snapFlt); snapFlt.connect(snapG); snapG.connect(_master);
+    snap.start(t); snap.stop(t + 0.03);
+    // Debris settling as the roar runs out - what the old crash was, at less than half
+    // the level, since it is now a tail and not the event.
+    const tSettle = t + dur - 0.08;
     const crash = _ac.createBufferSource();
     crash.buffer = _noiseBuf(0.3);
     const crashFlt = _ac.createBiquadFilter();
     crashFlt.type = 'lowpass';
-    crashFlt.frequency.setValueAtTime(700, tImpact);
-    crashFlt.frequency.exponentialRampToValueAtTime(60, tImpact + 0.22);
+    crashFlt.frequency.setValueAtTime(700, tSettle);
+    crashFlt.frequency.exponentialRampToValueAtTime(60, tSettle + 0.22);
     const crashGain = _ac.createGain();
-    crashGain.gain.setValueAtTime(0.32, tImpact);
-    crashGain.gain.exponentialRampToValueAtTime(0.001, tImpact + 0.26);
+    crashGain.gain.setValueAtTime(0.14, tSettle);
+    crashGain.gain.exponentialRampToValueAtTime(0.001, tSettle + 0.26);
     crash.connect(crashFlt); crashFlt.connect(crashGain); crashGain.connect(_master);
-    crash.start(tImpact); crash.stop(tImpact + 0.28);
+    crash.start(tSettle); crash.stop(tSettle + 0.28);
 }
 
 function sfxSlow() {
@@ -596,6 +798,21 @@ function sfxBomb() {
     g2.gain.exponentialRampToValueAtTime(0.001, tBoom + 0.44);
     src.connect(flt); flt.connect(g2); g2.connect(_master);
     src.start(tBoom); src.stop(tBoom + 0.46);
+    // Mid-band body (2026-09-17): the boom above sweeps 750 -> 50 Hz, i.e. straight into
+    // the range a phone speaker does not reproduce - measured flat it is the loudest
+    // layer here, on an iPhone speaker it is nearly nothing. This layer puts the
+    // detonation where the speaker actually lives without changing the boom itself.
+    const mid = _ac.createBufferSource();
+    mid.buffer = _noiseBuf(0.3);
+    const midFlt = _ac.createBiquadFilter();
+    midFlt.type = 'bandpass'; midFlt.Q.value = 0.7;
+    midFlt.frequency.setValueAtTime(1100, tBoom);
+    midFlt.frequency.exponentialRampToValueAtTime(400, tBoom + 0.26);
+    const midG = _ac.createGain();
+    midG.gain.setValueAtTime(0.30, tBoom);
+    midG.gain.exponentialRampToValueAtTime(0.001, tBoom + 0.30);
+    mid.connect(midFlt); midFlt.connect(midG); midG.connect(_master);
+    mid.start(tBoom); mid.stop(tBoom + 0.32);
 }
 
 // Warp portal entry (constants.js "Warp portal" doc): a rising sweep chord + a
@@ -647,7 +864,10 @@ function sfxCannonFire() {
     flt.frequency.setValueAtTime(1100, t);
     flt.frequency.exponentialRampToValueAtTime(180, t + 0.16);
     const g = _ac.createGain();
-    g.gain.setValueAtTime(0.32, t);
+    // +5 dB across all three layers (2026-09-17): a cannon shot is the game's only
+    // "something is about to happen to you" cue, and it measured 4 dB QUIETER than a
+    // gold coin. Warnings sit above rewards.
+    g.gain.setValueAtTime(0.57, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
     src.connect(flt); flt.connect(g); g.connect(_master);
     src.start(t); src.stop(t + 0.19);
@@ -657,7 +877,7 @@ function sfxCannonFire() {
     const flt2 = _ac.createBiquadFilter();
     flt2.type = 'lowpass'; flt2.frequency.value = 200;
     const g2 = _ac.createGain();
-    g2.gain.setValueAtTime(0.34, t);
+    g2.gain.setValueAtTime(0.60, t);
     g2.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
     src2.connect(flt2); flt2.connect(g2); g2.connect(_master);
     src2.start(t); src2.stop(t + 0.15);
@@ -667,12 +887,19 @@ function sfxCannonFire() {
     const flt3 = _ac.createBiquadFilter();
     flt3.type = 'highpass'; flt3.frequency.value = 3000;
     const g3 = _ac.createGain();
-    g3.gain.setValueAtTime(0.18, t);
+    g3.gain.setValueAtTime(0.32, t);
     g3.gain.exponentialRampToValueAtTime(0.001, t + 0.02);
     src3.connect(flt3); flt3.connect(g3); g3.connect(_master);
     src3.start(t); src3.stop(t + 0.02);
 }
 
+// The shield eating a hit for you - also the revive cue (update.js grantRevive).
+// Raised ~8 dB on 2026-09-17: measured, this was the QUIETEST gameplay sound in the game
+// (-32.3 dB momentary, a good 7 dB under a routine gold coin), which put the sound of
+// losing your one shield below the sound of picking up three points. The Q 1.8 bandpass
+// strips most of the noise energy before the gain node ever sees it, which is why the
+// old 0.40 did not mean what it looked like - see the thruster-voice note below for the
+// same trap. A shatter layer on the attack and a music duck carry the rest.
 function sfxShieldBreak() {
     if (!_ac || !fxOn) return;
     const t   = _ac.currentTime;
@@ -681,10 +908,22 @@ function sfxShieldBreak() {
     const flt = _ac.createBiquadFilter();
     flt.type = 'bandpass'; flt.frequency.value = 700; flt.Q.value = 1.8;
     const g = _ac.createGain();
-    g.gain.setValueAtTime(0.40, t);
+    g.gain.setValueAtTime(1.00, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
     src.connect(flt); flt.connect(g); g.connect(_master);
     src.start(t); src.stop(t + 0.30);
+    // Glass-shatter edge: a short bright burst on the attack so the moment reads on a
+    // phone speaker, where a 700 Hz-centred body alone goes thin.
+    const sh = _ac.createBufferSource();
+    sh.buffer = _noiseBuf(0.09);
+    const shFlt = _ac.createBiquadFilter();
+    shFlt.type = 'highpass'; shFlt.frequency.value = 2200;
+    const shG = _ac.createGain();
+    shG.gain.setValueAtTime(0.30, t);
+    shG.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+    sh.connect(shFlt); shFlt.connect(shG); shG.connect(_master);
+    sh.start(t); sh.stop(t + 0.10);
+    musicDuck();
 }
 
 function sfxMilestone(n) {
@@ -700,6 +939,7 @@ function sfxMilestone(n) {
         g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.40);
         o.start(t0); o.stop(t0 + 0.42);
     });
+    musicDuck();
 }
 
 // Daily-mission completion chime (update.js die()). A bright five-note major-pentatonic
@@ -732,7 +972,10 @@ function sfxNearMiss() {
     o.type = 'sine';
     o.frequency.setValueAtTime(880, t);
     o.frequency.exponentialRampToValueAtTime(1760, t + 0.10);
-    g.gain.setValueAtTime(0.08, t);
+    // +5 dB (2026-09-17): measured at -30 dB momentary this sat UNDER the steady thrust
+    // bed (-28) and under the music, so the one bonus a player earns by flying well was
+    // the thing they could not hear.
+    g.gain.setValueAtTime(0.14, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
     o.start(t); o.stop(t + 0.15);
 }
@@ -744,7 +987,7 @@ function sfxCombo(level) {
     o.connect(g); g.connect(_master);
     o.type = 'triangle';
     o.frequency.value = Math.min(600 + level * 120, 1400);
-    g.gain.setValueAtTime(0.09, t);
+    g.gain.setValueAtTime(0.16, t);   // +5 dB, same reason as sfxNearMiss
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
     o.start(t); o.stop(t + 0.20);
 }
@@ -809,6 +1052,7 @@ function sfxPbPassed() {
     rg.gain.exponentialRampToValueAtTime(0.09, rt + 0.02);
     rg.gain.exponentialRampToValueAtTime(0.0001, rt + 0.55);
     r.start(rt); r.stop(rt + 0.6);
+    musicDuck(MUSIC_DUCK_DB, 0.60);   // the deepest record of all - give it the room
 }
 
 function sfxMineExplode() {
@@ -835,6 +1079,20 @@ function sfxMineExplode() {
     g2.gain.exponentialRampToValueAtTime(0.001, t + 0.10);
     src2.connect(flt2); flt2.connect(g2); g2.connect(_master);
     src2.start(t); src2.stop(t + 0.12);
+    // Mid-band body, same speaker-translation reasoning as sfxBomb's: the boom lives at
+    // 700 -> 55 Hz and the crack at 1800 Hz+, leaving the 400-1500 Hz band a phone
+    // actually reproduces empty in between.
+    const mid = _ac.createBufferSource();
+    mid.buffer = _noiseBuf(0.28);
+    const midFlt = _ac.createBiquadFilter();
+    midFlt.type = 'bandpass'; midFlt.Q.value = 0.7;
+    midFlt.frequency.setValueAtTime(1200, t);
+    midFlt.frequency.exponentialRampToValueAtTime(380, t + 0.24);
+    const midG = _ac.createGain();
+    midG.gain.setValueAtTime(0.28, t);
+    midG.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+    mid.connect(midFlt); midFlt.connect(midG); midG.connect(_master);
+    mid.start(t); mid.stop(t + 0.30);
 }
 
 function sfxBulletPickup() {
@@ -1329,12 +1587,38 @@ const _THRUST_BUILDERS = [
     _thrustToxic, _thrustVoid, _thrustNova, _thrustSolaris
 ];
 
+// Shared upper-mid "presence" layer, added under EVERY ship's voice on 2026-09-17.
+// The eight voices are centred between 85 and 340 Hz (PEARL's whole engine is a 115 Hz
+// bandpass), which the 2026-09-05 offline-RMS pass measured as evenly matched at -28 dB
+// - flat. A phone speaker rolls off hard below ~300-400 Hz, so on the device the thrust
+// was far quieter than that number suggests, while on headphones it was exactly right.
+// Rather than re-voicing eight engines, one quiet 700 Hz breath layer rides along: it is
+// below every voice's own character in the mix, identical for all of them (so the
+// carefully matched per-ship balance is untouched, every voice moves by the same
+// amount), and it is the part a speaker can actually play.
+const THRUST_PRESENCE_GAIN = 0.075;
+let _tPresence = null;
+function _thrustPresenceOn() {
+    const src = _ac.createBufferSource();
+    src.buffer = _noiseBuf(0.5); src.loop = true;
+    const flt = _ac.createBiquadFilter();
+    flt.type = 'bandpass'; flt.frequency.value = 700; flt.Q.value = 0.8;
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(0.0001, _ac.currentTime);
+    g.gain.linearRampToValueAtTime(THRUST_PRESENCE_GAIN, _ac.currentTime + 0.07);
+    src.connect(flt); flt.connect(g); g.connect(_master);
+    src.start();
+    return { stop: () => _thrustRelease(g, [src], [src, flt, g], 0.10) };
+}
+
 function thrustOn() {
     if (!_ac || _tVoice || !fxOn) return;
     _tVoice = (_THRUST_BUILDERS[activeSkin] || _thrustPearl)();
+    _tPresence = _thrustPresenceOn();
 }
 
 function thrustOff() {
+    if (_tPresence) { _tPresence.stop(); _tPresence = null; }
     if (!_tVoice) return;
     _tVoice.stop();
     _tVoice = null;
@@ -1422,7 +1706,10 @@ function sfxUiTap() {
     const o = _ac.createOscillator(), g = _ac.createGain();
     o.connect(g); g.connect(_master);
     o.type = 'triangle'; o.frequency.value = 720;
-    g.gain.setValueAtTime(0.07, t);
+    // UI block raised +6 dB on 2026-09-17: measured at ~-33 dB momentary against a title
+    // bed at ~-24, every menu sound in the game was quieter than the music it plays
+    // over. Still the smallest, driest layer in the mix - see the block comment above.
+    g.gain.setValueAtTime(0.14, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
     o.start(t); o.stop(t + 0.06);
 }
@@ -1436,7 +1723,7 @@ function sfxUiClose() {
     const o = _ac.createOscillator(), g = _ac.createGain();
     o.connect(g); g.connect(_master);
     o.type = 'sine'; o.frequency.value = 480;
-    g.gain.setValueAtTime(0.05, t);
+    g.gain.setValueAtTime(0.10, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
     o.start(t); o.stop(t + 0.05);
 }
@@ -1455,7 +1742,7 @@ function sfxUiToggle(on) {
         o.connect(g); g.connect(_master);
         o.type = 'triangle'; o.frequency.value = freq;
         const t0 = t + i * 0.05;
-        g.gain.setValueAtTime(0.06, t0);
+        g.gain.setValueAtTime(0.12, t0);
         g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.06);
         o.start(t0); o.stop(t0 + 0.07);
     });
@@ -1480,7 +1767,7 @@ function sfxUiSelect(skinIdx) {
         o.connect(g); g.connect(_master);
         o.type = 'triangle'; o.frequency.value = freq;
         const t0 = t + i * 0.055;
-        g.gain.setValueAtTime(0.08, t0);
+        g.gain.setValueAtTime(0.16, t0);
         g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.09);
         o.start(t0); o.stop(t0 + 0.10);
     });
@@ -1495,7 +1782,7 @@ function sfxUiDenied() {
     const o = _ac.createOscillator(), g = _ac.createGain();
     o.connect(g); g.connect(_master);
     o.type = 'square'; o.frequency.value = 220;
-    g.gain.setValueAtTime(0.05, t);
+    g.gain.setValueAtTime(0.10, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
     o.start(t); o.stop(t + 0.08);
 }

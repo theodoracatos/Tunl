@@ -11,7 +11,11 @@
 `.githooks/pre-push` blocks any `git push` (from Claude Code or the terminal) whose
 new commits add a secrets-looking filename (`.env`, `*.pem`, `appsettings.Production.json`,
 etc.) or content matching a known secret pattern (AWS/Google/GitHub/Slack/Stripe keys,
-private key headers, generic `key|secret|token|password = <value>` assignments). It's
+private key headers, generic `key|secret|token|password = <value>` assignments). It
+**also blocks a tip that still has a `DEV_* = true` testing flag in `src/constants.js`**
+(`DEV_INVINCIBLE` / `DEV_PAUSE_KEY` / `DEV_WALLET`) - checked against the file content at
+the tip, not against added lines, so a flag flipped in an earlier commit cannot sail
+through a later push. It's
 committed to the repo but git does not auto-trust a `core.hooksPath` from a clone, so each
 clone must run `git config core.hooksPath .githooks` once to activate it. Bypass with
 `git push --no-verify` only after confirming a hit is a false positive. Run `/check-secrets`
@@ -857,21 +861,22 @@ onset. Wall glow shifts purple → cyan when bonus is active. Gold bar at bottom
 remaining bonus - both keyed off `gapBonusVisual` too, so what's shown always matches
 what's actually collided against.
 
-**Off-screen wall warning strip** (`draw.js`, added in 12.0, right after the wall-edge
-glow it sits alongside): a maxed `gapBonusVisual` can push the corridor edge past the
-canvas entirely (`boundsAt().top < 0` or `.bot > H`) - `centerAt()`'s clamp only keeps
-the corridor centred *inside* `_halfGap`, it has no idea the bonus is about to widen the
-edge straight off the screen. When that happens the wall polygon fills nowhere on
-screen for that column, but the player can still die there: `update.js`'s SECOND
-collision check (`py - cPR < 0 || py + cPR > H`) is screen-anchored, not corridor-
-anchored, and fires whenever the (invisible, far-off-screen) corridor check can't -
-found by a red-team audit as the game's one systematic source of "the wall I died on
-was never drawn" deaths (27-55% of play-frames past score 25, depending on skill tier).
-The strip is purely visual (a pulsing warm-red band right at `y=0`/`y=H`, only over the
-x-ranges where that column is actually off-screen) - `boundsAt()` and the collision code
-above are untouched. It reads as a hazard-warning colour distinct from the wall-glow's
-purple/cyan bonus indicator on purpose: one says "the bonus is active", the other says
-"the edge you can't see is live right here.
+**An off-screen wall is drawn ON the screen edge, in the normal edge look**
+(`WALL_EDGE_SLIVER` in `constants.js`, clamp in `draw.js`'s wall arrays, 2026-09-17 -
+do not bring back the red strip). A maxed `gapBonusVisual` or a warp can push the
+corridor edge past the canvas (`boundsAt().top < 0` / `.bot > H`); there `update.js`'s
+screen-anchored check (`py - cPR < 0 || py + cPR > H`) makes the screen edge the lethal
+line. 12.0 marked it with a pulsing red strip at `y=0`/`y=H`, which made one continuous
+lethal wall switch between two looks (day/cyan line on screen, red glow off it) as the
+wave swung it in and out, and the strip also pulsed during warps, where walls only clamp.
+Now the rendered `topArr`/`botArr` are clamped to a ~3pt sliver, so rock and edge line
+rest on the screen edge - one rule: the line is the wall. Draw-only, `boundsAt()` and
+collision untouched. The red proximity flash (`draw.js`) measures against that same
+lethal edge (`max(b.top, 0)` / `min(b.bot, H)`) - it used to measure the invisible
+off-screen edge and stayed silent flying into the screen edge - and is off while
+`warpTime > 0 || invulnT > 0`. Colour vocabulary: faint white-tinted edge + running light
+= soft wall (safe zone), day colour -> cyan = lethal wall (cyan = coin bonus), red = only
+the proximity wash, death markers and the death reticle.
 
 ### Difficulty scaling functions
 
@@ -1180,6 +1185,61 @@ than poison since it stings more visibly), checked between the poison and bomb c
 `makeCoin()` so a ready bomb still wins a triple-ready coin. Magnet-exempt like poison.
 `sfxDrain` (`audio.js`) is a downward triangle glissando + bandpassed noise "suck" -
 distinct from poison's sour sawtooth squelch so the two punishers sound different.
+
+### Audio bus and loudness (2026-09-17 audit, do not revert)
+
+`src/audio.js`. Every sound is synthesised per call and connects to `_master`; the bus in
+front of the speakers is now **sfx bus + music bus -> `MASTER_GAIN` -> soft-clip limiter
+-> destination** (`_initAC`). Audited by offline-rendering every sfx, every thruster voice
+and both music beds through the real chain in an `OfflineAudioContext` and comparing peak,
+loudest-50ms and RMS - by-ear tuning of these numbers does not predict how they sit
+against each other or the bed, exactly as the 2026-09-05 thruster pass already found.
+
+- **The whole mix was ~6 dB too quiet.** A run measured about -24 LUFS integrated while
+  mobile games, and the AdMob interstitial that follows every 4th death, sit near -14 to
+  -16 - the ad was louder than the game it interrupts. `MASTER_GAIN` = 1.6 (+4 dB) plus
+  the raised levels below land it near -18 LUFS.
+- **The limiter is a `WaveShaper` soft clipper, never a `DynamicsCompressor`.** A
+  compressor was tried and measured as a 9 dB tax on percussive sfx - it reduces
+  broadband for its whole release window, so `sfxMineExplode` came out of the boost
+  *quieter* than it went in. The shaper is exactly linear below `LIMIT_KNEE` (verified by
+  rendering each sfx with and without it: 0.0-0.3 dB), so nothing in normal play is
+  touched and it only rounds off the rare frame where several loud events coincide.
+- **Loudness hierarchy, loudest-50ms after the change** (music bed -19.7): death -13.2,
+  shield break -17.0, milestone -17.8, shield/magnet -18, cannon fire -20.6, coin /
+  near-miss / combo -21.4, thrust -22.7, UI -27.7. The rule is **warnings > rare rewards
+  > routine pickups > the thrust bed**; before this, shield break (-32) and cannon fire
+  (-29) sat *below* a gold coin, and near-miss and combo sat below the thrust. Raised:
+  shield break +8, cannon fire +5, near-miss/combo +5, the whole UI block +6.
+- **The death impact is on frame 0.** `sfxDie` is still the reverse of
+  `sfxEngineSpoolUp`, but that roar takes 1.3s, so its crash used to land 1.22s after the
+  collision - after `drawDeathFreeze()` had finished and the debriefing was fading in, and
+  the hit frame itself was silent. Hull thump, mid crunch and crack now fire at `t`; what
+  is left at the tail is a quiet debris settle.
+- **Music is a bus, and death collapses it rather than cutting it.** `_fadeBgMusic` closes
+  a lowpass to `DEATH_MUSIC_HZ` as the level falls over `DEATH_MUSIC_SEC` (the freeze
+  frame plus a beat). `musicDuck()` steps the whole music bus back `MUSIC_DUCK_DB` under
+  milestone / record / shield-break. Title and play music crossfade over `MUSIC_FADE_SEC`
+  instead of cutting, and the title bed went 0.058 -> 0.100: it sat 9 dB under the play
+  bed and, measured, *under its own UI taps*.
+- **Both tracks loop on `loopStart`/`loopEnd`, not on the raw buffer.** They are ordinary
+  masters: `the_mountain` fades out over its last ~4.5s and then holds 0.66s of silence,
+  `the_mountain_documentary` fades from ~114.5s. Looping the whole buffer played that
+  fade, a hole and a fade-in every pass - worst on the title screen, where it reads as
+  "the song ended". The lead-in stays as a one-time intro. Set from the EBU momentary
+  envelope; **the files are never re-encoded to fix this** (see the "encode once from the
+  source" rule in `audio.js`), so the same constants hold for the `.web.m4a` builds.
+- **Low-end layers do not exist on a phone speaker.** Everything below ~300-400 Hz is
+  rolled off on device, which is where the thrust voices (85-340 Hz), the death roar and
+  the bomb/mine booms live - so a flat RMS measurement flatters all of them. Each of those
+  now carries a mid-band partner (`THRUST_PRESENCE_GAIN`, and the 400-1400 Hz crunch
+  layers in `sfxDie`/`sfxBomb`/`sfxMineExplode`). The thrust layer is deliberately shared
+  by all eight ships, so the per-ship balance measured in 2026-09-05 is untouched - every
+  voice moves by the same amount.
+
+Still open, deliberately: no reverb send, no stereo placement, no per-sound pitch
+variation on the repeating sfx (bullets, cracks), and the music does not follow the
+sector ramp. None of it is blocking; all of it is listed in the audit as upgrades.
 
 ### Addictive systems
 
@@ -1625,6 +1685,44 @@ work at all for the entire top half of the roster. The current ladder
 gate implies at ~80 shards/day, so **stardust is the binding constraint at every tier**
 and SOLARIS still lands on day 180 exactly. Re-run the numbers before changing either
 side; a shard-side raise silently re-breaks the gate schedule.
+
+**Hangar liveries (cosmetic, 2026-09-17, phase 1 of the cosmetics concept).** Six
+finishes (`LIVERIES` in `constants.js`: FACTORY free, STEALTH 80, STRIPE 120, SPLIT 200,
+CHROME 320, AURORA 520 shards), bought in a Paint sheet opened from a PAINT pill on the
+ALL SHIPS sheet, which only appears once AMBER (`LIVERY_GATE_SKIN`) is owned so the
+first paid ship stays the first shard goal. Rules: purely visual (no perk, hitbox,
+placement or leaderboard effect); a finish is bought once for the hangar but equipped
+**per ship** (`shipLiveries` in `state.js`, key `tunnel_ship_liveries`, migrated from the
+old single `tunnel_livery`), so each ship keeps its own look without re-buying anything; it re-shades the ship's own facets (`_shipTones` livery arg) or paints a clipped
+pattern (`_drawLiveryOverlay`), never changes the hue, so ship identity stays readable;
+no `shadowBlur`; the ghost and the wrecked death frame always draw FACTORY;
+**every finish is built from big masses** - a whole half of the hull (SPLIT), a rim
+(STEALTH), a band across the span (STRIPE), a full-hull gradient (CHROME/AURORA) - because
+in flight the ship is only ~2*PR across (~35px at the W cap), where the first pass's fine
+patterns (a carbon weave, pinstripes) were invisible and the finishes read as not worth
+buying; detail that only resolves on the hero ship may sit on top of a mass, never instead
+of one, and a light mass flips dark on a pale ship (PEARL/NOVA) or it disappears again;
+**and every finish moves in colour** (STEALTH's rim breathes, STRIPE runs a pulse down the
+band, SPLIT cycles its spine line, CHROME's specular sweep throws the two hue neighbours,
+AURORA drifts four bands at two rates) - paint that only sits there reads as a recolour,
+and a recolour is not worth shards; the motion is one gradient fill or stroke riding
+`gtime` per frame, never particles or a second pass over the hull; **each finish also
+carries one signature mark** (STEALTH neon facet seams, STRIPE wing chevrons + tip caps,
+SPLIT a clean lit seam with wing-root lips, CHROME a hard reflected horizon, AURORA four
+polar-light curtains at three hues (+-45, the only finish allowed past the usual +-24)
+plus rim and sparkles) - audited at 150px, where a mere recolour still looked cheap. Two traps found in
+that audit and worth not repeating: a mark on the NOSE is invisible because the canopy and
+the leading-edge highlight draw after this overlay, and small repeated details (vents, fine
+teeth) read as noise rather than paint - SPLIT shipped a sawtooth divide for exactly one
+iteration and it was reported as odd, because teeth on a top-down planform read as damage.
+A third, found on the AURORA rebuild: an ADDITIVE wash has no headroom on a white hull
+(PEARL/NOVA blew out to plain white and lost all colour), so on a pale ship the curtains
+paint with `source-over` instead of `lighter`; the dearest finish has to out-spectacle the
+one below it, and a single drifting gradient did not; **not part of
+Unlock All Ships** (separate save keys `tunnel_liveries` / `tunnel_ship_liveries`). Names are
+untranslated proper nouns like ship names. Later phases in the concept: exhausts and
+trails, wreck effects and share-card frames, mastery/achievement rewards, and only then
+an optional real-money pack of named items (never random drops).
 
 **Unlock All Ships IAP**: a real-money non-consumable (`unlock_all_ships`, alongside the
 existing `remove_ads`) that instantly force-unlocks every ship, current and future

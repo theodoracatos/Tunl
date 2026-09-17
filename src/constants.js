@@ -144,6 +144,14 @@ const DEV_INVINCIBLE = false; // set true to disable all deaths (testing only)
 // from this key -- only the keyboard shortcut is gated. Flip true for local testing.
 const DEV_PAUSE_KEY = false;
 
+// Testing-only wallet (ships false, same pattern as DEV_INVINCIBLE above). True tops the
+// shard balance up and hands over every Hangar livery on load, so the Paint sheet can be
+// exercised in a fresh simulator/emulator install that has never earned a shard. Nothing
+// is written to localStorage by it, so flipping it back off returns the real save. Ships
+// still unlock through the normal rules, which with a full wallet means the shard half is
+// satisfied and only the stardust gate (days played) remains.
+const DEV_WALLET = false;
+
 // Coin constants
 const COIN_R          = W  * 0.009;   // visual radius
 const COIN_HIT_R      = W  * 0.032;   // collection radius (generous)
@@ -853,6 +861,16 @@ const WALLS_LIVE_HINT_RUNS = 3;     // "walls now deadly" notif only on a player
 const WALLS_LIVE_HINT_LEAD_FRAC = 0.40;
 const SAFE_OPEN_PAD          = H * (10 / _H_REF);   // wall sliver left at each screen edge
 
+// Rendered wall never leaves the canvas (draw.js wall arrays, 2026-09-17). A maxed
+// gapBonusVisual or a warp can push boundsAt() past y=0 / y=H, and there the screen
+// edge itself is the lethal line (update.js's screen-anchored check). Until 13.0 the
+// rock vanished off-canvas in those columns and a pulsing red strip marked the edge
+// instead, so one continuous lethal wall switched between two looks as the wave swung
+// it on and off screen, and the red strip also pulsed through warps, where the wall
+// cannot kill. Now the drawn edge is clamped to this sliver: rock + edge line rest on
+// the screen edge in the normal day/cyan colour. Draw-only; boundsAt() is untouched.
+const WALL_EDGE_SLIVER       = Math.max(2, H * (3 / _H_REF));
+
 // ── Soft walls: how a non-lethal wall looks and answers a bump ───────
 // Through 12.0 a soft wall was pixel-identical to a lethal one, and bumping it fired
 // burst()'s orange spark cloud plus a shake - the exact vocabulary a real hit uses
@@ -1479,3 +1497,23 @@ const SKINS = [
 // 0) is the free starter ship and has no unlock achievement, hence the leading ''.
 const SHIP_ACHIEVEMENTS = ['', 'tunl_ach_ship_amber', 'tunl_ach_ship_crimson', 'tunl_ach_ship_electric',
                             'tunl_ach_ship_toxic', 'tunl_ach_ship_void', 'tunl_ach_ship_nova', 'tunl_ach_ship_solaris'];
+
+// Hangar liveries (2026-09-17): cosmetic finishes bought with shards in the Paint sheet
+// (ALL SHIPS -> PAINT). Purely visual - no perk, no hitbox, no placement, no leaderboard
+// effect. A finish is bought once and applies to whichever owned ship is flown, and it
+// stays inside that ship's own colour family (it re-shades the facets, never repaints the
+// hue), so a PEARL can never be made to read as a SOLARIS. Not part of Unlock All Ships:
+// that entitlement is ships only. The sheet opens once LIVERY_GATE_SKIN (AMBER) is owned,
+// so the first paid ship stays the first shard goal. Prices sit against the ~80 shards/day
+// a real player banks (see the ship ladder): the whole set (1240) is ~15 days of income. Names
+// are proper nouns like ship names and are not translated. drawShip() in draw.js renders
+// them; the ghost and the wrecked death frame always fly FACTORY.
+const LIVERIES = [
+    { name: 'FACTORY'             },
+    { name: 'STEALTH', cost: 80   },
+    { name: 'STRIPE',  cost: 120  },
+    { name: 'SPLIT',   cost: 200  },
+    { name: 'CHROME',  cost: 320  },
+    { name: 'AURORA',  cost: 520  },
+];
+const LIVERY_GATE_SKIN = 1;

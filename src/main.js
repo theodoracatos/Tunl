@@ -103,6 +103,7 @@ window._tunlCloseSettingsIfOpen = function () {
     if (showSettings) { showSettings = false; return true; }
     if (showShop) { showShop = false; return true; }
     if (showMissions) { showMissions = false; return true; }
+    if (showPaint) { showPaint = false; paintPreview = -1; return true; }
     if (showShipPicker) { showShipPicker = false; return true; }
     return false;
 };

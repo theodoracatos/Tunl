@@ -353,7 +353,7 @@ function _coinMagnet(s, t, wx) {
     }
 }
 function _coinBomb(s, t, wx) {
-    const cy = s*0.15, R = s*0.7, fx = s*0.28, fy = -s*1.02;
+    const cy = s*0.15, R = s*0.7, fx = s*0.66, fy = -s*1.08;
     ctx.save(); ctx.translate(s*0.4, -s*0.4); ctx.rotate(0.8);
     ctx.fillStyle = coinTone('bomb', -0.2); ctx.fillRect(-s*0.17, -s*0.13, s*0.34, s*0.26); ctx.restore();
     ctx.beginPath(); ctx.arc(0, cy, R, 0, Math.PI*2); ctx.fillStyle = coinTone('bomb', -0.6); ctx.fill();
@@ -362,7 +362,8 @@ function _coinBomb(s, t, wx) {
     ctx.restore();
     ctx.beginPath(); ctx.arc(-s*0.28, cy - s*0.3, s*0.13, 0, Math.PI*2); ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.fill();
     ctx.beginPath(); ctx.arc(0, cy, R, 0, Math.PI*2); ctx.strokeStyle = coinTone('bomb', 0.1); ctx.lineWidth = 1; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(s*0.5, -s*0.52); ctx.quadraticCurveTo(s*0.72, -s, fx, fy);
+    // Straight fuse out of the cap - a curved one read as a cherry stem.
+    ctx.beginPath(); ctx.moveTo(s*0.46, -s*0.56); ctx.lineTo(fx, fy);
     ctx.strokeStyle = '#d9ccb0'; ctx.lineWidth = Math.max(1, s*0.09); ctx.stroke();
     // Burning fuse spark
     const fl = 0.6 + 0.4 * Math.sin(t * 23 + wx) * Math.sin(t * 7);
@@ -479,13 +480,24 @@ const _SHIP_DARK = [6, 8, 16], _SHIP_WHITE = [255, 255, 255];
 const _shipToneCache = new Map();
 // Facet colours per (colour, glow) pair, computed once - drawShip runs every frame
 // for the player, ghost, hero and every shop cell.
-function _shipTones(color, sr, sg, sb) {
-    const key = color + sr + ',' + sg + ',' + sb;
+function _shipTones(color, sr, sg, sb, lv) {
+    lv = lv || 0;
+    const key = color + sr + ',' + sg + ',' + sb + '/' + lv;
     let t = _shipToneCache.get(key);
     if (t) return t;
-    const base  = [parseInt(color.substr(1,2),16), parseInt(color.substr(3,2),16), parseInt(color.substr(5,2),16)];
+    let base    = [parseInt(color.substr(1,2),16), parseInt(color.substr(3,2),16), parseInt(color.substr(5,2),16)];
     const light = lerpClr(_SHIP_WHITE, [sr, sg, sb], 0.15);
-    const tone  = k => rgb(k >= 0 ? lerpClr(base, light, k) : lerpClr(base, _SHIP_DARK, -k));
+    // Livery re-shading (constants.js LIVERIES): STEALTH sinks the paint and flattens the
+    // light, CHROME pushes both ends of the ramp, CARBON darkens the shadow side for its
+    // weave. Hue never moves, so the ship stays recognisably itself.
+    let kUp = 1, kDn = 1, kOff = 0;
+    if (lv === 1) { base = lerpClr(base, _SHIP_DARK, 0.62); kUp = 0.30; kDn = 0.55; }
+    else if (lv === 3) { kUp = 0.85; kDn = 0.85; }
+    else if (lv === 4) { base = lerpClr(base, _SHIP_WHITE, 0.10); kUp = 1.5; kDn = 1.35; }
+    const tone  = k0 => {
+        const k = Math.max(-0.92, Math.min(0.92, (k0 >= 0 ? k0 * kUp : k0 * kDn) + (k0 < 0 ? kOff : 0)));
+        return rgb(k >= 0 ? lerpClr(base, light, k) : lerpClr(base, _SHIP_DARK, -k));
+    };
     t = {
         base:   rgb(base),
         top:    SHIP_FACETS.map(f => tone(f.top)),
@@ -498,6 +510,265 @@ function _shipTones(color, sr, sg, sb) {
     };
     _shipToneCache.set(key, t);
     return t;
+}
+
+// Pattern layer of a livery, painted over the facets and under the spine/leading-edge
+// highlights, clipped to the hull. No shadowBlur anywhere (the expensive call on
+// WKWebView); the animated ones are one gradient fill each.
+const _auroraCache = new Map();
+function _auroraPair(sr, sg, sb) {
+    const key = sr + ',' + sg + ',' + sb;
+    let p = _auroraCache.get(key);
+    if (p) return p;
+    const mx = Math.max(sr, sg, sb), mn = Math.min(sr, sg, sb);
+    if (mx - mn < mx * 0.3) {
+        // Near-white ships (PEARL, NOVA) have no hue to swing: pearlescent instead.
+        p = ['rgb(150,215,255)', 'rgb(255,175,235)'];
+    } else {
+        const shift = deg => {
+            const a = deg * Math.PI / 180, c = Math.cos(a), s1 = Math.sin(a), k = 1 / 3, q = Math.sqrt(k);
+            // Rotate around the grey axis (hue rotation that keeps lightness roughly put).
+            const m = [c + (1-c)*k, (1-c)*k - q*s1, (1-c)*k + q*s1];
+            const cl = v => Math.max(0, Math.min(255, Math.round(v)));
+            return `rgb(${cl(sr*m[0] + sg*m[1] + sb*m[2])},${cl(sr*m[2] + sg*m[0] + sb*m[1])},${cl(sr*m[1] + sg*m[2] + sb*m[0])})`;
+        };
+        p = [shift(24), shift(-24)];
+    }
+    _auroraCache.set(key, p);
+    return p;
+}
+
+// AURORA is the dearest finish, so it gets a wider swing than the +-24 degrees the other
+// finishes borrow: three hues at +-45 around the ship's own. The base paint underneath is
+// untouched, so the ship still reads as itself.
+const _auroraTrioCache = new Map();
+function _auroraTrio(sr, sg, sb) {
+    const key = sr + ',' + sg + ',' + sb;
+    let t = _auroraTrioCache.get(key);
+    if (t) return t;
+    const mx = Math.max(sr, sg, sb), mn = Math.min(sr, sg, sb);
+    if (mx - mn < mx * 0.3) {
+        t = [[120, 235, 255], [190, 160, 255], [255, 165, 225]];   // pearl: no hue to swing
+    } else {
+        const rot = deg => {
+            const a = deg * Math.PI / 180, c = Math.cos(a), s1 = Math.sin(a), k = 1 / 3, q = Math.sqrt(k);
+            const m = [c + (1-c)*k, (1-c)*k - q*s1, (1-c)*k + q*s1];
+            const cl = v => Math.max(0, Math.min(255, Math.round(v)));
+            return [cl(sr*m[0] + sg*m[1] + sb*m[2]), cl(sr*m[2] + sg*m[0] + sb*m[1]), cl(sr*m[1] + sg*m[2] + sb*m[0])];
+        };
+        t = [rot(45), rot(0), rot(-45)];
+    }
+    _auroraTrioCache.set(key, t);
+    return t;
+}
+
+function _drawLiveryOverlay(x, y, r, lv, sr, sg, sb) {
+    // Every finish is built from BIG masses - a whole half of the hull, a rim, a band
+    // across the span - because in flight the ship is only ~2*PR across (~35px at the W
+    // cap). Fine detail (a weave, a pinstripe) is invisible there, which is what made the
+    // first pass not worth buying. Detail that only resolves on the hero ship is allowed
+    // on top of a mass, never instead of one.
+    //
+    // Each one also MOVES, in colour: paint that only sits there reads as a recolour, and a
+    // recolour is not worth shards. The motion is always one cheap fill or stroke per frame
+    // (a gradient whose stops ride gtime), never a particle or a second pass over the hull.
+    const lt = `${(sr+255)>>1},${(sg+255)>>1},${(sb+255)>>1}`;
+    const [hueA, hueB] = _auroraPair(sr, sg, sb);
+    ctx.save();
+    shipPath(x, y, r);
+    ctx.clip();
+    if (lv === 1) {
+        // STEALTH: matte black hull read back by an edge-lit rim that breathes between the
+        // ship's glow and its lighter neighbour - a cooling-metal pulse.
+        ctx.fillStyle = 'rgba(0,0,0,0.62)';
+        ctx.fillRect(x - r*1.3, y - r, r*2.8, r*2);
+        const br = 0.55 + 0.45 * (0.5 - 0.5 * Math.cos(gtime * 1.6));
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        // Neon seams: the hull's own facet edges lit from inside, charging nose to tail.
+        for (const sy of [-1, 1]) {
+            for (let i = 0; i < SHIP_FACETS.length; i++) {
+                const wv = 0.45 + 0.55 * Math.max(0, Math.sin(gtime * 2.2 - i * 0.55));
+                ctx.beginPath();
+                _shipPoly(x, y, r, SHIP_FACETS[i].p, -sy);
+                ctx.strokeStyle = `rgba(${sr},${sg},${sb},${0.30 * wv})`;
+                ctx.lineWidth   = Math.max(r * 0.05, 1);
+                ctx.lineJoin    = 'round';
+                ctx.stroke();
+                ctx.strokeStyle = `rgba(${lt},${0.42 * wv})`;
+                ctx.lineWidth   = Math.max(r * 0.016, 0.4);
+                ctx.stroke();
+            }
+        }
+        shipPath(x, y, r);
+        ctx.strokeStyle = `rgba(${sr},${sg},${sb},${0.55 * br + 0.30})`;
+        ctx.lineWidth   = Math.max(r * 0.14, 2);
+        ctx.lineJoin    = 'round';
+        ctx.stroke();
+        shipPath(x, y, r);
+        ctx.strokeStyle = `rgba(${lt},${0.45 + 0.50 * br})`;
+        ctx.lineWidth   = Math.max(r * 0.045, 0.8);
+        ctx.stroke();
+        ctx.restore();
+    } else if (lv === 2) {
+        // STRIPE: a wide centre band plus solid wingtip caps - two masses, not pinstripes.
+        // The band flips dark on a pale ship (PEARL, NOVA): a light stripe on a light hull
+        // is the one case where a big mass still disappears. A colour pulse runs the band
+        // nose-to-tail, so the stripe reads as lit rather than painted on.
+        const pale2 = (sr * 0.299 + sg * 0.587 + sb * 0.114) > 200;
+        const band  = pale2 ? 'rgba(10,12,24,0.80)' : `rgba(${lt},0.92)`;
+        const edge  = pale2 ? `rgba(${lt},0.85)` : 'rgba(0,0,0,0.30)';
+        ctx.fillStyle = band;
+        ctx.fillRect(x - r*1.0, y - r*0.17, r*2.3, r*0.34);
+        ctx.fillStyle = edge;
+        ctx.fillRect(x - r*1.0, y - r*0.215, r*2.3, r*0.045);
+        ctx.fillRect(x - r*1.0, y + r*0.17,  r*2.3, r*0.045);
+        ctx.fillStyle = pale2 ? 'rgba(10,12,24,0.88)' : `rgba(${lt},0.98)`;
+        for (const sy of [-1, 1]) {
+            ctx.beginPath();
+            ctx.moveTo(x - r*0.30, y + sy*r*0.62);
+            ctx.lineTo(x - r*0.62, y + sy*r*1.05);
+            ctx.lineTo(x - r*0.92, y + sy*r*1.05);
+            ctx.lineTo(x - r*0.62, y + sy*r*0.62);
+            ctx.closePath();
+            ctx.fill();
+        }
+        // Chevrons on the WINGS, not the nose: the canopy and the leading-edge highlight
+        // draw after this overlay and swallowed a nose mark completely.
+        ctx.strokeStyle = pale2 ? 'rgba(10,12,24,0.85)' : `rgba(${lt},0.95)`;
+        ctx.lineWidth   = Math.max(r * 0.07, 1.2);
+        ctx.lineJoin    = 'miter';
+        for (const sy of [-1, 1]) {
+            for (let c = 0; c < 2; c++) {
+                const bx = x - r * (0.12 + c * 0.30);
+                ctx.beginPath();
+                ctx.moveTo(bx + r*0.10, y + sy*r*0.30);
+                ctx.lineTo(bx - r*0.16, y + sy*r*0.56);
+                ctx.lineTo(bx + r*0.10, y + sy*r*0.82);
+                ctx.stroke();
+            }
+        }
+        const u  = 1 - (gtime * 0.55) % 1;
+        const px = x + r * (-1.1 + u * 2.6);
+        const pg = ctx.createLinearGradient(px - r*0.5, 0, px + r*0.5, 0);
+        pg.addColorStop(0,   `rgba(${lt},0)`);
+        pg.addColorStop(0.5, hueA);
+        pg.addColorStop(1,   `rgba(${lt},0)`);
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = 0.85;
+        ctx.fillStyle = pg;
+        ctx.fillRect(x - r*1.0, y - r*0.215, r*2.3, r*0.43);
+        ctx.restore();
+    } else if (lv === 3) {
+        // SPLIT: one wing dark, one wing bright, one clean divide down the spine. The most
+        // legible finish at gameplay size - the silhouette itself changes weight. The
+        // sawtooth this used to have was reported as odd and it was: teeth on a top-down
+        // planform read as damage, not paint, and at flight size they turned to fuzz. The
+        // mark is now the seam itself - a thin dark shadow with a bright core that cycles
+        // between the ship's two hue neighbours, plus a matching lip along each wing root.
+        ctx.fillStyle = 'rgba(0,0,0,0.70)';
+        ctx.fillRect(x - r*1.3, y - r, r*2.8, r);
+        ctx.fillStyle = `rgba(${lt},0.46)`;
+        ctx.fillRect(x - r*1.3, y, r*2.8, r);
+        ctx.fillStyle = 'rgba(0,0,0,0.55)';
+        ctx.fillRect(x - r*1.30, y - r*0.115, r*2.6, r*0.115);
+        const lg = ctx.createLinearGradient(x + r*1.4, 0, x - r*1.1, 0);
+        const w  = 0.5 + 0.5 * Math.sin(gtime * 1.1);
+        lg.addColorStop(0, hueA);
+        lg.addColorStop(Math.max(0.06, Math.min(0.94, w)), hueB);
+        lg.addColorStop(1, hueA);
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = lg;
+        ctx.fillRect(x - r*1.30, y - r*0.055, r*2.6, r*0.110);
+        ctx.globalAlpha = 0.5;
+        ctx.fillRect(x - r*0.95, y - r*0.30, r*1.7, r*0.022);
+        ctx.fillRect(x - r*0.95, y + r*0.28, r*1.7, r*0.022);
+        ctx.globalAlpha = 1;
+        ctx.restore();
+    } else if (lv === 4) {
+        // CHROME: mirror gradient (sky above, ground below), a hard horizon and a specular
+        // streak sweeping the hull every ~3.4s, its edges split into the two hue neighbours
+        // the way a real polished edge throws colour.
+        const g0 = ctx.createLinearGradient(0, y - r, 0, y + r);
+        g0.addColorStop(0,    'rgba(255,255,255,0.72)');
+        g0.addColorStop(0.42, 'rgba(255,255,255,0.10)');
+        g0.addColorStop(0.5,  `rgba(${lt},0.55)`);
+        g0.addColorStop(0.58, 'rgba(0,0,0,0.30)');
+        g0.addColorStop(1,    'rgba(0,0,0,0.62)');
+        ctx.fillStyle = g0;
+        ctx.fillRect(x - r*1.3, y - r, r*2.8, r*2);
+        ctx.fillStyle = `rgba(${lt},0.95)`;
+        ctx.fillRect(x - r*1.3, y - r*0.022, r*2.8, r*0.044);   // the horizon a mirror reflects
+        const u  = (gtime * 0.30) % 1;
+        const bx = x + r * (-2.0 + u * 4.2);
+        const g  = ctx.createLinearGradient(bx - r*0.40, y - r, bx + r*0.40, y + r);
+        g.addColorStop(0,    'rgba(255,255,255,0)');
+        g.addColorStop(0.28, hueA);
+        g.addColorStop(0.5,  'rgba(255,255,255,0.80)');
+        g.addColorStop(0.72, hueB);
+        g.addColorStop(1,    'rgba(255,255,255,0)');
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = g;
+        ctx.fillRect(x - r*1.3, y - r, r*2.8, r*2);
+        ctx.restore();
+    } else if (lv === 5) {
+        // AURORA: polar-light curtains, not a tint. Four soft-edged bands sweep the hull
+        // nose to tail at different rates and widths, each in one of three hues at +-45
+        // around the ship's own (the other finishes borrow +-24), over a gentle base wash -
+        // so the colour never repeats and the finish reads as lit from outside. Rim and
+        // sparkles ride the same curtains. This is the dearest finish: a single drifting
+        // gradient was correctly called boring next to CHROME's sweep.
+        const trio = _auroraTrio(sr, sg, sb);
+        const mx0 = Math.max(sr, sg, sb), pale = mx0 - Math.min(sr, sg, sb) < mx0 * 0.3;
+        ctx.globalCompositeOperation = pale ? 'multiply' : 'overlay';
+        ctx.globalAlpha = pale ? 0.45 : 0.70;
+        ctx.fillStyle = rgb(trio[1]);
+        ctx.fillRect(x - r*1.3, y - r, r*2.8, r*2);
+        ctx.globalAlpha = 1;
+        // A white hull has no headroom left: adding light there blows the curtains out to
+        // plain white and the colour disappears (measured on PEARL). Pale ships get the
+        // same curtains painted ON the paint instead of added to it.
+        ctx.globalCompositeOperation = pale ? 'source-over' : 'lighter';
+        const CURT = [[0.31, 0.00, 0.62, 0], [0.19, 0.35, 0.90, 2], [0.43, 0.68, 0.48, 1], [0.25, 0.12, 1.15, 2]];
+        for (let c = 0; c < CURT.length; c++) {
+            const spd = CURT[c][0], ph = CURT[c][1], wid = CURT[c][2], col = trio[CURT[c][3]];
+            const u  = (gtime * spd + ph) % 1;
+            const bx = x + r * (1.45 - u * 3.1);
+            const hw = r * wid * 0.5;
+            const g  = ctx.createLinearGradient(bx - hw, y - r*0.8, bx + hw, y + r*0.8);
+            const aC = pale ? 0.42 : 0.55, aW = pale ? 0.10 : 0.32;
+            g.addColorStop(0,    rgb(col, 0));
+            g.addColorStop(0.42, rgb(col, aC));
+            g.addColorStop(0.55, `rgba(255,255,255,${aW})`);
+            g.addColorStop(0.68, rgb(col, aC));
+            g.addColorStop(1,    rgb(col, 0));
+            ctx.fillStyle = g;
+            ctx.fillRect(x - r*1.3, y - r, r*2.8, r*2);
+        }
+        ctx.globalCompositeOperation = 'lighter';
+        const rimHue = trio[((gtime * 0.31) % 1) < 0.5 ? 0 : 2];
+        shipPath(x, y, r);
+        ctx.strokeStyle = rgb(rimHue, 0.55 + 0.35 * Math.sin(gtime * 1.3));
+        ctx.lineWidth   = Math.max(r * 0.10, 1.5);
+        ctx.lineJoin    = 'round';
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        for (let k = 0; k < 9; k++) {
+            const t   = (gtime * 0.35 + k * 0.111) % 1;
+            const sx  = x + r * (1.25 - t * 2.4);
+            const syq = y + r * (0.78 * Math.sin(k * 2.4 + gtime * 0.5));
+            const a   = Math.sin(t * Math.PI);
+            ctx.globalAlpha = a * a * 0.95;
+            ctx.beginPath();
+            ctx.arc(sx, syq, Math.max(r * 0.024, 0.6), 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+    }
+    ctx.restore();
 }
 
 function _shipPoly(x, y, r, pts, sy) {
@@ -514,10 +785,12 @@ function shipPath(x, y, r) {
 // `fx` (default true) enables the emissive details (intake rings, wingtip strobes,
 // spine lights). The ghost and the wrecked death-frame ship pass false - a ghost
 // with running lights reads as a second live ship.
-function drawShip(x, y, r, color, sr, sg, sb, blur, fx) {
+function drawShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
     blur = blur === undefined ? 20 : blur;
     fx   = fx === undefined ? true : fx;
-    const T = _shipTones(color, sr, sg, sb);
+    lv   = lv || 0;
+    const T = _shipTones(color, sr, sg, sb, lv);
+    const edgeA = lv === 1 ? 0.45 : lv === 4 ? 1.3 : 1;
     const lw = Math.max(r * 0.016, 0.45);
 
     // Base fill with glow (the one shadowBlur this function spends)
@@ -547,11 +820,13 @@ function drawShip(x, y, r, color, sr, sg, sb, blur, fx) {
         ctx.stroke();
     }
 
+    if (lv) _drawLiveryOverlay(x, y, r, lv, sr, sg, sb);
+
     // Spine ridge + lit leading edge
     ctx.beginPath();
     ctx.moveTo(x + r*1.40, y - r*0.004);
     ctx.lineTo(x - r*0.92, y - r*0.004);
-    ctx.strokeStyle = 'rgba(255,255,255,0.42)';
+    ctx.strokeStyle = `rgba(255,255,255,${0.42 * edgeA})`;
     ctx.lineWidth   = Math.max(r * 0.028, 0.6);
     ctx.stroke();
     ctx.beginPath();
@@ -559,7 +834,7 @@ function drawShip(x, y, r, color, sr, sg, sb, blur, fx) {
     ctx.lineTo(x + r*0.95, y - r*0.13);
     ctx.lineTo(x + r*0.30, y - r*0.20);
     ctx.lineTo(x - r*0.60, y - r*0.98);
-    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.strokeStyle = `rgba(255,255,255,${Math.min(0.55 * edgeA, 0.85)})`;
     ctx.lineWidth   = Math.max(r * 0.035, 0.7);
     ctx.lineCap     = 'round';
     ctx.stroke();
@@ -842,8 +1117,12 @@ function drawWorld() {
         const wx = scrollX + sx;
         const b = boundsAt(wx);
         xs.push(sx);
-        topArr.push(b.top + _wallJagged(wx, 0) - (_dents ? _softBumpDent(wx, true)  : 0));
-        botArr.push(b.bot + _wallJagged(wx, 5000) + (_dents ? _softBumpDent(wx, false) : 0));
+        // Clamped to WALL_EDGE_SLIVER (constants.js doc): an off-screen corridor edge
+        // rests on the screen edge, where it is still lethal, in the same look.
+        topArr.push(Math.max(WALL_EDGE_SLIVER,
+            b.top + _wallJagged(wx, 0) - (_dents ? _softBumpDent(wx, true)  : 0)));
+        botArr.push(Math.min(H - WALL_EDGE_SLIVER,
+            b.bot + _wallJagged(wx, 5000) + (_dents ? _softBumpDent(wx, false) : 0)));
     }
     const n = xs.length;
 
@@ -1121,51 +1400,6 @@ function drawWorld() {
         ctx.ellipse(b.wx - scrollX, b.isTop ? bb.top : bb.bot,
                     PR * (0.5 + 4 * k), PR * (0.15 + 0.8 * k), 0, 0, Math.PI * 2);
         ctx.stroke();
-    }
-
-    // Off-screen wall warning strip (red-team audit, 2026-09-12; see CLAUDE.md's
-    // "Coin bonus vs. canvas edge" note). A maxed gapBonusVisual can push topArr[i]
-    // negative or botArr[i] past H - once that happens the wall polygon above fills
-    // entirely off-canvas for that column and NOTHING is drawn there. That's not
-    // just a cosmetic gap: update.js's collision has a second, screen-anchored check
-    // (`py - cPR < 0 || py + cPR > H`) that fires whenever the corridor's own check
-    // can't (b.top/b.bot are too far past py to ever trip), so the SCREEN EDGE, not
-    // the invisible corridor line, is the real lethal boundary there. Mark it
-    // directly wherever it's live, rather than leaving a silent, undrawn kill line -
-    // this is purely visual, boundsAt()/the collision code above are untouched.
-    // Skipped inside the safe opening zone (constants.js SAFE_START_WX doc): the walls
-    // sit a sliver from the edge there, the jagged edge noise can poke past it, and
-    // the edge is soft anyway - a "lethal edge" warning would be a false alarm.
-    if (safeOpenAt(scrollX + PX) <= 0) {
-        const pulse  = 0.55 + 0.35 * Math.sin(gtime * 5.5);
-        const bandH  = Math.max(6, H * 0.022);
-        const drawEdgeBand = (arr, atTop) => {
-            let run = false, x0 = 0;
-            for (let i = 0; i <= n; i++) {
-                const off = i < n && (atTop ? arr[i] < 0 : arr[i] > H);
-                if (off && !run) { run = true; x0 = xs[i]; }
-                if ((!off || i === n) && run) {
-                    run = false;
-                    const x1 = xs[i - 1];
-                    const grd = ctx.createLinearGradient(0, atTop ? 0 : H, 0, atTop ? bandH : H - bandH);
-                    grd.addColorStop(0, `rgba(255,60,40,${0.55 * pulse})`);
-                    grd.addColorStop(1, 'rgba(255,60,40,0)');
-                    ctx.fillStyle = grd;
-                    ctx.fillRect(x0, atTop ? 0 : H - bandH, x1 - x0, bandH);
-                    ctx.beginPath();
-                    ctx.moveTo(x0, atTop ? 0.5 : H - 0.5);
-                    ctx.lineTo(x1, atTop ? 0.5 : H - 0.5);
-                    ctx.strokeStyle = `rgba(255,120,80,${0.85 * pulse})`;
-                    ctx.lineWidth   = 2;
-                    ctx.shadowColor = `rgba(255,70,40,${0.7 * pulse})`;
-                    ctx.shadowBlur  = 10;
-                    ctx.stroke();
-                    ctx.shadowBlur  = 0;
-                }
-            }
-        };
-        drawEdgeBand(topArr, true);
-        drawEdgeBand(botArr, false);
     }
 
     // Death markers - rings etched into the wall at each death spot. y is resolved
@@ -1499,9 +1733,13 @@ function drawWorld() {
 
     // Proximity danger flash - not while the walls are soft (constants.js
     // SAFE_START_WX doc), a red "danger" wash there would teach the wrong thing.
-    if (phase === 'play' && !wallsSafe()) {
+    // Also off while a warp or hit-grace window is live: update.js only clamps the ship
+    // against the wall then, so a red wash would warn about a wall that cannot kill.
+    // Measured against the LETHAL edge, which is the screen edge wherever the corridor
+    // runs off-canvas (constants.js WALL_EDGE_SLIVER doc), not the invisible boundsAt().
+    if (phase === 'play' && !wallsSafe() && warpTime <= 0 && invulnT <= 0) {
         const b       = boundsAt(scrollX + PX);
-        const minDist = Math.min(py - PR - b.top, b.bot - (py + PR));
+        const minDist = Math.min(py - PR - Math.max(b.top, 0), Math.min(b.bot, H) - (py + PR));
         const safe    = (_halfGap + gapBonusVisual) * 0.35;
         const danger  = Math.max(0, 1 - minDist / safe);
         if (danger > 0) {
@@ -1756,7 +1994,7 @@ function drawWorld() {
         // drawTitleScreen() (dim, in the tunnel, part of the "world"; the hero
         // is a bright foreground portrait), not a confusing duplicate.
         ctx.globalAlpha = invulnAlpha;
-        drawShip(PX, py, PR, phase === 'dead' ? '#ff4040' : sk.color, sr, sg, sb, 20, phase !== 'dead');
+        drawShip(PX, py, PR, phase === 'dead' ? '#ff4040' : sk.color, sr, sg, sb, 20, phase !== 'dead', phase === 'dead' ? 0 : liveryOf(activeSkin));
         ctx.globalAlpha = 1;
         ctx.restore();
     }
@@ -2986,7 +3224,7 @@ function drawTitleScreen() {
     ctx.stroke();
     ctx.shadowBlur  = 0;
 
-    drawShip(shipStageX, shipStageY, heroR, SKINS[activeSkin].color, hr, hg, hb, 22);
+    drawShip(shipStageX, shipStageY, heroR, SKINS[activeSkin].color, hr, hg, hb, 22, true, liveryOf(activeSkin));
 
     // Mastery pips above the hero ship (constants.js masteryLevel/masteryLerp).
     // PEARL has no perk to master.
@@ -3381,6 +3619,36 @@ function drawTitleScreen() {
             // coin/hazard half of that panel, and it sat two taps deep.
         }
 
+        // PAINT pill (Hangar liveries, constants.js LIVERIES): top-right of the card, in the
+        // flown ship's glow. Hidden until the first paid ship is owned.
+        _paintBtnRect = null;
+        if (unlockedSkins & (1 << LIVERY_GATE_SKIN)) {
+            const [pr, pg, pb] = SKINS[activeSkin].shadow;
+            ctx.font = `bold ${FS * 0.020}px ${FONT_UI}`;
+            const pillH = Math.max(H * 0.058, FS * 0.040);
+            const pillW = ctx.measureText(T.paint).width + pillH * 1.5;
+            const pillX = shipPanX + shipPanW - pillW - H * 0.035;
+            const pillY = shipPanY + H * 0.035;
+            ctx.beginPath(); ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
+            ctx.fillStyle   = `rgba(${pr},${pg},${pb},0.14)`;
+            ctx.fill();
+            ctx.strokeStyle = `rgba(${pr},${pg},${pb},0.70)`;
+            ctx.lineWidth   = 1.5;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(pillX + pillH * 0.55, pillY + pillH / 2, pillH * 0.16, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${pr},${pg},${pb},0.95)`;
+            ctx.fill();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = 'rgba(235,240,255,0.95)';
+            ctx.fillText(T.paint, pillX + pillW / 2 + pillH * 0.22, pillY + pillH / 2 + 1);
+            ctx.textBaseline = 'alphabetic';
+            // Tap target padded to a thumb, the drawn pill stays slim.
+            const padT = Math.max(0, (44 - pillH) / 2);
+            _paintBtnRect = { x: pillX - padT, y: pillY - padT, w: pillW + padT * 2, h: pillH + padT * 2 };
+        }
+
         const gridCX    = W / 2;
         // rowY2 sat close enough to the panel's own bottom edge that row 2's
         // name/cost/perk text nearly touched it (direct feedback) -- moved up
@@ -3459,7 +3727,7 @@ function drawTitleScreen() {
                 ctx.shadowBlur  = 0;
                 ctx.restore();
             }
-            drawShip(cx, cy, cellR * 0.70, SKINS[i].color, sr, sg, sb, selected ? 22 : 8);
+            drawShip(cx, cy, cellR * 0.70, SKINS[i].color, sr, sg, sb, selected ? 22 : 8, true, liveryOf(i));
             if (selected && i > 0) {
                 const lvl   = masteryLevel(i);
                 const pipR  = cellR * 0.065, pipGap = cellR * 0.22;
@@ -3518,6 +3786,125 @@ function drawTitleScreen() {
             ctx.shadowBlur  = 0;
         }
 
+        ctx.textAlign = 'center';
+    }
+
+    // ── Paint sheet (Hangar liveries) ────────────────────────────────────
+    // Layered on the ALL SHIPS sheet. Left: the flown ship, big, in the finish being
+    // looked at. Right: a 3x2 grid of finishes. Owned -> tap equips. Unowned -> the first
+    // tap previews it on the big ship and shows the price, a second tap buys it.
+    _paintPanelRect = null;
+    _paintSwatchRects = [];
+    if (showShipPicker && showPaint) {
+        drawMenuBackdrop();
+        const panW = W * 0.74, panH = H * 0.80;
+        const panX = W / 2 - panW / 2, panY = H / 2 - panH / 2;
+        drawMenuPanel(panX, panY, panW, panH, 14);
+        _paintPanelRect = { x: panX, y: panY, w: panW, h: panH };
+        const sk = SKINS[activeSkin];
+        const [sr, sg, sb] = sk.shadow;
+        const shown = paintPreview >= 0 ? paintPreview : liveryOf(activeSkin);
+        const shownOwned = !!(ownedLiveries & (1 << shown));
+
+        ctx.textAlign   = 'center';
+        ctx.textBaseline = 'alphabetic';
+        ctx.font        = `bold ${FS * 0.032}px ${FONT_UI}`;
+        ctx.fillStyle   = 'rgba(255,225,110,0.95)';
+        ctx.fillText(`${T.paint}  ${sk.name}`, W / 2, panY + H * 0.075);   // named, since a finish is equipped per ship
+        ctx.font        = `bold ${FS * 0.022}px ${FONT_NUM}`;
+        ctx.fillText(`${shards} ⧫`, W / 2, panY + H * 0.075 + Math.max(H * 0.06, FS * 0.036));
+
+        // Preview
+        const leftCX = panX + panW * 0.27;
+        const prevR  = Math.min(H * 0.12, panW * 0.10);
+        const prevCY = panY + panH * 0.50;
+        ctx.beginPath();
+        ctx.ellipse(leftCX, prevCY + prevR * 1.25, prevR * 1.5, prevR * 0.22, 0, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${sr},${sg},${sb},0.10)`;
+        ctx.fill();
+        drawShip(leftCX - prevR * 0.1, prevCY, prevR, sk.color, sr, sg, sb, 18, true, shown);
+
+        const nameY = prevCY + prevR * 1.25 + Math.max(H * 0.07, FS * 0.040);
+        ctx.font      = `bold ${FS * 0.026}px ${FONT_UI}`;
+        ctx.fillStyle = `rgba(${sr},${sg},${sb},0.95)`;
+        ctx.fillText(LIVERIES[shown].name, leftCX, nameY);
+        const infoY = nameY + Math.max(H * 0.055, FS * 0.032);
+        if (!shownOwned) {
+            const cost = LIVERIES[shown].cost;
+            const canBuy = shards >= cost;
+            ctx.font      = `bold ${FS * 0.022}px ${FONT_NUM}`;
+            ctx.fillStyle = canBuy ? 'rgba(255,225,110,0.95)' : 'rgba(170,175,200,0.55)';
+            ctx.fillText(`${cost} ⧫`, leftCX, infoY);
+            if (canBuy) {
+                const pulse = 0.65 + 0.35 * Math.sin(gtime * 5);
+                ctx.font = `bold ${FS * 0.017}px ${FONT_UI}`;
+                ctx.fillStyle = `rgba(255,225,110,${pulse})`;
+                let txt = T.tapToBuy;
+                const maxW = panW * 0.44;
+                if (ctx.measureText(txt).width > maxW) {
+                    ctx.font = `bold ${FS * 0.017 * maxW / ctx.measureText(txt).width}px ${FONT_UI}`;
+                }
+                ctx.fillText(txt, leftCX, infoY + Math.max(H * 0.045, FS * 0.028));
+            }
+        } else if (shown === liveryOf(activeSkin)) {
+            ctx.font      = `bold ${FS * 0.024}px ${FONT_UI}`;
+            ctx.fillStyle = 'rgba(140,235,170,0.90)';
+            ctx.fillText('\u2713', leftCX, infoY);   // worn by THIS ship
+        } else {
+            // Owned, but this ship isn't wearing it: same quiet dot as the tiles, so the
+            // green tick never means two different things on one screen.
+            ctx.beginPath();
+            ctx.arc(leftCX, infoY - FS * 0.008, Math.max(FS * 0.004, 1.6), 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(170,180,215,0.55)';
+            ctx.fill();
+        }
+
+        // Finish grid
+        const cols = 3;
+        const gx0 = panX + panW * 0.50, gw = panW * 0.46;
+        const cellW = gw / cols;
+        const gy0 = panY + panH * 0.28, gh = panH * 0.64;
+        const cellH = gh / 2;
+        for (let i = 0; i < LIVERIES.length; i++) {
+            const cx = gx0 + cellW * (i % cols) + cellW / 2;
+            const cy = gy0 + cellH * Math.floor(i / cols) + cellH / 2;
+            const owned = !!(ownedLiveries & (1 << i));
+            const equipped = i === liveryOf(activeSkin);
+            const focus = i === shown;
+            const tw = cellW * 0.88, th = cellH * 0.86;
+            ctx.beginPath(); ctx.roundRect(cx - tw / 2, cy - th / 2, tw, th, 10);
+            ctx.fillStyle = focus ? `rgba(${sr},${sg},${sb},0.14)` : 'rgba(255,255,255,0.04)';
+            ctx.fill();
+            ctx.strokeStyle = equipped ? `rgba(${sr},${sg},${sb},0.85)`
+                            : focus ? 'rgba(255,225,110,0.70)' : 'rgba(150,160,205,0.22)';
+            ctx.lineWidth = equipped || focus ? 2 : 1;
+            ctx.stroke();
+            const shipR = Math.min(th * 0.25, tw * 0.28);
+            ctx.save();
+            if (!owned) ctx.globalAlpha = 0.55;
+            drawShip(cx - shipR * 0.1, cy - th * 0.10, shipR, sk.color, sr, sg, sb, 0, false, i);
+            ctx.restore();
+            const lblFs = Math.min(FS * 0.016, th * 0.13);
+            ctx.font = `bold ${lblFs}px ${FONT_UI}`;
+            ctx.fillStyle = owned ? 'rgba(225,232,255,0.90)' : 'rgba(170,178,210,0.70)';
+            ctx.fillText(LIVERIES[i].name, cx, cy + th * 0.22);
+            ctx.font = `bold ${lblFs}px ${FONT_NUM}`;
+            if (equipped) {
+                ctx.fillStyle = 'rgba(140,235,170,0.90)';
+                ctx.fillText('\u2713', cx, cy + th * 0.40);
+            } else if (!owned) {
+                ctx.fillStyle = shards >= LIVERIES[i].cost ? 'rgba(255,225,110,0.95)' : 'rgba(170,175,200,0.50)';
+                ctx.fillText(`${LIVERIES[i].cost} ⧫`, cx, cy + th * 0.40);
+            } else {
+                // Owned, worn by another ship or none: a quiet dot, so "bought" never reads
+                // as "locked" just because this ship isn't wearing it.
+                ctx.beginPath();
+                ctx.arc(cx, cy + th * 0.36, Math.max(lblFs * 0.14, 1.2), 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(170,180,215,0.55)';
+                ctx.fill();
+            }
+            _paintSwatchRects.push({ x: cx - tw / 2, y: cy - th / 2, w: tw, h: th });
+        }
         ctx.textAlign = 'center';
     }
 

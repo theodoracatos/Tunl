@@ -718,6 +718,9 @@ function update(dt) {
         if (dx*dx + dy*dy < mineHitR2) {
             deathCause = 'open';
             markDeathHit(sx, my, MINE_R);
+            // The mine detonates whatever happens next (death, shield, grace window), so
+            // it gets the same boom as a shot-down mine, layered under die()'s own cue.
+            sfxMineExplode();
             if (die()) return;
             // Shield absorbed - destroy the mine so it can't immediately re-hit
             mines.splice(mi, 1);

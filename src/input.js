@@ -141,7 +141,40 @@ function onDown(e) {
         // CONCEPT A: ALL SHIPS sheet. Hit-test the grid first (selecting a ship
         // keeps the sheet open, same as picking a language keeps Settings
         // open); anything else -- background, header, wallet line -- closes it.
+        // Paint sheet (on top of ALL SHIPS): owned finish -> equip; unowned -> first tap
+        // previews, second tap on the same finish buys it if shards allow.
+        if (showShipPicker && showPaint) {
+            for (let i = 0; i < _paintSwatchRects.length; i++) {
+                if (!inRect(cx, cy, _paintSwatchRects[i])) continue;
+                if (ownedLiveries & (1 << i)) {
+                    shipLiveries[activeSkin] = i;
+                    paintPreview = -1;
+                    localStorage.setItem('tunnel_ship_liveries', JSON.stringify(shipLiveries));
+                    sfxUiSelect(activeSkin);
+                } else if (paintPreview === i && shards >= LIVERIES[i].cost) {
+                    shards -= LIVERIES[i].cost;
+                    ownedLiveries |= (1 << i);
+                    shipLiveries[activeSkin] = i;   // bought for the hangar, worn by this ship
+                    paintPreview = -1;
+                    localStorage.setItem('tunnel_shards', shards);
+                    localStorage.setItem('tunnel_liveries', ownedLiveries);
+                    localStorage.setItem('tunnel_ship_liveries', JSON.stringify(shipLiveries));
+                    sfxUiPurchaseSuccess();
+                } else {
+                    paintPreview = i;
+                    if (shards >= LIVERIES[i].cost) sfxUiTap(); else sfxUiDenied();
+                }
+                return;
+            }
+            if (!_paintPanelRect || !inRect(cx, cy, _paintPanelRect)) {
+                showPaint = false; paintPreview = -1; sfxUiClose();
+            }
+            return;
+        }
         if (showShipPicker) {
+            if (_paintBtnRect && inRect(cx, cy, _paintBtnRect)) {
+                showPaint = true; paintPreview = -1; sfxUiTap(); return;
+            }
             for (let i = 0; i < _skinBtnRects.length; i++) {
                 const b = _skinBtnRects[i];
                 if (inCircle(cx, cy, b)) {
@@ -218,6 +251,7 @@ function onDown(e) {
         if (showSettings) { showSettings = false; return; }
         if (showShop) { showShop = false; return; }
         if (showMissions) { showMissions = false; return; }
+        if (showPaint) { showPaint = false; paintPreview = -1; return; }
         if (showShipPicker) { showShipPicker = false; return; }
         if (showNotifPrompt) _notifPromptResolve(false);   // keyboard start also dismisses it
         startPlay(); return;   // reached only for keyboard/synthetic triggers (no e)

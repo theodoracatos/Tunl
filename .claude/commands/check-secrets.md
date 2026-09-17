@@ -25,11 +25,16 @@ push, e.g. mid-session after committing.
      Slack tokens (`xox...`), Stripe live keys (`sk_live_...`), and generic
      `key|secret|token|password = <long value>` assignments.
 
+   - **Testing flags left on**: any `const DEV_<NAME> = true` in `src/constants.js` at the
+     tip being pushed (`git show HEAD:src/constants.js | grep -nE '^[[:space:]]*const[[:space:]]+DEV_[A-Z0-9_]+[[:space:]]*=[[:space:]]*true'`).
+     The hook checks this against file content, not added lines, so a flag flipped in an
+     older commit is still caught.
+
    The exact pattern list lives in `.githooks/pre-push` - use those patterns rather than
    inventing new ones, so this command and the enforced hook never disagree.
 
 4. Report a clear verdict:
-   - Clean: "No secrets found in N commit(s) ready to push."
+   - Clean: "No secrets or testing flags found in N commit(s) ready to push."
    - Found: list each hit (commit, file/pattern) and say the real `git push` will be
      blocked by the pre-push hook until it's fixed. Do not attempt to fix it yourself
      (e.g. by rewriting history) without being asked - that's destructive and the user

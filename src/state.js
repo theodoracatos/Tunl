@@ -112,6 +112,41 @@ if (localStorage.getItem('tunnel_stardustgate_v1') === null) {
 // regardless of load order.
 let allShipsOwned = localStorage.getItem('tunnel_all_ships') === '1';
 if (allShipsOwned) unlockedSkins = (1 << SKINS.length) - 1;
+// Hangar liveries (constants.js LIVERIES): bitmask of owned finishes (FACTORY, bit 0, is
+// always owned) and the equipped one. Separate keys from ships on purpose - Unlock All
+// Ships never touches these.
+// A finish is bought ONCE (ownedLiveries) but equipped PER SHIP (shipLiveries, index-aligned
+// with SKINS): the paint belongs to the hangar, the look belongs to the ship, so a player can
+// give each ship its own character without re-buying anything.
+let ownedLiveries = (parseInt(localStorage.getItem('tunnel_liveries') || '1') | 1) & ((1 << LIVERIES.length) - 1);
+let shipLiveries;
+try {
+    const raw = JSON.parse(localStorage.getItem('tunnel_ship_liveries') || 'null');
+    shipLiveries = Array.isArray(raw) ? raw : null;
+} catch (e) { shipLiveries = null; }
+if (!shipLiveries) {
+    // First load under the per-ship system: whatever was equipped globally becomes every
+    // ship's finish, so nothing visibly changes for a player who already picked one.
+    const prev = parseInt(localStorage.getItem('tunnel_livery') || '0') || 0;
+    shipLiveries = SKINS.map(() => prev);
+}
+while (shipLiveries.length < SKINS.length) shipLiveries.push(0);
+for (let i = 0; i < shipLiveries.length; i++) {
+    const lv = shipLiveries[i] | 0;
+    shipLiveries[i] = (lv >= 0 && lv < LIVERIES.length && (ownedLiveries & (1 << lv))) ? lv : 0;
+}
+function liveryOf(skin) { return shipLiveries[skin] || 0; }
+if (DEV_WALLET) {   // constants.js, ships false
+    shards = Math.max(shards, 9999);
+    ownedLiveries = (1 << LIVERIES.length) - 1;
+}
+// Paint sheet, layered on top of the ALL SHIPS sheet. paintPreview is the unowned finish
+// the player tapped once (shown on the big preview ship; a second tap buys it), -1 = none.
+let showPaint = false;
+let paintPreview = -1;
+let _paintBtnRect = null;
+let _paintPanelRect = null;
+let _paintSwatchRects = [];
 // How many shards have already been banked today (DAILY_SHARD_CAP in constants.js), reset
 // on the same UTC day boundary as dailyBest/dailyRuns above (see lifecycle.js startPlay()).
 let dailyShardsEarned = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tunnel_daily_shards') || '0') : 0;

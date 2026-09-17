@@ -6,6 +6,9 @@
 # git does not auto-trust a hooksPath committed in the repo). Run that once
 # after cloning to activate it.
 #
+# It also blocks a push whose tip still has a DEV_* testing flag set to true in
+# src/constants.js (DEV_INVINCIBLE, DEV_PAUSE_KEY, DEV_WALLET) - see dev_flag_re below.
+#
 # Bypass (only if you've confirmed a match is a false positive):
 #   git push --no-verify
 
@@ -21,7 +24,10 @@ sensitive_path_re='(^|/)\.env($|\.[^.]+$)|appsettings\.(Production|Staging)\.jso
 # Firebase's per-platform client config files carry an API_KEY that is a
 # public app identifier by Google's own design (restricted by API/bundle-ID
 # restrictions in Cloud Console, not by secrecy) - not a credential to flag.
-safe_basename_re='^(GoogleService-Info\.plist|google-services\.json)$'
+# check-secrets.md is this hook's own documented twin (.claude/commands): its NAME matches
+# the sensitive-path rule below, so editing the doc about secret scanning blocked every
+# push until it was listed here. Caught on the first push that touched it.
+safe_basename_re='^(GoogleService-Info\.plist|google-services\.json|check-secrets\.md)$'
 
 # Content patterns for common secret/key formats. Kept POSIX ERE (no PCRE
 # lookaround/inline flags) so this runs on macOS's stock BSD grep.
@@ -35,8 +41,26 @@ content_patterns=(
   '(api[_-]?key|secret|token|password|passwd|pwd)[[:space:]]*[:=][[:space:]]*[A-Za-z0-9_/+=-]{16,}'
 )
 
+# Debug/testing flags that must never reach a pushed commit (constants.js DEV_INVINCIBLE,
+# DEV_PAUSE_KEY, DEV_WALLET, ...). Not a secret, but the same class of mistake: a local
+# convenience that silently ships. Unlike the secret patterns this is checked against the
+# FILE CONTENT AT THE TIP being pushed, not against added lines - a flag flipped in an
+# older commit and never touched again would otherwise sail through every later push.
+dev_flag_re='^[[:space:]]*const[[:space:]]+DEV_[A-Z0-9_]+[[:space:]]*=[[:space:]]*true'
+dev_flag_files='src/constants.js'
+
 while read -r local_ref local_sha remote_ref remote_sha; do
   [ "$local_sha" = "$zero" ] && continue   # deleting a ref - nothing to scan
+
+  short_tip=$(git rev-parse --short "$local_sha")
+  for df in $dev_flag_files; do
+    git cat-file -e "$local_sha:$df" 2>/dev/null || continue
+    while IFS= read -r hit; do
+      [ -z "$hit" ] && continue
+      echo "pre-push: blocked - $df:$hit is still true at $short_tip (testing flag, see CLAUDE.md)" >&2
+      found=1
+    done < <(git show "$local_sha:$df" | grep -nE "$dev_flag_re" | cut -d: -f1,2 || true)
+  done
 
   # Commits about to be pushed that aren't already on any remote-tracking ref.
   commits=$(git rev-list "$local_sha" --not --remotes 2>/dev/null || true)
