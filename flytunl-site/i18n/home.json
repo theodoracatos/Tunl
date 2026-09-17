@@ -50,22 +50,22 @@
     "ja": "ボタンひとつの洞窟フライヤー。押して上昇、離して下降。トンネルが閉じる前に、どこまで暗闇へ進めるか。"
   },
   "hero.newTag": {
-    "en": "New in 13.0",
-    "de": "Neu in 13.0",
-    "fr": "Nouveau dans la 13.0",
-    "it": "Novità nella 13.0",
-    "es": "Novedad en la 13.0",
-    "pt": "Novo na 13.0",
-    "ja": "13.0の新機能"
+    "en": "New in 14.0",
+    "de": "Neu in 14.0",
+    "fr": "Nouveau dans la 14.0",
+    "it": "Novità nella 14.0",
+    "es": "Novedad en la 14.0",
+    "pt": "Novo na 14.0",
+    "ja": "14.0の新機能"
   },
   "hero.newBody": {
-    "en": "TUNL has a new look. Sharper type on every screen, a title screen that glows in the colour of today's planet, a score that fills toward your record as you fly, a combo counter with its own countdown, and coins that streak into your score.",
-    "de": "TUNL hat einen neuen Look. Schärfere Schrift auf jedem Bildschirm, ein Titelbildschirm in der Farbe des heutigen Planeten, ein Score, der sich im Flug Richtung Rekord füllt, ein Combo-Zähler mit eigenem Countdown und Münzen, die in deinen Score fliegen.",
-    "fr": "TUNL change de look. Une typo plus nette sur chaque écran, un écran titre aux couleurs de la planète du jour, un score qui se remplit vers ton record en plein vol, un compteur de combo avec son propre compte à rebours et des pièces qui filent vers ton score.",
-    "it": "TUNL ha un nuovo look. Caratteri più nitidi su ogni schermata, una schermata del titolo nel colore del pianeta di oggi, un punteggio che in volo si riempie verso il tuo record, un contatore combo con il suo conto alla rovescia e monete che volano nel punteggio.",
-    "es": "TUNL estrena look. Tipografía más nítida en cada pantalla, una pantalla de título con el color del planeta de hoy, una puntuación que se llena hacia tu récord en pleno vuelo, un contador de combo con su propia cuenta atrás y monedas que vuelan a tu puntuación.",
-    "pt": "O TUNL ganhou um visual novo. Tipografia mais nítida em todos os ecrãs, um ecrã de título na cor do planeta de hoje, uma pontuação que enche rumo ao seu recorde durante o voo, um contador de combo com a sua própria contagem decrescente e moedas que voam para a pontuação.",
-    "ja": "TUNLが新しい見た目に。全画面でよりシャープな文字、今日の惑星の色に染まるタイトル画面、飛行中に自己ベストへ向かって満ちていくスコア、専用カウントダウン付きのコンボカウンター、そしてスコアへ飛び込むコイン。"
+    "en": "TUNL ships get a paint job. Six liveries in the new Paint shop, from a glowing stealth rim to a shifting aurora sweep, bought once and yours on every ship you own. Plus a full audio pass: louder, better balanced hits and pickups.",
+    "de": "TUNLs Schiffe bekommen einen neuen Anstrich. Sechs Lackierungen im neuen Lackierung-Shop, vom leuchtenden Stealth-Rand bis zum wandernden Aurora-Schimmer, einmal gekauft und für jedes Schiff, das du besitzt. Dazu ein kompletter Audio-Umbau: lauter, ausgewogener bei Treffern und Pickups.",
+    "fr": "Les vaisseaux de TUNL ont droit à une nouvelle peinture. Six finitions dans la nouvelle boutique Peinture, d'un liseré furtif lumineux à un balayage aurore changeant, achetées une fois et valables sur chaque vaisseau que tu possèdes. Plus une refonte audio complète : des impacts et des prises plus forts et mieux équilibrés.",
+    "it": "Le navi di TUNL si fanno riverniciare. Sei finiture nel nuovo negozio Vernice, da un bordo stealth luminoso a uno sweep aurora mutevole, acquistate una volta e valide su ogni nave posseduta. Più un audio completamente rifatto: colpi e raccolte più forti e bilanciati.",
+    "es": "Las naves de TUNL estrenan pintura. Seis acabados en la nueva tienda Pintura, desde un borde sigiloso luminoso hasta un barrido aurora cambiante, comprados una vez y válidos en cada nave que tienes. Además, un audio completamente renovado: golpes y recogidas más fuertes y equilibrados.",
+    "pt": "As naves do TUNL ganham uma nova pintura. Seis acabamentos na nova loja Pintura, de uma borda furtiva brilhante a uma varredura aurora em movimento, comprados uma vez e válidos em toda nave que você possui. Além de um áudio totalmente refeito: impactos e coletas mais fortes e equilibrados.",
+    "ja": "TUNLの機体に新しい塗装が登場。新しい塗装ショップには6種類の仕上げがあり、光るステルスの縁取りから移り変わるオーロラまで、一度買えば所有する全機体に使えます。さらにサウンドも一新：ヒットやアイテム取得がより大きく、バランスよく響きます。"
   },
   "hero.playCta": {
     "en": "Play in your browser",
