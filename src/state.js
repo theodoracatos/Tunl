@@ -472,6 +472,10 @@ let lastRunWx = 0, lastRunY = 0;
 let milestoneFlash, milestoneText;
 let levelIntroT = 0;
 let gtime = 0;
+// Blue-coin "Zeitblase" presentation state (constants.js SLOW_FX doc). Draw-only.
+// slowFxVis: eased 0..1 intensity; vtime: slowed visual clock for ambient animation;
+// slowFxPulseT: seconds since the pickup ring started (-1 = none); slowFxRipPh: ripple phase.
+let slowFxVis = 0, vtime = 0, slowFxPulseT = -1, slowFxRipPh = 0;
 let skinFx = [], skinFxT = 0;
 let shipPitch = 0;
 let ambParts = [];

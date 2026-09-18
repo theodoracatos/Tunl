@@ -6,6 +6,19 @@ let prev = 0;
 function update(dt) {
     gtime += dt;
 
+    // Blue-coin "Zeitblase" (constants.js SLOW_FX doc): eased intensity, the slowed visual
+    // clock, the pickup-ring timer and the ripple phase. Presentation only.
+    {
+        const fxTarget = (slowTime > 0 && slowTimeMax > 0) ? Math.min(slowTime / slowTimeMax, 1) : 0;
+        slowFxVis += (fxTarget - slowFxVis) * Math.min(dt * SLOW_FX_EASE, 1);
+        if (slowFxVis < 0.001) slowFxVis = 0;
+        if (slowFxPulseT >= 0) { slowFxPulseT += dt; if (slowFxPulseT > SLOW_PULSE_SEC) slowFxPulseT = -1; }
+        slowFxRipPh = (slowFxRipPh + dt * lerp(SLOW_RIPPLE_HZ_MAX, SLOW_RIPPLE_HZ_MIN, slowFxVis)) % 1;
+    }
+    const vScale = 1 - SLOW_FX_TIME_SCALE * slowFxVis;
+    const vdt    = dt * vScale;
+    vtime += vdt;
+
     // Level intro banner decay -- counts down real elapsed time from run start,
     // independent of the launch-ramp/physics sub-phases below.
     if (phase === 'play') levelIntroT = Math.max(0, levelIntroT - dt);
@@ -13,22 +26,23 @@ function update(dt) {
     // Particles (always running)
     for (let i = parts.length - 1; i >= 0; i--) {
         const p = parts[i];
-        p.x += p.vx*dt; p.y += p.vy*dt; const d0 = 0.90 ** (dt * 60); p.vx *= d0; p.vy *= d0;
-        p.life -= dt * 2.0;
+        p.x += p.vx*vdt; p.y += p.vy*vdt; const d0 = 0.90 ** (vdt * 60); p.vx *= d0; p.vy *= d0;
+        p.life -= vdt * 2.0;
         if (p.life <= 0) parts.splice(i, 1);
     }
 
     // Thruster particles
     for (let i = thrustParts.length - 1; i >= 0; i--) {
         const p = thrustParts[i];
-        p.x += p.vx*dt; p.y += p.vy*dt; const d1 = 0.88 ** (dt * 60); p.vx *= d1; p.vy *= d1;
-        p.life -= dt * 3.2;
+        p.x += p.vx*vdt; p.y += p.vy*vdt; const d1 = 0.88 ** (vdt * 60); p.vx *= d1; p.vy *= d1;
+        p.life -= vdt * 3.2;
         if (p.life <= 0) thrustParts.splice(i, 1);
     }
     if (holding && (phase === 'play' || phase === 'title')) {
         for (const ns of [-1, 1]) {
             const ey = py + ns * PR * SHIP_NOZZLE_Y;
             for (let i = 0; i < 4; i++) {
+                if (Math.random() > vScale) continue;   // slowed particles live longer: thin the spawn to keep the count flat
                 const spread = (Math.random() - 0.5) * PR * 0.13;
                 const blue   = Math.random() < 0.35;
                 thrustParts.push({
@@ -293,6 +307,7 @@ function update(dt) {
             slowTime    = Math.max(slowTime, slowPending);
             slowTimeMax = slowTime;
             slowPending = 0;
+            slowFxPulseT = 0;
         }
         if (slowTime > 0) bgmSetSlow(true, slowTime);
     }
@@ -548,12 +563,12 @@ function update(dt) {
         for (let i = skinFx.length-1; i >= 0; i--) {
             const f = skinFx[i];
             const decay = f.t === 1 ? 3.5 : f.t === 2 ? 14 : f.t === 5 ? 4.5 : 2.8;
-            f.life -= dt * decay;
-            if (f.t === 0) { f.x += f.vx*dt; f.y += f.vy*dt; f.vy += 30*dt; }
-            if (f.t === 1) { f.r  += PR * 6 * dt; }
-            if (f.t === 3) { f.x += f.vx*dt; f.y += f.vy*dt; }
-            if (f.t === 4) { f.dist = Math.max(0, f.dist - PR * 3.2 * dt); }
-            if (f.t === 6) { f.x += f.vx*dt; f.y += f.vy*dt; }
+            f.life -= vdt * decay;
+            if (f.t === 0) { f.x += f.vx*vdt; f.y += f.vy*vdt; f.vy += 30*vdt; }
+            if (f.t === 1) { f.r  += PR * 6 * vdt; }
+            if (f.t === 3) { f.x += f.vx*vdt; f.y += f.vy*vdt; }
+            if (f.t === 4) { f.dist = Math.max(0, f.dist - PR * 3.2 * vdt); }
+            if (f.t === 6) { f.x += f.vx*vdt; f.y += f.vy*vdt; }
             if (f.life <= 0) skinFx.splice(i, 1);
         }
     }

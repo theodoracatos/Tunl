@@ -443,7 +443,7 @@ function drawCoin(x, y, type, wx) {
 
     ctx.save();
     ctx.translate(x, y);
-    COIN_OBJECTS[type](s, gtime, wx);
+    COIN_OBJECTS[type](s, vtime, wx);   // slowed clock during a blue-coin slow (constants.js SLOW_FX doc)
     ctx.restore();
 }
 
@@ -1794,6 +1794,44 @@ function drawWorld() {
                 ctx.stroke();
             }
             ctx.lineCap = 'butt';
+        }
+    }
+
+    // Blue-coin "Zeitblase" (constants.js SLOW_FX doc): a cool wash behind the ship, thin
+    // time ripples around it, and a one-shot double ring on pickup. Drawn under the trail
+    // and the ship. All of it rides slowFxVis, so it fades with the glide back to full speed.
+    if (phase === 'play' && (slowFxVis > 0.02 || slowFxPulseT >= 0)) {
+        const [fr, fg, fb] = SLOW_FX_RGB;
+        if (slowFxVis > 0.02) {
+            const washW = W * SLOW_WASH_FRAC;
+            const wg = ctx.createLinearGradient(0, 0, washW, 0);
+            wg.addColorStop(0, `rgba(${fr},${fg},${fb},${SLOW_WASH_ALPHA * slowFxVis})`);
+            wg.addColorStop(1, `rgba(${fr},${fg},${fb},0)`);
+            ctx.fillStyle = wg;
+            ctx.fillRect(0, 0, washW, H);
+            ctx.lineWidth = Math.max(1, PR * 0.08);
+            for (let k = 0; k < SLOW_RIPPLES; k++) {
+                const u = (slowFxRipPh + k / SLOW_RIPPLES) % 1;
+                const a = slowFxVis * 0.30 * (1 - u) * (1 - u) * Math.min(1, u * 6);
+                if (a < 0.01) continue;
+                ctx.beginPath();
+                ctx.arc(PX, py, PR * lerp(SLOW_RIPPLE_R0, SLOW_RIPPLE_R1, u), 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(${fr},${fg},${fb},${a})`;
+                ctx.stroke();
+            }
+        }
+        if (slowFxPulseT >= 0) {
+            const pu = slowFxPulseT / SLOW_PULSE_SEC;
+            for (let j = 0; j < 2; j++) {
+                const uj = pu - j * 0.18;
+                if (uj <= 0) continue;
+                const eo = 1 - (1 - uj) * (1 - uj);   // ease-out: fast start, settles wide
+                ctx.beginPath();
+                ctx.arc(PX, py, PR * lerp(1.2, 15, eo), 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(${fr},${fg},${fb},${0.55 * Math.pow(1 - uj, 1.5)})`;
+                ctx.lineWidth = Math.max(1, PR * lerp(0.22, 0.06, uj));
+                ctx.stroke();
+            }
         }
     }
 

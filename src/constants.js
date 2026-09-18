@@ -6,7 +6,7 @@
 // it exists so a build can identify itself: window.TUNL_VERSION for a DevTools check,
 // and build-play.mjs stamps it into /play as <meta name="tunl:version"> so the live
 // web build's version is greppable without diffing the bundle.
-const TUNL_VERSION = '14.0';
+const TUNL_VERSION = '14.1';
 if (typeof window !== 'undefined') window.TUNL_VERSION = TUNL_VERSION;
 
 const cv  = document.getElementById('c');
@@ -904,6 +904,35 @@ const WALL_EDGE_SLIVER       = Math.max(2, H * (3 / _H_REF));
 // the same rendering-only arrays _wallJagged already offsets - boundsAt() and every
 // collision test are untouched, so this changes no gameplay on any device.
 const SAFE_FIELD_ALPHA       = 0.25;  // rock opacity while the wall is still soft
+
+// ── Blue coin "Zeitblase" (2026-09-18, draw-only) ─────────────────────────────
+// The blue coin already slowed the scroll to 0.6x (world.js slowScrollFactor), sagged the
+// music and drew a HUD bar - but on screen nothing else changed: particles, sparks and
+// coin animations kept running at full speed, so it read as a stutter rather than as
+// slow motion. Three presentation layers, all riding one eased intensity `slowFxVis`
+// (state.js, 0..1, chases slowTime/slowTimeMax) so they fade out exactly with the glide
+// back to normal speed, the mirror of WARP_STREAKS riding warpScrollFactor():
+//  1. AMBIENT TIME - particles, thruster exhaust and coin animations run on a slowed
+//     clock (`vtime`, and dt * (1 - SLOW_FX_TIME_SCALE * vis) for particles). gtime is NOT
+//     touched: mines bob off gtime and collide against it, so slowing it would be a
+//     gameplay change, and this pass is presentation only.
+//  2. TIME RIPPLES - a one-shot double ring from the ship on pickup, then thin rings that
+//     drift out around it while the effect lasts, their period shortening as it wears off.
+//  3. COOL WASH - a faint ice-blue wash on the LEFT (behind the ship) only. Never ahead:
+//     hazards arrive from the right (same rule as DEPTH_LIGHT_*). Never on the walls'
+//     hue: cyan already means "coin bonus" there (gapBonus tint).
+// No shadowBlur, no rng(), no placement decision: identical caves on every device.
+const SLOW_FX_TIME_SCALE = 0.5;    // ambient clock runs at 1 - this at full intensity
+const SLOW_FX_EASE       = 8;      // 1/s the intensity chases its target (no pop on pickup)
+const SLOW_FX_RGB        = [140, 208, 255];
+const SLOW_PULSE_SEC     = 0.75;   // pickup ring lifetime, real seconds
+const SLOW_RIPPLES       = 3;      // concurrent ambient rings
+const SLOW_RIPPLE_R0     = 1.5;    // ring radius at birth, x PR
+const SLOW_RIPPLE_R1     = 7.0;    // ring radius at death, x PR
+const SLOW_RIPPLE_HZ_MIN = 0.45;   // rings per second at full intensity
+const SLOW_RIPPLE_HZ_MAX = 0.90;   // ... and as the effect runs out
+const SLOW_WASH_ALPHA    = 0.11;   // left-side wash at full intensity
+const SLOW_WASH_FRAC     = 0.60;   // how much of the width it covers, from the left edge
 const SAFE_FIELD_LINES       = 4;     // contour lines drawn inside the soft wall edge
 const SAFE_BUMP_DENT_SEC     = 0.9;   // dent lifetime (also when a bump is culled)
 const SAFE_BUMP_DENT_AMP     = 0.60;  // dent depth, in player radii

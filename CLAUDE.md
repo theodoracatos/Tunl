@@ -1009,6 +1009,18 @@ stays locked. `_deepVarietyOn` (default true) is the master kill switch for all 
   playtest for a "the game is cheating" read** - cut it if it feels unfair.
 - **Boulders**: see the Boulders section above.
 
+**Blue coin "Zeitblase" (2026-09-18, draw-only, `constants.js` `SLOW_FX_*` doc).** The slow
+already sagged the scroll, the music and drew a HUD bar, but nothing else on screen slowed,
+so it read as a stutter. Three presentation layers ride one eased intensity `slowFxVis`
+(`state.js`, chases `slowTime / slowTimeMax`, so they fade with the glide back to full speed):
+particles, thruster exhaust and coin animations run on a slowed clock (`vtime`, and `vdt` in
+`update.js`; exhaust spawn is thinned so the live count stays flat); a one-shot double ring
+on pickup plus thin time ripples around the ship; a faint ice-blue wash on the LEFT only
+(hazards arrive from the right, same rule as the depth light). **`gtime` is deliberately
+NOT slowed** - mines bob off it and collide against it, so that would be a gameplay change.
+No `shadowBlur`, no `rng()`, no placement decision. Cyan wall tint stays reserved for the
+coin bonus, so the effect never colours the walls.
+
 ### Coin type progression
 
 Coins are staged by `_prog` so power-ups introduce gradually:
@@ -1223,8 +1235,11 @@ against each other or the bed, exactly as the 2026-09-05 thruster pass already f
   instead of cutting, and the title bed went 0.058 -> 0.100: it sat 9 dB under the play
   bed and, measured, *under its own UI taps*.
 - **Both tracks loop on `loopStart`/`loopEnd`, not on the raw buffer.** They are ordinary
-  masters: `the_mountain` fades out over its last ~4.5s and then holds 0.66s of silence,
-  `the_mountain_documentary` fades from ~114.5s. Looping the whole buffer played that
+  masters: `the_mountain` (the Nebula track since 2026-09-18, 72s) has a quiet build to ~8s,
+  a full body to ~61s, then a quieter outro and a fade to silence; `the_mountain_documentary`
+  fades from ~114.5s. The Nebula loop is `BGM_LOOP_START/END` 8.10 / 56.10 = 28 bars at 140
+  BPM (1.714s per bar), so the seam lands on the beat grid; found by onset autocorrelation,
+  not by ear, and the music does not repeat sample-exactly. Looping the whole buffer played that
   fade, a hole and a fade-in every pass - worst on the title screen, where it reads as
   "the song ended". The lead-in stays as a one-time intro. Set from the EBU momentary
   envelope; **the files are never re-encoded to fix this** (see the "encode once from the
@@ -1236,6 +1251,16 @@ against each other or the bed, exactly as the 2026-09-05 thruster pass already f
   layers in `sfxDie`/`sfxBomb`/`sfxMineExplode`). The thrust layer is deliberately shared
   by all eight ships, so the per-ship balance measured in 2026-09-05 is untouched - every
   voice moves by the same amount.
+
+- **Impact sounds reworked 2026-09-18 (do not go back to noise bursts).** Shield break, projectile-on-rock
+  (`sfxRockHit`, new; wall / boulder / cannon shot on wall - a broken stalactite keeps `sfxStalCrack`) and mine / bomb
+  explosions (`_blast()`, shared) were all bandpassed noise, i.e. a pop or a "Knallfrosch". Explosions need shape: soft
+  kick-like onset, a body whose lowpass closes while its level holds (a straight exponential was -18 dB by 0.2 s and read
+  as a firecracker), a waveshaped sub so the bass survives a phone speaker, a rumble tail, low debris thuds with a soft
+  attack (a bandpassed 5 ms attack clicks). Method: render through an `OfflineAudioContext` in headless Chrome (drive it
+  over CDP in real time; `--virtual-time-budget` is flaky with offline rendering), then look at the WAV as a spectrogram
+  (`ffmpeg showspectrumpic`) and per-window band shares - the review is by eye, not by ear. Levels are matched to the
+  sounds they replaced (loudest 50 ms: shield -21, rock -26, mine -21, bomb -23 dB before the master gain).
 
 Still open, deliberately: no reverb send, no stereo placement, no per-sound pitch
 variation on the repeating sfx (bullets, cracks), and the music does not follow the

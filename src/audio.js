@@ -35,13 +35,13 @@ let _titleBgmActive = false, _titleBgmPending = false;
 // (the_mountain-piano, -10.6 LUFS) sits 4.4 dB under the old -15.0 title bed's mix
 // position once scaled. If a track is replaced, re-measure with ffmpeg ebur128 and
 // rescale: gain = 0.10 * 10^((-6.3 - newLUFS) / 20) for the in-game track.
-const BGM_GAIN       = 0.10;
+const BGM_GAIN       = 0.25;   // nebula track (-11.3 LUFS, 2026-09-18), +3 dB on request; the old the_mountain.mp3 was 0.10
 // Title bed raised 0.058 -> 0.100 (+4.7 dB) on 2026-09-17. Measured, the title screen
 // sat at ~-35.5 LUFS against the play screen's ~-26.5: a 9 dB step on every single run
 // start, and quiet enough that the UI taps (~-37 dB momentary) were UNDER their own
 // music. Still ~4 dB below the play bed, which is the intent - the title screen is the
 // calm one - but a step, not a cliff, and the crossfade below smooths what's left.
-const TITLE_BGM_GAIN = 0.100;
+const TITLE_BGM_GAIN = 0.141;  // +3 dB over 0.100 (2026-09-18, on request)
 
 // ── Master bus: gain then limiter (2026-09-17 audio audit) ───────────────────
 // Until 13.0 _master was a bare pass-through into _ac.destination: no limiter anywhere,
@@ -92,16 +92,21 @@ const MUSIC_DUCK_DB   = 3.5;   // how far music steps back under a big one-shot
 const MUSIC_DUCK_SEC  = 0.40;  // how long it stays there before gliding back
 
 // Loop points, in seconds into each file (2026-09-17). Both tracks are ordinary
-// masters, not loops: the_mountain fades out over its last ~4.5s and then holds 0.66s of
-// digital silence, the_mountain_documentary fades from ~114.5s, and both open with a
+// masters, not loops: the_mountain fades out over its last ~3s into silence,
+// the_mountain_documentary fades from ~114.5s, and both open with a
 // short lead-in. Looping the raw buffer therefore played a fade-out, a hole and a
 // fade-in every pass - loudest on the title screen, where the track loops while the
 // player sits there and it reads as "the song ended". BufferSource.loopStart/loopEnd
 // keep the lead-in as a one-time intro and then cycle the body only. Measured from the
-// EBU momentary envelope (full level from ~1.5s / ~0.2s, fade starting ~144s / ~114.5s),
+// EBU momentary envelope (full level from ~8s / ~0.2s, fade starting ~61s / ~114.5s),
 // NOT by re-encoding the files - see the "always encode once from the source" rule
 // above; the same numbers therefore hold for the .web.m4a encodes.
-const BGM_LOOP_START       = 1.60,  BGM_LOOP_END       = 144.00;
+// Play track = the Nebula master (72s, 2026-09-18): 140 BPM, 1.714s per bar, a quiet
+// build-up to ~8s, full body to ~61s, then a quieter outro and a fade. The loop is 28
+// bars (a multiple of the 4-bar phrase) on the beat grid, so the seam lands on a beat and
+// the tempo carries across it. Grid found by onset autocorrelation - it was not
+// listened to, and the music does not repeat sample-exactly, so ear-check the seam.
+const BGM_LOOP_START       = 8.10,  BGM_LOOP_END       = 56.10;
 const TITLE_BGM_LOOP_START = 0.30,  TITLE_BGM_LOOP_END = 114.50;
 
 function _startBgMusic() {
@@ -772,6 +777,120 @@ function sfxDrain() {
     ns.start(t); ns.stop(t + 0.46);
 }
 
+// Shared blast body for sfxMineExplode and sfxBomb. Reworked twice on 2026-09-18: first from
+// a swept noise puff into a layered blast, then again because that still sounded like a
+// firecracker ("Knallfrosch"). A firecracker is a bright, sharp crack that is over in a
+// fraction of a second, and the first rework had exactly that shape: a hard high-passed
+// onset, a mid-heavy body (76% of its energy above 400 Hz), a rattle of HIGH shrapnel ticks
+// and only ~0.3 s of length. What makes a blast read as big is the opposite: weight, a
+// soft-edged onset, a long low tail, and falling debris that is low, not tinkling.
+//  1. PUNCH    - a fast 220 -> 46 Hz sine drop (like a kick drum): the onset is a thump,
+//                not a click. Plus a 4 ms click, just enough to define the attack.
+//  2. BODY     - noise through a lowpass that closes 2 kHz -> 110 Hz, then a waveshaper for
+//                grit and a second lowpass to strip the fizz the shaper adds.
+//  3. SUB      - a sine sinking 95 -> 32 Hz, driven through a waveshaper and lowpassed at
+//                420 Hz, so the harmonics (200-400 Hz) carry the bass onto a speaker that
+//                cannot play the fundamental.
+//  4. RUMBLE   - low noise closing 320 -> 55 Hz with a slow tremolo, ~1 s long.
+//  5. DEBRIS   - five low band-passed thuds (500-1300 Hz) spread over the tail: rubble
+//                landing, not metal pinging.
+// `o.size` scales length (a mine is 1.3, the bomb 1.5), `o.pv` is a small pitch factor
+// so two blasts in a row do not sound identical, `o.level` the one loudness knob.
+function _blast(t, o) {
+    const size = o.size, pv = o.pv;
+    const out = _ac.createGain();   // one level knob for the whole blast (matched by offline render)
+    out.gain.value = o.level;
+    out.connect(_master);
+
+    const pu = _ac.createOscillator(), puG = _ac.createGain();
+    pu.type = 'sine';
+    pu.frequency.setValueAtTime(220 * pv, t);
+    pu.frequency.exponentialRampToValueAtTime(46, t + 0.07);
+    puG.gain.setValueAtTime(0.0001, t);
+    puG.gain.linearRampToValueAtTime(0.30 * o.boom, t + 0.004);
+    puG.gain.exponentialRampToValueAtTime(0.001, t + 0.15 * size);
+    pu.connect(puG); puG.connect(out);
+    pu.start(t); pu.stop(t + 0.17 * size);
+    const ck = _ac.createBufferSource();
+    ck.buffer = _noiseBuf(0.006);
+    const ckF = _ac.createBiquadFilter();
+    ckF.type = 'highpass'; ckF.frequency.value = 900;
+    const ckG = _ac.createGain();
+    ckG.gain.value = 0.10;
+    ck.connect(ckF); ckF.connect(ckG); ckG.connect(out);
+    ck.start(t); ck.stop(t + 0.006);
+
+    const bd = _ac.createBufferSource();
+    bd.buffer = _noiseBuf(0.95 * size);
+    const bdF = _ac.createBiquadFilter();
+    bdF.type = 'lowpass'; bdF.Q.value = 0.7;
+    bdF.frequency.setValueAtTime(2000 * pv, t);
+    bdF.frequency.exponentialRampToValueAtTime(110, t + 0.38 * size);
+    const shaper = _ac.createWaveShaper();
+    shaper.curve = _distortionCurve(4);
+    const bdF2 = _ac.createBiquadFilter();
+    bdF2.type = 'lowpass'; bdF2.frequency.value = 1600;
+    const bdG = _ac.createGain();
+    bdG.gain.setValueAtTime(0.0001, t);
+    bdG.gain.linearRampToValueAtTime(0.80 * o.blast, t + 0.004);
+    // Shoulder: a quick drop to ~40%, then a long roll-off - the body stays present for
+    // the first ~0.25 s instead of vanishing (a straight exponential was -18 dB by 0.2 s).
+    bdG.gain.exponentialRampToValueAtTime(0.32 * o.blast, t + 0.18 * size);
+    bdG.gain.exponentialRampToValueAtTime(0.001, t + 0.90 * size);
+    bd.connect(bdF); bdF.connect(shaper); shaper.connect(bdF2); bdF2.connect(bdG); bdG.connect(out);
+    bd.start(t); bd.stop(t + 0.94 * size);
+
+    const sb = _ac.createOscillator();
+    sb.type = 'sine';
+    sb.frequency.setValueAtTime(95 * pv, t);
+    sb.frequency.exponentialRampToValueAtTime(32, t + 0.6 * size);
+    const sbS = _ac.createWaveShaper();
+    sbS.curve = _distortionCurve(3);
+    const sbF = _ac.createBiquadFilter();
+    sbF.type = 'lowpass'; sbF.frequency.value = 420;
+    const sbG = _ac.createGain();
+    sbG.gain.setValueAtTime(0.0001, t);
+    sbG.gain.linearRampToValueAtTime(0.34 * o.boom, t + 0.01);
+    sbG.gain.exponentialRampToValueAtTime(0.001, t + 0.72 * size);
+    sb.connect(sbS); sbS.connect(sbF); sbF.connect(sbG); sbG.connect(out);
+    sb.start(t); sb.stop(t + 0.75 * size);
+
+    const rum = _ac.createBufferSource();
+    rum.buffer = _noiseBuf(1.3 * size);
+    const ruF = _ac.createBiquadFilter();
+    ruF.type = 'lowpass'; ruF.Q.value = 1.0;
+    ruF.frequency.setValueAtTime(320, t);
+    ruF.frequency.exponentialRampToValueAtTime(55, t + 1.05 * size);
+    const trem = _ac.createGain();
+    trem.gain.value = 0.7;
+    const lfo = _ac.createOscillator(), lfoD = _ac.createGain();
+    lfo.type = 'sine'; lfo.frequency.value = 14;
+    lfoD.gain.value = 0.3;
+    lfo.connect(lfoD); lfoD.connect(trem.gain);
+    const ruG = _ac.createGain();
+    ruG.gain.setValueAtTime(0.0001, t);
+    ruG.gain.linearRampToValueAtTime(0.24 * o.boom, t + 0.05);
+    ruG.gain.exponentialRampToValueAtTime(0.001, t + 1.2 * size);
+    rum.connect(ruF); ruF.connect(trem); trem.connect(ruG); ruG.connect(out);
+    rum.start(t); rum.stop(t + 1.25 * size);
+    lfo.start(t); lfo.stop(t + 1.25 * size);
+
+    [[0.14, 0.12, 1100], [0.26, 0.09, 700], [0.37, 0.10, 1300],
+     [0.52, 0.07, 600], [0.68, 0.05, 900]].forEach(([dt, a, hz]) => {
+        const td = t + dt * size;
+        const dr = _ac.createBufferSource();
+        dr.buffer = _noiseBuf(0.08);
+        const drF = _ac.createBiquadFilter();
+        drF.type = 'lowpass'; drF.frequency.value = hz * pv; drF.Q.value = 0.9;
+        const drG = _ac.createGain();
+        drG.gain.setValueAtTime(0.0001, td);
+        drG.gain.linearRampToValueAtTime(a * 0.75 * o.debris, td + 0.006);   // soft attack: no click
+        drG.gain.exponentialRampToValueAtTime(0.001, td + 0.07);
+        dr.connect(drF); drF.connect(drG); drG.connect(out);
+        dr.start(td); dr.stop(td + 0.08);
+    });
+}
+
 function sfxBomb() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
@@ -786,33 +905,9 @@ function sfxBomb() {
         g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.14);
         o.start(t0); o.stop(t0 + 0.15);
     });
-    const tBoom = t + 0.16;
-    const src = _ac.createBufferSource();
-    src.buffer = _noiseBuf(0.5);
-    const flt = _ac.createBiquadFilter();
-    flt.type = 'lowpass';
-    flt.frequency.setValueAtTime(750, tBoom);
-    flt.frequency.exponentialRampToValueAtTime(50, tBoom + 0.40);
-    const g2 = _ac.createGain();
-    g2.gain.setValueAtTime(0.44, tBoom);
-    g2.gain.exponentialRampToValueAtTime(0.001, tBoom + 0.44);
-    src.connect(flt); flt.connect(g2); g2.connect(_master);
-    src.start(tBoom); src.stop(tBoom + 0.46);
-    // Mid-band body (2026-09-17): the boom above sweeps 750 -> 50 Hz, i.e. straight into
-    // the range a phone speaker does not reproduce - measured flat it is the loudest
-    // layer here, on an iPhone speaker it is nearly nothing. This layer puts the
-    // detonation where the speaker actually lives without changing the boom itself.
-    const mid = _ac.createBufferSource();
-    mid.buffer = _noiseBuf(0.3);
-    const midFlt = _ac.createBiquadFilter();
-    midFlt.type = 'bandpass'; midFlt.Q.value = 0.7;
-    midFlt.frequency.setValueAtTime(1100, tBoom);
-    midFlt.frequency.exponentialRampToValueAtTime(400, tBoom + 0.26);
-    const midG = _ac.createGain();
-    midG.gain.setValueAtTime(0.30, tBoom);
-    midG.gain.exponentialRampToValueAtTime(0.001, tBoom + 0.30);
-    mid.connect(midFlt); midFlt.connect(midG); midG.connect(_master);
-    mid.start(tBoom); mid.stop(tBoom + 0.32);
+    // The blast itself: bigger and heavier than a mine's (size 1.5), with more boom and
+    // less debris - it is a clean charge, not a case breaking up.
+    _blast(t + 0.16, { size: 1.5, pv: 0.90 + Math.random() * 0.08, blast: 1.0, boom: 1.25, debris: 0.7, level: 0.12 });
 }
 
 // Warp portal entry (constants.js "Warp portal" doc): a rising sweep chord + a
@@ -902,27 +997,67 @@ function sfxCannonFire() {
 // same trap. A shatter layer on the attack and a music duck carry the rest.
 function sfxShieldBreak() {
     if (!_ac || !fxOn) return;
-    const t   = _ac.currentTime;
-    const src = _ac.createBufferSource();
-    src.buffer = _noiseBuf(0.3);
-    const flt = _ac.createBiquadFilter();
-    flt.type = 'bandpass'; flt.frequency.value = 700; flt.Q.value = 1.8;
-    const g = _ac.createGain();
-    g.gain.setValueAtTime(1.00, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
-    src.connect(flt); flt.connect(g); g.connect(_master);
-    src.start(t); src.stop(t + 0.30);
-    // Glass-shatter edge: a short bright burst on the attack so the moment reads on a
-    // phone speaker, where a 700 Hz-centred body alone goes thin.
-    const sh = _ac.createBufferSource();
-    sh.buffer = _noiseBuf(0.09);
-    const shFlt = _ac.createBiquadFilter();
-    shFlt.type = 'highpass'; shFlt.frequency.value = 2200;
-    const shG = _ac.createGain();
-    shG.gain.setValueAtTime(0.30, t);
-    shG.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
-    sh.connect(shFlt); shFlt.connect(shG); shG.connect(_master);
-    sh.start(t); sh.stop(t + 0.10);
+    const t = _ac.currentTime;
+    // Reworked 2026-09-18 ("a bit childish"): the old sound was a bandpassed noise burst
+    // plus a bright noise edge, i.e. a pop. An energy field failing sounds like power
+    // going out of something, not like something bursting, so it is now four layers:
+    //  1. FIELD COLLAPSE - a saw whose pitch falls 820 -> 90 Hz through a lowpass that
+    //     closes 3.2 kHz -> 240 Hz. The saw's harmonics keep it in the 500-2000 Hz band a
+    //     phone speaker actually reproduces (same reasoning as the mid partners below).
+    //  2. DISCHARGE - a short gated burst of band-passed noise, crackling rather than
+    //     hissing (hard on/off steps, decaying).
+    //  3. HULL THUMP - a fast 150 -> 48 Hz sine drop for the hit itself.
+    //  4. RING-DOWN - two inharmonic sines (ratio ~1.51) very quiet, so the tail reads as
+    //     metal cooling rather than glass.
+    // Level matched by offline render to the pop it replaces (loudest 50 ms about -21 dB
+    // before the master gain), so the loudness hierarchy in the 2026-09-17 audit holds.
+    const saw = _ac.createOscillator();
+    saw.type = 'sawtooth';
+    saw.frequency.setValueAtTime(820, t);
+    saw.frequency.exponentialRampToValueAtTime(90, t + 0.34);
+    const sawF = _ac.createBiquadFilter();
+    sawF.type = 'lowpass'; sawF.Q.value = 2.5;
+    sawF.frequency.setValueAtTime(3200, t);
+    sawF.frequency.exponentialRampToValueAtTime(240, t + 0.34);
+    const sawG = _ac.createGain();
+    sawG.gain.setValueAtTime(0.0001, t);
+    sawG.gain.linearRampToValueAtTime(0.155, t + 0.010);
+    sawG.gain.exponentialRampToValueAtTime(0.001, t + 0.36);
+    saw.connect(sawF); sawF.connect(sawG); sawG.connect(_master);
+    saw.start(t); saw.stop(t + 0.38);
+
+    const dis = _ac.createBufferSource();
+    dis.buffer = _noiseBuf(0.16);
+    const disF = _ac.createBiquadFilter();
+    disF.type = 'bandpass'; disF.frequency.value = 3800; disF.Q.value = 0.8;
+    const disG = _ac.createGain();
+    // Gate steps at fixed offsets (no Math.random: the sound is identical every time).
+    const gate = [0, 0.012, 0.021, 0.038, 0.047, 0.066, 0.077, 0.098, 0.112, 0.131];
+    disG.gain.setValueAtTime(0.0001, t);
+    gate.forEach((dt, k) => disG.gain.setValueAtTime(k % 2 === 0 ? 0.22 * (1 - k / 11) : 0.0001, t + dt));
+    disG.gain.setValueAtTime(0.0001, t + 0.15);
+    dis.connect(disF); disF.connect(disG); disG.connect(_master);
+    dis.start(t); dis.stop(t + 0.16);
+
+    const th = _ac.createOscillator();
+    th.type = 'sine';
+    th.frequency.setValueAtTime(150, t);
+    th.frequency.exponentialRampToValueAtTime(48, t + 0.14);
+    const thG = _ac.createGain();
+    thG.gain.setValueAtTime(0.10, t);
+    thG.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+    th.connect(thG); thG.connect(_master);
+    th.start(t); th.stop(t + 0.17);
+
+    [[1240, 0.028], [1873, 0.018]].forEach(([f, a]) => {
+        const o = _ac.createOscillator(), g = _ac.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t + 0.02);
+        g.gain.linearRampToValueAtTime(a, t + 0.035);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.50);
+        o.connect(g); g.connect(_master);
+        o.start(t + 0.02); o.stop(t + 0.52);
+    });
     musicDuck();
 }
 
@@ -1057,42 +1192,7 @@ function sfxPbPassed() {
 
 function sfxMineExplode() {
     if (!_ac || !fxOn) return;
-    const t = _ac.currentTime;
-    const src = _ac.createBufferSource();
-    src.buffer = _noiseBuf(0.45);
-    const flt = _ac.createBiquadFilter();
-    flt.type = 'lowpass';
-    flt.frequency.setValueAtTime(700, t);
-    flt.frequency.exponentialRampToValueAtTime(55, t + 0.38);
-    const g = _ac.createGain();
-    g.gain.setValueAtTime(0.42, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.44);
-    src.connect(flt); flt.connect(g); g.connect(_master);
-    src.start(t); src.stop(t + 0.46);
-    // Short high crack layered on top
-    const src2 = _ac.createBufferSource();
-    src2.buffer = _noiseBuf(0.12);
-    const flt2 = _ac.createBiquadFilter();
-    flt2.type = 'highpass'; flt2.frequency.value = 1800;
-    const g2 = _ac.createGain();
-    g2.gain.setValueAtTime(0.28, t);
-    g2.gain.exponentialRampToValueAtTime(0.001, t + 0.10);
-    src2.connect(flt2); flt2.connect(g2); g2.connect(_master);
-    src2.start(t); src2.stop(t + 0.12);
-    // Mid-band body, same speaker-translation reasoning as sfxBomb's: the boom lives at
-    // 700 -> 55 Hz and the crack at 1800 Hz+, leaving the 400-1500 Hz band a phone
-    // actually reproduces empty in between.
-    const mid = _ac.createBufferSource();
-    mid.buffer = _noiseBuf(0.28);
-    const midFlt = _ac.createBiquadFilter();
-    midFlt.type = 'bandpass'; midFlt.Q.value = 0.7;
-    midFlt.frequency.setValueAtTime(1200, t);
-    midFlt.frequency.exponentialRampToValueAtTime(380, t + 0.24);
-    const midG = _ac.createGain();
-    midG.gain.setValueAtTime(0.28, t);
-    midG.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
-    mid.connect(midFlt); midFlt.connect(midG); midG.connect(_master);
-    mid.start(t); mid.stop(t + 0.30);
+    _blast(_ac.currentTime, { size: 1.3, pv: 0.94 + Math.random() * 0.12, blast: 1.0, boom: 1.0, debris: 1.0, level: 0.17 });
 }
 
 function sfxBulletPickup() {
@@ -1221,6 +1321,58 @@ function sfxStalCrack() {
     g3.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
     o.connect(g3); g3.connect(_master);
     o.start(t); o.stop(t + 0.09);
+}
+
+// A projectile hitting SOLID rock: the corridor wall, a boulder, or a cannon shot dying on
+// the wall (2026-09-18, "a very odd sound"). These used to share sfxStalCrack, which is
+// the sound of a stalactite BREAKING - a bright band-passed noise snap that reads as static,
+// and on a wall it repeats every 0.32s while the ammo auto-fires. Rock does not snap, it
+// takes the hit: so now a dull stone "tock" (sine 210 -> 90 Hz) with a band-passed mid
+// partner so it exists on a phone speaker, a short dry chip crack on the attack, and three
+// tiny gravel ticks scattering after it at fixed offsets. Pitch varies +-8% per call so a
+// stream of hits does not machine-gun. Level matched by offline render to sfxStalCrack (loudest 50 ms about -26 dB
+// before the master gain), which it replaces at these three call sites.
+function sfxRockHit() {
+    if (!_ac || !fxOn) return;
+    const t  = _ac.currentTime;
+    const pv = 0.92 + Math.random() * 0.16;
+    const o = _ac.createOscillator(), og = _ac.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(210 * pv, t);
+    o.frequency.exponentialRampToValueAtTime(90 * pv, t + 0.07);
+    og.gain.setValueAtTime(0.12, t);
+    og.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+    o.connect(og); og.connect(_master);
+    o.start(t); o.stop(t + 0.10);
+    const body = _ac.createBufferSource();
+    body.buffer = _noiseBuf(0.07);
+    const bf = _ac.createBiquadFilter();
+    bf.type = 'bandpass'; bf.frequency.value = 950 * pv; bf.Q.value = 2.2;
+    const bg = _ac.createGain();
+    bg.gain.setValueAtTime(0.75, t);
+    bg.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+    body.connect(bf); bf.connect(bg); bg.connect(_master);
+    body.start(t); body.stop(t + 0.07);
+    const chip = _ac.createBufferSource();
+    chip.buffer = _noiseBuf(0.02);
+    const cf = _ac.createBiquadFilter();
+    cf.type = 'highpass'; cf.frequency.value = 2600;
+    const cg = _ac.createGain();
+    cg.gain.setValueAtTime(0.24, t);
+    cg.gain.exponentialRampToValueAtTime(0.001, t + 0.02);
+    chip.connect(cf); cf.connect(cg); cg.connect(_master);
+    chip.start(t); chip.stop(t + 0.02);
+    [[0.030, 0.10, 3600], [0.062, 0.07, 4400], [0.098, 0.05, 3100]].forEach(([dt, a, hz]) => {
+        const gr = _ac.createBufferSource();
+        gr.buffer = _noiseBuf(0.012);
+        const gf = _ac.createBiquadFilter();
+        gf.type = 'bandpass'; gf.frequency.value = hz * pv; gf.Q.value = 1.6;
+        const gg = _ac.createGain();
+        gg.gain.setValueAtTime(a, t + dt);
+        gg.gain.exponentialRampToValueAtTime(0.001, t + dt + 0.012);
+        gr.connect(gf); gf.connect(gg); gg.connect(_master);
+        gr.start(t + dt); gr.stop(t + dt + 0.012);
+    });
 }
 
 // ── Per-skin thruster voices ─────────────────────────────────────────────

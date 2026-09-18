@@ -558,6 +558,7 @@ function checkCoinCollection() {
                 } else {
                     slowTime = Math.min(slowTime + _slowAdd, _slowCap);
                     slowTimeMax = slowTime;  // capture the window the scroll + music glide ramps over (world.js slowScrollFactor)
+                    slowFxPulseT = 0;        // pickup ring (constants.js SLOW_FX doc)
                 }
                 burstCoin(sx, coin.y, 195, 26);
                 shake += 3;
@@ -691,7 +692,7 @@ function updateBullets(dt) {
         const wallBnd = boundsAt(b.wx);
         if (b.y - 3.5 < wallBnd.top || b.y + 3.5 > wallBnd.bot) {
             burstStalCrack(bsx, b.y);
-            sfxStalCrack();
+            sfxRockHit();   // solid rock, not a breaking stalactite (audio.js sfxRockHit)
             window.webkit?.messageHandlers?.haptic?.postMessage('light');
             hit = true;
         }
@@ -713,7 +714,7 @@ function updateBullets(dt) {
             for (const bo of boulders) {
                 if (boulderHit(bo, b.wx - bo.wx, b.y - bo.y, 3.5)) {
                     burstStalCrack(bsx, b.y);   // sparks off - solid rock, not destroyed
-                    sfxStalCrack();
+                    sfxRockHit();
                     window.webkit?.messageHandlers?.haptic?.postMessage('light');
                     hit = true;
                     break;
@@ -1026,7 +1027,7 @@ function updateCannonShots(dt) {
         const sb = boundsAt(s.wx);
         if (s.y < sb.top - 4 || s.y > sb.bot + 4) {
             burstStalCrack(bsx, Math.max(sb.top, Math.min(sb.bot, s.y)));
-            sfxStalCrack();
+            sfxRockHit();
             cannonShots.splice(i, 1);
         }
     }
