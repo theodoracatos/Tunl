@@ -1,8 +1,23 @@
 {
   "_note": "Homepage strings for flytunl.ch. Keys map to {{key}} placeholders in home.template.html. build-site.mjs generates site/index.html (en) + site/<lang>/index.html. A missing translation falls back to en.",
-  "_langs": ["en", "de", "fr", "it", "es", "pt", "ja"],
-  "_langNames": { "en": "English", "de": "Deutsch", "fr": "Français", "it": "Italiano", "es": "Español", "pt": "Português", "ja": "日本語" },
-
+  "_langs": [
+    "en",
+    "de",
+    "fr",
+    "it",
+    "es",
+    "pt",
+    "ja"
+  ],
+  "_langNames": {
+    "en": "English",
+    "de": "Deutsch",
+    "fr": "Français",
+    "it": "Italiano",
+    "es": "Español",
+    "pt": "Português",
+    "ja": "日本語"
+  },
   "meta.title": {
     "en": "TUNL - Eternal Labyrinth",
     "de": "TUNL - Ewiges Labyrinth",
@@ -30,7 +45,6 @@
     "pt": "Um cave flyer para iOS e Android. Segure para subir, solte para cair e veja até onde você avança na escuridão.",
     "ja": "iOS・Android向けの洞窟フライヤー。押して上昇、離して下降。どこまで暗闇の奥へ進めるか。"
   },
-
   "hero.eyebrow": {
     "en": "Eternal Labyrinth",
     "de": "Ewiges Labyrinth",
@@ -50,22 +64,22 @@
     "ja": "ボタンひとつの洞窟フライヤー。押して上昇、離して下降。トンネルが閉じる前に、どこまで暗闇へ進めるか。"
   },
   "hero.newTag": {
-    "en": "New in 14.0",
-    "de": "Neu in 14.0",
-    "fr": "Nouveau dans la 14.0",
-    "it": "Novità nella 14.0",
-    "es": "Novedad en la 14.0",
-    "pt": "Novo na 14.0",
-    "ja": "14.0の新機能"
+    "en": "New in 14.1",
+    "de": "Neu in 14.1",
+    "fr": "Nouveau dans la 14.1",
+    "it": "Novità nella 14.1",
+    "es": "Novedad en la 14.1",
+    "pt": "Novo na 14.1",
+    "ja": "14.1の新機能"
   },
   "hero.newBody": {
-    "en": "TUNL ships get a paint job. Six liveries in the new Paint shop, from a glowing stealth rim to a shifting aurora sweep, bought once and yours on every ship you own. Plus a full audio pass: louder, better balanced hits and pickups.",
-    "de": "TUNLs Schiffe bekommen einen neuen Anstrich. Sechs Lackierungen im neuen Lackierung-Shop, vom leuchtenden Stealth-Rand bis zum wandernden Aurora-Schimmer, einmal gekauft und für jedes Schiff, das du besitzt. Dazu ein kompletter Audio-Umbau: lauter, ausgewogener bei Treffern und Pickups.",
-    "fr": "Les vaisseaux de TUNL ont droit à une nouvelle peinture. Six finitions dans la nouvelle boutique Peinture, d'un liseré furtif lumineux à un balayage aurore changeant, achetées une fois et valables sur chaque vaisseau que tu possèdes. Plus une refonte audio complète : des impacts et des prises plus forts et mieux équilibrés.",
-    "it": "Le navi di TUNL si fanno riverniciare. Sei finiture nel nuovo negozio Vernice, da un bordo stealth luminoso a uno sweep aurora mutevole, acquistate una volta e valide su ogni nave posseduta. Più un audio completamente rifatto: colpi e raccolte più forti e bilanciati.",
-    "es": "Las naves de TUNL estrenan pintura. Seis acabados en la nueva tienda Pintura, desde un borde sigiloso luminoso hasta un barrido aurora cambiante, comprados una vez y válidos en cada nave que tienes. Además, un audio completamente renovado: golpes y recogidas más fuertes y equilibrados.",
-    "pt": "As naves do TUNL ganham uma nova pintura. Seis acabamentos na nova loja Pintura, de uma borda furtiva brilhante a uma varredura aurora em movimento, comprados uma vez e válidos em toda nave que você possui. Além de um áudio totalmente refeito: impactos e coletas mais fortes e equilibrados.",
-    "ja": "TUNLの機体に新しい塗装が登場。新しい塗装ショップには6種類の仕上げがあり、光るステルスの縁取りから移り変わるオーロラまで、一度買えば所有する全機体に使えます。さらにサウンドも一新：ヒットやアイテム取得がより大きく、バランスよく響きます。"
+    "en": "A new soundtrack and heavier blasts: mines, bombs, shield breaks and rock hits land with real weight. Grab a blue coin and time bends: the cave slows around you in ripples and an icy glow.",
+    "de": "Neuer Soundtrack und wuchtigere Explosionen: Minen, Bomben, Schildbrüche und Felstreffer schlagen mit echtem Gewicht ein. Schnapp dir eine blaue Münze und die Zeit biegt sich: die Höhle wird um dich langsamer, mit Wellen und eisigem Schimmer.",
+    "fr": "Une nouvelle bande-son et des explosions plus lourdes : mines, bombes, boucliers brisés et impacts de roche frappent avec un vrai poids. Ramasse une pièce bleue et le temps se plie : la grotte ralentit autour de toi, avec des ondes et une lueur glacée.",
+    "it": "Una nuova colonna sonora e esplosioni più pesanti: mine, bombe, scudi che si rompono e colpi contro la roccia hanno un vero peso. Raccogli una moneta blu e il tempo si piega: la grotta rallenta attorno a te, tra onde e un bagliore gelido.",
+    "es": "Una nueva banda sonora y explosiones más contundentes: minas, bombas, escudos rotos y golpes contra la roca suenan con peso de verdad. Recoge una moneda azul y el tiempo se dobla: la cueva se ralentiza a tu alrededor, con ondas y un brillo helado.",
+    "pt": "Uma nova trilha sonora e explosões mais pesadas: minas, bombas, escudos quebrando e batidas na rocha soam com peso de verdade. Pegue uma moeda azul e o tempo se curva: a caverna desacelera ao seu redor, com ondas e um brilho gelado.",
+    "ja": "新しいサウンドトラックと、より重い爆発音。地雷、爆弾、シールド破壊、岩への着弾が本物の重みで響きます。青いコインを取ると時間が歪み、洞窟は波紋と氷のような輝きとともに減速します。"
   },
   "hero.playCta": {
     "en": "Play in your browser",
@@ -85,7 +99,6 @@
     "pt": "ou baixe o app",
     "ja": "またはアプリを入手"
   },
-
   "s1.head": {
     "en": "Hold. Release. Survive.",
     "de": "Halten. Loslassen. Überleben.",
@@ -95,7 +108,15 @@
     "pt": "Segure. Solte. Sobreviva.",
     "ja": "押す。離す。生き延びる。"
   },
-  "s1.k1": { "en": "HOLD", "de": "HALTEN", "fr": "MAINTIENS", "it": "TIENI PREMUTO", "es": "MANTÉN", "pt": "SEGURE", "ja": "押す" },
+  "s1.k1": {
+    "en": "HOLD",
+    "de": "HALTEN",
+    "fr": "MAINTIENS",
+    "it": "TIENI PREMUTO",
+    "es": "MANTÉN",
+    "pt": "SEGURE",
+    "ja": "押す"
+  },
   "s1.d1": {
     "en": "Thrust upward",
     "de": "Schub nach oben",
@@ -105,7 +126,15 @@
     "pt": "Impulso para cima",
     "ja": "上へ推進"
   },
-  "s1.k2": { "en": "RELEASE", "de": "LOSLASSEN", "fr": "RELÂCHE", "it": "RILASCIA", "es": "SUELTA", "pt": "SOLTE", "ja": "離す" },
+  "s1.k2": {
+    "en": "RELEASE",
+    "de": "LOSLASSEN",
+    "fr": "RELÂCHE",
+    "it": "RILASCIA",
+    "es": "SUELTA",
+    "pt": "SOLTE",
+    "ja": "離す"
+  },
   "s1.d2": {
     "en": "Gravity pulls you down",
     "de": "Die Schwerkraft zieht dich nach unten",
@@ -115,7 +144,15 @@
     "pt": "A gravidade te puxa para baixo",
     "ja": "重力で下へ"
   },
-  "s1.k3": { "en": "DODGE", "de": "AUSWEICHEN", "fr": "ESQUIVE", "it": "SCHIVA", "es": "ESQUIVA", "pt": "DESVIE", "ja": "かわす" },
+  "s1.k3": {
+    "en": "DODGE",
+    "de": "AUSWEICHEN",
+    "fr": "ESQUIVE",
+    "it": "SCHIVA",
+    "es": "ESQUIVA",
+    "pt": "DESVIE",
+    "ja": "かわす"
+  },
   "s1.d3": {
     "en": "Stalactites, mines, cannons, walls",
     "de": "Stalaktiten, Minen, Kanonen, Wände",
@@ -125,9 +162,15 @@
     "pt": "Estalactites, minas, canhões, paredes",
     "ja": "鍾乳石、機雷、砲台、壁"
   },
-
-  "s2.head": { "en": "Features", "de": "Funktionen", "fr": "Fonctionnalités", "it": "Caratteristiche", "es": "Características", "pt": "Recursos", "ja": "特徴" },
-
+  "s2.head": {
+    "en": "Features",
+    "de": "Funktionen",
+    "fr": "Fonctionnalités",
+    "it": "Caratteristiche",
+    "es": "Características",
+    "pt": "Recursos",
+    "ja": "特徴"
+  },
   "f1.h": {
     "en": "A tunnel that never repeats",
     "de": "Ein Tunnel, der sich nie wiederholt",
@@ -362,10 +405,33 @@
     "pt": "O TUNL está disponível em 15 idiomas, incluindo espanhol, árabe, russo, chinês, francês, coreano, português, hindi e polonês.",
     "ja": "TUNLは15言語に対応。スペイン語、アラビア語、ロシア語、中国語、フランス語、韓国語、ポルトガル語、ヒンディー語、ポーランド語などを含む。"
   },
-
-  "ships.head": { "en": "Eight Ships, Eight Feels", "de": "Acht Schiffe, acht Gefühle", "fr": "Huit vaisseaux, huit sensations", "it": "Otto navi, otto sensazioni", "es": "Ocho naves, ocho sensaciones", "pt": "Oito naves, oito sensações", "ja": "8機、8つの感触" },
-  "ships.sub": { "en": "Same one-button feel, different tradeoffs.", "de": "Dasselbe Ein-Knopf-Gefühl, unterschiedliche Kompromisse.", "fr": "La même sensation à un bouton, des compromis différents.", "it": "La stessa sensazione a un pulsante, compromessi diversi.", "es": "La misma sensación de un botón, compensaciones distintas.", "pt": "A mesma sensação de um botão, trade-offs diferentes.", "ja": "同じワンボタンの感触、違うトレードオフ。" },
-  "ships.tagPearl": { "en": "Starter, free", "de": "Starter, kostenlos", "fr": "Starter, gratuit", "it": "Starter, gratis", "es": "Inicial, gratis", "pt": "Inicial, grátis", "ja": "スターター、無料" },
+  "ships.head": {
+    "en": "Eight Ships, Eight Feels",
+    "de": "Acht Schiffe, acht Gefühle",
+    "fr": "Huit vaisseaux, huit sensations",
+    "it": "Otto navi, otto sensazioni",
+    "es": "Ocho naves, ocho sensaciones",
+    "pt": "Oito naves, oito sensações",
+    "ja": "8機、8つの感触"
+  },
+  "ships.sub": {
+    "en": "Same one-button feel, different tradeoffs.",
+    "de": "Dasselbe Ein-Knopf-Gefühl, unterschiedliche Kompromisse.",
+    "fr": "La même sensation à un bouton, des compromis différents.",
+    "it": "La stessa sensazione a un pulsante, compromessi diversi.",
+    "es": "La misma sensación de un botón, compensaciones distintas.",
+    "pt": "A mesma sensação de um botão, trade-offs diferentes.",
+    "ja": "同じワンボタンの感触、違うトレードオフ。"
+  },
+  "ships.tagPearl": {
+    "en": "Starter, free",
+    "de": "Starter, kostenlos",
+    "fr": "Starter, gratuit",
+    "it": "Starter, gratis",
+    "es": "Inicial, gratis",
+    "pt": "Inicial, grátis",
+    "ja": "スターター、無料"
+  },
   "ships.pearl": {
     "en": "The neutral baseline every run starts with - no perk, no penalty, just the feel of the ship.",
     "de": "Die neutrale Basis, mit der jeder Lauf beginnt - kein Vorteil, kein Nachteil, nur das reine Fluggefühl.",
@@ -412,24 +478,32 @@
     "ja": "金のコイン一枚あたりの通路拡張効果が大きいが、効果の減衰も速い。"
   },
   "ships.void": {
-    "en": "Carries more shield charge than any other ship, at the cost of some margin on close calls.",
-    "de": "Trägt mehr Schildladungen als jedes andere Schiff, dafür mit weniger Spielraum bei knappen Vorbeiflügen.",
-    "fr": "Porte plus de charges de bouclier que tout autre vaisseau, au prix d'un peu de marge sur les frôlés.",
-    "it": "Porta più cariche di scudo di qualsiasi altra nave, a costo di un po' di margine sugli sfioramenti.",
-    "es": "Lleva más carga de escudo que cualquier otra nave, a cambio de algo de margen en los roces.",
-    "pt": "Carrega mais cargas de escudo que qualquer outra nave, ao custo de um pouco de margem nas quase-colisões.",
-    "ja": "どの機体よりも多くシールドを蓄えられるが、ニアミスの猶予は少し狭い。"
+    "en": "Every third shield coin gives two shields instead of one, at the cost of some margin on close calls.",
+    "de": "Jede dritte Schildmünze gibt zwei Schilde statt einem, dafür mit weniger Spielraum bei knappen Vorbeiflügen.",
+    "fr": "Une pièce de bouclier sur trois donne deux boucliers au lieu d'un, au prix d'un peu de marge sur les frôlés.",
+    "it": "Una moneta scudo su tre dà due scudi invece di uno, a costo di un po' di margine sugli sfioramenti.",
+    "es": "Una de cada tres monedas de escudo da dos escudos en vez de uno, a cambio de algo de margen en los roces.",
+    "pt": "Uma em cada três moedas de escudo dá dois escudos em vez de um, ao custo de um pouco de margem nas quase-colisões.",
+    "ja": "3枚に1枚のシールドコインが、シールド2枚分になる。代わりにニアミスの猶予は少し狭い。"
   },
   "ships.nova": {
-    "en": "Pulls coins in from further away, with less ammo held in reserve.",
-    "de": "Zieht Münzen aus größerer Entfernung an, hat dafür weniger Munition in Reserve.",
-    "fr": "Attire les pièces de plus loin, avec moins de munitions en réserve.",
-    "it": "Attira le monete da più lontano, con meno munizioni di riserva.",
-    "es": "Atrae las monedas desde más lejos, con menos munición en reserva.",
-    "pt": "Atrai moedas de mais longe, com menos munição de reserva.",
-    "ja": "コインをより遠くから引き寄せるが、弾の残量は少なめ。"
+    "en": "Every magnet coin pulls coins in for much longer, with less ammo held in reserve.",
+    "de": "Jede Magnetmünze zieht Münzen deutlich länger an, dafür mit weniger Munition in Reserve.",
+    "fr": "Chaque pièce aimant attire les pièces bien plus longtemps, avec moins de munitions en réserve.",
+    "it": "Ogni moneta magnete attira le monete molto più a lungo, con meno munizioni di riserva.",
+    "es": "Cada moneda imán atrae las monedas mucho más tiempo, con menos munición en reserva.",
+    "pt": "Cada moeda ímã atrai moedas por muito mais tempo, com menos munição de reserva.",
+    "ja": "マグネットコインの効果がずっと長く続くが、弾の残量は少なめ。"
   },
-  "ships.tagSolaris": { "en": "Rare", "de": "Selten", "fr": "Rare", "it": "Rara", "es": "Rara", "pt": "Rara", "ja": "レア" },
+  "ships.tagSolaris": {
+    "en": "Rare",
+    "de": "Selten",
+    "fr": "Rare",
+    "it": "Rara",
+    "es": "Rara",
+    "pt": "Rara",
+    "ja": "レア"
+  },
   "ships.solaris": {
     "en": "The rarest ship in the roster - forgiving on close calls, built for players chasing the deepest runs.",
     "de": "Das seltenste Schiff im Roster - verzeiht knappe Vorbeiflüge, gebaut für die tiefsten Läufe.",
@@ -439,8 +513,15 @@
     "pt": "A nave mais rara do time - tolerante com quase-colisões, feita para quem busca as runs mais profundas.",
     "ja": "ロースター中もっとも希少な機体。ニアミスに寛容で、最深記録を狙うプレイヤー向け。"
   },
-
-  "s3.head": { "en": "Screenshots", "de": "Screenshots", "fr": "Captures d'écran", "it": "Screenshot", "es": "Capturas", "pt": "Capturas de tela", "ja": "スクリーンショット" },
+  "s3.head": {
+    "en": "Screenshots",
+    "de": "Screenshots",
+    "fr": "Captures d'écran",
+    "it": "Screenshot",
+    "es": "Capturas",
+    "pt": "Capturas de tela",
+    "ja": "スクリーンショット"
+  },
   "alt1": {
     "en": "TUNL title screen - one cave, every player, every day",
     "de": "TUNL Titelbildschirm - eine Höhle, alle Spieler, jeden Tag",
@@ -486,12 +567,51 @@
     "pt": "Tela de resumo do TUNL - veja seu ranking, o mundo inteiro voa na mesma caverna",
     "ja": "TUNLのデブリーフィング画面 - 順位をチェック、世界中が同じ洞窟を飛ぶ"
   },
-
-  "footer.support": { "en": "Support", "de": "Support", "fr": "Aide", "it": "Assistenza", "es": "Soporte", "pt": "Suporte", "ja": "サポート" },
-  "footer.privacy": { "en": "Privacy Policy", "de": "Datenschutz", "fr": "Confidentialité", "it": "Privacy", "es": "Privacidad", "pt": "Privacidade", "ja": "プライバシー" },
-  "footer.press": { "en": "Press", "de": "Presse", "fr": "Presse", "it": "Stampa", "es": "Prensa", "pt": "Imprensa", "ja": "プレス" },
-  "footer.devlog": { "en": "Devlog", "de": "Entwicklerblog", "fr": "Journal de dev", "it": "Diario di sviluppo", "es": "Diario de desarrollo", "pt": "Diário de desenvolvimento", "ja": "開発ブログ" },
-  "footer.howto": { "en": "How to play", "de": "Spielanleitung", "fr": "Comment jouer", "it": "Come si gioca", "es": "Cómo jugar", "pt": "Como jogar", "ja": "遊び方" },
+  "footer.support": {
+    "en": "Support",
+    "de": "Support",
+    "fr": "Aide",
+    "it": "Assistenza",
+    "es": "Soporte",
+    "pt": "Suporte",
+    "ja": "サポート"
+  },
+  "footer.privacy": {
+    "en": "Privacy Policy",
+    "de": "Datenschutz",
+    "fr": "Confidentialité",
+    "it": "Privacy",
+    "es": "Privacidad",
+    "pt": "Privacidade",
+    "ja": "プライバシー"
+  },
+  "footer.press": {
+    "en": "Press",
+    "de": "Presse",
+    "fr": "Presse",
+    "it": "Stampa",
+    "es": "Prensa",
+    "pt": "Imprensa",
+    "ja": "プレス"
+  },
+  "footer.devlog": {
+    "en": "Devlog",
+    "de": "Entwicklerblog",
+    "fr": "Journal de dev",
+    "it": "Diario di sviluppo",
+    "es": "Diario de desarrollo",
+    "pt": "Diário de desenvolvimento",
+    "ja": "開発ブログ"
+  },
+  "footer.howto": {
+    "en": "How to play",
+    "de": "Spielanleitung",
+    "fr": "Comment jouer",
+    "it": "Come si gioca",
+    "es": "Cómo jugar",
+    "pt": "Como jogar",
+    "ja": "遊び方"
+  },
   "footer.rights": {
     "en": "&copy; 2026 Theodoracatos. All rights reserved.",
     "de": "&copy; 2026 Theodoracatos. Alle Rechte vorbehalten.",
@@ -510,15 +630,58 @@
     "pt": "Música de <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a> via Pixabay.",
     "ja": "音楽: <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a> (Pixabay)"
   },
-  "footer.langLabel": { "en": "Language", "de": "Sprache", "fr": "Langue", "it": "Lingua", "es": "Idioma", "pt": "Idioma", "ja": "言語" },
-
+  "footer.langLabel": {
+    "en": "Language",
+    "de": "Sprache",
+    "fr": "Langue",
+    "it": "Lingua",
+    "es": "Idioma",
+    "pt": "Idioma",
+    "ja": "言語"
+  },
   "aria.musicPlay": {
-    "en": "Play title music", "de": "Titelmusik abspielen", "fr": "Lire la musique du titre", "it": "Riproduci la musica del titolo", "es": "Reproducir música del título", "pt": "Tocar música do título", "ja": "タイトル音楽を再生"
+    "en": "Play title music",
+    "de": "Titelmusik abspielen",
+    "fr": "Lire la musique du titre",
+    "it": "Riproduci la musica del titolo",
+    "es": "Reproducir música del título",
+    "pt": "Tocar música do título",
+    "ja": "タイトル音楽を再生"
   },
   "aria.musicPause": {
-    "en": "Pause title music", "de": "Titelmusik pausieren", "fr": "Mettre en pause la musique du titre", "it": "Metti in pausa la musica del titolo", "es": "Pausar música del título", "pt": "Pausar música do título", "ja": "タイトル音楽を一時停止"
+    "en": "Pause title music",
+    "de": "Titelmusik pausieren",
+    "fr": "Mettre en pause la musique du titre",
+    "it": "Metti in pausa la musica del titolo",
+    "es": "Pausar música del título",
+    "pt": "Pausar música do título",
+    "ja": "タイトル音楽を一時停止"
   },
   "aria.demo": {
-    "en": "TUNL gameplay demo", "de": "TUNL Gameplay-Demo", "fr": "Démo de gameplay de TUNL", "it": "Demo di gameplay di TUNL", "es": "Demo de gameplay de TUNL", "pt": "Demo de gameplay do TUNL", "ja": "TUNLのゲームプレイデモ"
+    "en": "TUNL gameplay demo",
+    "de": "TUNL Gameplay-Demo",
+    "fr": "Démo de gameplay de TUNL",
+    "it": "Demo di gameplay di TUNL",
+    "es": "Demo de gameplay de TUNL",
+    "pt": "Demo de gameplay do TUNL",
+    "ja": "TUNLのゲームプレイデモ"
+  },
+  "f9b.h": {
+    "en": "Paint your ship",
+    "de": "Lackiere dein Schiff",
+    "fr": "Peins ton vaisseau",
+    "it": "Dipingi la tua nave",
+    "es": "Pinta tu nave",
+    "pt": "Pinte sua nave",
+    "ja": "機体をペイントしよう"
+  },
+  "f9b.p": {
+    "en": "Six liveries in the Paint shop, from a glowing stealth rim to a shifting aurora sweep. Buy a finish once with shards, then choose it for each ship you own. Purely cosmetic: no perks, no edge on the leaderboard.",
+    "de": "Sechs Lackierungen im Paint-Shop, vom leuchtenden Stealth-Rand bis zum wandernden Aurora-Schimmer. Einmal mit Shards kaufen, dann für jedes deiner Schiffe einzeln wählen. Rein kosmetisch: keine Boni, kein Vorteil in der Rangliste.",
+    "fr": "Six livrées dans l'atelier Paint, du liseré furtif lumineux au balayage d'aurore changeant. Achète une finition une fois avec des shards, puis choisis-la pour chacun de tes vaisseaux. Purement esthétique : aucun bonus, aucun avantage au classement.",
+    "it": "Sei livree nell'officina Paint, dal bordo stealth luminoso al riflesso mutevole dell'aurora. Acquista una finitura una volta con gli shard, poi scegli quale usare su ogni nave. Solo estetica: nessun bonus, nessun vantaggio in classifica.",
+    "es": "Seis acabados en el taller Paint, desde un borde sigiloso brillante hasta un barrido de aurora cambiante. Compra un acabado una vez con shards y elígelo para cada nave que tengas. Solo estético: sin ventajas ni ventaja en la clasificación.",
+    "pt": "Seis pinturas na oficina Paint, de uma borda furtiva brilhante a um varrer de aurora cambiante. Compre um acabamento uma vez com shards e escolha-o para cada nave que você tem. Apenas estético: sem bônus, sem vantagem no ranking.",
+    "ja": "ペイントショップに6種類のカラーリング。光るステルスの縁取りから、移ろうオーロラの輝きまで。シャードで一度買えば、持っている機体ごとに選べる。見た目だけで、性能もランキングへの影響もなし。"
   }
 }
