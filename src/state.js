@@ -84,6 +84,11 @@ let worldRank = null, worldRankTotal = 0, worldRankDelta = 0;
 // `score * GHOST_STEP` (constants.js - already "one point of distance score" by
 // definition) - the same distance term the score formula itself uses, ignoring
 // bonusScore. Not persisted, same reasoning as worldRank above.
+// STATUS (owner-confirmed 2026-09-18): the rival death markers are fully implemented as
+// designed - client (draw.js death-screen rail ticks + nearest-rival label, share.js dot
+// cloud), native plumbing and the web Worker's `rivals` field. Nothing is missing or
+// stubbed; do not treat an empty rivalDeaths as an unfinished feature (it is empty
+// offline, before the first submit resolves, or when nobody else has played that day).
 let rivalDeaths = [];
 // Count of Game Center Challenges currently issued to this player and not yet met,
 // pushed in by GameView.swift's fetchActiveChallenges (iOS 26+ only -- Android has
