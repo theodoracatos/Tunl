@@ -35,6 +35,15 @@ let totalRuns = parseInt(localStorage.getItem('tunnel_total_runs') || '0');
 // (each run's `runNearMisses` banked in commitDeath(), same source
 // dailyMissionStats.nearMisses reads). Backs DODGE_ACHIEVEMENTS (constants.js).
 let lifetimeNearMisses = parseInt(localStorage.getItem('tunnel_lifetime_near_misses') || '0');
+// Lifetime score, summed across every run ever (each run's final `score` banked in
+// commitDeath()). Backs 'tunl_ach_score_100000' ("Sechs Stellen") - that achievement
+// used to check a single run's `best`, but the 2026-09-13 flight-plan rework made a
+// mine-dodge fail deterministically past a certain scrollX (see the "Mines are the
+// only thing that guarantees no run survives forever" doc in CLAUDE.md), so no input
+// sequence can reach a six-digit score in one run any more, at any skill level. Summed
+// across runs it stays honestly reachable through sustained play instead, same pattern
+// as lifetimeDist/lifetimeNearMisses above.
+let lifetimeScore = parseFloat(localStorage.getItem('tunnel_lifetime_score') || '0') || 0;
 let runsWithoutPB = parseInt(localStorage.getItem('tunnel_no_pb')   || '0');
 let top5 = _savedLastDay === _initToday ? JSON.parse(localStorage.getItem('tunnel_top5') || '[]') : [];
 let dailyBest = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tunnel_daily_best') || '0') : 0;
@@ -64,6 +73,18 @@ let _notifPromptYesRect = null, _notifPromptNoRect = null, _notifToggleRect = nu
 // submit hasn't come back yet), and the death screen falls back to the local list.
 // worldRankDelta is positive when the player climbed, since a smaller rank is better.
 let worldRank = null, worldRankTotal = 0, worldRankDelta = 0;
+// Other players' runs on today's leaderboard, pushed in alongside worldRank (native:
+// GameView.swift/MainActivity.kt's leaderboard-entries fetch; web: the Cloudflare
+// Worker's anonymous daily sample - see main.js _tunlNativeUpdate). Each entry is
+// { score, name }. `name` is only ever populated on iOS/Android, where a real Game
+// Center / Play Games display name comes back in the same call as the score - web
+// players are anonymous by design (no login, no name field in the D1 schema), so web
+// entries always carry name: ''. Position is APPROXIMATE: no platform stores a real
+// death world-x, only the final score, so draw.js/share.js derive wx as
+// `score * GHOST_STEP` (constants.js - already "one point of distance score" by
+// definition) - the same distance term the score formula itself uses, ignoring
+// bonusScore. Not persisted, same reasoning as worldRank above.
+let rivalDeaths = [];
 // Count of Game Center Challenges currently issued to this player and not yet met,
 // pushed in by GameView.swift's fetchActiveChallenges (iOS 26+ only -- Android has
 // no challenge system). Drives the small badge under the title screen's CHALLENGE
@@ -528,7 +549,8 @@ window._tunlBackfillAchievements = function backfillAchievements() {
     }
     if (best >= 1000)   report('tunl_ach_score_1000');
     if (best >= 10000)  report('tunl_ach_score_10000');
-    if (best >= 100000) report('tunl_ach_score_100000');
+    // Lifetime total, not a single run's best -- see the lifetimeScore doc above.
+    if (lifetimeScore >= 100000) report('tunl_ach_score_100000');
     if (streak >= 7)  report('tunl_ach_streak_7');
     if (streak >= 30) report('tunl_ach_streak_30');
     let _anyMaxed = false, _allFleetMaxed = true;

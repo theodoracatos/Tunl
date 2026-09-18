@@ -4790,6 +4790,115 @@ function drawDeathScreen() {
     const yRailLbl = railY + railH + step(0.042, DS_LBL, 1.45);
     lbl(targetTxt, L + railW, yRailLbl, FNT(0.75), 'right');
 
+    // Width the left column's own content (rivals line, reward chips) has to live in.
+    const chipMaxW = RX - L - W * 0.030;
+
+    // ── rivals, as marks ON the scale ─────────────────────────────────────────
+    // Other players' runs on today's board (state.js rivalDeaths doc). The rail is
+    // already a score axis, so a rival belongs on it as a position, not in a list of
+    // its own: "someone is a hair ahead of me" then reads as a tick just past the fill,
+    // the way the old in-tunnel PB ring read, instead of as two numbers to subtract.
+    // An earlier pass put these in the right column as named rows under TODAY TOP and
+    // it was the wrong home twice over -- two near-identical numeric lists stacked, and
+    // the one genuinely spatial idea in the feature rendered as text.
+    //
+    // Ticks cost NO vertical space (the rail is drawn either way), so they survive the
+    // short-screen case (H 371 and below) where every optional block on this screen is
+    // dropped; only the names line below yields. A rival past `target` has no tick:
+    // it is off this scale by definition, and someone beyond the record or the next
+    // milestone is not who the player is chasing on this run.
+    const RIVAL_TICK_MAX = 5;
+    const rivalsNear = rivalDeaths
+        .filter(r => r.score > 0 && r.score <= target)
+        .sort((p, q) => Math.abs(p.score - score) - Math.abs(q.score - score))
+        .slice(0, RIVAL_TICK_MAX);
+    sh(0);
+    // Reverse so the nearest is drawn last and sits on top of any it overlaps. It also
+    // stays quieter than the target tick above (0.45 white, 2.8 railH): the goal marker
+    // must not be out-shouted by a rival.
+    for (let i = rivalsNear.length - 1; i >= 0; i--) {
+        const lead = i === 0;
+        const rx   = L + railW * (rivalsNear[i].score / target);
+        // A tick sitting on the filled (day-accent) stretch is drawn as a dark notch, not
+        // a light mark: a white tick on the bright fill is what the light ones read as on
+        // the empty rail, and it disappears. That matters most for exactly the rival the
+        // player cares about -- the one a few points BEHIND them sits right under the
+        // fill's own end cap, which is where a light tick was invisible.
+        const onFill = rx < L + railW * frac;
+        ctx.fillStyle = onFill
+            ? `rgba(4,4,14,${a * (lead ? 0.75 : 0.42)})`
+            : `rgba(232,238,255,${a * (lead ? 0.70 : 0.30)})`;
+        ctx.fillRect(rx, railY - railH * (lead ? 0.42 : 0.22), 1.5, railH * (lead ? 2.0 : 1.5));
+    }
+
+    // The nearest rival by name, written as a GAP rather than an absolute score: "+6" is
+    // the number that decides whether the player taps PLAY AGAIN, and an absolute score
+    // makes them work it out.
+    //
+    // It shares the rail's own label line instead of taking one of its own, so like the
+    // ticks it costs ZERO vertical height. That is not tidiness: a line of its own was
+    // measured eating the flight band on a run that earned a mission reward and a shard
+    // payout -- the band yields before the chips do, so an extra line above it came
+    // straight out of the run's own pictures. Nothing here should cost the run's own
+    // pictures space to say something about other people.
+    //
+    // DELIBERATELY UNLABELLED. A "RIVALS" label in front measured wider than the name it
+    // introduced, and this slot is small enough that the label was the difference between
+    // a recognisable name and six characters of one ("Marc_F..."). A display name people
+    // chose themselves is the thing worth the pixels; what it is reads from the gap beside
+    // it and from the ticks directly above. Do not reintroduce a label here without
+    // re-measuring what it costs the name -- and note the i18n key it used (T.rivals) was
+    // deleted from all 15 locales with it, per the standing "no strings for UI that does
+    // not exist" rule.
+    //
+    // Only ONE name fits beside the target label; the rest of the field stays as ticks.
+    // Names exist only on iOS/Android (Game Center / Play Games hand one back with the
+    // score); web players are anonymous, so on web this is absent and the ticks carry the
+    // feature alone.
+    //
+    // Picked from the WHOLE field, not from the ticks: the ticks are bounded by the rail's
+    // scale, and on a record run the scale ends at the player's own score, so everyone
+    // ahead of them falls off it. Naming only an on-scale rival meant that exactly on the
+    // run worth beating -- a new record -- the screen showed whoever was behind instead of
+    // the person four points ahead, which is the reason to go again. The named rival can
+    // therefore be one without a tick; the gap is the point, and the ticks keep their own
+    // (honest) rule.
+    const rivalNamed = rivalDeaths
+        .filter(r => r.name && r.score > 0)
+        .sort((p, q) => Math.abs(p.score - score) - Math.abs(q.score - score))[0];
+    if (rivalNamed) {
+        const gapTxt = `${rivalNamed.score >= score ? '+' : '-'}${Math.abs(rivalNamed.score - score)}`;
+        // What is left of the label line once the target label (right-aligned at the rail's
+        // end) has taken its half. lbl() letterspaces what it draws (DS_LBL * 0.11 per
+        // glyph) and measureText does not, so that has to be added back or the name is set
+        // straight into the target label.
+        font(DS_LBL);
+        const targetW = ctx.measureText(targetTxt).width
+                      + Math.max(1, DS_LBL * 0.11) * targetTxt.length;
+        num(DS_TXT);
+        const gapW   = ctx.measureText(gapTxt).width + W * 0.006;
+        const availW = railW - targetW - W * 0.016 - gapW;
+        font(DS_TXT, 'normal');
+        let nm = rivalNamed.name;
+        if (ctx.measureText(nm).width > availW) {
+            while (nm.length > 1 && ctx.measureText(nm + '\u2026').width > availW) nm = nm.slice(0, -1);
+            nm += '\u2026';
+        }
+        // Even an abbreviated name plus its gap can overrun a narrow column; then there is
+        // genuinely no room for a name and the ticks stand alone.
+        if (ctx.measureText(nm).width <= availW) {
+            sh(0);
+            let sx = L;
+            ctx.fillStyle = DIM(0.92);
+            ctx.textAlign = 'left';
+            ctx.fillText(nm, sx, yRailLbl);
+            sx += ctx.measureText(nm).width + W * 0.006;
+            num(DS_TXT);
+            ctx.fillStyle = INK(0.80);
+            ctx.fillText(gapTxt, sx, yRailLbl);
+        }
+    }
+
     // Reward chips, wrapping inside the left column.
     const rewards = [];
     if (recordChip) rewards.push(recordChip);
@@ -4803,11 +4912,10 @@ function drawDeathScreen() {
     if (runCoins > 0) {
         // The banked total has no upper bound, so past 10000 it is rounded to "13k".
         const disp = shards >= 10000 ? Math.round(shards / 1000) + 'k' : shards;
-        let s = `+${runShardsBanked} ⧫  ·  ${disp} ⧫`;
+        let s = `+${runShardsBanked} ⧫  ·  ${disp} ⧫`;
         if (runShardsBanked < runCoins) s += `  (${T.dailyCap})`;
         rewards.push({ t: s, c: [255, 200, 97] });
     }
-    const chipMaxW = RX - L - W * 0.030;
     let cx = L, cy = yRailLbl + step(0.020, DS_LBL, 0.75);
     for (const rw of rewards) {
         const w = chipW(rw.t);

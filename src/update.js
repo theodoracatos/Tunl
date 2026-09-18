@@ -1076,6 +1076,16 @@ function commitDeath() {
         }
     }
     if (score > 0) {
+        // Lifetime score ("Sechs Stellen" / tunl_ach_score_100000): summed across every
+        // run, since a single run can no longer reach a six-digit score at all -- see
+        // the lifetimeScore doc in state.js. Mirrors the lifetimeDist crossing check
+        // above; unlike that one there's only one tier, so no loop.
+        const _scoreBefore = lifetimeScore;
+        lifetimeScore += score;
+        localStorage.setItem('tunnel_lifetime_score', String(Math.round(lifetimeScore)));
+        if (_scoreBefore < 100000 && lifetimeScore >= 100000) {
+            window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: 'tunl_ach_score_100000' });
+        }
         top5 = [...top5, score].sort((a, b) => b - a).slice(0, 5);
         localStorage.setItem('tunnel_top5', JSON.stringify(top5));
         window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'submit', score });

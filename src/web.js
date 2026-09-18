@@ -151,6 +151,16 @@ function _webApplyRank(j) {
     if (j && typeof j.rank === 'number' && j.rank > 0 && typeof window._tunlNativeUpdate === 'function') {
         window._tunlNativeUpdate({ worldRank: j.rank, worldRankTotal: j.total | 0 });
     }
+    // Anonymous rival scores for today (worker's rankFor doc) -- independent of the
+    // rank check above, since the sample exists even before this browser's own first
+    // submit resolves. Web has no name to attach (see state.js rivalDeaths doc), so
+    // name is always '' here; draw.js's named rival rows never show on web as a
+    // result, only share.js's unlabeled dots do.
+    if (j && Array.isArray(j.rivals) && typeof window._tunlNativeUpdate === 'function') {
+        window._tunlNativeUpdate({
+            rivalDeaths: j.rivals.filter(s => typeof s === 'number' && s > 0).map(s => ({ score: s, name: '' }))
+        });
+    }
 }
 
 function webFetchRank() {

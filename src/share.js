@@ -257,6 +257,29 @@ function drawRunProfile(g, x0, y0, w, h, opts) {
         }
     }
 
+    // Other players' approximate death points on today's board (state.js rivalDeaths
+    // doc): small, unlabeled dots. Unlike the PB tick above these carry no name -- this
+    // canvas is the shareable card/backdrop, not a list, so it reads as a scatter
+    // ("here's where others ended up"), not as individual callouts (those are the death
+    // screen's named rival rows, draw.js). Gated on the same showMarker flag as the PB
+    // tick and the ship below: nowhere this function is called wants landmarks without
+    // also wanting this one. Position is the same score*GHOST_STEP approximation used
+    // everywhere else rivalDeaths shows up.
+    if (showMarker && rivalDeaths.length) {
+        g.save();
+        for (const rv of rivalDeaths) {
+            const rwx = rv.score * GHOST_STEP;
+            if (rwx <= 0 || rwx > wxMax) continue;
+            const rb  = _profileBounds(rwx);
+            const rx  = xOf(rwx), rym = yOf((rb.top + rb.bot) / 2);
+            g.beginPath();
+            g.arc(rx, rym, 2.4 * k, 0, Math.PI * 2);
+            g.fillStyle = `rgba(220,228,255,${0.40 * A})`;
+            g.fill();
+        }
+        g.restore();
+    }
+
     // Death point -- the ship the run was actually flown in, at the spot it ended,
     // nose forward the way it flies in game (_shipGlyph above; draw.js's own ship
     // routines can't target this offscreen canvas). Skin colour so the card shows

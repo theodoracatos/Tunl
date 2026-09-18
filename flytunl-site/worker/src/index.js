@@ -6,9 +6,16 @@
 // ============================================================
 //  Leaderboard endpoints (see ALLOWED_ORIGINS below for what's accepted):
 //    GET  /t                 -> { t } a short-lived signed token
-//    GET  /r?d=<day>&id=<id> -> { rank, total, best } for one player on one day
-//    POST /s   { d, s, p, id, tok } -> records the score, returns { rank, total, best }
+//    GET  /r?d=<day>&id=<id> -> { rank, total, best, rivals } for one player on one day
+//    POST /s   { d, s, p, id, tok } -> records the score, returns { rank, total, best, rivals }
 //    POST /ga  { cid, sid, dl, dt } -> relays one page_view to GA4
+//
+//  `rivals` (added for the client's rival-death-dots feature, see src/state.js
+//  rivalDeaths doc) is up to 20 other players' scores for that day, numbers only -
+//  no pid ever leaves this table, matching the web build's no-login, anonymous-by-
+//  design identity model (see schema.sql: `pid` is a random per-browser id, no name
+//  field exists). Native (iOS/Android) gets real display names for the same feature
+//  from Game Center/Play Games directly - this endpoint has no equivalent to offer.
 //
 //  Storage: D1 (see schema.sql). One row per (day, player); the best score wins.
 //  A daily cron prunes rows older than 45 days.
@@ -108,9 +115,18 @@ async function rankFor(db, day, pid) {
   const row = await db.prepare('SELECT score FROM scores WHERE day = ?1 AND pid = ?2').bind(day, pid).first();
   const best = row ? row.score : null;
   const total = (await db.prepare('SELECT COUNT(*) AS c FROM scores WHERE day = ?1').bind(day).first())?.c || 0;
-  if (best == null) return { rank: null, total, best: null };
+  // Anonymous sample of today's OTHER scores (numbers only, see the doc comment
+  // above) for the client's rival-death-dots feature. Ordered by score rather than
+  // "nearest to this player" on purpose: with the field sizes this table actually
+  // sees (see project memory - most days 0-4 distinct players), "top 20" already is
+  // "everyone", and picking by score needs no second round trip once `best` is known.
+  const rivalRows = await db.prepare(
+    'SELECT score FROM scores WHERE day = ?1 AND pid != ?2 ORDER BY score DESC LIMIT 20'
+  ).bind(day, pid).all();
+  const rivals = (rivalRows && rivalRows.results || []).map(r => r.score);
+  if (best == null) return { rank: null, total, best: null, rivals };
   const above = (await db.prepare('SELECT COUNT(*) AS c FROM scores WHERE day = ?1 AND score > ?2').bind(day, best).first())?.c || 0;
-  return { rank: above + 1, total, best };
+  return { rank: above + 1, total, best, rivals };
 }
 
 // ── Campaign click tracking ──────────────────────────────────────────

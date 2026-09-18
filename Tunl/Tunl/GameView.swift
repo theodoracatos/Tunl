@@ -341,6 +341,40 @@ struct GameView: UIViewRepresentable {
                     DispatchQueue.main.async {
                         self?.webView?.evaluateJavaScript("window._tunlNativeUpdate && window._tunlNativeUpdate(\(json))")
                     }
+                    self?.fetchRivalDeaths(board: dailyBoard, totalPlayers: totalPlayers)
+                }
+            }
+        }
+
+        // Death-screen rival markers (src/draw.js "nearby rivals" block, src/share.js's
+        // dot cloud - see src/state.js's rivalDeaths doc). A second loadEntries call on
+        // the same daily board, scoped to however many players actually exist today: the
+        // project's own leaderboard audit found most days sit at 0-4 distinct players, so
+        // requesting a fixed range like (1, 20) unconditionally would risk an
+        // out-of-bounds range on a near-empty day, and GameKit's documented behavior for
+        // that case isn't solid enough to rely on - clamp first rather than find out live.
+        // Names come back in the same call as the score, at no extra Game Center
+        // entitlement beyond what loadEntries already needed for the rank fetch above.
+        private func fetchRivalDeaths(board: GKLeaderboard, totalPlayers: Int) {
+            guard totalPlayers > 0 else { return }
+            let count = min(20, totalPlayers)
+            board.loadEntries(for: .global, timeScope: .allTime,
+                               range: NSRange(location: 1, length: count)) { [weak self] _, entries, _, error in
+                guard error == nil, let entries else { return }
+                // Exclude the local player - "rivals" means someone else's run, and
+                // they're already the subject of the rank line above.
+                let localID = GKLocalPlayer.local.gamePlayerID
+                let rivals: [[String: Any]] = entries
+                    .filter { $0.player.gamePlayerID != localID }
+                    .map { ["score": $0.score, "name": $0.player.displayName] }
+                // JSONSerialization, not string interpolation: display names are
+                // arbitrary player-chosen text (quotes, backslashes, emoji all legal)
+                // and every other _tunlNativeUpdate payload in this file has gotten away
+                // with hand-built JSON only because its fields were all numeric/boolean.
+                guard let data = try? JSONSerialization.data(withJSONObject: ["rivalDeaths": rivals]),
+                      let json = String(data: data, encoding: .utf8) else { return }
+                DispatchQueue.main.async {
+                    self?.webView?.evaluateJavaScript("window._tunlNativeUpdate && window._tunlNativeUpdate(\(json))")
                 }
             }
         }

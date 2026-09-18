@@ -39,6 +39,17 @@ window._tunlNativeUpdate = function (state) {
     if (typeof state.worldRankTotal === 'number' && state.worldRankTotal > 0) {
         worldRankTotal = state.worldRankTotal;
     }
+    // Other players' runs on today's board (state.js rivalDeaths doc). Re-validated here
+    // rather than trusted, since this crosses the native/JS bridge (or, on web, an HTTP
+    // response) the same way every other _tunlNativeUpdate field does. Capped at 20 --
+    // plenty for both the death screen's nearest-few rows and the share card's dot cloud,
+    // and small enough that a malformed payload can't bloat the object.
+    if (Array.isArray(state.rivalDeaths)) {
+        rivalDeaths = state.rivalDeaths
+            .filter(r => r && typeof r.score === 'number' && r.score > 0)
+            .slice(0, 20)
+            .map(r => ({ score: r.score, name: typeof r.name === 'string' ? r.name.slice(0, 24) : '' }));
+    }
     // Outstanding Game Center Challenges for this player, pushed from
     // GameView.swift (fetchActiveChallenges) at auth, after each score submit, and
     // when one arrives or is completed live. Drives the CHALLENGE icon badge on the

@@ -351,7 +351,9 @@ const DODGE_ACHIEVEMENTS = [
 // is final. Per-run, not a persisted lifetime stat -- like FLIGHT_ACHIEVEMENTS,
 // deliberately NOT backfilled since a past run's coin-free-ness can't be reconstructed
 // after the fact.
-const PACIFIST_ACH_SCORE = 233;
+// Raised 233 -> 250 on 2026-09-17 (user request, same pass as NO_BONUS_ACH_SCORE above) -
+// nudged just past the difficulty-plateau score so it no longer sits exactly on _prog=1.
+const PACIFIST_ACH_SCORE = 250;
 const PACIFIST_ACH_ID = 'tunl_ach_pacifist';
 
 // "Perfect Sprint" achievement: reach SPRINT_ACH_SCORE within SPRINT_ACH_MAX_SEC of real
@@ -371,7 +373,10 @@ const SPRINT_ACH_ID = 'tunl_ach_sprint';
 // by a shield or the post-hit invuln window still counts as a hit here, since the ship
 // still got hit). Checked live, guarded by `noHitAchFired` (state.js) for the same
 // re-fire reason as SPRINT_ACH above. Per-run, not backfilled.
-const NO_HIT_ACH_SCORE = 233;
+// Raised 233 -> 250 on 2026-09-17 (user request, same pass as PACIFIST_ACH_SCORE above) -
+// same reasoning: 233 sits exactly on the difficulty-plateau score (_prog=1), nudged
+// just past it so this no longer lands exactly on that boundary either.
+const NO_HIT_ACH_SCORE = 250;
 const NO_HIT_ACH_ID = 'tunl_ach_no_hit';
 
 // "Ohne Bonus" (no-bonus run) achievement: reach NO_BONUS_ACH_SCORE in a single run
@@ -381,7 +386,13 @@ const NO_HIT_ACH_ID = 'tunl_ach_no_hit';
 // (blue/red/orange/green/bomb) are still fair game. Checked against
 // `runCoinsByType.gold` (state.js), live, guarded by `noBonusAchFired`. Per-run, not
 // backfilled.
-const NO_BONUS_ACH_SCORE = 233;
+// Raised 233 -> 500 on 2026-09-17 (user request): unlike PACIFIST_ACH/NO_HIT_ACH, which
+// forbid every coin or every hit, this only forbids ONE type while every other coin stays
+// fair game, so 233 was trivial to clear on purpose alone - the same score threshold as
+// the two much stricter achievements undersold it. 500 sits at the upper end of what a
+// "good" tier run reaches post-rebalance (see project_balance_pass_2026-09-11 memory),
+// so it is genuinely harder to hit than 233 without needing perfect play.
+const NO_BONUS_ACH_SCORE = 500;
 const NO_BONUS_ACH_ID = 'tunl_ach_no_bonus';
 
 // "Boulder Meister" achievement: thread BOULDER_MEISTER_TARGET boulders' NARROW
@@ -393,7 +404,7 @@ const NO_BONUS_ACH_ID = 'tunl_ach_no_bonus';
 // happened, same x-crossing idiom the warp portal ring uses. `runBoulderNarrowPasses`
 // (state.js) only ever advances by 1, so a plain `=== target` check fires it exactly
 // once. Per-run, not backfilled.
-const BOULDER_MEISTER_TARGET = 5;
+const BOULDER_MEISTER_TARGET = 3;
 const BOULDER_MEISTER_ID = 'tunl_ach_boulder_meister';
 
 // ── Ship mastery ──────────────────────────────────────────────────────

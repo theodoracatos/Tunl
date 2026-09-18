@@ -366,8 +366,10 @@ function triggerMilestone(n) {
                      life: 1.1, r: 1.5+Math.random()*3, h: 40+Math.random()*25 });
     }
     sfxMilestone(n);
-    if (n === 1000 || n === 10000 || n === 100000) {
-        const _id = n === 1000 ? 'tunl_ach_score_1000' : n === 10000 ? 'tunl_ach_score_10000' : 'tunl_ach_score_100000';
+    // tunl_ach_score_100000 ("Sechs Stellen") is NOT here -- it's a lifetime-score
+    // total now, not a single run's milestone. See the lifetimeScore doc in state.js.
+    if (n === 1000 || n === 10000) {
+        const _id = n === 1000 ? 'tunl_ach_score_1000' : 'tunl_ach_score_10000';
         window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: _id });
     }
 }

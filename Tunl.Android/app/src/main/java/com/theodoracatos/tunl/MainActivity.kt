@@ -32,6 +32,7 @@ import com.google.android.gms.games.PlayGames
 import com.google.android.gms.games.leaderboard.LeaderboardVariant
 import com.google.android.play.core.review.ReviewManagerFactory
 import com.google.firebase.analytics.FirebaseAnalytics
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
@@ -638,8 +639,52 @@ class MainActivity : ComponentActivity() {
                     "window._tunlNativeUpdate && window._tunlNativeUpdate(" +
                         "{\"worldRank\":$rank,\"worldRankTotal\":$total})"
                 )
+                fetchRivalDeaths(total)
             }
             .addOnFailureListener { e -> Log.w("TunlPlayGames", "Could not load rank", e) }
+    }
+
+    // Death-screen rival markers (src/draw.js "nearby rivals" block, src/share.js's dot
+    // cloud - see src/state.js's rivalDeaths doc). loadTopScores gives a real display
+    // name in the same call as the score, at no extra Play Games permission beyond what
+    // fetchWorldRank already needed. Capped to the daily variant's own player count
+    // (from the metadata call above) so a near-empty day - the project's own leaderboard
+    // audit found most days sit at 0-4 distinct players - never asks for more results
+    // than exist. Mirrors GameView.swift's fetchRivalDeaths.
+    private fun fetchRivalDeaths(totalPlayers: Long) {
+        if (totalPlayers <= 0) return
+        val count = minOf(20L, totalPlayers).toInt()
+        PlayGames.getPlayersClient(this).currentPlayerId
+            .addOnSuccessListener { localId ->
+                PlayGames.getLeaderboardsClient(this)
+                    .loadTopScores(getString(R.string.leaderboard_id), LeaderboardVariant.TIME_SPAN_DAILY,
+                        LeaderboardVariant.COLLECTION_PUBLIC, count)
+                    .addOnSuccessListener { data ->
+                        val scores = data.get() ?: return@addOnSuccessListener
+                        val buffer = scores.scores
+                        // JSONArray/JSONObject, not string concatenation: display names are
+                        // arbitrary player-chosen text (quotes, backslashes, emoji all legal),
+                        // the same reasoning as GameView.swift's JSONSerialization use.
+                        val rivals = JSONArray()
+                        for (i in 0 until buffer.count) {
+                            val entry = buffer.get(i)
+                            // Exclude the local player - "rivals" means someone else's run,
+                            // and they're already the subject of the rank line above.
+                            if (entry.scoreHolder?.playerId == localId) continue
+                            rivals.put(JSONObject().apply {
+                                put("score", entry.rawScore)
+                                put("name", entry.scoreHolderDisplayName ?: "")
+                            })
+                        }
+                        scores.release()
+                        runJs(
+                            "window._tunlNativeUpdate && window._tunlNativeUpdate(" +
+                                "{\"rivalDeaths\":$rivals})"
+                        )
+                    }
+                    .addOnFailureListener { e -> Log.w("TunlPlayGames", "Could not load rivals", e) }
+            }
+            .addOnFailureListener { e -> Log.w("TunlPlayGames", "Could not load local player id", e) }
     }
 
     // Mirrors GameView.swift's presentShare: hands the daily run card (src/share.js) to
