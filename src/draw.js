@@ -2836,19 +2836,17 @@ function drawTitleScreen() {
     // TUNL wordmark. The "U" is not a glyph: it is stroked as an open channel with a gem
     // glowing inside, so the mark depicts the thing you fly through. Chakra Petch (fonts.js)
     // is proportional, so nothing here may assume a shared advance width the way the
-    // Courier version did: cap height comes off 'T', stem width off 'I' (its ink box IS
-    // its stem), and each letter advances by its own measured width. The U's bottom
-    // corners are chamfered to match the typeface's own clipped corners. If the webfont
-    // never loaded, the same measurements simply describe the fallback face.
+    // Courier version did: cap height comes off 'T', and each letter advances by its own
+    // measured width. The U's bottom corners are chamfered to match the typeface's own
+    // clipped corners. If the webfont never loaded, the same measurements simply describe
+    // the fallback face.
     const fontPx = FS * 0.090;
     ctx.font = `bold ${fontPx}px ${FONT_UI}`;
     // Alignment first: measureText's bounding boxes are relative to the CURRENT
     // textAlign/textBaseline, and every offset below assumes left/alphabetic.
     ctx.textAlign    = 'left';
     ctx.textBaseline = 'alphabetic';
-    const inkW   = m => (m.actualBoundingBoxLeft || 0) + (m.actualBoundingBoxRight || 0);
     const capH   = ctx.measureText('T').actualBoundingBoxAscent || fontPx * 0.70;
-    const stem   = Math.max(1.5, inkW(ctx.measureText('I')) || fontPx * 0.13);
     const track  = fontPx * 0.05;
     const mU     = ctx.measureText('U');
     const advT = ctx.measureText('T').width, advU = mU.width;
@@ -2872,15 +2870,26 @@ function drawTitleScreen() {
     drawGlyph('T');
     lx += advT + track;
 
-    // The U channel, as a centreline path stroked at the font's own stem width. Its ink
-    // box (from the real 'U' glyph) sets the outer edges, so it lines up with T/N/L on cap
-    // height and baseline; butt caps keep the open top ends exactly at cap height.
+    // The U channel, as a centreline path stroked at a fixed fraction of cap height. Its
+    // ink box (from the real 'U' glyph) sets the outer edges, so it lines up with T/N/L on
+    // cap height and baseline; butt caps keep the open top ends exactly at cap height.
     const uL   = lx - (mU.actualBoundingBoxLeft || 0);
     const uR   = lx + (mU.actualBoundingBoxRight || advU);
-    // Stroked thinner than the font's own stem (0.51x): at full stem weight the hollow U
-    // read as heavier than the solid T/N/L next to it (reported on device 2026-09-16).
-    // The outer ink edges still sit on the real glyph's box, so width and baseline match.
-    const uStroke = stem * 0.51;
+    // uStroke used to be derived from ctx.measureText('I')'s ink box ("the font's own stem
+    // width") times 0.51, tuned down from full stem weight which "read as heavier than the
+    // solid T/N/L next to it" (reported on device 2026-09-16). That measurement turned out
+    // to disagree badly between rendering engines for Chakra Petch's 'I' at this weight -
+    // WebKit (iOS WKWebView, where the 0.51x tuning happened) and Blink (desktop Chrome)
+    // returned ink-box widths roughly 2x apart for the identical loaded webfont, so the
+    // same 0.51x multiplier produced a visibly thinner U channel on the web build only
+    // (reported 2026-09-18, confirmed by comparing a browser screenshot against a
+    // simulator screenshot pixel-for-pixel). capH (T's measured ascent) does not show this
+    // disagreement - T/N/L render identically on both engines - so uStroke is now a fixed
+    // fraction of capH instead: 0.20, calibrated by measuring the shipped app screenshot's
+    // actual stroke widths (U's channel sits at essentially the same width as T's own
+    // stem, not half of it - the 0.51x number was only ever correcting for WebKit's
+    // inflated 'I' measurement, not describing the intended visual weight).
+    const uStroke = Math.max(1.5, capH * 0.20);
     const xl   = uL + uStroke / 2, xr = uR - uStroke / 2;
     const yTop = logoBase - capH, yBot = logoBase - uStroke / 2;
     const cham = Math.min((xr - xl) * 0.30, uStroke * 1.6);
