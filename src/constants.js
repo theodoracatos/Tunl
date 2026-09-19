@@ -115,7 +115,7 @@ const SHIP_NOZZLE_X = -0.92, SHIP_NOZZLE_Y = 0.50;
 // only ~0.55-0.8 PR vertically (0.98 top-down); raised to 60 deg on 2026-09-19 so both
 // swing wings read, which also brings the span back to ~0.85 PR. SHIP3D_FIN_SCALE is the lever. Liveries are not mapped onto the model
 // yet (flies FACTORY). A DEV_ flag so the pre-push hook refuses to ship it switched on.
-const DEV_SHIP_3D      = true;
+const DEV_SHIP_3D      = false;
 const SHIP3D_ROLL_BASE = 60;    // degrees: 90 = today's top view, 0 = pure profile
 const SHIP3D_ROLL_AMP  = 10;    // degrees of roll at full climb / full fall
 const SHIP3D_FIN_SCALE = 1.0;   // fin height, x real SR-71 proportion
