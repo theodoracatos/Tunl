@@ -266,6 +266,8 @@ let planetsFlown = parseInt(localStorage.getItem('tunnel_planets_flown') || '0')
 let stardust = parseInt(localStorage.getItem('tunnel_stardust') || '0');
 let _homeBtnRect = null, _playBtnRect = null, _shareBtnRect = null;
 let _continueBtnRect = null;
+// Web app-pitch store buttons (draw.js drawWebContinuePromo), null while it is not up.
+let _promoAppleBtnRect = null, _promoPlayBtnRect = null;
 // >0 while the death-screen SHARE button should read "link copied" instead of
 // "share" - set by share.js's desktop clipboard fallback, decayed in update.js.
 let _shareCopiedT = 0;
@@ -424,6 +426,10 @@ let hullScratches = 0, lastSectorShown = 0;
 // freezes deadT so a slow-loading/long-watched ad can't let the auto-commit fire out
 // from under a decision the player already made.
 let continuesUsedThisRun, continueOfferPending, continueAdPending;
+// Web only (constants.js WEB_CONTINUE_PROMO_SEC doc): the app pitch that stands in for
+// the rewarded video. webPromoT counts up while the promo screen is on; webPromoOn is
+// what draw.js/input.js route on. Never set in either app - isWeb() gates every write.
+let webPromoOn = false, webPromoT = 0;
 // Revive countdown after a granted continue (constants.js REVIVE_COUNTDOWN_SEC doc),
 // counted down while phase === 'revive'. Reaching 0 flips phase back to 'play'.
 let reviveCountdownT;

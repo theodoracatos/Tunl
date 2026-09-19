@@ -459,7 +459,7 @@ The placement vetoes still apply but only decide geometry - **retune by the meas
 **Hull scratches** (`HULL_SCRATCHES` = 2, from the tunnel entry, for the **whole run**;
 `update.js` `hullScratch`): a lethal-wall contact spends one - clamp, bounce, "SCRAPE!"
 notif, HUD diamonds bottom-right - instead of ending the run. Counts as a hit for the
-No-Hit achievement. **The grace after a scratch is wall-only** (`WALL_GRACE_SEC`,
+No-Hit achievement. **A rewarded continue repairs them** - see Ad cadence. **The grace after a scratch is wall-only** (`WALL_GRACE_SEC`,
 `state.js wallGraceT`): the wall clamps instead of scratching again, but stalactites,
 mines, boulders and shots stay lethal and the ship does not blink. It was the full
 `HIT_INVULN_SEC` while scratches expired at S3; carried into the deep run that would let a
@@ -1460,7 +1460,25 @@ That is the only *forced* ad. There are also two **opt-in rewarded videos**, eac
 own dedicated AdMob unit and each still shown to Remove Ads owners (Remove Ads buys out
 the forced interstitial, not a video the player actively taps):
 - **Rewarded continue** (8.1) - offered once per run past score 25 on death, revives the
-  run. See the Rewarded continue notes in `constants.js`.
+  run **and repairs the hull back to `HULL_SCRATCHES`** (2026-09-19, on request:
+  `grantRevive` also resets `hullScratches`/`wallGraceT` and says so with a `+HULL`
+  notif). Without it the ad bought a few seconds at the hardest point of the run, since
+  spending the scratches is usually what got the player there. Safe: scratches are
+  wall-only and run-scoped, no placement, `rng()` or leaderboard number reads them. See
+  the Rewarded continue notes in `constants.js`.
+- **Web has no rewarded video, so the offer slot carries the app pitch instead**
+  (2026-09-19, `constants.js WEB_CONTINUE_PROMO_SEC` = 15s, `draw.js`
+  `drawWebContinuePromo`). `rewardedAdReady` is false forever on web (the Ad Manager
+  network code in `ads-web.js` is still a placeholder and AdSense rejected the site), so
+  the one moment a player most wants what the app has said nothing at all. Now the ring
+  appears anyway, captioned `T.secondLifeApp` ("second life - in the app") and carrying
+  "+1" rather than a play triangle, and a tap opens a card - day accent, the player's own
+  ship, both store buttons - for exactly the length of a rewarded video, dismissible from
+  `WEB_PROMO_DISMISS_SEC` (2.5s) like an ad's skip. **It never grants a revive** (the
+  pitch is that the second life is app-only, and a free one on web would outrank an app
+  player who watched an ad for it on the shared leaderboard), and **the caption is honest
+  before the tap** so nothing here is a bait-and-switch. `isWeb()`-gated end to end; both
+  apps still decide on `rewardedAdReady` alone.
 - **Rewarded shard bonus** (8.2) - a row at the bottom of the Missions drawer: watch an
   ad once per UTC day for a flat `SHARDS_AD_REWARD` (20) shards, exempt from
   `DAILY_SHARD_CAP` like a mission reward. Native plumbing

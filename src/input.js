@@ -291,12 +291,36 @@ function onDown(e) {
     // CONTINUE_OFFER_SEC doc. Swallows every tap while it's up rather than falling
     // through, since _homeBtnRect etc. are still null at this point anyway
     // (drawDeathScreen hasn't run yet).
+    // Web app pitch (constants.js WEB_CONTINUE_PROMO_SEC): while it is up it owns every
+    // input, keyboard included -- without this a Space press would fall through to the
+    // restart branch below and start a run behind the screen, since deadT is frozen and
+    // may already be past DEATH_INTERACTIVE_SEC by the time the promo opens. The two
+    // store buttons open the store; anything else closes it once the skip gate has
+    // passed, exactly like a rewarded video's close button.
+    if (phase === 'dead' && webPromoOn) {
+        if (e) {
+            const rect = cv.getBoundingClientRect();
+            const cx = (e.clientX - rect.left) * (W / rect.width);
+            const cy = (e.clientY - rect.top)  * (H / rect.height);
+            if (_promoAppleBtnRect && inRect(cx, cy, _promoAppleBtnRect)) {
+                sfxUiTap(); window.open(APP_STORE_URL, '_blank', 'noopener'); return;
+            }
+            if (_promoPlayBtnRect && inRect(cx, cy, _promoPlayBtnRect)) {
+                sfxUiTap(); window.open(PLAY_STORE_URL, '_blank', 'noopener'); return;
+            }
+        }
+        if (webPromoT >= WEB_PROMO_DISMISS_SEC) { sfxUiTap(); closeWebPromo(); }
+        return;
+    }
     if (phase === 'dead' && continueOfferPending && !continueAdPending && e) {
         const rect = cv.getBoundingClientRect();
         const cx = (e.clientX - rect.left) * (W / rect.width);
         const cy = (e.clientY - rect.top)  * (H / rect.height);
         if (_continueBtnRect && inCircle(cx, cy, _continueBtnRect)) {
             sfxUiTap();
+            // Web has no rewarded video behind this ring -- the tap opens the app pitch
+            // instead, and never revives (constants.js WEB_CONTINUE_PROMO_SEC).
+            if (isWeb()) { webPromoOn = true; webPromoT = 0; return; }
             continueAdPending = true;
             window.webkit?.messageHandlers?.ads?.postMessage({ action: 'reviveRequest', score });
         }

@@ -41,6 +41,7 @@ function titleScreen() {
     safeEndWx = 0; safeCloseWx = 1; wallsLiveShown = false;
     hullScratches = 0; lastSectorShown = 0;
     continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;
+    webPromoOn = false; webPromoT = 0;
     reviveCountdownT = 0; interruptPaused = false;
     bullets = []; bulletAmmo = 0; bulletFireTimer = 0;
     ghostTrack = []; ghostY = null; ghostPitch = 0; ghostPassed = false;
@@ -110,6 +111,7 @@ function startPlay() {
     gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; slowPending = 0; slowFxVis = 0; slowFxPulseT = -1; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = []; hudSparks = []; hudBump = 0;
     invulnT = 0; wallGraceT = 0; deathCause = null;
     continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;
+    webPromoOn = false; webPromoT = 0;
     reviveCountdownT = 0; interruptPaused = false;
     bullets = []; bulletAmmo = 0; bulletFireTimer = 0;
     // Ghost: fresh recording buffer for this run; ghostPlay itself (today's best, from

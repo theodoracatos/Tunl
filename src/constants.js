@@ -1166,6 +1166,36 @@ const BULLET_HIT_PTS = { stal: 1, mine: 3, shot: 2 };
 // something a player can actually land. See drawContinueOffer's countdown ring, which
 // makes that budget visible rather than a silent cliff.
 const CONTINUE_OFFER_SEC = 2.8;   // 3.0 until 2026-09-19, -0.2s on request
+// ── Web: the second life lives in the app (2026-09-19) ───────────────
+// The rewarded continue is an APP feature: it is paid for by a rewarded video, and the
+// web build has no ad network behind it (ads-web.js still ships a placeholder Ad Manager
+// network code, and AdSense rejected flytunl.ch - see the project_web_ads_google_admanager
+// memory). Until now that just meant `rewardedAdReady` stayed false forever on web and the
+// offer never appeared at all: the one moment in the whole game where a player most wants
+// something the app has - the instant their run ended - said nothing.
+//
+// So on web the offer slot is kept and its CONTENT is swapped: the ring says "second life
+// - in the app", and tapping it opens drawWebContinuePromo() instead of a video. That
+// screen occupies exactly the slot the rewarded ad occupies in the apps, and lasts
+// WEB_CONTINUE_PROMO_SEC, the length of a rewarded video.
+//
+// Three rules, each load-bearing:
+//  - It never grants a revive. The pitch IS that the second life is app-only, and a web
+//    player who got one for free would both hear the opposite and carry an advantage
+//    into the shared daily leaderboard that app players have to watch an ad for.
+//  - The offer's own caption is honest BEFORE the tap (i18n secondLifeApp, not
+//    watchAdContinue), so nothing here is a bait-and-switch: a player taps because they
+//    want the app, not because they were promised a life and handed a billboard.
+//  - It is dismissible from WEB_PROMO_DISMISS_SEC on, exactly like a rewarded video's
+//    skip button. The full duration is the ceiling, not a toll.
+// isWeb()-gated end to end (CLAUDE.md's standing web/app isolation rule): in both apps
+// `rewardedAdReady` decides as it always did and none of this code runs.
+const WEB_CONTINUE_PROMO_SEC = 15;   // a rewarded video's own length
+const WEB_PROMO_DISMISS_SEC  = 2.5;  // before this, a tap can't close it (an ad's skip gate)
+// The two store links the promo offers. Written here rather than in draw.js because
+// share.js's SHARE_URL sets the precedent: one place per outbound URL in this repo.
+const APP_STORE_URL  = 'https://apps.apple.com/app/id6789721765';
+const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.theodoracatos.tunl';
 // Revive countdown (update.js grantRevive()/phase==='revive' branch): once the
 // reward lands, the world freezes with the ship parked at the recentered spot for
 // this long, showing a localized "READY" flash (T.ready, draw.js

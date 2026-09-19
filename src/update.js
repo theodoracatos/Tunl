@@ -93,7 +93,13 @@ function update(dt) {
         // Frozen while native has a rewarded ad on screen (continueAdPending) so a
         // slow load or a long watch can't let the timeout below fire out from under
         // a decision the player already made by tapping the offer.
-        if (!continueAdPending) deadT += dt;
+        // The web app pitch (constants.js WEB_CONTINUE_PROMO_SEC) stands exactly where
+        // the rewarded video stands in the apps, so it freezes deadT for the same reason.
+        if (!continueAdPending && !webPromoOn) deadT += dt;
+        if (webPromoOn) {
+            webPromoT += dt;
+            if (webPromoT >= WEB_CONTINUE_PROMO_SEC) closeWebPromo();
+        }
         flashA      = Math.max(0, flashA  - dt * 2.5);
         shake       = Math.max(0, shake   - dt * 30);
         if (_shareCopiedT > 0) _shareCopiedT -= dt;
@@ -104,7 +110,7 @@ function update(dt) {
         // frame (draw.js), so its tuned budget is offset by that -- otherwise 12.0 would
         // have silently shortened a window that a real-device pass already found too
         // short once. CONTINUE_OFFER_SEC keeps meaning "seconds the offer is on screen".
-        if (continueOfferPending && !continueAdPending && deadT >= CONTINUE_OFFER_SEC + DEATH_REPLAY_SEC) {
+        if (continueOfferPending && !continueAdPending && !webPromoOn && deadT >= CONTINUE_OFFER_SEC + DEATH_REPLAY_SEC) {
             continueOfferPending = false;
             commitDeath();
         }
@@ -925,6 +931,7 @@ function die(bypassShield = false) {
     phase = 'dead'; deadT = 0; flashA = 1.0; shake = 14; holding = false;
     _shareCopiedT = 0;
     _homeBtnRect = null; _playBtnRect = null; _shareBtnRect = null; _continueBtnRect = null;
+    _promoAppleBtnRect = null; _promoPlayBtnRect = null;
     // Impact feedback fires now, unconditionally -- a hit should always feel like a
     // hit, whether or not a rewarded continue ends up saving the run a moment later
     // (same principle the shield-absorb branch above already follows).
@@ -939,7 +946,11 @@ function die(bypassShield = false) {
     // floor the interstitial uses. When offered, the real bookkeeping below is held
     // until either the offer resolves to a decline (update.js's phase==='dead'
     // branch, at CONTINUE_OFFER_SEC) or grantRevive() undoes this hit entirely.
-    if (continuesUsedThisRun < MAX_CONTINUES_PER_RUN && score >= CONTINUE_MIN_SCORE && rewardedAdReady) {
+    // On web there is no rewarded video to be ready (constants.js WEB_CONTINUE_PROMO_SEC):
+    // the same slot opens anyway and carries the app pitch instead, so the one moment a
+    // player most wants what the app has is not silent there.
+    if (continuesUsedThisRun < MAX_CONTINUES_PER_RUN && score >= CONTINUE_MIN_SCORE
+        && (rewardedAdReady || isWeb())) {
         continueOfferPending = true;
         return true;
     }
@@ -1245,6 +1256,21 @@ function grantRevive() {
     const b = boundsAt(scrollX + PX);
     py = (b.top + b.bot) / 2;
     vy = 0;
+    // The hull is repaired with the run (2026-09-19, on request): a rewarded continue
+    // hands back the full HULL_SCRATCHES, not just the one life. A revive used to drop
+    // the player back into the deep cave with whatever scratches were left -- usually
+    // zero, since spending them is what got them here -- so the ad bought a few seconds
+    // at the hardest point of the run. Restoring them makes the watch worth it and
+    // costs nothing anyone else can see: scratches are wall-only, run-scoped, and no
+    // placement, rng() or leaderboard number reads them (constants.js HULL_SCRATCHES).
+    // Deliberately NOT given by the web app pitch, which grants nothing at all.
+    hullScratches = HULL_SCRATCHES;
+    wallGraceT = 0;
+    // Said out loud, in the same colour the SCRAPE! notif uses, so the repair is a
+    // visible part of the reward and not just two diamonds quietly refilling in the
+    // corner. Zero new strings: '+' + T.hull, the notif vocabulary the game already
+    // speaks (+SLOW, +SHIELD, +CLOSE).
+    pushNotif(PX + PR * 3, py - H * 0.10, 1.4, '+' + T.hull, [255, 170, 90]);
     triggerBombExplosion(PX, py);
     // Not straight back into 'play' -- phase='revive' freezes the world (scrollX
     // untouched, no physics/collision) with the ship parked here for
@@ -1274,6 +1300,18 @@ function declineRevive() {
     continueOfferPending = false;
     continueAdPending = false;
     commitDeath();
+}
+
+// Web only: the app pitch is over (its own timeout, or the player dismissed it past
+// WEB_PROMO_DISMISS_SEC). It never grants anything, so it resolves down exactly the
+// path an ad that could not be shown does - see constants.js WEB_CONTINUE_PROMO_SEC.
+function closeWebPromo() {
+    if (!webPromoOn) return;
+    webPromoOn = false;
+    webPromoT  = 0;
+    _promoAppleBtnRect = null;
+    _promoPlayBtnRect  = null;
+    declineRevive();
 }
 
 // 3/4 side view (constants.js SHIP_VIEW_3D): the hull rolls a little with the

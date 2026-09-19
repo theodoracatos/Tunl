@@ -4617,27 +4617,7 @@ function drawTitleScreen() {
         // unbreakable "word" and let it run straight off the edge of the panel,
         // unclipped, over whatever sat behind it) while keeping Latin/Cyrillic/etc.
         // words whole and breaking only at spaces, same as before for those.
-        const wrapTokenRe = /[　-鿿가-힣＀-￯]|[^\s　-鿿가-힣＀-￯]+|\s+/gu;
-        const wrap = (text, maxW) => {
-            const tokens = text.match(wrapTokenRe) || [text];
-            const lines = [];
-            let line = '';
-            for (const tok of tokens) {
-                if (/^\s+$/.test(tok)) {
-                    if (line) line += tok;
-                    continue;
-                }
-                const test = line + tok;
-                if (line.trim() && ctx.measureText(test).width > maxW) {
-                    lines.push(line.trimEnd());
-                    line = tok;
-                } else {
-                    line = test;
-                }
-            }
-            if (line.trim()) lines.push(line.trimEnd());
-            return lines;
-        };
+        const wrap = _wrapLines;
 
         // Unlike the Shop panel above (fixed line count, so one linear shopScale
         // covers it), this panel wraps translated paragraphs -- line count per row
@@ -5540,7 +5520,13 @@ function draw() {
     if (phase === 'dead')  drawDeathFreeze();
     // continueOfferPending gates which one shows, never both -- see update.js's
     // die()/commitDeath() split and constants.js's CONTINUE_OFFER_SEC doc.
-    if (phase === 'dead')  { if (continueOfferPending) drawContinueOffer(); else drawDeathScreen(); }
+    // webPromoOn (web only) sits in front of both: it stands where a rewarded video
+    // stands in the apps, and a video covers the screen. See drawWebContinuePromo.
+    if (phase === 'dead')  {
+        if (webPromoOn) drawWebContinuePromo();
+        else if (continueOfferPending) drawContinueOffer();
+        else drawDeathScreen();
+    }
     if (phase === 'revive' && interruptPaused) drawInterruptCover();
     if (phase === 'revive') drawReviveCountdown();
 }
@@ -5578,6 +5564,216 @@ function drawReviveCountdown() {
     ctx.shadowBlur   = 20;
     ctx.fillText(T.ready, PX, py - PR * 3.2);
     ctx.shadowBlur   = 0;
+    ctx.restore();
+}
+
+// Greedy wrap at whatever font is currently set on ctx. Tokenises CJK/fullwidth
+// characters one at a time (they carry no spaces to break on -- a plain split(' ')
+// treated a whole ja/ko/zh sentence as a single unbreakable "word" and let it run
+// straight off the edge of the panel, unclipped, over whatever sat behind it) while
+// keeping Latin/Cyrillic/etc. words whole and breaking only at spaces. Lived inside
+// the currency-info panel until the web app pitch below needed the same behaviour.
+const _WRAP_TOKEN_RE = /[　-鿿가-힣＀-￯]|[^\s　-鿿가-힣＀-￯]+|\s+/gu;
+function _wrapLines(text, maxW) {
+    const tokens = text.match(_WRAP_TOKEN_RE) || [text];
+    const lines = [];
+    let line = '';
+    for (const tok of tokens) {
+        if (/^\s+$/.test(tok)) {
+            if (line) line += tok;
+            continue;
+        }
+        const test = line + tok;
+        if (line.trim() && ctx.measureText(test).width > maxW) {
+            lines.push(line.trimEnd());
+            line = tok;
+        } else {
+            line = test;
+        }
+    }
+    if (line.trim()) lines.push(line.trimEnd());
+    return lines;
+}
+
+// ── Web only: the second life lives in the app ───────────────────────
+// Stands exactly where the rewarded video stands in the apps (constants.js
+// WEB_CONTINUE_PROMO_SEC), for the same length of time, and grants nothing: the whole
+// message is that a second life is an app feature. Built to the death screen's own
+// rules rather than as a banner -- one accent (the day's rock, getTheme().wallBase),
+// type from the same five-step scale, and every vertical step max(H-fraction,
+// type-derived), because FS is keyed to UI_H's floor of 600 while H can be 371 on a
+// 12 mini (see drawDeathScreen's step() doc).
+// The ship is the real one, in the player's own skin and livery: this screen is a
+// portrait of what they would be flying, so it uses the top-down drawShip() the hangar
+// uses, not the 3/4 flight view (CLAUDE.md "the hangar is a portrait, the flight is a
+// flight").
+function drawWebContinuePromo() {
+    const a = Math.min(1, webPromoT * 5);
+    ctx.save();
+    ctx.textBaseline = 'alphabetic';
+
+    const day = getTheme().wallBase;
+    const DAY = al => `rgba(${day[0]},${day[1]},${day[2]},${a * al})`;
+    const INK = al => `rgba(232,238,255,${a * (al === undefined ? 1 : al)})`;
+    const DIM = al => `rgba(168,180,212,${a * (al === undefined ? 0.82 : al)})`;
+    const FNT = al => `rgba(132,146,184,${a * (al === undefined ? 0.62 : al)})`;
+    const font = (sz, w) => { ctx.font = `${w || 'bold'} ${sz}px ${FONT_UI}`; };
+
+    ctx.fillStyle = `rgba(4,4,14,${a * 0.93})`;
+    ctx.fillRect(0, 0, W, H);
+
+    // ── fit ───────────────────────────────────────────────────────────────────
+    // The card is sized by its CONTENT, then the type is scaled down until that
+    // content clears the screen -- not laid out on H-fractions. FS is keyed to UI_H's
+    // floor of 600 while H is whatever the browser window gives (measured: 277px in a
+    // short desktop window, 375 on a 12 mini), so an H-fraction layout puts a 36px
+    // button row into a 20px slot and the label ends up under the buttons. Same
+    // iterate-the-scale-down method the currency info panel uses, and the same reason.
+    const padX  = Math.min(W * 0.07, FS * 0.06);
+    const gapB  = Math.max(8, W * 0.02);
+    let sc = 1, hero, txt, lbl, btn, btnH, lines, textW, textL, cardW, cardH, contentH, shipR, wide;
+    for (let i = 0; i < 14; i++) {
+        hero = FS * 0.052 * sc; txt = FS * 0.026 * sc; lbl = FS * 0.019 * sc; btn = FS * 0.026 * sc;
+        btnH = btn * 2.0;
+        cardW = Math.min(W * 0.92, FS * 1.18);
+        // The ship column is the first thing to go: below this width the picture would
+        // squeeze the body text into a column too narrow to read.
+        wide  = cardW > FS * 0.80 && H > FS * 0.42;
+        shipR = Math.min(cardW * 0.13, H * 0.17);
+        textL = (W - cardW) / 2 + padX + (wide ? shipR * 2.5 : 0);
+        textW = (W + cardW) / 2 - padX - textL;
+        font(txt, '');
+        lines = _wrapLines(T.secondLifeBody, textW);
+        contentH = hero * 1.02        // headline ink
+                 + hero * 0.34 + 2    // accent rule
+                 + txt * 1.60         // gap to body
+                 + lines.length * txt * 1.45
+                 + lbl * 2.40         // GET THE APP label + its gap
+                 + btnH
+                 + lbl * 2.20;        // the drain bar and its breathing room
+        cardH = Math.min(H * 0.94, contentH + Math.max(18, hero * 0.9) * 2);
+        if (contentH + Math.max(18, hero * 0.9) * 2 <= H * 0.94 || sc <= 0.62) break;
+        sc *= 0.93;
+    }
+
+    const cardX = (W - cardW) / 2, cardY = (H - cardH) / 2;
+    const rad   = Math.min(22, cardH * 0.10);
+
+    ctx.beginPath(); ctx.roundRect(cardX, cardY, cardW, cardH, rad);
+    ctx.fillStyle = `rgba(10,11,22,${a * 0.96})`;
+    ctx.fill();
+    ctx.strokeStyle = DAY(0.40);
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // One soft accent wash from the top edge, the same "light behind, never ahead"
+    // restraint the depth light follows -- a flat panel reads as a dialog box.
+    const gl = ctx.createLinearGradient(0, cardY, 0, cardY + cardH * 0.55);
+    gl.addColorStop(0, DAY(0.13));
+    gl.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath(); ctx.roundRect(cardX, cardY, cardW, cardH, rad);
+    ctx.fillStyle = gl; ctx.fill();
+
+    // ── the ship ──────────────────────────────────────────────────────────────
+    // The real one, in the player's own skin and livery: this screen is a portrait of
+    // what they would be flying, so it uses the top-down drawShip() the hangar uses,
+    // never the 3/4 flight view (CLAUDE.md "the hangar is a portrait, the flight is a
+    // flight"). No rng(), no gameplay state touched.
+    if (wide) {
+        const [sr, sg, sb] = SKINS[activeSkin].shadow;
+        const sx = cardX + padX + shipR * 1.05, sy = cardY + cardH * 0.46;
+        ctx.beginPath();
+        ctx.arc(sx, sy, shipR * 1.55, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(${sr},${sg},${sb},${a * 0.26})`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        drawShip(sx, sy, shipR, SKINS[activeSkin].color, sr, sg, sb, 16, true, liveryOf(activeSkin));
+    }
+
+    // ── headline, rule, body ──────────────────────────────────────────────────
+    ctx.textAlign = 'left';
+    let y = cardY + (cardH - contentH) / 2 + hero * 0.86;
+
+    font(hero);
+    ctx.fillStyle = INK();
+    ctx.shadowColor = DAY(0.55); ctx.shadowBlur = 16;
+    ctx.fillText(T.secondLifeTitle, textL, y);
+    ctx.shadowBlur = 0;
+
+    // Accent rule, measured off the real ink so it never overruns a long locale.
+    const hlW = Math.min(ctx.measureText(T.secondLifeTitle).width, textW);
+    y += hero * 0.34;
+    ctx.fillStyle = DAY(0.85);
+    ctx.fillRect(textL, y, hlW, 2);
+
+    y += 2 + txt * 1.60;
+    font(txt, '');
+    ctx.fillStyle = DIM();
+    for (const ln of lines) {
+        ctx.fillText(ln, textL, y);
+        y += txt * 1.45;
+    }
+
+    // ── store buttons ─────────────────────────────────────────────────────────
+    y += lbl * 1.40;
+    font(lbl);
+    try { ctx.letterSpacing = `${Math.max(1, lbl * 0.11)}px`; } catch (e) {}
+    ctx.fillStyle = FNT();
+    ctx.fillText(T.getTheApp, textL, y);
+    try { ctx.letterSpacing = '0px'; } catch (e) {}
+
+    y += lbl * 1.00;
+    const btnW = Math.min((textW - gapB) / 2, FS * 0.30);
+    _promoAppleBtnRect = { x: textL,              y, w: btnW, h: btnH };
+    _promoPlayBtnRect  = { x: textL + btnW + gapB, y, w: btnW, h: btnH };
+
+    const storeBtn = (r, label, filled) => {
+        ctx.beginPath(); ctx.roundRect(r.x, r.y, r.w, r.h, r.h * 0.30);
+        ctx.fillStyle = filled ? DAY(0.92) : `rgba(255,255,255,${a * 0.05})`;
+        ctx.fill();
+        ctx.strokeStyle = filled ? DAY(1) : DAY(0.45);
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        // Shrink-to-fit: "GOOGLE PLAY" next to a Russian or Hindi label is exactly the
+        // kind of string the death screen keeps its own two shrink checks for.
+        let sz = btn;
+        font(sz);
+        const maxW = r.w * 0.86;
+        const lw = ctx.measureText(label).width;
+        if (lw > maxW) { sz = Math.max(sz * maxW / lw, lbl * 0.85); font(sz); }
+        ctx.textAlign = 'center';
+        ctx.fillStyle = filled ? `rgba(8,8,16,${a})` : INK(0.92);
+        ctx.fillText(label, r.x + r.w / 2, r.y + r.h / 2 + sz * 0.35);
+        ctx.textAlign = 'left';
+    };
+    storeBtn(_promoAppleBtnRect, 'APP STORE', true);
+    storeBtn(_promoPlayBtnRect,  'GOOGLE PLAY', false);
+
+    // ── the clock ─────────────────────────────────────────────────────────────
+    // A rewarded video shows how long it still holds you; so does this. The bar drains
+    // along the card's bottom edge over WEB_CONTINUE_PROMO_SEC.
+    const remain = Math.max(0, 1 - webPromoT / WEB_CONTINUE_PROMO_SEC);
+    const barW = cardW - padX * 2, barY = y + btnH + lbl * 1.30;
+    ctx.fillStyle = `rgba(255,255,255,${a * 0.08})`;
+    ctx.fillRect(cardX + padX, barY, barW, 2);
+    ctx.fillStyle = DAY(0.8);
+    ctx.fillRect(cardX + padX, barY, barW * remain, 2);
+
+    // Close mark, top right, from the skip gate on -- wordless on purpose (it adds no
+    // string to 15 locales) and the universal shape for "this can go away now". A tap
+    // anywhere outside the store buttons does it, not just on the mark itself.
+    if (webPromoT >= WEB_PROMO_DISMISS_SEC) {
+        const xr = Math.max(6, lbl * 0.42);
+        const xx = cardX + cardW - padX * 0.7, xy = cardY + Math.max(xr * 2.2, cardH * 0.11);
+        ctx.strokeStyle = FNT(0.75);
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(xx - xr, xy - xr); ctx.lineTo(xx + xr, xy + xr);
+        ctx.moveTo(xx + xr, xy - xr); ctx.lineTo(xx - xr, xy + xr);
+        ctx.stroke();
+        ctx.lineCap = 'butt';
+    }
+
     ctx.restore();
 }
 
@@ -5641,17 +5837,25 @@ function drawContinueOffer() {
     ctx.lineWidth   = 2;
     ctx.stroke();
 
-    // Play triangle -- wordless on purpose, see the doc comment above drawContinueOffer
+    // Play triangle -- wordless on purpose, see the doc comment above drawContinueOffer.
+    // On web there is no video behind this ring (constants.js WEB_CONTINUE_PROMO_SEC),
+    // so a play glyph would be the one thing on the screen that lies: it carries "+1"
+    // instead, which is what the app actually gives back.
     const triR = r * 0.34;
-    ctx.beginPath();
-    ctx.moveTo(cx - triR * 0.55, cy - triR);
-    ctx.lineTo(cx - triR * 0.55, cy + triR);
-    ctx.lineTo(cx + triR * 1.05, cy);
-    ctx.closePath();
     ctx.fillStyle   = `rgba(220,245,255,${a})`;
     ctx.shadowColor = `rgba(160,230,255,${a * 0.7})`;
     ctx.shadowBlur  = 10;
-    ctx.fill();
+    if (isWeb()) {
+        ctx.font = `bold ${r * 0.62}px ${FONT_NUM}`;
+        ctx.fillText('+1', cx, cy + r * 0.02);
+    } else {
+        ctx.beginPath();
+        ctx.moveTo(cx - triR * 0.55, cy - triR);
+        ctx.lineTo(cx - triR * 0.55, cy + triR);
+        ctx.lineTo(cx + triR * 1.05, cy);
+        ctx.closePath();
+        ctx.fill();
+    }
     ctx.shadowBlur  = 0;
 
     // Caption (src/i18n.js T.watchAdContinue, all 15 languages) -- an earlier
@@ -5659,10 +5863,13 @@ function drawContinueOffer() {
     // de-facto universal marking), but that only labels the icon as an ad, not what
     // tapping it actually does. Shrink-to-fit since translations range from
     // Chinese's 6 characters to Russian's/German's much wider strings.
+    // The web caption says app-only BEFORE the tap, so tapping this ring is never a
+    // bait-and-switch (constants.js WEB_CONTINUE_PROMO_SEC, second rule).
+    const capTxt = isWeb() ? T.secondLifeApp : T.watchAdContinue;
     let capFsz = FS * 0.020;
     ctx.font = `bold ${capFsz}px ${FONT_UI}`;
     const capAvailW = W * 0.86;
-    const capW = ctx.measureText(T.watchAdContinue).width;
+    const capW = ctx.measureText(capTxt).width;
     if (capW > capAvailW) {
         capFsz = Math.max(capFsz * capAvailW / capW, FS * 0.012);
         ctx.font = `bold ${capFsz}px ${FONT_UI}`;
@@ -5670,7 +5877,7 @@ function drawContinueOffer() {
     ctx.fillStyle   = `rgba(255,210,90,${a})`;
     ctx.shadowColor = `rgba(255,180,40,${a * 0.5})`;
     ctx.shadowBlur  = 6;
-    ctx.fillText(T.watchAdContinue, cx, cy + r * 1.6);
+    ctx.fillText(capTxt, cx, cy + r * 1.6);
     ctx.shadowBlur  = 0;
 
     ctx.restore();
