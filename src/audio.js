@@ -636,76 +636,86 @@ function sfxCoin(combo) {
     });
 }
 
-// Turbine spool-up: a whine that climbs in pitch and level until the ship is ready to
-// fly, then cuts off in a short release. `dur` is the time the player cannot act yet
-// (START_RAMP_SEC on a run start, REVIVE_COUNTDOWN_SEC after a revive), so the sound
-// lasts exactly as long as the ship is warming up. The whine and its harmonic live at
-// 150-2500 Hz on purpose: a phone speaker drops everything below ~300 Hz, which is
-// why the old bass-only roar was barely audible on device.
+// Turbofan spool-up ("rollendes Grollen", 2026-09-19): a big engine turning over, heard
+// from inside the cabin. Low-passed air roar (150 -> 700 Hz) plus a heavy rumble, both run
+// through a slow tremolo (2 -> 8 Hz, 40% deep) that reads as a distant engine not yet
+// running smooth; on top a buzz-saw fan (40 -> 150 Hz) and one quiet sine whine (70 -> 260 Hz).
+// Everything climbs on a rev curve (t^pw in log-frequency: slow at first, faster near the
+// end) instead of a straight glide, which is what a real spool does. `dur` is the time the
+// player cannot act yet (START_RAMP_SEC on a run start, REVIVE_COUNTDOWN_SEC after a
+// revive), so the sound lasts exactly as long as the ship is warming up. Deliberately
+// LOW: no partial above ~700 Hz, chosen over the earlier 110 -> 980 Hz whine on request.
+// The buzz-saw layer is what carries on a phone speaker (its harmonics sit above ~300 Hz).
+// Level: `K` matches the old turbine's loudest-50ms (offline render: old 0.103, new 0.095 at K=0.85, so K=0.92).
+// Designed in the spool-up study: https://claude.ai/artifact/D7D9hELLqBerVNddPgPk4X
 function sfxEngineSpoolUp(dur) {
     if (!_ac || !fxOn) return;
     dur = dur || 1.3;
     const t = _ac.currentTime;
     const end = t + dur;
-    const rel = 0.14;  // release after the ship is ready
+    const rel = 0.16;   // release after the ship is ready
+    const K = 0.92;     // level match against the previous turbine
 
-    // Main turbine whine: sawtooth through a lowpass that opens with the pitch.
-    const o1 = _ac.createOscillator(), f1 = _ac.createBiquadFilter(), g1 = _ac.createGain();
-    o1.type = 'sawtooth';
-    o1.frequency.setValueAtTime(110, t);
-    o1.frequency.exponentialRampToValueAtTime(420, t + dur * 0.55);
-    o1.frequency.exponentialRampToValueAtTime(980, end);
-    f1.type = 'lowpass'; f1.Q.value = 2;
-    f1.frequency.setValueAtTime(500, t);
-    f1.frequency.exponentialRampToValueAtTime(3200, end);
-    g1.gain.setValueAtTime(0.001, t);
-    g1.gain.linearRampToValueAtTime(0.10, t + dur * 0.35);
-    g1.gain.linearRampToValueAtTime(0.16, end);
-    g1.gain.linearRampToValueAtTime(0.001, end + rel);
-    o1.connect(f1); f1.connect(g1); g1.connect(_master);
-    o1.start(t); o1.stop(end + rel + 0.02);
+    // Rev curve: f0 -> f1, exponent pw > 1 = slow start, steeper finish.
+    const rev = (param, f0, f1, pw) => {
+        const a = new Float32Array(96);
+        for (let i = 0; i < 96; i++) a[i] = f0 * Math.pow(f1 / f0, Math.pow(i / 95, pw));
+        param.setValueCurveAtTime(a, t, dur);
+    };
+    const env = (pts) => {
+        const g = _ac.createGain();
+        g.gain.setValueAtTime(0.001, t);
+        pts.forEach(p => g.gain.linearRampToValueAtTime(p[1] * K, t + p[0]));
+        return g;
+    };
+    const noiseSrc = () => {
+        const n = _ac.createBufferSource();
+        n.buffer = _noiseBuf(dur + rel + 0.05);
+        return n;
+    };
 
-    // Compressor-stage whine: a pure tone about 2.5x the main pitch, the thin
-    // "turbine" sheen on top. Detuned from a clean harmonic so it beats a little.
-    const o2 = _ac.createOscillator(), g2 = _ac.createGain();
-    o2.type = 'sine';
-    o2.frequency.setValueAtTime(280, t);
-    o2.frequency.exponentialRampToValueAtTime(1050, t + dur * 0.55);
-    o2.frequency.exponentialRampToValueAtTime(2450, end);
-    g2.gain.setValueAtTime(0.001, t);
-    g2.gain.linearRampToValueAtTime(0.02, t + dur * 0.4);
-    g2.gain.linearRampToValueAtTime(0.07, end);
-    g2.gain.linearRampToValueAtTime(0.001, end + rel);
-    o2.connect(g2); g2.connect(_master);
-    o2.start(t); o2.stop(end + rel + 0.02);
+    // Slow tremolo on the air layers only (the tonal layers stay steady).
+    const wobble = _ac.createGain();
+    wobble.gain.value = 0.8;
+    const lfo = _ac.createOscillator(), lfoDepth = _ac.createGain();
+    lfo.type = 'sine';
+    lfo.frequency.setValueAtTime(2, t);
+    lfo.frequency.exponentialRampToValueAtTime(8, end);
+    lfoDepth.gain.value = 0.2;
+    lfo.connect(lfoDepth); lfoDepth.connect(wobble.gain);
+    wobble.connect(_master);
+    lfo.start(t); lfo.stop(end + rel + 0.05);
 
-    // Air hiss: bandpassed noise whose centre climbs with the whine.
-    const n = _ac.createBufferSource();
-    n.buffer = _noiseBuf(dur + rel + 0.05);
-    const nf = _ac.createBiquadFilter(), ng = _ac.createGain();
-    nf.type = 'bandpass'; nf.Q.value = 0.9;
-    nf.frequency.setValueAtTime(700, t);
-    nf.frequency.exponentialRampToValueAtTime(4200, end);
-    ng.gain.setValueAtTime(0.001, t);
-    ng.gain.linearRampToValueAtTime(0.05, t + dur * 0.5);
-    ng.gain.linearRampToValueAtTime(0.11, end);
-    ng.gain.linearRampToValueAtTime(0.001, end + rel);
-    n.connect(nf); nf.connect(ng); ng.connect(_master);
-    n.start(t); n.stop(end + rel + 0.05);
+    // Air roar: lowpassed noise that opens with the revs and swells.
+    const roar = noiseSrc(), rf = _ac.createBiquadFilter();
+    rf.type = 'lowpass'; rf.Q.value = 0.6; rev(rf.frequency, 150, 700, 1.6);
+    const rg = env([[dur * 0.5, 0.21], [dur, 0.7], [dur + rel, 0.001 / K]]);
+    roar.connect(rf); rf.connect(rg); rg.connect(wobble);
+    roar.start(t); roar.stop(end + rel + 0.05);
 
-    // Low combustion rumble, kept from the old roar for weight on real speakers.
-    const r = _ac.createBufferSource();
-    r.buffer = _noiseBuf(dur + rel + 0.05);
-    const rf = _ac.createBiquadFilter(), rg = _ac.createGain();
-    rf.type = 'lowpass';
-    rf.frequency.setValueAtTime(140, t);
-    rf.frequency.linearRampToValueAtTime(420, end);
-    rg.gain.setValueAtTime(0.001, t);
-    rg.gain.linearRampToValueAtTime(0.28, t + dur * 0.4);
-    rg.gain.linearRampToValueAtTime(0.32, end);
-    rg.gain.linearRampToValueAtTime(0.001, end + rel);
-    r.connect(rf); rf.connect(rg); rg.connect(_master);
-    r.start(t); r.stop(end + rel + 0.05);
+    // Low rumble for weight.
+    const rum = noiseSrc(), rumF = _ac.createBiquadFilter();
+    rumF.type = 'lowpass';
+    rumF.frequency.setValueAtTime(110, t);
+    rumF.frequency.linearRampToValueAtTime(380, end);
+    const rumG = env([[dur * 0.4, 0.36], [dur, 0.396], [dur + rel, 0.001 / K]]);
+    rum.connect(rumF); rumF.connect(rumG); rumG.connect(wobble);
+    rum.start(t); rum.stop(end + rel + 0.05);
+
+    // Buzz-saw fan: the mid-band harmonics that survive a phone speaker.
+    const buzz = _ac.createOscillator(), bf = _ac.createBiquadFilter();
+    buzz.type = 'sawtooth'; rev(buzz.frequency, 40, 150, 1.8);
+    bf.type = 'lowpass'; bf.Q.value = 0.8; rev(bf.frequency, 150, 700, 1.8);
+    const bg = env([[dur * 0.4, 0.049], [dur, 0.14], [dur + rel, 0.001 / K]]);
+    buzz.connect(bf); bf.connect(bg); bg.connect(_master);
+    buzz.start(t); buzz.stop(end + rel + 0.02);
+
+    // One quiet sine whine so it still reads as a turbine and not just air.
+    const wh = _ac.createOscillator();
+    wh.type = 'sine'; rev(wh.frequency, 70, 260, 1.6);
+    const wg = env([[dur * 0.35, 0.014], [dur, 0.04], [dur + rel, 0.001 / K]]);
+    wh.connect(wg); wg.connect(_master);
+    wh.start(t); wh.stop(end + rel + 0.02);
 }
 
 function sfxDie() {

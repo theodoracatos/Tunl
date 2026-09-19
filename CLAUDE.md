@@ -1223,6 +1223,14 @@ against each other or the bed, exactly as the 2026-09-05 thruster pass already f
   > routine pickups > the thrust bed**; before this, shield break (-32) and cannon fire
   (-29) sat *below* a gold coin, and near-miss and combo sat below the thrust. Raised:
   shield break +8, cannon fire +5, near-miss/combo +5, the whole UI block +6.
+- **Spool-up is a low turbofan (2026-09-19, "rollendes Grollen").** `sfxEngineSpoolUp` was a
+  110 -> 980 Hz saw whine; it is now lowpassed air roar 150 -> 700 Hz + rumble under a slow
+  2 -> 8 Hz tremolo, a 40 -> 150 Hz buzz-saw and one quiet 70 -> 260 Hz sine, all on a rev
+  curve (`t^pw` in log-frequency, slow start). Chosen by the user from a five-round study
+  (https://claude.ai/artifact/D7D9hELLqBerVNddPgPk4X) with the explicit brief "low, may stay
+  low, like an airliner turbine": **do not add partials above ~700 Hz.** Level matched to the
+  old turbine's loudest-50ms by offline render. `sfxDie` is still the mirror of the OLD
+  roar layer (420 -> 160 Hz), close enough to the new one that it was left alone.
 - **The death impact is on frame 0.** `sfxDie` is still the reverse of
   `sfxEngineSpoolUp`, but that roar takes 1.3s, so its crash used to land 1.22s after the
   collision - after `drawDeathFreeze()` had finished and the debriefing was fading in, and
