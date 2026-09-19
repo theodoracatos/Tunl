@@ -239,5 +239,5 @@ function startPlay() {
     flightClock = 0; flightAchIdx = 0;
     refreshWave();
     _startBgMusic();
-    sfxEngineSpoolUp();
+    sfxEngineSpoolUp(START_RAMP_SEC);
 }

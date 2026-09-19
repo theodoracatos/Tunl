@@ -252,7 +252,7 @@ const COIN_OBJECT_SCALE = 1.5;
 // read as the least important thing on screen.
 const COIN_OBJECT_BOOST = { gold: 1.2 };
 const COIN_BASE_CLR = {
-    gold: [255,225,50], blue: [60,200,255], red: [190,50,255], orange: [255,85,0],
+    gold: [255,225,50], blue: [60,200,255], red: [190,50,255], orange: [255,122,0],
     green: [50,255,120], bomb: [255,60,60], poison: [110,200,20], drain: [215,80,140],
 };
 const _COIN_WHITE = [255,255,255], _COIN_BLACK = [0,0,0];
@@ -4657,13 +4657,13 @@ function drawTitleScreen() {
 // widths.
 //
 // Deliberately NOT changed: every piece of data shown, the fade timing, the
-// deadT > 0.75 button gate, _homeBtnRect/_shareBtnRect/_playBtnRect, and the i18n
+// deadT > 0.95 button gate, _homeBtnRect/_shareBtnRect/_playBtnRect, and the i18n
 // surface -- this redesign adds ZERO new strings, it only reuses keys this screen
 // or the share card already had (T.level/T.planet/T.flown/T.pb from the card).
 function drawDeathScreen() {
     // Offset by the freeze frame (constants.js DEATH_REPLAY_SEC). The button row
-    // below (deadT > 0.75) and input.js's DEATH_INTERACTIVE_SEC gate are deliberately
-    // NOT offset: 0.40 + the 0.15s fade still lands well inside the 0.9s the death
+    // below (deadT > 0.95) and input.js's DEATH_INTERACTIVE_SEC gate are deliberately
+    // NOT offset: 0.70 + the 0.15s fade still lands inside the 0.95s the death
     // screen was already unskippable for, so this beat costs the player no extra wait
     // and no extra tap, it just stops the panel painting over the fatal frame.
     const a = Math.min(1, Math.max(0, deadT - DEATH_REPLAY_SEC) * 6.5);
@@ -5228,13 +5228,13 @@ function drawDeathScreen() {
     }
 
     // ── buttons, inside the card ──────────────────────────────────────────────
-    // Same deadT > 0.75 gate and the same three rects input.js hit-tests; what changed
+    // Same deadT > 0.95 gate and the same three rects input.js hit-tests; what changed
     // is that the row sits inside the panel and that PLAY AGAIN is filled rather than
     // being a third equally-weighted outline. SHARE only appears on a run worth showing
     // someone (share.js shareWorthy) and only where there is somewhere to send it.
     _shareBtnRect = null;
-    if (deadT > 0.75) {
-        const b    = Math.min(1, (deadT - 0.75) * 6);
+    if (deadT > 0.95) {
+        const b    = Math.min(1, (deadT - 0.95) * 6);
         const bh   = bhBtn;
         const byT  = btnTop;
         const gap  = W * 0.016;

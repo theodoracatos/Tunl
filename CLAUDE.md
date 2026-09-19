@@ -1237,9 +1237,12 @@ against each other or the bed, exactly as the 2026-09-05 thruster pass already f
 - **Both tracks loop on `loopStart`/`loopEnd`, not on the raw buffer.** They are ordinary
   masters: `the_mountain` (the Nebula track since 2026-09-18, 72s) has a quiet build to ~8s,
   a full body to ~61s, then a quieter outro and a fade to silence; `the_mountain_documentary`
-  fades from ~114.5s. The Nebula loop is `BGM_LOOP_START/END` 8.10 / 56.10 = 28 bars at 140
-  BPM (1.714s per bar), so the seam lands on the beat grid; found by onset autocorrelation,
-  not by ear, and the music does not repeat sample-exactly. Looping the whole buffer played that
+  fades from ~114.5s. The title piano loops the whole song, 18.0 / 114.0 with a 4s crossfade (2026-09-19; `_bakeBgmLoop`, same baking as the play track): the old 0.30 / 114.50 cut into the piece's own fade-out and landed on unrelated material. The piece has copy-pasted sections (0-16s = 66-82s, 84-96s = 100-112s) that would give an exact seam, but only for loops that skip the tail, which was rejected on request; the user wants the loop to run to ~114s. The Nebula loop is `BGM_LOOP_START/END` 11.53 / 38.96 = 16 bars at 140
+  BPM (1.714s per bar), with the seam crossfaded 0.857s equal-power into the material
+  before the loop start (`_bakeBgmLoop`, one baked buffer, one source node so playbackRate
+  effects still work). The first pair (8.10 / 56.10) was an audible jump on device
+  (2026-09-19): waveform correlation 0.33 across the seam; the new pair scores 0.73 and was
+  picked by ear from four rendered candidates. The music does not repeat sample-exactly. **Death plays the song's own ending (2026-09-19):** `die()` collapses the loop as before, then `_playBgmOutro()` fades in the track's last ~10s (from `BGM_OUTRO_START` 61.75: quiet pad, one last hit at ~68.5, decay to silence) through its own gain node; nothing loops it, so the death screen ends in silence until the title screen's music. `_stopBgmOutro()` cuts it on restart, revive and return to the title. Only when the play music was actually sounding (music off stays silent). `commitDeath()` no longer starts the title music, so the ending plays through the continue offer AND the debriefing to its last decay; the piano only returns on the title screen. Looping the whole buffer played that
   fade, a hole and a fade-in every pass - worst on the title screen, where it reads as
   "the song ended". The lead-in stays as a one-time intro. Set from the EBU momentary
   envelope; **the files are never re-encoded to fix this** (see the "encode once from the
@@ -1322,7 +1325,7 @@ in the coin, not just the separate `sfxCombo` ping (which only fires from x2). S
 
 **Death freeze frame** (`DEATH_REPLAY_SEC` in `constants.js`, `drawDeathFreeze()` in
 `draw.js`, `markDeathHit()` in `update.js`, `deathHitX/Y/R` in `state.js`): for the first
-0.40s after a fatal hit the death panel does not paint at all. The world is already
+0.70s (was 0.40, raised on request 2026-09-19) after a fatal hit the death panel does not paint at all. The world is already
 frozen (`update.js`'s `dead` branch advances nothing but `deadT`), the wrecked ship keeps
 rendering in red, and a reticle contracts onto whatever landed the hit. Added in 12.0:
 `deathCause` had existed since the death-marker work but was never shown to the player,
@@ -1330,10 +1333,10 @@ so through 11.0 the death screen's entire answer to "what did I do wrong" was th
 "dead" and a number - against a measured beginner run of 0.9s of flight.
 
 Two things make this **free rather than a tax on restarting**, and both must stay true:
-the panel's own alpha is the only thing offset (the button row's `deadT > 0.75` fade and
-`input.js`'s `DEATH_INTERACTIVE_SEC` gate are untouched, so 0.40 + the 0.15s fade still
-lands inside the 0.9s the death screen was already unskippable for - restarting costs the
-same wait and the same one tap it always did); and `CONTINUE_OFFER_SEC` **is** offset by
+the panel's own alpha is the only thing offset (the button row's `deadT > 0.95` fade and
+`input.js`'s `DEATH_INTERACTIVE_SEC` gate, 1.1s, were both moved +0.2s on 2026-09-19 when the
+freeze frame went 0.40 -> 0.70; restarting therefore costs 0.2s more wait than before that
+change, the one deliberate exception to "free"); and `CONTINUE_OFFER_SEC` **is** offset by
 `DEATH_REPLAY_SEC` in `update.js`, because that budget is measured in seconds the offer is
 actually *on screen* - a real-device pass already found 0.9s too short once, so silently
 shaving 0.4s off it would have re-broken that. `drawContinueOffer` also nulls

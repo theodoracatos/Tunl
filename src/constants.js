@@ -6,7 +6,7 @@
 // it exists so a build can identify itself: window.TUNL_VERSION for a DevTools check,
 // and build-play.mjs stamps it into /play as <meta name="tunl:version"> so the live
 // web build's version is greppable without diffing the bundle.
-const TUNL_VERSION = '14.1';
+const TUNL_VERSION = '14.2';
 if (typeof window !== 'undefined') window.TUNL_VERSION = TUNL_VERSION;
 
 const cv  = document.getElementById('c');
@@ -1104,7 +1104,7 @@ const REVIEW_COOLDOWN_MS = 90 * 24 * 60 * 60 * 1000;
 // drawContinueOffer) -- see CLAUDE.md's Rewarded Continue notes: declining the
 // offer must cost zero extra wait or tap versus today, so the offer has to fit
 // inside time that's already unskippable, not add its own.
-const DEATH_INTERACTIVE_SEC = 0.9;
+const DEATH_INTERACTIVE_SEC = 1.1;   // 0.9 until 2026-09-19: +0.2s to fit the 0.70s freeze frame
 // How long the crash itself stays on screen before the death panel starts fading in
 // (draw.js drawDeathScreen/drawContinueOffer). The world is already frozen the moment
 // phase flips to 'dead' (update.js's dead branch advances nothing but deadT), so this
@@ -1115,10 +1115,10 @@ const DEATH_INTERACTIVE_SEC = 0.9;
 // screen's only message was the word "dead" and a number. deathCause has existed since
 // the death-marker work but was never shown to anyone.
 // Deliberately NOT added to DEATH_INTERACTIVE_SEC: this beat sits INSIDE the existing
-// unskippable window (0.40 < 0.9), so restarting costs exactly the same wait and the
+// unskippable window (0.70 + 0.15s fade = 0.85 < 0.95, when the buttons start to show), so restarting costs exactly the same wait and the
 // same one tap it did before. CONTINUE_OFFER_SEC is the one thing that does get this
 // added back (update.js), because that budget is measured in *visible* offer time.
-const DEATH_REPLAY_SEC = 0.40;
+const DEATH_REPLAY_SEC = 0.70;   // 0.40 until 2026-09-19, then 0.70 on request
 
 // ── HUD instrument (2026-09-16 design pass, proposals 3 + 4) ─────────────
 // A coin that pays points sends a spark from where it was collected to the live score;
@@ -1132,8 +1132,11 @@ const HUD_SPARK_MAX = 14;
 // Spark colour per coin type, matched to each type's pickup notif colour (systems.js).
 const HUD_SPARK_COLOR = {
     gold: [255, 214, 70], blue: [60, 210, 255], red: [190, 60, 255],
-    green: [80, 255, 130], orange: [255, 120, 30], bomb: [255, 90, 90],
+    green: [80, 255, 130], orange: [255, 122, 0], bomb: [255, 90, 90],
 };
+// Points for a bullet hit (systems.js updateBullets). Flat, no combo: ammo is capped and
+// bullets auto-fire, so this is a small bonus for a shot that landed, not a score engine.
+const BULLET_HIT_PTS = { stal: 1, mine: 3, shot: 2 };
 // The continue offer's own timeout -- deliberately NOT reusing DEATH_INTERACTIVE_SEC
 // above. First real-device pass found 0.9s (matched to that *existing* pre-interactive
 // beat, so declining would cost zero extra wait) too short to actually use: a player

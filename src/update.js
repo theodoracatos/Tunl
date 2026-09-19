@@ -948,7 +948,7 @@ function die(bypassShield = false) {
     // (same principle the shield-absorb branch above already follows).
     burst(PX, py, 46);
     sfxDie();
-    _fadeBgMusic();
+    if (_fadeBgMusic()) _playBgmOutro();   // the song's own ending on the death screen (audio.js)
     window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
 
     // Rewarded continue (constants.js CONTINUE_MIN_SCORE doc): offered at most once
@@ -1245,7 +1245,9 @@ function commitDeath() {
             }
         }
     }
-    _startTitleMusic();
+    // No title music here: the death screen keeps playing the song's own ending (started
+    // in die(), audio.js _playBgmOutro) and then stays quiet. The title screen starts its
+    // own track when the player goes home (lifecycle.js).
 }
 
 // Rewarded continue succeeded (native's userDidEarnReward callback, see main.js
@@ -1275,7 +1277,7 @@ function grantRevive() {
     // Same "engine warming back up" cue startPlay() opens every run with (~1.3s,
     // fits inside the 2s countdown) -- the ship visibly sat dead a second ago, so
     // it reads as literally spooling back up to fly again, not just a generic sfx.
-    sfxEngineSpoolUp();
+    sfxEngineSpoolUp(REVIVE_COUNTDOWN_SEC);
     window.webkit?.messageHandlers?.haptic?.postMessage('success');
 }
 

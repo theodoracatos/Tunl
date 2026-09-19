@@ -64,22 +64,22 @@
     "ja": "ボタンひとつの洞窟フライヤー。押して上昇、離して下降。トンネルが閉じる前に、どこまで暗闇へ進めるか。"
   },
   "hero.newTag": {
-    "en": "New in 14.1",
-    "de": "Neu in 14.1",
-    "fr": "Nouveau dans la 14.1",
-    "it": "Novità nella 14.1",
-    "es": "Novedad en la 14.1",
-    "pt": "Novo na 14.1",
-    "ja": "14.1の新機能"
+    "en": "New in 14.2",
+    "de": "Neu in 14.2",
+    "fr": "Nouveau dans la 14.2",
+    "it": "Novità nella 14.2",
+    "es": "Novedad en la 14.2",
+    "pt": "Novo na 14.2",
+    "ja": "14.2の新機能"
   },
   "hero.newBody": {
-    "en": "A new soundtrack and heavier blasts: mines, bombs, shield breaks and rock hits land with real weight. Grab a blue coin and time bends: the cave slows around you in ripples and an icy glow.",
-    "de": "Neuer Soundtrack und wuchtigere Explosionen: Minen, Bomben, Schildbrüche und Felstreffer schlagen mit echtem Gewicht ein. Schnapp dir eine blaue Münze und die Zeit biegt sich: die Höhle wird um dich langsamer, mit Wellen und eisigem Schimmer.",
-    "fr": "Une nouvelle bande-son et des explosions plus lourdes : mines, bombes, boucliers brisés et impacts de roche frappent avec un vrai poids. Ramasse une pièce bleue et le temps se plie : la grotte ralentit autour de toi, avec des ondes et une lueur glacée.",
-    "it": "Una nuova colonna sonora e esplosioni più pesanti: mine, bombe, scudi che si rompono e colpi contro la roccia hanno un vero peso. Raccogli una moneta blu e il tempo si piega: la grotta rallenta attorno a te, tra onde e un bagliore gelido.",
-    "es": "Una nueva banda sonora y explosiones más contundentes: minas, bombas, escudos rotos y golpes contra la roca suenan con peso de verdad. Recoge una moneda azul y el tiempo se dobla: la cueva se ralentiza a tu alrededor, con ondas y un brillo helado.",
-    "pt": "Uma nova trilha sonora e explosões mais pesadas: minas, bombas, escudos quebrando e batidas na rocha soam com peso de verdade. Pegue uma moeda azul e o tempo se curva: a caverna desacelera ao seu redor, com ondas e um brilho gelado.",
-    "ja": "新しいサウンドトラックと、より重い爆発音。地雷、爆弾、シールド破壊、岩への着弾が本物の重みで響きます。青いコインを取ると時間が歪み、洞窟は波紋と氷のような輝きとともに減速します。"
+    "en": "Seamless music that loops without a jump, and when you crash the song plays its real ending. A longer freeze frame shows what got you. Bombs boom like thunder, and shots that land on rocks, mines and cannon fire now score.",
+    "de": "Nahtlose Musik ohne Sprung in der Schleife, und beim Absturz spielt der Song sein echtes Ende. Ein längeres Standbild zeigt, was dich erwischt hat. Bomben donnern wie ein Gewitter, und Treffer auf Fels, Minen und Kanonenschüsse geben jetzt Punkte.",
+    "fr": "Une musique sans coupure en boucle, et quand tu t'écrases, le morceau joue sa vraie fin. Un arrêt sur image plus long montre ce qui t'a eu. Les bombes grondent comme le tonnerre, et les tirs sur roche, mines et obus rapportent des points.",
+    "it": "Musica senza stacchi in loop e, quando ti schianti, il brano suona il suo vero finale. Un fermo immagine più lungo mostra cosa ti ha colpito. Le bombe rimbombano come tuoni e i colpi su roccia, mine e proiettili danno punti.",
+    "es": "Música sin cortes en bucle y, cuando te estrellas, la canción suena con su final real. Una imagen congelada más larga muestra qué te alcanzó. Las bombas retumban como truenos y los disparos a roca, minas y proyectiles suman puntos.",
+    "pt": "Música sem cortes em loop e, quando você bate, a canção toca seu final de verdade. Um congelamento de imagem mais longo mostra o que te pegou. Bombas ribombam como trovões e tiros em rocha, minas e projéteis dão pontos.",
+    "ja": "途切れなくループする音楽。墜落すると曲が本来のエンディングを奏でます。停止フレームが長くなり、何に当たったのかがはっきり分かります。爆弾は雷のように轟き、岩や地雷、砲弾に当てた弾はスコアになります。"
   },
   "hero.playCta": {
     "en": "Play in your browser",

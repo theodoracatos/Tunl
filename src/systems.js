@@ -616,7 +616,7 @@ function checkCoinCollection() {
                 bulletFireTimer = 0;
                 burstCoin(sx, coin.y, 28, 26);
                 shake += 3;
-                pushNotif(sx, coin.y - 34, 1.1, T.notifAmmo, [255,85,0]);
+                pushNotif(sx, coin.y - 34, 1.1, T.notifAmmo, [255,122,0]);
                 sfxBulletPickup();
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             } else if (coin.type === 'bomb') {
@@ -659,6 +659,15 @@ function checkCoinCollection() {
 }
 
 // ── Bullet system ─────────────────────────────────────────────────────
+
+// Points + a spark flying to the score for a bullet hit (same spark as a coin pickup).
+function bulletHitScore(sx, y, pts) {
+    bonusScore += pts;
+    if (hudSparks.length < HUD_SPARK_MAX) {
+        hudSparks.push({ x: sx, y: y, t: 0, col: HUD_SPARK_COLOR.orange });
+    }
+    pushNotif(sx, y + H*0.05, 0.8, `+${pts}`, [255,122,0]);
+}
 
 function updateBullets(dt) {
     if (bulletAmmo > 0) {
@@ -705,6 +714,7 @@ function updateBullets(dt) {
                 const tipY = s.isTop ? bnd.top + s.length : bnd.bot - s.length;
                 burstStalCrack(bsx, tipY);
                 sfxStalCrack();
+                bulletHitScore(bsx, tipY, BULLET_HIT_PTS.stal);
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
                 hit = true;
                 break;
@@ -733,6 +743,7 @@ function updateBullets(dt) {
                     burst(bsx, my);
                     pushNotif(bsx, my - H*0.06, 1.1, T.boom, [255, 120, 20]);
                     sfxMineExplode();
+                    bulletHitScore(bsx, my, BULLET_HIT_PTS.mine);
                     window.webkit?.messageHandlers?.haptic?.postMessage('medium');
                     hit = true;
                     break;
@@ -748,6 +759,7 @@ function updateBullets(dt) {
                     cannonShots.splice(ci, 1);
                     burstStalCrack(bsx, b.y);
                     sfxStalCrack();
+                    bulletHitScore(bsx, b.y, BULLET_HIT_PTS.shot);
                     window.webkit?.messageHandlers?.haptic?.postMessage('light');
                     hit = true;
                     break;

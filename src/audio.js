@@ -21,6 +21,7 @@ let _wNode = null, _wGain = null, _wOsc = null;
 // letting the tail ring on into sfxDie (see sfxBulletFireStop below).
 let _bfVoices = [];
 let _bgmBuf = null, _bgmNode = null, _bgmGain = null, _bgmFlt = null;
+let _bgmOutroBuf = null, _outroNode = null, _outroGain = null;  // the track's own ending, played on death
 let _bgmLoading = false, _titleBgmLoading = false; // in-flight guards for the lazy loaders
 let _bgmActive = false, _bgmPending = false;
 let _titleBgmBuf = null, _titleBgmNode = null, _titleBgmGain = null, _titleBgmFlt = null;
@@ -102,14 +103,35 @@ const MUSIC_DUCK_SEC  = 0.40;  // how long it stays there before gliding back
 // NOT by re-encoding the files - see the "always encode once from the source" rule
 // above; the same numbers therefore hold for the .web.m4a encodes.
 // Play track = the Nebula master (72s, 2026-09-18): 140 BPM, 1.714s per bar, a quiet
-// build-up to ~8s, full body to ~61s, then a quieter outro and a fade. The loop is 28
-// bars (a multiple of the 4-bar phrase) on the beat grid, so the seam lands on a beat and
-// the tempo carries across it. Grid found by onset autocorrelation - it was not
-// listened to, and the music does not repeat sample-exactly, so ear-check the seam.
-const BGM_LOOP_START       = 8.10,  BGM_LOOP_END       = 56.10;
-const TITLE_BGM_LOOP_START = 0.30,  TITLE_BGM_LOOP_END = 114.50;
+// build-up to ~8s, full body to ~61s, then a quieter outro and a fade. The first loop
+// (8.10 / 56.10, 28 bars) was heard on device on 2026-09-19 and the seam was a
+// noticeable jump: the music does not repeat sample-exactly, and the waveform of the bar
+// before the seam correlated only 0.33 with the bar before the loop start. Now the best
+// pair on the bar grid (search over start bar x loop length 16-32 bars, bar-length
+// normalised cross-correlation, +-60ms lag) is 11.53 / 38.96 = 16 bars, correlation 0.73,
+// and the seam is additionally crossfaded (see _bakeBgmLoop). Chosen by ear from four
+// candidates (hard cut vs crossfade, old vs new pair) - do not lengthen the loop without
+// re-running that search.
+const BGM_LOOP_START       = 11.53, BGM_LOOP_END       = 11.53 + 16 * 1.714286;
+const BGM_LOOP_XFADE       = 0.857;   // half a bar, equal-power
+// The track's own ending (2026-09-19): full body drops to a quiet pad at ~61.8s, one last
+// hit at ~68.5s, then a decay to silence at ~71.7s. Played once on death in place of the
+// loop (see _playBgmOutro), then silence until the title screen's own music.
+const BGM_OUTRO_START      = 61.75;
+const BGM_OUTRO_DELAY      = 0.20;    // the loop collapses first (DEATH_MUSIC_SEC), then this fades in
+const BGM_OUTRO_FADE_IN    = 0.60;
+// Title track (2026-09-19): the whole song loops, back to 18.0 after 114.0 (bar grid at
+// 120 BPM, 2s per bar). The old pair (0.30 / 114.50) cut into the piece's own fade-out
+// and landed on unrelated material (waveform correlation -0.11). No exact repeat exists
+// for a 114s seam (the piece has copy-pasted sections, 0-16s = 66-82s and 84-96s =
+// 100-112s, but nothing that matches the end against the start), so the seam is a 4s
+// equal-power crossfade into the material before the start (_bakeBgmLoop). Pair chosen
+// by 12-bin chroma similarity of the 4s before each point: 0.96 for 18/114.
+const TITLE_BGM_LOOP_START = 18.0,  TITLE_BGM_LOOP_END = 114.0;
+const TITLE_BGM_LOOP_XFADE = 4.0;
 
 function _startBgMusic() {
+    _stopBgmOutro();
     if (!musicOn) return;
     if (_bgmActive) return;  // already playing - don't restart
     _bgmActive = true;
@@ -151,9 +173,9 @@ function _playBgmBuffer() {
     _bgmNode.loop = true;
     // Skip the lead-in and the fade-out on every pass after the first - see the
     // BGM_LOOP_START doc block.
-    if (_bgmBuf.duration > BGM_LOOP_END) {
+    if (_bgmBuf.duration > BGM_LOOP_START + 1) {
         _bgmNode.loopStart = BGM_LOOP_START;
-        _bgmNode.loopEnd   = BGM_LOOP_END;
+        _bgmNode.loopEnd   = Math.min(BGM_LOOP_END, _bgmBuf.duration);
     }
     _bgmNode.connect(_bgmGain);
     _bgmNode.start();
@@ -182,7 +204,9 @@ const DEATH_MUSIC_HZ  = 300;
 function _fadeBgMusic() {
     _bgmActive = false;
     _bgmPending = false;
+    let faded = false;
     if (_bgmGain && _bgmNode) {
+        faded = true;
         const t = _ac.currentTime;
         _bgmGain.gain.cancelScheduledValues(t);
         _bgmGain.gain.setValueAtTime(_bgmGain.gain.value, t);
@@ -196,6 +220,43 @@ function _fadeBgMusic() {
         n.onended = null;  // prevent ghost restart from stopped node
         setTimeout(() => { try { n.stop(); } catch(e){} }, DEATH_MUSIC_SEC * 1000 + 80);
     }
+    return faded;
+}
+
+// The song's real ending on the death screen instead of a fade to nothing. Only when the
+// play music was actually sounding (_fadeBgMusic returns true), so music-off and
+// not-yet-loaded stay silent. Any restart, revive or return to the title cuts it through
+// _stopBgmOutro, and nothing loops it: after the last decay there is silence until the
+// title screen starts its own track.
+function _playBgmOutro() {
+    if (!_ac || !_bgmOutroBuf || !musicOn) return;
+    _stopBgmOutro(0.05);
+    const t = _ac.currentTime;
+    _outroGain = _ac.createGain();
+    _outroGain.gain.setValueAtTime(0.0001, t);
+    _outroGain.gain.setValueAtTime(0.0001, t + BGM_OUTRO_DELAY);
+    _outroGain.gain.linearRampToValueAtTime(BGM_GAIN, t + BGM_OUTRO_DELAY + BGM_OUTRO_FADE_IN);
+    _outroGain.connect(_musicBus);
+    _outroNode = _ac.createBufferSource();
+    _outroNode.buffer = _bgmOutroBuf;
+    _outroNode.connect(_outroGain);
+    const n = _outroNode, g = _outroGain;
+    n.onended = () => { try { g.disconnect(); } catch (e) {} if (_outroNode === n) { _outroNode = null; _outroGain = null; } };
+    n.start(t + BGM_OUTRO_DELAY);
+}
+
+function _stopBgmOutro(fade) {
+    if (!_outroNode || !_ac) return;
+    const n = _outroNode, g = _outroGain, d = (fade === undefined) ? 0.25 : fade;
+    _outroNode = null; _outroGain = null;
+    try {
+        const t = _ac.currentTime;
+        g.gain.cancelScheduledValues(t);
+        g.gain.setValueAtTime(Math.max(g.gain.value, 0.0001), t);
+        g.gain.linearRampToValueAtTime(0.0001, t + d);
+        n.onended = () => { try { g.disconnect(); } catch (e) {} };
+        n.stop(t + d + 0.02);
+    } catch (e) {}
 }
 
 // Steps the whole music bus back by MUSIC_DUCK_DB for a moment so a one-shot that
@@ -275,6 +336,7 @@ function bgmSetWarp(on, duration) {
 }
 
 function _startTitleMusic() {
+    _stopBgmOutro();
     if (!musicOn) return;
     if (_titleBgmActive) return;  // already playing - don't restart
     _titleBgmActive = true;
@@ -303,9 +365,9 @@ function _playTitleBgmBuffer() {
     _titleBgmNode = _ac.createBufferSource();
     _titleBgmNode.buffer = _titleBgmBuf;
     _titleBgmNode.loop = true;
-    if (_titleBgmBuf.duration > TITLE_BGM_LOOP_END) {
+    if (_titleBgmBuf.duration > TITLE_BGM_LOOP_START + 1) {
         _titleBgmNode.loopStart = TITLE_BGM_LOOP_START;
-        _titleBgmNode.loopEnd   = TITLE_BGM_LOOP_END;
+        _titleBgmNode.loopEnd   = Math.min(TITLE_BGM_LOOP_END, _titleBgmBuf.duration);
     }
     _titleBgmNode.connect(_titleBgmGain);
     _titleBgmNode.start();
@@ -381,6 +443,42 @@ function _bgmUrl(name) {
     return (typeof isWeb === 'function' && isWeb()) ? name + '.web.m4a' : name + '.mp3';
 }
 
+// Bakes the loop seam into a copy of the track, cut at the loop end. The last
+// BGM_LOOP_XFADE seconds are an equal-power blend of the material before the loop end
+// (fading out) and the material just before the loop START (fading in), so the wrap
+// from end to start continues into the real audio that precedes the start - no cut, and
+// still ONE source node, which keeps the playbackRate slow/warp effects working. Works
+// on any decoder: an mp3/m4a delay offsets both loop points equally.
+function _bakeBgmLoop(buf, loopStart, loopEnd, xfade) {
+    try {
+        const sr = buf.sampleRate;
+        const s = Math.round(loopStart * sr), e = Math.round(loopEnd * sr);
+        const n = Math.round(xfade * sr);
+        if (buf.length < e || s < n) return buf;
+        const out = _ac.createBuffer(buf.numberOfChannels, e, sr);
+        for (let c = 0; c < buf.numberOfChannels; c++) {
+            const src = buf.getChannelData(c), dst = out.getChannelData(c);
+            dst.set(src.subarray(0, e));
+            for (let i = 0; i < n; i++) {
+                const a = (i + 0.5) / n * Math.PI / 2;
+                dst[e - n + i] = src[e - n + i] * Math.cos(a) + src[s - n + i] * Math.sin(a);
+            }
+        }
+        return out;
+    } catch (err) { return buf; }
+}
+
+// The ending as its own small buffer, so the full decode can be dropped.
+function _sliceOutro(buf) {
+    try {
+        const sr = buf.sampleRate, a = Math.round(BGM_OUTRO_START * sr);
+        if (buf.length <= a + sr) return null;
+        const out = _ac.createBuffer(buf.numberOfChannels, buf.length - a, sr);
+        for (let c = 0; c < buf.numberOfChannels; c++) out.getChannelData(c).set(buf.getChannelData(c).subarray(a));
+        return out;
+    } catch (err) { return null; }
+}
+
 function _loadBgmBuffer() {
     if (!_ac || _bgmBuf || _bgmLoading) return;
     _bgmLoading = true;
@@ -391,7 +489,8 @@ function _loadBgmBuffer() {
         .then(buf => {
             _bgmLoading = false;
             if (_ac !== ctx) return;   // context rebuilt mid-load; revive path reloads
-            _bgmBuf = buf;
+            _bgmBuf = _bakeBgmLoop(buf, BGM_LOOP_START, BGM_LOOP_END, BGM_LOOP_XFADE);
+            _bgmOutroBuf = _sliceOutro(buf);
             if (_bgmPending && _bgmActive) { _bgmPending = false; _playBgmBuffer(); }
         })
         .catch(err => {
@@ -410,7 +509,7 @@ function _loadTitleBgmBuffer() {
         .then(buf => {
             _titleBgmLoading = false;
             if (_ac !== ctx) return;
-            _titleBgmBuf = buf;
+            _titleBgmBuf = _bakeBgmLoop(buf, TITLE_BGM_LOOP_START, TITLE_BGM_LOOP_END, TITLE_BGM_LOOP_XFADE);
             if (_titleBgmPending && _titleBgmActive) { _titleBgmPending = false; _playTitleBgmBuffer(); }
             // Warm the play track now that the title track is in and the player is
             // sitting on the title screen anyway. Sequenced rather than parallel so it
@@ -450,7 +549,7 @@ function _reviveAudioContext() {
     _bgmPending = _bgmActive;
     _titleBgmPending = _titleBgmActive;
     _ac = null; _master = null; _musicBus = null; _outGain = null; _limiter = null;
-    _bgmFlt = null; _titleBgmFlt = null; _bgmBuf = null; _bgmNode = null; _bgmGain = null;
+    _bgmFlt = null; _titleBgmFlt = null; _bgmBuf = null; _bgmOutroBuf = null; _outroNode = null; _outroGain = null; _bgmNode = null; _bgmGain = null;
     _titleBgmBuf = null; _titleBgmNode = null; _titleBgmGain = null;
     // Any decode still in flight belongs to the context just closed and will drop itself
     // on the _ac !== ctx check; clear the guards so the fresh context can load again.
@@ -537,37 +636,76 @@ function sfxCoin(combo) {
     });
 }
 
-function sfxEngineSpoolUp() {
+// Turbine spool-up: a whine that climbs in pitch and level until the ship is ready to
+// fly, then cuts off in a short release. `dur` is the time the player cannot act yet
+// (START_RAMP_SEC on a run start, REVIVE_COUNTDOWN_SEC after a revive), so the sound
+// lasts exactly as long as the ship is warming up. The whine and its harmonic live at
+// 150-2500 Hz on purpose: a phone speaker drops everything below ~300 Hz, which is
+// why the old bass-only roar was barely audible on device.
+function sfxEngineSpoolUp(dur) {
     if (!_ac || !fxOn) return;
+    dur = dur || 1.3;
     const t = _ac.currentTime;
-    const dur = 1.3;
-    // Deep broadband roar - measured real jet engine recordings are bass-dominant
-    // noise (spectral centroid ~450Hz, low-band energy ~8x high-band), not a
-    // bright tone or whine: fast attack, gradual loudness swell.
-    const src = _ac.createBufferSource();
-    src.buffer = _noiseBuf(dur);
-    const flt = _ac.createBiquadFilter();
-    flt.type = 'lowpass';
-    flt.frequency.setValueAtTime(160, t);
-    flt.frequency.linearRampToValueAtTime(420, t + dur);
-    const g = _ac.createGain();
-    g.gain.setValueAtTime(0.001, t);
-    g.gain.linearRampToValueAtTime(0.30, t + 0.12);
-    g.gain.linearRampToValueAtTime(0.40, t + dur * 0.9);
-    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-    src.connect(flt); flt.connect(g); g.connect(_master);
-    src.start(t); src.stop(t + dur + 0.05);
-    // Mid roar color - broad, low-centered bandpass for engine "growl" texture
-    const src2 = _ac.createBufferSource();
-    src2.buffer = _noiseBuf(dur);
-    const flt2 = _ac.createBiquadFilter();
-    flt2.type = 'bandpass'; flt2.Q.value = 0.6; flt2.frequency.value = 480;
-    const g2 = _ac.createGain();
+    const end = t + dur;
+    const rel = 0.14;  // release after the ship is ready
+
+    // Main turbine whine: sawtooth through a lowpass that opens with the pitch.
+    const o1 = _ac.createOscillator(), f1 = _ac.createBiquadFilter(), g1 = _ac.createGain();
+    o1.type = 'sawtooth';
+    o1.frequency.setValueAtTime(110, t);
+    o1.frequency.exponentialRampToValueAtTime(420, t + dur * 0.55);
+    o1.frequency.exponentialRampToValueAtTime(980, end);
+    f1.type = 'lowpass'; f1.Q.value = 2;
+    f1.frequency.setValueAtTime(500, t);
+    f1.frequency.exponentialRampToValueAtTime(3200, end);
+    g1.gain.setValueAtTime(0.001, t);
+    g1.gain.linearRampToValueAtTime(0.10, t + dur * 0.35);
+    g1.gain.linearRampToValueAtTime(0.16, end);
+    g1.gain.linearRampToValueAtTime(0.001, end + rel);
+    o1.connect(f1); f1.connect(g1); g1.connect(_master);
+    o1.start(t); o1.stop(end + rel + 0.02);
+
+    // Compressor-stage whine: a pure tone about 2.5x the main pitch, the thin
+    // "turbine" sheen on top. Detuned from a clean harmonic so it beats a little.
+    const o2 = _ac.createOscillator(), g2 = _ac.createGain();
+    o2.type = 'sine';
+    o2.frequency.setValueAtTime(280, t);
+    o2.frequency.exponentialRampToValueAtTime(1050, t + dur * 0.55);
+    o2.frequency.exponentialRampToValueAtTime(2450, end);
     g2.gain.setValueAtTime(0.001, t);
-    g2.gain.linearRampToValueAtTime(0.14, t + 0.15);
-    g2.gain.exponentialRampToValueAtTime(0.001, t + dur);
-    src2.connect(flt2); flt2.connect(g2); g2.connect(_master);
-    src2.start(t); src2.stop(t + dur + 0.05);
+    g2.gain.linearRampToValueAtTime(0.02, t + dur * 0.4);
+    g2.gain.linearRampToValueAtTime(0.07, end);
+    g2.gain.linearRampToValueAtTime(0.001, end + rel);
+    o2.connect(g2); g2.connect(_master);
+    o2.start(t); o2.stop(end + rel + 0.02);
+
+    // Air hiss: bandpassed noise whose centre climbs with the whine.
+    const n = _ac.createBufferSource();
+    n.buffer = _noiseBuf(dur + rel + 0.05);
+    const nf = _ac.createBiquadFilter(), ng = _ac.createGain();
+    nf.type = 'bandpass'; nf.Q.value = 0.9;
+    nf.frequency.setValueAtTime(700, t);
+    nf.frequency.exponentialRampToValueAtTime(4200, end);
+    ng.gain.setValueAtTime(0.001, t);
+    ng.gain.linearRampToValueAtTime(0.05, t + dur * 0.5);
+    ng.gain.linearRampToValueAtTime(0.11, end);
+    ng.gain.linearRampToValueAtTime(0.001, end + rel);
+    n.connect(nf); nf.connect(ng); ng.connect(_master);
+    n.start(t); n.stop(end + rel + 0.05);
+
+    // Low combustion rumble, kept from the old roar for weight on real speakers.
+    const r = _ac.createBufferSource();
+    r.buffer = _noiseBuf(dur + rel + 0.05);
+    const rf = _ac.createBiquadFilter(), rg = _ac.createGain();
+    rf.type = 'lowpass';
+    rf.frequency.setValueAtTime(140, t);
+    rf.frequency.linearRampToValueAtTime(420, end);
+    rg.gain.setValueAtTime(0.001, t);
+    rg.gain.linearRampToValueAtTime(0.28, t + dur * 0.4);
+    rg.gain.linearRampToValueAtTime(0.32, end);
+    rg.gain.linearRampToValueAtTime(0.001, end + rel);
+    r.connect(rf); rf.connect(rg); rg.connect(_master);
+    r.start(t); r.stop(end + rel + 0.05);
 }
 
 function sfxDie() {
@@ -777,7 +915,7 @@ function sfxDrain() {
     ns.start(t); ns.stop(t + 0.46);
 }
 
-// Shared blast body for sfxMineExplode and sfxBomb. Reworked twice on 2026-09-18: first from
+// Blast body for sfxMineExplode (sfxBomb has had its own since 2026-09-19). Reworked twice on 2026-09-18: first from
 // a swept noise puff into a layered blast, then again because that still sounded like a
 // firecracker ("Knallfrosch"). A firecracker is a bright, sharp crack that is over in a
 // fraction of a second, and the first rework had exactly that shape: a hard high-passed
@@ -891,23 +1029,95 @@ function _blast(t, o) {
     });
 }
 
+// Bomb pickup, variant "Donner" (chosen 2026-09-19 from three browser proposals; the old
+// arpeggio chime + _blast() noise burst was disliked). A low thunder-like boom sent through a
+// convolution hall (`_bombVerb`, generated once per context). The dry path carries the hit,
+// the hall gives it the long filmic tail. The proposal had a 0.28 s crackling fuse in front
+// (matching the coin's burning fuse); dropped on request, so the boom now lands on frame 0.
+// `out` and `both` are the loudness knobs; `out` was matched by offline render to the old
+// sound (-24 dB loudest 50 ms), then `both` raised (asked louder, three times).
+let _bombVerb = null, _bombVerbAC = null;
+function _getBombVerb() {
+    if (_bombVerb && _bombVerbAC === _ac) return _bombVerb;
+    const sec = 2.2, n = Math.ceil(_ac.sampleRate * sec);
+    const buf = _ac.createBuffer(2, n, _ac.sampleRate);
+    for (let c = 0; c < 2; c++) {
+        const d = buf.getChannelData(c);
+        let p = 0;
+        for (let i = 0; i < n; i++) {
+            p += ((Math.random()*2-1) - p) * 0.18;   // one-pole lowpass: a dark hall
+            d[i] = p * Math.exp(-i / (_ac.sampleRate * sec * 0.28));
+        }
+    }
+    _bombVerb = buf; _bombVerbAC = _ac;
+    return buf;
+}
+
 function sfxBomb() {
     if (!_ac || !fxOn) return;
-    const t = _ac.currentTime;
-    // Bright ascending chime (the "power triggered" cue) immediately followed by a
-    // punchy low boom, so the pickup reads as one "charge then detonate" gesture.
-    [500, 750, 1100].forEach((freq, i) => {
-        const o = _ac.createOscillator(), g = _ac.createGain();
-        o.connect(g); g.connect(_master);
-        o.type = 'triangle'; o.frequency.value = freq;
-        const t0 = t + i * 0.045;
-        g.gain.setValueAtTime(0.16, t0);   // P6b: rare, run-defining pickup
-        g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.14);
-        o.start(t0); o.stop(t0 + 0.15);
-    });
-    // The blast itself: bigger and heavier than a mine's (size 1.5), with more boom and
-    // less debris - it is a clean charge, not a case breaking up.
-    _blast(t + 0.16, { size: 1.5, pv: 0.90 + Math.random() * 0.08, blast: 1.0, boom: 1.25, debris: 0.7, level: 0.12 });
+    const t = _ac.currentTime + 0.02;
+    const b = t;
+    const out = _ac.createGain();
+    out.gain.value = 0.12;
+    out.connect(_master);
+    const dry = _ac.createGain();
+    dry.connect(out);
+    const rv = _ac.createConvolver();
+    rv.buffer = _getBombVerb();
+    const wet = _ac.createGain(); wet.gain.value = 0.9;
+    rv.connect(wet); wet.connect(out);
+    const send = _ac.createGain(); send.gain.value = 0.7;
+    send.connect(rv);
+    const both = _ac.createGain();   // the boom goes dry and into the hall
+    both.gain.value = 3.8;           // +11.5 dB over the first version (asked louder three times, 2026-09-19)
+    both.connect(dry); both.connect(send);
+
+    // Boom: punch 130 -> 34 Hz, sub 68 -> 28 Hz through a waveshaper (bass survives a phone
+    // speaker), a lowpassed noise body and a 2 ms-ish click to place the hit.
+    const pu = _ac.createOscillator(), puG = _ac.createGain();
+    pu.type = 'sine';
+    pu.frequency.setValueAtTime(130, b);
+    pu.frequency.exponentialRampToValueAtTime(34, b + 0.22);
+    puG.gain.setValueAtTime(0.0001, b);
+    puG.gain.linearRampToValueAtTime(0.6, b + 0.005);
+    puG.gain.exponentialRampToValueAtTime(0.001, b + 1.0);
+    pu.connect(puG); puG.connect(both);
+    pu.start(b); pu.stop(b + 1.02);
+
+    const sb = _ac.createOscillator(), sbS = _ac.createWaveShaper(), sbF = _ac.createBiquadFilter(), sbG = _ac.createGain();
+    sb.type = 'sine';
+    sb.frequency.setValueAtTime(68, b);
+    sb.frequency.exponentialRampToValueAtTime(28, b + 0.8);
+    sbS.curve = _distortionCurve(2.5);
+    sbF.type = 'lowpass'; sbF.frequency.value = 300;
+    sbG.gain.setValueAtTime(0.0001, b);
+    sbG.gain.linearRampToValueAtTime(0.5, b + 0.02);
+    sbG.gain.exponentialRampToValueAtTime(0.001, b + 1.6);
+    sb.connect(sbS); sbS.connect(sbF); sbF.connect(sbG); sbG.connect(both);
+    sb.start(b); sb.stop(b + 1.62);
+
+    const bd = _ac.createBufferSource();
+    bd.buffer = _noiseBuf(0.95);
+    const bdF = _ac.createBiquadFilter();
+    bdF.type = 'lowpass'; bdF.Q.value = 0.8;
+    bdF.frequency.setValueAtTime(1200, b);
+    bdF.frequency.exponentialRampToValueAtTime(80, b + 0.5);
+    const bdS = _ac.createWaveShaper(); bdS.curve = _distortionCurve(3);
+    const bdG = _ac.createGain();
+    bdG.gain.setValueAtTime(0.0001, b);
+    bdG.gain.linearRampToValueAtTime(0.30, b + 0.004);
+    bdG.gain.exponentialRampToValueAtTime(0.001, b + 0.9);
+    bd.connect(bdF); bdF.connect(bdS); bdS.connect(bdG); bdG.connect(both);
+    bd.start(b); bd.stop(b + 0.95);
+
+    const ck = _ac.createBufferSource();
+    ck.buffer = _noiseBuf(0.02);
+    const ckF = _ac.createBiquadFilter(); ckF.type = 'highpass'; ckF.frequency.value = 1500;
+    const ckG = _ac.createGain();
+    ckG.gain.setValueAtTime(0.10, b);
+    ckG.gain.exponentialRampToValueAtTime(0.001, b + 0.02);
+    ck.connect(ckF); ckF.connect(ckG); ckG.connect(both);
+    ck.start(b); ck.stop(b + 0.02);
 }
 
 // Warp portal entry (constants.js "Warp portal" doc): a rising sweep chord + a
