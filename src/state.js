@@ -19,6 +19,25 @@ let hasHeldThisRun;
 let idleHoldTimer;
 const _initToday    = (() => { const d = new Date(); return d.getUTCFullYear()*10000 + (d.getUTCMonth()+1)*100 + d.getUTCDate(); })();
 const _savedLastDay = parseInt(localStorage.getItem('tunnel_lastday') || '0');
+// One-time record reset for 15.0: the personal records saved by earlier versions come from
+// caves and physics that no longer exist (unrealistic highs), so the first launch of a
+// build carrying this block wipes them - all-time best and where it died, plus today's
+// best, list and ghost, which would otherwise keep showing the same stale numbers for the
+// rest of the UTC day. The flag is keyed to the migration, not to TUNL_VERSION, so it runs
+// exactly once per device and a later version never wipes again. Must stay ABOVE the reads
+// below: they pick up the zeroed values. Untouched on purpose: shards, stardust, ships,
+// achievements and lifetime counters were earned honestly and did not change.
+try {
+    if (localStorage.getItem('tunnel_record_reset_v15') === null) {
+        localStorage.setItem('tunnel_best', '0');
+        localStorage.setItem('tunnel_best_sx', '0');
+        localStorage.setItem('tunnel_daily_best', '0');
+        localStorage.setItem('tunnel_top5', '[]');
+        localStorage.setItem('tunnel_no_pb', '0');
+        localStorage.removeItem('tunnel_ghost');
+        localStorage.setItem('tunnel_record_reset_v15', '1');
+    }
+} catch (e) {}
 let best          = parseInt(localStorage.getItem('tunnel_best')    || '0');
 let bestSX        = parseInt(localStorage.getItem('tunnel_best_sx') || '0');
 // Lifetime distance flown, in world-px, summed across every run ever (banked in
