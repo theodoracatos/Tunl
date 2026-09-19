@@ -19,6 +19,7 @@
 // ============================================================
 
 import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -78,6 +79,16 @@ async function build() {
 
   // structural injections (anchors that exist in home.src.html)
   tpl = tpl.replace('<html lang="en">', '<html lang="{{LANG}}">');
+  // Localized store screenshots: the 15.0 portrait frames carry a headline baked into
+  // the image, and Screenshots/iOS_15.0/<locale>/ has a set per language, so a German
+  // page shows German frames instead of English ones. home.src.html names the English
+  // path (it has to stay a valid standalone page); every language swaps the directory.
+  // NOTE the directory is /shots/, not /Screenshots/: "Screenshots" is itself a
+  // translated key (s3.head), and step 1 above replaces every key's English value
+  // wherever it appears - including inside a URL - so the ja page shipped
+  // src="/スクリーンショット/12.1/01.webp" for as long as that path existed. The render
+  // check at the end of this file now fails the build on that class of breakage.
+  tpl = tpl.split('/shots/15.0/en/').join('/shots/15.0/{{SHOTLANG}}/');
 
   if (!tpl.includes('<meta property="og:type" content="website">')) {
     throw new Error('anchor <meta property="og:type"...> not found in home.src.html');
@@ -109,12 +120,28 @@ async function build() {
   for (const lang of LANGS) {
     let html = tpl.replace(/\{\{([a-zA-Z0-9._]+)\}\}/g, (m, key) => {
       if (key === 'LANG') return lang;
+      if (key === 'SHOTLANG') return lang;
       if (key === 'OG_URL') return ORIGIN + langPath(lang);
       if (key === 'HEAD_ALT') return headAlt(lang);
       if (key === 'AUTO_REDIRECT') return lang === 'en' ? REDIRECT_JS : '';
       if (key === 'LANGSWITCH') return langSwitch(lang);
       return t(key, lang);
     });
+
+    // Every asset URL the page renders must still be an asset URL. Step 1 replaces each
+    // key's English text wherever it occurs, with no idea what is markup and what is
+    // prose, so a key whose English value happens to be a path segment ("Screenshots")
+    // silently rewrites src="/Screenshots/..." into the translated word. That shipped
+    // broken image links on the ja homepage; this turns it into a failed build.
+    for (const m of html.matchAll(/(?:src|href)="(\/[^"]*\.[a-z0-9]{2,5})"/g)) {
+      const url = m[1];
+      if (!/^[\x20-\x7E]+$/.test(url)) {
+        throw new Error(`[${lang}] non-ASCII asset URL "${url}" - an i18n key's English value collides with a path segment`);
+      }
+      if (!existsSync(path.join(SITE, url.replace(/^\//, '').split('?')[0]))) {
+        throw new Error(`[${lang}] asset URL "${url}" does not exist under site/`);
+      }
+    }
 
     const outDir = lang === 'en' ? SITE : path.join(SITE, lang);
     await mkdir(outDir, { recursive: true });

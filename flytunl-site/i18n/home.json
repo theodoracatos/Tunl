@@ -531,6 +531,15 @@
     "pt": "Tela de título do TUNL - uma caverna, todos os jogadores, todo dia",
     "ja": "TUNLタイトル画面 - ひとつの洞窟、全プレイヤー、毎日"
   },
+  "altCity": {
+    "en": "TUNL approach - every run takes off over the city at dusk and dives into the rock",
+    "de": "TUNL Anflug - jeder Lauf startet über der Stadt in der Dämmerung und taucht in den Fels",
+    "fr": "Approche TUNL - chaque partie décolle au-dessus de la ville au crépuscule et plonge dans la roche",
+    "it": "Avvicinamento TUNL - ogni partita decolla sopra la città al tramonto e si tuffa nella roccia",
+    "es": "Aproximación TUNL - cada partida despega sobre la ciudad al anochecer y se hunde en la roca",
+    "pt": "Aproximação TUNL - cada partida decola sobre a cidade ao anoitecer e mergulha na rocha",
+    "ja": "TUNL の進入 - すべての走行は夕暮れの街の上から始まり、岩へと飛び込む"
+  },
   "alt2": {
     "en": "TUNL gameplay - hold to climb, let go to fall, one touch is the whole game",
     "de": "TUNL Gameplay - halten zum Steigen, loslassen zum Fallen, eine Berührung ist das ganze Spiel",
