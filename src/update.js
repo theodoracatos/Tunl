@@ -117,10 +117,14 @@ function update(dt) {
     // below does for a fresh run. Once it runs out, play actually resumes and only
     // then does the post-revive grace window start.
     if (phase === 'revive') {
+        // Interruption pause: hold the count full until the page is back (input.js).
+        if (interruptPaused && _pageAway) { reviveCountdownT = REVIVE_COUNTDOWN_SEC; return; }
         reviveCountdownT = Math.max(0, reviveCountdownT - dt);
         if (reviveCountdownT <= 0) {
             phase = 'play';
-            invulnT = HIT_INVULN_SEC;
+            // A rewarded continue earns the grace window; an interruption does not.
+            if (!interruptPaused) invulnT = HIT_INVULN_SEC;
+            interruptPaused = false;
             // input.js only starts the thrust engine loop from an onDown while
             // phase === 'play' -- if the player is already holding through the
             // countdown (nothing to do but wait), sync it here so thrust force
@@ -735,7 +739,7 @@ function update(dt) {
             markDeathHit(sx, my, MINE_R);
             // The mine detonates whatever happens next (death, shield, grace window), so
             // it gets the same boom as a shot-down mine, layered under die()'s own cue.
-            sfxMineExplode();
+            sfxMineExplode(sx);
             if (die()) return;
             // Shield absorbed - destroy the mine so it can't immediately re-hit
             mines.splice(mi, 1);
@@ -893,7 +897,7 @@ function hullScratch(top, bot, r) {
     burst(PX, hitTop ? top : bot, 22);
     shake = Math.max(shake, 8);
     pushNotif(PX + PR * 3, py - H * 0.08, 1.3, T.notifScratch, [255, 170, 90]);
-    sfxShieldBreak();
+    sfxHullScratch();
     window.webkit?.messageHandlers?.haptic?.postMessage('medium');
 }
 
@@ -1271,9 +1275,10 @@ function grantRevive() {
     // actually resumes. See constants.js's doc comment for why the invuln window
     // doesn't start ticking during this freeze.
     phase = 'revive';
+    interruptPaused = false;   // a real continue: it earns the grace window at the end
     reviveCountdownT = REVIVE_COUNTDOWN_SEC;
     _startBgMusic();
-    sfxShieldBreak(); // reuses the "you were saved" cue; a dedicated revive jingle can replace this later
+    sfxRevive();   // its own cue since 2026-09-19 (audio.js sfxRevive); it used to reuse sfxShieldBreak
     // Same "engine warming back up" cue startPlay() opens every run with (~1.3s,
     // fits inside the 2s countdown) -- the ship visibly sat dead a second ago, so
     // it reads as literally spooling back up to fly again, not just a generic sfx.

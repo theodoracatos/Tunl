@@ -1273,9 +1273,32 @@ against each other or the bed, exactly as the 2026-09-05 thruster pass already f
   (`ffmpeg showspectrumpic`) and per-window band shares - the review is by eye, not by ear. Levels are matched to the
   sounds they replaced (loudest 50 ms: shield -21, rock -26, mine -21, bomb -23 dB before the master gain).
 
-Still open, deliberately: no reverb send, no stereo placement, no per-sound pitch
-variation on the repeating sfx (bullets, cracks), and the music does not follow the
-sector ramp. None of it is blocking; all of it is listed in the audit as upgrades.
+**Sound/UX review pass (2026-09-19, do not revert).** Proposals and the user's picks:
+https://claude.ai/artifact/6KC3aJhYAAfthzVXtX5oAa (db collection `entscheidungen`).
+- **One sound, one meaning.** Hull scratch (`sfxHullScratch`, a metal scrape ~2.5 dB under
+  the shield break) and revive (`sfxRevive`, a glide 660 -> 1320 Hz landing on a bell fifth,
+  above the spool-up's band) no longer reuse `sfxShieldBreak`.
+- **Stereo, centred on the ship** (`_sfxOut(x)`): cannon fire, mine blasts, rock hits and
+  stalactite cracks pan by screen x relative to `PX`, capped at `SFX_PAN_MAX` 0.6; ship-local
+  sounds stay centre. The `Math.SQRT2` in front of the panner is load-bearing: a mono sfx into
+  `_master` is upmixed to full level per channel, the equal-power panner puts it at 0.707, so
+  without it every panned sound measured ~3 dB quieter.
+- **Per-call variation** (`_vary`): +-3-4% pitch, +-1.5 dB on bullets, cracks, cannon, rock hits.
+- **Gold coin in the play track's key**: Nebula is D major (chroma of the loop body), so the
+  blips are D5 + A5 with in-key 3x/4x partials and a 3 ms attack; loudest-50ms unchanged (-25.3).
+- **Hazard telegraphs**: `sfxCannonArm` `CANNON_ARM_SEC` (0.4s) before a cannon fires, usually
+  while it is still just off the right edge; `sfxStalCreak` as a loose falling stalactite scrolls
+  on screen, lasting exactly until its detach. Both ~-28 dB, under a coin. Audio only: no rng().
+- **Settings: music and sound are three-level** (`musicLevel`/`fxLevel`, state.js; FULL -> LOW ->
+  OFF per tap, stored '1'/'low'/'0' so old saves read the same). Levels ride `_musicLvl`/`_fxLvl`
+  behind each bus, never `_musicBus.gain`, which `musicDuck()` owns. `AUDIO_LOW_GAIN` = -8 dB.
+  Vibration was deliberately left without a toggle (user's call: no room in the sheet).
+- **Interruption pause** (`pauseForInterrupt`, input.js; `PAUSE_REVEAL_SEC` doc in constants.js):
+  losing focus mid-run freezes into the revive countdown, cave covered while away. It ends with
+  **no** `HIT_INVULN_SEC` - backgrounding must never be a free invulnerability button.
+
+Still open, deliberately: no reverb send, and the music does not follow the sector ramp
+(both "later" in the 2026-09-19 review, with wall-proximity audio and the title sonar pulse).
 
 ### Addictive systems
 

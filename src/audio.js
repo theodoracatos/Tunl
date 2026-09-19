@@ -14,6 +14,11 @@ let _master = null;
 // _master keeps its name and its role as the sfx bus - every sfx in this file still
 // connects straight to it, which is why none of them needed touching.
 let _musicBus = null, _outGain = null, _limiter = null;
+// Settings levels (2026-09-19 sound review U4): one gain behind each bus, so "low" never
+// fights musicDuck(), which owns _musicBus.gain. AUDIO_LOW_GAIN is -8 dB: clearly quieter,
+// still well above the point where the thrust bed and the coin hierarchy stop reading.
+let _musicLvl = null, _fxLvl = null;
+const AUDIO_LOW_GAIN = 0.4;
 let _fNode = null, _fGain = null;
 let _mNode = null, _mGain = null, _mOsc = null;
 let _wNode = null, _wGain = null, _wOsc = null;
@@ -259,6 +264,19 @@ function _stopBgmOutro(fade) {
     } catch (e) {}
 }
 
+// Pushes musicLevel / fxLevel (state.js) onto the two level gains. A short glide on a tap in
+// the settings sheet so a level change never clicks; `now` sets it outright (context init).
+function applyAudioLevels(now) {
+    if (!_ac || !_musicLvl) return;
+    const t = _ac.currentTime;
+    [[_musicLvl, musicLevel], [_fxLvl, fxLevel]].forEach(([node, lvl]) => {
+        const v = lvl === 1 ? AUDIO_LOW_GAIN : 1;
+        if (now) { node.gain.value = v; return; }
+        node.gain.cancelScheduledValues(t);
+        node.gain.setTargetAtTime(v, t, 0.03);
+    });
+}
+
 // Steps the whole music bus back by MUSIC_DUCK_DB for a moment so a one-shot that
 // matters (a milestone, a record, the shield taking a hit for you) lands in its own
 // space instead of fighting a bed that is only ~2 dB below it. Bus-level, so it works
@@ -406,8 +424,11 @@ function _initAC() {
     _limiter = _ac.createWaveShaper();
     _limiter.curve = _limiterCurve();
     _limiter.oversample = '4x';   // keeps the shoulder's harmonics out of the alias band
-    _master.connect(_outGain);
-    _musicBus.connect(_outGain);
+    _fxLvl    = _ac.createGain();
+    _musicLvl = _ac.createGain();
+    _master.connect(_fxLvl);     _fxLvl.connect(_outGain);
+    _musicBus.connect(_musicLvl); _musicLvl.connect(_outGain);
+    applyAudioLevels(true);
     _outGain.connect(_limiter);
     _limiter.connect(_ac.destination);
     // WebKit sometimes creates the context in 'suspended' state even inside a
@@ -548,7 +569,7 @@ function _reviveAudioContext() {
     try { _ac.close(); } catch(e){}
     _bgmPending = _bgmActive;
     _titleBgmPending = _titleBgmActive;
-    _ac = null; _master = null; _musicBus = null; _outGain = null; _limiter = null;
+    _ac = null; _master = null; _musicBus = null; _outGain = null; _limiter = null; _musicLvl = null; _fxLvl = null;
     _bgmFlt = null; _titleBgmFlt = null; _bgmBuf = null; _bgmOutroBuf = null; _outroNode = null; _outroGain = null; _bgmNode = null; _bgmGain = null;
     _titleBgmBuf = null; _titleBgmNode = null; _titleBgmGain = null;
     // Any decode still in flight belongs to the context just closed and will drop itself
@@ -605,6 +626,35 @@ function _noiseBuf(dur) {
     return buf;
 }
 
+// Stereo placement (2026-09-19 sound review, S4). Every hazard arrives from the right, and an
+// iPhone held landscape has a speaker at each end, so a sound that happens somewhere in the
+// cave is panned to where it happens. The SHIP is the centre (not the screen): its own
+// sounds (coins, pickups, shield, death, thrust) stay dead centre, and the pan grows with
+// distance to the right of it, capped at SFX_PAN_MAX so nothing collapses into one ear.
+// `x` is a screen x; undefined means "at the ship" and returns _master unchanged. On a mono
+// speaker the panner is a no-op. Draw-free, rng()-free: no gameplay or placement effect.
+// The sqrt(2) in front is load-bearing: every sfx is mono, and a mono source into _master is
+// upmixed to FULL level on both channels, while a StereoPanner's equal-power law puts it at
+// 0.707 per channel at pan 0. Without it a panned sound measured ~3 dB quieter than the same
+// sound unpanned (offline render), which would have quietly broken the 2026-09-17 loudness
+// hierarchy for exactly the warning sounds that sit at the top of it.
+const SFX_PAN_MAX = 0.6;
+function _sfxOut(x) {
+    if (x === undefined || !_ac.createStereoPanner) return _master;
+    const g = _ac.createGain(), p = _ac.createStereoPanner();
+    g.gain.value = Math.SQRT2;
+    p.pan.value = SFX_PAN_MAX * Math.max(-1, Math.min(1, (x - PX) / (W - PX)));
+    g.connect(p); p.connect(_master);
+    return g;
+}
+
+// Per-call variation (2026-09-19 sound review, S7): +-pct pitch and +-db level, so a sound
+// that repeats every 0.32s (auto-fire) or in bursts (cracks, cannon) does not read as a loop.
+// Math.random is fine here - audio only, never the seeded rng() streams.
+function _vary(pct, db) {
+    return { pv: 1 + (Math.random() * 2 - 1) * pct, gv: Math.pow(10, (Math.random() * 2 - 1) * db / 20) };
+}
+
 function _distortionCurve(amount) {
     const n = 4096;
     const curve = new Float32Array(n);
@@ -617,24 +667,34 @@ function _distortionCurve(amount) {
 // and never changes the coin sound. `combo` is 1-indexed (systems.js increments
 // coinCombo before calling); the climb plateaus a major-tenth up so a long streak keeps
 // brightening without shrieking, same "widen the step, never cap flat" idea as
-// milestoneStep(). Called with no arg (combo -> NaN -> index 0) it falls back to the
-// original 600/900 Hz two-blip.
+// milestoneStep(). Called with no arg (combo -> NaN -> index 0) it plays the base two-blip.
 function sfxCoin(combo) {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
     const STEPS = [0, 2, 4, 7, 9, 12, 14, 16];  // major pentatonic, semitones
     const semis = STEPS[Math.min(Math.max(((combo | 0) - 1), 0), STEPS.length - 1)];
     const mul   = Math.pow(2, semis / 12);
-    [600 * mul, 900 * mul].forEach((freq, i) => {
-        const o = _ac.createOscillator(), g = _ac.createGain();
-        o.connect(g); g.connect(_master);
-        o.type = 'sine'; o.frequency.value = freq;
+    // In the play track's key (2026-09-19 sound review S6). The Nebula track is D major
+    // (chroma over the loop body: D dominant, F# 0.49 against F 0.16, A/E/G present), so
+    // the two blips are D5 + A5 and the pentatonic ladder above is D E F# A B - every step
+    // of a combo lands in key. It used to be 600/900 Hz, a third of a semitone sharp of D5.
+    // Each blip also carries two quiet partials at 3x and 4x (A and D again, so still in
+    // key): the 3x gives the body a little bell, the short 4x "tink" the attack. A pure sine
+    // read as a beep. COIN_LEVEL keeps the loudest-50ms where the old two sines sat.
+    [587.33 * mul, 880 * mul].forEach((freq, i) => {
         const t0 = t + i * 0.10;
-        g.gain.setValueAtTime(0.14, t0);
-        g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.15);
-        o.start(t0); o.stop(t0 + 0.16);
+        [[1, 1, 0.15], [3, 0.16, 0.10], [4, 0.10, 0.05]].forEach(([h, a, len]) => {
+            const o = _ac.createOscillator(), g = _ac.createGain();
+            o.connect(g); g.connect(_master);
+            o.type = 'sine'; o.frequency.value = freq * h;
+            g.gain.setValueAtTime(0.0001, t0);                       // 3 ms attack: the old
+            g.gain.linearRampToValueAtTime(COIN_LEVEL * a, t0 + 0.003); // hard start clicked
+            g.gain.exponentialRampToValueAtTime(0.001, t0 + len);
+            o.start(t0); o.stop(t0 + len + 0.01);
+        });
     });
 }
+const COIN_LEVEL = 0.14;
 
 // Turbofan spool-up ("rollendes Grollen", 2026-09-19): a big engine turning over, heard
 // from inside the cabin. Low-passed air roar (150 -> 700 Hz) plus a heavy rumble, both run
@@ -948,7 +1008,7 @@ function _blast(t, o) {
     const size = o.size, pv = o.pv;
     const out = _ac.createGain();   // one level knob for the whole blast (matched by offline render)
     out.gain.value = o.level;
-    out.connect(_master);
+    out.connect(_sfxOut(o.x));
 
     const pu = _ac.createOscillator(), puG = _ac.createGain();
     pu.type = 'sine';
@@ -1169,32 +1229,36 @@ function sfxWarpEnter() {
 // thump underneath for weight, and a bright crack on the attack for punch -
 // deliberately heavier than sfxBulletFire's crisp zap so the two guns still
 // read as different weapons even though their shots share a sprite.
-function sfxCannonFire() {
+function sfxCannonFire(x) {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
+    const { pv, gv } = _vary(0.04, 1.5);
+    const out = _ac.createGain();
+    out.gain.value = gv;
+    out.connect(_sfxOut(x));
     const src = _ac.createBufferSource();
     src.buffer = _noiseBuf(0.18);
     const flt = _ac.createBiquadFilter();
     flt.type = 'bandpass'; flt.Q.value = 1.1;
-    flt.frequency.setValueAtTime(1100, t);
-    flt.frequency.exponentialRampToValueAtTime(180, t + 0.16);
+    flt.frequency.setValueAtTime(1100 * pv, t);
+    flt.frequency.exponentialRampToValueAtTime(180 * pv, t + 0.16);
     const g = _ac.createGain();
     // +5 dB across all three layers (2026-09-17): a cannon shot is the game's only
     // "something is about to happen to you" cue, and it measured 4 dB QUIETER than a
     // gold coin. Warnings sit above rewards.
     g.gain.setValueAtTime(0.57, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
-    src.connect(flt); flt.connect(g); g.connect(_master);
+    src.connect(flt); flt.connect(g); g.connect(out);
     src.start(t); src.stop(t + 0.19);
     // Low thump for artillery weight the old single-layer version lacked.
     const src2 = _ac.createBufferSource();
     src2.buffer = _noiseBuf(0.14);
     const flt2 = _ac.createBiquadFilter();
-    flt2.type = 'lowpass'; flt2.frequency.value = 200;
+    flt2.type = 'lowpass'; flt2.frequency.value = 200 * pv;
     const g2 = _ac.createGain();
     g2.gain.setValueAtTime(0.60, t);
     g2.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
-    src2.connect(flt2); flt2.connect(g2); g2.connect(_master);
+    src2.connect(flt2); flt2.connect(g2); g2.connect(out);
     src2.start(t); src2.stop(t + 0.15);
     // Muzzle crack: a hair of bright noise on the attack for punch.
     const src3 = _ac.createBufferSource();
@@ -1204,11 +1268,12 @@ function sfxCannonFire() {
     const g3 = _ac.createGain();
     g3.gain.setValueAtTime(0.32, t);
     g3.gain.exponentialRampToValueAtTime(0.001, t + 0.02);
-    src3.connect(flt3); flt3.connect(g3); g3.connect(_master);
+    src3.connect(flt3); flt3.connect(g3); g3.connect(out);
     src3.start(t); src3.stop(t + 0.02);
 }
 
-// The shield eating a hit for you - also the revive cue (update.js grantRevive).
+// The shield eating a hit for you (update.js die()'s shield branch). Until 2026-09-19 it was
+// also the hull-scratch and the revive cue - see sfxHullScratch / sfxRevive below.
 // Raised ~8 dB on 2026-09-17: measured, this was the QUIETEST gameplay sound in the game
 // (-32.3 dB momentary, a good 7 dB under a routine gold coin), which put the sound of
 // losing your one shield below the sound of picking up three points. The Q 1.8 bandpass
@@ -1280,6 +1345,125 @@ function sfxShieldBreak() {
     });
     musicDuck();
 }
+
+// Hull scratch (update.js hullScratch, 2026-09-19 sound review S2): a lethal wall touched while
+// the ship still has one of its HULL_SCRATCHES. It used to play sfxShieldBreak, as did the
+// revive, so three different messages ("a reserve is gone", "your shield is gone", "you are
+// back") were one sound and the player could learn nothing from it. A scratch is metal
+// dragged along rock, and it sits BELOW the shield break in level, because the game is still
+// forgiving here - it is a warning, not a loss:
+//  1. SCRAPE - noise through a resonant bandpass sliding 2600 -> 1100 Hz, chopped by a 38 Hz
+//     square gate (the grain of a scrape rather than a hiss).
+//  2. RING   - two quiet inharmonic partials gliding down 3%: the hull ringing after.
+//  3. BUMP   - a short 130 -> 60 Hz sine for the contact, with a 700 Hz noise partner so it
+//     exists on a phone speaker.
+function sfxHullScratch() {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    const sc = _ac.createBufferSource();
+    sc.buffer = _noiseBuf(0.30);
+    const scF = _ac.createBiquadFilter();
+    scF.type = 'bandpass'; scF.Q.value = 5;
+    scF.frequency.setValueAtTime(2600, t);
+    scF.frequency.exponentialRampToValueAtTime(1100, t + 0.26);
+    const grain = _ac.createGain();
+    grain.gain.value = 0.55;
+    const lfo = _ac.createOscillator(), lfoD = _ac.createGain();
+    lfo.type = 'square'; lfo.frequency.value = 38;
+    lfoD.gain.value = 0.45;
+    lfo.connect(lfoD); lfoD.connect(grain.gain);
+    const scG = _ac.createGain();
+    scG.gain.setValueAtTime(0.0001, t);
+    scG.gain.linearRampToValueAtTime(SCRATCH_SCRAPE, t + 0.006);
+    scG.gain.setValueAtTime(SCRATCH_SCRAPE, t + 0.10);
+    scG.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+    sc.connect(scF); scF.connect(grain); grain.connect(scG); scG.connect(_master);
+    sc.start(t); sc.stop(t + 0.30);
+    lfo.start(t); lfo.stop(t + 0.30);
+
+    [[1480, 0.030], [2210, 0.020]].forEach(([f, a]) => {
+        const o = _ac.createOscillator(), g = _ac.createGain();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(f, t + 0.01);
+        o.frequency.exponentialRampToValueAtTime(f * 0.97, t + 0.34);
+        g.gain.setValueAtTime(0.0001, t + 0.01);
+        g.gain.linearRampToValueAtTime(a, t + 0.025);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.34);
+        o.connect(g); g.connect(_master);
+        o.start(t + 0.01); o.stop(t + 0.36);
+    });
+
+    const th = _ac.createOscillator(), thG = _ac.createGain();
+    th.type = 'sine';
+    th.frequency.setValueAtTime(130, t);
+    th.frequency.exponentialRampToValueAtTime(60, t + 0.09);
+    thG.gain.setValueAtTime(0.09, t);
+    thG.gain.exponentialRampToValueAtTime(0.001, t + 0.10);
+    th.connect(thG); thG.connect(_master);
+    th.start(t); th.stop(t + 0.11);
+    const bm = _ac.createBufferSource();
+    bm.buffer = _noiseBuf(0.05);
+    const bmF = _ac.createBiquadFilter();
+    bmF.type = 'bandpass'; bmF.frequency.value = 700; bmF.Q.value = 2;
+    const bmG = _ac.createGain();
+    bmG.gain.setValueAtTime(0.45, t);
+    bmG.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+    bm.connect(bmF); bmF.connect(bmG); bmG.connect(_master);
+    bm.start(t); bm.stop(t + 0.05);
+}
+const SCRATCH_SCRAPE = 0.8;
+
+// Rewarded continue (update.js grantRevive, 2026-09-19 sound review S2): the run is given
+// back. It layers over sfxEngineSpoolUp (which grantRevive also starts and which has nothing
+// above ~700 Hz), so this cue lives in the band above it and reads as power returning, not as
+// damage: two detuned triangles glide up an octave (660 -> 1320 Hz) behind a lowpass that
+// opens, land on a bell fifth (1320 + 1980 Hz), and a rising high shimmer peaks on the landing.
+// Deliberately a GLIDE, not an arpeggio, so it is not mistaken for sfxMilestone's note stack.
+function sfxRevive() {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    const land = t + 0.34;
+    const lp = _ac.createBiquadFilter();
+    lp.type = 'lowpass'; lp.Q.value = 1.2;
+    lp.frequency.setValueAtTime(1400, t);
+    lp.frequency.exponentialRampToValueAtTime(8000, land);
+    const gl = _ac.createGain();
+    gl.gain.setValueAtTime(0.0001, t);
+    gl.gain.linearRampToValueAtTime(REVIVE_GLIDE, t + 0.05);
+    gl.gain.setValueAtTime(REVIVE_GLIDE, land - 0.04);
+    gl.gain.exponentialRampToValueAtTime(0.001, land + 0.12);
+    lp.connect(gl); gl.connect(_master);
+    [1, 1.006].forEach(d => {
+        const o = _ac.createOscillator();
+        o.type = 'triangle';
+        o.frequency.setValueAtTime(660 * d, t);
+        o.frequency.exponentialRampToValueAtTime(1320 * d, land);
+        o.connect(lp);
+        o.start(t); o.stop(land + 0.14);
+    });
+    [[1320, 0.08, 0.9], [1980, 0.055, 0.75]].forEach(([f, a, len]) => {
+        const o = _ac.createOscillator(), g = _ac.createGain();
+        o.type = 'triangle'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, land);
+        g.gain.linearRampToValueAtTime(a, land + 0.008);
+        g.gain.exponentialRampToValueAtTime(0.0001, land + len);
+        o.connect(g); g.connect(_master);
+        o.start(land); o.stop(land + len + 0.02);
+    });
+    const sh = _ac.createBufferSource();
+    sh.buffer = _noiseBuf(0.6);
+    const shF = _ac.createBiquadFilter();
+    shF.type = 'bandpass'; shF.Q.value = 1.4;
+    shF.frequency.setValueAtTime(3000, t);
+    shF.frequency.exponentialRampToValueAtTime(7000, land);
+    const shG = _ac.createGain();
+    shG.gain.setValueAtTime(0.0001, t);
+    shG.gain.exponentialRampToValueAtTime(0.05, land);
+    shG.gain.exponentialRampToValueAtTime(0.0001, land + 0.25);
+    sh.connect(shF); shF.connect(shG); shG.connect(_master);
+    sh.start(t); sh.stop(land + 0.26);
+}
+const REVIVE_GLIDE = 0.08;
 
 function sfxMilestone(n) {
     if (!_ac || !fxOn) return;
@@ -1410,9 +1594,9 @@ function sfxPbPassed() {
     musicDuck(MUSIC_DUCK_DB, 0.60);   // the deepest record of all - give it the room
 }
 
-function sfxMineExplode() {
+function sfxMineExplode(x) {
     if (!_ac || !fxOn) return;
-    _blast(_ac.currentTime, { size: 1.3, pv: 0.94 + Math.random() * 0.12, blast: 1.0, boom: 1.0, debris: 1.0, level: 0.17 });
+    _blast(_ac.currentTime, { size: 1.3, pv: 0.94 + Math.random() * 0.12, blast: 1.0, boom: 1.0, debris: 1.0, level: 0.17, x });
 }
 
 function sfxBulletPickup() {
@@ -1434,6 +1618,7 @@ function sfxBulletFire() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
     const dur = 0.08;
+    const { pv, gv } = _vary(0.03, 1.5);   // S7: every 0.32s while ammo lasts - never the same shot twice
     // Body: triangle wave, not the old sawtooth - sawtooth's dense harmonics on
     // a fast downward sweep read as a nasal "quack" rather than a clean zap.
     // A lowpass sweeping down in lockstep with pitch shaves the remaining top
@@ -1443,12 +1628,12 @@ function sfxBulletFire() {
     const flt = _ac.createBiquadFilter();
     o.connect(flt); flt.connect(g); g.connect(_master);
     o.type = 'triangle';
-    o.frequency.setValueAtTime(1400, t);
-    o.frequency.exponentialRampToValueAtTime(300, t + dur);
+    o.frequency.setValueAtTime(1400 * pv, t);
+    o.frequency.exponentialRampToValueAtTime(300 * pv, t + dur);
     flt.type = 'lowpass';
     flt.frequency.setValueAtTime(6000, t);
     flt.frequency.exponentialRampToValueAtTime(700, t + dur);
-    g.gain.setValueAtTime(0.16, t);
+    g.gain.setValueAtTime(0.16 * gv, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + dur);
     o.start(t); o.stop(t + dur + 0.02);
     _bfVoices = [{ node: o, gain: g }];
@@ -1460,9 +1645,9 @@ function sfxBulletFire() {
     const o2 = _ac.createOscillator(), g2 = _ac.createGain();
     o2.connect(g2); g2.connect(_master);
     o2.type = 'square';
-    o2.frequency.setValueAtTime(700, t);
-    o2.frequency.exponentialRampToValueAtTime(150, t + dur);
-    g2.gain.setValueAtTime(0.05, t);
+    o2.frequency.setValueAtTime(700 * pv, t);
+    o2.frequency.exponentialRampToValueAtTime(150 * pv, t + dur);
+    g2.gain.setValueAtTime(0.05 * gv, t);
     g2.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.9);
     o2.start(t); o2.stop(t + dur);
     _bfVoices.push({ node: o2, gain: g2 });
@@ -1473,7 +1658,7 @@ function sfxBulletFire() {
     const cFlt = _ac.createBiquadFilter();
     cFlt.type = 'bandpass'; cFlt.Q.value = 1.2; cFlt.frequency.value = 5000;
     const g3 = _ac.createGain();
-    g3.gain.setValueAtTime(0.09, t);
+    g3.gain.setValueAtTime(0.09 * gv, t);
     g3.gain.exponentialRampToValueAtTime(0.001, t + 0.015);
     src.connect(cFlt); cFlt.connect(g3); g3.connect(_master);
     src.start(t); src.stop(t + 0.015);
@@ -1507,19 +1692,23 @@ function sfxBulletFireStop() {
 // other layered impact sfx (compare sfxMineExplode's boom+crack). Now three
 // short layers: a bandpassed "snap" body, a brief high-frequency tick on the
 // attack, and a touch of low thump for weight.
-function sfxStalCrack() {
+function sfxStalCrack(x) {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
+    const { pv, gv } = _vary(0.03, 1.5);
+    const out = _ac.createGain();
+    out.gain.value = gv;
+    out.connect(_sfxOut(x));
     const src = _ac.createBufferSource();
     src.buffer = _noiseBuf(0.16);
     const flt = _ac.createBiquadFilter();
     flt.type = 'bandpass'; flt.Q.value = 1.1;
-    flt.frequency.setValueAtTime(2600, t);
-    flt.frequency.exponentialRampToValueAtTime(1200, t + 0.14);
+    flt.frequency.setValueAtTime(2600 * pv, t);
+    flt.frequency.exponentialRampToValueAtTime(1200 * pv, t + 0.14);
     const g = _ac.createGain();
     g.gain.setValueAtTime(0.34, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
-    src.connect(flt); flt.connect(g); g.connect(_master);
+    src.connect(flt); flt.connect(g); g.connect(out);
     src.start(t); src.stop(t + 0.16);
     // Transient tick on the attack for a sharp onset - same role as the muzzle
     // crack in sfxBulletFire.
@@ -1530,16 +1719,16 @@ function sfxStalCrack() {
     const g2 = _ac.createGain();
     g2.gain.setValueAtTime(0.22, t);
     g2.gain.exponentialRampToValueAtTime(0.001, t + 0.015);
-    src2.connect(flt2); flt2.connect(g2); g2.connect(_master);
+    src2.connect(flt2); flt2.connect(g2); g2.connect(out);
     src2.start(t); src2.stop(t + 0.015);
     // Low thump underneath so the hit reads with a bit of weight, not pure static.
     const o = _ac.createOscillator(), g3 = _ac.createGain();
     o.type = 'sine';
-    o.frequency.setValueAtTime(180, t);
-    o.frequency.exponentialRampToValueAtTime(70, t + 0.08);
+    o.frequency.setValueAtTime(180 * pv, t);
+    o.frequency.exponentialRampToValueAtTime(70 * pv, t + 0.08);
     g3.gain.setValueAtTime(0.10, t);
     g3.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
-    o.connect(g3); g3.connect(_master);
+    o.connect(g3); g3.connect(out);
     o.start(t); o.stop(t + 0.09);
 }
 
@@ -1552,17 +1741,20 @@ function sfxStalCrack() {
 // tiny gravel ticks scattering after it at fixed offsets. Pitch varies +-8% per call so a
 // stream of hits does not machine-gun. Level matched by offline render to sfxStalCrack (loudest 50 ms about -26 dB
 // before the master gain), which it replaces at these three call sites.
-function sfxRockHit() {
+function sfxRockHit(x) {
     if (!_ac || !fxOn) return;
     const t  = _ac.currentTime;
     const pv = 0.92 + Math.random() * 0.16;
+    const out = _ac.createGain();
+    out.gain.value = _vary(0, 1.5).gv;
+    out.connect(_sfxOut(x));
     const o = _ac.createOscillator(), og = _ac.createGain();
     o.type = 'sine';
     o.frequency.setValueAtTime(210 * pv, t);
     o.frequency.exponentialRampToValueAtTime(90 * pv, t + 0.07);
     og.gain.setValueAtTime(0.12, t);
     og.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
-    o.connect(og); og.connect(_master);
+    o.connect(og); og.connect(out);
     o.start(t); o.stop(t + 0.10);
     const body = _ac.createBufferSource();
     body.buffer = _noiseBuf(0.07);
@@ -1571,7 +1763,7 @@ function sfxRockHit() {
     const bg = _ac.createGain();
     bg.gain.setValueAtTime(0.75, t);
     bg.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
-    body.connect(bf); bf.connect(bg); bg.connect(_master);
+    body.connect(bf); bf.connect(bg); bg.connect(out);
     body.start(t); body.stop(t + 0.07);
     const chip = _ac.createBufferSource();
     chip.buffer = _noiseBuf(0.02);
@@ -1580,7 +1772,7 @@ function sfxRockHit() {
     const cg = _ac.createGain();
     cg.gain.setValueAtTime(0.24, t);
     cg.gain.exponentialRampToValueAtTime(0.001, t + 0.02);
-    chip.connect(cf); cf.connect(cg); cg.connect(_master);
+    chip.connect(cf); cf.connect(cg); cg.connect(out);
     chip.start(t); chip.stop(t + 0.02);
     [[0.030, 0.10, 3600], [0.062, 0.07, 4400], [0.098, 0.05, 3100]].forEach(([dt, a, hz]) => {
         const gr = _ac.createBufferSource();
@@ -1590,10 +1782,92 @@ function sfxRockHit() {
         const gg = _ac.createGain();
         gg.gain.setValueAtTime(a, t + dt);
         gg.gain.exponentialRampToValueAtTime(0.001, t + dt + 0.012);
-        gr.connect(gf); gf.connect(gg); gg.connect(_master);
+        gr.connect(gf); gf.connect(gg); gg.connect(out);
         gr.start(t + dt); gr.stop(t + dt + 0.012);
     });
 }
+
+// Hazard telegraphs (2026-09-19 sound review S3). Information, not alarm: both sit a few dB
+// under a gold coin, and both are panned to where the hazard is (_sfxOut), which for these
+// two is almost always the right edge or just past it.
+
+// A loose falling stalactite starts to go (systems.js updateFallingStals, the frame it scrolls
+// on screen). Rock does not squeal, it gives in stick-slip jerks, so this is a train of short
+// resonant clicks (band-passed noise, 620 Hz, Q 7) whose spacing ACCELERATES and whose level
+// builds over `dur` - which the caller sets to the time left until the detach, so the creak
+// peaks exactly where sfxStalCrack takes over. A sparse high grit trickle rides on top, the
+// sound of the dust the spike is already shedding. Fixed offsets, no Math.random in the
+// timing: the same creak every time, only the pan moves.
+function sfxStalCreak(x, dur) {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    const out = _ac.createGain();
+    out.gain.value = STAL_CREAK_LEVEL;
+    out.connect(_sfxOut(x));
+    const n = 14;
+    for (let k = 0; k < n; k++) {
+        const u  = k / (n - 1);
+        const tk = t + dur * (1 - Math.pow(1 - u, 1.8));   // clicks bunch up toward the end
+        const a  = 0.25 + 0.75 * u;
+        const c = _ac.createBufferSource();
+        c.buffer = _noiseBuf(0.03);
+        const cf = _ac.createBiquadFilter();
+        cf.type = 'bandpass'; cf.frequency.value = 620 * (1 - 0.18 * u); cf.Q.value = 7;
+        const cg = _ac.createGain();
+        cg.gain.setValueAtTime(0.0001, tk);
+        cg.gain.linearRampToValueAtTime(a, tk + 0.003);
+        cg.gain.exponentialRampToValueAtTime(0.001, tk + 0.028);
+        c.connect(cf); cf.connect(cg); cg.connect(out);
+        c.start(tk); c.stop(tk + 0.03);
+    }
+    const gr = _ac.createBufferSource();
+    gr.buffer = _noiseBuf(dur + 0.05);
+    const gf = _ac.createBiquadFilter();
+    gf.type = 'bandpass'; gf.frequency.value = 4200; gf.Q.value = 1.2;
+    const gg = _ac.createGain();
+    gg.gain.setValueAtTime(0.0001, t);
+    gg.gain.linearRampToValueAtTime(0.04, t + dur);
+    gg.gain.exponentialRampToValueAtTime(0.001, t + dur + 0.05);
+    gr.connect(gf); gf.connect(gg); gg.connect(out);
+    gr.start(t); gr.stop(t + dur + 0.05);
+}
+const STAL_CREAK_LEVEL = 2.6;
+
+// A cannon arming, CANNON_ARM_SEC before it fires (systems.js updateCannonShots). Until now
+// its whole warning was the shell's own flight time - nothing announced the shot. A latch
+// (two dry clicks) and a short servo whine rising 300 -> 900 Hz, the gun swinging onto its
+// line; it ends just before sfxCannonFire so the two read as one action.
+function sfxCannonArm(x) {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    const out = _ac.createGain();
+    out.gain.value = CANNON_ARM_LEVEL;
+    out.connect(_sfxOut(x));
+    [[0, 3000, 0.6], [0.05, 2300, 0.45]].forEach(([dt, hz, a]) => {
+        const c = _ac.createBufferSource();
+        c.buffer = _noiseBuf(0.02);
+        const cf = _ac.createBiquadFilter();
+        cf.type = 'bandpass'; cf.frequency.value = hz; cf.Q.value = 3;
+        const cg = _ac.createGain();
+        cg.gain.setValueAtTime(a, t + dt);
+        cg.gain.exponentialRampToValueAtTime(0.001, t + dt + 0.018);
+        c.connect(cf); cf.connect(cg); cg.connect(out);
+        c.start(t + dt); c.stop(t + dt + 0.02);
+    });
+    const o = _ac.createOscillator(), og = _ac.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(300, t + 0.07);
+    o.frequency.exponentialRampToValueAtTime(900, t + 0.34);
+    const of = _ac.createBiquadFilter();
+    of.type = 'bandpass'; of.frequency.value = 1200; of.Q.value = 1.5;
+    og.gain.setValueAtTime(0.0001, t + 0.07);
+    og.gain.linearRampToValueAtTime(0.10, t + 0.12);
+    og.gain.setValueAtTime(0.10, t + 0.30);
+    og.gain.exponentialRampToValueAtTime(0.001, t + 0.36);
+    o.connect(of); of.connect(og); og.connect(out);
+    o.start(t + 0.07); o.stop(t + 0.37);
+}
+const CANNON_ARM_LEVEL = 1.6;
 
 // ── Per-skin thruster voices ─────────────────────────────────────────────
 // Every skin used to share this exact bandpass-noise texture as its hold-to-thrust

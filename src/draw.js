@@ -4110,8 +4110,8 @@ function drawTitleScreen() {
             const halfW      = (rowW - audioGap) / 2;
             const musicCX    = rowX0 + halfW / 2;
             const fxCX       = rowX0 + rowW - halfW / 2;
-            const musicLabel = musicOn ? T.musicOn : T.musicOff;
-            const fxLabel    = fxOn    ? T.fxOn    : T.fxOff;
+            const musicLabel = [T.musicOff, T.musicLow, T.musicOn][musicLevel];
+            const fxLabel    = [T.fxOff,    T.fxLow,    T.fxOn][fxLevel];
             ctx.font = `${FS*0.022}px ${FONT_UI}`;
             _btnMusicRect = drawBtn(musicCX, audioBY, musicLabel, musicOn, false, halfW);
             ctx.font = `${FS*0.022}px ${FONT_UI}`;   // drawBtn may have shrunk it for musicLabel
@@ -5359,7 +5359,18 @@ function draw() {
     // continueOfferPending gates which one shows, never both -- see update.js's
     // die()/commitDeath() split and constants.js's CONTINUE_OFFER_SEC doc.
     if (phase === 'dead')  { if (continueOfferPending) drawContinueOffer(); else drawDeathScreen(); }
+    if (phase === 'revive' && interruptPaused) drawInterruptCover();
     if (phase === 'revive') drawReviveCountdown();
+}
+
+// Interruption pause (constants.js PAUSE_REVEAL_SEC doc): the cave is covered while the app
+// is away and for all but the last PAUSE_REVEAL_SEC of the countdown, then fades back in.
+// Drawn under the READY word, which drawReviveCountdown puts on top.
+function drawInterruptCover() {
+    const a = _pageAway ? 1 : Math.min(1, reviveCountdownT / PAUSE_REVEAL_SEC);
+    if (a <= 0) return;
+    ctx.fillStyle = `rgba(4,4,14,${a})`;
+    ctx.fillRect(0, 0, W, H);
 }
 
 // Revive countdown (state.js reviveCountdownT, update.js's phase==='revive' branch).

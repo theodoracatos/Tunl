@@ -13,10 +13,31 @@ const INPUT_RESUME_GRACE_MS = 400;
 function _suppressInput() {
     holding = false; thrustOff();
     _inputSuppressedUntil = performance.now() + INPUT_RESUME_GRACE_MS;
+    _pageAway = true;
+    pauseForInterrupt();
 }
-document.addEventListener('visibilitychange', () => { if (document.hidden) _suppressInput(); else _inputSuppressedUntil = performance.now() + INPUT_RESUME_GRACE_MS; });
+function _pageBack() { _pageAway = false; }
+// iOS: GameView.swift calls _tunlResumeAudio from applicationDidBecomeActive, which is the one
+// signal that reliably arrives after the app was only inactive (notification pull, call
+// banner). audio.js sets it up before this file loads.
+{
+    const _resumeAudio = window._tunlResumeAudio;
+    window._tunlResumeAudio = () => { _pageBack(); if (_resumeAudio) _resumeAudio(); };
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) _suppressInput(); else { _inputSuppressedUntil = performance.now() + INPUT_RESUME_GRACE_MS; _pageBack(); } });
 window.addEventListener('blur', _suppressInput);
 window.addEventListener('pagehide', _suppressInput);
+window.addEventListener('focus', _pageBack);
+window.addEventListener('pageshow', _pageBack);
+
+// Interruption mid-run (constants.js PAUSE_REVEAL_SEC doc): freeze into the revive countdown.
+// update.js holds the countdown full while _pageAway, then runs it down once the page is back.
+function pauseForInterrupt() {
+    if (phase !== 'play') return;
+    phase = 'revive';
+    interruptPaused = true;
+    reviveCountdownT = REVIVE_COUNTDOWN_SEC;
+}
 
 // A blank-area tap on the title screen starts a run. But that tap's pointerdown
 // is indistinguishable from the start of a system edge-swipe gesture (e.g. iOS
@@ -26,6 +47,9 @@ window.addEventListener('pagehide', _suppressInput);
 let _titleStartPending = null;
 
 function onDown(e) {
+    // A touch proves the page is back even if no focus event arrived (WKWebView does not
+    // always send one after the app was only inactive), so a pause can never stick.
+    if (!document.hidden) _pageBack();
     if (document.hidden || performance.now() < _inputSuppressedUntil) return;
     if (phase === 'title' && e) {
         const rect = cv.getBoundingClientRect();
@@ -69,16 +93,22 @@ function onDown(e) {
                 else              { window._tunlReminderEnable();  sfxUiTap(); }
                 return;
             }
+            // Each tap steps FULL -> LOW -> OFF -> FULL (state.js musicLevel doc).
             if (_btnMusicRect && inRect(cx, cy, _btnMusicRect)) {
-                musicOn = !musicOn;
-                localStorage.setItem('tunnel_music', musicOn ? '1' : '0');
-                if (musicOn) _startTitleMusic(); else _fadeTitleMusic();
+                const wasOn = musicOn;
+                musicLevel = (musicLevel + 2) % 3;
+                musicOn = musicLevel > 0;
+                localStorage.setItem('tunnel_music', ['0', 'low', '1'][musicLevel]);
+                applyAudioLevels();
+                if (musicOn && !wasOn) _startTitleMusic(); else if (!musicOn && wasOn) _fadeTitleMusic();
                 sfxUiToggle(musicOn);
                 return;
             }
             if (_btnFxRect && inRect(cx, cy, _btnFxRect)) {
-                fxOn = !fxOn;
-                localStorage.setItem('tunnel_fx', fxOn ? '1' : '0');
+                fxLevel = (fxLevel + 2) % 3;
+                fxOn = fxLevel > 0;
+                localStorage.setItem('tunnel_fx', ['0', 'low', '1'][fxLevel]);
+                applyAudioLevels();
                 sfxUiToggle(fxOn);
                 return;
             }

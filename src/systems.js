@@ -140,6 +140,13 @@ function updateFallingStals(dt) {
         const sx = s.wx - scrollX;
         const onScreen = sx > -30 && sx < W + 30;
         if (!s.detached) {
+            // Audible telegraph (audio.js sfxStalCreak): once, as it scrolls on screen, lasting
+            // exactly until the detach below so the creak hands over to the crack.
+            if (!s.creaked && sx < W) {
+                s.creaked = true;
+                const toDetach = (s.detachAtWx - playerWx) / Math.max(1, scrollSpd());
+                if (toDetach > 0.1) sfxStalCreak(sx, Math.min(0.9, toDetach));
+            }
             // Loose: dust trickle + faint jitter cue while it scrolls in.
             if (onScreen && Math.random() < dt * 8) {
                 const b = boundsAt(s.wx);
@@ -159,7 +166,7 @@ function updateFallingStals(dt) {
                 // How far that is is NOT captured here on purpose - stalFallY()
                 // recomputes it live every frame, see its doc.
                 shake += 4;
-                sfxStalCrack();
+                sfxStalCrack(sx);
                 burstStalCrack(sx, b.top + s.length);
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             }
@@ -176,7 +183,7 @@ function updateFallingStals(dt) {
                 s.landed = true;
                 const b = boundsAt(s.wx);
                 burstStalCrack(sx, b.top + s.length + stalFallY(s));
-                if (onScreen) { shake += 3; sfxStalCrack(); }
+                if (onScreen) { shake += 3; sfxStalCrack(sx); }
             }
         }
     }
@@ -701,7 +708,7 @@ function updateBullets(dt) {
         const wallBnd = boundsAt(b.wx);
         if (b.y - 3.5 < wallBnd.top || b.y + 3.5 > wallBnd.bot) {
             burstStalCrack(bsx, b.y);
-            sfxRockHit();   // solid rock, not a breaking stalactite (audio.js sfxRockHit)
+            sfxRockHit(bsx);   // solid rock, not a breaking stalactite (audio.js sfxRockHit)
             window.webkit?.messageHandlers?.haptic?.postMessage('light');
             hit = true;
         }
@@ -713,7 +720,7 @@ function updateBullets(dt) {
                 const bnd  = boundsAt(s.wx);
                 const tipY = s.isTop ? bnd.top + s.length : bnd.bot - s.length;
                 burstStalCrack(bsx, tipY);
-                sfxStalCrack();
+                sfxStalCrack(bsx);
                 bulletHitScore(bsx, tipY, BULLET_HIT_PTS.stal);
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
                 hit = true;
@@ -724,7 +731,7 @@ function updateBullets(dt) {
             for (const bo of boulders) {
                 if (boulderHit(bo, b.wx - bo.wx, b.y - bo.y, 3.5)) {
                     burstStalCrack(bsx, b.y);   // sparks off - solid rock, not destroyed
-                    sfxRockHit();
+                    sfxRockHit(bsx);
                     window.webkit?.messageHandlers?.haptic?.postMessage('light');
                     hit = true;
                     break;
@@ -742,7 +749,7 @@ function updateBullets(dt) {
                     shake += 8;
                     burst(bsx, my);
                     pushNotif(bsx, my - H*0.06, 1.1, T.boom, [255, 120, 20]);
-                    sfxMineExplode();
+                    sfxMineExplode(bsx);
                     bulletHitScore(bsx, my, BULLET_HIT_PTS.mine);
                     window.webkit?.messageHandlers?.haptic?.postMessage('medium');
                     hit = true;
@@ -758,7 +765,7 @@ function updateBullets(dt) {
                 if (cdx*cdx + cdy*cdy < (CANNON_SHOT_R + 10) * (CANNON_SHOT_R + 10)) {
                     cannonShots.splice(ci, 1);
                     burstStalCrack(bsx, b.y);
-                    sfxStalCrack();
+                    sfxStalCrack(bsx);
                     bulletHitScore(bsx, b.y, BULLET_HIT_PTS.shot);
                     window.webkit?.messageHandlers?.haptic?.postMessage('light');
                     hit = true;
@@ -976,6 +983,10 @@ function maintainCannons() {
 function updateCannonShots(dt) {
     const playerWx = scrollX + PX;
     for (const c of cannons) {
+        if (!c.armed && !c.fired && playerWx >= c.fireAtWx - scrollSpd() * CANNON_ARM_SEC) {
+            c.armed = true;
+            sfxCannonArm(Math.min(c.wx - scrollX, W));   // just off-screen right: heard before seen
+        }
         if (c.fired || playerWx < c.fireAtWx) continue;
         c.fired = true;
         const b = boundsAt(c.wx);
@@ -1017,7 +1028,7 @@ function updateCannonShots(dt) {
             vy: vy0 * k,
         });
         burst(muzzleX - scrollX, muzzleY, 10);
-        sfxCannonFire();
+        sfxCannonFire(muzzleX - scrollX);
     }
     // Same slowScrollFactor()/warpScrollFactor() scaling as the player's bullets and
     // the scroll itself: an enemy shot fired just before (or during) a blue-coin slow
@@ -1039,7 +1050,7 @@ function updateCannonShots(dt) {
         const sb = boundsAt(s.wx);
         if (s.y < sb.top - 4 || s.y > sb.bot + 4) {
             burstStalCrack(bsx, Math.max(sb.top, Math.min(sb.bot, s.y)));
-            sfxRockHit();
+            sfxRockHit(bsx);
             cannonShots.splice(i, 1);
         }
     }

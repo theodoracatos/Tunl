@@ -48,8 +48,15 @@ let runsWithoutPB = parseInt(localStorage.getItem('tunnel_no_pb')   || '0');
 let top5 = _savedLastDay === _initToday ? JSON.parse(localStorage.getItem('tunnel_top5') || '[]') : [];
 let dailyBest = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tunnel_daily_best') || '0') : 0;
 let dailyRuns = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tunnel_daily_runs') || '0') : 0;
-let musicOn = localStorage.getItem('tunnel_music') !== '0';
-let fxOn    = localStorage.getItem('tunnel_fx')    !== '0';
+// Three levels since 2026-09-19 (sound review U4): 0 off, 1 low, 2 full. Stored as '0' / 'low'
+// / anything else, so every save written by the old on/off toggle ('0' / '1') still reads the
+// same. musicOn / fxOn stay the gate every play-path checks; the level only scales a bus gain
+// (audio.js applyAudioLevels).
+function _audioLevel(key) { const v = localStorage.getItem(key); return v === '0' ? 0 : v === 'low' ? 1 : 2; }
+let musicLevel = _audioLevel('tunnel_music');
+let fxLevel    = _audioLevel('tunnel_fx');
+let musicOn = musicLevel > 0;
+let fxOn    = fxLevel > 0;
 let _btnMusicRect = null, _btnFxRect = null;
 
 // ── Daily reminder (local notification, src/notify.js) ────────────────
@@ -402,6 +409,13 @@ let continuesUsedThisRun, continueOfferPending, continueAdPending;
 // Revive countdown after a granted continue (constants.js REVIVE_COUNTDOWN_SEC doc),
 // counted down while phase === 'revive'. Reaching 0 flips phase back to 'play'.
 let reviveCountdownT;
+// The same freeze reused for an interruption (2026-09-19 sound/UX review U2, input.js
+// pauseForInterrupt): true while phase === 'revive' was entered because the app lost focus
+// mid-run rather than through a rewarded continue. It decides the two differences: no
+// HIT_INVULN_SEC at the end, and the cave stays covered (draw.js drawInterruptCover).
+let interruptPaused = false;
+// True from the moment the page loses focus / visibility until it is back (or tapped).
+let _pageAway = false;
 let bullets, bulletAmmo, bulletFireTimer;
 let mines, nextMineWx;
 let cannons, nextCannonWx;

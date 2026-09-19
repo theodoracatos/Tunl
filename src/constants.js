@@ -623,6 +623,11 @@ const CANNON_SHOT_R      = W * 0.013;
 // and systems.js spawns the shot at its tip, so they must not drift apart.
 const CANNON_BARREL_LEN  = 2.2;
 const CANNON_FIRE_LEAD   = W * 0.62;
+// Sound only (2026-09-19 sound review S3): sfxCannonArm plays this many real seconds before
+// the shot, converted with the live scrollSpd() at that moment. No rng(), no placement
+// decision, nothing another player's cave depends on - the fire point itself is untouched.
+// At every cannon depth this puts the cue while the gun is still just off the right edge.
+const CANNON_ARM_SEC = 0.4;
 // 1.15 -> 1.45 in 12.0: raised the shot's own flight time (CANNON_FIRE_LEAD, hence
 // where the muzzle fires from, is untouched) after a red-team measurement found
 // cannon shots the worst-telegraphed hazard in the game - see CLAUDE.md's Cannons
@@ -1157,6 +1162,16 @@ const CONTINUE_OFFER_SEC = 3.0;
 // the player anyway since scrollX isn't advancing), so this freeze is free grace
 // time, not time subtracted from the invulnerability window after it.
 const REVIVE_COUNTDOWN_SEC = 1.2;
+// Interruption pause (input.js pauseForInterrupt, 2026-09-19 review U2). A notification pull,
+// a call or an app switch mid-run used to resume the run the instant the page came back,
+// with input still suppressed for INPUT_RESUME_GRACE_MS - the ship fell while the finger
+// could do nothing. Now the run freezes in the revive phase and restarts through the same
+// REVIVE_COUNTDOWN_SEC, but (a) with NO grace window afterwards, or backgrounding the app
+// would be a free invulnerability button, and (b) with the screen covered while away and
+// for all but the last PAUSE_REVEAL_SEC of the countdown. The cover is the fairness half:
+// a pause that shows the cave ahead is free thinking time on a shared daily leaderboard,
+// the same reason DEV_PAUSE_KEY ships false.
+const PAUSE_REVEAL_SEC = 0.6;
 
 // ── Poison / bomb rarity ─────────────────────────────────────────────
 // Both are driven by a real-time clock (state.js poisonClock/bombClock, incremented
