@@ -655,6 +655,58 @@ function _vary(pct, db) {
     return { pv: 1 + (Math.random() * 2 - 1) * pct, gv: Math.pow(10, (Math.random() * 2 - 1) * db / 20) };
 }
 
+// Cave reverb (2026-09-19 sound review S5). Every sfx used to be bone dry, so a game set
+// inside a rock tube sounded like an open field. One shared ConvolverNode per context, fed by
+// small per-sound sends (_caveSend): impacts, blasts, cracks, the cannon, the shield and the
+// death crash get a room around them; coins, UI, pickups and the thruster stay dry so they
+// keep their snap (a reward buried in reverb stops reading as a reward). The bomb keeps its own
+// longer hall (_bombVerb) and gets no send.
+// The impulse response is generated, not sampled: five early reflections in the first ~55 ms
+// (rock walls close by, offset per channel so the room is wide), then a diffuse tail after an
+// 8 ms pre-delay that decays -60 dB over CAVE_VERB_SEC and darkens as it goes (a one-pole
+// lowpass whose coefficient falls with time - stone absorbs highs first). Normalised to unit
+// energy per channel, so CAVE_VERB_WET is the wet level for a send of 1.0.
+// Built lazily for whatever _ac is current, which is also what lets an OfflineAudioContext
+// render measure it. The wet return goes into _master, so the settings' sound level applies.
+const CAVE_VERB_SEC = 0.9;
+const CAVE_VERB_WET = 0.7;
+let _caveIn = null, _caveAC = null;
+function _caveSend(node, amt) {
+    if (!_ac || !_master) return;
+    if (!_caveIn || _caveAC !== _ac) {
+        const sr = _ac.sampleRate, n = Math.ceil(sr * CAVE_VERB_SEC);
+        const buf = _ac.createBuffer(2, n, sr);
+        for (let c = 0; c < 2; c++) {
+            const d = buf.getChannelData(c);
+            let lp = 0;
+            for (let i = Math.round(sr * 0.008); i < n; i++) {
+                const tt = i / sr;
+                lp += ((Math.random() * 2 - 1) - lp) * (0.08 + 0.5 * Math.exp(-tt * 4));
+                d[i] = lp * Math.exp(-tt * 6.9 / CAVE_VERB_SEC);
+            }
+            [[0.011, 0.9], [0.019, -0.7], [0.028, 0.55], [0.041, -0.4], [0.054, 0.3]].forEach(([dt, a]) => {
+                const i = Math.round(sr * (dt + c * 0.0023));
+                if (i < n) d[i] += a * 0.25;
+            });
+            let e = 0;
+            for (let i = 0; i < n; i++) e += d[i] * d[i];
+            const k = 1 / Math.sqrt(e || 1);
+            for (let i = 0; i < n; i++) d[i] *= k;
+        }
+        const cv = _ac.createConvolver();
+        cv.normalize = false;
+        cv.buffer = buf;
+        const wet = _ac.createGain();
+        wet.gain.value = CAVE_VERB_WET;
+        _caveIn = _ac.createGain();
+        _caveIn.connect(cv); cv.connect(wet); wet.connect(_master);
+        _caveAC = _ac;
+    }
+    const g = _ac.createGain();
+    g.gain.value = amt;
+    node.connect(g); g.connect(_caveIn);
+}
+
 function _distortionCurve(amount) {
     const n = 4096;
     const curve = new Float32Array(n);
@@ -781,6 +833,9 @@ function sfxEngineSpoolUp(dur) {
 function sfxDie() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
+    const out = _ac.createGain();   // dry bus, so one send feeds the cave reverb
+    out.connect(_master);
+    _caveSend(out, 0.6);
     const dur = 1.3;  // matches sfxEngineSpoolUp's duration - this is that sound played in reverse
     // Deep broadband roar - literal time-reversal of the spool-up's roar layer:
     // frequency ramp reversed (420->160, mirroring the up-sweep's 160->420),
@@ -796,7 +851,7 @@ function sfxDie() {
     g.gain.exponentialRampToValueAtTime(0.40, t + 0.13);
     g.gain.linearRampToValueAtTime(0.30, t + dur - 0.12);
     g.gain.linearRampToValueAtTime(0.001, t + dur);
-    src.connect(flt); flt.connect(g); g.connect(_master);
+    src.connect(flt); flt.connect(g); g.connect(out);
     src.start(t); src.stop(t + dur + 0.05);
     // Mid roar color - reversed gain envelope of the spool-up's growl layer
     const src2 = _ac.createBufferSource();
@@ -807,7 +862,7 @@ function sfxDie() {
     g2.gain.setValueAtTime(0.001, t);
     g2.gain.exponentialRampToValueAtTime(0.14, t + dur - 0.15);
     g2.gain.linearRampToValueAtTime(0.001, t + dur);
-    src2.connect(flt2); flt2.connect(g2); g2.connect(_master);
+    src2.connect(flt2); flt2.connect(g2); g2.connect(out);
     src2.start(t); src2.stop(t + dur + 0.05);
     // ── The impact itself, on frame 0 (2026-09-17 audio audit) ──────────────
     // The crash used to sit at t + dur - 0.08, i.e. 1.22s AFTER the collision: the
@@ -826,7 +881,7 @@ function sfxDie() {
     thump.frequency.exponentialRampToValueAtTime(45, t + 0.18);
     thumpG.gain.setValueAtTime(0.28, t);
     thumpG.gain.exponentialRampToValueAtTime(0.001, t + 0.30);
-    thump.connect(thumpG); thumpG.connect(_master);
+    thump.connect(thumpG); thumpG.connect(out);
     thump.start(t); thump.stop(t + 0.32);
     const crunch = _ac.createBufferSource();
     crunch.buffer = _noiseBuf(0.26);
@@ -837,7 +892,7 @@ function sfxDie() {
     const crunchG = _ac.createGain();
     crunchG.gain.setValueAtTime(0.26, t);
     crunchG.gain.exponentialRampToValueAtTime(0.001, t + 0.26);
-    crunch.connect(crunchFlt); crunchFlt.connect(crunchG); crunchG.connect(_master);
+    crunch.connect(crunchFlt); crunchFlt.connect(crunchG); crunchG.connect(out);
     crunch.start(t); crunch.stop(t + 0.28);
     const snap = _ac.createBufferSource();
     snap.buffer = _noiseBuf(0.03);
@@ -846,7 +901,7 @@ function sfxDie() {
     const snapG = _ac.createGain();
     snapG.gain.setValueAtTime(0.18, t);
     snapG.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
-    snap.connect(snapFlt); snapFlt.connect(snapG); snapG.connect(_master);
+    snap.connect(snapFlt); snapFlt.connect(snapG); snapG.connect(out);
     snap.start(t); snap.stop(t + 0.03);
     // Debris settling as the roar runs out - what the old crash was, at less than half
     // the level, since it is now a tail and not the event.
@@ -860,7 +915,7 @@ function sfxDie() {
     const crashGain = _ac.createGain();
     crashGain.gain.setValueAtTime(0.14, tSettle);
     crashGain.gain.exponentialRampToValueAtTime(0.001, tSettle + 0.26);
-    crash.connect(crashFlt); crashFlt.connect(crashGain); crashGain.connect(_master);
+    crash.connect(crashFlt); crashFlt.connect(crashGain); crashGain.connect(out);
     crash.start(tSettle); crash.stop(tSettle + 0.28);
 }
 
@@ -1009,6 +1064,7 @@ function _blast(t, o) {
     const out = _ac.createGain();   // one level knob for the whole blast (matched by offline render)
     out.gain.value = o.level;
     out.connect(_sfxOut(o.x));
+    _caveSend(out, 1.0);
 
     const pu = _ac.createOscillator(), puG = _ac.createGain();
     pu.type = 'sine';
@@ -1236,6 +1292,7 @@ function sfxCannonFire(x) {
     const out = _ac.createGain();
     out.gain.value = gv;
     out.connect(_sfxOut(x));
+    _caveSend(out, 0.8);
     const src = _ac.createBufferSource();
     src.buffer = _noiseBuf(0.18);
     const flt = _ac.createBiquadFilter();
@@ -1283,6 +1340,9 @@ function sfxCannonFire(x) {
 function sfxShieldBreak() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
+    const out = _ac.createGain();   // dry bus, so one send feeds the cave reverb
+    out.connect(_master);
+    _caveSend(out, 0.7);
     // Reworked 2026-09-18 ("a bit childish"): the old sound was a bandpassed noise burst
     // plus a bright noise edge, i.e. a pop. An energy field failing sounds like power
     // going out of something, not like something bursting, so it is now four layers:
@@ -1308,7 +1368,7 @@ function sfxShieldBreak() {
     sawG.gain.setValueAtTime(0.0001, t);
     sawG.gain.linearRampToValueAtTime(0.155, t + 0.010);
     sawG.gain.exponentialRampToValueAtTime(0.001, t + 0.36);
-    saw.connect(sawF); sawF.connect(sawG); sawG.connect(_master);
+    saw.connect(sawF); sawF.connect(sawG); sawG.connect(out);
     saw.start(t); saw.stop(t + 0.38);
 
     const dis = _ac.createBufferSource();
@@ -1321,7 +1381,7 @@ function sfxShieldBreak() {
     disG.gain.setValueAtTime(0.0001, t);
     gate.forEach((dt, k) => disG.gain.setValueAtTime(k % 2 === 0 ? 0.22 * (1 - k / 11) : 0.0001, t + dt));
     disG.gain.setValueAtTime(0.0001, t + 0.15);
-    dis.connect(disF); disF.connect(disG); disG.connect(_master);
+    dis.connect(disF); disF.connect(disG); disG.connect(out);
     dis.start(t); dis.stop(t + 0.16);
 
     const th = _ac.createOscillator();
@@ -1331,7 +1391,7 @@ function sfxShieldBreak() {
     const thG = _ac.createGain();
     thG.gain.setValueAtTime(0.10, t);
     thG.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
-    th.connect(thG); thG.connect(_master);
+    th.connect(thG); thG.connect(out);
     th.start(t); th.stop(t + 0.17);
 
     [[1240, 0.028], [1873, 0.018]].forEach(([f, a]) => {
@@ -1340,7 +1400,7 @@ function sfxShieldBreak() {
         g.gain.setValueAtTime(0.0001, t + 0.02);
         g.gain.linearRampToValueAtTime(a, t + 0.035);
         g.gain.exponentialRampToValueAtTime(0.001, t + 0.50);
-        o.connect(g); g.connect(_master);
+        o.connect(g); g.connect(out);
         o.start(t + 0.02); o.stop(t + 0.52);
     });
     musicDuck();
@@ -1360,6 +1420,9 @@ function sfxShieldBreak() {
 function sfxHullScratch() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
+    const out = _ac.createGain();   // dry bus, so one send feeds the cave reverb
+    out.connect(_master);
+    _caveSend(out, 0.8);
     const sc = _ac.createBufferSource();
     sc.buffer = _noiseBuf(0.30);
     const scF = _ac.createBiquadFilter();
@@ -1377,7 +1440,7 @@ function sfxHullScratch() {
     scG.gain.linearRampToValueAtTime(SCRATCH_SCRAPE, t + 0.006);
     scG.gain.setValueAtTime(SCRATCH_SCRAPE, t + 0.10);
     scG.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
-    sc.connect(scF); scF.connect(grain); grain.connect(scG); scG.connect(_master);
+    sc.connect(scF); scF.connect(grain); grain.connect(scG); scG.connect(out);
     sc.start(t); sc.stop(t + 0.30);
     lfo.start(t); lfo.stop(t + 0.30);
 
@@ -1389,7 +1452,7 @@ function sfxHullScratch() {
         g.gain.setValueAtTime(0.0001, t + 0.01);
         g.gain.linearRampToValueAtTime(a, t + 0.025);
         g.gain.exponentialRampToValueAtTime(0.001, t + 0.34);
-        o.connect(g); g.connect(_master);
+        o.connect(g); g.connect(out);
         o.start(t + 0.01); o.stop(t + 0.36);
     });
 
@@ -1399,7 +1462,7 @@ function sfxHullScratch() {
     th.frequency.exponentialRampToValueAtTime(60, t + 0.09);
     thG.gain.setValueAtTime(0.09, t);
     thG.gain.exponentialRampToValueAtTime(0.001, t + 0.10);
-    th.connect(thG); thG.connect(_master);
+    th.connect(thG); thG.connect(out);
     th.start(t); th.stop(t + 0.11);
     const bm = _ac.createBufferSource();
     bm.buffer = _noiseBuf(0.05);
@@ -1408,7 +1471,7 @@ function sfxHullScratch() {
     const bmG = _ac.createGain();
     bmG.gain.setValueAtTime(0.45, t);
     bmG.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
-    bm.connect(bmF); bmF.connect(bmG); bmG.connect(_master);
+    bm.connect(bmF); bmF.connect(bmG); bmG.connect(out);
     bm.start(t); bm.stop(t + 0.05);
 }
 const SCRATCH_SCRAPE = 0.8;
@@ -1699,6 +1762,7 @@ function sfxStalCrack(x) {
     const out = _ac.createGain();
     out.gain.value = gv;
     out.connect(_sfxOut(x));
+    _caveSend(out, 0.9);
     const src = _ac.createBufferSource();
     src.buffer = _noiseBuf(0.16);
     const flt = _ac.createBiquadFilter();
@@ -1748,6 +1812,7 @@ function sfxRockHit(x) {
     const out = _ac.createGain();
     out.gain.value = _vary(0, 1.5).gv;
     out.connect(_sfxOut(x));
+    _caveSend(out, 0.8);
     const o = _ac.createOscillator(), og = _ac.createGain();
     o.type = 'sine';
     o.frequency.setValueAtTime(210 * pv, t);
@@ -1804,6 +1869,7 @@ function sfxStalCreak(x, dur) {
     const out = _ac.createGain();
     out.gain.value = STAL_CREAK_LEVEL;
     out.connect(_sfxOut(x));
+    _caveSend(out, 0.7);
     const n = 14;
     for (let k = 0; k < n; k++) {
         const u  = k / (n - 1);
@@ -1843,6 +1909,7 @@ function sfxCannonArm(x) {
     const out = _ac.createGain();
     out.gain.value = CANNON_ARM_LEVEL;
     out.connect(_sfxOut(x));
+    _caveSend(out, 0.5);
     [[0, 3000, 0.6], [0.05, 2300, 0.45]].forEach(([dt, hz, a]) => {
         const c = _ac.createBufferSource();
         c.buffer = _noiseBuf(0.02);

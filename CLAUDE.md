@@ -1297,8 +1297,17 @@ https://claude.ai/artifact/6KC3aJhYAAfthzVXtX5oAa (db collection `entscheidungen
   losing focus mid-run freezes into the revive countdown, cave covered while away. It ends with
   **no** `HIT_INVULN_SEC` - backgrounding must never be a free invulnerability button.
 
-Still open, deliberately: no reverb send, and the music does not follow the sector ramp
-(both "later" in the 2026-09-19 review, with wall-proximity audio and the title sonar pulse).
+- **Cave reverb** (`_caveSend`, S5, same day): one shared generated convolver per context -
+  early rock reflections, 8 ms pre-delay, a tail that darkens and dies over `CAVE_VERB_SEC`
+  0.9 s, unit-energy IR so `CAVE_VERB_WET` (0.7) is the level. Sends only from impacts, blasts,
+  cracks, cannon (fire + arm), creak, shield break, hull scratch and the death crash; coins, UI,
+  pickups and the thruster stay dry, the bomb keeps its own `_bombVerb`. Measured: peaks +0.5
+  to +1.5 dB, a rock hit's tail ~20 dB under the hit (0.12-0.40 s), a mine's +6 dB over dry.
+  The first try at wet 0.22 left the tail ~28 dB down, i.e. inaudible under the music bed.
+  Not ear-checked on a device yet - `CAVE_VERB_WET` is the knob.
+
+Still open, deliberately: the music does not follow the sector ramp ("later" in the
+2026-09-19 review, with wall-proximity audio and the title sonar pulse).
 
 ### Addictive systems
 
