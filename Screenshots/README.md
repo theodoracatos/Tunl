@@ -13,12 +13,19 @@ history) - each release's raw captures start on the Desktop anyway, not here.
 
 ```
 iOS_<version>/
+  capture-*.png             raw landscape captures (2868x1320), one per slide,
+                            in filename order = the store order
   <locale>/                 e.g. en, pt-BR  (single-locale early versions
                             keep their shots flat in iOS_<version>/)
     Simulator Screenshot *.png   raw landscape sim captures (2868x1320)
     <name>.mov                   raw App Preview screen recording
     portrait/                    store-ready 1320x2868 portrait frames,
                                  built by ../../make-portrait-frames.py
+capture/                    headless raw-capture driver (see below)
+fonts/                      the game's own Chakra Petch / JetBrains Mono cuts,
+                            unpacked from src/fonts.js's base64 woff2 so the
+                            frame headlines use the same faces the game does.
+                            Regenerate with fontTools if src/fonts.js changes.
 Android/                    Play Console listing graphics (feature graphic,
                             512 icon) + legacy landscape store screenshots.
                             feature_graphic_1024x500.png and play_icon_512.png
@@ -32,11 +39,44 @@ listings portrait, so `make-portrait-frames.py` drops each landscape shot into a
 portrait "cave corridor" frame (Courier-New headline + TUNL wordmark). See that
 script's docstring; headline copy per screenshot lives inline in it.
 
+## Capturing the raw frames (15.0 onward)
+
+`capture/capture.mjs` drives headless Chrome over the DevTools protocol at 956x440
+with `deviceScaleFactor: 3` - which is what `constants.js` turns into a 2868x1320
+canvas, i.e. the same raster an iPhone 17 Pro Max simulator shot has - stubs
+`window.webkit.messageHandlers` so `isWeb()` is false (the canvas is then the APP
+build, not the web one), and stages each slide from the game's own globals.
+
+`capture/autopilot.js` flies the run: a one-switch bang-bang plan re-solved every
+frame against a snapshot of the real obstacle geometry (~score 680-970 on the days
+sampled). `capture/scenes.json` holds one entry per slide - the cave day and a
+predicate that says what the frame must contain (score band, both corridor walls on
+screen, N obstacles ahead of the ship, no notif / milestone / sector banner on top).
+The run advances until the predicate is true, then freezes (`_freezeDraw` plus a
+stubbed `requestAnimationFrame`) and reads `cv.toDataURL`. Real gameplay, picked
+deterministically instead of by luck.
+
+Two things that silently ruin a capture: the 15.0 one-time record wipe
+(`tunnel_record_reset_v15`, `src/state.js`) clears `best` unless the flag is seeded,
+so the title screen loses its record plate; and `toLocaleString()` follows the browser
+locale, so without `--lang=en-US` + `Emulation.setLocaleOverride` every number prints
+with German separators.
+
+```sh
+python3 -m http.server 8787           # from the repo root
+node Screenshots/capture/capture.mjs Screenshots/iOS_15.0
+```
+
 ## Regenerating a portrait set
 
-`make-portrait-frames.py` is the recipe (headline copy + frame layout inline in
-its docstring); the in/out paths near the bottom are version-pinned and get
-edited per release. `make-portrait-video-frame.py` and `build-portrait-video.sh`
+`make-store-portraits.py` is the current recipe (headline copy + frame layout
+inline in its docstring): headline block, the full landscape capture as an
+edge-to-edge strip, and a zoom panel on the one thing each slide is about.
+`SRC_DIR`, `ZOOM`/`ZOOM_COMPACT`, `ACCENT`, `COPY` and the day palette at the top
+are version-pinned and get edited per release - 15.0 runs six slides on the
+Ianthe (violet) palette. Slide count is taken from `len(ZOOM)`.
+`make-portrait-frames.py` is the older 7.0-10.x "cave corridor" recipe; the in/out
+paths near the bottom are version-pinned and get edited per release. `make-portrait-video-frame.py` and `build-portrait-video.sh`
 are the equivalents for the portrait App Preview video. All three read raw
 captures from the Desktop and need Pillow + rsvg-convert.
 
@@ -58,6 +98,33 @@ through monospace text at cap-height/baseline rows).
 
 ## App Preview video spec (App Store Connect, 6.9" / 6.5")
 
-1920x886, H.264 High, 30fps, 15-30s, no audio required. The kept
+1920x886, H.264 High, **square pixels** (`setsar=1` - a screen recording can carry
+a non-1:1 SAR and ASC rejects it), yuv420p, 30fps, 15-30s, audio optional. The kept
 `app-preview-*.mp4` files under the current `iOS_<version>/` dirs are already in
 this format; raw recordings live on the Desktop, not in the repo.
+
+Google Play takes no video FILE at all - the listing links a YouTube video - so the
+same cut is also exported 16:9 as `youtube-1920x1080.mp4`.
+
+15.0 recipe, from a 1912x880 device recording of one full run (title screen ->
+approach over the city -> run -> death -> debriefing):
+
+```sh
+SRC=~/Downloads/tunl-20260919-w627-331pts.mp4
+ffmpeg -t 28 -i "$SRC" \
+  -vf "tpad=start_duration=0.9:start_mode=clone,scale=1920:-2:flags=lanczos,\
+pad=1920:886:0:(886-ih)/2:color=black,setsar=1,fps=30,\
+fade=t=out:st=28.4:d=0.5,format=yuv420p" \
+  -af "adelay=900|900,afade=t=out:st=28.4:d=0.5" \
+  -c:v libx264 -profile:v high -level 4.0 -preset slow -crf 19 \
+  -pix_fmt yuv420p -color_range tv -c:a aac -b:a 160k -ar 44100 \
+  -movflags +faststart app-preview-1920x886.mp4
+```
+
+Three things that are deliberate. `tpad ... start_mode=clone` holds the recording's
+FIRST frame for 0.9s: the run starts ~0.6s in, which is too fast to read the title
+screen, and freezing a frame the app itself drew keeps the preview pure app footage.
+`-t 28` on the INPUT side (not the output) leaves the debriefing on screen ~2.7s and
+lands the whole thing at 28.9s, inside ASC's 30s ceiling - the raw take is 30.7s and
+ends on 5s of a static death screen. And `pad` to 886 rather than `scale=1920:886`
+because 1912x880 is not exactly 1920x886; padding 1px keeps the geometry honest.

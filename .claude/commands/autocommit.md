@@ -21,15 +21,10 @@ Stage all current changes and commit with a generated message. Do not ask the us
    - Focus on why, not what
    - No user confirmation needed - just write it
 
-6. Commit:
-   ```bash
-   git commit -m "$(cat <<'EOF'
-   <generated subject line>
-
-   Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
-   EOF
-   )"
-   ```
+6. Commit with `git commit -m` using the generated subject line, and end the message
+   with the `Co-Authored-By:` attribution line given in this session's own instructions.
+   Do not hardcode a model name here - it goes stale (this file said "Sonnet 5" while
+   sessions were running on another model).
 
 7. Run `git push` to push the commit to the remote.
 

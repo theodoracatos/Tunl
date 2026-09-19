@@ -1,24 +1,26 @@
 # TUNL source map
 
-The game is split across `tunl.html` (HTML/CSS shell only) and 15 JS files in `src/`. All files share one global scope - scripts load in order via `<script src>` tags, no modules, no build step.
+The game is split across `tunl.html` (HTML/CSS shell only) and 18 JS files in `src/`. All files share one global scope - scripts load in order via `<script src>` tags, no modules, no build step. The table below is in load order - keep it in sync with the `<script src>` tags in `tunl.html`.
 
 ## Load order and contents
 
 | File | What lives here |
 |---|---|
 | `src/web.js` | Loaded FIRST. Host detection: `isWeb()`, `isAndroidApp()` (both key off `window.webkit.messageHandlers.haptic` / `window.TunlNative`). Deep-link param parsing (`?d=` day, `?g=` ghost, `?s=` ghost score), `_tunlActiveDate()` / `_tunlActiveDayInt()`. All web-vs-app divergences elsewhere gate on `isWeb()` |
+| `src/fonts.js` | Loaded SECOND. The only two font stacks the canvas uses: `FONT_UI` (Chakra Petch) and `FONT_NUM` (JetBrains Mono), shipped as base64 woff2 inside this file. `fontsReady` + `FONT_WAIT_MS` (main.js holds the first frame on it). No literal family name exists anywhere else |
 | `src/i18n.js` | `LANGS` (15-locale string table), `LANG_ORDER`, `detectLang()`, `activeLang`, `T` (active locale's strings), `setLang()`. Run `node test-i18n.js` after any string change |
 | `src/constants.js` | Canvas (`cv`, `ctx`), `W`/`H`/`FS`, physics (`GRAVITY`, `THRUST`, `MAX_VY`, `PX`, `PR`), coin constants (`GAP_PER_COIN_FRAC`, `GAP_BONUS_MAX_FRAC`, `GAP_DECAY_FRAC` - fractions of the corridor's own half-gap since 12.0; the px accessors `gapPerCoin()`/`gapBonusMax()`/`gapDecay()` live in `world.js`), `MINE_R`, `SKINS[]`, utils (`lerp`, `lerpClr`, `rgb`), seeded PRNG (`seedRng`, `rng`) |
 | `src/world.js` | Tunnel wave state (`_prog`, `_halfGap`, etc.), `refreshWave()`, difficulty scalars (`scrollSpd`, `stalSpacing`, `stalLenFrac`, `coinSpacing`, `mineSpacing`, plus the sector-rate layer `sectorRate`/`sectorEnvelope` and the separate pacing clocks `gapProgAt`/`hazProgAt`), daily world name (`WORLD_NAME`), tunnel geometry (`centerAt`, `halfGapAt`, `boundsAt`, `boundsBase`) |
 | `src/state.js` | All mutable `let` globals (phase, py, vy, scrollX, score, gapBonus, etc.) and localStorage init |
 | `src/lifecycle.js` | `initAmbParts()`, `titleScreen()`, `startPlay()` |
 | `src/systems.js` | Stalactites (`makeStal`, `maintainStalactites`), coins (`makeCoin`, `maintainCoins`, `checkCoinCollection`, `coinBlockedByStal`), bullets (`updateBullets`, `drawBullets`), mines (`makeMine`, `maintainMines`), collision math (`ptSeg2`, `inTri`, `stalHit`, `stalHitBullet`), particles (`burst`, `burstCoin`, `burstStalCrack`) |
-| `src/audio.js` | BGM (`_startBgMusic`, `_fadeBgMusic`, `_playBgmBuffer`, `_initAC`), all SFX (`sfxCoin`, `sfxDie`, `sfxSlow`, `sfxShield`, `sfxMagnet`, `sfxShieldBreak`, `sfxMilestone`, `sfxNearMiss`, `sfxCombo`, `sfxMineExplode`, `sfxBulletPickup`, `sfxBulletFire`, `sfxStalCrack`), thruster audio (`thrustOn`, `thrustOff`) |
+| `src/audio.js` | The bus (`_initAC`: sfx bus + music bus -> `MASTER_GAIN` -> soft-clip limiter; `_caveSend` reverb, `_sfxOut(x)` stereo pan), music (`_playBgmBuffer`, `_bakeBgmLoop`, `_playBgmOutro`, `_fadeBgMusic`, `musicDuck`, `bgmSetSlow`, `bgmSetWarp`), ~40 `sfx*` one-shots, thruster + magnet loops (`thrustOn`/`thrustOff`, `magnetLoopOn`/`Off`). Judge any new sound by offline render + spectrogram, never by ear-guess - see CLAUDE.md "Audio bus and loudness" |
 | `src/input.js` | `inRect()`, `onDown()`, `onUp()`, pointer/keyboard event listeners, `triggerMilestone()` |
 | `src/update.js` | `let prev`, `update(dt)` (physics, scroll, collision, skin FX, particle tick), `die()` |
 | `src/draw.js` | `getTheme()`, `drawCoinIcon()`, `shipPath()`, `drawShip()`, `draw()` (tunnel walls, stalactites, coins, player, HUD, title screen, death screen) |
 | `src/approach.js` | Run opening over the city ("Anflug"): `approachStart()`, `approachUpdate()`, `approachRock()` (mountain + mouth profile), `drawApproachScene()` (dusk sky, skyline, mountain), `drawApproachBanner()`; title screen = the city |
 | `src/share.js` | Daily run card: `SHARE_URL`, `shareWorthy()`, `shareAvailable()`, `_shareCardCanvas()` (offscreen run-profile PNG), `shareRunText()`, `shareRun()` (native bridge / Web Share fallback), `shareRunUrl()` (web `/play?d=&s=&g=` deep link) |
+| `src/record.js` | Web-only "record this run" button for flytunl.ch/play: `startRecording()`/`stopRecording()`/`toggleRecording()`, MediaRecorder onto a dedicated offscreen canvas at a fixed 1912x880 (`REC_OUT_SCALE`) so every clip exports at the same size regardless of DPR/window. Used for the TikTok clip workflow. No-op in both apps |
 | `src/notify.js` | Daily-reminder bridge only (native owns the 19:00-local scheduling via `NotificationManager.swift` / `ReminderScheduler.kt`). Hands native the localized text + "played today" flag. No-ops in a browser |
 | `src/main.js` | `window._freezeDraw`, `loop(ts)`, `titleScreen()` kick-off, initial `requestAnimationFrame`, `_updatePortraitGate()` / `_syncWebCta()` (web only), `_tunlNativeUpdate` |
 | `src/ads-web.js` | Loaded LAST. Web-only ad cadence (Google Ad Manager H5 Games Ads via `googletag`, not the AdMob SDK): forced interstitial, rewarded continue (`reviveRequest`), rewarded shard bonus. `isWeb()`-gated, no-op in both apps |
@@ -47,7 +49,7 @@ The game is split across `tunl.html` (HTML/CSS shell only) and 15 JS files in `s
 - **Coin combo multiplier**: `src/systems.js` `checkCoinCollection()`
 - **Death screen layout**: `src/draw.js` `draw()` `phase === 'dead'` block
 - **Title screen layout**: `src/draw.js` `draw()` `phase === 'title'` block
-- **BGM file**: `the_mountain.mp3` in project root, loaded in `src/audio.js` `_initAC()`
+- **BGM files**: `the_mountain.mp3` (play track, "Nebula") and `the_mountain_documentary.mp3` (title piano) in the project root, plus their `.web.m4a` twins for the web build; loop points are `BGM_LOOP_START/END` in `src/audio.js`
 - **DEV_INVINCIBLE flag**: `src/constants.js` (`const DEV_INVINCIBLE = false`, ~line 96), read in `src/update.js`
 - **isWeb() / isAndroidApp() / deep-link params**: `src/web.js` (loaded first)
 - **Translation strings (T.*), locale list**: `src/i18n.js`

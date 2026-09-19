@@ -30,6 +30,21 @@ map. Open `tunl.html` in a browser to play.
 
 **Orientation: landscape only.** The iOS app (`Info.plist`) locks to `LandscapeLeft + LandscapeRight`. Never change this to portrait.
 
+**Three targets from one `src/`.** The same `tunl.html` + `src/*.js` ships as the iOS app
+(WKWebView), the Android app (WebView, assets mirrored - see
+`reference_android_assets_mirror` memory) and the live web build at **flytunl.ch/play**
+(source in `flytunl-site/`, bundled by `build-play.mjs`, deployed by
+`flytunl-site/deploy.sh`). **Standing rule: a web change must never alter app behaviour
+and vice versa** - gate every gameplay/layout/text change in a shared file on `isWeb()`
+(`src/web.js`, reliably `false` in both apps from the first script). Build tooling, the
+marketing site and test files never reach the apps and need no gate. See the
+`feedback_web_app_isolation` and `project_web_build` memories.
+
+**This file holds the rule, the number and the "do not revert".** The measurement
+narratives, rejected alternatives and before/after tables behind those rules live in
+`docs/design-history.md` - read the matching section there before re-opening a decision,
+and append to it when you change one.
+
 ## How to play
 
 - **HOLD** (tap/click/Space/ArrowUp) = thrust upward
@@ -52,166 +67,126 @@ const GRAVITY = 1300;  // px/s² downward
 const THRUST  = 3100;  // px/s² upward when holding (net: 1800 up)
 const MAX_VY  = 1080;  // terminal velocity cap
 ```
-Originally tuned up hard across several requested passes (GRAVITY 1150 -> 1300, THRUST
-2400 -> 3400, MAX_VY 820 -> 1080) chasing a "Flappy Bird snappy" feel, but real-player
-Reddit feedback (2026-09-09) called the accel "too fast" with players dying before the
-run's rush ever landed. Walked back to the documented middle ground on 2026-09-09:
-THRUST 3400 -> 2700. A same-day playtest of 2700 felt off in the other direction (too
-floaty), so it was nudged back up to **3100** - net-up 1800 vs net-down 1300, roughly
-midway between the original 2100:1300 snap and the 2700 pass's 1400:1300 softness.
-GRAVITY and MAX_VY are untouched throughout. The input model is UNCHANGED - still
-hold-to-thrust (an acceleration ramp), not Flappy's instant velocity impulse - just
-tuned to a less hair-trigger point on that same ramp. If this needs walking back
-further: original pre-tuning feel is GRAVITY 1150 / THRUST 2400 / MAX_VY 820.
+**THRUST has already been walked back twice on real player feedback - read
+`docs/design-history.md` -> "Physics tuning" before touching it.** Short version: tuned up
+hard chasing a "Flappy Bird snappy" feel, called "too fast" by real players, walked back
+3400 -> 2700, felt floaty, settled at **3100** (net-up 1800 vs net-down 1300). GRAVITY and
+MAX_VY are untouched throughout. **The input model is UNCHANGED** - hold-to-thrust is an
+acceleration ramp, not Flappy's instant velocity impulse.
 
 **Frame-rate-independent integration (do not revert).** `update.js` integrates the ship
 with the TRAPEZOID - `py += (vyPrev + vy) * 0.5 * dt` - not `py += vy * dt` after the
 velocity update. The latter pretends the ship spent the whole frame already at its
 end-of-frame speed, overshooting by `0.5*a*dt^2` every frame; because that error scales
-with FRAME LENGTH, the ship flew a measurably different trajectory on every refresh
-rate. Measured over 0.5s of held thrust: 228px at 144Hz, 232px at 60Hz, 240px at 30Hz,
-against an exact 225px. Since everyone flies the same daily cave into the same
-leaderboard, that was a bigger inequity than anything `_FEEL_SCALE` and the W cap exist
-to equalise. Replaying a bit-identical input schedule now gives a **0.000px** spread
-across 12-144Hz (was 4.1px on that same schedule); `test-math.js` asserts both that and
-that the old integrator genuinely diverged, so a silent revert fails.
+with FRAME LENGTH, the ship flew a measurably different trajectory on every refresh rate -
+a bigger inequity on a shared daily leaderboard than anything `_FEEL_SCALE` and the W cap
+exist to equalise. Replaying a bit-identical input schedule now gives a **0.000px** spread
+across 12-144Hz. `test-math.js` asserts both that and that the old integrator genuinely
+diverged, so a silent revert fails.
 
-Two honest caveats. **This did not close the measured score gap between frame rates** -
-a simulated pilot still scored ~33% higher at 144Hz than at 60Hz afterwards, essentially
-unchanged. The physics half is now exact; the rest is input resolution (a thumb can only
-change state on a frame boundary, so a 144Hz device genuinely gets finer control), which
-no integrator change can remove and which a bang-bang bot exaggerates relative to a
-human. **And the fix is very slightly a nerf at 60Hz**: the ship now covers 225px rather
-than 232px over a 0.5s climb, and proportionally more on short taps (the old error was
-`1 + dt/T`, so it flattered quick corrections most). No constant rescale can reproduce
-the old behaviour for that reason. Left uncompensated deliberately; if a real-device
-playtest finds it sluggish, the lever is THRUST (3100), where ~+3% restores the old
-half-second manoeuvre - but re-read the tuning history above first, that number has
-already been walked back twice on player feedback.
+Two honest caveats, both left uncompensated deliberately: it did **not** close the score
+gap between frame rates (that residue is input resolution, not physics), and it is very
+slightly a nerf at 60Hz. If a real-device playtest finds it sluggish the lever is THRUST -
+but re-read the tuning history first.
 
 **Screen-independent feel (do not revert - explicit rule).** GRAVITY/THRUST/MAX_VY are
-quoted at `_H_REF` = 440pt (iPhone 17 Pro Max landscape height, the size the feel was
-tuned and player-tested at) and **every device** - apps and web alike - scales all three
-by `_FEEL_SCALE = H / _H_REF`. Because the corridor half-gap also scales with H, this
-makes every trajectory geometrically similar to the reference - same fraction of the
-corridor covered per second, same time-to-cross, identical felt snappiness on a 375pt
-iPhone 12 mini, a 440pt 17 Pro Max, and a 520pt Android tablet. A bigger screen genuinely
-gets steeper px/s² and a smaller one gentler, by design. Any new code that reasons about
-vertical motion must stay ratio-based (fraction of MAX_VY, fraction of H) and never
-compare `vy` against a hardcoded px/s literal - scale the literal by `_FEEL_SCALE` if
-you need one (see the speed-line `vyFloor` in draw.js).
+quoted at `_H_REF` = 440pt (iPhone 17 Pro Max landscape height, where the feel was tuned
+and player-tested) and **every device - apps and web alike - scales all three by
+`_FEEL_SCALE = H / _H_REF`.** Because the corridor half-gap also scales with H, every
+trajectory is geometrically similar to the reference: same fraction of the corridor
+covered per second, same time-to-cross, identical felt snappiness on a 375pt iPhone 12
+mini, a 440pt 17 Pro Max and a 520pt Android tablet. A bigger screen genuinely gets
+steeper px/s² and a smaller one gentler, by design.
 
-The web build clamps W/H to 956x440 - the iPhone 17 Pro Max's own landscape footprint -
-so `_FEEL_SCALE` lands at ~1.0 and **web plays as a pixel-and-physics copy of the 17 Pro
-Max**. There is no separate web feel tuning any more; the old `_WEB_FEEL` 1.3 multiplier
-was deleted (it only ever existed to fight the floatiness of web's earlier 520 clamp).
+**Any new code that reasons about vertical motion must stay ratio-based** (fraction of
+MAX_VY, fraction of H) and never compare `vy` against a hardcoded px/s literal - scale the
+literal by `_FEEL_SCALE` if you need one (see the speed-line `vyFloor` in `draw.js`).
+
+The web build clamps W/H to 956x440 - the 17 Pro Max's own landscape footprint - so
+`_FEEL_SCALE` lands at ~1.0 and **web plays as a pixel-and-physics copy of the 17 Pro
+Max**. There is no separate web feel tuning; the old `_WEB_FEEL` 1.3 multiplier was
+deleted (it only existed to fight the floatiness of web's earlier 520 clamp).
 
 ### Cross-device fairness (do not revert without re-auditing)
 
-**This is enforced by `test-cave.js`, not just asserted.** It replays the real
-spawners frame by frame at six device sizes and compares the resulting obstacle lists
-byte for byte. Run it after touching anything in `maintain*()` / `make*()` / the
-difficulty curves. Until 2026-09-11 the claim below was simply false - a replay of one
-day seed at six sizes produced six different caves, diverging from wx ~938 (score 15).
-Four independent causes had to be fixed, and all four are easy to reintroduce:
+The daily seed makes the cave identical in world-x for every player on Earth, and
+`score = floor(scrollX / 60) + bonusScore` is pure world-distance, so the leaderboard is
+only fair if flying a given stretch of world-x is equally hard on every screen.
+
+**This is enforced by `test-cave.js`, not just asserted.** It replays the real spawners
+frame by frame at six device sizes and compares the resulting obstacle lists byte for
+byte, asserts the `SPAWN_AHEAD_*` budget table and re-checks every boulder's two passes.
+**Run it after touching anything in `maintain*()` / `make*()` / the difficulty curves.**
+Until 2026-09-11 the claim was simply false (six sizes, six different caves, diverging
+from wx ~938). Four rules came out of that fix and all four are easy to reintroduce:
 
 1. **Sample the difficulty curves at the PLACEMENT wx, never the player's.**
    `stalSpacing()` / `stalLenFrac()` / `coinSpacing()` / `mineSpacing()` /
    `cannonSpacing()` / `boulderSpacing()` / `fallSpacing()` / `chicaneProb()` and
-   `makeCoin`'s whole type ladder now take a wx (`progAt`/`prog2At` in `world.js`).
-   The spawn loops run to a horizon, so reading `_prog` meant reading the difficulty
-   wherever the player happened to be when the loop reached that slot.
+   `makeCoin`'s whole type ladder take a wx (`progAt`/`prog2At`, `world.js`). The spawn
+   loops run to a horizon, so reading `_prog` reads the difficulty wherever the player
+   happens to be when the loop reaches that slot.
 2. **Do placement geometry in REFERENCE units, not screen units.** `PR`/`COIN_R`/
-   `MINE_R` are W-derived sizes while the corridor is H-derived, so any placement test
-   comparing the two came out differently per aspect ratio - and since `makeMine`
-   draws `rng()` only on success, one differing rejection forked the whole stream. The
-   `PLACE_*` constants + `_H_TO_REF`/`_REF_TO_H` (`constants.js`) are the fix;
-   the real `PR` is untouched, because keying the actual hitbox off H is still "a feel
-   change needing its own playtest".
-3. **One rng stream per spawner** (`makeRngStream`, `state.js` `rngStal/rngCoin/
-   rngMine/rngCannon`). This was the deep one: all spawners shared `rng()` and
-   interleave per frame, and `scrollX` advances by `scrollSpd()*dt` which carries a
-   W/600 term - so the frame on which an object crossed the horizon, and therefore the
-   ORDER of draws, varied by screen width. Same seed, same curves, different cave.
-4. **Cadences that are tuned in seconds must be stored as world-x.** The poison/bomb/
-   drain and power-up-floor clocks were `+= dt`; seconds-per-world-px depends on
-   `scrollSpd`, so they fired at different world positions per device (and the hazard
-   branch draws `rng()`). They are world-x cursors now (`state.js` `nextPoisonWx`),
-   converted from the tuned seconds via `worldPxForSec()`, which uses the reference
-   width. Same trick as the chicane-gold gate.
+   `MINE_R` are W-derived while the corridor is H-derived, so any test comparing the two
+   differs per aspect ratio - and since `makeMine` draws `rng()` only on success, one
+   differing rejection forks the whole stream. Use the `PLACE_*` constants +
+   `_H_TO_REF`/`_REF_TO_H` (`constants.js`). The real `PR` is untouched: keying the
+   actual hitbox off H is a feel change needing its own playtest.
+3. **One rng stream per spawner** (`makeRngStream`, `state.js` `rngStal`/`rngCoin`/
+   `rngMine`/`rngCannon`). The deep one: shared `rng()` interleaves per frame, and
+   `scrollX` advances by `scrollSpd()*dt` which carries a W/600 term, so the frame an
+   object crosses the horizon - and therefore the ORDER of draws - varied by width.
+4. **Cadences tuned in seconds must be stored as world-x.** The poison/bomb/drain and
+   power-up-floor clocks were `+= dt`; seconds-per-world-px depends on `scrollSpd`, so
+   they fired at different world positions per device (and the hazard branch draws
+   `rng()`). They are world-x cursors now (`state.js` `nextPoisonWx`), converted from
+   the tuned seconds via `worldPxForSec()`, which uses the reference width. Same trick
+   as the chicane-gold gate.
 
-Two consequences worth knowing. **`SPAWN_AHEAD_*` (`constants.js`) encodes an ordering
-invariant**: stalactites are created first and furthest ahead, and every spawner that
-inspects the stalactite array must sit far enough inside that horizon for its whole
-inspection radius to be populated. Cannons and boulders used to sit OUTSIDE it, so
-their overlap checks were half blind - which is the only reason they were as common as
-they were. Fixing that made them nearly extinct until they got retry loops
-(`CANNON_RETRY_OFFSETS` / `BOULDER_RETRY_OFFSETS`), same pattern as
-`MINE_RETRY_OFFSETS`.
+**`SPAWN_AHEAD_*` (`constants.js`) encodes an ordering invariant with a budget:**
+`SPAWN_AHEAD_X + largest retry offset + inspection radius <= SPAWN_AHEAD_STAL`.
+Stalactites are created first and furthest ahead, and every spawner that inspects the
+stalactite array must sit far enough inside that horizon for its whole inspection radius
+to be populated. This has been broken twice (cannons/boulders outside the horizon, then
+the retry loops reaching back out past it) - the second time 15 of 18 boulders and 28 of
+28 cannons were placed blind and 12 boulders had a pass sealed. Three rules hold it now:
 
-**The retry loops then re-broke the same invariant, and a browser playtest is what
-caught it (2026-09-11).** The budget is `SPAWN_AHEAD_X + largest retry offset +
-inspection radius <= SPAWN_AHEAD_STAL`, and the retry term was simply never added -
-so a retried probe walked straight back out past the stalactite horizon and the veto
-it was retrying for saw an empty array again. Measured over 60000 world-px: **15 of 18
-boulders and 28 of 28 cannons** were placed blind, 12 boulders had a pass sealed by a
-stalactite and one was sealed on **both** sides (an unavoidable death at score 940).
-The very first boulder of the day had a ceiling spike driven through its top edge.
-Three fixes, all load-bearing:
-- `SPAWN_AHEAD_STAL` 600 -> **1550**, covering every retry reach. Raising the horizon
-  rather than clamping the offsets, because clamping boulders to the ~226px that fit
-  inside 600 would have dropped 15 of 18 of them - re-creating the near-extinction the
-  retry loops exist to fix. The stalactite sequence itself does not change (each
-  spawner has owned its own rng stream since the cross-device pass, so creating
-  stalactites earlier no longer reorders anyone's draws); the cost is a longer live
-  stalactite array (~39 -> ~70 deep).
-- **Flat-radius vetoes had to become geometric**, because once the horizon was wide
-  enough to enforce them they turned out to be unsatisfiable deep - `stalSpacing()`
-  floors at 50px, so "no spike within 140px" (cannons) or "within ~73px" (boulders) is
-  a window that essentially never exists. `makeCannon` now vetoes only **same-wall**
-  stalactites within `PLACE_CANNON_R + placeStalW` (a ceiling spike was never a reason
-  to move a floor-mounted cannon), and draws its wall **before** the retry loop so the
-  rng stream no longer depends on how many offsets were rejected.
-- `_makeBoulderAt` **tests the contract instead of a proxy for it**: both passes must
-  survive the stalactites that actually overlap the rock, measured against the circle's
-  half-chord at each spike's own x, requiring >= 1.3 player diameters each (1.1 before the 2026-09-13 shrink). A spike near
-  the rock's edge barely eats into a pass, which the old proxy could not tell apart from
-  a spike through its middle. Measured after: **0 sealed passes** (was 12 of 18), first
-  boulder back at score 85 on 7 of 8 day-seeds, cannon density unchanged (27.5 per 60000
-  world-px), boulder density 9.3. Deep boulders are genuinely rare past score 900 (0.04
-  per 1000 world-px vs 0.21 early) - at that corridor width two 1.1-diameter passes plus
-  the rock barely fit, so that thinning is honest, not a bug.
+- **Raise the horizon, never clamp the retry offsets** (`SPAWN_AHEAD_STAL` = 1550).
+  Clamping boulders to what fits inside the old 600 would drop 15 of 18 of them,
+  re-creating the near-extinction the retry loops exist to fix. Safe because each
+  spawner owns its rng stream; the cost is a longer live stalactite array (~39 -> ~70).
+- **Placement vetoes are geometric and same-wall, never a flat radius.** `stalSpacing()`
+  floors at 50px, so "no spike within 140px" is a window that essentially never exists
+  deep. `makeCannon` vetoes only same-wall spikes within `PLACE_CANNON_R + placeStalW`
+  and draws its wall **before** the retry loop, so the rng stream does not depend on how
+  many offsets were rejected.
+- **`_makeBoulderAt` tests the contract, not a proxy for it**: both passes must survive
+  the stalactites that actually overlap the rock, measured against the half-chord at
+  each spike's own x, requiring >= 1.3 player diameters each. Result: 0 sealed passes.
 
-`test-cave.js` now asserts the whole budget table and re-checks every boulder's two
-passes, so neither can rot silently again.
+`_makeMineAt`'s tip-push radius lerps 300 -> 90 over `_prog2` for the same reason - at
+50px stalactite spacing a flat 300 left no vertical room at all past the plateau.
 
-**And the old deep mine density was itself an artifact** of that
-same blindness: with the horizons ordered, `_makeMineAt`'s 300px tip-push radius left
-no vertical room at all past the plateau (stalSpacing floors at 50px there), so the
-radius now lerps 300 -> 90 over `_prog2`. Measured deep mine density 0.98 -> 2.0 per
-1000 world-px; below score 233 every one of these changes is a measured no-op.
-
-The daily seed makes the cave identical in world-x for every player on Earth, and
-`score = floor(scrollX / 60) + bonusScore` is pure world-distance, so the leaderboard is
-only fair if flying a given stretch of world-x is equally hard on every screen. Two
-independent axes:
+Two independent fairness axes:
 
 - **Vertical** (gravity/thrust/fall vs corridor): normalized by `_FEEL_SCALE` - see
   "Screen-independent feel". Fair by construction; `test-math.js` guards it.
-- **Horizontal** (how fast the cave scrolls past): `scrollSpd()` multiplies by `W/600`,
+- **Horizontal** (how fast the cave scrolls past): `scrollSpd()` multiplies by `W/600`
   and obstacle spacing is fixed in world-x, so reaction time per obstacle at a given
-  score is `∝ 1/W`. This is why **W is capped at 956** (`constants.js`) - without it an
-  Android tablet (W ~1280) faced the shared cave ~1.75x faster than a small phone at the
-  same score. The cap is a no-op on iOS (`TARGETED_DEVICE_FAMILY = 1`, no iPhone exceeds
-  ~956) and clamps large Android devices. Residual: small phones (SE, minis) still get
-  slightly *more* reaction time - erring generous for small screens, which is the
-  acceptable direction.
-- Lookahead *time* (`W*0.78 / scrollSpd`) is W-independent - every device gets the same
-  seconds of visual warning. Good.
-- Known residual, not yet addressed: `PR = W*0.018` (hitbox) vs corridor `∝ H`, so
-  hitbox/corridor tracks aspect ratio - iPhones are all ~2.17 so it's negligible on iOS;
-  a squarer Android tablet with H capped at 520 is ~20% more forgiving. Fixing it means
-  keying `PR` off H instead of W, which is a feel change needing its own playtest.
+  score is `∝ 1/W`. Hence **W is capped at 956** (`constants.js`) - without it an
+  Android tablet (W ~1280) faced the shared cave ~1.75x faster than a small phone. The
+  cap is a no-op on iOS (`TARGETED_DEVICE_FAMILY = 1`) and clamps large Android devices.
+  Residual: small phones still get slightly *more* reaction time - the acceptable
+  direction.
+- Lookahead *time* (`W*0.78 / scrollSpd`) is W-independent - same seconds of visual
+  warning everywhere. Good.
+- **Known residual, not addressed:** `PR = W*0.018` vs corridor `∝ H`, so hitbox/corridor
+  tracks aspect ratio. iPhones are all ~2.17 so it is negligible on iOS; a squarer
+  Android tablet with H capped at 520 is ~20% more forgiving. Fixing it means keying
+  `PR` off H, a feel change needing its own playtest.
+
+Measured before/after numbers for both breakages: `docs/design-history.md` ->
+"Cross-device fairness".
 
 ### Player
 ```javascript
@@ -436,33 +411,23 @@ deep variety) are unchanged. `test-math.js` guards the flat zone, plateau and mo
 `test-cave.js` mirrors the start cursors and still shows an identical cave on all
 device sizes with 0 sealed boulder passes.
 
-### Flight plan (sectors) - 2026-09-13, do not revert to per-hazard world-px curves
+### Flight plan (sectors) - do not revert to per-hazard world-px curves
 
 A run is a sequence of **sectors of `SECTOR_SEC` = 7 reference seconds** (`constants.js`
-`refSpdTrend` / `sectorAt` / `sectorStartWx` / `sectorPhase`). Sector 0 is the safe
-flight and ends exactly at `SAFE_START_WX`; later boundaries are integrated from
-`refSpdTrend`, which is `scrollSpdBase`'s trend at the W cap with no deep pulse - one
-formula, called by both (`test-math.js` asserts they agree). Sector boundaries are
-therefore pure world-x and identical on every device.
-
-**Why.** A replay audit (real spawners + physics, 4 bot tiers x 100 runs, 24 day-seeds)
-measured the 12.0 working tree as: 7 new elements in the first 9 s, none between 9 s and
-22 s, five between 23 s and 37 s, nothing new after that; **41% of beginner runs dying
-within 8 points of the walls turning lethal** (91% of beginner deaths are walls, and the
-safe zone only bumps, so it cannot teach them); stalactites per second doubling twice
-between score 300 and 1150, which ended 100% of expert runs inside score 500-900; and 3x
-the 11.0 mine count because sparse stalactites stopped the placement vetoes from
-thinning mines and coins. Concept + evidence:
-https://claude.ai/code/artifact/9c713c80-e348-46fc-b6ee-f66af5bb9be4
+`refSpdTrend` / `sectorAt` / `sectorStartWx` / `sectorPhase`). Sector 0 is the safe flight
+and ends exactly at `SAFE_START_WX`; later boundaries are integrated from `refSpdTrend`,
+which is `scrollSpdBase`'s trend at the W cap with no deep pulse - one formula, called by
+both (`test-math.js` asserts they agree). Sector boundaries are therefore pure world-x and
+identical on every device.
 
 **What each sector introduces** (`constants.js` `*_START_WX = sectorStartWx(n)`):
 
 | sector | score | new |
 |--------|-------|-----|
-| S0 | 0-50 | open corridor, walls lethal + 2 hull scratches from the tunnel entry, kept all run (since 2026-09-19); gold, blue |
+| S0 | 0-50 | open corridor, walls lethal + 2 hull scratches from the tunnel entry (kept all run); gold, blue |
 | S1 | 50-111 | first stalactites, shield coin |
 | S2 | 111-178 | orange ammo, green magnet |
-| S3 | 178-252 | first mine (alone, centred in its band), bomb coin; scratches expire |
+| S3 | 178-252 | first mine (alone, centred in its band), bomb coin |
 | S4 | 252-328 | boulders |
 | S5 | 328-408 | chicanes (faded in over `CHICANE_FADE_WX`) |
 | S6 | 408-493 | cannons |
@@ -471,52 +436,45 @@ https://claude.ai/code/artifact/9c713c80-e348-46fc-b6ee-f66af5bb9be4
 | S9 | 677-773 | drain coin |
 | S10+ | 773+ | nothing new; rates keep growing |
 
-Tools come before the threat they answer, but **not later than S2**: the daily missions
+**Tools come before the threat they answer, but not later than S2**: the daily missions
 ("5 ammo", "2 magnets", "3 bombs") are cumulative per day and must stay reachable for
-casual players, whose runs end around S2-S3. Check `MISSION_DEFS` before moving a coin gate.
-Bomb/poison/drain clocks start at their sector (`lifecycle.js`), first one 15-65% of the
-interval after unlock. The portal ring is unchanged.
+casual players, whose runs end around S2-S3. **Check `MISSION_DEFS` before moving a coin
+gate.** Bomb/poison/drain clocks start at their sector (`lifecycle.js`), the first one
+15-65% of the interval after unlock. The portal ring is unchanged. "SECTOR n" notif fires
+at each boundary from S2 on (i18n key `sector`).
 
 **Densities are rates per reference second, not world-px spacings** (`world.js`
 `sectorRate` / `sectorEnvelope`): `spacing = worldPxForSec(1 / rate)`. Stalactite slots
-`STAL_RATE_S1` 2.0/s x `STAL_GROWTH` 1.14 per sector, 1.08 from `SECTOR_GROWTH_TAPER` (S8);
-mines `MINE_RATE_S3` 0.28/s x 1.2, then 1.1; floors 50 / 200 px unchanged, so rates grow
-without limit and every run still ends ("mines guarantee an eventual death" holds). Each
-sector is a **sawtooth**: the first 20% runs at 55% density (the breather, with 1.5x coin
-candidates as the payout), then ramps 80% -> 115%. Coins: `COIN_RATE_SAFE` 0.75/s in S0,
-0.95/s in S1-S3, x0.985 per sector after, floor 0.8/s. The placement vetoes still apply
-but only decide geometry - **retune by the measured rate** (the replay harness method in
-the audit), never by the spacing number; that coupling is exactly how 12.0 tripled mines.
+`STAL_RATE_S1` 2.0/s x `STAL_GROWTH` 1.14 per sector, 1.08 from `SECTOR_GROWTH_TAPER`
+(S8); mines `MINE_RATE_S3` 0.28/s x 1.2, then 1.1; floors 50 / 200 px unchanged, so rates
+grow without limit and every run still ends ("mines guarantee an eventual death" holds).
+Each sector is a **sawtooth**: the first 20% runs at 55% density (the breather, with 1.5x
+coin candidates as the payout), then ramps 80% -> 115%. Coins: `COIN_RATE_SAFE` 0.75/s in
+S0, 0.95/s in S1-S3, x0.985 per sector after, floor 0.8/s.
 
-**Hull scratches** (`HULL_SCRATCHES` = 2 from the tunnel entry - the rock mouth, see Approach -
-for the **whole run** since 2026-09-19, `update.js` `hullScratch`; they used to expire at S3
-via the deleted `HULL_END_WX`): a lethal-wall contact spends one - clamp, bounce, "SCRAPE!"
-notif, HUD diamonds bottom-right - instead of ending the run. **The grace after a scratch is
-wall-only** (`WALL_GRACE_SEC`, `state.js wallGraceT`): the wall clamps instead of scratching
-again, but stalactites, mines, boulders and shots stay lethal and the ship does not blink. It
-was the full `HIT_INVULN_SEC` before, harmless while scratches ended at S3, but carried into
-the deep run it would have let a player scrape a wall on purpose to pass through a
-stalactite field. Scratches forgive wall mistakes only; direct hits are the shield's job. Counts as a hit
-for the No-Hit achievement. A plain shield at the same moment was measured and rejected
-(it mostly boosted the good tier, +72% median, by eating a stalactite later).
-"SECTOR n" notif fires at each boundary from S2 on (`update.js`, i18n key `sector`).
+The placement vetoes still apply but only decide geometry - **retune by the measured rate
+(the replay-harness method), never by the spacing number**; that coupling is exactly how
+12.0 accidentally tripled the mine count.
 
-**Measured result** (bot tiers; average = the tier real players matched in 11.0):
+**Hull scratches** (`HULL_SCRATCHES` = 2, from the tunnel entry, for the **whole run**;
+`update.js` `hullScratch`): a lethal-wall contact spends one - clamp, bounce, "SCRAPE!"
+notif, HUD diamonds bottom-right - instead of ending the run. Counts as a hit for the
+No-Hit achievement. **The grace after a scratch is wall-only** (`WALL_GRACE_SEC`,
+`state.js wallGraceT`): the wall clamps instead of scratching again, but stalactites,
+mines, boulders and shots stay lethal and the ship does not blink. It was the full
+`HIT_INVULN_SEC` while scratches expired at S3; carried into the deep run that would let a
+player scrape a wall on purpose to pass through a stalactite field. **Scratches forgive
+wall mistakes only; direct hits are the shield's job.** A plain shield at the same moment
+was measured and rejected - it mostly boosted the good tier (+72% median) by eating a
+stalactite later.
 
-| tier | median before -> after | reaches 100 | dies within 8 pts of walls lethal |
-|------|------------------------|-------------|-----------------------------------|
-| beginner | 65 -> 95 | 4% -> 39% | 41% -> 3% |
-| average | 107 -> 155 | 32% -> 70% | 16% -> 2% |
-| good | 205 -> 401 | 80% -> 91% | 1% -> 1% |
-| expert | 715 -> 928 (p90 1328) | 100% | 0% |
-
-Average-tier death rate per sector is now a ramp (S1 38%, S2 60%, S3 68%) instead of a
-cliff. Per 10 real seconds at W956: stalactites 17 / 20 / 23 / 26 / 33 / 44 / 53 / 62 / 68 /
-78 / 96 across S1..S11+ (was 20 -> 188 with two doublings), mines 2.6 in S3 rising to 10
-by score ~1000, coins 7-9 through S4 then thinning to ~4 (+ chicane gold ~4).
 **Known residual:** experts still hit a reaction-time wall at S10-S11 (death 63% / 77% per
 sector, was 100% at S7-S8). A slower `stalLenFrac` leg and a slower chicane-probability
 ramp were both tried and measured as no-ops, so the lever left is speed itself.
+
+The audit that produced this and the measured before/after per tier:
+`docs/design-history.md` -> "Flight plan (sectors)". Concept + evidence:
+https://claude.ai/code/artifact/9c713c80-e348-46fc-b6ee-f66af5bb9be4
 
 Two bounds functions:
 - `boundsAt(wx)` - includes coin bonus - used for rendering AND collision
@@ -594,352 +552,233 @@ median 1.89 -> 1.93 / min 1.48 -> 1.46 player diameters, length median 1.7 -> 3.
 both passes along the whole outline.
 
 ### Cannons
+
 Rare wall-mounted artillery turret (`src/systems.js` `makeCannon`/`maintainCannons`/
-`updateCannonShots`), first appearing at wx=7000 (score ~117, was 6000 before the 2026-09-13 safe opening flight) and spaced far apart
-(`cannonSpacing()` in `src/world.js`, floor 1200px vs. every other obstacle's sub-300px
-floor) - a rare set-piece, not a recurring hazard. Each cannon is inert (not solid, can't
-be flown into) until the player closes to within `CANNON_FIRE_LEAD` world-px, at which
-point it fires exactly one diagonal shot toward the opposite wall and goes dormant.
-Shots reuse the player's own bullet sprite (`drawProjectile` in `src/systems.js`) so a
-cannon shot reads as literal enemy fire, not a different weapon type - only its diagonal
-angle (vs. the player's always-horizontal bullets) tells them apart. Same hitbox
-trade-offs and shield-absorb behavior as mine collision; player bullets destroy a shot
-in flight the same way they destroy a mine.
+`updateCannonShots`), first at wx=7000 (score ~117) and spaced far apart
+(`cannonSpacing()`, floor 1200px vs every other obstacle's sub-300px floor) - a rare
+set-piece, not a recurring hazard. Each cannon is inert (not solid, can't be flown into)
+until the player closes to within `CANNON_FIRE_LEAD`, then fires exactly one diagonal
+shot toward the opposite wall and goes dormant. Shots reuse the player's own bullet
+sprite (`drawProjectile`), so a cannon shot reads as literal enemy fire and only its
+diagonal angle tells them apart. Same hitbox trade-offs and shield-absorb behaviour as a
+mine; player bullets destroy a shot in flight like they destroy a mine.
 
-**Barrel, shell nose and exit line share one axis - the TUNNEL frame** (12.0, do not
-switch to screen velocity). The barrel used to be pinned at a hardcoded `dir * 0.55`
-rad while the sprite rotated by world velocity, so gun and shell disagreed. A first
-fix aimed both along the shot's **screen** velocity (`s.vx - scrollSpd()`): each looked
-right in isolation, but the gun is bolted to the tunnel and scrolls left faster than its
-own shell, so the shell visibly peeled away from the muzzle almost broadside to its nose
-(~118 degrees off, reported from play). Now `updateCannonShots` aims everything along the
-shell's **world** velocity (`c.aimUX/aimUY`, sprite `atan2(s.vy, s.vx)`); before firing,
-`draw.js` aims at the nominal mid-span shot. Since `scrollSpd()` outruns the closing
-speed at every cannon depth, that axis leans down-and-away from the player - the player
-flies into the falling shell. Measured: barrel = nose = motion relative to the gun at
-every sampled cannon (49/-32/23/20 degrees).
+**Barrel, shell nose and exit line share one axis - the TUNNEL frame. Do not switch to
+screen velocity.** `updateCannonShots` aims everything along the shell's **world**
+velocity (`c.aimUX/aimUY`, sprite `atan2(s.vy, s.vx)`); before firing, `draw.js` aims at
+the nominal mid-span shot. Since `scrollSpd()` outruns the closing speed at every cannon
+depth, that axis leans down-and-away from the player - the player flies into the falling
+shell. A screen-velocity aim looks right per element in isolation but the gun is bolted
+to the tunnel and scrolls left faster than its own shell, so the shell peels away from
+the muzzle almost broadside (~118 degrees off, reported from play).
 
-The shot spawns at the barrel's **muzzle** (`CANNON_BARREL_LEN`, shared between
-`draw.js` and `systems.js`), sliding the start along that same world line and slowing
-the shell by exactly the barrel length over the flight, so the endpoint and arrival time
-(`CANNON_SHOT_TRAVEL`) match a pivot launch - measured 1.43-1.45s to reach the player
-against the 1.45 target, so the tuned warning window does not move.
+The shot spawns at the barrel's **muzzle** (`CANNON_BARREL_LEN`, shared between `draw.js`
+and `systems.js`), sliding the start along that same world line and slowing the shell by
+exactly the barrel length over the flight, so endpoint and arrival time match a pivot
+launch and the tuned warning window does not move.
 
-One invariant this relies on, checked rather than assumed: `rngCannon()` is drawn both
-by `makeCannon` (at the spawn horizon) and by `updateCannonShots` (at fire time) on the
-same stream, which would fork the cave per player if the two could interleave
-differently. They can't - a cannon spawns at `scrollX = wx - 1256` and fires at
-`scrollX = wx - 803`, and `cannonSpacing()`'s 1200px floor is wider than that 453px
-window, so the order is always spawn-N, fire-N, spawn-N+1. Measured identical across
-17 cannons for two pilots with different scroll histories on the same day.
+**`CANNON_SHOT_TRAVEL` is 1.45s and `CANNON_FIRE_LEAD` is deliberately untouched at
+`W*0.62`.** A cannon's shot does not exist until `CANNON_FIRE_LEAD` out and its vertical
+span is rolled from `rngCannon()` at that instant, so **its whole warning window IS its
+flight time** - which made it the weakest-telegraphed hazard in the game until the travel
+time was raised from 1.15. The muzzle still fires from the same on-screen position and
+world-x; only the closing speed dropped (`closingSpd = CANNON_FIRE_LEAD /
+CANNON_SHOT_TRAVEL`), and `cannonSpacing()` is untouched, so rarity is unaffected.
+
+**One invariant, checked rather than assumed:** `rngCannon()` is drawn both by
+`makeCannon` (at the spawn horizon) and by `updateCannonShots` (at fire time) on the same
+stream, which would fork the cave per player if the two could interleave differently.
+They can't - a cannon spawns at `scrollX = wx - 1256` and fires at `scrollX = wx - 803`,
+and `cannonSpacing()`'s 1200px floor is wider than that 453px window, so the order is
+always spawn-N, fire-N, spawn-N+1. Verified identical across 17 cannons for two pilots
+with different scroll histories on the same day. **Re-check this if either number moves.**
 
 `makeCannon`'s placement veto is **same-wall and geometric** (`PLACE_CANNON_R +
-placeStalW`), not the flat 140px both-walls test it started as - see the
-`SPAWN_AHEAD_*` discussion under Cross-device fairness for why that flat radius could
-never be satisfied past the plateau, and why the wall (`isTop`) is now drawn before the
-retry loop rather than inside the winning branch.
+placeStalW`), not the flat 140px both-walls test it started as, and the wall (`isTop`) is
+drawn **before** the retry loop - see the `SPAWN_AHEAD_*` discussion under Cross-device
+fairness.
 
-**`CANNON_SHOT_TRAVEL` raised 1.15 -> 1.45 in 12.0 (`CANNON_FIRE_LEAD` untouched).** A
-red-team simulation flagged cannon shots as the weakest-telegraphed hazard in the game -
-every other obstacle is visible on screen well before the final dodge (`SPAWN_AHEAD_*`),
-but a cannon's shot doesn't even exist until `CANNON_FIRE_LEAD` world-px out, and its
-vertical span is freshly rolled from `rngCannon()` at that exact instant, so its whole
-warning window IS its flight time. Measured across a pooled 800-run/20-day sample (same
-expert-tier pilot, same seeds, before/after only `CANNON_SHOT_TRAVEL` changing): the
-share of cannon deaths already unavoidable more than a human reaction-time (0.25s)
-before impact fell from **19.4% (n=31, worst of every hazard type, including
-stalactites at 17.9% and walls at 11.5%) to 2.9% (n=34, now the best or tied-best)**;
-stalactite (18.1%) and wall (9.7%) numbers barely moved in the same run, confirming the
-change is isolated to cannons - `CANNON_SHOT_TRAVEL` only feeds the shot's own vx/vy in
-`updateCannonShots`, nothing else reads it. `CANNON_FIRE_LEAD` is deliberately
-untouched, so the muzzle still fires from the same on-screen position and at the same
-world-x as before (verified live: fires ~587-593 world-px out, matching
-`CANNON_FIRE_LEAD` = `W*0.62` either way) - only the shot's closing speed dropped, since
-`closingSpd = CANNON_FIRE_LEAD / CANNON_SHOT_TRAVEL`. Cannon rarity/density is
-unaffected (`cannonSpacing()` untouched; the pooled sample's cannon-death count, n=31 vs
-n=34 out of 800 runs, moved by sampling noise alone, same source as every other
-hazard's small day-to-day swing - at the time, the game's one unseeded gameplay
-`Math.random()` call was the warp coin's duration roll, which compounded enough over a
-long run to shift exactly which runs landed in each rare-death bucket from one sample
-to the next. The warp coin and that roll were removed on 2026-09-13).
+Measurements behind the travel-time change: `docs/design-history.md` -> "Cannons".
 
 ### Warp portal ("Sog")
 
-Reward set-piece added in 11.0, not a hazard - the game's answer to "reacting" and
-"committing" (stalactites, boulders) is joined by a third verb, "escaping". The one
-way in is a hoop hanging in the corridor (`makePortal`/`maintainPortals`/
-`_makePortalAt`, from world-x `PORTAL_START_WX` = 3000, ~score 50), which calls
-`triggerWarp()` (`src/systems.js`) when flown through.
+Reward set-piece, not a hazard - the third verb ("escaping") next to reacting
+(stalactites) and committing (boulders). The one way in is a hoop in the corridor
+(`makePortal`/`maintainPortals`/`_makePortalAt`, from `PORTAL_START_WX` = 3000,
+~score 50) calling `triggerWarp(accuracy)` (`src/systems.js`) when flown through.
+Long-form rationale and the audit numbers: `docs/design-history.md` -> "Warp portal".
 
-**There is no warp coin any more (removed 2026-09-13, on request).** 11.0 shipped a
-second entry point, a violet warp coin on its own 40s real-time clock. After the hoop
-redesign its coin-size twin read as an unidentifiable "pill", and the user chose the
-hoop alone over redesigning it. Removing it deleted `WARP_COIN_INTERVAL_SEC`,
-`nextWarpWx`, its `rngCoin()` draws (so the day's coin stream differs from 11.0, still
-identical across devices - `test-cave.js` mirrors it), `T.notifWarp`, and the
-`Math.random()` duration fallback in `triggerWarp`. Don't reintroduce it as a coin
-without a silhouette that reads at `COIN_R`.
+**There is no warp coin, and don't reintroduce one** without a silhouette that reads at
+`COIN_R` - the 11.0 coin read as an unidentifiable "pill" and was removed 2026-09-13 on
+request, along with `WARP_COIN_INTERVAL_SEC`, `nextWarpWx`, its `rngCoin()` draws,
+`T.notifWarp` and the `Math.random()` duration fallback.
 
 **The ring's cadence is a DUTY CYCLE, not a world-px number** (`portalSpacing()`,
-`world.js` - retuned 2026-09-12, do not revert to a progAt-keyed curve). Shipped
-11.0 ran `lerp(5200, 2800, progAt)`, and an audit measured it at **one ring every
-1-4 real seconds** past score 100 - denser than boulders at every depth, 8-13x more
-frequent than the (since removed) warp coin's own 40s clock, and the opposite of the "rarer than a
-boulder" intent in its own doc comment. The shape was the error, not just the
-scale: spacing *tightened* with depth while `scrollSpd()` climbs, collapsing the
-real-time gap twice over. Three things compounded. (1) **The ring needs no aim** -
-`portalHitTol` (`update.js`, `PR*3.2`) is wider than the ring's own
-+/-25%-of-halfGap jitter at *every* depth, so a player holding the corridor
-centreline logged **0 misses in 42.3 crossings**, and the accuracy-based duration
-added the same day is therefore near-inert. (2) One full-length warp sweeps
-1900-4300 world-px against a 2100-3500 spacing, so a warp carried the player *past*
-the next ring and re-triggered before it ended - 185 re-triggers per run. (3) Every
-warp exit grants `HIT_INVULN_SEC` on top. Net at a 100% hit rate: **warp live 54.6%
-of the run, hazard-immune 75.1%**, and score 2400 reached in 92s instead of 145s - a
-**1.58x distance-score rate** on the one metric the shared daily leaderboard is made
-of. Same failure the blue coin was retuned for on 2026-09-11, and it breaks the
-"mines are the only thing that guarantees no run survives forever" pillar below,
-since a warped player cannot be hit by one. The curve is now
-`lerp(6500, 10000, progAt) * (1 + 4*prog2At)`: growth keyed to **`prog2At`, not
-`progAt`**, because `progAt` saturates at score 233 and every flat-widened candidate
-therefore left ring #2 past score 250 - which per the leaderboard audit (median
-daily best 70, highest ever 169) means most players would see exactly one ring ever,
-the same mistake that had boulders at 84000. Measured now: one ring per
-11s/12s/19s/28s/44s/46s across the score bands, rings at score ~47/161/274/455,
-warp live 5.7%, hazard-immune 11.0%. Re-measure the duty cycle, never the world-px
-number, before moving this again.
+`world.js`, `lerp(6500, 10000, progAt) * (1 + 4*prog2At)` - do not revert to a
+progAt-only curve). Growth is keyed to `prog2At` because `progAt` saturates at score 233
+and any flat-widened candidate pushes ring #2 past score 250, i.e. most players would
+ever see one ring. Measured now: one ring per 11-46s across the score bands, warp live
+5.7% of the run, hazard-immune 11.0%. **Re-measure the duty cycle, never the world-px
+number, before moving this again** - the 11.0 curve read as reasonable and was 8-13x too
+frequent (warp live 54.6%, a 1.58x score rate on the shared leaderboard).
 
-**Look: a tall hoop the ship threads ("Reif", 2026-09-13, do not go back to flat
-ovals).** The 11.0 ring was two wide, flat, counter-rotating ovals drawn entirely
-before the ship: it read as a spinning disc you fly *over*, had no direction, sank
-into the violet Ianthe (Friday) rock, spent two `shadowBlur`s, and was drawn at only
-0.52x the height of its own hit window. Now `draw.js` draws a tall ellipse (height =
-`Math.max(p.r, PR*1.6)`, exactly `portalHitTol`) in two passes: glow, flow lines and
-the far arc before the player, the near arc plus a chase light after it
-(`_portalBand`), so the ship visibly flies through. Stacked soft strokes with a
-near-white core replace `shadowBlur`; the core is what keeps it legible on violet
-rock. A used hoop widens as `usedFade` runs out. While a warp is live, white speed streaks sweep the whole tunnel
-(`WARP_STREAKS`, alpha riding `warpScrollFactor()`), placed from `scrollX` plus
-`_rockHash` - stateless, no `rng()`. Design proposals:
-https://claude.ai/code/artifact/7fab90a9-4ad8-4729-a1d6-04d56d49ddd8
+**Look: a tall hoop the ship threads ("Reif") - do not go back to flat ovals.**
+`draw.js` draws a tall ellipse (height = `Math.max(p.r, PR*1.6)`, exactly
+`portalHitTol`) in two passes: glow, flow lines and the far arc **before** the player,
+the near arc plus a chase light **after** it (`_portalBand`), so the ship visibly flies
+through. Stacked soft strokes with a near-white core replace `shadowBlur` - the core is
+what keeps it legible on the violet Friday rock. A used hoop widens as `usedFade` runs
+out. While a warp is live, white speed streaks sweep the tunnel (`WARP_STREAKS`, alpha
+riding `warpScrollFactor()`), placed from `scrollX` + `_rockHash` - stateless, no
+`rng()`. Proposals: https://claude.ai/code/artifact/7fab90a9-4ad8-4729-a1d6-04d56d49ddd8
 
-Two follow-ups from the same audit. **The ring's hit window is its own drawn radius**
-(`update.js`, `Math.max(p.r, PR*1.6)`, was a flat `PR*3.2`): 55px of window against a
-~39px ring meant you could take a warp while visibly outside it, and `accuracy`
-measured off a phantom circle - a rim graze scored ~0.7. Keying it to `p.r` makes the
-window the picture and the accuracy gradient span it honestly. Measured a balance
-no-op (0 centreline misses before or after, floor never binds at any shipped H) -
-forcing a *real* aim would need a smaller ring plus a much wider jitter, which is a
-look-and-feel redesign for a playtest, not an audit fix. **A warp-vacuumed coin banks
-in full but does not raise the combo** (`systems.js`, the `warpVacuum` branch): one
-ring auto-collects every gold coin on screen, and letting those increment normally let
-the combo's quadratic term manufacture 11-54 bonus points per warp - worst at LOW
-score, where gold's share is 76%. Against a median daily best of 70 the first ring
-alone (score ~47, which every player reaches) was worth about as much as the whole
-rest of a typical run. Now 17 points cold, and a combo you *earned* before arriving
-still pays on every vacuumed coin - that part is skill and is kept deliberately.
+**The hit window IS the drawn radius** (`Math.max(p.r, PR*1.6)`, never a flat `PR*3.2`),
+so the accuracy gradient spans the picture honestly. **A warp-vacuumed coin banks in
+full but does not raise the combo** (`systems.js`, the `warpVacuum` branch) - letting
+them increment let the combo's quadratic term manufacture 11-54 bonus points per warp,
+worst at low score. A combo *earned* before arriving still pays on every vacuumed coin;
+that part is skill and is kept deliberately.
 
-For `WARP_DUR_MIN..MAX_SEC`
-(~1.1-1.6s) real seconds: `scrollSpd()` is multiplied by `warpMult` (`state.js`,
-rolled once at trigger time from `WARP_MULT_MIN..MAX` (2.2-2.8x) against the
-player's own live `_prog2` and held fixed for the whole warp - deeper run, stronger
-sog, same "never just endurance at a fixed pace" philosophy `scrollSpd()` itself
-follows, capped at `_prog2 >= 1` like most per-run knobs since `scrollSpd()`
-underneath it keeps climbing forever regardless of where this ratio caps).
-`world.js warpScrollFactor()` is the mirror image of `slowScrollFactor()`, folded
-into the identical five call sites. The corridor widens (`WARP_GAP_MULT`, eased through
-the same `gapBonusVisual`-style channel, `boundsAt()` only, never `boundsBase()` -
-same "no placement decision may depend on a player state" rule gapBonus already
-follows), every stalactite/mine/boulder/cannon-shot is skipped entirely (drawn ghosted
-at `warpFade` opacity, `src/draw.js`), and every gold coin on screen is auto-collected
-into the combo (`checkCoinCollection`'s `warpVacuum` check, systems.js) - power-up
-coins still have to be flown to and hit normally. The background music surges with it
-(`audio.js bgmSetWarp`, the mirror image of `bgmSetSlow` - same `_bgmNode.playbackRate`
-rate, so the two are mutually exclusive in practice, which is fine since both are
-short and rare): a quick ramp to 1.35x on trigger, gliding back to 1.0x as the window
-runs out. Deliberately far under the warp's own 2.2-2.8x - that range is a gameplay
-scroll speed, not an audio pitch target, and a whole track played back that fast stops
-reading as "faster" and starts reading as a chipmunked mess.
+**What a live warp does.** For `WARP_DUR_MIN..MAX_SEC` (~1.1-1.6s, picked linearly by
+the crossing's accuracy - dead centre earns the max), `scrollSpd()` is multiplied by
+`warpMult` (`state.js`, rolled once at trigger from `WARP_MULT_MIN..MAX` 2.2-2.8x
+against the player's live `_prog2`, held fixed for the whole warp; capped at
+`_prog2 >= 1`). `warpScrollFactor()` (`world.js`) is the mirror of `slowScrollFactor()`
+and is folded into the identical five call sites. The corridor widens (`WARP_GAP_MULT`,
+eased like `gapBonusVisual`, **`boundsAt()` only, never `boundsBase()`** - no placement
+decision may depend on a player state), every stalactite/mine/boulder/cannon-shot is
+skipped and drawn ghosted at `warpFade`, and every gold coin on screen is auto-collected.
+Power-up coins still have to be flown to. The music surges via `bgmSetWarp` (mirror of
+`bgmSetSlow`, same `_bgmNode.playbackRate`): 1.35x on trigger, gliding back to 1.0x -
+deliberately far under the gameplay 2.2-2.8x, because a track played that fast reads as
+chipmunked, not fast.
 
-**A blue coin collected DURING a warp is banked, not started** (2026-09-14, from a
-player report that the slow bar appeared but neither the sound nor the speed changed).
-`triggerWarp` already clears a slow that is *already running* ("you are now fast, not
-fast-and-slow-at-once", 2026-09-12); the opposite order was missed. Picked up inside a
-warp, `slowScrollFactor()`'s 0.6x multiplies against `warpScrollFactor()`'s 2.2-2.8x for
-a combined 1.32-1.68x - still faster than normal, so the effect is unfeelable - and the
-player is hazard-immune anyway, so the window drained for nothing: 1.1-1.6s of warp
-against a 4.0s coin is 27-40% of it. The music broke too, because `bgmSetSlow` and
-`bgmSetWarp` share `_bgmNode.playbackRate` and each calls `cancelScheduledValues` first,
-so the `bgmSetWarp(false)` at the warp's end wiped the sag and left the track at normal
-speed while the game actually did slow down. Now `state.js slowPending` holds it (same
-cap, so banking can never buy more than flying it normally) and `update.js`'s warpTime
-falling edge releases it next to the `HIT_INVULN_SEC` grant, arming `bgmSetSlow` there.
-The HUD shows a banked slow as the same cyan bar held full and dimmed, pulsing - a
-draining bar would lie, showing nothing would look like the pickup was swallowed. Pure
-per-player effect, no `rng()`, no placement decision, so no cross-device concern.
-Measured in a browser: banked at 4.00 through the warp at a clean 2.20x surge, released
-the frame warpTime hits 0 with the factor dropping to 0.63, `bgm: warp(false) |
-slow(true,4.00)` in that order.
+**A blue coin collected DURING a warp is banked, not started** (`state.js slowPending`,
+released on `update.js`'s warpTime falling edge next to the `HIT_INVULN_SEC` grant, which
+also arms `bgmSetSlow`). Same cap, so banking can never buy more than flying it normally.
+Started immediately it would be unfeelable (0.6x against 2.2-2.8x is still faster than
+normal) and would drain 27-40% of its window while the player is hazard-immune anyway -
+and it broke the music, since both helpers share `playbackRate` and `cancelScheduledValues`.
+The HUD shows a banked slow as the cyan bar held full, dimmed and pulsing: a draining bar
+would lie, nothing would look swallowed. `triggerWarp` still clears a slow that is
+*already* running ("you are now fast, not fast-and-slow-at-once").
 
-**Exiting a warp grants `HIT_INVULN_SEC` of the same grace window a shield-absorbed
-hit or a revive already gets** (`update.js`, the `warpTime` falling edge) - `Math.max`
-against whatever's already running, never a shortening. Coming out of a warp drops the
-player back into full collision at whatever speed/position the surge left them at,
-with the corridor still easing back in from `WARP_GAP_MULT`-wide (`warpWidenVisual`) -
-a hazard could already be uncomfortably close the instant collision solidifies again,
-so the same clamp-not-kill/pass-through convention the shield window uses covers the
-transition. This is the reuse `constants.js`'s own `HIT_INVULN_SEC` doc comment
-already anticipated ("a future rewarded continue reuses the same timer") - not a new
-constant.
+**Exiting a warp grants `HIT_INVULN_SEC`** (`update.js`, warpTime falling edge, `Math.max`
+against whatever is running, never a shortening) - collision solidifies with the corridor
+still easing in from `WARP_GAP_MULT`-wide (`warpWidenVisual`), so a hazard can be uncomfortably close. This is
+the reuse `constants.js`'s own `HIT_INVULN_SEC` doc comment anticipated, not a new constant.
 
-**Deliberately real seconds, not a world-px distance.** Nothing about a warp is a
-placement decision - no `rng()` draw, nothing any other player's cave depends on - so
-it is exactly the same category of per-player effect the blue coin's `slowTime`
-already is, not a cross-device-fairness concern. `scrollX` still advances one `dt` at
-a time through the ordinary `maintain*()` while-loops; a warp is just a few real
-seconds of a bigger step per frame; the loops already have to backfill an arbitrary
-jump (a backgrounded tab does the same thing) so nothing about them changes for this.
+**The wall is never a warp-caused death, by construction, not by tuning.**
+`update.js`'s wall check treats `warpTime > 0` exactly like `invulnT > 0`: clamp back
+inside the corridor instead of killing. `WARP_GAP_MULT` only decides how much clamping
+the player feels. (The warp's drift can outrun `MAX_VY` at the wave's peak slope, and
+amplitude, frequency and `warpMult` all still climb - so this must not be a tuned margin.)
 
-**The wall is never a warp-caused death, by construction, not by tuning.** At the
-corridor wave's peak slope, the warp's faster drift can in theory outrun `MAX_VY`
-(a measured ~45% of `MAX_VY` already at the difficulty plateau, unwarped, before even
-`WARP_MULT_MIN` is applied). Rather than hand-tuning `WARP_GAP_MULT` against a moving
-target (wave amplitude/frequency both still climb with `_prog2`, and now `warpMult`
-does too), `update.js`'s wall-collision check treats `warpTime > 0`
-exactly like `invulnT > 0` (the shield-absorbed grace window): clamp the ship back
-inside the corridor instead of killing it. `WARP_GAP_MULT` only decides how much of
-that clamping the player actually feels, never whether a warp can end in a wall death.
+**Deliberately real seconds, not a world-px distance.** No `rng()` draw, nothing any
+other player's cave depends on - the same category of per-player effect as the blue
+coin's `slowTime`, not a cross-device-fairness concern. `scrollX` still advances one
+`dt` at a time through the ordinary `maintain*()` loops, which already backfill an
+arbitrary jump (a backgrounded tab does the same).
 
-**Portal placement reuses the coin contract, not a bespoke geometric veto.** The
-ring's *drawn* radius (`PORTAL_R_FRAC` of the corridor's halfGap at that wx) is
-spectacle; only its centre point has to be provably flyable, and that question is
-already answered for every coin in the game by `coinBlockedByStal()` - reused directly
-in `_makePortalAt` rather than reinventing per-spike chord math. A bespoke flat/
-geometric veto is exactly the mistake that nearly wiped out boulders and cannons (see
-the `SPAWN_AHEAD_*` discussion above); reusing the coin contract sidesteps it because
-coins already place successfully at every difficulty without one. `PORTAL_RETRY_OFFSETS`
-follows the same retry-on-veto pattern as mines/cannons/boulders regardless.
-
-The portal ring itself triggers on an **x-crossing test**, not a circle-overlap test -
-same reasoning as the falling-stalactite landed check and the cannon fire lead: a
-fast-scrolling frame can jump the player's world-x past a thin ring in one step, a risk
-that only grows once `warpScrollFactor()` itself can be live.
-
-**Flying the ring's centre is rewarded with a longer warp** (`update.js`'s
-x-crossing check, `triggerWarp(accuracy)`) - a dead-centre pass earns the full
-`WARP_DUR_MAX_SEC`, a graze along the hit tolerance's edge only `WARP_DUR_MIN_SEC`,
-linearly in between. This reuses `WARP_DUR_MIN..MAX_SEC` rather than adding a new constant pair; only
-*where in the range* a given warp lands changed, not the range itself.
+**Portal placement reuses the coin contract** (`coinBlockedByStal()` in `_makePortalAt`).
+The ring's *drawn* radius (`PORTAL_R_FRAC` of the halfGap at that wx) is spectacle; only
+its centre point has to be provably flyable, and that question is already answered for
+every coin in the game. So: never a bespoke geometric veto, which is exactly the mistake
+that nearly wiped out
+boulders and cannons (see `SPAWN_AHEAD_*` above). `PORTAL_RETRY_OFFSETS` follows the same
+retry-on-veto pattern as mines/cannons/boulders. The ring triggers on an **x-crossing
+test**, not a circle overlap: a fast-scrolling frame can jump the player past a thin ring
+in one step, a risk that only grows once `warpScrollFactor()` is live.
 
 ### Coin system
-**Gold coins bank no `gapBonus` during the safe opening zone** (score < 50,
-`SAFE_START_WX`, `checkCoinCollection`'s gold branch in `systems.js`, 2026-09-13 on
-request) - walls there are already pushed to the screen edges (`safeOpenAt`), so a
-gold pickup widening the corridor further is invisible in the moment and only pays
-off as a bonus already sitting near its cap the instant the zone ends and hazards
-start (`HAZARD_START_WX`). Points, combo and shard banking are unaffected - only the
-`gapBonus +=` is skipped while `scrollX < SAFE_START_WX`.
 
 Coins collect into `gapBonus` (extra halfGap px, capped, decays over time). Since 12.0
 all three magnitudes are **fractions of the corridor's own half-gap, not of `H`**
-(`constants.js`, accessors `gapPerCoin()` / `gapBonusMax()` / `gapDecay()` in
-`world.js` next to `refreshWave()`):
+(`constants.js`, accessors `gapPerCoin()` / `gapBonusMax()` / `gapDecay()` in `world.js`
+next to `refreshWave()`):
 ```javascript
 const GAP_PER_COIN_FRAC  = 0.075 / 0.43;   // bonus halfGap added per coin
 const GAP_BONUS_MAX_FRAC = 0.19  / 0.43;   // cap: max halfGap bonus
 const GAP_DECAY_FRAC     = 0.015 / 0.43;   // bonus lost per second
 ```
 
-**Why they stopped being absolute (do not revert).** A fixed number of px added to a
-base corridor that shrinks `H*0.34 -> H*0.163` is a curve-flattener by construction,
-and a red-team replay measured exactly that. The bonus is easy to hold - chicane gold
-sits on the corridor centreline, i.e. the line the player already flies, so collecting
-it costs no detour - and an expert holds it at ~66% of cap for the whole run. Measured
-widening of the corridor by score band, same pilot, same seeds, before vs after:
-
-| band | 0-25 | 25-50 | 50-100 | 100-233 | 233-500 | 500-900 | 900+ |
-|------|------|-------|--------|---------|---------|---------|------|
-| before | 1.00x | 1.16x | 1.36x | 1.55x | 1.79x | 1.99x | **2.01x** |
-| after  | 1.00x | 1.14x | 1.32x | 1.42x | 1.42x | 1.41x | **1.40x** |
-
-Before, the reward grew steadily with depth until it doubled the deep corridor - the
-corridor the pilot actually flew narrowed only 10.6 -> 8.6 ship diameters against a
-designed 11.0 -> 4.2. After, the widening is flat from score 100 on (the early rise is
-just the bar filling from empty), and the flown corridor narrows 10.6 -> 5.9. A run's
-corridor is now the base curve TIMES a constant instead of PLUS one, so the shape the
-difficulty curve was designed to have is the shape that gets flown.
+**Why they stopped being absolute (do not revert).** A fixed number of px added to a base
+corridor that shrinks `H*0.34 -> H*0.163` is a curve-flattener by construction: the bonus
+is easy to hold (chicane gold sits on the centreline the player already flies), an expert
+holds it at ~66% of cap all run, and it grew from 1.00x widening early to **2.01x deep**.
+The corridor actually flown narrowed 10.6 -> 8.6 ship diameters against a designed
+11.0 -> 4.2. As fractions it is flat at ~1.40x from score 100 on and the flown corridor
+narrows 10.6 -> 5.9: the corridor is the base curve TIMES a constant instead of PLUS one.
 
 Two properties make this safe, both asserted in `test-math.js`:
 - **The fractions are anchored so wx=0 reproduces the old absolute values exactly**
-  (`halfGapAt(0)` = `H*0.43`, hence the `/0.43`). Score 0 is a byte-exact no-op and the
-  band real runs actually end in barely moves: the `average`-tier median was 22 before
-  and 22 after, mean -2%. Deep runs are where it bites - expert mean 625 -> 459, p90
-  1543 -> 1092. Same standing rule as the 2026-09-11 pass: only the deep run may get
-  harder.
+  (`halfGapAt(0)` = `H*0.43`, hence the `/0.43`). Score 0 is a byte-exact no-op; only the
+  deep run got harder, which is the standing rule.
 - **All three scale together**, so every ratio between them is depth-independent: still
   2.53 coins to fill the bar from empty, still 0.2 coins/sec to hold it at the cap. The
-  supply economics `CHICANE_GOLD_GAP_SEC` and `POWERUP_MIN_GAP_SEC` were tuned against
-  are untouched; only the px magnitude tracks the corridor the bonus is a bonus ON.
+  supply economics that `CHICANE_GOLD_GAP_SEC` and `POWERUP_MIN_GAP_SEC` were tuned
+  against are untouched.
 
-They scale off `_gapRef` (`world.js`), which is the base difficulty curve **without**
-`deepChamberAt` - a chamber is a transient local breather, not a difficulty level, and
-letting the cap balloon 2.1x on entering one would only snap it back on the way out.
-`update.js` also clamps `gapBonus` down to `gapBonusMax()` every frame, so a bonus
-banked in a wide stretch gives ground as the corridor narrows under it.
+They scale off `_gapRef` (`world.js`), the base curve **without** `deepChamberAt` - a
+chamber is a transient breather, not a difficulty level, and letting the cap balloon 2.1x
+on entering one would only snap it back on the way out. `update.js` clamps `gapBonus`
+down to `gapBonusMax()` every frame, so a bonus banked in a wide stretch gives ground as
+the corridor narrows under it.
 
-`DEEP_DECAY_PEAK` (the deep decay ramp, `update.js`) was expected to need lowering once
-the magnitudes scaled - it doesn't. Swept at 1.0 / 1.6 / 2.5 and 25.0 over 100 expert
-runs each, the held bonus moved 0.850 -> 0.849 -> 0.821 and the per-band corridor not
-at all: coin **supply** refills the bar far faster than any of those rates drain it, so
-decay is no longer the binding constraint, the cap is. Left at 2.5 rather than re-tuned
-on a guess. If the deep run needs tightening again, the lever is supply or
-`GAP_BONUS_MAX_FRAC`, not that ramp.
-**Chicane gold is gated in SECONDS, not world-px** (`CHICANE_GOLD_GAP_SEC`, flat at
-every depth since `CHICANE_GOLD_EARLY_MULT` was deleted on 2026-09-13, in `constants.js`, `worldPxForSec()` in `world.js`, applied in
-`maintainStalactites`). Deep, `stalSpacing()` sits on its 50px floor at a 0.62 chicane
-probability, so nearly every chicane wants to drop a centred gold coin right on the line
-the player threads anyway. A flat 30px gate gave ~7/sec; the 340px gate that replaced it
-still measured **2.09/sec** in the deep run, because a fixed distance keeps shrinking in
-seconds as `scrollSpd()` climbs forever. Against the ~0.2 coins/sec that holds `gapBonus`
-pinned at its cap, that was a 10x oversupply - and the measured consequence was that the
-*effective* half-gap ran flat at ~0.34*H for the entire run, i.e. **the whole 0.34 ->
-0.163 narrowing was cancelled out and the corridor never actually got tighter.** A time
-gate is flat in coins/sec at every depth by construction. Two implementation constraints:
-it must use `worldPxForSec()` (the W-independent speed) and NOT `scrollSpd()`, or the
-cave forks by screen width and the shared daily seed stops being shared; and it is gated
-on `lastChicaneCoinWx` (`state.js`), not on the tail of the live `chicaneCoins` array,
-which is culled behind the player and so silently capped any gate wider than ~1700px.
-Measured result across 8 day-seeds at a 50/70% collection rate: median free channel at a
-stalactite now falls 9.4 -> 7.5 -> 6.7 -> 5.5 -> 3.6 -> 2.1 player diameters across the
-score bands, against a flat ~5-7 before. The base decay rate was deliberately NOT raised
-to achieve this (it would have narrowed the score 25-233 corridor too); the deep end is
-handled by the pre-existing `_deepDecay` ramp in `update.js`, which is inert until 233.
+**If the deep run needs tightening, the lever is supply or `GAP_BONUS_MAX_FRAC`, not
+`DEEP_DECAY_PEAK`** - swept 1.0 / 1.6 / 2.5 / 25.0 over 100 expert runs each, the held
+bonus moved 0.850 -> 0.821 and the per-band corridor not at all. Coin supply refills the
+bar far faster than any of those rates drain it, so the cap binds, not decay.
 
-`gapBonus` itself still jumps instantly on pickup (systems.js), but collision and
-rendering never read it directly - they read `gapBonusVisual` (update.js), which
-chases `gapBonus` at a constant `GAP_EASE_RATE` px/s instead of snapping to it. That's
-what makes the wall visibly widen rather than teleport, and because the same lag
-applies on the way down once the decay starts pulling the target back in, smoothing
-this also nudges the corridor's total "wide" window a little longer, not just its
-onset. Wall glow shifts purple → cyan when bonus is active. Gold bar at bottom shows
-remaining bonus - both keyed off `gapBonusVisual` too, so what's shown always matches
-what's actually collided against.
+**Gold coins bank no `gapBonus` during the safe opening zone** (`scrollX <
+SAFE_START_WX`, `checkCoinCollection`'s gold branch): walls there are already at the
+screen edges (`safeOpenAt`), so the widening is invisible in the moment and only pays off
+as a bonus already near its cap the instant hazards start. Points, combo and shard
+banking are unaffected.
+
+**Chicane gold is gated in SECONDS, not world-px** (`CHICANE_GOLD_GAP_SEC`,
+`worldPxForSec()` in `world.js`, applied in `maintainStalactites`; flat at every depth
+since `CHICANE_GOLD_EARLY_MULT` was deleted). Deep, `stalSpacing()` sits on its 50px
+floor at a 0.62 chicane probability, so nearly every chicane wants to drop a centred gold
+coin on the line the player threads anyway. A fixed distance keeps shrinking in seconds
+as `scrollSpd()` climbs forever - the 340px gate still measured 2.09 coins/sec deep
+against the ~0.2/sec that pins `gapBonus` at its cap, and the consequence was that the
+effective half-gap ran flat at ~0.34*H for the entire run: **the whole 0.34 -> 0.163
+narrowing was cancelled out.** A time gate is flat in coins/sec at every depth by
+construction. Two implementation constraints:
+- it must use `worldPxForSec()` (W-independent), **never `scrollSpd()`**, or the cave
+  forks by screen width and the shared daily seed stops being shared;
+- it is gated on `lastChicaneCoinWx` (`state.js`), **not** on the tail of the live
+  `chicaneCoins` array, which is culled behind the player and so silently capped any gate
+  wider than ~1700px.
+
+The base decay rate was deliberately NOT raised to achieve this (it would have narrowed
+the score 25-233 corridor too); the deep end is handled by `_deepDecay` in `update.js`,
+inert until 233.
+
+`gapBonus` jumps instantly on pickup (`systems.js`), but collision and rendering never
+read it - they read `gapBonusVisual` (`update.js`), which chases it at a constant
+`GAP_EASE_RATE` px/s. That is what makes the wall visibly widen rather than teleport, and
+the same lag on the way down nudges the total "wide" window a little longer. Wall glow
+shifts purple -> cyan while a bonus is active; the gold bar at the bottom shows the
+remainder. Both keyed off `gapBonusVisual`, so what is shown matches what is collided
+against.
 
 **An off-screen wall is drawn ON the screen edge, in the normal edge look**
-(`WALL_EDGE_SLIVER` in `constants.js`, clamp in `draw.js`'s wall arrays, 2026-09-17 -
-do not bring back the red strip). A maxed `gapBonusVisual` or a warp can push the
-corridor edge past the canvas (`boundsAt().top < 0` / `.bot > H`); there `update.js`'s
-screen-anchored check (`py - cPR < 0 || py + cPR > H`) makes the screen edge the lethal
-line. 12.0 marked it with a pulsing red strip at `y=0`/`y=H`, which made one continuous
-lethal wall switch between two looks (day/cyan line on screen, red glow off it) as the
-wave swung it in and out, and the strip also pulsed during warps, where walls only clamp.
-Now the rendered `topArr`/`botArr` are clamped to a ~3pt sliver, so rock and edge line
-rest on the screen edge - one rule: the line is the wall. Draw-only, `boundsAt()` and
-collision untouched. The red proximity flash (`draw.js`) measures against that same
-lethal edge (`max(b.top, 0)` / `min(b.bot, H)`) - it used to measure the invisible
-off-screen edge and stayed silent flying into the screen edge - and is off while
-`warpTime > 0 || invulnT > 0`. Colour vocabulary: day colour -> cyan = wall (cyan = coin bonus), red = only
-the proximity wash, death markers and the death reticle.
+(`WALL_EDGE_SLIVER`, clamp in `draw.js`'s wall arrays - do not bring back the red strip).
+A maxed `gapBonusVisual` or a warp can push the corridor edge past the canvas; there
+`update.js`'s screen-anchored check (`py - cPR < 0 || py + cPR > H`) makes the screen edge
+the lethal line. 12.0 marked it with a pulsing red strip, which made one continuous lethal
+wall switch between two looks as the wave swung it in and out, and pulsed during warps
+where walls only clamp. Now `topArr`/`botArr` are clamped to a ~3pt sliver: **the line is
+the wall.** Draw-only; `boundsAt()` and collision untouched. The red proximity flash
+measures against that same lethal edge (`max(b.top, 0)` / `min(b.bot, H)`) and is off
+while `warpTime > 0 || invulnT > 0`.
+
+**Colour vocabulary:** day colour -> cyan = wall (cyan = coin bonus). Red = only the
+proximity wash, death markers and the death reticle.
+
+Measured before/after tables: `docs/design-history.md` -> "Coin system".
 
 ### Difficulty scaling functions
 
@@ -982,500 +821,383 @@ as `deepChamberAt`.
 Past `_prog2 = 1` (score ~900) every corridor geometry knob is capped and only
 `scrollSpd()` moves - so a five-digit run was one variable, speed, getting twitchier
 against a frozen corridor. `DEEP_VARIETY_WX` (the switch-on point for the shape morph,
-chambers, deep coin-line shapes and the palette drift) was **moved 54000 -> 30000
-(score ~500) on 2026-09-11**, same leaderboard argument as the Boulders section: at
-54000 none of it had ever been seen. **Moved again 30000 -> 9000 (score ~150) in
-12.0** - a red-team simulation (2400 runs across 4 calibrated skill tiers) found the
-real leaderboard sample's own tier reached wx 30000 in exactly 0% of 600 runs: same
-mistake, one order smaller. At 9000, a tier just under real players' best runs reaches
-it in 24.7% of runs, one step better (expert) in 63.5% - see the doc comment above
-`DEEP_VARIETY_WX` in `world.js` for the full numbers. It is safe at any value because
-every one of those features is bounded *relative to the same wx unmorphed* (the
-`test-math` energy guard holds at any wx, and chambers only ever widen). Two things
-deliberately did NOT move with it: the **speed pulse** (still gated on `_prog2 > 1` in
-`scrollSpd()` - surging above a still-ramping trend is a different proposition from
-surging above a flat one) and the **apex-biased mines**, which keep their own
-`DEEP_APEX_WX` = 54000 because that one is flagged below as an unplaytested fairness
-risk.
+chambers, deep coin-line shapes and the palette drift) is **9000 (~score 150)**, moved
+there from 54000 -> 30000 -> 9000 on the same leaderboard argument as the Boulders
+section: at the old values essentially no real player had ever seen any of it. Full
+numbers in the doc comment above `DEEP_VARIETY_WX` in `world.js`.
 
-**Moving `DEEP_VARIETY_WX` earlier exposed two latent bugs that moving it back
-wouldn't have fixed - both are now fixed, not worked around:**
-1. `deepMorphAt` jumped straight from the inert `{a1:1,a2:1}` to a fully-hashed
-   character in a single world-px at the `DEEP_VARIETY_WX` boundary itself - a real
-   seam that the existing "continuous across character boundaries" guard in
-   `test-math.js` never sampled (it starts checking a few hundred world-px past the
-   boundary, well after the jump). At wx=30000 this sat deep past every boulder that
-   was ever placed there, so it went uncaught; at wx=9000 it landed right in active
-   boulder territory and `test-cave.js`'s boulder-pass-safety check caught it as a
-   sealed pass. Fixed by giving segment 0 its own entry ramp - the same 30%-of-
-   wavelength blend every later segment already spends blending OUT, spent blending
-   IN instead - which keeps `wx <= DEEP_VARIETY_WX` exactly inert (nothing at or below
-   the documented switch-on point moves) while making everything past it seamless.
-2. `test-cave.js`'s own boulder-safety check had a second, independent bug: it
-   extracted `boundsBase`/`placeStalW` from one `makeWorld()` sandbox that never had
-   `startRun(day)` called on it, so it validated every day's boulders against
-   world.js's bare load-time defaults (phase 0, jitter 1, archetype 0, `_deepHash`
-   seeded off day 0) instead of that day's real seeded state - the portal check right
-   below it already re-seeds per day and was never affected. This test bug is what
-   turned bug #1's tiny, already-fixed seam into a false "2 boulders sealed" failure
-   in the first place; both are fixed now, and `node test-cave.js` shows 0 sealed
-   passes across the full DAYS sample either way.
+It is safe at any value because every feature is bounded *relative to the same wx
+unmorphed* (the `test-math` energy guard holds at any wx, chambers only ever widen). Two
+things deliberately did NOT move with it: the **speed pulse** (still gated on
+`_prog2 > 1` in `scrollSpd()` - surging above a still-ramping trend is a different
+proposition from surging above a flat one) and the **apex-biased mines**, which keep
+their own `DEEP_APEX_WX` = 54000 because that one is flagged below as an unplaytested
+fairness risk.
 
-Two additions in `world.js` (all `DEEP_*` consts + `_deepHash`
-+ `deepMorphAt`, gated by `_deepVarietyOn`) give the deep run a changing shape and pace
-without touching the navigability caps:
+All of it lives in `world.js` (`DEEP_*` consts + `_deepHash` + `deepMorphAt`) and is a
+pure function of `scrollX` + `_deepDay` (captured in `seedDailyVariety`, independent of
+the `rng()` obstacle stream and the `h`-chain), so every player flies the identical
+sequence and the scrollX-indexed ghost stays locked. **`_deepVarietyOn` (default true) is
+the master kill switch for all of it.**
 
-- **Shape morph** (`deepMorphAt`, folded into `refreshWave` and `boundsBase`): past
-  `DEEP_VARIETY_WX` the two corridor waves' **amplitudes** are rescaled by a seeded
-  per-day sequence of characters (`DEEP_CHARS`: even / sweeps / chop / near-straight),
-  each holding `DEEP_CHAR_WAVELEN` world-px then smoothstepping into the next. The a1/a2
-  splits are picked so `wA1*wF1 + wA2*wF2` (peak corridor velocity) never exceeds ~1.02x
-  the same-`wx` unmorphed value - a different *ride*, never more wiggle-energy than
-  today. **Frequencies are deliberately left untouched**: changing the frequency of
-  `sin(wx*f)` at large `wx` scrambles accumulated phase and needs a phase-integral
-  rework (a later phase if wanted). `test-math.js` guards inertness below the plateau,
-  the <4% energy ceiling across 40 day-seeds, and boundary continuity.
-- **Speed pulse** (in `scrollSpd()`): past `_prog2 > 1`, a seeded swell of up to
+- **Shape morph** (`deepMorphAt`, folded into `refreshWave` and `boundsBase`): the two
+  corridor waves' **amplitudes** are rescaled by a seeded per-day sequence of characters
+  (`DEEP_CHARS`: even / sweeps / chop / near-straight), each holding
+  `DEEP_CHAR_WAVELEN` world-px then smoothstepping into the next. The a1/a2 splits are
+  picked so `wA1*wF1 + wA2*wF2` (peak corridor velocity) never exceeds ~1.02x the
+  same-`wx` unmorphed value - a different *ride*, never more wiggle-energy than today.
+  **Frequencies are deliberately left untouched**: changing the frequency of `sin(wx*f)`
+  at large `wx` scrambles accumulated phase and needs a phase-integral rework.
+  `test-math.js` guards inertness below the plateau, the <4% energy ceiling across 40
+  day-seeds, and boundary continuity. Segment 0 has its own entry ramp (the same
+  30%-of-wavelength blend later segments spend blending OUT, spent blending IN), so
+  `wx <= DEEP_VARIETY_WX` stays exactly inert and everything past it is seamless - without
+  it the morph jumped from inert to fully-hashed in a single world-px at the boundary.
+- **Speed pulse** (`scrollSpd()`): past `_prog2 > 1`, a seeded swell of up to
   `+DEEP_PULSE_AMP` (12%) **above** the trend over `DEEP_PULSE_WAVELEN` world-px
-  (`swell = 0.5 - 0.5*cos(...)`, in `[0,1]`), so the deep game surges and eases back.
-  It is **surge-only - it never dips below the trend** (was `±8%` around the trend
-  until 2026-09-08, i.e. half of every cycle the deep run decelerated, which reads as
-  the game getting easier). Because each breath's trough sits exactly on the trend and
-  the **trend itself is untouched and still climbs forever** ("scrollSpd never
-  plateaus"), every successive breath is faster than the last - the speed envelope
-  only ever rises; only the within-breath ease-back varies.
-
-- **Chambers** (`deepChamberAt` in `world.js`, `DEEP_CHAMBER_PERIOD`/`DEEP_CHAMBER_PEAK`):
-  a rare seeded world-x window (~55% of 15000px periods) where the half-gap balloons to
-  `DEEP_CHAMBER_PEAK` (2.1x) on a sine bump then settles back - a breather, never a
-  hazard (wider is always navigable). Applied to `_halfGap` in `refreshWave` **and**
-  `halfGapAt()` so `boundsBase` / coin+mine placement follow the room. The sub-window
-  never touches a period boundary, so the factor is always 1 (continuous) at the seams.
-  This is the one thing that legitimately breaks "the corridor only ever narrows" past
-  the plateau, by design.
-
-Everything above (morph, pulse, chambers) is a pure function of `scrollX` + `_deepDay`
-(captured in `seedDailyVariety`, independent of the `rng()` obstacle stream and the
-`h`-chain), so every player flies the identical sequence and the scrollX-indexed ghost
-stays locked. `_deepVarietyOn` (default true) is the master kill switch for all of it.
-
-**Phase 3** (also `_deepVarietyOn` / `_deepHash`, all past `DEEP_VARIETY_WX`):
-- **Coin-line shapes** (`makeCoin`, `src/systems.js`): deep coin `y` follows a seeded
-  slow sine arc per ~3200px band instead of scattering independently - a line to follow.
-  `rng()` is still consumed so coin *types* are unchanged; only positions move.
-- **Palette drift** (`draw()`, `src/draw.js`): past `_prog2 > 1` the wall / stalactite
-  *glow* (`wallBase`/`stalEdge`) lerps toward a cool deep tint, capped at 0.30. Base rock
-  colour and the daily identity are untouched. Subtle on purpose.
-- **Apex-biased mines** (`makeMine`, `src/systems.js`, flagged): at a genuine bend apex
-  (`centerAt` neighbours both on one side) ~60% of mines snap toward the centreline -
-  where the corridor shape already forces the player. Same count/speed. **Watch in
-  playtest for a "the game is cheating" read** - cut it if it feels unfair.
+  (`swell = 0.5 - 0.5*cos(...)`, in `[0,1]`). **Surge-only - it never dips below the
+  trend** (it was +-8% around the trend until 2026-09-08, i.e. half of every cycle the
+  deep run decelerated, which reads as the game getting easier). Each breath's trough
+  sits exactly on the trend, and the trend itself still climbs forever, so the speed
+  envelope only ever rises; only the within-breath ease-back varies.
+- **Chambers** (`deepChamberAt`, `DEEP_CHAMBER_PERIOD`/`DEEP_CHAMBER_PEAK`): a rare
+  seeded window (~55% of 15000px periods) where the half-gap balloons to 2.1x on a sine
+  bump then settles - a breather, never a hazard (wider is always navigable). Applied to
+  `_halfGap` in `refreshWave` **and** `halfGapAt()` so `boundsBase` / coin+mine placement
+  follow the room. The sub-window never touches a period boundary, so the factor is
+  always 1 (continuous) at the seams. This is the one thing that legitimately breaks
+  "the corridor only ever narrows" past the plateau, by design.
+- **Coin-line shapes** (`makeCoin`): deep coin `y` follows a seeded slow sine arc per
+  ~3200px band instead of scattering independently - a line to follow. `rng()` is still
+  consumed, so coin *types* are unchanged; only positions move.
+- **Palette drift** (`draw()`): past `_prog2 > 1` the wall / stalactite *glow*
+  (`wallBase`/`stalEdge`) lerps toward a cool deep tint, capped at 0.30. Base rock colour
+  and the daily identity are untouched. Subtle on purpose.
+- **Apex-biased mines** (`makeMine`, **flagged**): at a genuine bend apex (`centerAt`
+  neighbours both on one side) ~60% of mines snap toward the centreline - where the
+  corridor shape already forces the player. Same count/speed. **Watch in playtest for a
+  "the game is cheating" read** - cut it if it feels unfair.
 - **Boulders**: see the Boulders section above.
 
-**Blue coin "Zeitblase" (2026-09-18, draw-only, `constants.js` `SLOW_FX_*` doc).** The slow
-already sagged the scroll, the music and drew a HUD bar, but nothing else on screen slowed,
-so it read as a stutter. Three presentation layers ride one eased intensity `slowFxVis`
-(`state.js`, chases `slowTime / slowTimeMax`, so they fade with the glide back to full speed):
-particles, thruster exhaust and coin animations run on a slowed clock (`vtime`, and `vdt` in
-`update.js`; exhaust spawn is thinned so the live count stays flat); a one-shot double ring
-on pickup plus thin time ripples around the ship; a faint ice-blue wash on the LEFT only
-(hazards arrive from the right, same rule as the depth light). **`gtime` is deliberately
-NOT slowed** - mines bob off it and collide against it, so that would be a gameplay change.
-No `shadowBlur`, no `rng()`, no placement decision. Cyan wall tint stays reserved for the
-coin bonus, so the effect never colours the walls.
+**Blue coin "Zeitblase" (draw-only, `constants.js` `SLOW_FX_*` doc).** The slow already
+sagged the scroll, the music and drew a HUD bar, but nothing else on screen slowed, so it
+read as a stutter. Three presentation layers ride one eased intensity `slowFxVis`
+(`state.js`, chases `slowTime / slowTimeMax`, so they fade with the glide back to full
+speed): particles, thruster exhaust and coin animations run on a slowed clock (`vtime`,
+and `vdt` in `update.js`; exhaust spawn is thinned so the live count stays flat); a
+one-shot double ring on pickup plus thin time ripples around the ship; a faint ice-blue
+wash on the LEFT only (hazards arrive from the right, same rule as the depth light).
+**`gtime` is deliberately NOT slowed** - mines bob off it and collide against it, so that
+would be a gameplay change. No `shadowBlur`, no `rng()`, no placement decision. Cyan wall
+tint stays reserved for the coin bonus, so the effect never colours the walls.
 
 ### Coin type progression
 
 Coins are staged by `_prog` so power-ups introduce gradually:
-- score 0-11 (_prog < 0.22): gold only (gap bonus)
-- score 11-33 (_prog 0.22-0.38): + blue (slow time: scroll sags to 0.6x on pickup then ramps back to full over ~4s - see slowScrollFactor)
-- score 34+ (_prog >= 0.38): the weighted ladder switches on
-- score 50+ (S1, `RED_START_WX`): + red (shield, absorbs 1 hit; type id is `red`, the coin is drawn violet)
-- score 111+ (S2, `ORANGE_START_WX` / `GREEN_START_WX`): + orange (bullet ammo) + green (magnet)
+- score 0-11 (`_prog` < 0.22): gold only (gap bonus)
+- score 11-33 (0.22-0.38): + blue (slow time: scroll sags to 0.6x then ramps back over ~4s)
+- score 34+ (>= 0.38): the weighted ladder switches on
+- score 50+ (S1, `RED_START_WX`): + red (shield, absorbs 1 hit; type id `red`, drawn violet)
+- score 111+ (S2, `ORANGE_START_WX` / `GREEN_START_WX`): + orange (ammo) + green (magnet)
 - score 178+ (S3): bomb clock; S8 (583+) poison; S9 (677+) drain - see "Flight plan (sectors)"
-  (red was 34, orange 34, green 71, bomb/poison/drain 34 until 2026-09-13)
+
+Mines first spawn at `MINE_START_WX` = start of sector 3 (~score 178). **Shield coins
+unlock in S1, so a player always has shields available before the first mine** - keep
+that ordering if either moves.
 
 **Power-up SUPPLY is paced in real seconds, not just by weighted share**
-(`POWERUP_MIN_GAP_SEC` / `POWERUP_GAP_EARLY_MULT` in `constants.js`, enforced in
-`makeCoin`; `blueClock`/`redClock`/`greenClock` in `state.js`, ticked in `update.js`).
-A measured replay audit (2026-09-11) found every capped power-up pinned at its ceiling
-once a run got deep - shield stack full 87-100% of the time from score 233 on, slow-time
-active 38-85% of the run. The *durations* were never the problem (4s per blue coin, 3s
-per magnet are short); the weighted roll simply has no notion of real time, so as
-`coinSpacing()` tightens and `scrollSpd()` climbs, every type's coins-per-second climbs
-with them. Three rules, all load-bearing:
+(`POWERUP_MIN_GAP_SEC` / `POWERUP_GAP_EARLY_MULT`, enforced in `makeCoin`;
+`blueClock`/`redClock`/`greenClock` in `state.js`, ticked in `update.js`). The weighted
+roll has no notion of real time, so as `coinSpacing()` tightens and `scrollSpd()` climbs,
+every type's coins-per-second climbs with them - measured deep, the shield stack was full
+87-100% of the time and slow-time active 38-85% of the run. Four rules, all load-bearing:
 - A vetoed power-up coin is **skipped entirely** (`makeCoin` returns `null`), never
-  downgraded to gold - downgrading would hand the suppressed share to gold and re-break
-  the corridor bonus (below).
-- The floor **scales in with depth**, so it is a measured no-op below score 233. That
-  band is where real runs actually end; this pass is only allowed to make the deep run
-  harder. Same rule governs the `makeMine` retry.
+  downgraded to gold - downgrading hands the suppressed share to gold and re-breaks the
+  corridor bonus.
+- The floor **scales in with depth**, so it is a measured no-op below score 233. That band
+  is where real runs end; this pass may only make the deep run harder. Same rule governs
+  the `makeMine` retry.
 - The check sits **after** the poison/bomb/drain overrides, so a ready hazard is never
   delayed by an unrelated shield veto and the hazard `rng()` stream is untouched.
-- **Orange (ammo) is deliberately exempt.** Bullets auto-fire every 0.32s
-  (`updateBullets`), so a 5-shot pickup drains itself in 1.6s - there is no stock to
-  pin, and measured with firing modelled the player is armed only 2-9% of the run at
-  every depth. An earlier pass of the audit called ammo "pegged at 10/10"; that was a
-  modelling error, not a finding. `test-math.js` guards the exemption.
+- **Orange (ammo) is deliberately exempt** (`test-math.js` guards it). Bullets auto-fire
+  every 0.32s, so a 5-shot pickup drains in 1.6s - there is no stock to pin, and with
+  firing modelled the player is armed only 2-9% of the run at every depth.
 
-The values are FLOORS, not the resulting cadence - the type still has to win the
-weighted roll afterwards, which adds ~4-6s deep. Pick a floor by subtracting that from
-the cadence you want, then re-measure.
+The values are FLOORS, not the resulting cadence - the type still has to win the weighted
+roll, which adds ~4-6s deep. Pick a floor by subtracting that from the cadence you want,
+then re-measure.
 
-Mines first spawn at `MINE_START_WX` = start of sector 3 (score ~178; was 1800 / ~30, then 6400, then 12000 on 2026-09-13). Shield coins unlock in sector 1, so a player has shields available before meeting the first mine.
+**Gold's share also gets an explicit extra cut with depth** (`GOLD_DEEP_DECAY`, applied in
+`makeCoin`), phased half over the score 34-233 ramp (`t`) and half over the 233-900
+marathon (`_prog2`), so gold keeps thinning long after `t` maxes. **The two legs are
+redistributed differently and must stay that way:** the t-leg spreads proportionally
+across whichever of blue/orange/green are already active (never a flat
+leftover-to-green fallback, which would bend green's gate open early), while the `_prog2`
+leg goes to green alone - red/blue/orange are all flat past score 233 while green is the
+one type designed to keep growing. A single blended split let every capped power-up drift
+past its ceiling by the plateau (red ~26% against a 21% cap), which surfaced as a real
+player complaint ("too many shields").
 
-Gold's share isn't just "whatever's left after the other types' shares" - it also
-gets an explicit extra cut as a run goes deeper (`GOLD_DEEP_DECAY` in
-`src/constants.js`, applied in `makeCoin`, `src/systems.js`), phased half over the
-score 34→233 ramp (`t`) and half over the score 233→900 marathon (`_prog2`), so gold
-keeps thinning out long after `t` maxes at score 233 instead of holding flat. The two
-legs are redistributed differently (retuned 2026-09-11, replacing one blended
-`goldDecayT` fed through a single proportional split): the t-leg still spreads
-proportionally across whichever of blue/orange/green are already active - never a
-flat leftover-to-green fallback, which would otherwise bend green's score-71 gate
-open early - but the `_prog2` leg goes to green alone, since red/blue/orange are all
-flat past score 233 (matching red's own ramp, which is t-only) while green is the one
-type designed to keep growing through the marathon. The single-split version let every
-capped power-up (red's stack cap, blue's slow-time duration, orange's ammo cap) drift
-past its documented ceiling by the deep-run plateau - red was hitting ~26% against its
-21% cap - a real player complaint ("too many shields").
+**Blue's stack cap is 6.0s** (cut from 8.0 on 2026-09-11; ELECTRIC's 12/15 scaled with it
+to keep its documented +50%). Slow-time measured active 38-85% of the run past score 233,
+which makes the blue coin the baseline pace rather than a rescue and works against the
+"`scrollSpd()` never plateaus" rule. **The 4.0s per coin is untouched** - the swoop is the
+mechanic; what changed is how far a streak can run the window out.
 
-**Coin/power-up audio** (`audio.js`): the pickup sounds carry a loudness hierarchy -
-gold and blue (slow) sit at their base level; red (shield), green (magnet) and bomb are
-rare, run-defining grabs and sit ~2 dB hotter with a touch more tail (shield also gets a
-low body layer). Two effects are *states*, not one-shots, so they stay audible for their
-whole duration: blue sags the background music to 0.6x playback rate then *glides* it
-continuously back up to 1.0x across the whole slow-time window, landing on normal speed
-as the effect runs out (`bgmSetSlow(true, slowTime)`, riding `_bgmNode.playbackRate` so
-pitch sags and recovers with it - that ramp is the effect); a second blue coin restarts
-the glide from the current rate over the new topped-up duration. **The gameplay scroll
-speed follows the identical curve** (`slowScrollFactor()` in `world.js`, multiplied into
-`scrollSpd()` in `update.js`, into the speed-line intensity in `draw.js`, and into both
-projectile integrations in `systems.js` - the player's own bullets in `updateBullets`
-and the cannon shots in `updateCannonShots`, so during bullet-time nothing streaks
-through a slowed tunnel at full speed) - the blue coin is a decelerate-then-recover
-swoop, not a flat half-speed plateau, and tunnel, projectiles and soundtrack speed back
-up together. `slowTimeMax` (state.js, captured at each pickup in `systems.js`) is the
-window the ramp lerps over. The **stack cap was cut 8.0s -> 6.0s** on 2026-09-11
-(ELECTRIC's 12/15 scaled with it to keep its documented +50%): slow-time measured
-active 38-85% of the run past score 233, which makes the blue coin the baseline pace
-rather than a rescue and works directly against the "`scrollSpd()` never plateaus" rule
-below. The 4.0s **per coin** is untouched - the swoop is the mechanic; what changed is
-how far a streak of them can run the window out. Blue also carries a
-`POWERUP_MIN_GAP_SEC` floor (see Coin type progression). Green runs a faint
-ambient shimmer loop while the magnet is live (`magnetLoopOn`/`magnetLoopOff`, same
-at-most-once guard pattern as the thruster / onFire loops). Both are driven ON from the
-pickup branch in `systems.js`; the magnet loop is turned OFF from `update.js` on the
-falling edge of `magnetTime`, and `bgmSetSlow(false)` fires there too (plus
-`startPlay`/`die`) purely as a belt-and-braces snap-home in case the glide and the
-gameplay timer drift.
+**Coin/power-up audio** (`audio.js`): pickup sounds carry a loudness hierarchy - gold and
+blue at base level; red, green and bomb are rare, run-defining grabs and sit ~2 dB hotter
+with more tail (shield also gets a low body layer). Two effects are *states*, not
+one-shots:
+- **Blue** sags the music to 0.6x playback rate then *glides* it continuously back to 1.0x
+  across the whole slow-time window (`bgmSetSlow(true, slowTime)` on
+  `_bgmNode.playbackRate` - that ramp IS the effect). A second coin restarts the glide from
+  the current rate over the new duration. **The gameplay scroll speed follows the identical
+  curve** (`slowScrollFactor()`, multiplied into `scrollSpd()` in `update.js`, the
+  speed-line intensity in `draw.js`, and **both** projectile integrations in `systems.js` -
+  `updateBullets` and `updateCannonShots`, so nothing streaks through a slowed tunnel at
+  full speed). `slowTimeMax` is the window the ramp lerps over.
+- **Green** runs a faint ambient shimmer loop while the magnet is live
+  (`magnetLoopOn`/`magnetLoopOff`, same at-most-once guard as the thruster/onFire loops),
+  turned off from `update.js` on the falling edge of `magnetTime`. `bgmSetSlow(false)`
+  fires there too (plus `startPlay`/`die`) as a belt-and-braces snap-home.
 
-**Poison/bomb/drain rarity**: all three unlock at score ~34+ (`_prog >= 0.38`, same
-gate as red/orange; since 2026-09-13 their first clock target also counts from
-`HAZARD_START_WX`, so in practice none lands inside the safe opening flight) and are driven by a real-time clock (`drainClock` mirrors
-`poisonClock`/`bombClock` exactly; see the Drain coin section below), not a
-per-coin-candidate percentage
-(`poisonClock`/`bombClock`, `state.js`, incremented every play-frame in `update.js`).
-An earlier version rolled a percentage per coin *candidate*, derived from a target
-hits/sec so the cadence wouldn't accelerate with difficulty - correct in principle, but
-it silently assumed every candidate becomes a real coin. It doesn't: `coinBlockedByStal`
-(`src/systems.js`) rejects candidates too close to a stalactite, and a live replay of a
-real daily seed measured ~90% rejection, varying with difficulty/chicane
-density/day archetype - so the actual cadence players saw was ~10x rarer than intended
-and drifted with conditions no formula could predict. The clock model sidesteps that
-entirely: once `poisonClock`/`bombClock` passes its jittered `nextPoisonAt`/`nextBombAt`
-target (`POISON_INTERVAL_SEC`/`BOMB_INTERVAL_SEC`, `src/constants.js`), the *next coin
-that actually clears placement* (i.e. reaches the end of `makeCoin()`) becomes that type
-- immune to rejection rate, day archetype, and screen width by construction. Targets are
-~20s poison / ~16s bomb, retuned down from an original ~55s/45s guess after checking
-against how long runs actually last: a live replay of today's seed found a "good" run
-(score ~300) takes only ~20-36 real seconds end to end at realistic phone widths, and
-even a "great" run (score ~1000) is only ~54-97s - both far shorter than assumed, so the
-original interval meant many runs, especially on wide screens (scroll speed scales with
-W), saw literally zero of either. Bomb is deliberately a little more frequent than
-poison - a reward landing at least as often as a punishment reads more generous.
+**Poison/bomb/drain cadence is a real-time CLOCK, never a per-candidate percentage**
+(`poisonClock`/`drainClock`/`bombClock` in `state.js`, ticked in `update.js`; once past a
+jittered `nextPoisonAt`/`nextDrainAt`/`nextBombAt`, the next coin that actually clears
+placement becomes that type). A percentage per coin *candidate* silently assumes every
+candidate becomes a coin - `coinBlockedByStal()` rejects ~90% of them, varying with
+difficulty, chicane density and day archetype, so the cadence players saw was ~10x rarer
+than intended and drifted with conditions no formula could predict. The clock is immune to
+rejection rate, day archetype and screen width by construction. Intervals `POISON_INTERVAL_SEC` / `BOMB_INTERVAL_SEC` / `DRAIN_INTERVAL_SEC`
+(`constants.js`) target ~20s poison / ~16s bomb / ~30s drain; bomb is deliberately more frequent than poison, because a reward
+landing at least as often as a punishment reads more generous. Their first clock target
+counts from `HAZARD_START_WX`, so none lands inside the safe opening flight.
 
-**Coin rendering ("Gegenstand", 2026-09-16, do not go back to glossy gems or add a frame)**
-(`draw.js` `drawCoin` / `COIN_OBJECTS`). Each coin draws the thing it does: gold = gem with
-two outward chevrons (the corridor widens), blue = a Sanduhr that runs through in 4s (one
-coin's slow-time), red = violet Wappenschild, orange = a Fadenkreuz (crosshair; three cartridges were tried first and read as sticks at ~17pt), green = horseshoe magnet
-with its poles toward the ship and sparks drifting in, bomb = red bomb with a burning fuse,
-poison = Giftflasche, drain = inward Strudel. A player learns the type from the object
-without being told; the old glossy gems used an abstract pictogram per type (a droplet
-for slow time, four strokes for the magnet) that had to be learned, and their gradient +
-white-glint + `shadowBlur` material was the only glossy thing left after the design pass.
-**No frame:** a hexagon / dashed-hazard-ring frame was built the same day and removed on
+**Coin rendering ("Gegenstand" - do not go back to glossy gems or add a frame)**
+(`draw.js` `drawCoin` / `COIN_OBJECTS`). Each coin draws the thing it does: gold = gem
+with two outward chevrons (the corridor widens), blue = a Sanduhr that runs through in 4s,
+red = violet Wappenschild, orange = a Fadenkreuz, green = horseshoe magnet with its poles
+toward the ship and sparks drifting in, bomb = red bomb with a burning fuse, poison =
+Giftflasche, drain = inward Strudel. A player learns the type from the object without
+being told. **No frame:** a hexagon / dashed-hazard-ring frame was built and removed on
 the user's call - at ~17pt it shrank the object until you could not tell what it was.
-Objects are drawn at `COIN_OBJECT_SCALE` (1.5) of the hitbox radius, gold a little more
-(`COIN_OBJECT_BOOST`).
-**Shield is violet, bomb is red (swapped 2026-09-16 on request).** The type id is still
-`'red'` for the shield - only colours moved: the coin, its pickup notif and `burstCoin`
-hue (`systems.js`), `HUD_SPARK_COLOR` and the shield bubble around the ship all follow,
-so the effect keeps the coin's colour. Don't "fix" the id/colour mismatch by renaming
-the type - missions, achievements and saves key off it. Gold was asked to move no more than the blue coin - no
-spin, no flip, a slow shallow chevron breathe. Flat facets lit from above, same material
-as the ship; zero `shadowBlur` (the old path spent 5-6 per coin). Purely visual: the
-hitbox is still `COIN_R * COIN_SIZE_MULT` in `systems.js`. Drain is drawn in
-`[215,80,140]` instead of wine `#7a2f4f`, which sank into the void.
-Study: https://claude.ai/artifact/Cqn7gYiN5ZXneyTA2BwTXb (variant 1)
+Objects draw at `COIN_OBJECT_SCALE` (1.5) of the hitbox radius, gold a little more
+(`COIN_OBJECT_BOOST`). Flat facets lit from above, same material as the ship, **zero
+`shadowBlur`** (the old path spent 5-6 per coin). Gold moves no more than the blue coin -
+no spin, no flip, a slow shallow chevron breathe. Purely visual: the hitbox is still
+`COIN_R * COIN_SIZE_MULT`. Study: https://claude.ai/artifact/Cqn7gYiN5ZXneyTA2BwTXb (variant 1)
 
-**Poison coin**: hazard coin. Drawn as a Giftflasche (see
-"Coin rendering" above). Also continuously emits a slow ooze-drip particle while sitting
-uncollected on screen (`update.js`'s coin-fade loop), so it visibly reads as "active
-hazard" even at a glance, not a static pickup. Color is toxic/acid green ("giftgrün",
-`#5fbf00`, deliberately different from the magnet coin's mint `#44ff88`). Touching it
-breaks the coin combo and removes a **percentage** of `runCoins`
-(`POISON_LOSS_PCT_MIN`->`POISON_LOSS_PCT_MAX`, 12%->15%, `lerp` on `_prog`, `Math.ceil`
-so a small pool can't round to a 0-coin no-op) - deliberately punishing rather than a flat
-nudge: a %-based tax compounds over repeated hits (survivor fraction ~0.8^N over N hits
-at a 20% rate), so a long run that keeps getting careless with poison can lose most of
-its pool, not just N x a fixed amount regardless of how large the pool had grown. (An
-earlier version used a flat per-hit amount specifically to avoid this compounding -
-reverted on explicit request that poison "really punish" someone; see git history on
-`POISON_LOSS_MIN`/`POISON_LOSS_MAX` if that trade-off ever needs revisiting.) Comes out
-of this run's *pending* shard bank (see Score formula below), never the persistent
-`shards` balance directly, so it can only cost progress not yet banked. See
-`checkCoinCollection` in `src/systems.js`.
+**Shield is violet, bomb is red.** The type id is still `'red'` for the shield - only
+colours moved (coin, pickup notif, `burstCoin` hue, `HUD_SPARK_COLOR`, the shield bubble),
+so the effect keeps the coin's colour. **Don't "fix" the id/colour mismatch by renaming
+the type** - missions, achievements and saves key off it. Drain is drawn `[215,80,140]`,
+not wine `#7a2f4f`, which sank into the void.
 
-**Bomb coin**: power-up, the opposite of a hazard. Drawn as a red bomb with a burning fuse (see "Coin rendering" above). Collecting it triggers a small blast around the
-pickup point (`BOMB_RADIUS`, `src/constants.js`) that clears every hazard caught in it:
-stalactites fade out the same way a bullet-destroyed one does, mines and in-flight
-cannon shots are destroyed outright, and any cannon that hasn't fired yet is disabled.
-See `triggerBombExplosion` in `src/systems.js`, called from `checkCoinCollection`'s
-`bomb` branch (joins the coin combo and banks toward `runCoins` like any other power-up
-- only the two hazard coins opt out of that shared path).
+**Poison coin**: hazard. Toxic green `#5fbf00` (deliberately unlike the magnet's mint
+`#44ff88`) and continuously emits a slow ooze drip while uncollected (`update.js`'s
+coin-fade loop), so it reads as an active hazard at a glance. Touching it breaks the combo
+and removes a **percentage** of `runCoins` (`POISON_LOSS_PCT_MIN` -> `POISON_LOSS_PCT_MAX`, 12%->15%,
+lerp on `_prog`, `Math.ceil` so a small pool can't round to a no-op). Percentage, not a flat
+amount, so it **compounds** over repeated hits - a long careless run can lose most of its
+pool. (A flat amount was tried first, specifically to avoid that, and reverted on explicit
+request that poison "really punish".) Comes out of this run's *pending* shard bank, never
+the persistent `shards` balance, so it can only cost progress not yet banked.
 
-**Drain coin**: the SECOND hazard coin (`'drain'`, drawn as a pink Strudel, see "Coin rendering" above). Where
-poison debits the *pending shard bank* (`runCoins`, meta progress), drain debits the
-*visible run score*: `checkCoinCollection`'s `drain` branch subtracts
-`ceil(score * lerp(DRAIN_LOSS_PCT_MIN, DRAIN_LOSS_PCT_MAX, _prog))` (5%->8%) from
-`bonusScore`, so the HUD number itself drops. `bonusScore` may now go negative;
-`update.js` clamps the displayed `score` at 0, and because the loss is a fraction of a
-shrinking number it can never actually reach a negative total. Compounds over repeated
-hits like poison's %-loss, and because it is a % of the current score its absolute bite
-*grows the deeper the run goes* - deliberately, so the deep run gets harder over
-distance. Breaks the combo (`coinCombo = 0`) like poison. Same real-time-clock cadence
-model as poison/bomb (`drainClock`/`nextDrainAt`, `DRAIN_INTERVAL_SEC` ~30s - rarer
-than poison since it stings more visibly), checked between the poison and bomb clocks in
-`makeCoin()` so a ready bomb still wins a triple-ready coin. Magnet-exempt like poison.
-`sfxDrain` (`audio.js`) is a downward triangle glissando + bandpassed noise "suck" -
-distinct from poison's sour sawtooth squelch so the two punishers sound different.
+**Bomb coin**: power-up, the opposite of a hazard. Clears every hazard within
+`BOMB_RADIUS` of the pickup - stalactites fade out like a bullet kill, mines and in-flight
+cannon shots are destroyed, an unfired cannon is disabled (`triggerBombExplosion`). Joins
+the combo and banks toward `runCoins` like any power-up; only the two hazard coins opt out
+of that shared path.
 
-### Audio bus and loudness (2026-09-17 audit, do not revert)
+**Drain coin**: the second hazard. Where poison debits the pending shard bank (meta
+progress), drain debits the *visible run score* - `ceil(score * lerp(DRAIN_LOSS_PCT_MIN,
+DRAIN_LOSS_PCT_MAX, _prog))` (5%->8%) off `bonusScore`, so the HUD number drops. `bonusScore` may go
+negative; `update.js` clamps the displayed score at 0, and since the loss is a fraction of
+a shrinking number it can never reach a negative total. Its absolute bite *grows* with
+depth, deliberately. Breaks the combo. Checked between the poison and bomb clocks in
+`makeCoin()`, so a ready bomb still wins a triple-ready coin. Magnet-exempt like poison.
+`sfxDrain` is a downward triangle glissando + bandpassed noise "suck", distinct from
+poison's sour sawtooth squelch.
+
+### Audio bus and loudness (do not revert)
 
 `src/audio.js`. Every sound is synthesised per call and connects to `_master`; the bus in
-front of the speakers is now **sfx bus + music bus -> `MASTER_GAIN` -> soft-clip limiter
--> destination** (`_initAC`). Audited by offline-rendering every sfx, every thruster voice
-and both music beds through the real chain in an `OfflineAudioContext` and comparing peak,
-loudest-50ms and RMS - by-ear tuning of these numbers does not predict how they sit
-against each other or the bed, exactly as the 2026-09-05 thruster pass already found.
+front of the speakers is **sfx bus + music bus -> `MASTER_GAIN` -> soft-clip limiter ->
+destination** (`_initAC`), plus a shared cave reverb send.
 
-- **The whole mix was ~6 dB too quiet.** A run measured about -24 LUFS integrated while
-  mobile games, and the AdMob interstitial that follows every 4th death, sit near -14 to
-  -16 - the ad was louder than the game it interrupts. `MASTER_GAIN` = 1.6 (+4 dB) plus
-  the raised levels below land it near -18 LUFS.
-- **The limiter is a `WaveShaper` soft clipper, never a `DynamicsCompressor`.** A
-  compressor was tried and measured as a 9 dB tax on percussive sfx - it reduces
-  broadband for its whole release window, so `sfxMineExplode` came out of the boost
-  *quieter* than it went in. The shaper is exactly linear below `LIMIT_KNEE` (verified by
-  rendering each sfx with and without it: 0.0-0.3 dB), so nothing in normal play is
-  touched and it only rounds off the rare frame where several loud events coincide.
-- **Loudness hierarchy, loudest-50ms after the change** (music bed -19.7): death -13.2,
-  shield break -17.0, milestone -17.8, shield/magnet -18, cannon fire -20.6, coin /
-  near-miss / combo -21.4, thrust -22.7, UI -27.7. The rule is **warnings > rare rewards
-  > routine pickups > the thrust bed**; before this, shield break (-32) and cannon fire
-  (-29) sat *below* a gold coin, and near-miss and combo sat below the thrust. Raised:
-  shield break +8, cannon fire +5, near-miss/combo +5, the whole UI block +6.
-- **Spool-up is a low turbofan (2026-09-19, "rollendes Grollen").** `sfxEngineSpoolUp` was a
-  110 -> 980 Hz saw whine; it is now lowpassed air roar 150 -> 700 Hz + rumble under a slow
-  2 -> 8 Hz tremolo, a 40 -> 150 Hz buzz-saw and one quiet 70 -> 260 Hz sine, all on a rev
-  curve (`t^pw` in log-frequency, slow start). Chosen by the user from a five-round study
-  (https://claude.ai/artifact/D7D9hELLqBerVNddPgPk4X) with the explicit brief "low, may stay
-  low, like an airliner turbine": **do not add partials above ~700 Hz.** Level matched to the
-  old turbine's loudest-50ms by offline render. `sfxDie` is still the mirror of the OLD
-  roar layer (420 -> 160 Hz), close enough to the new one that it was left alone.
-- **The death impact is on frame 0.** `sfxDie` is still the reverse of
-  `sfxEngineSpoolUp`, but that roar takes 1.3s, so its crash used to land 1.22s after the
-  collision - after `drawDeathFreeze()` had finished and the debriefing was fading in, and
-  the hit frame itself was silent. Hull thump, mid crunch and crack now fire at `t`; what
-  is left at the tail is a quiet debris settle.
-- **Music is a bus, and death collapses it rather than cutting it.** `_fadeBgMusic` closes
-  a lowpass to `DEATH_MUSIC_HZ` as the level falls over `DEATH_MUSIC_SEC` (the freeze
-  frame plus a beat). `musicDuck()` steps the whole music bus back `MUSIC_DUCK_DB` under
-  milestone / record / shield-break. Title and play music crossfade over `MUSIC_FADE_SEC`
-  instead of cutting, and the title bed went 0.058 -> 0.100: it sat 9 dB under the play
-  bed and, measured, *under its own UI taps*.
-- **Both tracks loop on `loopStart`/`loopEnd`, not on the raw buffer.** They are ordinary
-  masters: `the_mountain` (the Nebula track since 2026-09-18, 72s) has a quiet build to ~8s,
-  a full body to ~61s, then a quieter outro and a fade to silence; `the_mountain_documentary`
-  fades from ~114.5s. The title piano loops the whole song, 18.0 / 114.0 with a 4s crossfade (2026-09-19; `_bakeBgmLoop`, same baking as the play track): the old 0.30 / 114.50 cut into the piece's own fade-out and landed on unrelated material. The piece has copy-pasted sections (0-16s = 66-82s, 84-96s = 100-112s) that would give an exact seam, but only for loops that skip the tail, which was rejected on request; the user wants the loop to run to ~114s. The Nebula loop is `BGM_LOOP_START/END` 11.53 / 38.96 = 16 bars at 140
-  BPM (1.714s per bar), with the seam crossfaded 0.857s equal-power into the material
-  before the loop start (`_bakeBgmLoop`, one baked buffer, one source node so playbackRate
-  effects still work). The first pair (8.10 / 56.10) was an audible jump on device
-  (2026-09-19): waveform correlation 0.33 across the seam; the new pair scores 0.73 and was
-  picked by ear from four rendered candidates. The music does not repeat sample-exactly. **Death plays the song's own ending (2026-09-19):** `die()` collapses the loop as before, then `_playBgmOutro()` fades in the track's last ~10s (from `BGM_OUTRO_START` 61.75: quiet pad, one last hit at ~68.5, decay to silence) through its own gain node; nothing loops it, so the death screen ends in silence until the title screen's music. `_stopBgmOutro()` cuts it on restart, revive and return to the title. Only when the play music was actually sounding (music off stays silent). `commitDeath()` no longer starts the title music, so the ending plays through the continue offer AND the debriefing to its last decay; the piano only returns on the title screen. Looping the whole buffer played that
-  fade, a hole and a fade-in every pass - worst on the title screen, where it reads as
-  "the song ended". The lead-in stays as a one-time intro. Set from the EBU momentary
-  envelope; **the files are never re-encoded to fix this** (see the "encode once from the
-  source" rule in `audio.js`), so the same constants hold for the `.web.m4a` builds.
+**Judge every change here by offline render, never by ear** - by-ear tuning does not
+predict how sounds sit against each other or the bed, and a loudness match alone shipped
+a "Knallfrosch" twice. Method, metrics and traps: `reference_audio_method` memory.
+
+- **`MASTER_GAIN` = 1.6.** The mix used to measure ~-24 LUFS integrated while mobile games
+  and the AdMob interstitial after every 4th death sit near -14 to -16 - the ad was louder
+  than the game it interrupts. Now near -18 LUFS.
+- **The limiter is a `WaveShaper` soft clipper, never a `DynamicsCompressor`** (a
+  compressor cost 9 dB on percussive sfx). Exactly linear below `LIMIT_KNEE`, so it only
+  rounds off the rare frame where several loud events coincide.
+- **Loudness hierarchy** (loudest-50ms; music bed -19.7): death -13.2, shield break -17.0,
+  milestone -17.8, shield/magnet -18, cannon fire -20.6, coin / near-miss / combo -21.4,
+  thrust -22.7, UI -27.7. **The rule is warnings > rare rewards > routine pickups > the
+  thrust bed.** Match any new sound into this, then re-measure.
 - **Low-end layers do not exist on a phone speaker.** Everything below ~300-400 Hz is
-  rolled off on device, which is where the thrust voices (85-340 Hz), the death roar and
-  the bomb/mine booms live - so a flat RMS measurement flatters all of them. Each of those
-  now carries a mid-band partner (`THRUST_PRESENCE_GAIN`, and the 400-1400 Hz crunch
-  layers in `sfxDie`/`sfxBomb`/`sfxMineExplode`). The thrust layer is deliberately shared
-  by all eight ships, so the per-ship balance measured in 2026-09-05 is untouched - every
-  voice moves by the same amount.
-
-- **Impact sounds reworked 2026-09-18 (do not go back to noise bursts).** Shield break, projectile-on-rock
-  (`sfxRockHit`, new; wall / boulder / cannon shot on wall - a broken stalactite keeps `sfxStalCrack`) and mine / bomb
-  explosions (`_blast()`, shared) were all bandpassed noise, i.e. a pop or a "Knallfrosch". Explosions need shape: soft
-  kick-like onset, a body whose lowpass closes while its level holds (a straight exponential was -18 dB by 0.2 s and read
-  as a firecracker), a waveshaped sub so the bass survives a phone speaker, a rumble tail, low debris thuds with a soft
-  attack (a bandpassed 5 ms attack clicks). Method: render through an `OfflineAudioContext` in headless Chrome (drive it
-  over CDP in real time; `--virtual-time-budget` is flaky with offline rendering), then look at the WAV as a spectrogram
-  (`ffmpeg showspectrumpic`) and per-window band shares - the review is by eye, not by ear. Levels are matched to the
-  sounds they replaced (loudest 50 ms: shield -21, rock -26, mine -21, bomb -23 dB before the master gain).
-
-**Sound/UX review pass (2026-09-19, do not revert).** Proposals and the user's picks:
-https://claude.ai/artifact/6KC3aJhYAAfthzVXtX5oAa (db collection `entscheidungen`).
-- **One sound, one meaning.** Hull scratch (`sfxHullScratch`, a metal scrape ~2.5 dB under
-  the shield break) and revive (`sfxRevive`, a glide 660 -> 1320 Hz landing on a bell fifth,
-  above the spool-up's band) no longer reuse `sfxShieldBreak`.
+  rolled off on device - which is where the thrust voices (85-340 Hz), the death roar and
+  the bomb/mine booms live - so a flat RMS measurement flatters all of them. Each carries
+  a mid-band partner (`THRUST_PRESENCE_GAIN`, the 400-1400 Hz crunch layers in
+  `sfxDie`/`sfxBomb`/`sfxMineExplode`). The thrust presence layer is deliberately shared
+  by all eight ships, so the per-ship balance measured in 2026-09-05 is untouched.
+- **The death impact is on frame 0.** `sfxDie` is the reverse of the old spool-up roar,
+  which takes 1.3s, so its crash used to land 1.22s after the collision - after
+  `drawDeathFreeze()` had finished - and the hit frame itself was silent. Hull thump, mid
+  crunch and crack fire at `t`; only a quiet debris settle is left at the tail.
+- **Spool-up is a low turbofan, "rollendes Grollen"** (`sfxEngineSpoolUp`). Lowpassed air roar 150 -> 700 Hz +
+  rumble under a slow 2 -> 8 Hz tremolo, a 40 -> 150 Hz buzz-saw and one quiet 70 -> 260 Hz
+  sine, on a rev curve (`t^pw` in log-frequency, slow start). The user's brief was "low,
+  may stay low, like an airliner turbine": **do not add partials above ~700 Hz** - if it
+  needs presence on a phone speaker, lean on the buzz-saw harmonics, not a higher whine.
+  Study (holds the rejected variants): https://claude.ai/artifact/D7D9hELLqBerVNddPgPk4X
+- **Impact sounds are shaped, not noise bursts (do not go back).** Shield break,
+  `sfxRockHit` (wall / boulder / cannon shot on wall; a broken stalactite keeps
+  `sfxStalCrack`) and mine / bomb explosions (`_blast()`, shared) need: soft kick-like
+  onset, a body whose lowpass closes while its level holds (a straight exponential is
+  -18 dB by 0.2s and reads as a firecracker), a waveshaped sub so the bass survives a
+  phone speaker, a rumble tail, and low debris thuds with a soft attack (a bandpassed 5ms
+  attack clicks).
+- **Music is a bus, and death collapses it rather than cutting it.** `_fadeBgMusic` closes
+  a lowpass to `DEATH_MUSIC_HZ` as the level falls over `DEATH_MUSIC_SEC`. `musicDuck()`
+  steps the whole music bus back `MUSIC_DUCK_DB` under milestone / record / shield-break.
+  Title and play music crossfade over `MUSIC_FADE_SEC` instead of cutting.
+- **Both tracks loop on `loopStart`/`loopEnd`, never the raw buffer**, with the seam
+  crossfaded into the material before the loop start (`_bakeBgmLoop` - one baked buffer,
+  one source node, so `playbackRate` effects still work). They are ordinary masters with
+  their own fade-out, so looping the whole buffer played a fade, a hole and a fade-in every
+  pass. Play track (`the_mountain`, the Nebula track, 72s): `BGM_LOOP_START/END` 11.53 / 38.96 = 16 bars at 140 BPM,
+  0.857s equal-power crossfade. Title piano (`the_mountain_documentary`): 18.0 / 114.0 with a 4s crossfade. **The files
+  are never re-encoded to fix a seam** (the "encode once from the source" rule in
+  `audio.js`), so the same constants hold for the `.web.m4a` builds.
+- **Death plays the song's own ending.** `die()` collapses the loop, then
+  `_playBgmOutro()` fades in the track's last ~10s (from `BGM_OUTRO_START` 61.75) through
+  its own gain node; nothing loops it, so the death screen ends in silence until the title
+  screen's music. `_stopBgmOutro()` cuts it on restart, revive and return to the title.
+  Only when the play music was actually sounding. `commitDeath()` deliberately does NOT
+  start the title music, so the ending plays through the continue offer AND the debriefing
+  to its last decay; the piano only returns on the title screen.
+- **One sound, one meaning.** Hull scratch (`sfxHullScratch`) and revive (`sfxRevive`) do
+  not reuse `sfxShieldBreak`.
 - **Stereo, centred on the ship** (`_sfxOut(x)`): cannon fire, mine blasts, rock hits and
-  stalactite cracks pan by screen x relative to `PX`, capped at `SFX_PAN_MAX` 0.6; ship-local
-  sounds stay centre. The `Math.SQRT2` in front of the panner is load-bearing: a mono sfx into
-  `_master` is upmixed to full level per channel, the equal-power panner puts it at 0.707, so
-  without it every panned sound measured ~3 dB quieter.
-- **Per-call variation** (`_vary`): +-3-4% pitch, +-1.5 dB on bullets, cracks, cannon, rock hits.
-- **Gold coin in the play track's key**: Nebula is D major (chroma of the loop body), so the
-  blips are D5 + A5 with in-key 3x/4x partials and a 3 ms attack; loudest-50ms unchanged (-25.3).
-- **Hazard telegraphs**: `sfxCannonArm` `CANNON_ARM_SEC` (0.4s) before a cannon fires, usually
-  while it is still just off the right edge; `sfxStalCreak` as a loose falling stalactite scrolls
-  on screen, lasting exactly until its detach. Both ~-28 dB, under a coin. Audio only: no rng().
-- **Settings: music and sound are three-level** (`musicLevel`/`fxLevel`, state.js; FULL -> LOW ->
-  OFF per tap, stored '1'/'low'/'0' so old saves read the same). Levels ride `_musicLvl`/`_fxLvl`
-  behind each bus, never `_musicBus.gain`, which `musicDuck()` owns. `AUDIO_LOW_GAIN` = -8 dB.
-  Vibration was deliberately left without a toggle (user's call: no room in the sheet).
-- **Interruption pause** (`pauseForInterrupt`, input.js; `PAUSE_REVEAL_SEC` doc in constants.js):
-  losing focus mid-run freezes into the revive countdown, cave covered while away. It ends with
-  **no** `HIT_INVULN_SEC` - backgrounding must never be a free invulnerability button.
+  stalactite cracks pan by screen x relative to `PX`, capped at `SFX_PAN_MAX` 0.6;
+  ship-local sounds stay centre. **The `Math.SQRT2` in front of the panner is
+  load-bearing** - a mono sfx into `_master` is upmixed to full level per channel and the
+  equal-power panner puts it at 0.707, so without it every panned sound is ~3 dB quieter.
+- **Per-call variation** (`_vary`): +-3-4% pitch, +-1.5 dB on bullets, cracks, cannon,
+  rock hits.
+- **The gold coin is in the play track's key**: Nebula is D major, so the blips are D5 + A5
+  with in-key 3x/4x partials and a 3ms attack.
+- **Hazard telegraphs, audio only (no `rng()`)**: `sfxCannonArm` `CANNON_ARM_SEC` (0.4s)
+  before a cannon fires, usually while it is still just off the right edge; `sfxStalCreak`
+  while a loose falling stalactite is on screen, lasting exactly until its detach. Both
+  ~-28 dB, under a coin.
+- **Cave reverb** (`_caveSend`): one shared generated convolver per context - early rock
+  reflections, 8ms pre-delay, a tail darkening and dying over `CAVE_VERB_SEC` 0.9s,
+  unit-energy IR so `CAVE_VERB_WET` (0.7) is the level. Sends only from impacts, blasts,
+  cracks, cannon (fire + arm), creak, shield break, hull scratch and the death crash;
+  coins, UI, pickups and the thruster stay dry, the bomb keeps its own `_bombVerb`. Not
+  ear-checked on a device yet - `CAVE_VERB_WET` is the knob.
+- **Settings: music and sound are three-level** (`musicLevel`/`fxLevel`, `state.js`;
+  FULL -> LOW -> OFF per tap, stored '1'/'low'/'0' so old saves read the same). Levels ride
+  `_musicLvl`/`_fxLvl` behind each bus, **never `_musicBus.gain`, which `musicDuck()`
+  owns**. `AUDIO_LOW_GAIN` = -8 dB. Vibration deliberately has no toggle (no room).
+- **Interruption pause** (`pauseForInterrupt`, `input.js`; `PAUSE_REVEAL_SEC` doc in
+  `constants.js`): losing focus mid-run freezes into the revive countdown with the cave
+  covered. It ends with **no** `HIT_INVULN_SEC` - backgrounding must never be a free
+  invulnerability button.
 
-- **Cave reverb** (`_caveSend`, S5, same day): one shared generated convolver per context -
-  early rock reflections, 8 ms pre-delay, a tail that darkens and dies over `CAVE_VERB_SEC`
-  0.9 s, unit-energy IR so `CAVE_VERB_WET` (0.7) is the level. Sends only from impacts, blasts,
-  cracks, cannon (fire + arm), creak, shield break, hull scratch and the death crash; coins, UI,
-  pickups and the thruster stay dry, the bomb keeps its own `_bombVerb`. Measured: peaks +0.5
-  to +1.5 dB, a rock hit's tail ~20 dB under the hit (0.12-0.40 s), a mine's +6 dB over dry.
-  The first try at wet 0.22 left the tail ~28 dB down, i.e. inaudible under the music bed.
-  Not ear-checked on a device yet - `CAVE_VERB_WET` is the knob.
-
-Still open, deliberately: the music does not follow the sector ramp ("later" in the
-2026-09-19 review, with wall-proximity audio and the title sonar pulse).
+Still open, deliberately: the music does not follow the sector ramp (with wall-proximity
+audio and the title sonar pulse). Review proposals and the user's picks:
+https://claude.ai/artifact/6KC3aJhYAAfthzVXtX5oAa
 
 ### Addictive systems
 
-**Score formula**: `score = Math.floor(scrollX / 60) + bonusScore`
-`bonusScore` accumulates from coin collection and near-miss bonuses; resets each run.
+**Score formula**: `score = Math.floor(scrollX / 60) + bonusScore`. `bonusScore`
+accumulates from coin collection and near-miss bonuses; resets each run.
 
-**Milestone moments**: Triggers at 75, 100, 150, 200, 250, 300, 400, 500, 600...
-Step size widens with score via `milestoneStep()` (`world.js`): 25 up to 100, 50 up to
-300, 100 up to 1000, 250 up to 3000, 500 up to 10000, 1000 beyond - uncapped, keeps
-growing forever rather than settling into a fixed step (same "never just endurance at a
-fixed pace" philosophy as `scrollSpd()`, see its own doc comment).
+**Milestone moments**: 75, 100, 150, 200, 250, 300, 400, 500, 600... Step size widens with
+score via `milestoneStep()` (`world.js`): 25 up to 100, 50 up to 300, 100 up to 1000, 250
+up to 3000, 500 up to 10000, 1000 beyond - **uncapped**, same "never just endurance at a
+fixed pace" philosophy as `scrollSpd()`. A flat +50 step past 100 meant a strong player
+hit a milestone every ~50 points, every one already-maxed `!!!` - noise, not a reward.
+Big floating text + gold particle burst + ascending chord; `milestoneFlash` decays over
+~0.6s. Four tiers (`triggerMilestone` in `input.js`, `sfxMilestone`): `!` below 100, `!!`
+from 100, `!!!` from 200, `!!!!` from 1000, so a genuinely deep milestone still reads as a
+step up.
 
-**The ladder is seeded at `MIN_REAL_RUN_SCORE` (75), not at 25 (2026-09-14).** The band
-SHAPE below 100 is still 25 points; only the starting rung moved. The 12.0 restoration
-below was calibrated on "median real run is 22, only 13% of runs reach 50" - numbers the
-same release invalidated, since the safe opening flight makes 50 the minimum score of any
-completed run. The 25 and 50 rungs were therefore fired by 100% of runs, for free, before
-the player had done anything. 75 is the first rung a player can actually miss. Everything
-at and above 100 is untouched, as it was in 12.0. See the `MIN_REAL_RUN_SCORE` doc block
-in `constants.js` - **no score gate anywhere in the game may sit at or below 50**, and
-that number moves with `SAFE_START_WX`.
+**The ladder is seeded at `MIN_REAL_RUN_SCORE` (75).** The band SHAPE below 100 is still
+25 points; only the starting rung moved. The safe opening flight makes 50 the minimum
+score of any completed run, so the 25 and 50 rungs fired for 100% of runs, for free,
+before the player had done anything. 75 is the first rung a player can actually miss.
+Everything at and above 100 is untouched. **No score gate anywhere in the game may sit at
+or below 50**, and that number moves with `SAFE_START_WX` - see the `MIN_REAL_RUN_SCORE`
+doc block in `constants.js`.
 
-The 25-point band below 100 was **dropped once and restored in 12.0** - don't drop it
-again without new data. The removal argued it "fired 3 milestones before a weak run even
-reaches 100", which is true and was the wrong test: it counted milestones per run instead
-of asking what share of runs fire one at all. A red-team replay against the real
-leaderboard sample (median daily best 70) put actual players at a **median run of 22**,
-with only **13% of runs** ever reaching the old first milestone at 50 - **2% within a new
-player's first five runs**. The first thing the game had to say other than "dead" sat at
-more than twice the distance a typical run covers. The band ends at 100 so everything a
-competent run sees is exactly where it was; `test-math.js` asserts the whole ladder plus
-that invariant. If this is revisited again, the number that matters is the share of REAL
-runs that fire a milestone, not the count a good run accumulates. Originally a
-flat +50 step past 100, which meant a strong player blowing past 200-1000 in under a
-minute hit a milestone every ~50 points, every one of them already-maxed-out `!!!` (see below) -
-noisy repetition, not a reward; widened after that feedback. Shows big floating text +
-gold particle burst + ascending chord. `milestoneFlash` decays over ~0.6s.
-Text/sfx escalate in 4 tiers (`triggerMilestone` in `input.js`, `sfxMilestone` in
-`audio.js`): `!` below 100, `!!` from 100, `!!!` from 200, `!!!!` from 1000 - the 1000+
-tier exists so a genuinely deep milestone still reads as a step up rather than the same
-maxed punctuation every time from 200 to the top.
+**Don't drop the 25-point band below 100 again without new data.** It was dropped once on
+the argument that it "fired 3 milestones before a weak run even reaches 100" - true, and
+the wrong test: it counted milestones per run instead of the share of runs that fire one
+at all, which was 13%. `test-math.js` asserts the whole ladder. If revisited, the number
+that matters is the share of REAL runs that fire a milestone.
 
-**Near-miss bonus**: +1 bonusScore when wall clearance < `PR * 2.0` (within 2 player radii of wall).
-1.5s cooldown prevents spam. Shows "+CLOSE" notif + quick ascending ping sfx.
+**Near-miss bonus**: +1 `bonusScore` when wall clearance < `PR * 2.0`, 1.5s cooldown.
+"+CLOSE" notif + ascending ping.
 
-**Coin combo multiplier**: Coins collected within 2s of each other build a streak.
-Score pts = `coinCombo * 3` (so x1=+3, x2=+6, x3=+9...). The multiplier shows as a chip beside the live score with a bar draining over the combo window (since 2026-09-16; it used to float as an "x2"/"x3" notif above the gold coin notif) - see "HUD instrument".
-Blue/red/bomb coins join the streak but their notif doesn't change (power-up is the
-reward). Poison breaks the streak outright (`coinCombo` reset to 0) rather than joining
-it - see Poison coin above.
-The gold pickup sound itself climbs a major-pentatonic step per combo level
-(`sfxCoin(coinCombo)`, `audio.js`), plateauing a major-tenth up - the streak is audible
-in the coin, not just the separate `sfxCombo` ping (which only fires from x2). Same
-"widen the step, never cap flat" shape as `milestoneStep()`.
+**Coin combo multiplier**: coins within 2s of each other build a streak; score pts =
+`coinCombo * 3`. Shown as a chip beside the live score with a bar draining over the combo
+window (see "HUD instrument"). Blue/red/bomb coins join the streak but their notif does
+not change (the power-up is the reward); poison and drain break it outright. The gold
+pickup sound climbs a major-pentatonic step per combo level (`sfxCoin(coinCombo)`),
+plateauing a major-tenth up - the streak is audible in the coin itself, not only in the
+separate `sfxCombo` ping (which fires from x2). Same "widen the step, never cap flat"
+shape as `milestoneStep()`.
 
-**Death freeze frame** (`DEATH_REPLAY_SEC` in `constants.js`, `drawDeathFreeze()` in
-`draw.js`, `markDeathHit()` in `update.js`, `deathHitX/Y/R` in `state.js`): for the first
-0.70s (was 0.40, raised on request 2026-09-19) after a fatal hit the death panel does not paint at all. The world is already
-frozen (`update.js`'s `dead` branch advances nothing but `deadT`), the wrecked ship keeps
-rendering in red, and a reticle contracts onto whatever landed the hit. Added in 12.0:
-`deathCause` had existed since the death-marker work but was never shown to the player,
-so through 11.0 the death screen's entire answer to "what did I do wrong" was the word
-"dead" and a number - against a measured beginner run of 0.9s of flight.
+**Death freeze frame** (`DEATH_REPLAY_SEC`, `drawDeathFreeze()` in `draw.js`,
+`markDeathHit()` in `update.js`, `deathHitX/Y/R` in `state.js`): for the first **0.70s**
+after a fatal hit the death panel does not paint at all. The world is already frozen
+(`update.js`'s `dead` branch advances nothing but `deadT`), the wrecked ship keeps
+rendering in red, and a reticle contracts onto whatever landed the hit - because through
+11.0 the death screen's entire answer to "what did I do wrong" was the word "dead" and a
+number, against a measured beginner run of 0.9s of flight.
 
-Two things make this **free rather than a tax on restarting**, and both must stay true:
-the panel's own alpha is the only thing offset (the button row's `deadT > 0.95` fade and
-`input.js`'s `DEATH_INTERACTIVE_SEC` gate, 1.1s, were both moved +0.2s on 2026-09-19 when the
-freeze frame went 0.40 -> 0.70; restarting therefore costs 0.2s more wait than before that
-change, the one deliberate exception to "free"); and `CONTINUE_OFFER_SEC` **is** offset by
-`DEATH_REPLAY_SEC` in `update.js`, because that budget is measured in seconds the offer is
-actually *on screen* - a real-device pass already found 0.9s too short once, so silently
-shaving 0.4s off it would have re-broken that. `drawContinueOffer` also nulls
-`_continueBtnRect` while it is invisible, so there is no tappable-but-unseen button.
-`markDeathHit` is called at the same six sites that set `deathCause`, and like
-`deathCause` it also fires on shield/invuln-absorbed hits - harmless, since it is only
-ever read in the `dead` phase.
+Two things keep this **free rather than a tax on restarting**, and both must stay true:
+- The panel's own alpha is the only thing offset. (The button row's `deadT > 0.95` fade
+  and `input.js`'s `DEATH_INTERACTIVE_SEC` gate, 1.1s, both moved +0.2s when the freeze
+  went 0.40 -> 0.70 - restarting costs 0.2s more than before, the one deliberate
+  exception.)
+- `CONTINUE_OFFER_SEC` **is** offset by `DEATH_REPLAY_SEC` in `update.js`: that budget is
+  measured in seconds the offer is actually *on screen*, and a real-device pass already
+  found 0.9s too short once. `drawContinueOffer` also nulls `_continueBtnRect` while
+  invisible, so there is no tappable-but-unseen button.
 
-**Death screen context**: Shows "+X vs last" / "-X vs last" after the second run. Uses `prevRunScore` (run before the current one). Score number glows gold when within 5 of personal best.
+`markDeathHit` is called at the same six sites that set `deathCause` and, like it, also
+fires on shield/invuln-absorbed hits - harmless, since it is only read in the `dead` phase.
 
-**Two records, two different beats, both score-based** - kept separate, but as of
-2026-09-01 both compare `score`, not distance:
-- **ON FIRE** (`onFire`, `update.js`): fires the frame live score overtakes the bar it
-  has to beat - normally today's `dailyBest`, but on the day's *first* run (where
-  `dailyBest` is still 0) it falls back to the all-time `best` so a strong opening run
-  still ignites (`_fireBar = dailyBest || best`; `_fireBar > 0` still guards a brand-new
-  player's very first run). Recolors the thruster trail fire-hot for the rest of the run,
-  plus a one-shot notif/`sfxOnFire`/orange ring pop (`onFireFlash`).
-- **New all-time record** (`pbPassed`, `update.js`): fires the frame live score overtakes
-  the all-time `best`, NOT reset at the day boundary. One-shot gold ring pop (`pbFlash`),
-  `T.pbPassed` notif, `sfxPbPassed`. Separate from ON FIRE because ON FIRE has usually
-  already fired earlier in the run (daily best <= all-time best), so the all-time
-  crossing still deserves its own, bigger beat.
-  Used to be a pure *position* check instead - crossing `bestSX` (the previous best run's
-  death distance), drawn as a dashed gold "PB" line in the tunnel that the ship visibly
-  flew through. Retired because `score` includes `bonusScore` (coin combos, near-misses)
-  on top of raw distance, so a coin-heavy run could overtake the old best *score* well
-  before physically reaching the old best's *distance* - onFire (score-based) and the
-  line (distance-based) would then disagree on which fired first, reading as a bug ("on
-  fire" before the visible PB line) rather than the two distinct signals they were.
-  Merged onto score on request, since the game already only ever settles records by score
-  everywhere else (death screen, daily best, all-time best). `bestSX` itself still exists
-  and is unaffected - it still backs the passive gold ring (`bestMarker` in `draw.js`)
-  showing exactly where the best run died, and the PB marker on the daily share card
-  (`share.js`), both of which are legitimately about physical position, not a score
-  comparison.
+**Death screen context**: "+X vs last" / "-X vs last" from the second run on, using
+`prevRunScore`. The score glows gold within 5 of the personal best.
+
+**Two records, two different beats, both score-based** (both compare `score`, not
+distance):
+- **ON FIRE** (`onFire`, `update.js`): fires the frame live score overtakes the bar it has
+  to beat - today's `dailyBest`, falling back to the all-time `best` on the day's first run
+  so a strong opening run still ignites (`_fireBar = dailyBest || best`, still guarded by
+  `_fireBar > 0` for a brand-new player). Recolours the thruster trail fire-hot for the
+  rest of the run, plus a one-shot notif / `sfxOnFire` / orange ring pop (`onFireFlash`).
+- **New all-time record** (`pbPassed`, `update.js`): fires on overtaking the all-time
+  `best`, NOT reset at the day boundary. Gold ring pop (`pbFlash`), `T.pbPassed`, `sfxPbPassed`.
+  Separate from ON FIRE because ON FIRE has usually already fired earlier in the run
+  (daily best <= all-time best), so the all-time crossing deserves its own bigger beat.
+
+  **Don't turn either back into a position check.** `pbPassed` used to test crossing
+  `bestSX` (the previous best run's death distance), drawn as a dashed gold PB line. Since
+  `score` includes `bonusScore`, a coin-heavy run overtakes the old best *score* before
+  reaching its *distance*, so the two signals disagreed on which fired first and read as a
+  bug. `bestSX` still backs the passive gold ring (`bestMarker` in `draw.js`) and the share
+  card's PB marker, which are legitimately about position.
 
 ### Daily run card (share)
 
@@ -1785,88 +1507,80 @@ stock that can only be spent by getting hit never drains if nothing is hitting y
 
 ## Ship unlock economy
 
-Every paid ship (`SKINS` in `src/constants.js`) needs two things at once: `cost` shards
-(earned from collected coins, `runCoins`, banked at death, capped daily by
-`DAILY_SHARD_CAP` = 160; the 3 daily missions and the once-per-day rewarded-ad bonus
-`SHARDS_AD_REWARD` = 20 are exempt, so the real ceiling is 160+20+30+40+50 = 300/day)
-and `stardustGate` days played (`stardust` in `state.js`, +1 per
-calendar day opened regardless of skill or how much is played that day, +1 bonus per
-7-day unbroken streak - see the Stardust doc block in `constants.js`). Stardust is never
-spent, only checked as a `>=` threshold, so a tier's gate doesn't stack on top of the
-next tier's. SOLARIS (the 8th/last ship) needs 5600 shards and 180 stardust (~half a
-year at the daily floor) - see that same doc block for why shards alone or stardust alone
-can't do this job, and the worked timelines for hardcore/good/bad player tiers.
+Every paid ship (`SKINS` in `src/constants.js`) needs two things at once:
+- **`cost` shards** - earned from collected coins (`runCoins`, banked at death), capped
+  daily by `DAILY_SHARD_CAP` = 160. The 3 daily missions and the once-per-day rewarded-ad
+  bonus (`SHARDS_AD_REWARD` = 20) are exempt, so the real ceiling is
+  160+20+30+40+50 = **300/day**.
+- **`stardustGate` days played** - `stardust` in `state.js`, +1 per calendar day opened
+  regardless of skill or how much is played, +1 bonus per 7-day unbroken streak. Never
+  spent, only checked as a `>=` threshold, so a tier's gate doesn't stack on the next.
 
-**Shard costs were re-tuned 2026-09-10 (do not revert to the old ladder).** The previous
-prices (240/880/2200/4800/12000/32000/50000, cumulative 102120) were measured against the
-real curves and found to make the top three tiers effectively unreachable: NOVA was ~174
-days even at the full 300/day ceiling and ~652 days at a realistic ~80/day, SOLARIS ~341
-and ~1277. Worse, the binding constraint flipped from `stardustGate` to shards at VOID,
-so the stardust system - the thing that is supposed to pace unlocks - stopped doing any
-work at all for the entire top half of the roster. The current ladder
-(240/320/560/1280/2400/4000/5600, cumulative 14400) is set just under what each tier's
-gate implies at ~80 shards/day, so **stardust is the binding constraint at every tier**
-and SOLARIS still lands on day 180 exactly. Re-run the numbers before changing either
-side; a shard-side raise silently re-breaks the gate schedule.
+SOLARIS (the 8th and last ship) needs 5600 shards and 180 stardust (~half a year at the
+daily floor). The Stardust doc block in `constants.js` has the worked timelines per player
+tier and why neither currency alone can do this job.
 
-**Hangar liveries (cosmetic, 2026-09-17, phase 1 of the cosmetics concept).** Six
-finishes (`LIVERIES` in `constants.js`: FACTORY free, STEALTH 80, STRIPE 120, SPLIT 200,
-CHROME 320, AURORA 520 shards), bought in a Paint sheet opened from a PAINT pill on the
-ALL SHIPS sheet, which only appears once AMBER (`LIVERY_GATE_SKIN`) is owned so the
-first paid ship stays the first shard goal. Rules: purely visual (no perk, hitbox,
-placement or leaderboard effect); a finish is bought once for the hangar but equipped
-**per ship** (`shipLiveries` in `state.js`, key `tunnel_ship_liveries`, migrated from the
-old single `tunnel_livery`), so each ship keeps its own look without re-buying anything; it re-shades the ship's own facets (`_shipTones` livery arg) or paints a clipped
-pattern (`_drawLiveryOverlay`), never changes the hue, so ship identity stays readable;
-no `shadowBlur`; the ghost and the wrecked death frame always draw FACTORY;
-**every finish is built from big masses** - a whole half of the hull (SPLIT), a rim
-(STEALTH), a band across the span (STRIPE), a full-hull gradient (CHROME/AURORA) - because
-in flight the ship is only ~2*PR across (~35px at the W cap), where the first pass's fine
-patterns (a carbon weave, pinstripes) were invisible and the finishes read as not worth
-buying; detail that only resolves on the hero ship may sit on top of a mass, never instead
-of one, and a light mass flips dark on a pale ship (PEARL/NOVA) or it disappears again;
-**and every finish moves in colour** (STEALTH's rim breathes, STRIPE runs a pulse down the
-band, SPLIT cycles its spine line, CHROME's specular sweep throws the two hue neighbours,
-AURORA drifts four bands at two rates) - paint that only sits there reads as a recolour,
-and a recolour is not worth shards; the motion is one gradient fill or stroke riding
-`gtime` per frame, never particles or a second pass over the hull; **each finish also
-carries one signature mark** (STEALTH neon facet seams, STRIPE wing chevrons + tip caps,
-SPLIT a clean lit seam with wing-root lips, CHROME a hard reflected horizon, AURORA four
-polar-light curtains at three hues (+-45, the only finish allowed past the usual +-24)
-plus rim and sparkles) - audited at 150px, where a mere recolour still looked cheap. Two traps found in
-that audit and worth not repeating: a mark on the NOSE is invisible because the canopy and
-the leading-edge highlight draw after this overlay, and small repeated details (vents, fine
-teeth) read as noise rather than paint - SPLIT shipped a sawtooth divide for exactly one
-iteration and it was reported as odd, because teeth on a top-down planform read as damage.
-A third, found on the AURORA rebuild: an ADDITIVE wash has no headroom on a white hull
-(PEARL/NOVA blew out to plain white and lost all colour), so on a pale ship the curtains
-paint with `source-over` instead of `lighter`; the dearest finish has to out-spectacle the
-one below it, and a single drifting gradient did not; **not part of
-Unlock All Ships** (separate save keys `tunnel_liveries` / `tunnel_ship_liveries`). Names are
-untranslated proper nouns like ship names. Later phases in the concept: exhausts and
-trails, wreck effects and share-card frames, mastery/achievement rewards, and only then
-an optional real-money pack of named items (never random drops).
+**The shard ladder (240/320/560/1280/2400/4000/5600, cumulative 14400) is set just under
+what each tier's gate implies at ~80 shards/day, so stardust is the binding constraint at
+every tier** and SOLARIS still lands on day 180 exactly. **Re-run the numbers before
+changing either side - a shard-side raise silently re-breaks the gate schedule.** Do not
+revert to the old ladder; it made the top three tiers effectively unreachable and flipped
+the binding constraint to shards at VOID, i.e. the stardust system stopped doing any work
+for the entire top half of the roster (`docs/design-history.md` -> "Ship unlock economy").
 
-**Unlock All Ships IAP**: a real-money non-consumable (`unlock_all_ships`, alongside the
-existing `remove_ads`) that instantly force-unlocks every ship, current and future
-(`allShipsOwned` in `state.js`, re-applied on every load rather than snapshotting which
-ships existed at purchase time). $9.99, versus `remove_ads` at $2.99 - priced higher to
-match a much bigger value proposition (skip up to a year of daily return, not just an
-ad-free screen), landing on the standard "unlock everything" tier common across
-App Store/Play Store IAPs rather than a steeper "whale" price, since these ships also
-carry real gameplay perks (see the buff/nerf table above `SKINS`), not just cosmetics.
-Shop UI in `draw.js`'s `showShop` panel, purchase/restore bridge generalized from a
-single-product design to a product-ID-keyed one in `IAPManager.swift` and
-`BillingManager.kt` (both mirror each other exactly, see their doc comments). Shards and
-stardust are untouched by this purchase - it's a separate entitlement flag, not a
-currency grant, so it stays meaningful even for a player who already owns everything.
+**Hangar liveries (cosmetic, phase 1 of the cosmetics concept).** Six finishes (`LIVERIES`
+in `constants.js`: FACTORY free, STEALTH 80, STRIPE 120, SPLIT 200, CHROME 320, AURORA 520
+shards), bought in a Paint sheet opened from a PAINT pill on the ALL SHIPS sheet, which
+only appears once AMBER (`LIVERY_GATE_SKIN`) is owned, so the first paid ship stays the
+first shard goal. Rules, each load-bearing:
+- **Purely visual** - no perk, hitbox, placement or leaderboard effect. No `shadowBlur`.
+  The ghost and the wrecked death frame always draw FACTORY.
+- **Bought once for the hangar, equipped per ship** (`shipLiveries` in `state.js`, key
+  `tunnel_ship_liveries`, migrated from the old single `tunnel_livery`), so each ship keeps
+  its own look without re-buying anything. **Not part of Unlock All Ships** (separate save
+  keys `tunnel_liveries` / `tunnel_ship_liveries`). Names are untranslated proper nouns, like ship names.
+- **It re-shades the ship's own facets** (`_shipTones` livery arg) or paints a clipped
+  pattern (`_drawLiveryOverlay`), **never changes the hue**, so ship identity stays readable.
+- **Every finish is built from big masses** - a whole half of the hull (SPLIT), a rim
+  (STEALTH), a band across the span (STRIPE), a full-hull gradient (CHROME/AURORA). In
+  flight the ship is only ~2*PR across (~35px at the W cap), where the first pass's fine
+  patterns (a carbon weave, pinstripes) were invisible and the finishes read as not worth
+  buying. Detail that only resolves on the hero ship may sit **on top of** a mass, never
+  instead of one - and a light mass must flip dark on a pale ship (PEARL/NOVA) or it
+  disappears again.
+- **Every finish moves in colour** (STEALTH's rim breathes, STRIPE runs a pulse down the
+  band, SPLIT cycles its spine line, CHROME's specular sweep throws the two hue
+  neighbours, AURORA drifts four bands at two rates) - paint that only sits there reads as
+  a recolour, and a recolour is not worth shards. The motion is **one** gradient fill or
+  stroke riding `gtime` per frame, never particles or a second pass over the hull.
+- **Each finish carries one signature mark** (STEALTH neon facet seams, STRIPE wing
+  chevrons + tip caps, SPLIT a clean lit seam with wing-root lips, CHROME a hard reflected
+  horizon, AURORA four polar-light curtains at three hues - +-45, the only finish allowed
+  past the usual +-24 - plus rim and sparkles). Audited at 150px, where a mere recolour
+  still looked cheap.
 
-Shipped in 6.0: the real `unlock_all_ships` product exists in both App Store Connect and
-Play Console at the $9.99 tier (alongside `Configuration.storekit`'s copy, which stays
-for local testing only), and both stores' content-rating questionnaires were redone
-accounting for it - still a flat one-time digital-goods purchase, not gambling/loot-box/
-cash-back, so the "never purchasable with real money" answer from the prior audit (see
-project memory) held after re-checking.
+Three traps from that audit, worth not repeating: **a mark on the NOSE is invisible**
+(the canopy and leading-edge highlight draw after this overlay); **small repeated details
+read as noise, not paint** (SPLIT shipped a sawtooth divide for one iteration and was
+reported as odd - teeth on a top-down planform read as damage); and **an additive wash has
+no headroom on a white hull** (PEARL/NOVA blew out to plain white), so on a pale ship the
+curtains paint with `source-over` instead of `lighter`.
+
+Later phases in the concept: exhausts and trails, wreck effects and share-card frames,
+mastery/achievement rewards, and only then an optional real-money pack of named items
+(never random drops).
+
+**Unlock All Ships IAP**: a real-money non-consumable (`unlock_all_ships`, alongside
+`remove_ads`) that force-unlocks every ship, current and future (`allShipsOwned` in
+`state.js`, **re-applied on every load** rather than snapshotting which ships existed at
+purchase time). $9.99 versus `remove_ads` at $2.99 - the standard "unlock everything"
+tier, not a whale price, but higher than Remove Ads because it skips up to a year of daily
+return and these ships carry real gameplay perks (the buff/nerf table above `SKINS`), not
+just cosmetics. Shop UI in `draw.js`'s `showShop`; the purchase/restore bridge is
+product-ID-keyed in `IAPManager.swift` and `BillingManager.kt` (they mirror each other
+exactly - see their doc comments). **Shards and stardust are untouched by this purchase** -
+a separate entitlement flag, not a currency grant. Both products exist live in App Store
+Connect and Play Console; `Configuration.storekit` stays for local testing only.
 
 ## Possible future features
 
@@ -1876,8 +1590,3 @@ project memory) held after re-checking.
 - Additional coin types beyond the current eight (gold/blue/red/orange/green/bomb + the two hazards poison/drain)
 - Friend ghosts carried inside a share link (see Ghost run below - the local ghost is
   already only a few hundred bytes, so a shared one is mostly a transport problem)
-- A playable web build. Deliberately NOT on the roadmap right now: the user decided
-  against it. If it comes back, the remaining blockers are a portrait/rotate overlay and
-  an install CTA - the launch-time audio cost that used to head this list is fixed (see
-  the lazy loaders in `audio.js`), though the two MP3s would still want smaller web
-  encodes before shipping over a link.

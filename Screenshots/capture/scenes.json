@@ -1,0 +1,32 @@
+[
+ {
+  "name": "01_title",
+  "day": "20260918",
+  "js": "(()=>{ __tunl.freeze(); draw(); return JSON.stringify({best, lifetimeDist}); })()"
+ },
+ {
+  "name": "02_city",
+  "day": "20260918",
+  "js": "(()=>{ __tunl.freeze(); startPlay(); __tunl.run(168); draw(); return JSON.stringify({approachLeft:Math.round(approachLeft)}); })()"
+ },
+ {
+  "name": "03_flight",
+  "day": "20260918",
+  "js": "(()=>{ __tunl.freeze(); startPlay(); const onScreen=(a,f)=>a.filter(o=>{const sx=(o.wx!==undefined?o.wx:0)-scrollX; return sx>-20&&sx<W+40&&(!f||f(o,sx));}).length; const wallsIn=()=>{const b=boundsAt(scrollX+PX); return b.top>H*0.03 && b.bot<H*0.97;}; let bestS=-1, bestT=0; const r=__tunl.run(12000, ()=>{ if(score<340 || phase!=='play') return false; if(!(milestoneFlash<=0 && levelIntroT<=0 && notifs.length===0 && wallsIn())) return false; const st=onScreen(stalactites,(o,sx)=>sx>PX-20), co=onScreen(coins,(o,sx)=>!o.collected&&sx>PX); const combo=(coinCombo>=2 && coinComboTimer>coinComboWindow*0.45)?1:0; const sc2=st*1.0+co*1.4+combo*3; if(sc2>bestS){bestS=sc2;bestT=scrollX;} return st>=4 && co>=2; }); draw(); return JSON.stringify({score, ok:r.ok, bestS}); })()"
+ },
+ {
+  "name": "04_portal",
+  "day": "20260918",
+  "js": "(()=>{ __tunl.freeze(); startPlay(); const wallsIn=()=>{const b=boundsAt(scrollX+PX); return b.top>H*0.02 && b.bot<H*0.98;}; const r=__tunl.run(12000, ()=> score>=150 && milestoneFlash<=0 && levelIntroT<=0 && notifs.length===0 && wallsIn() && portals.some(p=>!p.used && (p.wx-scrollX) > W*0.38 && (p.wx-scrollX) < W*0.80)); draw(); return JSON.stringify({score, ok:r.ok}); })()"
+ },
+ {
+  "name": "05_deep",
+  "day": "20260918",
+  "js": "(()=>{ __tunl.freeze(); startPlay(); const onScreen=(a,f)=>a.filter(o=>{const sx=(o.wx!==undefined?o.wx:0)-scrollX; return sx>-20&&sx<W+40&&(!f||f(o,sx));}).length; const wallsIn=()=>{const b=boundsAt(scrollX+PX); return b.top>H*0.03 && b.bot<H*0.97;}; const r=__tunl.run(12000, ()=>{ if(score>430) shieldCount=Math.max(shieldCount,2); return score>=680 && milestoneFlash<=0 && levelIntroT<=0 && notifs.length===0 && wallsIn() && bulletAmmo<=0 && onScreen(stalactites,(o,sx)=>sx>PX-60)>=4; }); draw(); return JSON.stringify({score, ok:r.ok, shieldCount}); })()"
+ },
+ {
+  "name": "06_debrief",
+  "day": "20260918",
+  "js": "(()=>{ __tunl.freeze(); startPlay(); __tunl.run(9000, ()=> score>=470, true); runCoins=42; runShardsBanked=42; missionRewardWon=30; worldRank=37; worldRankTotal=1184; worldRankDelta=6; top5=[612,509,471]; dailyBest=612; prevRunScore=431; best=612; dailyRuns=7; shieldCount=0; invulnT=0; hullScratches=0; wallGraceT=0; deathCause='wallBot'; markDeathHit(PX,py+PR,PR); die(true); for(let i=0;i<150;i++){ update(1/60); } draw(); return JSON.stringify({score, phase, deadT:Math.round(deadT*100)/100}); })()"
+ }
+]
