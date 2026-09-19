@@ -1464,8 +1464,14 @@ the forced interstitial, not a video the player actively taps):
   `grantRevive` also resets `hullScratches`/`wallGraceT` and says so with a `+HULL`
   notif). Without it the ad bought a few seconds at the hardest point of the run, since
   spending the scratches is usually what got the player there. Safe: scratches are
-  wall-only and run-scoped, no placement, `rng()` or leaderboard number reads them. See
-  the Rewarded continue notes in `constants.js`.
+  wall-only and run-scoped, no placement, `rng()` or leaderboard number reads them.
+  **An extra shield on top was considered and rejected (2026-09-19, user's call)** - the
+  revive already recentres the ship, fires a bomb clear and grants `HIT_INVULN_SEC`, so a
+  shield would stack a direct-hit absorb on that and blur "scratches forgive wall
+  mistakes, direct hits are the shield's job"; the one time a shield was measured at the
+  scratch moment it mostly boosted the good tier (+72% median). If it is ever revisited,
+  measure death cause by sector per tier first - hull scratches are worth least deep,
+  which is where revives happen. See the Rewarded continue notes in `constants.js`.
 - **Web has no rewarded video, so the offer slot carries the app pitch instead**
   (2026-09-19, `constants.js WEB_CONTINUE_PROMO_SEC` = 15s, `draw.js`
   `drawWebContinuePromo`). `rewardedAdReady` is false forever on web (the Ad Manager
