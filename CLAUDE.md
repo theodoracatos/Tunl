@@ -24,7 +24,7 @@ to get the same verdict mid-session before attempting a push.
 ## What is this
 
 TUNL is an HTML5 Canvas hold-to-thrust cave flyer game.
-`tunl.html` is an HTML/CSS shell that loads 17 plain scripts from `src/` in order - no
+`tunl.html` is an HTML/CSS shell that loads 18 plain scripts from `src/` in order - no
 libraries, no modules, no build step, one shared global scope. Run `/map` for the file
 map. Open `tunl.html` in a browser to play.
 
@@ -302,8 +302,8 @@ https://claude.ai/artifact/QPvLrDmGiU6przXNwXLV9y
   of these fonts ~15pt lower than Chromium, which on an iPhone 12 mini pushed BEST into the
   banner. The banner also never sits above the HUD stack (`hudY`).
 - **Title screen accent = the day's `wallBase`**, same rule as the debriefing: logo halo and
-  glow, the U, underline, world line, the ALL SHIPS pill, rail button rims and a floor light
-  under the hero ship. The hero ring and ship keep the SKIN colour. The planet line went
+  glow, the U, underline, world line, the ALL SHIPS pill and rail button rims (the floor light
+  under the hero ship was removed 2026-09-19). The hero ring and ship keep the SKIN colour. The planet line went
   neutral so the order reads logo > world > planet. Deliberately NOT done from the study:
   a PLAY button (tapping anywhere starts a run, and see Onboarding on title-screen CTAs)
   and rail text labels (no room between the ring and a 5-icon rail at 667x375).
@@ -329,12 +329,12 @@ https://claude.ai/artifact/QPvLrDmGiU6przXNwXLV9y
 
 `constants.js` `DEPTH_LIGHT_*` doc, `draw.js` `depthLightAt()` / `drawWorld()`. The void
 behind the walls is no longer a flat `WEEKDAY_BG` at every depth: it is **lifted toward the
-day's own `wallBase` and steps darker at each sector boundary** (S0 15%, then 62% / 34% / 14%
+day's own `wallBase` and steps darker at each sector boundary** (S0 5% since the 2026-09-19 approach, was 15%; then 62% / 34% / 14%
 of that, plain `WEEKDAY_BG` from S4, each step eased over `DEPTH_STEP_EASE_WX`), and a
 **warm cave-mouth light** (warm white tinted 60% toward the day's rock) falls in from behind
 the ship off the left edge, fading out by S4. Softened 2026-09-16 ("too glaring"): alpha
-0.30 -> 0.24, tint 35% -> 60%, gradient centre moved to `DEPTH_MOUTH_X` = -0.30W so its hot
-core is never on screen, and a 6-stop falloff (`DEPTH_MOUTH_STOPS`) instead of a 3-stop cone. The title screen shows the mouth (wx = 0).
+0.30 -> 0.24 (-> 0.10 with the 2026-09-19 approach), tint 35% -> 60%, gradient centre moved to `DEPTH_MOUTH_X` = -0.30W so its hot
+core is never on screen, and a 6-stop falloff (`DEPTH_MOUTH_STOPS`) instead of a 3-stop cone. The title screen is the approach's city now, not the mouth.
 Three rules, each from the variant study
 (https://claude.ai/code/artifact/ea963ae1-1c8b-4bf4-9587-c2f90286d666):
 - **Never literally bright.** A light-to-dark ground was measured and rejected: the
@@ -401,8 +401,8 @@ https://claude.ai/code/artifact/9c713c80-e348-46fc-b6ee-f66af5bb9be4
 
 | sector | score | new |
 |--------|-------|-----|
-| S0 | 0-50 | safe flight; gold, blue |
-| S1 | 50-111 | walls lethal + 2 hull scratches, first stalactites, shield coin |
+| S0 | 0-50 | open corridor, walls lethal + 2 hull scratches from the tunnel entry, kept all run (since 2026-09-19); gold, blue |
+| S1 | 50-111 | first stalactites, shield coin |
 | S2 | 111-178 | orange ammo, green magnet |
 | S3 | 178-252 | first mine (alone, centred in its band), bomb coin; scratches expire |
 | S4 | 252-328 | boulders |
@@ -430,9 +430,15 @@ candidates as the payout), then ramps 80% -> 115%. Coins: `COIN_RATE_SAFE` 0.75/
 but only decide geometry - **retune by the measured rate** (the replay harness method in
 the audit), never by the spacing number; that coupling is exactly how 12.0 tripled mines.
 
-**Hull scratches** (`HULL_SCRATCHES` = 2 until `HULL_END_WX` = start of S3, `update.js`
-`hullScratch`): a lethal-wall contact spends one - clamp, bounce, `HIT_INVULN_SEC` grace,
-"SCRAPE!" notif, HUD diamonds bottom-right - instead of ending the run. Counts as a hit
+**Hull scratches** (`HULL_SCRATCHES` = 2 from the tunnel entry - the rock mouth, see Approach -
+for the **whole run** since 2026-09-19, `update.js` `hullScratch`; they used to expire at S3
+via the deleted `HULL_END_WX`): a lethal-wall contact spends one - clamp, bounce, "SCRAPE!"
+notif, HUD diamonds bottom-right - instead of ending the run. **The grace after a scratch is
+wall-only** (`WALL_GRACE_SEC`, `state.js wallGraceT`): the wall clamps instead of scratching
+again, but stalactites, mines, boulders and shots stay lethal and the ship does not blink. It
+was the full `HIT_INVULN_SEC` before, harmless while scratches ended at S3, but carried into
+the deep run it would have let a player scrape a wall on purpose to pass through a
+stalactite field. Scratches forgive wall mistakes only; direct hits are the shield's job. Counts as a hit
 for the No-Hit achievement. A plain shield at the same moment was measured and rejected
 (it mostly boosted the good tier, +72% median, by eating a stalactite later).
 "SECTOR n" notif fires at each boundary from S2 on (`update.js`, i18n key `sector`).
@@ -874,8 +880,7 @@ rest on the screen edge - one rule: the line is the wall. Draw-only, `boundsAt()
 collision untouched. The red proximity flash (`draw.js`) measures against that same
 lethal edge (`max(b.top, 0)` / `min(b.bot, H)`) - it used to measure the invisible
 off-screen edge and stayed silent flying into the screen edge - and is off while
-`warpTime > 0 || invulnT > 0`. Colour vocabulary: faint white-tinted edge + running light
-= soft wall (safe zone), day colour -> cyan = lethal wall (cyan = coin bonus), red = only
+`warpTime > 0 || invulnT > 0`. Colour vocabulary: day colour -> cyan = wall (cyan = coin bonus), red = only
 the proximity wash, death markers and the death reticle.
 
 ### Difficulty scaling functions
@@ -1564,59 +1569,51 @@ The ghost is drawn *before* the Player block in `draw.js`, not inside it: that b
 applies a `rotate()` pivoted on the player's position, which would swing the ghost around
 the live ship on every pitch change.
 
+### Approach over the city ("Anflug", 2026-09-19)
+
+`src/approach.js` (doc block at its top). Every run opens over the day's metropolis at dusk
+(three parallax silhouette layers, beacons in the day colour) and flies through a rock mouth
+into the safe opening flight; the title screen IS that city. Every run, PLAY AGAIN included,
+reaches the cave 4s later than before (`APPROACH_SEC` = `START_RAMP_SEC` + 4, user's call: the
+start stays the same every time). If it is ever shortened, keep it above ~2.3s or the ship
+launches through the mountain foot.
+"ENTERING THE TUNL" (`T.entering`, 15 langs) shows over the city; the world banner and the
+score wait for the cave. Concept: https://claude.ai/artifact/ECrpmHcPeTsREMwEtK6vNs
+- **The city lies before world-x 0, never in it.** `scrollX` stays 0; only `approachLeft`
+  (a camera offset) moves, and `drawWorld()` draws the cave translated + clipped by it.
+  `update.js` returns right after the physics while `approachLeft > 0`, so no clock, hazard,
+  score, flight-time achievement or ghost step runs early. Score, sectors and `test-cave.js`
+  are untouched. Don't turn the city into world-x: every score and threshold would shift.
+- **No parallax behind a wall** (see "No parallax background"): the skyline exists only left of
+  the mountain, and the cave's own void shows through the mouth (`APPROACH_BLEND`).
+- **The mouth is the same rock as the cave** (wall colour, stone pattern, day-coloured edge),
+  solid all the way into the cave's lethal walls.
+- **No soft walls (2026-09-19, "keine Gummiwände mehr").** Over the city the mountain face and
+  the screen edges only bounce the ship; from the mouth on (`approachUpdate`) the tunnel rule
+  applies at once: a wall contact spends a hull scratch, with none left it kills. The whole
+  soft-wall layer (translucent field, dents and rings, `safeWallBump`, `wallsSafe()`,
+  `SAFE_FIELD_*`, `SAFE_BUMP_*`) is deleted. Near-miss and the red danger flash now run from
+  the tunnel entry; the "walls now deadly" hint fires as the ship enters.
+- **The tunnel start was darkened with it** (`DEPTH_LIFT` 0.15 -> 0.05, `DEPTH_MOUTH_ALPHA`
+  0.24 -> 0.10): lit by a city at dusk, the old values made the cave a bright olive hall,
+  lighter than the sky outside. Sector steps keep their ratios.
+- Not done yet: city/tunnel audio (dry outside, cave reverb on entry), the S0 debriefing scene
+  showing the mouth, and a device pass (WebKit, 812x375).
+
 ### Onboarding
 
-**The first ~50 points of every run are a plain, safe flight** (was ~100, cut to 50 on request the same day) (2026-09-13, from
+**The first ~50 points of every run are an open, hazard-free flight** (2026-09-13, from
 beginner feedback "too hard, frustrating, deleted it"; `SAFE_START_WX` doc block in
-`constants.js`, `safeOpenAt()`/`wallsSafe()` in `world.js`, `safeWallBump()` in
-`update.js`). Until world-x 3000 the corridor is pushed out to the screen edges
-(`boundsAt()` only, never `boundsBase()`) and **walls bump the ship back instead of
-killing it**, easing shut over the last 1800px. **No stalactites, mines, boulders or
-cannon fire** until `HAZARD_START_WX` (3400, ~1s after the walls turn lethal); boulders
-from 6620, cannons from 7000 so no shot lands inside the zone. Coins and the warp portal
-still appear. The "walls now deadly" notif fires only on a player's first
-`WALLS_LIVE_HINT_RUNS` runs, and **at `WALLS_LIVE_HINT_LEAD_FRAC` (0.40) of the closing
-ramp, not at its first frame** - it used to fire the instant the ramp started, which is
-3.8 reference seconds out and at a point where `safeOpenAt()` is still 1.00, so the text
-said "deadly" while the corridor was still fully open and nothing had moved yet (reported
-as too early on a 2026-09-13 playtest). Now the lead is ~1.5 ref seconds, matching the
-soft-field visual's own warning window, with `safeOpenAt()` down to ~0.35 so the walls are
-visibly coming in as the player reads it; the notif's 1.8s life means it is still on
-screen when they actually turn lethal. Measured on `refSpdTrend`, so the lead is
-device-independent. Near-miss bonus and the red danger flash are
-off while walls are soft (no wall-riding bonus farm). Every run counts normally.
-
-**A soft wall looks soft (2026-09-13, do not revert to "identical rock").** Through
-12.0 a non-lethal wall was pixel-identical to a lethal one, and bumping it fired
-`burst()`'s orange sparks plus a shake - the vocabulary every real hit uses - so the one
-stretch that cannot kill you looked like the one that just did. Two draw-only halves
-(`SAFE_FIELD_ALPHA` doc block in `constants.js`):
-- **Field vs rock, split at the world-x, not at a timer.** `draw.js` paints the walls
-  twice per frame while `safeEndWx - scrollX` is on screen: full rock past that column,
-  and before it the same rock at `SAFE_FIELD_ALPHA` with contour lines riding inside the
-  edge (`_paintSoftField`), a bright thin edge over a wide soft one, and a light running
-  along it. The lethal rock therefore rolls in from the right and reaches the ship
-  exactly when `wallsSafe()` flips - roughly 1.5s of warning, free, no HUD. A hairline
-  marks the seam. The signal is **opacity and motion, never hue**: the edge colour is the
-  weekday's own (Luna is near-white, Io teal) and `gapBonus` tints it cyan the moment the
-  zone ends, so a colour-coded "soft" would be invisible on 3 of 7 days and ambiguous
-  right after. **Cost, corrected 2026-09-14 - the old claim here ("the second pass is
-  cheaper than the stone pattern it replaces") was wrong:** nothing is replaced.
-  `paintWalls(SAFE_FIELD_ALPHA)` runs `_paintStonePattern` itself, so the zone's two
-  clipped passes are ADDITIVE, and `_paintSoftField` adds `SAFE_FIELD_LINES` contour
-  polylines per wall on top. Per frame inside the zone that is 8 wall paths of ~320
-  points instead of 4, 4 stone-pattern fills instead of 2, plus 2 x (1 + 4) contour
-  paths - roughly 4.5x the wall path work of a normal frame. It still only runs during
-  the ~7s zone, but that zone is the first 7s of EVERY run, i.e. the onboarding path and
-  the weakest devices. Left as is (it performs fine); do not re-assert it is free, and
-  if the walls ever need a frame-budget cut, this is the first place to look.
-- **A bump bends the wall instead of spraying sparks.** `safeWallBump` only records
-  `{wx, isTop, t}` into `state.js safeBumps`; `draw.js` bends the RENDERED edge around it
-  (`_softBumpDent`, a damped spring that gives and settles) and runs a ring out of the
-  contact point. Cleared in `die()`, since the dents stop aging once the world freezes.
-Both only ever touch `topArr`/`botArr`, the same rendering-only arrays `_wallJagged`
-already offsets - `boundsAt()` and every collision test are untouched, so this is a pure
-look change on every device and needs no `isWeb()` gate.
+`constants.js`, `safeOpenAt()` in `world.js`). Until world-x 3000 the corridor is pushed
+out to the screen edges (`boundsAt()` only, never `boundsBase()`), easing shut over the last
+1800px. **No stalactites, mines, boulders or cannon fire** until `HAZARD_START_WX` (3400);
+boulders from 6620, cannons from 7000 so no shot lands inside the zone. Coins and the warp
+portal still appear. **The walls are lethal from the tunnel entry** since 2026-09-19 (see
+Approach): two hull scratches cover the first mistakes. Until then they were SOFT - they
+bumped the ship back, drawn as a translucent field with contour lines, dents and rings -
+and that whole layer was removed on request ("keine Gummiwände mehr"). The "walls now
+deadly" notif fires as the ship enters the tunnel, on a player's first
+`WALLS_LIVE_HINT_RUNS` runs. Every run counts normally.
 
 Fair by construction: identical for every player and screen, all offsets are fixed
 world-px, and `test-cave.js` mirrors the start cursors. Consequences worth knowing:
@@ -1640,7 +1637,7 @@ better, and that was chosen over the ~42% interactive share. Don't cut it again 
 asking.
 
 On top of that, **every run opens with a level glide**: gravity is withheld until the
-player's first hold press or `HOLD_GATE_MAX_SEC` (`constants.js`, 2.25s), so the ship
+player's first hold press or `HOLD_GATE_MAX_SEC` (`constants.js`, 2.55s since 2026-09-19, was 2.25s), so the ship
 flies dead level and never drops before the player acts. This applies to PLAY AGAIN
 restarts too - `input.js` no longer pre-sets `holding`/`hasHeldThisRun` on the restart
 tap, so a restart opens exactly like a fresh title-screen start rather than mid-thrust.

@@ -116,60 +116,6 @@ function _wallJagged(wx, seedOffset) {
          * r;
 }
 
-// Runs fn with drawing clipped to a vertical slab of the canvas. The safe opening zone
-// paints the walls twice through this - soft field before the world-x where they turn
-// lethal, full rock after it (constants.js SAFE_FIELD_ALPHA doc).
-function _clipX(x0, x1, fn) {
-    if (x1 <= x0) return;
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(x0, -20, x1 - x0, H + 40);
-    ctx.clip();
-    fn();
-    ctx.restore();
-}
-
-// Contour lines riding just inside a soft wall's edge, drifting outward so the field
-// reads as live rather than as a flat wash. Clipped to the wall itself, so nothing
-// spills into the corridor even where the wall is only a sliver at the screen edge.
-function _paintSoftField(xs, arr, atTop, traceWall, clr) {
-    ctx.save();
-    traceWall();
-    ctx.clip();
-    ctx.lineWidth = 1;
-    const step  = PR * 0.8;
-    const drift = (gtime * 9) % step;
-    for (let k = 0; k < SAFE_FIELD_LINES; k++) {
-        const off = (k * step + drift) * (atTop ? -1 : 1);
-        ctx.strokeStyle = rgb(clr, 0.20 * (1 - k / SAFE_FIELD_LINES));
-        ctx.beginPath();
-        for (let i = 0; i < xs.length; i++) {
-            if (i) ctx.lineTo(xs[i], arr[i] + off);
-            else   ctx.moveTo(xs[i], arr[i] + off);
-        }
-        ctx.stroke();
-    }
-    ctx.restore();
-}
-
-// Soft-wall bump dent (constants.js SAFE_FIELD_ALPHA doc): how far the RENDERED wall
-// edge at world-x wx is pushed away from the corridor by the bumps recorded in
-// state.js safeBumps. A damped spring per bump - it gives, springs back past the resting
-// line once, and settles - falling off as a gaussian along the wall, so the edge flexes
-// locally like a membrane instead of denting as a block. Returns an outward offset in
-// px; the caller subtracts it from the ceiling and adds it to the floor. Purely visual,
-// like _wallJagged above: collision reads boundsAt(), never these arrays.
-function _softBumpDent(wx, isTop) {
-    let d = 0;
-    for (const b of safeBumps) {
-        if (b.isTop !== isTop) continue;
-        const g = (wx - b.wx) / (PR * SAFE_BUMP_DENT_W);
-        if (g < -4 || g > 4) continue;
-        d += PR * SAFE_BUMP_DENT_AMP * Math.exp(-b.t * 5) * Math.cos(b.t * 24) * Math.exp(-g * g);
-    }
-    return d;
-}
-
 // Same rough-rock treatment as the walls, applied to a stalactite's own
 // silhouette (draw()'s stalactite loop). Walks the same two cubic beziers
 // the smooth silhouette used, but as a jagged polyline instead of a single
@@ -1058,6 +1004,15 @@ function drawWorld() {
 
     const theme = getTheme();
     const dayRock = theme.wallBase;   // the day's own rock, before the drift/warp tints below
+    // Approach (approach.js): the cave is drawn shifted right by the camera offset and clipped
+    // to its own side of the screen; the city and the mountain fill the rest, further down.
+    const _apx = approachCamX();
+    if (_apx > 0) {
+        ctx.save();
+        const _clipL = _apx - APPROACH_LIP - APPROACH_BLEND;   // the cave's own void shows through the mouth
+        ctx.beginPath(); ctx.rect(_clipL, -40, W + 80 - _clipL, H + 80); ctx.clip();
+        ctx.translate(_apx, 0);
+    }
     // Deep-run palette drift: nudge the wall / stalactite GLOW toward a cooler
     // deep tint the further in you get - "it looks different down here" fights
     // monotony even when the mechanics hold steady. Subtle, capped, and only the
@@ -1094,7 +1049,7 @@ function drawWorld() {
     // unaffected (their letterbox, on tablets that get one, keeps following the lift).
     if (!isWeb() && bgStr !== _lastBgStr) { document.body.style.backgroundColor = bgStr; _lastBgStr = bgStr; }
     ctx.fillStyle = bgStr;
-    ctx.fillRect(-20, -20, W+40, H+40);
+    ctx.fillRect(-20 - _apx, -20, W+40 + _apx, H+40);   // _apx: reaches back into the approach's mouth
     if (depth.mouth > 0.004) {
         // Behind the ship, off the left edge: hazards arrive from the right, and that side
         // stays dark. One gradient fill, no shadowBlur.
@@ -1103,7 +1058,7 @@ function drawWorld() {
         const mg = ctx.createRadialGradient(mx, my, 0, mx, my, depth.mouthR - mx);
         for (const [o, a] of DEPTH_MOUTH_STOPS) mg.addColorStop(o, rgb(mc, depth.mouth * a));
         ctx.fillStyle = mg;
-        ctx.fillRect(-20, -20, W+40, H+40);
+        ctx.fillRect(-20 - _apx, -20, W+40 + _apx, H+40);
     }
 
     // Wall arrays. topArr/botArr get a small cosmetic jag added on top of the
@@ -1112,7 +1067,6 @@ function drawWorld() {
     // boundsAt()/boundsBase() directly (update.js/systems.js), never these
     // arrays, so the jag is purely visual.
     const topArr = [], botArr = [], xs = [];
-    const _dents = safeBumps.length > 0;   // constants.js SAFE_FIELD_ALPHA doc
     for (let sx = -RSTEP; sx <= W + RSTEP*2; sx += RSTEP) {
         const wx = scrollX + sx;
         const b = boundsAt(wx);
@@ -1120,9 +1074,9 @@ function drawWorld() {
         // Clamped to WALL_EDGE_SLIVER (constants.js doc): an off-screen corridor edge
         // rests on the screen edge, where it is still lethal, in the same look.
         topArr.push(Math.max(WALL_EDGE_SLIVER,
-            b.top + _wallJagged(wx, 0) - (_dents ? _softBumpDent(wx, true)  : 0)));
+            b.top + _wallJagged(wx, 0)));
         botArr.push(Math.min(H - WALL_EDGE_SLIVER,
-            b.bot + _wallJagged(wx, 5000) + (_dents ? _softBumpDent(wx, false) : 0)));
+            b.bot + _wallJagged(wx, 5000)));
     }
     const n = xs.length;
 
@@ -1270,8 +1224,8 @@ function drawWorld() {
         ctx.lineTo(xs[n-1], H+2);
         ctx.closePath();
     };
-    // Both walls at one opacity. A function because the safe opening zone paints the
-    // same rock twice per frame at two strengths (constants.js SAFE_FIELD_ALPHA doc).
+    // Both walls at one opacity. (A function from when the safe opening zone painted a
+    // translucent soft-wall pass too; walls are lethal from the tunnel entry since 2026-09-19.)
     const paintWalls = (alpha) => {
         ctx.save();
         ctx.globalAlpha = alpha;
@@ -1302,21 +1256,7 @@ function drawWorld() {
         ctx.restore();
         ctx.restore();
     };
-    // Screen x where the soft wall ends and lethal rock begins. Off the left of the
-    // canvas (the whole run after the safe opening zone, and the title screen, where
-    // safeEndWx is 0) means one plain full-strength pass, exactly as before.
-    const softX   = safeEndWx > 0 ? safeEndWx - scrollX : -Infinity;
-    const softOn  = softX > xs[0];
-    const fieldClr = lerpClr(theme.wallBase, [255, 255, 255], 0.45);
-    if (!softOn) paintWalls(1);
-    else {
-        _clipX(softX, W + RSTEP * 3, () => paintWalls(1));
-        _clipX(xs[0] - RSTEP, softX, () => {
-            paintWalls(SAFE_FIELD_ALPHA);
-            _paintSoftField(xs, topArr, true,  traceTopWall, fieldClr);
-            _paintSoftField(xs, botArr, false, traceBotWall, fieldClr);
-        });
-    }
+    paintWalls(1);
 
     // Bullets
     drawBullets();
@@ -1358,49 +1298,7 @@ function drawWorld() {
             ctx.stroke();
         }
     };
-    if (!softOn) strokeEdges(edgeClr, 2);
-    else {
-        _clipX(softX, W + RSTEP * 3, () => strokeEdges(edgeClr, 2));
-        // Soft wall: a bright thin edge over a wide soft one (stacked strokes, never
-        // shadowBlur - that is the expensive call on WKWebView), plus a light running
-        // along it. Motion and brightness carry the "not solid" read, not hue.
-        _clipX(xs[0] - RSTEP, softX, () => {
-            strokeEdges(rgb(fieldClr, 0.13), Math.max(4, PR * 0.42));
-            strokeEdges(rgb(fieldClr, 0.80), 1.5);
-            const runX = ((gtime * 420) % (W + 520)) - 260;
-            const runG = ctx.createLinearGradient(runX - PR * 7, 0, runX + PR * 7, 0);
-            runG.addColorStop(0,   rgb(fieldClr, 0));
-            runG.addColorStop(0.5, 'rgba(255,255,255,0.85)');
-            runG.addColorStop(1,   rgb(fieldClr, 0));
-            strokeEdges(runG, 2.5);
-        });
-        // The seam itself: a hairline where the field gives way to lethal rock, so the
-        // boundary is a place on the wall and not just a change of treatment.
-        if (softX < W + RSTEP) {
-            const si = Math.min(n - 1, Math.max(0, Math.round((softX - xs[0]) / RSTEP)));
-            ctx.strokeStyle = rgb(fieldClr, 0.35); ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(softX, -2);          ctx.lineTo(softX, topArr[si]);
-            ctx.moveTo(softX, botArr[si]);  ctx.lineTo(softX, H + 2);
-            ctx.stroke();
-        }
-    }
-
-    // Soft-wall bump rings (constants.js SAFE_BUMP_RING_SEC doc): the field's answer to
-    // being pushed, running out of each contact point. y is resolved live from the
-    // corridor, like the death markers below, so a ring stays on the wall it came from
-    // even as the corridor keeps moving under it.
-    for (const b of safeBumps) {
-        if (b.t > SAFE_BUMP_RING_SEC) continue;
-        const k  = b.t / SAFE_BUMP_RING_SEC;
-        const bb = boundsAt(b.wx);
-        ctx.strokeStyle = rgb(fieldClr, 0.9 * (1 - k));
-        ctx.lineWidth   = 2.2 * (1 - k) + 0.6;
-        ctx.beginPath();
-        ctx.ellipse(b.wx - scrollX, b.isTop ? bb.top : bb.bot,
-                    PR * (0.5 + 4 * k), PR * (0.15 + 0.8 * k), 0, 0, Math.PI * 2);
-        ctx.stroke();
-    }
+    strokeEdges(edgeClr, 2);
 
     // Death markers - rings etched into the wall at each death spot. y is resolved
     // live from the current corridor so the ring swings with the wave and stays stuck
@@ -1731,13 +1629,17 @@ function drawWorld() {
         ctx.globalAlpha = 1;
     }
 
-    // Proximity danger flash - not while the walls are soft (constants.js
-    // SAFE_START_WX doc), a red "danger" wash there would teach the wrong thing.
-    // Also off while a warp or hit-grace window is live: update.js only clamps the ship
+    if (_apx > 0) {
+        ctx.restore();
+        drawApproachScene(theme, dayRock);
+    }
+
+    // Proximity danger flash - not over the approach's city (approach.js), where there is
+    // no cave wall to warn about. Also off while a warp or hit-grace window is live: update.js only clamps the ship
     // against the wall then, so a red wash would warn about a wall that cannot kill.
     // Measured against the LETHAL edge, which is the screen edge wherever the corridor
     // runs off-canvas (constants.js WALL_EDGE_SLIVER doc), not the invisible boundsAt().
-    if (phase === 'play' && !wallsSafe() && warpTime <= 0 && invulnT <= 0) {
+    if (phase === 'play' && approachLeft <= 0 && warpTime <= 0 && invulnT <= 0 && wallGraceT <= 0) {
         const b       = boundsAt(scrollX + PX);
         const minDist = Math.min(py - PR - Math.max(b.top, 0), Math.min(b.bot, H) - (py + PR));
         const safe    = (_halfGap + gapBonusVisual) * 0.35;
@@ -2229,6 +2131,8 @@ let _hudLastCombo = 0, _hudComboPopT = -1;
 
 function drawHUD() {
     const theme = getTheme();
+    // Approach (approach.js): no score yet - the run starts counting in the cave.
+    if (phase !== 'title' && approachLeft > 0) { drawApproachBanner(theme); return; }
 
     // ── HUD ───────────────────────────────────────────────────────────
     ctx.textAlign    = 'center';
@@ -2478,8 +2382,8 @@ function drawHUD() {
         ctx.restore();
     }
 
-    // Hull scratches (bottom right, mirrors the ammo row): only while they still apply.
-    if (phase === 'play' && hullScratches > 0 && scrollX + PX < HULL_END_WX && !wallsSafe()) {
+    // Hull scratches (bottom right, mirrors the ammo row): until spent - they last the whole run.
+    if (phase === 'play' && hullScratches > 0) {
         const s      = 5;
         const dotY   = H * 0.910;
         const endX   = W * 0.775;
@@ -3245,22 +3149,8 @@ function drawTitleScreen() {
     // for a tap on it to change.
     const ringPulse = 0.6 + 0.4 * Math.sin(gtime * 1.6);
 
-    // Hangar floor: a flat pool of the day's light under the hero ship, so the ship stands
-    // in today's cave instead of floating inside a reticle. Ring and ship keep the SKIN's
-    // colour (that is the ship's identity); only the floor belongs to the day.
-    {
-        const fy = shipStageY + heroR * 1.05, frx = heroR * 1.45, fry = heroR * 0.30;
-        ctx.save();
-        ctx.translate(shipStageX, fy);
-        ctx.scale(1, fry / frx);
-        const floor = ctx.createRadialGradient(0, 0, 0, 0, 0, frx);
-        floor.addColorStop(0,   rgb(dayAcc, a * (0.22 + 0.06 * ringPulse)));
-        floor.addColorStop(0.6, rgb(dayAcc, a * 0.07));
-        floor.addColorStop(1,   rgb(dayAcc, 0));
-        ctx.fillStyle = floor;
-        ctx.beginPath(); ctx.arc(0, 0, frx, 0, Math.PI * 2); ctx.fill();
-        ctx.restore();
-    }
+    // (The day-coloured "hangar floor" glow under the hero ship was removed 2026-09-19 on
+    // request - it read as a fog shadow over the approach's city.)
 
     ctx.beginPath();
     ctx.arc(shipStageX, shipStageY, heroR * 1.7, 0, Math.PI * 2);

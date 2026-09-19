@@ -387,17 +387,16 @@ let slowTime, slowTimeMax, shieldCount, shieldFlash, magnetTime;
 let slowPending;
 // Grace/invulnerability window after an absorbed hit (constants.js HIT_INVULN_SEC doc).
 let invulnT;
-// Safe opening zone (constants.js SAFE_START_WX doc): world-x where the walls turn
-// lethal this run, how long the corridor takes to close before it, the bump-feedback
-// cooldown, and whether the one-shot walls-live hint has fired. 0 on the title screen = no zone.
-let safeEndWx = 0, safeCloseWx = 1, safeBumpT = 0, wallsLiveShown = false;
-// Soft-wall bump feedback (constants.js SAFE_BUMP_DENT_SEC doc): one entry per bump the
-// cooldown above let through, { wx, isTop, t }, aged in update.js and culled once the
-// dent has died out. Purely visual - draw.js bends the RENDERED wall edge around wx and
-// runs a ring out of it; boundsAt() and the collision code never see these.
-let safeBumps = [];
+// Wall-only grace after a hull scratch (constants.js WALL_GRACE_SEC): the wall clamps
+// instead of scratching again; every hazard still kills. Deliberately not invulnT.
+let wallGraceT = 0;
+// Safe opening zone (constants.js SAFE_START_WX doc): world-x where the open corridor has
+// closed to normal this run, how long it takes to close, and whether the one-shot
+// walls-live hint has fired. 0 on the title screen = no zone. (The walls are lethal from the
+// tunnel entry since 2026-09-19; this only widens the corridor now.)
+let safeEndWx = 0, safeCloseWx = 1, wallsLiveShown = false;
 // Flight plan (constants.js sector table): wall-only scratches left this run
-// (HULL_SCRATCHES at start, spent by update.js hullScratch until HULL_END_WX), and the
+// (HULL_SCRATCHES at start, spent by update.js hullScratch, never expiring), and the
 // highest sector whose "SECTOR n" notif has already fired this run.
 let hullScratches = 0, lastSectorShown = 0;
 // Rewarded continue, run-scoped (constants.js CONTINUE_MIN_SCORE doc). continueOfferPending

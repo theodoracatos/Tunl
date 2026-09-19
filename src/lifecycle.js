@@ -28,7 +28,7 @@ function initAmbParts() {
 }
 
 function titleScreen() {
-    phase = 'title'; py = H / 2; vy = 0; holding = false; scrollX = 0;
+    phase = 'title'; py = H / 2; vy = 0; holding = false; scrollX = 0; approachLeft = 0;
     score = 0; newBest = false; newDailyBest = false;
     parts = []; thrustParts = []; deadT = 0; titleT = 0; flashA = 0; shake = 0; trailY = [];
     skinFx = []; skinFxT = 0; shipPitch = 0;
@@ -37,8 +37,8 @@ function titleScreen() {
     coins = [];     nextCoinWx = 99999;
     chicaneCoins = []; lastChicaneCoinWx = -Infinity;
     gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; slowPending = 0; slowFxVis = 0; slowFxPulseT = -1; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = []; hudSparks = []; hudBump = 0;
-    invulnT = 0; deathCause = null;
-    safeEndWx = 0; safeCloseWx = 1; safeBumpT = 0; wallsLiveShown = false; safeBumps = [];
+    invulnT = 0; wallGraceT = 0; deathCause = null;
+    safeEndWx = 0; safeCloseWx = 1; wallsLiveShown = false;
     hullScratches = 0; lastSectorShown = 0;
     continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;
     reviveCountdownT = 0; interruptPaused = false;
@@ -108,7 +108,7 @@ function startPlay() {
     coins = [];     nextCoinWx = 500;
     chicaneCoins = []; lastChicaneCoinWx = -Infinity;
     gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; slowPending = 0; slowFxVis = 0; slowFxPulseT = -1; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = []; hudSparks = []; hudBump = 0;
-    invulnT = 0; deathCause = null;
+    invulnT = 0; wallGraceT = 0; deathCause = null;
     continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;
     reviveCountdownT = 0; interruptPaused = false;
     bullets = []; bulletAmmo = 0; bulletFireTimer = 0;
@@ -203,7 +203,7 @@ function startPlay() {
     safeEndWx = SAFE_START_WX; safeCloseWx = SAFE_CLOSE_WX;
     hullScratches = HULL_SCRATCHES; lastSectorShown = 1;   // constants.js flight plan
     resetRunScenes();                                       // constants.js SCENE_* doc
-    safeBumpT = 0; wallsLiveShown = false; safeBumps = [];
+    wallsLiveShown = false;
     // A ghost carried in on a ?g= share link (state.js _webGhostPlay) has to
     // survive the daily-rollover reset above, which clears the local ghost -
     // racing that shared ghost is the whole point of opening the link.
@@ -238,6 +238,7 @@ function startPlay() {
     lastBlueWx = 0; lastRedWx = 0; lastGreenWx = 0;
     flightClock = 0; flightAchIdx = 0;
     refreshWave();
+    approachStart();   // approach.js: the run opens over the city, before world-x 0
     _startBgMusic();
     sfxEngineSpoolUp(START_RAMP_SEC);
 }

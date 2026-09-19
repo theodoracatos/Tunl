@@ -655,7 +655,6 @@ function safeOpenAt(wx) {
     const t = Math.min(1, (safeEndWx - wx) / safeCloseWx);
     return t * t * (3 - 2 * t);
 }
-function wallsSafe() { return scrollX + PX < safeEndWx; }
 
 // boundsBase predicts placement bounds using the wave params and halfGap that
 // will be in effect when the player reaches wx. Mirrors refreshWave's scaling

@@ -147,6 +147,7 @@ function update(dt) {
         const pitchTarget = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, Math.atan2(demoVy, 110)));
         shipPitch += (pitchTarget - shipPitch) * Math.min(dt * 14, 1);
         maintainStalactites();
+        approachTitleTick(dt);   // the title screen is the city (approach.js)
         const aTSpd = 110 * 0.18;
         for (const p of ambParts) {
             p.x -= aTSpd * p.par * dt;
@@ -175,9 +176,12 @@ function update(dt) {
                 h: 18 + Math.random() * 38,
             });
         }
-        // Tunnel starts scrolling only in the last 15% of launch
+        // Tunnel starts scrolling only in the last 15% of launch - unless the run opens with
+        // the approach (approach.js), where the camera flies over the city under the launch
+        // and scrollX stays 0 until the ship is in the cave.
         const lf = Math.max(0, (startRamp - 0.85) / 0.15);
-        scrollX += scrollSpd() * lf * lf * dt;
+        if (approachLeft > 0) approachStep(dt);
+        else scrollX += scrollSpd() * lf * lf * dt;
         refreshWave();
         score = Math.floor(scrollX / 60) + bonusScore;
         // maintainBoulders too, for completeness with the main path below. A no-op in
@@ -215,6 +219,10 @@ function update(dt) {
     // Idle-hold hint timer (draw.js IDLE_HINT_DELAY) -- only worth counting up before
     // the player's first press; irrelevant forever after, so don't bother once true.
     if (!hasHeldThisRun) idleHoldTimer += dt;
+
+    // Approach over the city (approach.js): camera, soft bumps, pitch and trail only.
+    // Returning here keeps every clock, hazard, score and ghost step at the cave's world-x 0.
+    if (approachLeft > 0) { approachUpdate(dt); return; }
 
     // Gap bonus / slow / magnet decay
     // TOXIC trades faster gap-bonus decay for its 2x-per-coin buff (systems.js) --
@@ -428,16 +436,10 @@ function update(dt) {
         }
     }
 
-    // Safe opening flight: on a player's first few runs, say it out loud when the
-    // corridor starts closing in - walls turning lethal ~50 points in would otherwise
-    // be a surprise. Veterans know, so it stays quiet for them.
-    safeBumpT = Math.max(0, safeBumpT - dt);
-    // Age the soft-wall dents and drop the dead ones (constants.js SAFE_BUMP_DENT_SEC).
-    for (let i = safeBumps.length - 1; i >= 0; i--) {
-        if ((safeBumps[i].t += dt) > SAFE_BUMP_DENT_SEC) safeBumps.splice(i, 1);
-    }
-    if (totalRuns <= WALLS_LIVE_HINT_RUNS && !wallsLiveShown &&
-        scrollX + PX >= safeEndWx - safeCloseWx * WALLS_LIVE_HINT_LEAD_FRAC) {
+    // On a player's first few runs, say it out loud as the ship enters the tunnel: the walls
+    // are lethal from the first metre (no soft walls since 2026-09-19, the hull scratches
+    // cover the first mistakes). Veterans know, so it stays quiet for them.
+    if (totalRuns <= WALLS_LIVE_HINT_RUNS && !wallsLiveShown && scrollX > 0) {
         wallsLiveShown = true;
         pushNotif(PX + PR * 3, py - H * 0.10, 1.8, T.wallsLive, [255, 120, 70]);
         window.webkit?.messageHandlers?.haptic?.postMessage('medium');
@@ -478,7 +480,7 @@ function update(dt) {
 
     // Near-miss bonus (wall proximity)
     nearMissTimer = Math.max(0, nearMissTimer - dt);
-    if (nearMissTimer <= 0 && !wallsSafe()) {
+    if (nearMissTimer <= 0) {
         const nmB = boundsAt(scrollX + PX);
         const nmC = Math.min(py - PR - nmB.top, nmB.bot - (py + PR));
         // VOID trades a smaller near-miss window for its extra shield capacity
@@ -635,14 +637,9 @@ function update(dt) {
               : activeSkin === 1 ? PR * masteryLerp(1, 1.10, 1.06)
               : activeSkin === 7 ? PR * masteryLerp(7, 1.06, 1.03)
               : PR;
-    const _wallsSafe = wallsSafe();
     for (const dx of [-cPR * 0.7, 0, cPR * 0.7]) {
         const b = boundsAt(scrollX + PX + dx);
         if (py - cPR < b.top || py + cPR > b.bot) {
-            // Safe opening zone (constants.js SAFE_START_WX doc): the wall bumps the
-            // ship back instead of killing it - a soft bounce plus a spark, so hitting
-            // it still reads as a mistake to learn from rather than as nothing.
-            if (_wallsSafe) { safeWallBump(b.top, b.bot, cPR); break; }
             // Mid-grace-window OR mid-warp: the wall is solid geometry, not a hazard,
             // so simply skipping the check (like stalactites/mines below) would let
             // the ship drift into the rock for the rest of the window. Clamp back
@@ -651,9 +648,9 @@ function update(dt) {
             // theory outrun MAX_VY for a moment at the wave's peak slope (constants.js
             // WARP_GAP_MULT doc) - the clamp is what actually guarantees "the reward
             // never kills you," the widened corridor is just breathing room on top.
-            if (invulnT > 0 || warpTime > 0) { py = Math.max(b.top + cPR, Math.min(b.bot - cPR, py)); break; }
+            if (invulnT > 0 || warpTime > 0 || wallGraceT > 0) { py = Math.max(b.top + cPR, Math.min(b.bot - cPR, py)); break; }
             // Flight plan: early wall mistakes cost a scratch, not the run (constants.js HULL_SCRATCHES).
-            if (hullScratches > 0 && scrollX + PX < HULL_END_WX) { hullScratch(b.top, b.bot, cPR); break; }
+            if (hullScratches > 0) { hullScratch(b.top, b.bot, cPR); break; }
             deathCause = (py - cPR < b.top) ? 'wallTop' : 'wallBot';
             markDeathHit(PX + dx, (py - cPR < b.top) ? b.top : b.bot, cPR);
             if (die()) return;
@@ -661,9 +658,8 @@ function update(dt) {
         }
     }
     if (py - cPR < 0 || py + cPR > H) {
-        if (_wallsSafe) safeWallBump(0, H, cPR);
-        else if (invulnT > 0 || warpTime > 0) { py = Math.max(cPR, Math.min(H - cPR, py)); }
-        else if (hullScratches > 0 && scrollX + PX < HULL_END_WX) hullScratch(0, H, cPR);
+        if (invulnT > 0 || warpTime > 0 || wallGraceT > 0) { py = Math.max(cPR, Math.min(H - cPR, py)); }
+        else if (hullScratches > 0) hullScratch(0, H, cPR);
         else {
             deathCause = (py - cPR < 0) ? 'wallTop' : 'wallBot';
             markDeathHit(PX, (py - cPR < 0) ? 0 : H, cPR);
@@ -847,6 +843,7 @@ function update(dt) {
     shieldFlash   = Math.max(0, shieldFlash   - dt * 5);
     flashA        = Math.max(0, flashA        - dt * 5);
     invulnT       = Math.max(0, invulnT       - dt);
+    wallGraceT    = Math.max(0, wallGraceT    - dt);
 
     // Ambient motes drift at ~18% of play scroll speed (parallax)
     const aSpd = spd * 0.18;
@@ -865,32 +862,14 @@ function update(dt) {
 // harmless, since it is only ever read once phase is 'dead'. The radius is the KILLER's
 // size, not the ship's, so the ring reads as "this is what got you" rather than as a
 // second ship outline; for a wall hit there is no object, so the ship radius is passed.
-// Soft wall inside the safe opening zone (constants.js SAFE_START_WX doc): clamp back
-// inside, reflect a fraction of the velocity that was carrying the ship into the wall,
-// and throttle the feedback/haptic so riding along the edge doesn't strobe.
-// The feedback is a dent in the rendered wall plus a ring, NOT burst()'s sparks and a
-// shake -- those are what a real hit looks like everywhere else in the game, and this
-// contact is the one kind that cannot hurt (constants.js SAFE_FIELD_ALPHA doc). Only the
-// record is made here; draw.js does the bending, so nothing about the collision moves.
-function safeWallBump(top, bot, r) {
-    const hitTop = py - r < top;
-    py = Math.max(top + r, Math.min(bot - r, py));
-    if (hitTop ? vy < 0 : vy > 0) vy = -vy * 0.35;
-    if (safeBumpT <= 0) {
-        safeBumpT = 0.25;
-        safeBumps.push({ wx: scrollX + PX, isTop: hitTop, t: 0 });
-        window.webkit?.messageHandlers?.haptic?.postMessage('light');
-    }
-}
-
-// Flight plan (constants.js HULL_SCRATCHES): a lethal-wall contact while scratches
-// remain. Same clamp-and-bounce as the safe zone's bump, plus the HIT_INVULN_SEC grace a
-// shield-absorbed hit gets, so the ship cannot scrape the same wall twice in a row. It
-// counts as a hit for the No-Hit achievement like every other absorbed collision.
+// Hull (constants.js HULL_SCRATCHES): a lethal-wall contact while scratches remain, at
+// any depth. Clamp and bounce, plus WALL_GRACE_SEC in which only the wall is harmless, so
+// the ship cannot scrape the same wall twice in a row - hazards stay lethal (no invulnT,
+// no blink). It counts as a hit for the No-Hit achievement like every other absorbed collision.
 function hullScratch(top, bot, r) {
     hullScratches--;
     runHitCount++;
-    invulnT = Math.max(invulnT, HIT_INVULN_SEC);
+    wallGraceT = WALL_GRACE_SEC;
     const hitTop = py - r < top;
     py = Math.max(top + r, Math.min(bot - r, py));
     if (hitTop ? vy < 0 : vy > 0) vy = -vy * 0.35;
@@ -942,9 +921,6 @@ function die(bypassShield = false) {
     bgmSetSlow(false);
     bgmSetWarp(false);
     phase = 'dead'; deadT = 0; flashA = 1.0; shake = 14; holding = false;
-    // Soft-wall dents/rings stop aging once the world freezes, so drop them rather than
-    // leave one hanging in the death frame (constants.js SAFE_BUMP_DENT_SEC doc).
-    safeBumps.length = 0;
     _shareCopiedT = 0;
     _homeBtnRect = null; _playBtnRect = null; _shareBtnRect = null; _continueBtnRect = null;
     // Impact feedback fires now, unconditionally -- a hit should always feel like a

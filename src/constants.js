@@ -6,7 +6,7 @@
 // it exists so a build can identify itself: window.TUNL_VERSION for a DevTools check,
 // and build-play.mjs stamps it into /play as <meta name="tunl:version"> so the live
 // web build's version is greppable without diffing the bundle.
-const TUNL_VERSION = '14.3';
+const TUNL_VERSION = '15.0';
 if (typeof window !== 'undefined') window.TUNL_VERSION = TUNL_VERSION;
 
 const cv  = document.getElementById('c');
@@ -760,17 +760,18 @@ const HIT_INVULN_SEC = 1.4;
 // So the first ~50 points of EVERY run are a plain flight (was ~100 until the same
 // day, cut to 50 on request):
 // - the corridor opens up to the screen edges (world.js safeOpenAt, boundsAt only -
-//   placement via boundsBase is untouched) and the walls bump the ship back instead of
-//   killing it (update.js safeWallBump), easing shut over the last SAFE_CLOSE_WX;
+//   placement via boundsBase is untouched), easing shut over the last SAFE_CLOSE_WX.
+//   The walls themselves are lethal from the tunnel entry since 2026-09-19 (they used to
+//   bump the ship back until SAFE_START_WX); HULL_SCRATCHES absorbs the first two hits;
 // - no stalactites, mines, boulders or cannon fire until HAZARD_START_WX, which leaves
-//   SAFE_HAZARD_GAP_WX (~1s) between the walls turning lethal and the first hazard.
+//   SAFE_HAZARD_GAP_WX (~1s) between the corridor closing and the first hazard.
 //   Coins and the warp portal still appear.
 // It applies identically to every player and every screen, so the shared daily cave and
 // leaderboard stay fair (test-cave.js mirrors these start cursors). All hazard offsets
 // here are fixed world-px, never W/H-derived, or the cave would fork per device.
 // Briefly (same day, never shipped) this was a 3-run off-record "training flight" with
 // normal runs safe only to score 50; unified on request once both had the same rules.
-const SAFE_START_WX       = 3000;   // ~score 50: walls turn lethal here (was 6000 / ~100)
+const SAFE_START_WX       = 3000;   // ~score 50: the open corridor has closed here (was 6000 / ~100)
 const SAFE_CLOSE_WX       = 1800;
 const SAFE_HAZARD_GAP_WX  = 400;
 const HAZARD_START_WX     = SAFE_START_WX + SAFE_HAZARD_GAP_WX;   // first stalactite
@@ -825,8 +826,8 @@ function sectorPhase(wx) {
     return Math.min(Math.max((wx - a) / (b - a), 0), 1);
 }
 // What each sector introduces (score is approximate, distance only):
-//   S0  0-50    safe flight: gold, blue
-//   S1  50-111  walls lethal + HULL_SCRATCHES, first stalactites, shield coin
+//   S0  0-50    open corridor, lethal walls + HULL_SCRATCHES (whole run): gold, blue
+//   S1  50-111  first stalactites, shield coin
 //   S2  111-178 orange ammo, green magnet
 //   S3  178-252 first mine (alone, centred), bomb coin
 //   S4  252-328 boulders
@@ -851,30 +852,23 @@ const CANNON_START_WX     = sectorStartWx(6);
 const FALL_START_WX       = sectorStartWx(7);
 const POISON_START_WX     = sectorStartWx(8);
 const DRAIN_START_WX      = sectorStartWx(9);
-// Soft hand-over from the safe flight (update.js wall collision): when the walls turn
-// lethal the ship carries HULL_SCRATCHES wall-only "scratches" until the end of sector 2.
-// A wall hit spends one (bounce + HIT_INVULN_SEC grace) instead of the run. Measured with
+// Hull (update.js wall collision, approach.js in the mouth): from the tunnel entry the ship
+// carries HULL_SCRATCHES wall-only "scratches" for the WHOLE run (2026-09-19; they used to
+// expire at the start of sector 3, and to start where the soft walls ended). A wall contact
+// spends one - bounce plus WALL_GRACE_SEC in which only the WALL is harmless (the ship is
+// held off it so it cannot scrape twice). Hazards stay lethal throughout: a scratch must
+// never be a way through a stalactite field, which the old full HIT_INVULN_SEC grace was
+// once the scratches reached the deep run. Direct hits are for the shield coin. Measured with
 // 2 scratches until score 150: runs dying within 8 points of the walls turning lethal
 // 41% -> 4% (beginner tier), share reaching score 100 4% -> 40% (beginner) and 32% -> 66%
 // (average, the tier real players match). A plain shield at the same moment was tried
 // and rejected: it mostly helped the good tier (+72% median) by eating a stalactite later.
 const HULL_SCRATCHES      = 2;
-const HULL_END_WX         = sectorStartWx(3);
+const WALL_GRACE_SEC      = 1.0;    // wall-only grace after a scratch (HIT_INVULN_SEC's length, not its reach)
 // Hazard LENGTH pace (world.js stalLenFrac/cannonSpacing): the old 14000/40000 two-leg
 // shape, starting at HAZARD_START_WX and stretched. Densities use the sector rates.
 const HAZ_RAMP_WX         = 30000;
-const WALLS_LIVE_HINT_RUNS = 3;     // "walls now deadly" notif only on a player's first runs
-// How late in the corridor's closing ramp that notif fires, as the fraction of
-// SAFE_CLOSE_WX still left to run. It used to fire at the ramp's first frame (i.e. an
-// implicit 1.0), which is 3.8 reference seconds before the walls actually turn lethal and
-// at a point where safeOpenAt() is still 1.00 - the text said "deadly" while the corridor
-// was still fully open and nothing had begun to move, which read as too early on a
-// playtest. At 0.40 the lead is ~1.5 ref seconds, matching the soft-field visual's own
-// warning window (see the Soft walls block below), and safeOpenAt() is down to ~0.35, so
-// the player can see the walls coming in as they read it. The notif lives 1.8s, so it is
-// still on screen at the moment the walls go live. Measured on refSpdTrend, so the lead
-// is the same on every device.
-const WALLS_LIVE_HINT_LEAD_FRAC = 0.40;
+const WALLS_LIVE_HINT_RUNS = 3;     // "walls now deadly" notif on a player's first runs, as the ship enters the tunnel
 const SAFE_OPEN_PAD          = H * (10 / _H_REF);   // wall sliver left at each screen edge
 
 // Rendered wall never leaves the canvas (draw.js wall arrays, 2026-09-17). A maxed
@@ -887,28 +881,9 @@ const SAFE_OPEN_PAD          = H * (10 / _H_REF);   // wall sliver left at each 
 // the screen edge in the normal day/cyan colour. Draw-only; boundsAt() is untouched.
 const WALL_EDGE_SLIVER       = Math.max(2, H * (3 / _H_REF));
 
-// ── Soft walls: how a non-lethal wall looks and answers a bump ───────
-// Through 12.0 a soft wall was pixel-identical to a lethal one, and bumping it fired
-// burst()'s orange spark cloud plus a shake - the exact vocabulary a real hit uses
-// (mines, boulders, cannons all call the same burst()). So the one stretch of the game
-// that cannot kill you looked like the one that just did, and the only thing that ever
-// said otherwise was the "WALLS NOW DEADLY!" notif, which stops after
-// WALLS_LIVE_HINT_RUNS runs. Two halves, both draw-only:
-// - While the wall is soft (world-x < safeEndWx) draw.js renders it as a translucent
-//   FIELD: the rock at SAFE_FIELD_ALPHA, contour lines riding just inside the edge, a
-//   bright thin edge with a light run travelling along it. Past that world-x the same
-//   frame paints full rock - so the lethal wall visibly rolls in from the right and
-//   reaches the ship exactly when world.js wallsSafe() flips. The signal is opacity and
-//   motion, never hue: the edge colour is the weekday's own (WEEKDAY_PALETTES - Luna is
-//   near-white, Io teal) and the coin bonus tints it cyan the moment the zone ends, so a
-//   colour-coded "soft" would be invisible on 3 of 7 days and ambiguous after.
-// - A bump bends the rendered edge instead of spraying sparks: a damped dent that
-//   springs back (SAFE_BUMP_DENT_*), plus a ring running out of the contact point
-//   (SAFE_BUMP_RING_SEC). A field flexes, rock does not.
-// The dent/ring live in state.js safeBumps and only ever touch draw.js's topArr/botArr,
-// the same rendering-only arrays _wallJagged already offsets - boundsAt() and every
-// collision test are untouched, so this changes no gameplay on any device.
-const SAFE_FIELD_ALPHA       = 0.25;  // rock opacity while the wall is still soft
+// Soft walls (translucent field, dent + ring on a bump, 2026-09-13) were removed on
+// 2026-09-19 with the approach (approach.js): the walls are lethal from the tunnel entry,
+// and HULL_SCRATCHES covers the first mistakes instead.
 
 // ── Blue coin "Zeitblase" (2026-09-18, draw-only) ─────────────────────────────
 // The blue coin already slowed the scroll to 0.6x (world.js slowScrollFactor), sagged the
@@ -938,11 +913,6 @@ const SLOW_RIPPLE_HZ_MIN = 0.45;   // rings per second at full intensity
 const SLOW_RIPPLE_HZ_MAX = 0.90;   // ... and as the effect runs out
 const SLOW_WASH_ALPHA    = 0.11;   // left-side wash at full intensity
 const SLOW_WASH_FRAC     = 0.60;   // how much of the width it covers, from the left edge
-const SAFE_FIELD_LINES       = 4;     // contour lines drawn inside the soft wall edge
-const SAFE_BUMP_DENT_SEC     = 0.9;   // dent lifetime (also when a bump is culled)
-const SAFE_BUMP_DENT_AMP     = 0.60;  // dent depth, in player radii
-const SAFE_BUMP_DENT_W       = 2.40;  // dent half-width, in player radii
-const SAFE_BUMP_RING_SEC     = 0.45;  // ring lifetime
 
 // ── Depth light: bright cave mouth, dark depths (2026-09-13) ──────────
 // Through 13.0 the void behind the walls was WEEKDAY_BG at every depth, so nothing but
@@ -965,9 +935,13 @@ const SAFE_BUMP_RING_SEC     = 0.45;  // ring lifetime
 // to light up. Keyed to world-x through sectorAt/sectorStartWx, so it is identical on every
 // device, and it touches no gameplay value. The title screen shows the mouth (wx = 0).
 const DEPTH_LIGHT_STEPS      = [1, 0.62, 0.34, 0.14];   // lift level in S0..S3, 0 from S4
-const DEPTH_LIFT             = 0.15;  // max mix of WEEKDAY_BG toward the day's wallBase
+const DEPTH_LIFT             = 0.05;  // max mix of WEEKDAY_BG toward the day's wallBase (0.15 until 2026-09-19, see below)
 const DEPTH_STEP_EASE_WX     = 540;   // world-px a step takes to settle (~1.3 ref s)
-const DEPTH_MOUTH_ALPHA      = 0.24;  // mouth light strength at wx = 0 (0.30 until 2026-09-16, read as glaring)
+const DEPTH_MOUTH_ALPHA      = 0.10;  // mouth light strength at wx = 0 (0.30 until 2026-09-16, read as glaring; 0.24 until 2026-09-19)
+// Darkened 2026-09-19 with the approach (approach.js): the light now comes from a city at
+// DUSK behind the ship, and at 0.15 / 0.24 the tunnel just inside the mouth read as a bright
+// olive hall, lighter than the sky outside. Cut to about a third / 40%; the sector steps keep their
+// ratios, so the run still walks from the lit mouth into the dark.
 const DEPTH_MOUTH_END_SECTOR = 4;     // the mouth is gone by the start of this sector
 const DEPTH_MOUTH_WARM       = [255, 246, 228];
 const DEPTH_MOUTH_TINT       = 0.60;  // how far the daylight leans toward the day's rock (was 0.35: near-white glare)
@@ -1152,7 +1126,7 @@ const BULLET_HIT_PTS = { stal: 1, mine: 3, shot: 2 };
 // the normal death screen if the offer goes untapped, in exchange for the offer being
 // something a player can actually land. See drawContinueOffer's countdown ring, which
 // makes that budget visible rather than a silent cliff.
-const CONTINUE_OFFER_SEC = 3.0;
+const CONTINUE_OFFER_SEC = 2.8;   // 3.0 until 2026-09-19, -0.2s on request
 // Revive countdown (update.js grantRevive()/phase==='revive' branch): once the
 // reward lands, the world freezes with the ship parked at the recentered spot for
 // this long, showing a localized "READY" flash (T.ready, draw.js
@@ -1310,7 +1284,7 @@ const LEVEL_INTRO_FADE = 0.6; // seconds of that spent fading out at the end
 // surprisingly high score doing nothing at all. This caps the grace -- past it, gravity
 // engages exactly as if the gate had never existed, so an unattended run still ends up
 // falling like every other unheld ship.
-const HOLD_GATE_MAX_SEC = 2.25;
+const HOLD_GATE_MAX_SEC = 2.55;   // 2.25 until 2026-09-19, +0.3s on request
 
 // Launch ramp (update.js): the run opens with the ship flying up into frame from below
 // and levelling out, with py/vy/shipPitch driven by the ramp rather than by the player.

@@ -50,7 +50,7 @@ function makeWorld(innerWidth, innerHeight) {
         this.MIN_REAL_RUN_SCORE = MIN_REAL_RUN_SCORE;
         this.SAFE_CLOSE_WX = SAFE_CLOSE_WX; this.SAFE_OPEN_PAD = SAFE_OPEN_PAD;
         this.H = H; this.lerp = lerp;
-        this.sectorAt = sectorAt; this.sectorStartWx = sectorStartWx; this.HULL_END_WX = HULL_END_WX;
+        this.sectorAt = sectorAt; this.sectorStartWx = sectorStartWx;
         for (const n of ['RED_START_WX','ORANGE_START_WX','GREEN_START_WX','BOMB_START_WX','BOULDER_START_WX','CANNON_START_WX','FALL_START_WX','POISON_START_WX','DRAIN_START_WX']) this[n] = eval(n);
         this.setDayArchetype = function(i) { _dayArchetype = i; };
         this.deepMorphAt = deepMorphAt; this.deepChamberAt = deepChamberAt;
@@ -198,7 +198,7 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
         k('RED_START_WX') === 1 && k('ORANGE_START_WX') === 2 && k('GREEN_START_WX') === 2 &&
         k('MINE_START_WX') === 3 && k('BOMB_START_WX') === 3 && k('BOULDER_START_WX') === 4 &&
         k('CHICANE_START_WX') === 5 && k('CANNON_START_WX') === 6 && k('FALL_START_WX') === 7 &&
-        k('POISON_START_WX') === 8 && k('DRAIN_START_WX') === 9 && w.HULL_END_WX === w.sectorStartWx(3));
+        k('POISON_START_WX') === 8 && k('DRAIN_START_WX') === 9);
 
     // Hazard rates per reference second: at the same phase of consecutive sectors they grow
     // by exactly the per-sector factor - never a doubling between neighbours (the 12.0

@@ -17,6 +17,7 @@ The game is split across `tunl.html` (HTML/CSS shell only) and 15 JS files in `s
 | `src/input.js` | `inRect()`, `onDown()`, `onUp()`, pointer/keyboard event listeners, `triggerMilestone()` |
 | `src/update.js` | `let prev`, `update(dt)` (physics, scroll, collision, skin FX, particle tick), `die()` |
 | `src/draw.js` | `getTheme()`, `drawCoinIcon()`, `shipPath()`, `drawShip()`, `draw()` (tunnel walls, stalactites, coins, player, HUD, title screen, death screen) |
+| `src/approach.js` | Run opening over the city ("Anflug"): `approachStart()`, `approachUpdate()`, `approachRock()` (mountain + mouth profile), `drawApproachScene()` (dusk sky, skyline, mountain), `drawApproachBanner()`; title screen = the city |
 | `src/share.js` | Daily run card: `SHARE_URL`, `shareWorthy()`, `shareAvailable()`, `_shareCardCanvas()` (offscreen run-profile PNG), `shareRunText()`, `shareRun()` (native bridge / Web Share fallback), `shareRunUrl()` (web `/play?d=&s=&g=` deep link) |
 | `src/notify.js` | Daily-reminder bridge only (native owns the 19:00-local scheduling via `NotificationManager.swift` / `ReminderScheduler.kt`). Hands native the localized text + "played today" flag. No-ops in a browser |
 | `src/main.js` | `window._freezeDraw`, `loop(ts)`, `titleScreen()` kick-off, initial `requestAnimationFrame`, `_updatePortraitGate()` / `_syncWebCta()` (web only), `_tunlNativeUpdate` |
