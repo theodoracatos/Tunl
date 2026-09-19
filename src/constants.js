@@ -105,17 +105,27 @@ const PR      = W  * 0.018;
 // always leaves the nacelles whatever the hull geometry does.
 const SHIP_NOZZLE_X = -0.92, SHIP_NOZZLE_Y = 0.50;
 
-// 3/4 side-view PROTOTYPE (2026-09-19, variant D of the view study:
+// 3/4 SIDE VIEW (2026-09-19, variant D of the view study:
 // https://claude.ai/artifact/Q9gDK8SdVrCYm9rU9biZdJ). The flying ship (player, ghost,
 // wreck) is drawn from a small 3D model of the K5 hull (draw.js drawShip3D), rolled
 // SHIP3D_ROLL_BASE degrees out of the top view toward a side view, plus a light roll
-// that follows the climb rate (+-SHIP3D_ROLL_AMP, update.js stepShipRoll). Hangar, hero
-// and share card stay top-down. PR is untouched. Draw-only: no rng(), no placement.
-// Known gap, measured in the study: at 45 deg with real fin height the picture reached
-// only ~0.55-0.8 PR vertically (0.98 top-down); raised to 60 deg on 2026-09-19 so both
-// swing wings read, which also brings the span back to ~0.85 PR. SHIP3D_FIN_SCALE is the lever. Liveries are not mapped onto the model
-// yet (flies FACTORY). A DEV_ flag so the pre-push hook refuses to ship it switched on.
-const DEV_SHIP_3D      = false;
+// that follows the climb rate (+-SHIP3D_ROLL_AMP, update.js stepShipRoll). Hangar, hero,
+// shop and share card stay top-down - the hangar is a portrait, the flight is a flight.
+// PR is untouched and this is draw-only: no rng(), no placement, no collision input.
+//
+// WHY: the cave is a side section (gravity down, stalactites from the ceiling, a dusk
+// skyline in the approach) and the ship was the one thing in it seen from above.
+//
+// The roll angle is a trade, and 60 is the measured middle: at 45 only the near wing read
+// and the picture reached just ~0.55-0.8 PR vertically against the hitbox circle (0.98
+// top-down), at 90 it is simply today's top view. At 60 both swing wings read and the span
+// is back to ~0.85 PR (0.71 with the wings swept, 0.63 at the bottom of the roll swing).
+// test-collision.js holds that envelope (never past 1.0 PR, never a longer nose than the
+// flat hull) at every roll and sweep state. At 60 the SPAN carries the coverage, so
+// SHIP3D_FIN_SCALE barely moves it (measured +0.01 between 1.0 and 1.8) - the lever for
+// "the picture should fill more of the circle" is SHIP3D_ROLL_BASE.
+// Kill switch: false restores the flat top-down drawShip everywhere, with no other change.
+const SHIP_VIEW_3D      = true;
 const SHIP3D_ROLL_BASE = 60;    // degrees: 90 = today's top view, 0 = pure profile
 const SHIP3D_ROLL_AMP  = 10;    // degrees of roll at full climb / full fall
 const SHIP3D_FIN_SCALE = 1.0;   // fin height, x real SR-71 proportion

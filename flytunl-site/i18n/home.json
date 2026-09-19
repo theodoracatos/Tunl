@@ -64,22 +64,22 @@
     "ja": "ボタンひとつの洞窟フライヤー。押して上昇、離して下降。トンネルが閉じる前に、どこまで暗闇へ進めるか。"
   },
   "hero.newTag": {
-    "en": "New in 14.2",
-    "de": "Neu in 14.2",
-    "fr": "Nouveau dans la 14.2",
-    "it": "Novità nella 14.2",
-    "es": "Novedad en la 14.2",
-    "pt": "Novo na 14.2",
-    "ja": "14.2の新機能"
+    "en": "New in 15.0",
+    "de": "Neu in 15.0",
+    "fr": "Nouveau dans la 15.0",
+    "it": "Novità nella 15.0",
+    "es": "Novedad en la 15.0",
+    "pt": "Novo na 15.0",
+    "ja": "15.0の新機能"
   },
   "hero.newBody": {
-    "en": "Seamless music that loops without a jump, and when you crash the song plays its real ending. A longer freeze frame shows what got you. Bombs boom like thunder, and shots that land on rocks, mines and cannon fire now score.",
-    "de": "Nahtlose Musik ohne Sprung in der Schleife, und beim Absturz spielt der Song sein echtes Ende. Ein längeres Standbild zeigt, was dich erwischt hat. Bomben donnern wie ein Gewitter, und Treffer auf Fels, Minen und Kanonenschüsse geben jetzt Punkte.",
-    "fr": "Une musique sans coupure en boucle, et quand tu t'écrases, le morceau joue sa vraie fin. Un arrêt sur image plus long montre ce qui t'a eu. Les bombes grondent comme le tonnerre, et les tirs sur roche, mines et obus rapportent des points.",
-    "it": "Musica senza stacchi in loop e, quando ti schianti, il brano suona il suo vero finale. Un fermo immagine più lungo mostra cosa ti ha colpito. Le bombe rimbombano come tuoni e i colpi su roccia, mine e proiettili danno punti.",
-    "es": "Música sin cortes en bucle y, cuando te estrellas, la canción suena con su final real. Una imagen congelada más larga muestra qué te alcanzó. Las bombas retumban como truenos y los disparos a roca, minas y proyectiles suman puntos.",
-    "pt": "Música sem cortes em loop e, quando você bate, a canção toca seu final de verdade. Um congelamento de imagem mais longo mostra o que te pegou. Bombas ribombam como trovões e tiros em rocha, minas e projéteis dão pontos.",
-    "ja": "途切れなくループする音楽。墜落すると曲が本来のエンディングを奏でます。停止フレームが長くなり、何に当たったのかがはっきり分かります。爆弾は雷のように轟き、岩や地雷、砲弾に当てた弾はスコアになります。"
+    "en": "Every run now opens over a city at dusk and flies into the tunnel mouth. From there the walls are real, but two hull scratches forgive your first mistakes. The cave starts darker, and a moon hangs over the skyline.",
+    "de": "Jeder Flug beginnt jetzt über einer Stadt in der Dämmerung und führt in den Tunneleingang. Ab dort sind die Wände echt, doch zwei Kratzer am Rumpf verzeihen dir die ersten Fehler. Die Höhle beginnt dunkler, und über der Skyline hängt ein Mond.",
+    "fr": "Chaque vol commence désormais au-dessus d'une ville au crépuscule et entre dans la bouche du tunnel. Dès là, les parois sont réelles, mais deux éraflures de coque pardonnent tes premières erreurs. La grotte commence plus sombre, et une lune flotte sur la ligne d'horizon.",
+    "it": "Ogni volo ora parte sopra una città al crepuscolo ed entra nella bocca del tunnel. Da lì le pareti sono vere, ma due graffi allo scafo perdonano i primi errori. La grotta inizia più buia e una luna pende sopra lo skyline.",
+    "es": "Cada vuelo empieza ahora sobre una ciudad al anochecer y entra por la boca del túnel. Desde ahí las paredes son reales, pero dos arañazos en el casco perdonan tus primeros errores. La cueva empieza más oscura y una luna cuelga sobre el horizonte.",
+    "pt": "Cada voo agora começa sobre uma cidade ao anoitecer e entra pela boca do túnel. Dali em diante as paredes são de verdade, mas dois arranhões no casco perdoam seus primeiros erros. A caverna começa mais escura e uma lua paira sobre o horizonte.",
+    "ja": "すべてのフライトが、夕暮れの街の上空から始まり、トンネルの入口へと突入します。そこから壁は本物ですが、機体の傷は2回まで、最初のミスを許してくれます。洞窟は暗めに始まり、街の空には月が浮かびます。"
   },
   "hero.playCta": {
     "en": "Play in your browser",

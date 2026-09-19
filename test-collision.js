@@ -137,6 +137,50 @@ function check(name, cond) {
     check('a landed spike stays on the floor as the corridor keeps moving', held);
 }
 
+// ── Drawn 3D ship vs the PR hitbox (CLAUDE.md "3/4 side view") ────────
+// The flat hull's envelope rule is span +-0.98r / nose +1.40r: the picture must sit just
+// inside the circle it is collided with, and never reach past what update.js's forward
+// probe covers. The 3D hull has to hold the same line at every roll and every wing sweep,
+// including the blue-coin brake (wings forward) and the portal barrel roll (any roll).
+{
+    const drawSrc = fs.readFileSync(path.join(__dirname, 'src', 'draw.js'), 'utf8');
+    const ex = name => {
+        const start = drawSrc.indexOf(`function ${name}(`);
+        if (start === -1) throw new Error(`function ${name} not found in src/draw.js`);
+        let depth = 0, i = drawSrc.indexOf('{', start);
+        for (; i < drawSrc.length; i++) {
+            if (drawSrc[i] === '{') depth++;
+            else if (drawSrc[i] === '}') { depth--; if (depth === 0) break; }
+        }
+        return drawSrc.slice(start, i + 1);
+    };
+    const consts = fs.readFileSync(path.join(__dirname, 'src', 'constants.js'), 'utf8');
+    const num = name => Number(consts.match(new RegExp(`${name}\\s*=\\s*(-?[0-9.]+)`))[1]);
+    const s3 = { Math, console };
+    vm.createContext(s3);
+    vm.runInContext(`const SHIP_NOZZLE_Y = ${num('SHIP_NOZZLE_Y')};`, s3);
+    vm.runInContext(`const SHIP3D_SWEEP_MAX = ${num('SHIP3D_SWEEP_MAX')}, SHIP3D_BRAKE_DEG = ${num('SHIP3D_BRAKE_DEG')};`, s3);
+    vm.runInContext(drawSrc.match(/const SHIP3D_PIVOT = \[[^\]]*\];/)[0], s3);
+    for (const fn of ['_ship3dFaces', '_buildShip3D', '_swingPt', 'ship3dInk']) vm.runInContext(ex(fn), s3, { filename: fn });
+    const roll = num('SHIP3D_ROLL_BASE'), amp = num('SHIP3D_ROLL_AMP');
+    const M = s3._buildShip3D(num('SHIP3D_FIN_SCALE'), roll);
+    const sweeps = [-s3.SHIP3D_BRAKE_DEG / s3.SHIP3D_SWEEP_MAX, 0, 0.5, 1];
+    let worst = 0, cover = 9, nose = 0;
+    for (let a = 0; a < 360; a += 5) {
+        for (const sw of sweeps) {
+            const ink = s3.ship3dInk(M, a, sw);
+            worst = Math.max(worst, ink.up, ink.dn);
+            nose  = Math.max(nose, ink.nose);
+            // Coverage is only meaningful at the rolls the ship actually flies at
+            // (the barrel roll is hazard-immune and wall-clamped by construction).
+            if (a >= roll - amp && a <= roll + amp) cover = Math.min(cover, ink.up, ink.dn);
+        }
+    }
+    check(`3D hull stays inside the PR circle at every roll and sweep (worst ${worst.toFixed(2)} r)`, worst <= 1.0);
+    check(`3D nose never reaches past the flat hull's 1.40 r (${nose.toFixed(2)} r)`, nose <= 1.4001);
+    check(`3D hull still fills most of the circle while flying (worst ${cover.toFixed(2)} r)`, cover >= 0.60);
+}
+
 if (failed) {
     console.error('\ncollision check FAILED');
     process.exit(1);

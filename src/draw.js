@@ -508,7 +508,11 @@ function _auroraTrio(sr, sg, sb) {
     return t;
 }
 
-function _drawLiveryOverlay(x, y, r, lv, sr, sg, sb) {
+// `hull` (drawShip3D) swaps the two things that cannot be expressed in planform
+// coordinates: the facet seams and the rim outline, both traced in screen space on the 3D
+// silhouette. Without it (the flat hull, hangar and shop) the overlay clips itself to
+// shipPath and uses SHIP_FACETS, exactly as before.
+function _drawLiveryOverlay(x, y, r, lv, sr, sg, sb, hull) {
     // Every finish is built from BIG masses - a whole half of the hull, a rim, a band
     // across the span - because in flight the ship is only ~2*PR across (~35px at the W
     // cap). Fine detail (a weave, a pinstripe) is invisible there, which is what made the
@@ -520,9 +524,20 @@ function _drawLiveryOverlay(x, y, r, lv, sr, sg, sb) {
     // (a gradient whose stops ride gtime), never a particle or a second pass over the hull.
     const lt = `${(sr+255)>>1},${(sg+255)>>1},${(sb+255)>>1}`;
     const [hueA, hueB] = _auroraPair(sr, sg, sb);
+    // Rim of the hull, stroked with the caller's style: shipPath on the flat hull, the
+    // silhouette of the visible 3D faces otherwise.
+    const rimStroke = style => {
+        const paint = () => {
+            hull ? hull.rimPath() : shipPath(x, y, r);
+            ctx.strokeStyle = style.color;
+            ctx.lineWidth   = style.w;
+            ctx.lineJoin    = 'round';
+            ctx.stroke();
+        };
+        hull ? hull.screen(paint) : paint();
+    };
     ctx.save();
-    shipPath(x, y, r);
-    ctx.clip();
+    if (!hull) { shipPath(x, y, r); ctx.clip(); }
     if (lv === 1) {
         // STEALTH: matte black hull read back by an edge-lit rim that breathes between the
         // ship's glow and its lighter neighbour - a cooling-metal pulse.
@@ -532,29 +547,28 @@ function _drawLiveryOverlay(x, y, r, lv, sr, sg, sb) {
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
         // Neon seams: the hull's own facet edges lit from inside, charging nose to tail.
-        for (const sy of [-1, 1]) {
+        const seam = (tracePath, i) => {
+            const wv = 0.45 + 0.55 * Math.max(0, Math.sin(gtime * 2.2 - i * 0.55));
+            tracePath();
+            ctx.strokeStyle = `rgba(${sr},${sg},${sb},${0.30 * wv})`;
+            ctx.lineWidth   = Math.max(r * 0.05, 1);
+            ctx.lineJoin    = 'round';
+            ctx.stroke();
+            ctx.strokeStyle = `rgba(${lt},${0.42 * wv})`;
+            ctx.lineWidth   = Math.max(r * 0.016, 0.4);
+            ctx.stroke();
+        };
+        if (hull) hull.screen(() => { ctx.globalCompositeOperation = 'lighter'; hull.eachFace(seam); });
+        else for (const sy of [-1, 1]) {
             for (let i = 0; i < SHIP_FACETS.length; i++) {
-                const wv = 0.45 + 0.55 * Math.max(0, Math.sin(gtime * 2.2 - i * 0.55));
-                ctx.beginPath();
-                _shipPoly(x, y, r, SHIP_FACETS[i].p, -sy);
-                ctx.strokeStyle = `rgba(${sr},${sg},${sb},${0.30 * wv})`;
-                ctx.lineWidth   = Math.max(r * 0.05, 1);
-                ctx.lineJoin    = 'round';
-                ctx.stroke();
-                ctx.strokeStyle = `rgba(${lt},${0.42 * wv})`;
-                ctx.lineWidth   = Math.max(r * 0.016, 0.4);
-                ctx.stroke();
+                seam(() => { ctx.beginPath(); _shipPoly(x, y, r, SHIP_FACETS[i].p, -sy); }, i);
             }
         }
-        shipPath(x, y, r);
-        ctx.strokeStyle = `rgba(${sr},${sg},${sb},${0.55 * br + 0.30})`;
-        ctx.lineWidth   = Math.max(r * 0.14, 2);
-        ctx.lineJoin    = 'round';
-        ctx.stroke();
-        shipPath(x, y, r);
-        ctx.strokeStyle = `rgba(${lt},${0.45 + 0.50 * br})`;
-        ctx.lineWidth   = Math.max(r * 0.045, 0.8);
-        ctx.stroke();
+        ctx.restore();
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        rimStroke({ color: `rgba(${sr},${sg},${sb},${0.55 * br + 0.30})`, w: Math.max(r * 0.14, 2) });
+        rimStroke({ color: `rgba(${lt},${0.45 + 0.50 * br})`, w: Math.max(r * 0.045, 0.8) });
         ctx.restore();
     } else if (lv === 2) {
         // STRIPE: a wide centre band plus solid wingtip caps - two masses, not pinstripes.
@@ -696,11 +710,7 @@ function _drawLiveryOverlay(x, y, r, lv, sr, sg, sb) {
         }
         ctx.globalCompositeOperation = 'lighter';
         const rimHue = trio[((gtime * 0.31) % 1) < 0.5 ? 0 : 2];
-        shipPath(x, y, r);
-        ctx.strokeStyle = rgb(rimHue, 0.55 + 0.35 * Math.sin(gtime * 1.3));
-        ctx.lineWidth   = Math.max(r * 0.10, 1.5);
-        ctx.lineJoin    = 'round';
-        ctx.stroke();
+        rimStroke({ color: rgb(rimHue, 0.55 + 0.35 * Math.sin(gtime * 1.3)), w: Math.max(r * 0.10, 1.5) });
         ctx.fillStyle = 'rgba(255,255,255,0.9)';
         for (let k = 0; k < 9; k++) {
             const t   = (gtime * 0.35 + k * 0.111) % 1;
@@ -892,7 +902,7 @@ function drawShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
     ctx.restore();
 }
 
-// ── 3/4 side-view prototype (constants.js DEV_SHIP_3D) ─────────────────
+// ── 3/4 side view (constants.js SHIP_VIEW_3D) ──────────────────────────
 // The K5 hull as a small 3D model: x forward (nose +1.40), y span (+-0.98), z up, all
 // in r units, matching SHIP_OUTLINE's planform. Rolled SHIP3D_ROLL_BASE (+ shipRoll's
 // swing) about the long axis and projected orthographically, flat-shaded and lit from
@@ -982,7 +992,7 @@ function _buildShip3D(finScale, centerDeg) {
     }
     return { faces, dz };
 }
-const _SHIP3D = DEV_SHIP_3D ? _buildShip3D(SHIP3D_FIN_SCALE, SHIP3D_ROLL_BASE) : null;
+const _SHIP3D = SHIP_VIEW_3D ? _buildShip3D(SHIP3D_FIN_SCALE, SHIP3D_ROLL_BASE) : null;
 // Pivot of the swinging outer wing panel (x, |y|), near the root of its leading edge.
 const SHIP3D_PIVOT = [-0.22, 0.59];
 // Rotate a model point of the outer panel on side s about the pivot, in the wing plane.
@@ -1000,17 +1010,28 @@ function shipNozzleDY(ns) {
 
 // The flying ship: player, ghost and wreck. Hangar/hero/shop keep calling drawShip.
 function drawFlightShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
-    if (_SHIP3D) drawShip3D(x, y, r, color, sr, sg, sb, blur, fx);
+    if (_SHIP3D) drawShip3D(x, y, r, color, sr, sg, sb, blur, fx, lv);
     else drawShip(x, y, r, color, sr, sg, sb, blur, fx, lv);
 }
 
 const _ship3dVis = [];
-function drawShip3D(x, y, r, color, sr, sg, sb, blur, fx) {
+const _ship3dEdges = new Map();
+// Livery re-shading, the 3D twin of _shipTones' kUp/kDn (same numbers, same reasoning:
+// hue never moves, so the ship stays recognisably itself).
+function _ship3dPaint(base, lv) {
+    if (lv === 1) return [lerpClr(base, _SHIP_DARK, 0.62), 0.30, 0.55];
+    if (lv === 3) return [base, 0.85, 0.85];
+    if (lv === 4) return [lerpClr(base, _SHIP_WHITE, 0.10), 1.5, 1.35];
+    return [base, 1, 1];
+}
+function drawShip3D(x, y, r, color, sr, sg, sb, blur, fx, lv) {
     fx = fx === undefined ? true : fx;
+    lv = lv || 0;
     const M = _SHIP3D, a = shipRollDeg() * Math.PI / 180, cp = Math.cos(a), sp = Math.sin(a);
     // The caller rotated the canvas by shipPitch around (PX, py); light stays screen-up.
     const ct = Math.cos(shipPitch), st = Math.sin(shipPitch);
-    const base = [parseInt(color.substr(1,2),16), parseInt(color.substr(3,2),16), parseInt(color.substr(5,2),16)];
+    const [base, kUp, kDn] = _ship3dPaint(
+        [parseInt(color.substr(1,2),16), parseInt(color.substr(3,2),16), parseInt(color.substr(5,2),16)], lv);
     const light = lerpClr(_SHIP_WHITE, [sr, sg, sb], 0.15);
     // Glow behind the hull: a radial fill instead of shadowBlur (expensive on WKWebView)
     if (blur > 0) {
@@ -1037,28 +1058,94 @@ function drawShip3D(x, y, r, color, sr, sg, sb, blur, fx) {
         const nUp = n[2] * cp + n[1] * sp, su = nUp * ct - n[0] * st, sx = n[0] * ct + nUp * st;
         let depth = 0;
         for (const q of p) depth += q[2] * sp - q[1] * cp;
-        vis.push({ p, kind: f.kind, d: 0.74 * su + 0.60 * nT + 0.12 * sx, depth: depth / p.length });
+        const P = p.map(q => [x + q[0] * r, y - (q[2] * cp + q[1] * sp) * r]);
+        vis.push({ p, P, kind: f.kind, d: 0.74 * su + 0.60 * nT + 0.12 * sx, depth: depth / p.length });
     }
     vis.sort((p, q) => p.depth - q.depth);
+    const trace = P => { ctx.moveTo(P[0][0], P[0][1]); for (let i = 1; i < P.length; i++) ctx.lineTo(P[i][0], P[i][1]); ctx.closePath(); };
     ctx.lineJoin = 'round';
     ctx.lineWidth = Math.max(r * 0.012, 0.6);
     for (const v of vis) {
-        const k = Math.max(-0.88, Math.min(0.62, (v.d - 0.50) * 1.35)), kind = v.kind;
+        const k0 = Math.max(-0.88, Math.min(0.62, (v.d - 0.50) * 1.35)), kind = v.kind;
+        const k = k0 >= 0 ? k0 * kUp : k0 * kDn;
         let col;
         if (kind === 'glass') col = k >= 0 ? lerpClr([150,210,245], _SHIP_WHITE, k * 0.7) : lerpClr([150,210,245], [14,34,62], -k);
         else if (kind === 'dark') col = lerpClr(base, _SHIP_DARK, 0.72);
         else if (kind === 'hot') col = lerpClr([sr, sg, sb], [255,250,225], 0.55);
         else if (kind === 'spike') col = lerpClr(base, light, 0.5);
-        else { const kk = kind === 'pod' ? k - 0.06 : k; col = kk >= 0 ? lerpClr(base, light, kk) : lerpClr(base, _SHIP_DARK, -kk); }
-        const p = v.p;
-        ctx.beginPath();
-        ctx.moveTo(x + p[0][0] * r, y - (p[0][2] * cp + p[0][1] * sp) * r);
-        for (let i = 1; i < p.length; i++) ctx.lineTo(x + p[i][0] * r, y - (p[i][2] * cp + p[i][1] * sp) * r);
-        ctx.closePath();
-        const c = rgb(col);
-        ctx.fillStyle = c; ctx.fill();
-        ctx.strokeStyle = c; ctx.stroke();   // same colour: hides the anti-alias seams between faces
+        else { const kk = Math.max(-0.92, Math.min(0.92, kind === 'pod' ? k - 0.06 : k)); col = kk >= 0 ? lerpClr(base, light, kk) : lerpClr(base, _SHIP_DARK, -kk); }
+        v.col = rgb(col);
+        ctx.beginPath(); trace(v.P);
+        ctx.fillStyle = v.col; ctx.fill();
+        ctx.strokeStyle = v.col; ctx.stroke();   // same colour: hides the anti-alias seams between faces
     }
+
+    // Livery pattern. The finishes are authored in planform coordinates (a band across the
+    // span, one half of the hull, a sweeping highlight), and at roll `a` the top surface
+    // projects to exactly that planform squashed by sin(a) - so the same code paints them
+    // here under a scale, clipped to the 3D silhouette instead of shipPath. `hull` hands
+    // _drawLiveryOverlay the two things it cannot express that way: the facet seams and the
+    // rim, both traced in screen space. Near edge-on (mid barrel roll) there is no top
+    // surface to paint, so the pattern is skipped for those few frames.
+    if (lv && Math.abs(sp) > 0.22) {
+        ctx.save();
+        ctx.beginPath();
+        for (const v of vis) if (v.kind !== 'glass') trace(v.P);
+        ctx.clip();
+        const m = ctx.getTransform();
+        const screen = fn => { ctx.save(); ctx.setTransform(m); fn(); ctx.restore(); };
+        const rimPath = () => {
+            const ed = _ship3dEdges; ed.clear();
+            for (const v of vis) {
+                if (v.kind === 'glass') continue;
+                for (let i = 0; i < v.p.length; i++) {
+                    const A = v.p[i], B = v.p[(i + 1) % v.p.length];
+                    const ka = `${A[0].toFixed(3)},${A[1].toFixed(3)},${A[2].toFixed(3)}`;
+                    const kb = `${B[0].toFixed(3)},${B[1].toFixed(3)},${B[2].toFixed(3)}`;
+                    const key = ka < kb ? ka + '|' + kb : kb + '|' + ka;
+                    const e = ed.get(key);
+                    if (e) e.n++; else ed.set(key, { n: 1, a: v.P[i], b: v.P[(i + 1) % v.P.length] });
+                }
+            }
+            ctx.beginPath();
+            for (const e of ed.values()) if (e.n === 1) { ctx.moveTo(e.a[0], e.a[1]); ctx.lineTo(e.b[0], e.b[1]); }
+        };
+        const hull = {
+            screen, rimPath,
+            // Facet seams (STEALTH): the big visible faces, charging nose to tail - the wave
+            // index comes from where a face sits along x, not from a facet list. The 3D hull
+            // has ~90 faces against the flat one's 7, so the small ones are skipped and the
+            // pass runs at part alpha: stroking every one turns the matte finish into a lamp.
+            eachFace(cb) {
+                const amin = (r * 0.09) ** 2;
+                ctx.globalAlpha = 0.5;
+                for (const v of vis) {
+                    if (v.kind === 'glass') continue;
+                    let a2 = 0;
+                    for (let i = 0; i < v.P.length; i++) {
+                        const A = v.P[i], B = v.P[(i + 1) % v.P.length];
+                        a2 += A[0] * B[1] - B[0] * A[1];
+                    }
+                    if (Math.abs(a2) * 0.5 < amin) continue;
+                    cb(() => { ctx.beginPath(); trace(v.P); }, (1.4 - v.p[0][0]) * 2.2);
+                }
+                ctx.globalAlpha = 1;
+            },
+        };
+        ctx.translate(0, y + M.dz * cp * r);
+        ctx.scale(1, sp);
+        ctx.translate(0, -y);
+        _drawLiveryOverlay(x, y, r, lv, sr, sg, sb, hull);
+        ctx.restore();
+        // The canopy sits on top of the paint, as it does on the flat hull.
+        for (const v of vis) {
+            if (v.kind !== 'glass') continue;
+            ctx.beginPath(); trace(v.P);
+            ctx.fillStyle = v.col; ctx.fill();
+            ctx.strokeStyle = v.col; ctx.stroke();
+        }
+    }
+
     if (!fx) return;
     // Wingtip strobes, only on a tip that faces the camera
     const strobe = ((gtime * 0.85) % 1) < 0.07 ? 0.85 : 0.10;
@@ -1076,6 +1163,25 @@ function drawShip3D(x, y, r, color, sr, sg, sb, blur, fx) {
         ctx.beginPath(); ctx.arc(lx, ly, r * 0.16, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
     }
     ctx.restore();
+}
+
+// How far the drawn 3D ship reaches from the hitbox centre, in r, at a roll and sweep:
+// up/dn vertically (the axis the corridor is read on) and nose ahead. Pure, so
+// test-collision.js can hold the drawn envelope against PR without a canvas.
+function ship3dInk(M, rollDeg, sweep) {
+    const a = rollDeg * Math.PI / 180, cp = Math.cos(a), sp = Math.sin(a);
+    const sw = sweep * SHIP3D_SWEEP_MAX * Math.PI / 180, swc = Math.cos(sw), sws = Math.sin(sw);
+    let up = -9, dn = 9, nose = 0;
+    for (const f of M.faces) {
+        for (let q of f.p) {
+            if (f.swing && Math.abs(sw) > 0.001) q = _swingPt(q, f.swing, swc, f.swing * sws);
+            const u = q[2] * cp + q[1] * sp;
+            if (u > up) up = u;
+            if (u < dn) dn = u;
+            if (q[0] > nose) nose = q[0];
+        }
+    }
+    return { up, dn: -dn, nose };
 }
 
 // Thrust plume: teardrop with a white core and three shock diamonds, its mid colour

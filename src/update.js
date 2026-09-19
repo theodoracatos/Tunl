@@ -1276,12 +1276,12 @@ function declineRevive() {
     commitDeath();
 }
 
-// 3/4 side-view prototype (constants.js DEV_SHIP_3D): the hull rolls a little with the
+// 3/4 side view (constants.js SHIP_VIEW_3D): the hull rolls a little with the
 // climb rate - climbing turns the back toward the camera, falling the belly. A damped
 // spring in degrees, no overshoot, so it reads as weight rather than wobble. Ratio of
 // MAX_VY, never a px/s literal (CLAUDE.md "Screen-independent feel").
 function stepShipRoll(dt, vyNow) {
-    if (!DEV_SHIP_3D) return;
+    if (!SHIP_VIEW_3D) return;
     const target = SHIP3D_ROLL_BASE + SHIP3D_ROLL_AMP * Math.max(-1, Math.min(1, -vyNow / (MAX_VY * 0.7)));
     const K = 55, damp = 2 * 0.85 * Math.sqrt(K);
     const h = Math.min(dt, 1 / 30);
