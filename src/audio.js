@@ -457,11 +457,17 @@ function _initAC() {
 
 // The open web build (isWeb()) pulls a stereo 128kbps AAC encode of each track
 // (~1/3 lighter than the mp3; the earlier mono ~66kbps encode sounded thin); build-play.mjs copies the .web.m4a files into
-// play/. AAC decodes everywhere decodeAudioData is supported, so there's no
+// play/audio/. AAC decodes everywhere decodeAudioData is supported, so there's no
 // fallback path. The app builds keep the full stereo mp3 - gradle's copyGameFiles
 // and the Xcode resource refs list only the .mp3s, so the .m4a is never bundled.
+//
+// BGM_DIR: the tracks live in audio/ at the repo root rather than scattered next to
+// tunl.html, and every target reproduces that one subfolder next to the page - Android
+// copies audio/*.mp3 into assets/audio/, Xcode has a Copy Files phase with dstPath
+// "audio", build-play.mjs writes play/audio/. Keep those four in sync if it ever moves.
+const BGM_DIR = 'audio/';
 function _bgmUrl(name) {
-    return (typeof isWeb === 'function' && isWeb()) ? name + '.web.m4a' : name + '.mp3';
+    return BGM_DIR + name + ((typeof isWeb === 'function' && isWeb()) ? '.web.m4a' : '.mp3');
 }
 
 // Bakes the loop seam into a copy of the track, cut at the loop end. The last

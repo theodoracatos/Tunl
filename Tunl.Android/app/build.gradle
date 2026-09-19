@@ -69,8 +69,7 @@ android {
 task copyGameFiles(type: Copy) {
     from(project.rootDir.parentFile) {
         include 'tunl.html'
-        include 'the_mountain.mp3'
-        include 'the_mountain_documentary.mp3'
+        include 'audio/*.mp3'
         include 'src/**/*.js'
     }
     into 'src/main/assets'

@@ -1021,7 +1021,12 @@ poison's sour sawtooth squelch.
 
 ### Audio bus and loudness (do not revert)
 
-`src/audio.js`. Every sound is synthesised per call and connects to `_master`; the bus in
+`src/audio.js`. **Both BGM tracks live in `audio/`** (with their `.web.m4a` web
+encodes), not loose at the repo root, and `BGM_DIR` makes the fetch the relative
+`audio/<name>.<ext>` - so every target has to reproduce that one subfolder next to the
+page: gradle copies `audio/*.mp3`, Xcode uses a Copy Files phase with `dstPath = audio`
+(the Resources phase flattens), and `build-play.mjs` writes `play/audio/`.
+Every sound is synthesised per call and connects to `_master`; the bus in
 front of the speakers is **sfx bus + music bus -> `MASTER_GAIN` -> soft-clip limiter ->
 destination** (`_initAC`), plus a shared cave reverb send.
 

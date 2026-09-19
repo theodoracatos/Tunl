@@ -11,7 +11,7 @@
 //    index.html        - tunl.html with the 12 <script> tags collapsed to one
 //    tunl.bundle.js     - all of src/*.js concatenated, compressed, locals mangled
 //    branding/web/*     - icons/wordmarks referenced by index.html
-//    the_mountain*.web.m4a - background tracks, smaller mono AAC web encodes
+//    audio/the_mountain*.web.m4a - background tracks, smaller AAC web encodes
 //                          (audio.js _bgmUrl picks these on isWeb()). The stereo
 //                          .mp3 originals are not shipped to /play.
 //
@@ -239,8 +239,10 @@ async function build() {
     await copyFile(path.join(brandingSrc, f), path.join(brandingOut, f));
   }
 
+  const audioOut = path.join(outDir, 'audio');
+  await mkdir(audioOut, { recursive: true });
   for (const track of ['the_mountain.web.m4a', 'the_mountain_documentary.web.m4a']) {
-    await copyFile(path.join(root, track), path.join(outDir, track));
+    await copyFile(path.join(root, 'audio', track), path.join(audioOut, track));
   }
 
   const kb = (min.code.length / 1024).toFixed(0);

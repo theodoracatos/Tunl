@@ -49,7 +49,7 @@ The game is split across `tunl.html` (HTML/CSS shell only) and 18 JS files in `s
 - **Coin combo multiplier**: `src/systems.js` `checkCoinCollection()`
 - **Death screen layout**: `src/draw.js` `draw()` `phase === 'dead'` block
 - **Title screen layout**: `src/draw.js` `draw()` `phase === 'title'` block
-- **BGM files**: `the_mountain.mp3` (play track, "Nebula") and `the_mountain_documentary.mp3` (title piano) in the project root, plus their `.web.m4a` twins for the web build; loop points are `BGM_LOOP_START/END` in `src/audio.js`
+- **BGM files**: `audio/the_mountain.mp3` (play track, "Nebula") and `audio/the_mountain_documentary.mp3` (title piano), plus their `.web.m4a` twins for the web build, all in `audio/`; every target reproduces that folder next to the page (`BGM_DIR` in `src/audio.js`); loop points are `BGM_LOOP_START/END` there too
 - **DEV_INVINCIBLE flag**: `src/constants.js` (`const DEV_INVINCIBLE = false`, ~line 96), read in `src/update.js`
 - **isWeb() / isAndroidApp() / deep-link params**: `src/web.js` (loaded first)
 - **Translation strings (T.*), locale list**: `src/i18n.js`

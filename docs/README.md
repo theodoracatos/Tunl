@@ -7,8 +7,8 @@ Reference material that isn't code and isn't a store-upload asset.
   into every session and holds the rule; this holds the evidence. If the two disagree,
   CLAUDE.md wins and this file is stale.
 
-- `audio-license/` - proof-of-license screenshots for `the_mountain.mp3` /
-  `the_mountain_documentary.mp3` (Pixabay stock tracks). Used when filling out
+- `audio-license/` - proof-of-license screenshots for `audio/the_mountain.mp3` /
+  `audio/the_mountain_documentary.mp3` (Pixabay stock tracks). Used when filling out
   the App Store / Play Console "Content Rights" declarations. See the
   `reference_audio_license_source` project memory.
 - `legacy-pages/` - the original standalone `privacy.html` / `support.html` that
