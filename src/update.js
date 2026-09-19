@@ -40,7 +40,7 @@ function update(dt) {
     }
     if (holding && (phase === 'play' || phase === 'title')) {
         for (const ns of [-1, 1]) {
-            const ey = py + ns * PR * SHIP_NOZZLE_Y;
+            const ey = py + PR * shipNozzleDY(ns);
             for (let i = 0; i < 4; i++) {
                 if (Math.random() > vScale) continue;   // slowed particles live longer: thin the spawn to keep the count flat
                 const spread = (Math.random() - 0.5) * PR * 0.13;
@@ -68,7 +68,7 @@ function update(dt) {
     // thrust burst's 15-60 orange range) so it still reads as "extra" next to it.
     if (onFire && phase === 'play') {
         const ns = Math.random() < 0.5 ? -1 : 1;
-        const ey = py + ns * PR * SHIP_NOZZLE_Y;
+        const ey = py + PR * shipNozzleDY(ns);
         thrustParts.push({
             x:    PX + PR * SHIP_NOZZLE_X + (Math.random() - 0.5) * PR * 0.15,
             y:    ey + (Math.random() - 0.5) * PR * 0.15,
@@ -146,6 +146,7 @@ function update(dt) {
         const MAX_PITCH = 0.70;
         const pitchTarget = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, Math.atan2(demoVy, 110)));
         shipPitch += (pitchTarget - shipPitch) * Math.min(dt * 14, 1);
+        stepShipRoll(dt, demoVy);
         maintainStalactites();
         approachTitleTick(dt);   // the title screen is the city (approach.js)
         const aTSpd = 110 * 0.18;
@@ -586,6 +587,7 @@ function update(dt) {
             ? Math.max(-MAX_PITCH, Math.min(MAX_PITCH, Math.atan2(vy, scrollSpd())))
             : 0;
         shipPitch += (target - shipPitch) * Math.min(dt * 14, 1);
+        stepShipRoll(dt, phase === 'play' ? vy : 0);
     }
 
     // Trail
@@ -1272,4 +1274,45 @@ function declineRevive() {
     continueOfferPending = false;
     continueAdPending = false;
     commitDeath();
+}
+
+// 3/4 side-view prototype (constants.js DEV_SHIP_3D): the hull rolls a little with the
+// climb rate - climbing turns the back toward the camera, falling the belly. A damped
+// spring in degrees, no overshoot, so it reads as weight rather than wobble. Ratio of
+// MAX_VY, never a px/s literal (CLAUDE.md "Screen-independent feel").
+function stepShipRoll(dt, vyNow) {
+    if (!DEV_SHIP_3D) return;
+    const target = SHIP3D_ROLL_BASE + SHIP3D_ROLL_AMP * Math.max(-1, Math.min(1, -vyNow / (MAX_VY * 0.7)));
+    const K = 55, damp = 2 * 0.85 * Math.sqrt(K);
+    const h = Math.min(dt, 1 / 30);
+    shipRollV += (K * (target - shipRoll) - damp * shipRollV) * h;
+    shipRoll  += shipRollV * h;
+    // Swing wing: fold with the speed the player actually feels. Only in play - the
+    // title demo and the approach fly spread.
+    let sweepT = 0;
+    if (phase === 'play') {
+        const eff = scrollSpdBase() * slowScrollFactor() * warpScrollFactor();
+        sweepT = Math.max(0, Math.min(1, (eff - SHIP3D_SWEEP_SPD_LO) / (SHIP3D_SWEEP_SPD_HI - SHIP3D_SWEEP_SPD_LO)));
+        // Blue coin: the wings snap out PAST their normal spread (swung forward, an air
+        // brake) on pickup, then fold back to the speed's own sweep exactly as fast as
+        // slowScrollFactor() returns the speed - it is linear in slowTime/slowTimeMax too.
+        if (slowTime > 0 && slowTimeMax > 0) {
+            const w = slowTime / slowTimeMax;
+            sweepT = sweepT + (-SHIP3D_BRAKE_DEG / SHIP3D_SWEEP_MAX - sweepT) * w;
+        }
+    }
+    // Opening is fast (a brake), folding is slow (a gradual speed-up).
+    shipSweep += (sweepT - shipSweep) * Math.min(dt * (sweepT < shipSweep ? 12 : 4), 1);
+    if (shipBarrelT >= 0) {
+        shipBarrelT += dt;
+        if (shipBarrelT >= SHIP3D_BARREL_SEC) shipBarrelT = -1;
+    }
+}
+
+// Roll the 3D ship is drawn at, in degrees: the sprung roll plus the portal barrel roll
+// (smoothstep over SHIP3D_BARREL_SEC, so it starts and lands without a jolt).
+function shipRollDeg() {
+    if (shipBarrelT < 0) return shipRoll;
+    const u = Math.min(shipBarrelT / SHIP3D_BARREL_SEC, 1);
+    return shipRoll + 360 * u * u * (3 - 2 * u);
 }

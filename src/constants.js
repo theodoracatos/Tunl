@@ -104,6 +104,35 @@ const PR      = W  * 0.018;
 // plume and on-fire cone (draw.js) and the thruster particles (update.js), so exhaust
 // always leaves the nacelles whatever the hull geometry does.
 const SHIP_NOZZLE_X = -0.92, SHIP_NOZZLE_Y = 0.50;
+
+// 3/4 side-view PROTOTYPE (2026-09-19, variant D of the view study:
+// https://claude.ai/artifact/Q9gDK8SdVrCYm9rU9biZdJ). The flying ship (player, ghost,
+// wreck) is drawn from a small 3D model of the K5 hull (draw.js drawShip3D), rolled
+// SHIP3D_ROLL_BASE degrees out of the top view toward a side view, plus a light roll
+// that follows the climb rate (+-SHIP3D_ROLL_AMP, update.js stepShipRoll). Hangar, hero
+// and share card stay top-down. PR is untouched. Draw-only: no rng(), no placement.
+// Known gap, measured in the study: at 45 deg with real fin height the picture reached
+// only ~0.55-0.8 PR vertically (0.98 top-down); raised to 60 deg on 2026-09-19 so both
+// swing wings read, which also brings the span back to ~0.85 PR. SHIP3D_FIN_SCALE is the lever. Liveries are not mapped onto the model
+// yet (flies FACTORY). A DEV_ flag so the pre-push hook refuses to ship it switched on.
+const DEV_SHIP_3D      = true;
+const SHIP3D_ROLL_BASE = 60;    // degrees: 90 = today's top view, 0 = pure profile
+const SHIP3D_ROLL_AMP  = 10;    // degrees of roll at full climb / full fall
+const SHIP3D_FIN_SCALE = 1.0;   // fin height, x real SR-71 proportion
+// Swing wing (F-14 style, 2026-09-19): the outer wing panels sweep back with forward
+// speed - spread at the slow start and under a blue coin, folded deep in and in a warp.
+// Keyed to the effective scroll speed in W=600 units (scrollSpdBase x slow x warp), so it
+// tracks what the player feels, and eased so a warp visibly folds them. Costs span: at
+// full sweep the wingtips come in from 0.975 to ~0.77 r.
+const SHIP3D_SWEEP_MAX    = 50;    // degrees of outer-panel sweep at full speed
+const SHIP3D_SWEEP_SPD_LO = 300;   // effective speed at which the wings start folding
+const SHIP3D_SWEEP_SPD_HI = 560;   // ... and are fully folded (the difficulty plateau)
+const SHIP3D_BRAKE_DEG    = 24;    // blue coin: wings swing this far FORWARD of spread (air brake)
+// Barrel roll on flying through the warp portal (2026-09-19): one full 360 deg turn about
+// the long axis, eased in and out, on top of the normal roll. The warp makes the player
+// hazard-immune and wall-clamped (CLAUDE.md "Warp portal"), so the picture briefly
+// leaving the hitbox mid-roll can never decide a death.
+const SHIP3D_BARREL_SEC = 0.75;
 // SCREEN-INDEPENDENT FEEL (CLAUDE.md rule). GRAVITY/THRUST/MAX_VY are quoted at
 // _H_REF - the landscape height the feel was tuned and player-tested at, an iPhone 17
 // Pro Max (~956x440pt) - and EVERY device (apps and web alike) scales them by

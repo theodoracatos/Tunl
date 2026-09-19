@@ -31,7 +31,7 @@ function titleScreen() {
     phase = 'title'; py = H / 2; vy = 0; holding = false; scrollX = 0; approachLeft = 0;
     score = 0; newBest = false; newDailyBest = false;
     parts = []; thrustParts = []; deadT = 0; titleT = 0; flashA = 0; shake = 0; trailY = [];
-    skinFx = []; skinFxT = 0; shipPitch = 0;
+    skinFx = []; skinFxT = 0; shipPitch = 0; shipRoll = SHIP3D_ROLL_BASE; shipRollV = 0; shipSweep = 0; shipBarrelT = -1;
     _seedSpawnStreams(_tunlActiveDayInt());
     stalactites = []; nextStalWx = 420; nextFallWx = 99999;
     coins = [];     nextCoinWx = 99999;
@@ -92,7 +92,7 @@ function startPlay() {
     phase = 'play'; py = H + PR * 4; vy = 0; holding = false; hasHeldThisRun = false; idleHoldTimer = 0; scrollX = 0; startRamp = 0;
     score = 0; newBest = false; newDailyBest = false;
     parts = []; thrustParts = []; deadT = 0; flashA = 0; shake = 0; trailY = [];
-    skinFx = []; skinFxT = 0; shipPitch = -Math.PI / 2;
+    skinFx = []; skinFxT = 0; shipPitch = -Math.PI / 2; shipRoll = SHIP3D_ROLL_BASE; shipRollV = 0; shipSweep = 0; shipBarrelT = -1;
     // No stalactites/stalagmites before STAL_START_WX (~score 107) on any run -- see
     // constants.js SAFE_START_WX. Coins start at their normal distance; they can't kill.
     stalactites = []; nextStalWx = STAL_START_WX;

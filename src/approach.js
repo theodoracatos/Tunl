@@ -41,6 +41,10 @@ const CITY_LAYERS = [
     { f: 0.26, hMin: 0.18, hMax: 0.44, wMin: 0.026, wMax: 0.064, tone: 0.66 },
     { f: 0.52, hMin: 0.07, hMax: 0.28, wMin: 0.034, wMax: 0.090, tone: 0.88 },
 ];
+const MOON_X = 0.075, MOON_Y = 0.19, MOON_R = 0.042;   // screen fractions; clear of the title wordmark
+const MOON_TONE = [232, 234, 242];                      // pale silver, tinted a little toward the day's rock
+const MOON_MARIA = [[-0.30, -0.18, 0.28], [0.22, 0.10, 0.22], [-0.05, 0.38, 0.16], [0.34, -0.34, 0.12]];
+const MOONLIGHT_RIM = 0.42;   // alpha of the cool rim the moon puts on roofs and left facades
 const CITY_TILE = Math.ceil(W * 1.6);   // each layer's building list wraps at this width
 
 let approachLeft = 0;          // screen px until world-x 0 reaches the left edge; > 0 = approach live
@@ -97,6 +101,29 @@ function _traceBuilding(x, b) {
     }
     ctx.lineTo(x + b.w, H + 2);
     ctx.closePath();
+}
+
+// The moonlit part of a building's outline: the upper third of its left wall and its roof.
+function _traceRim(x, b) {
+    const top = H - b.h;
+    ctx.moveTo(x + 0.5, top + b.h * 0.33);
+    ctx.lineTo(x + 0.5, top);
+    if (b.kind === 1) {
+        ctx.lineTo(x + b.w * 0.2, top); ctx.moveTo(x + b.w * 0.2, top);
+        ctx.lineTo(x + b.w * 0.2, top - b.h * 0.16); ctx.lineTo(x + b.w * 0.8, top - b.h * 0.16);
+        ctx.moveTo(x + b.w * 0.8, top); ctx.lineTo(x + b.w, top);
+    } else if (b.kind === 2) {
+        ctx.lineTo(x + b.w * 0.44, top); ctx.lineTo(x + b.w * 0.5, top - b.h * 0.34);
+        ctx.moveTo(x + b.w * 0.56, top); ctx.lineTo(x + b.w, top);
+    } else if (b.kind === 3) {
+        ctx.lineTo(x + b.w, top - b.h * 0.12);
+    } else if (b.kind === 4) {
+        ctx.lineTo(x + b.w * 0.58, top); ctx.lineTo(x + b.w * 0.58, top - b.h * 0.22);
+        ctx.lineTo(x + b.w * 0.63, top - b.h * 0.22);
+        ctx.moveTo(x + b.w * 0.63, top); ctx.lineTo(x + b.w, top);
+    } else {
+        ctx.lineTo(x + b.w, top);
+    }
 }
 
 // Rock profile in approach space: u = world-x the point would have (negative before the cave).
@@ -179,6 +206,7 @@ function approachUpdate(dt) {
     wallGraceT = Math.max(0, wallGraceT - dt);
     const target = Math.max(-0.70, Math.min(0.70, Math.atan2(vy, scrollSpd())));
     shipPitch += (target - shipPitch) * Math.min(dt * 14, 1);
+    stepShipRoll(dt, vy);
     trailY.push(py);
     if (trailY.length > 10) trailY.shift();
 }
@@ -221,12 +249,52 @@ function drawApproachScene(theme, dayRock) {
     ctx.fillStyle = sg;
     ctx.fillRect(-20, -20, xEnd + 40, H + 40);
 
+    // Moon, top left: the source of the dusk's dim light (the skyline and the mountain's
+    // foothill catch it below), behind the ship like the cave-mouth light (hazards arrive
+    // from the right, that side stays dark). Fixed on screen - it is at infinity, no
+    // parallax - and left of the title's wordmark + halo (titleX = 0.25W). The mountain's
+    // rock covers it as the mouth passes. No shadowBlur.
+    const moonX = W * MOON_X, moonY = H * MOON_Y, moonR = H * MOON_R;
+    const moonLit = lerpClr(MOON_TONE, dayRock, 0.12);
+    {
+        const mx = moonX, my = moonY, mr = moonR, lit = moonLit;
+        const glow = ctx.createRadialGradient(mx, my, mr * 0.8, mx, my, mr * 5);
+        glow.addColorStop(0, rgb(lit, 0.16));
+        glow.addColorStop(0.35, rgb(lit, 0.05));
+        glow.addColorStop(1, rgb(lit, 0));
+        ctx.fillStyle = glow;
+        ctx.fillRect(mx - mr * 5, my - mr * 5, mr * 10, mr * 10);
+        const disc = ctx.createLinearGradient(mx - mr, my - mr, mx + mr, my + mr);
+        disc.addColorStop(0, rgb(lit));
+        disc.addColorStop(1, rgb(lerpClr(lit, skyTop, 0.28)));
+        ctx.fillStyle = disc;
+        ctx.beginPath(); ctx.arc(mx, my, mr, 0, 6.283); ctx.fill();
+        // Maria: a few soft darker patches, clipped to the disc.
+        ctx.save();
+        ctx.clip();
+        ctx.fillStyle = rgb(lerpClr(lit, skyTop, 0.22), 0.55);
+        for (const [dx, dy, sz] of MOON_MARIA) {
+            ctx.beginPath(); ctx.arc(mx + dx * mr, my + dy * mr, sz * mr, 0, 6.283); ctx.fill();
+        }
+        ctx.restore();
+    }
+    // Moonlight falls off with distance from the moon: one radial style shared by every rim.
+    const moonRim = ctx.createRadialGradient(moonX, moonY, 0, moonX, moonY, W * 0.9);
+    moonRim.addColorStop(0, rgb(moonLit, MOONLIGHT_RIM));
+    moonRim.addColorStop(0.5, rgb(moonLit, MOONLIGHT_RIM * 0.45));
+    moonRim.addColorStop(1, rgb(moonLit, MOONLIGHT_RIM * 0.12));
+
     // Skyline: three silhouette layers, one path + one fill each, no shadowBlur.
     const blink = gtime;
     for (let li = 0; li < _cityLayers.length; li++) {
         const L = _cityLayers[li];
         const off = (cityScroll * L.f) % CITY_TILE;
-        ctx.fillStyle = rgb(lerpClr(lerpClr(skyLow, skyTop, 0.35), theme.bg, L.tone));
+        // The side toward the moon is a touch lighter and cooler than the far side.
+        const base = lerpClr(lerpClr(skyLow, skyTop, 0.35), theme.bg, L.tone);
+        const lf = ctx.createLinearGradient(0, 0, W, 0);
+        lf.addColorStop(0, rgb(lerpClr(base, moonLit, 0.10)));
+        lf.addColorStop(1, rgb(base));
+        ctx.fillStyle = lf;
         ctx.beginPath();
         for (const b of L.bld) {
             let x = b.x - off;
@@ -236,6 +304,19 @@ function drawApproachScene(theme, dayRock) {
             if (x + CITY_TILE < xEnd) _traceBuilding(x + CITY_TILE, b);
         }
         ctx.fill();
+        // Moonlit rim: roofs and the left facades' upper part, one stroke per layer. The far
+        // layer gets less (haze), the near one most.
+        ctx.beginPath();
+        for (const b of L.bld) {
+            let x = b.x - off;
+            if (x + b.w < 0) x += CITY_TILE;
+            if (x > xEnd) continue;
+            _traceRim(x, b);
+            if (x + CITY_TILE < xEnd) _traceRim(x + CITY_TILE, b);
+        }
+        ctx.globalAlpha = 0.6 + 0.4 * (li / (_cityLayers.length - 1));
+        ctx.strokeStyle = moonRim; ctx.lineWidth = 1; ctx.stroke();
+        ctx.globalAlpha = 1;
         // Aircraft-warning beacons on masts and spires, in the day colour, slow blink.
         if (li > 0) {
             for (const b of L.bld) {
@@ -307,6 +388,8 @@ function drawApproachScene(theme, dayRock) {
                 ctx.strokeStyle = style; ctx.lineWidth = lw; ctx.stroke();
             };
             stroke(-Infinity, mouthX, rgb(horizon, 0.30), 3);
+            // The foothill's upper face looks up at the moon; the overhang above faces down.
+            if (!isTop) stroke(-Infinity, mouthX, moonRim, 1.5);
             stroke(-Infinity, xEnd, rgb(theme.wallBase, 0.55), 2);   // drawWorld's lethal edge, same stroke
         }
     }

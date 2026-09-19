@@ -496,6 +496,9 @@ let gtime = 0;
 let slowFxVis = 0, vtime = 0, slowFxPulseT = -1, slowFxRipPh = 0;
 let skinFx = [], skinFxT = 0;
 let shipPitch = 0;
+let shipRoll = SHIP3D_ROLL_BASE, shipRollV = 0;   // degrees, deg/s (constants.js DEV_SHIP_3D)
+let shipSweep = 0;   // 0 = wings spread .. 1 = fully swept, < 0 = braking past spread (constants.js SHIP3D_SWEEP_*)
+let shipBarrelT = -1;   // seconds into the portal barrel roll, -1 = none (SHIP3D_BARREL_SEC)
 let ambParts = [];
 // persists across runs: { wx, side } where side is 'top' | 'bot' | 'mid'. The y is NOT
 // stored -- draw.js recomputes it every frame from boundsAt(wx) so the ring rides the

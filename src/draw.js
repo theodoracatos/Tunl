@@ -892,6 +892,192 @@ function drawShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
     ctx.restore();
 }
 
+// ── 3/4 side-view prototype (constants.js DEV_SHIP_3D) ─────────────────
+// The K5 hull as a small 3D model: x forward (nose +1.40), y span (+-0.98), z up, all
+// in r units, matching SHIP_OUTLINE's planform. Rolled SHIP3D_ROLL_BASE (+ shipRoll's
+// swing) about the long axis and projected orthographically, flat-shaded and lit from
+// screen-up like the facets above. Ported from the view study, variant D. Drawn in the
+// caller's pitch-rotated frame, so shipPitch works exactly as it does for drawShip.
+// Fin points carry the z of their root as a 4th value so SHIP3D_FIN_SCALE stretches the
+// fins without fattening the body.
+function _ship3dFaces() {
+    const F = [];
+    const add = (p, kind, ref, fin) => F.push({ p, kind, ref, fin: !!fin });
+    const finBox = (Q, ny, nz) => {
+        const l = Math.hypot(ny, nz), oy = ny / l * 0.013, oz = nz / l * 0.013;
+        const A = Q.map(q => [q[0], q[1] + oy, q[2] + oz, q[3]]), B = Q.map(q => [q[0], q[1] - oy, q[2] - oz, q[3]]);
+        const ref = [0, 1, 2].map(k => Q.reduce((s, q) => s + q[k], 0) / 4).concat(Q[0][3]);
+        add(A, 'hull', ref, true); add(B, 'hull', ref, true);
+        for (let k = 0; k < 4; k++) { const k2 = (k + 1) % 4; add([A[k], A[k2], B[k2], B[k]], 'hull', ref, true); }
+    };
+    // Fuselage: hexagonal chine section lofted along x
+    const st = [[1.40,0.004,0.004,-0.004],[1.18,0.07,0.055,-0.035],[0.95,0.13,0.085,-0.055],[0.60,0.17,0.10,-0.07],
+                [0.30,0.20,0.105,-0.075],[-0.30,0.22,0.10,-0.08],[-0.92,0.18,0.07,-0.06]];
+    const ring = ([x, w, zt, zb]) => [[x,w,0],[x,0.5*w,zt],[x,-0.5*w,zt],[x,-w,0],[x,-0.5*w,zb],[x,0.5*w,zb]];
+    for (let i = 0; i < st.length - 1; i++) {
+        const a = ring(st[i]), b = ring(st[i + 1]), xm = (st[i][0] + st[i + 1][0]) / 2;
+        for (let k = 0; k < 6; k++) { const k2 = (k + 1) % 6; add([a[k], a[k2], b[k2], b[k]], 'hull', [xm, 0, 0.01]); }
+    }
+    add(ring(st[st.length - 1]), 'dark', [-0.5, 0, 0]);
+    // Canopy
+    const cF = [1.12,0,0.062], cR = [0.62,0,0.10], t1 = [0.95,0,0.15], t2 = [0.72,0,0.148];
+    const cL = [0.86,0.065,0.093], cRt = [0.86,-0.065,0.093], cref = [0.86,0,0.08];
+    [[cF,t1,cL],[cF,cRt,t1],[t1,t2,cL],[t1,cRt,t2],[t2,cR,cL],[t2,cRt,cR]].forEach(p => add(p, 'glass', cref));
+    for (const s of [-1, 1]) {
+        // Wing: thin prisms - the fixed inner delta of the SHIP_OUTLINE planform as a glove
+        // (carries the nacelle) and a slender outer panel that swings back about
+        // SHIP3D_PIVOT, sitting a hair lower so it slides under the glove when swept.
+        // Spread it points ~14 deg aft; a long-chord delta panel would vanish under the
+        // glove when swept, so the panel is slender, like an F-14's.
+        const prism = (pts, z0, ref, swing) => {
+            const wp = pts.map(q => [q[0], q[1] * s]);
+            const up = wp.map(q => [q[0], q[1], z0 + 0.012]), dn = wp.map(q => [q[0], q[1], z0 - 0.012]);
+            const fs = [up, dn];
+            for (let k = 0; k < wp.length; k++) { const k2 = (k + 1) % wp.length; fs.push([up[k], up[k2], dn[k2], dn[k]]); }
+            for (const f of fs) { add(f, 'hull', ref); if (swing) F[F.length - 1].swing = s; }
+        };
+        prism([[0.30,0.20],[-0.15,0.59],[-0.86,0.59],[-1.00,0.24]], 0, [-0.45, s * 0.40, 0], false);
+        prism([[-0.18,0.585],[-0.25,0.98],[-0.42,0.975],[-0.58,0.585]], -0.006, [-0.36, s * 0.78, -0.006], true);
+        // Nacelle: octagon loft, dark intake, hot nozzle, inlet spike
+        const ny = s * SHIP_NOZZLE_Y, nst = [[0.12,0.075],[0.0,0.095],[-0.40,0.10],[-0.80,0.09],[-0.92,0.085]];
+        const oct = (x, rad) => { const o = []; for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2 + Math.PI / 8; o.push([x, ny + rad * Math.cos(a), rad * Math.sin(a)]); } return o; };
+        for (let i = 0; i < nst.length - 1; i++) {
+            const a = oct(...nst[i]), b = oct(...nst[i + 1]), xm = (nst[i][0] + nst[i + 1][0]) / 2;
+            for (let k = 0; k < 8; k++) { const k2 = (k + 1) % 8; add([a[k], a[k2], b[k2], b[k]], 'pod', [xm, ny, 0]); }
+        }
+        add(oct(...nst[0]), 'dark', [-0.3, ny, 0]);
+        add(oct(...nst[nst.length - 1]), 'hot', [0, ny, 0]);
+        const sp = oct(0.11, 0.04), tip = [0.24, ny, 0];
+        for (let k = 0; k < 8; k++) add([tip, sp[k], sp[(k + 1) % 8]], 'spike', [0.15, ny, 0]);
+        // Fin on the nacelle, canted inward
+        const zb = 0.085, zt = 0.42, yb = s * 0.50, yt = s * 0.40;
+        finBox([[-0.40,yb,zb,zb],[-0.90,yb,zb,zb],[-0.97,yt,zt,zb],[-0.68,yt,zt,zb]], zt - zb, -(yt - yb));
+    }
+    // Ventral fin on the centreline
+    finBox([[-0.30,0,-0.07,-0.07],[-0.86,0,-0.06,-0.07],[-0.92,0,-0.30,-0.07],[-0.66,0,-0.30,-0.07]], 1, 0);
+    return F;
+}
+function _buildShip3D(finScale, centerDeg) {
+    const bodyK = 1 + (finScale - 1) * 0.35;
+    const sz = (q, fin) => fin && q[3] !== undefined ? [q[0], q[1], q[3] * bodyK + (q[2] - q[3]) * finScale] : [q[0], q[1], q[2] * bodyK];
+    const faces = _ship3dFaces().map(f => ({ p: f.p.map(q => sz(q, f.fin)), ref: sz(f.ref, f.fin), kind: f.kind, swing: f.swing || 0 }));
+    // Centre the ink on the hitbox at the base roll: a z shift of dz moves the top edge
+    // by -dz*cos and the bottom edge by +dz*cos.
+    const ca = Math.cos(centerDeg * Math.PI / 180), sa = Math.sin(centerDeg * Math.PI / 180);
+    let hi = -9, lo = 9;
+    for (const f of faces) for (const q of f.p) { const u = q[2] * ca + q[1] * sa; hi = Math.max(hi, u); lo = Math.min(lo, u); }
+    const dz = ca > 0.15 ? (hi + lo) / (2 * ca) : 0;
+    for (const f of faces) {
+        f.p = f.p.map(q => [q[0], q[1], q[2] - dz]); f.ref = [f.ref[0], f.ref[1], f.ref[2] - dz];
+        // Newell normal, turned away from the part's own axis point
+        let nx = 0, ny = 0, nz = 0;
+        for (let i = 0; i < f.p.length; i++) {
+            const a = f.p[i], b = f.p[(i + 1) % f.p.length];
+            nx += (a[1] - b[1]) * (a[2] + b[2]); ny += (a[2] - b[2]) * (a[0] + b[0]); nz += (a[0] - b[0]) * (a[1] + b[1]);
+        }
+        const l = Math.hypot(nx, ny, nz) || 1; nx /= l; ny /= l; nz /= l;
+        const c = [0, 1, 2].map(k => f.p.reduce((s, q) => s + q[k], 0) / f.p.length);
+        if (nx * (c[0] - f.ref[0]) + ny * (c[1] - f.ref[1]) + nz * (c[2] - f.ref[2]) < 0) { nx = -nx; ny = -ny; nz = -nz; }
+        f.n = [nx, ny, nz];
+    }
+    return { faces, dz };
+}
+const _SHIP3D = DEV_SHIP_3D ? _buildShip3D(SHIP3D_FIN_SCALE, SHIP3D_ROLL_BASE) : null;
+// Pivot of the swinging outer wing panel (x, |y|), near the root of its leading edge.
+const SHIP3D_PIVOT = [-0.22, 0.59];
+// Rotate a model point of the outer panel on side s about the pivot, in the wing plane.
+function _swingPt(q, s, c, sn) {
+    const dx = q[0] - SHIP3D_PIVOT[0], dy = q[1] - s * SHIP3D_PIVOT[1];
+    return [SHIP3D_PIVOT[0] + dx * c - dy * sn, s * SHIP3D_PIVOT[1] + dx * sn + dy * c, q[2]];
+}
+
+// Screen-y of a nozzle in PR units (ns = -1 / +1), before pitch. Top view: +-SHIP_NOZZLE_Y.
+function shipNozzleDY(ns) {
+    if (!_SHIP3D) return ns * SHIP_NOZZLE_Y;
+    const a = shipRollDeg() * Math.PI / 180;
+    return -(ns * SHIP_NOZZLE_Y * Math.sin(a) - _SHIP3D.dz * Math.cos(a));
+}
+
+// The flying ship: player, ghost and wreck. Hangar/hero/shop keep calling drawShip.
+function drawFlightShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
+    if (_SHIP3D) drawShip3D(x, y, r, color, sr, sg, sb, blur, fx);
+    else drawShip(x, y, r, color, sr, sg, sb, blur, fx, lv);
+}
+
+const _ship3dVis = [];
+function drawShip3D(x, y, r, color, sr, sg, sb, blur, fx) {
+    fx = fx === undefined ? true : fx;
+    const M = _SHIP3D, a = shipRollDeg() * Math.PI / 180, cp = Math.cos(a), sp = Math.sin(a);
+    // The caller rotated the canvas by shipPitch around (PX, py); light stays screen-up.
+    const ct = Math.cos(shipPitch), st = Math.sin(shipPitch);
+    const base = [parseInt(color.substr(1,2),16), parseInt(color.substr(3,2),16), parseInt(color.substr(5,2),16)];
+    const light = lerpClr(_SHIP_WHITE, [sr, sg, sb], 0.15);
+    // Glow behind the hull: a radial fill instead of shadowBlur (expensive on WKWebView)
+    if (blur > 0) {
+        const gr = ctx.createRadialGradient(x, y, 0, x, y, r * 1.5);
+        gr.addColorStop(0, `rgba(${sr},${sg},${sb},${Math.min(0.32, blur / 60)})`);
+        gr.addColorStop(1, `rgba(${sr},${sg},${sb},0)`);
+        ctx.fillStyle = gr;
+        ctx.beginPath(); ctx.arc(x, y, r * 1.5, 0, Math.PI * 2); ctx.fill();
+    }
+    // Swing wing: the outer panels turn by s * sweep in the wing plane (s = side), which
+    // folds each tip aft and inward; a negative sweep (blue-coin brake) swings them
+    // forward past spread. Normals turn with them (top/bottom stay +-z).
+    const sw = shipSweep * SHIP3D_SWEEP_MAX * Math.PI / 180, swc = Math.cos(sw), sws = Math.sin(sw);
+    const vis = _ship3dVis; vis.length = 0;
+    for (const f of M.faces) {
+        let p = f.p, n = f.n;
+        if (f.swing && Math.abs(sw) > 0.001) {
+            const sn = f.swing * sws;
+            p = p.map(q => _swingPt(q, f.swing, swc, sn));
+            n = [n[0] * swc - n[1] * sn, n[0] * sn + n[1] * swc, n[2]];
+        }
+        const nT = n[2] * sp - n[1] * cp;
+        if (nT <= 0.002) continue;
+        const nUp = n[2] * cp + n[1] * sp, su = nUp * ct - n[0] * st, sx = n[0] * ct + nUp * st;
+        let depth = 0;
+        for (const q of p) depth += q[2] * sp - q[1] * cp;
+        vis.push({ p, kind: f.kind, d: 0.74 * su + 0.60 * nT + 0.12 * sx, depth: depth / p.length });
+    }
+    vis.sort((p, q) => p.depth - q.depth);
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = Math.max(r * 0.012, 0.6);
+    for (const v of vis) {
+        const k = Math.max(-0.88, Math.min(0.62, (v.d - 0.50) * 1.35)), kind = v.kind;
+        let col;
+        if (kind === 'glass') col = k >= 0 ? lerpClr([150,210,245], _SHIP_WHITE, k * 0.7) : lerpClr([150,210,245], [14,34,62], -k);
+        else if (kind === 'dark') col = lerpClr(base, _SHIP_DARK, 0.72);
+        else if (kind === 'hot') col = lerpClr([sr, sg, sb], [255,250,225], 0.55);
+        else if (kind === 'spike') col = lerpClr(base, light, 0.5);
+        else { const kk = kind === 'pod' ? k - 0.06 : k; col = kk >= 0 ? lerpClr(base, light, kk) : lerpClr(base, _SHIP_DARK, -kk); }
+        const p = v.p;
+        ctx.beginPath();
+        ctx.moveTo(x + p[0][0] * r, y - (p[0][2] * cp + p[0][1] * sp) * r);
+        for (let i = 1; i < p.length; i++) ctx.lineTo(x + p[i][0] * r, y - (p[i][2] * cp + p[i][1] * sp) * r);
+        ctx.closePath();
+        const c = rgb(col);
+        ctx.fillStyle = c; ctx.fill();
+        ctx.strokeStyle = c; ctx.stroke();   // same colour: hides the anti-alias seams between faces
+    }
+    if (!fx) return;
+    // Wingtip strobes, only on a tip that faces the camera
+    const strobe = ((gtime * 0.85) % 1) < 0.07 ? 0.85 : 0.10;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const s of [-1, 1]) {
+        const tip = _swingPt([-0.33, s * 0.97, -M.dz - 0.006], s, swc, s * sws);
+        const ty = tip[1], tz = tip[2];
+        if (tz * sp - ty * cp < -0.05) continue;
+        const lx = x + r * tip[0], ly = y - (tz * cp + ty * sp) * r;
+        const g = ctx.createRadialGradient(lx, ly, 0, lx, ly, r * 0.16);
+        g.addColorStop(0,   `rgba(255,255,255,${strobe})`);
+        g.addColorStop(0.3, `rgba(${sr},${sg},${sb},${strobe * 0.7})`);
+        g.addColorStop(1,   `rgba(${sr},${sg},${sb},0)`);
+        ctx.beginPath(); ctx.arc(lx, ly, r * 0.16, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
+    }
+    ctx.restore();
+}
+
 // Thrust plume: teardrop with a white core and three shock diamonds, its mid colour
 // taken from the skin glow. Normal thrust used to be the same orange as the ON FIRE
 // afterburner; tinting it leaves orange-red to ON FIRE alone.
@@ -900,7 +1086,7 @@ function drawThrustPlume(x, y, r, sr, sg, sb) {
     ctx.globalCompositeOperation = 'lighter';
     const tr = (sr + 90) >> 1, tg = (sg + 40) >> 1, tb = (sb + 230) >> 1;
     for (const ns of [-1, 1]) {
-        const nx = x + SHIP_NOZZLE_X * r, ny = y + ns * r * SHIP_NOZZLE_Y;
+        const nx = x + SHIP_NOZZLE_X * r, ny = y + r * shipNozzleDY(ns);
         const pulse = 0.84 + 0.16 * Math.sin(gtime * 23 + ns);
         const L = r * 5.0 * pulse, w = r * 0.15;
         const drop = (len, wd) => {
@@ -1858,7 +2044,7 @@ function drawWorld() {
         ctx.translate(PX, ghostY);
         ctx.rotate(ghostPitch);
         ctx.translate(-PX, -ghostY);
-        drawShip(PX, ghostY, PR, '#8fb4ec', 120, 165, 235, 8, false);
+        drawFlightShip(PX, ghostY, PR, '#8fb4ec', 120, 165, 235, 8, false);
         ctx.restore();
     }
 
@@ -1888,7 +2074,7 @@ function drawWorld() {
         if (onFire && phase === 'play') {
             const pulse = 0.85 + 0.15 * Math.sin(gtime * 9);
             for (const ns of [-1, 1]) {
-                const nx = PX + PR * SHIP_NOZZLE_X, ny = py + ns * PR * SHIP_NOZZLE_Y;
+                const nx = PX + PR * SHIP_NOZZLE_X, ny = py + PR * shipNozzleDY(ns);
                 const cLen = PR * 8.0 * pulse, cW = PR * 0.30;
                 ctx.beginPath();
                 ctx.moveTo(nx,        ny - cW);
@@ -1934,7 +2120,7 @@ function drawWorld() {
         // drawTitleScreen() (dim, in the tunnel, part of the "world"; the hero
         // is a bright foreground portrait), not a confusing duplicate.
         ctx.globalAlpha = invulnAlpha;
-        drawShip(PX, py, PR, phase === 'dead' ? '#ff4040' : sk.color, sr, sg, sb, 20, phase !== 'dead', phase === 'dead' ? 0 : liveryOf(activeSkin));
+        drawFlightShip(PX, py, PR, phase === 'dead' ? '#ff4040' : sk.color, sr, sg, sb, 20, phase !== 'dead', phase === 'dead' ? 0 : liveryOf(activeSkin));
         ctx.globalAlpha = 1;
         ctx.restore();
     }

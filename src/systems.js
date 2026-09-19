@@ -1323,6 +1323,7 @@ function maintainPortals() {
 // how centred the flythrough was) decides where in WARP_DUR_MIN..MAX_SEC the
 // duration lands - see the doc at its use below.
 function triggerWarp(accuracy) {
+    if (DEV_SHIP_3D) shipBarrelT = 0;   // barrel roll through the ring (constants.js SHIP3D_BARREL_SEC)
     // A warp is a speed-UP; an active blue-coin slow-time is a speed-DOWN
     // (world.js slowScrollFactor()), and warpScrollFactor() multiplies straight
     // into the same scrollSpd() term - the two would partially cancel into a
