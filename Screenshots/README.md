@@ -80,6 +80,17 @@ paths near the bottom are version-pinned and get edited per release. `make-portr
 are the equivalents for the portrait App Preview video. All three read raw
 captures from the Desktop and need Pillow + rsvg-convert.
 
+## Play tablet screenshots (7" and 10" slots)
+
+`make-store-tablets.py` builds the 16:9 (1920x1080) tablet frames into
+`iOS_15.0/en/play-tablet-16x9/`. It imports palette, fonts, wordmark and the `COPY["en"]`
+headlines from `make-store-portraits.py`, so a release that edits those gets matching tablet
+frames for free; the full raw capture is shown uncropped under a one-line headline. English
+only, because the tablet slots exist only on the default (en-US) Play listing and the
+translations inherit them. The same six files go into BOTH slots. Before 15.0 these two slots
+were the last stale images on the listing (12.x, Courier captions) - they are easy to forget
+because the phone slot is the one everyone looks at.
+
 ## Adding a locale without a fresh capture
 
 `recaption-locale.py` is the fast path for a secondary/long-tail locale that
