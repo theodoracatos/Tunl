@@ -687,7 +687,19 @@ function update(dt) {
             deathCause = s.isTop ? 'wallTop' : 'wallBot';
             const sb = boundsAt(s.wx), sfy = stalFallY(s);
             markDeathHit(s.wx - scrollX, s.isTop ? sb.top + s.length + sfy : sb.bot - s.length, s.width);
-            if (die()) return;
+            if (die()) {
+                // Flying into a crystal is by far the most common way a player
+                // touches one, and until 16.0 it was the one contact that did not
+                // shatter: the bullet, the bomb-clear behind a shield and the
+                // break-off all threw shards, the fatal hit threw only dust. They
+                // land in the death freeze frame, exactly where drawDeathFreeze()'s
+                // reticle is contracting, and the world is frozen there, so they
+                // hang as a starburst instead of animating - which reads better
+                // than motion would. No sound: sfxDie owns frame 0 and is 8 dB
+                // louder than the crack, which would just be masked.
+                if (CRYSTAL_STALS) burstCrystalShards(PX, py, crystalShardHue(), 22);
+                return;
+            }
             break;
         }
     }

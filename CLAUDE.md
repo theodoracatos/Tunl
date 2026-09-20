@@ -554,7 +554,14 @@ real bus, never by ear - see the `reference_audio_method` memory.
 The visual half is `burstCrystalShards`: tumbling slivers (`long`/`rot`/`spin` on
 the ordinary particle, drawn as a triangle instead of a dot) thrown ALONGSIDE the
 round dust, never instead of it - the dust sells the impact, the shards sell the
-material. Both are gated on `CRYSTAL_STALS`, so the one switch reverts picture and
+material. **All four ways of touching a crystal throw them** - measured 14 on a
+bullet kill, 18 on the bomb-clear behind a shield, 8 on the break-off and 22 on a
+fatal hit. That last one was missing at first and is the one that matters most:
+flying into a crystal is by far the most common contact, and it lands in the death
+freeze frame, right where `drawDeathFreeze()`'s reticle is contracting. The world
+is frozen there, so the shards hang as a starburst rather than animating, which
+reads better than motion would. **No crack sound on the fatal hit** - `sfxDie` owns
+frame 0 and is ~8 dB louder, so it would only mask it. Both are gated on `CRYSTAL_STALS`, so the one switch reverts picture and
 sound together. **The LANDING keeps the rock thud** (`sfxStalCrack`): that is a
 chunk striking the floor, not a fracture.
 
