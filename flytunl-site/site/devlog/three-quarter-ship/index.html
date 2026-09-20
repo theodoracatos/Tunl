@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Google AdSense (site verification + ad serving) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4882203470005029"
+     crossorigin="anonymous"></script>
+<title>A Three-Quarter View on a Flat Canvas: Drawing TUNL's Ship in 3D Without a 3D Engine</title>
+<meta name="description" content="How TUNL draws its ship in a three-quarter side view with no 3D library: a hitbox the picture may not outgrow, a measured 60-degree roll, swing wings, and paint on a 3D hull.">
+<link rel="canonical" href="https://flytunl.ch/devlog/three-quarter-ship/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="A Three-Quarter View on a Flat Canvas: Drawing TUNL's Ship in 3D Without a 3D Engine">
+<meta property="og:description" content="How TUNL draws its ship in a three-quarter side view with no 3D library: a hitbox the picture may not outgrow, a measured 60-degree roll, swing wings, and paint on a 3D hull.">
+<meta property="og:url" content="https://flytunl.ch/devlog/three-quarter-ship/">
+<meta property="og:image" content="https://flytunl.ch/feature-graphic-1024x500.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png">
+<link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#04040a">
+<style>
+  * { box-sizing:border-box; }
+  body {
+    background:#04040a;
+    color:#ddd;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height:1.7;
+    margin:0;
+    padding:40px 20px 80px;
+  }
+  main { max-width:720px; margin:0 auto; }
+  .brand { display:inline-flex; align-items:center; text-decoration:none; margin-bottom:28px; }
+  .brand img { height:28px; width:auto; }
+  h1 { color:#ffe040; font-size:30px; letter-spacing:1px; margin-bottom:10px; line-height:1.25; }
+  .lead { color:#aaa; font-size:17px; margin-top:0; margin-bottom:8px; }
+  .meta { color:#666; font-size:13px; margin-bottom:34px; }
+  h2 { color:#4dd9ff; font-size:21px; margin-top:44px; margin-bottom:12px; line-height:1.3; }
+  h3 { color:#fff; font-size:16px; margin-top:28px; margin-bottom:8px; }
+  p, li { color:#ccc; font-size:15.5px; }
+  ul, ol { padding-left:22px; }
+  li { margin-bottom:10px; }
+  a { color:#4dd9ff; }
+  strong { color:#fff; }
+  em { color:#ddd; }
+  code {
+    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size:13.5px; color:#ffe040;
+    background:#12121c; border-radius:4px; padding:1px 5px;
+  }
+  pre {
+    background:#0d0d16; border:1px solid #222; border-radius:10px;
+    padding:16px; overflow-x:auto; margin:18px 0;
+  }
+  pre code { background:none; padding:0; color:#cfe8ff; font-size:13px; line-height:1.6; }
+  .note {
+    background:#0d0d16; border:1px solid #222; border-left:3px solid #4dd9ff;
+    border-radius:0 10px 10px 0; padding:14px 18px; margin:22px 0;
+  }
+  .note p { margin:0; font-size:14.5px; color:#bbb; }
+  .wrap { overflow-x:auto; margin:18px 0; }
+  table { width:100%; border-collapse:collapse; font-size:14.5px; min-width:480px; }
+  th, td { text-align:left; padding:9px 12px; border-bottom:1px solid #222; vertical-align:top; }
+  th { color:#4dd9ff; font-weight:600; }
+  td { color:#ccc; }
+  .cta {
+    display:inline-block; background:#ffe040; color:#04040a; font-weight:700;
+    text-decoration:none; padding:12px 24px; border-radius:10px; margin-top:8px;
+  }
+  .cta:hover { background:#fff06a; }
+  .post { display:block; background:#0d0d16; border:1px solid #222; border-radius:12px;
+    padding:18px 20px; margin:16px 0; text-decoration:none; }
+  .post:hover { border-color:#4dd9ff; }
+  .post h3 { color:#ffe040; font-size:18px; margin:0 0 6px; }
+  .post p { margin:0; color:#bbb; font-size:14.5px; }
+  .post .when { color:#666; font-size:12.5px; margin-bottom:6px; display:block; }
+  .swatch { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:8px; vertical-align:middle; }
+  footer {
+    margin-top:56px; color:#666; font-size:13px; line-height:1.9;
+    border-top:1px solid #222; padding-top:16px;
+  }
+  footer a { color:#888; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "A Three-Quarter View on a Flat Canvas",
+  "description": "Drawing a 3D ship on a 2D canvas without a 3D engine, under a hard hitbox constraint.",
+  "author": {
+    "@type": "Person",
+    "name": "Theodoracatos"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "TUNL"
+  },
+  "datePublished": "2026-09-20",
+  "mainEntityOfPage": "https://flytunl.ch/devlog/three-quarter-ship/",
+  "image": "https://flytunl.ch/feature-graphic-1024x500.png"
+}
+</script>
+<!-- Cloudflare Web Analytics (cookieless, no consent banner needed) -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "7783839e84374212b7d76f25e1fb8e87"}'></script>
+</head>
+<body>
+<main>
+  <a class="brand" href="/">
+    <img src="/wordmark.svg" alt="TUNL">
+  </a>
+
+  <h1>A Three-Quarter View on a Flat Canvas</h1>
+  <p class="lead">Until version 15.0 the ship in TUNL was drawn from above while the cave
+  around it was a side-on cutaway. Fixing that meant a small 3D model, a hitbox the picture
+  was not allowed to outgrow, and a lot of restraint about what should move.</p>
+  <p class="meta">Devlog &middot; 20 September 2026 &middot; <a href="/devlog/">all posts</a></p>
+
+  <h2>The mismatch</h2>
+
+  <p>TUNL's cave is a side section. Gravity pulls down, stalactites hang from the ceiling and
+  the approach at the start of every run is a dusk skyline. The ship was the one thing in it
+  drawn from directly above, like a top-down plan of an aircraft flying through a picture of
+  the side of a mountain. Players do not usually articulate that, but it makes the ship feel
+  slightly pasted on.</p>
+
+  <p>The obvious fix, drawing a plain side view, would have thrown away the top-down silhouette
+  the ship is recognisable by, and the ship's shape is at its best seen from above. The compromise is a
+  <strong>three-quarter view</strong>: a 3D model of the same hull, turned out of the top view
+  around its long axis and projected flat.</p>
+
+  <h2>A tiny renderer</h2>
+
+  <p>There is no 3D library in TUNL and no build step, so the renderer is small.
+  The hull already existed as a set of flat facets, lit from above, with the top half mixed
+  toward white and the bottom half toward near-black. The 3D version gives each facet
+  a third coordinate, rotates the model around the long axis, projects it orthographically and
+  fills each face in the same flat, lit-from-above style. It comes to about 90
+  visible faces filled per frame, compared with about 40 fills for the flat hull. There is no
+  blur, which matters because blur is the expensive call on a phone's web view, and the glow is
+  a single radial fill. If a weak device ever struggles, the obvious cut is to cache the hull
+  per roll angle in an offscreen canvas.</p>
+
+  <h2>The hitbox is the boss</h2>
+
+  <p>The most important constraint is that <strong>collision does not change</strong>. The
+  ship's hitbox is a circle, and the whole game's difficulty was tuned against it. So the 3D
+  picture is not allowed to look bigger than the circle, and not allowed to look so much smaller
+  that the ship "dies" before the wing visibly touches anything.</p>
+
+  <p>That turned the roll angle into a measurement rather than a taste call. Tilted 45 degrees
+  out of the top view, only the near wing reads and the picture covers just over half to about
+  four fifths of the circle's height. At 90 degrees it is simply the old top view again. At
+  <strong>60 degrees</strong> both wings read and the span is back to around 85% of the circle.
+  I built a small lab with five candidate views and a coverage curve, and picked 60. A test
+  now asserts that at any roll and any wing sweep, the drawn hull never reaches past the circle
+  and never past the flat nose, and that it still fills a healthy share of the circle while
+  flying.</p>
+
+  <h2>What moves, and what deliberately does not</h2>
+
+  <p>Once the ship was a 3D object, it was tempting to animate everything. Most of that got
+  cut. What survived has to carry information:</p>
+
+  <ul>
+    <li><strong>The roll follows the climb.</strong> A damped spring turns the hull by up to about ten
+    degrees either way, the back toward the camera when climbing and the belly when falling. It is
+    driven by the vertical speed as a fraction of terminal velocity, so it looks the same on
+    every screen. It is a second read on the thing you are trying to judge.</li>
+    <li><strong>The wings sweep with the speed you feel.</strong> Like a swing-wing fighter,
+    the outer panels are spread at the slow start and folded well back by the time the cave
+    reaches full pace. A blue coin, which slows time, throws them forward like an air brake,
+    and they fold back exactly as fast as the slow-down glides away. A warp folds them in half
+    a second.</li>
+    <li><strong>The warp ring gives a barrel roll.</strong> One full turn, eased. It is safe
+    by construction: a warp makes you untouchable, so the picture leaving the circle in the
+    middle of a roll can never decide a death.</li>
+  </ul>
+
+  <p>What did <em>not</em> survive is a free-swinging wobble. An earlier variant where the
+  ship "swung after" a movement looked lively, and it was noise: in a game whose only skill is
+  reading distances, a hull that oscillates for its own sake competes with the information you
+  need. It is the same reasoning that got a parallax background of far rock silhouettes
+  removed the same day it was added. In a game about reading where the walls are, a second set
+  of shapes moving at a different speed is a distraction, even at low contrast.</p>
+
+  <h2>Paint on a 3D hull</h2>
+
+  <p>The ship's six paint finishes were designed for the flat hull, in planform coordinates.
+  Rather than redraw them, I used a small piece of geometry: at a given roll, the top surface
+  of the hull projects to exactly the planform, squashed vertically by the sine of the roll
+  angle. So the existing painter runs under that squash and is clipped to the 3D silhouette.
+  The two things that cannot be expressed that way, the facet seams and the rim, are traced in
+  screen space.</p>
+
+  <p>One correction was needed for the 3D version. The flat hull has seven facets and the 3D one
+  has around ninety, and drawing a light seam on every one turned the STEALTH finish into a lamp.
+  So in 3D the seams run at half strength and skip small faces, and when the hull is nearly
+  edge-on in the middle of a barrel roll, the pattern is skipped for those few frames.</p>
+
+  <h2>What stayed flat</h2>
+
+  <p>Only the ship <em>in flight</em> got the new view. The hangar, the shop and the share card
+  still show the ship from above, because those are portraits of a ship, not pictures of a
+  flight, and the top view is the one that shows the whole planform. The app icon and the
+  store graphics are top-down portraits as well, and whether they should ever follow the
+  in-flight view is an open question.</p>
+
+  <p>The full picture of how the ship is built and painted is on the <a href="/ships/">ships
+  page</a>, and you can see it fly in <a href="/play/">today's cave</a>.</p>
+
+  <p><a class="cta" href="/play/">Play today's cave</a></p>
+
+
+  <footer>
+    TUNL &middot; <a href="/">Home</a> &middot; <a href="/play/">Play</a> &middot;
+    <a href="/how-to-play/">How to play</a> &middot; <a href="/ships/">Ships</a> &middot;
+    <a href="/devlog/">Devlog</a> &middot; <a href="/changelog/">Changelog</a> &middot;
+    <a href="/about/">About</a> &middot; <a href="/support/">Support</a> &middot;
+    <a href="/privacy/">Privacy Policy</a> &middot; <a href="/press/">Press</a><br>
+    &copy; 2026 Theodoracatos. All rights reserved.
+  </footer>
+</main>
+</body>
+</html>

@@ -914,6 +914,16 @@ function _makeMineAt(wx) {
             baseY = Math.max(lo, Math.min(hi, lerp(baseY, cM, 0.75)));
         }
     }
+    // Never on top of a coin (coins exist first, SPAWN_AHEAD_COIN, so the mine yields and
+    // the retry offsets shuffle it on). The mine bobs over +-bobAmp, so the test is
+    // against that whole vertical stretch. Reference units, same verdict on every screen.
+    const clear = PLACE_MINE_R + PLACE_COIN_CLEAR_R;
+    for (const arr of [coins, chicaneCoins]) for (const c of arr) {
+        const dx = c.wx - wx;
+        if (Math.abs(dx) >= clear) continue;
+        const dy = Math.max(0, Math.abs(c.y - baseY) - bobAmp) * _H_TO_REF;
+        if (dx * dx + dy * dy < clear * clear) return null;
+    }
     return { wx, baseY, phase: rngMine() * Math.PI * 2, bobAmp };
 }
 
@@ -1255,9 +1265,21 @@ function _fitIsland(wx, y, r, hl, prof) {
     // records which of the two passes is the tighter squeeze, scored guards against
     // crediting the same boulder's pass twice.
     const up = prof.top.map(f => f * r), dn = prof.bot.map(f => f * r);
+    const upMax = Math.max(...up), dnMax = Math.max(...dn);
+    // A coin the rock would swallow. Coins are created first and further ahead
+    // (SPAWN_AHEAD_COIN), so they are the fixed point here and the ROCK yields: a
+    // shorter island (BOULDER_STRETCH_FALLBACK), the next retry offset, or none.
+    // Tested in reference units, exactly like coinBlockedByStal, so the verdict is the
+    // same on every screen; x is world-px already, y and the outline scale by _H_TO_REF.
+    const ref = { hl, up: up.map(v => v * _H_TO_REF), dn: dn.map(v => v * _H_TO_REF),
+                  upMax: upMax * _H_TO_REF, dnMax: dnMax * _H_TO_REF };
+    for (const arr of [coins, chicaneCoins]) for (const c of arr) {
+        if (Math.abs(c.wx - wx) >= hl + PLACE_COIN_CLEAR_R) continue;
+        if (boulderHit(ref, c.wx - wx, (c.y - y) * _H_TO_REF, PLACE_COIN_CLEAR_R)) return null;
+    }
     return {
         wx, y, r, hl, up, dn, fTop: prof.top, fBot: prof.bot,
-        upMax: Math.max(...up), dnMax: Math.max(...dn),
+        upMax, dnMax,
         narrowTop: minTop < minBot, scored: false,
     };
 }

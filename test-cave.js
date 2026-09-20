@@ -210,6 +210,16 @@ for (const day of DAYS) {
         ['portal',  g('SPAWN_AHEAD_PORTAL'),  Math.max(...g('PORTAL_RETRY_OFFSETS')),   REF_STAL_W + (g('PLACE_PR') + g('PLACE_COIN_R')) * 2],
     ];
     const stalAhead = g('SPAWN_AHEAD_STAL');
+    // The mirror image: boulders and mines yield to coins, so every coin they can overlap
+    // must already exist when they are placed (constants.js SPAWN_AHEAD_COIN doc).
+    const coinAhead = g('SPAWN_AHEAD_COIN'), clear = g('PLACE_COIN_CLEAR_R');
+    const reach = {
+        boulder: g('SPAWN_AHEAD_BOULDER') + Math.max(...g('BOULDER_RETRY_OFFSETS')) + g('BOULDER_MAX_HALF_LEN') + clear,
+        mine:    g('SPAWN_AHEAD_MINE') + Math.max(...g('MINE_RETRY_OFFSETS')) + g('PLACE_MINE_R') + clear,
+    };
+    for (const [name, need] of Object.entries(reach)) {
+        check(`${name} reach ${Math.round(need)} <= SPAWN_AHEAD_COIN ${coinAhead} (every coin it can overlap already exists)`, need <= coinAhead);
+    }
     for (const [name, ahead, retry, inspect] of budget) {
         const need = ahead + retry + inspect;
         check(`${name}: horizon ${ahead} + retry ${retry} + inspect ${Math.round(inspect)} = ${Math.round(need)} <= SPAWN_AHEAD_STAL ${stalAhead}`,
@@ -265,6 +275,40 @@ for (const day of DAYS) {
         checked > 10 && sealed === 0 && worst >= 1.0);
     check(`boulder islands stay short (mean length ${(lenSum / checked / (2 * PR)).toFixed(1)}, max ${(lenMax / (2 * PR)).toFixed(1)} player diameters)`,
         lenMax <= 2 * vm.runInContext('BOULDER_MAX_HALF_LEN', w) + 1e-9);
+}
+
+// ── Coins never sit inside a boulder or a mine ─────────────────────────
+// Coins are placed against stalactites only (coinBlockedByStal); the two obstacles that
+// come LATER (boulders, mines) used to ignore them, so a power-up could end up inside a
+// rock or on a mine (measured 2026-09-20: ~1% of coins inside a boulder, ~3% touching a
+// mine). Boulders and mines now yield to the coins that already exist (SPAWN_AHEAD_COIN
+// is what guarantees they exist). Re-checked against a real replay, not trusted.
+{
+    const w = makeWorld(956, 440);
+    const boulderHit = vm.runInContext('boulderHit', w);
+    const CLEAR = vm.runInContext('PLACE_COIN_CLEAR_R', w);
+    const MINE  = vm.runInContext('PLACE_MINE_R', w);
+    let coinsN = 0, inRock = 0, onMine = 0, rocks = 0, mines = 0;
+    for (const day of DAYS) {
+        const { snap } = replay(956, 440, day, UNTIL_WX);
+        const allCoins = snap.coin.concat(snap.chic);
+        rocks += snap.boulder.length; mines += snap.mine.length;
+        for (const [cwx, cy] of allCoins) {
+            coinsN++;
+            for (const [bwx, by, , hl, up, dn] of snap.boulder) {
+                if (Math.abs(bwx - cwx) >= hl + CLEAR) continue;
+                const bo = { hl, up, dn, upMax: Math.max(...up), dnMax: Math.max(...dn) };
+                if (boulderHit(bo, cwx - bwx, cy - by, CLEAR - 1e-6)) inRock++;
+            }
+            for (const [mwx, mby, bob] of snap.mine) {
+                if (Math.abs(mwx - cwx) >= MINE + CLEAR) continue;
+                const dy = Math.max(0, Math.abs(cy - mby) - bob);
+                if (Math.hypot(cwx - mwx, dy) < MINE + CLEAR - 1e-6) onMine++;
+            }
+        }
+    }
+    check(`no coin inside a boulder or on a mine (${coinsN} coins, ${rocks} boulders, ${mines} mines: ${inRock} in rock, ${onMine} on a mine)`,
+        coinsN > 100 && rocks > 5 && mines > 5 && inRock === 0 && onMine === 0);
 }
 
 // ── Portals keep their contract ─────────────────────────────────────────

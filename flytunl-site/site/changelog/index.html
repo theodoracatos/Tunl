@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Google AdSense (site verification + ad serving) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4882203470005029"
+     crossorigin="anonymous"></script>
+<title>TUNL Changelog - Release Notes for Every Version</title>
+<meta name="description" content="What changed in every version of TUNL, newest first: the dusk-city approach and 3D ship in 15.0, paint finishes in 14.0, the warp portal in 11.0, and everything in between.">
+<link rel="canonical" href="https://flytunl.ch/changelog/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="TUNL Changelog - Release Notes for Every Version">
+<meta property="og:description" content="What changed in every version of TUNL, newest first: the dusk-city approach and 3D ship in 15.0, paint finishes in 14.0, the warp portal in 11.0, and everything in between.">
+<meta property="og:url" content="https://flytunl.ch/changelog/">
+<meta property="og:image" content="https://flytunl.ch/feature-graphic-1024x500.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png">
+<link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#04040a">
+<style>
+  * { box-sizing:border-box; }
+  body {
+    background:#04040a;
+    color:#ddd;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height:1.7;
+    margin:0;
+    padding:40px 20px 80px;
+  }
+  main { max-width:720px; margin:0 auto; }
+  .brand { display:inline-flex; align-items:center; text-decoration:none; margin-bottom:28px; }
+  .brand img { height:28px; width:auto; }
+  h1 { color:#ffe040; font-size:30px; letter-spacing:1px; margin-bottom:10px; line-height:1.25; }
+  .lead { color:#aaa; font-size:17px; margin-top:0; margin-bottom:8px; }
+  .meta { color:#666; font-size:13px; margin-bottom:34px; }
+  h2 { color:#4dd9ff; font-size:21px; margin-top:44px; margin-bottom:12px; line-height:1.3; }
+  h3 { color:#fff; font-size:16px; margin-top:28px; margin-bottom:8px; }
+  p, li { color:#ccc; font-size:15.5px; }
+  ul, ol { padding-left:22px; }
+  li { margin-bottom:10px; }
+  a { color:#4dd9ff; }
+  strong { color:#fff; }
+  em { color:#ddd; }
+  code {
+    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size:13.5px; color:#ffe040;
+    background:#12121c; border-radius:4px; padding:1px 5px;
+  }
+  pre {
+    background:#0d0d16; border:1px solid #222; border-radius:10px;
+    padding:16px; overflow-x:auto; margin:18px 0;
+  }
+  pre code { background:none; padding:0; color:#cfe8ff; font-size:13px; line-height:1.6; }
+  .note {
+    background:#0d0d16; border:1px solid #222; border-left:3px solid #4dd9ff;
+    border-radius:0 10px 10px 0; padding:14px 18px; margin:22px 0;
+  }
+  .note p { margin:0; font-size:14.5px; color:#bbb; }
+  .wrap { overflow-x:auto; margin:18px 0; }
+  table { width:100%; border-collapse:collapse; font-size:14.5px; min-width:480px; }
+  th, td { text-align:left; padding:9px 12px; border-bottom:1px solid #222; vertical-align:top; }
+  th { color:#4dd9ff; font-weight:600; }
+  td { color:#ccc; }
+  .cta {
+    display:inline-block; background:#ffe040; color:#04040a; font-weight:700;
+    text-decoration:none; padding:12px 24px; border-radius:10px; margin-top:8px;
+  }
+  .cta:hover { background:#fff06a; }
+  .post { display:block; background:#0d0d16; border:1px solid #222; border-radius:12px;
+    padding:18px 20px; margin:16px 0; text-decoration:none; }
+  .post:hover { border-color:#4dd9ff; }
+  .post h3 { color:#ffe040; font-size:18px; margin:0 0 6px; }
+  .post p { margin:0; color:#bbb; font-size:14.5px; }
+  .post .when { color:#666; font-size:12.5px; margin-bottom:6px; display:block; }
+  .swatch { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:8px; vertical-align:middle; }
+  footer {
+    margin-top:56px; color:#666; font-size:13px; line-height:1.9;
+    border-top:1px solid #222; padding-top:16px;
+  }
+  footer a { color:#888; }
+</style>
+<!-- Cloudflare Web Analytics (cookieless, no consent banner needed) -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "7783839e84374212b7d76f25e1fb8e87"}'></script>
+</head>
+<body>
+<main>
+  <a class="brand" href="/">
+    <img src="/wordmark.svg" alt="TUNL">
+  </a>
+
+  <h1>TUNL Changelog</h1>
+  <p class="lead">What changed in each version, newest first. The browser version at
+  <a href="/play/">flytunl.ch/play</a> always runs the newest build.</p>
+  <p class="meta">Changelog &middot; updated 20 September 2026 &middot; the latest version is 15.0</p>
+
+  <h2>15.0: The run now begins outside the cave</h2>
+  <ul>
+    <li>Every run opens over the day's city at dusk and flies into a rock mouth. An "ENTERING THE TUNL" banner marks the way in. The cave, the score and the daily seed are exactly as before.</li>
+    <li>The ship in flight is drawn in a three-quarter side view: its wings sweep back with the speed, the hull rolls with your climb, and the warp ring gives a barrel roll. Hitbox unchanged.</li>
+    <li>The soft walls are gone. Walls are lethal from the tunnel mouth on, and the two hull scratches now last the whole run.</li>
+    <li>A sound and interface pass: distinct sounds for a hull scratch and a revive, stereo panning around the ship, an audible warning just before a cannon fires and before a loose stalactite falls, cave reverb on impacts, a low turbofan spool-up, three-level music and sound settings, and a pause when the app loses focus mid-run.</li>
+    <li>Local records were reset once, on first launch. Shards, stardust, ships, achievements and lifetime counters are untouched.</li>
+  </ul>
+
+  <h2>14.2: Music, the death screen and small feel fixes</h2>
+  <ul>
+    <li>Seamless music loops, with no audible jump.</li>
+    <li>The song's real ending plays when you die, then silence until the title music returns.</li>
+    <li>A longer death freeze frame, with the reticle on whatever hit you.</li>
+    <li>The bomb sound rebuilt as a thunder boom, and an engine spool-up that matches the launch.</li>
+    <li>Shooting a hazard now scores points, and the ammo coin is a brighter orange.</li>
+  </ul>
+
+  <h2>14.1: Sound and slow-time</h2>
+  <ul>
+    <li>A new in-game soundtrack.</li>
+    <li>Reworked impact sounds for the shield break, rock hits and mine and bomb explosions.</li>
+    <li>Picking up a blue coin now visibly slows the world: ripples, an ice-blue wash on the left, and slowed particles, exhaust and coin animations. Presentation only.</li>
+  </ul>
+
+  <h2>14.0: Paint and polish</h2>
+  <ul>
+    <li>Six hangar paint finishes, bought once with shards and equipped per ship. Purely cosmetic.</li>
+    <li>A full audio pass: a shared master bus with a soft limiter, and a rebalanced mix so that warnings are never quieter than a routine pickup.</li>
+    <li>A fix for the rendered wall pulling away from the screen edge when the corridor bonus was maxed or a warp was live.</li>
+  </ul>
+
+  <h2>13.0: A new look</h2>
+  <ul>
+    <li>New typography across every screen.</li>
+    <li>The title screen takes the colour of the day's world, and the TUNL wordmark was rebuilt.</li>
+    <li>A new score display: a gauge that fills toward your record, a combo chip beside the score, and a spark from each paying coin.</li>
+    <li>Every coin is drawn as the thing it does: an hourglass, a shield, a crosshair, a magnet, a bomb with a lit fuse, a poison flask, a whirlpool, a gem with outward arrows.</li>
+    <li>The death screen was rebuilt as a debriefing on a clear grid, with the score as its hero.</li>
+  </ul>
+
+  <h2>12.2: Leaderboard reset and an achievement fix</h2>
+  <ul>
+    <li>The all-time leaderboard was reset on both platforms, because its top scores were set on much easier builds. Daily and weekly boards were untouched.</li>
+    <li>"Master of the Fleet" now requires every ship in the roster to be maxed.</li>
+  </ul>
+
+  <h2>12.0 and 12.1: A gentler start and a plan for the run</h2>
+  <ul>
+    <li>A safe, hazard-free opening flight for the first stretch of every run.</li>
+    <li>The run is now a plan of seven-second sectors, each introducing one new thing, with a breather at the start of each. See the <a href="/devlog/run-pacing/">pacing devlog</a>.</li>
+    <li>Two hull scratches to forgive early wall mistakes.</li>
+    <li>Boulders became rock islands with four outline families, and cannon shots got more flight time.</li>
+    <li>A faceted ship hull, and physics that no longer depends on the refresh rate.</li>
+    <li>A frozen death frame that points at what killed you.</li>
+  </ul>
+
+  <h2>11.0: The warp portal</h2>
+  <ul>
+    <li>A hoop hangs in the corridor now and then. Fly through it to surge ahead, untouchable, with gold coins pulled in automatically.</li>
+    <li>Ten new achievements.</li>
+  </ul>
+
+  <h2>10.5: Fairness across screens</h2>
+  <ul>
+    <li>Every screen size now flies the exact same daily cave. Four separate causes of per-device difference were found and fixed.</li>
+    <li>Boulders and falling stalactites moved much earlier, where players actually reach them.</li>
+    <li>A re-paced power-up economy, and two placement bugs fixed.</li>
+  </ul>
+
+  <h2>10.4: Flight-time achievements</h2>
+  <ul>
+    <li>Two new achievements for staying airborne for a minute and for two minutes in one run.</li>
+    <li>A fix for late-run power-up coins overshooting their intended share, after a player said there were too many shields.</li>
+  </ul>
+
+  <h2>10.3: Reachability</h2>
+  <ul>
+    <li>Ship unlock costs were cut hard, so the daily calendar rather than the shard count paces every ship.</li>
+    <li>The opening coins now teach releasing, not just holding.</li>
+    <li>World rank is hidden until enough players have flown the day's cave for it to mean something.</li>
+  </ul>
+
+  <h2>10.2: Thrust retune</h2>
+  <ul>
+    <li>The upward acceleration was eased after player feedback. See <a href="/devlog/thrust-retune/">the story</a>.</li>
+  </ul>
+
+  <h2>10.1: A bug fix</h2>
+  <ul>
+    <li>Achievements you had already earned before they existed are now granted retroactively.</li>
+  </ul>
+
+  <h2>10.0: Deep runs get variety</h2>
+  <ul>
+    <li>For runs past a few hundred points: a corridor whose shape changes character, pulses of extra speed, wide breather chambers, and a shifting colour palette.</li>
+    <li>A second hazard coin, the drain, which takes a share of your current score.</li>
+    <li>Lifetime distance on the title screen, and two lifetime-distance achievements.</li>
+  </ul>
+
+  <h2>9.1: The seven daily worlds</h2>
+  <ul>
+    <li>Eight new achievements built on the seven-day world rotation: one for a real run on each of the seven worlds, plus a Grand Tour for all of them.</li>
+  </ul>
+
+  <h2>9.0: Achievements</h2>
+  <ul>
+    <li>Eighteen achievements on Game Center and Play Games, unlocked by flying, upgrading ships, hitting milestones and returning daily.</li>
+  </ul>
+
+  <h2>8.4: Invite a friend</h2>
+  <ul>
+    <li>Invite a friend and earn a shard bonus when they fly their first cave, and a shared link now opens straight into the app if it is installed.</li>
+  </ul>
+
+  <h2>8.3: Daily reminder</h2>
+  <ul>
+    <li>An opt-in evening reminder on days you have not flown the day's tunnel, with one tap in Settings to turn it on or off.</li>
+  </ul>
+
+  <h2>8.1 and 8.2: Optional rewards</h2>
+  <ul>
+    <li>An optional video to continue a run, and a once-a-day optional video for a shard bonus.</li>
+  </ul>
+
+  <h2>Earlier versions</h2>
+  <p>Versions before 8.1 built the core game: the hold-to-thrust flight, the daily cave, the
+  first coin types, ships and shards, and the leaderboards.</p>
+
+  <p>For how the current game plays, see the <a href="/how-to-play/">how-to-play guide</a>. If
+  something in a new version broke your run, tell me at
+  <a href="mailto:info@flytunl.ch">info@flytunl.ch</a>.</p>
+
+  <p><a class="cta" href="/play/">Play today's cave</a></p>
+
+
+  <footer>
+    TUNL &middot; <a href="/">Home</a> &middot; <a href="/play/">Play</a> &middot;
+    <a href="/how-to-play/">How to play</a> &middot; <a href="/ships/">Ships</a> &middot;
+    <a href="/devlog/">Devlog</a> &middot; <a href="/changelog/">Changelog</a> &middot;
+    <a href="/about/">About</a> &middot; <a href="/support/">Support</a> &middot;
+    <a href="/privacy/">Privacy Policy</a> &middot; <a href="/press/">Press</a><br>
+    &copy; 2026 Theodoracatos. All rights reserved.
+  </footer>
+</main>
+</body>
+</html>

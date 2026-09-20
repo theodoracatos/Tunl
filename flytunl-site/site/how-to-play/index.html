@@ -7,7 +7,7 @@
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4882203470005029"
      crossorigin="anonymous"></script>
 <title>How to Play TUNL - Controls, Coins, Hazards and Scoring</title>
-<meta name="description" content="A complete guide to TUNL: the one control, how scoring and coin combos work, what all eight coin types do, every hazard in order of appearance, and the strategy that actually raises your score.">
+<meta name="description" content="A complete guide to TUNL: the one control, the opening and hull scratches, how a run is paced in sectors, how scoring and coin combos work, what all eight coin types do, every hazard in order of appearance, and the strategy that raises your score.">
 <link rel="canonical" href="https://flytunl.ch/how-to-play/">
 <meta property="og:type" content="article">
 <meta property="og:title" content="How to Play TUNL - Controls, Coins, Hazards and Scoring">
@@ -36,7 +36,8 @@
   .brand { display:inline-flex; align-items:center; text-decoration:none; margin-bottom:28px; }
   .brand img { height:28px; width:auto; }
   h1 { color:#ffe040; font-size:30px; letter-spacing:1px; margin-bottom:10px; line-height:1.25; }
-  .lead { color:#aaa; font-size:17px; margin-top:0; margin-bottom:34px; }
+  .lead { color:#aaa; font-size:17px; margin-top:0; margin-bottom:8px; }
+  .updated { color:#777; font-size:13px; margin-top:0; margin-bottom:34px; }
   h2 { color:#4dd9ff; font-size:21px; margin-top:44px; margin-bottom:12px; line-height:1.3; }
   h3 { color:#fff; font-size:16px; margin-top:26px; margin-bottom:8px; }
   p, li { color:#ccc; font-size:15.5px; }
@@ -87,6 +88,7 @@
     { "@type": "HowToStep", "name": "Hold to climb", "text": "Hold anywhere on screen, or press Space, to thrust upward. Release to let gravity pull you down." },
     { "@type": "HowToStep", "name": "Collect gold", "text": "Gold coins widen the corridor. The bonus decays, so keep topping it up." },
     { "@type": "HowToStep", "name": "Avoid the two hazard coins", "text": "Poison and drain look like pickups but cost you. Learn their shapes." },
+    { "@type": "HowToStep", "name": "Spend your hull scratches wisely", "text": "You have two hull scratches for the whole run. A wall contact costs one; with none left the next wall ends the run. Stalactites, mines, boulders and cannon shots are direct hits that only a shield absorbs." },
     { "@type": "HowToStep", "name": "Chain coins for combo points", "text": "Coins collected within two seconds of each other build a multiplier." }
   ]
 }
@@ -103,6 +105,7 @@
   <h1>How to Play TUNL</h1>
   <p class="lead">One button, a narrowing cave, and eight kinds of coin, two of which are
   lying to you. Here is everything the game does not stop to explain.</p>
+  <p class="updated">Updated 20 September 2026 for TUNL 15.0.</p>
 
   <h2>The one control</h2>
 
@@ -118,18 +121,32 @@
   <p>The fix is to think one bend ahead rather than reacting to the bend you are in. Short
   taps hold an altitude. Long holds change it.</p>
 
-  <h2>The opening runway</h2>
+  <h2>The opening: city, glide and runway</h2>
 
-  <p>Every run starts with two deliberate mercies.</p>
+  <p>Every run starts the same way, on purpose. You are flying over the day's city at dusk,
+  the skyline sliding past behind you, with a mountain ahead and a rock mouth in it. The banner
+  says <strong>ENTERING THE TUNL</strong>, the ship climbs into frame and levels out, and you
+  fly in. The city is a backdrop and a breather. The cave (and your score) begins at the mouth,
+  and it is the same cave for everyone that day, whatever the city looks like.</p>
+
+  <p>Three deliberate mercies follow.</p>
 
   <p>First, <strong>gravity does not switch on until you press</strong>. The ship flies dead
   level until your first hold, or for a couple of seconds, whichever comes first. You never
   drop before you have acted, including on a restart.</p>
 
-  <p>Second, <strong>the walls are not lethal for roughly the first 50 points</strong>, and
-  there are no stalactites at all in that stretch. You can bump the tunnel and keep flying.
-  This is where you are supposed to get the feel of thrust against gravity, so use it. When
-  the walls go live the game tells you.</p>
+  <p>Second, <strong>the first stretch of cave is an open hall</strong>. For roughly the first
+  50 points the corridor is pushed out to the edges of the screen and there are no stalactites,
+  mines, boulders or cannons at all. Only coins, and occasionally a warp ring. It is where you
+  are supposed to get the feel of thrust against gravity, so use it.</p>
+
+  <p>Third, <strong>the walls are real, but you get two hull scratches</strong>. Touching a wall
+  costs one scratch instead of your run: the ship is pushed back inside, the game says
+  <strong>SCRAPE!</strong> and a diamond disappears from the pair at the bottom right of the
+  screen. There is a short grace period in which the wall cannot scratch you again. With both
+  scratches gone, the next wall contact ends the run. The scratches last the whole run, and
+  they forgive walls only: a stalactite, a mine, a boulder or a cannon shot is a direct hit and
+  is handled by shields, not scratches.</p>
 
   <h2>How scoring works</h2>
 
@@ -143,11 +160,48 @@
     five is worth far more than five separate coins.</li>
     <li><strong>Near miss</strong>: passing within about two ship-widths of a wall pays a
     point, with a short cooldown so you cannot farm it by hugging.</li>
+    <li><strong>Shooting</strong>: once you carry ammo, every stalactite, mine or cannon shot you
+    destroy in flight pays a few points on the spot.</li>
   </ul>
 
   <p>Two things follow from this. Coin routing genuinely matters, because a tight chain
   outscores a lazy sweep of the same coins. And flying close to walls is rewarded, which is
   the game quietly encouraging the exact behaviour that kills you.</p>
+
+  <h2>How a run is paced: sectors</h2>
+
+  <p>A run is not one long ramp. It is a sequence of <strong>sectors</strong>, each about seven
+  seconds of flying at the game's reference speed, and each one either adds something new or
+  turns up something you already know. When you cross into a new sector from the third onward
+  a <strong>SECTOR</strong> notice tells you so. Roughly, and by score:</p>
+
+  <div class="wrap">
+  <table>
+    <tr><th>Sector</th><th>Score</th><th>What arrives</th></tr>
+    <tr><td>0</td><td>0 - 50</td><td>The open hall. Gold and hourglass coins, no hazards.</td></tr>
+    <tr><td>1</td><td>50 - 110</td><td>The first stalactites, and the shield coin to answer them.</td></tr>
+    <tr><td>2</td><td>110 - 180</td><td>Ammo and the magnet.</td></tr>
+    <tr><td>3</td><td>180 - 250</td><td>The first mine, alone and centred, and the bomb coin.</td></tr>
+    <tr><td>4</td><td>250 - 330</td><td>Boulders.</td></tr>
+    <tr><td>5</td><td>330 - 410</td><td>Chicanes: spikes from both walls at once.</td></tr>
+    <tr><td>6</td><td>410 - 490</td><td>Wall cannons.</td></tr>
+    <tr><td>7</td><td>490 - 580</td><td>Falling stalactites.</td></tr>
+    <tr><td>8</td><td>580 - 680</td><td>The poison coin.</td></tr>
+    <tr><td>9</td><td>680 - 770</td><td>The drain coin.</td></tr>
+    <tr><td>10+</td><td>770 and up</td><td>Nothing new. The rates keep climbing.</td></tr>
+  </table>
+  </div>
+
+  <p>Two rules sit behind that table. The first is that <strong>tools come before the threat they
+  answer</strong>: you can pick up a shield a full sector before the first mine that wants one.
+  The second is that each sector is a <strong>sawtooth</strong>. Its first fifth is a breather,
+  with fewer hazards and more coins, and then it ramps up again toward the next boundary.
+  The pattern is: a little rest, then a little more pressure, then a new idea.</p>
+
+  <p>Past the last new idea, the hazards do not stop getting denser and the cave does not stop
+  getting faster. That is by design. Speed never plateaus, and one of the hazards, the mine,
+  is placed anywhere across the corridor rather than against a wall, so a very long run is
+  never just an endurance test at a fixed pace. Every run ends eventually.</p>
 
   <h2>The eight coins</h2>
 
@@ -225,7 +279,8 @@
 
   <h2>The hazards</h2>
 
-  <p>These also unlock in order, so you meet them one at a time.</p>
+  <p>These also arrive in order, one per sector as the table above shows, so you meet them one
+  at a time.</p>
 
   <ul>
     <li><strong>Stalactites</strong> are triangular spikes rooted in the ceiling or floor.
@@ -277,6 +332,34 @@
   is free. A chain you cross the corridor for at speed, into a narrowing section, usually is
   not.</p>
 
+  <h2>When the run ends</h2>
+
+  <p>The world freezes for a moment when you die, the wrecked ship stays on screen, and a
+  reticle contracts onto whatever hit you. That pause is the game answering "what did I just
+  do wrong" before it shows you a single number. Then comes the <strong>debriefing</strong>:</p>
+
+  <ul>
+    <li>Your <strong>score</strong>, with a rail under it that runs toward your all-time best or,
+    if this run was nowhere near it, toward the next milestone. That is the bar a short run is
+    actually playing against.</li>
+    <li>Your <strong>rank on today's world leaderboard</strong> and how many places you moved
+    since your last run, once enough people have flown the day's cave for the number to mean
+    something.</li>
+    <li>A strip of <strong>scenes from the run</strong>: one real frame from each sector you
+    reached, then the frozen moment of the crash, then a dashed slot naming the sector you were
+    trying for.</li>
+    <li>Anything the run <strong>earned</strong>: shards, a ship unlock, a mastery level, a
+    finished daily mission.</li>
+    <li>A <strong>share card</strong> after a strong run: a picture of the tunnel you flew,
+    with the spot you died and your best marked on it, not just a number.</li>
+  </ul>
+
+  <p>In the iOS and Android apps, a run that got somewhere can be continued once by watching a
+  short optional video. The continue puts you back in the cave, clears the danger around you,
+  gives you a moment of invulnerability and <strong>repairs both hull scratches</strong>. The
+  browser version has no rewarded video, so it never offers a free second life; that one is
+  an app feature.</p>
+
   <h2>Ships, shards and stardust</h2>
 
   <p>Coins you collect are banked as <strong>shards</strong> at the end of a run, which unlock
@@ -287,6 +370,9 @@
   game on a given day, with a bonus for unbroken weekly streaks. Stardust is never spent, only
   checked as a threshold. It means the deepest unlocks are gated on showing up over time rather
   than on grinding a single long session.</p>
+
+  <p>There is a full page on the <a href="/ships/">eight ships, their trade-offs, mastery and
+  paint finishes</a>.</p>
 
   <h2>The daily cave</h2>
 
@@ -305,8 +391,11 @@
 
   <footer>
     TUNL &middot; <a href="/">Home</a> &middot; <a href="/play/">Play</a> &middot;
-    <a href="/devlog/daily-cave/">Devlog</a> &middot; <a href="/support">Support</a> &middot;
-    <a href="/privacy">Privacy Policy</a> &middot; &copy; 2026 Theodoracatos
+    <a href="/how-to-play/">How to play</a> &middot; <a href="/ships/">Ships</a> &middot;
+    <a href="/devlog/">Devlog</a> &middot; <a href="/changelog/">Changelog</a> &middot;
+    <a href="/about/">About</a> &middot; <a href="/support/">Support</a> &middot;
+    <a href="/privacy/">Privacy Policy</a> &middot; <a href="/press/">Press</a><br>
+    &copy; 2026 Theodoracatos. All rights reserved.
   </footer>
 </main>
 </body>

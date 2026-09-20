@@ -164,6 +164,20 @@ the retry loops reaching back out past it) - the second time 15 of 18 boulders a
   the stalactites that actually overlap the rock, measured against the half-chord at
   each spike's own x, requiring >= 1.3 player diameters each. Result: 0 sealed passes.
 
+**Coins are the fixed point for boulders and mines (2026-09-20).** `coinBlockedByStal` only
+knows stalactites, so a coin (power-ups included) could land inside a boulder (~1% of
+coins) or on a mine's bob range (~3%); the later spawners never looked at coins. Now
+`_fitIsland` and `_makeMineAt` reject any placement within `PLACE_COIN_CLEAR_R` of an
+existing coin (shorter island / next retry offset / none), in reference units so the verdict
+is the same on every screen. **The coin never moves and is never dropped** - rocks and mines
+yield, and boulder count is unchanged (107 over 8 days x 60000 wx, before and after), mines
+262 -> 265. This needs the coins to exist first, so `SPAWN_AHEAD_COIN` went 500 -> 1500 (a
+boulder probes 300 + 1000 retry + 100 half-length ahead; the coin's own stalactite budget
+caps it at 1500 + 46 <= 1550). **Do not lower it or reorder `maintainCoins()` after
+`maintainBoulders()`/`maintainMines()`**: coin and boulder verdicts would then depend on frame
+timing, i.e. on screen width. `test-cave.js` asserts both the reach budget and 0 overlaps.
+Not covered: falling stalactites (they move) and portal rings.
+
 `_makeMineAt`'s tip-push radius lerps 300 -> 90 over `_prog2` for the same reason - at
 50px stalactite spacing a flat 300 left no vertical room at all past the plateau.
 

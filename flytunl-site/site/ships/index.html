@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Google AdSense (site verification + ad serving) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4882203470005029"
+     crossorigin="anonymous"></script>
+<title>The Eight Ships of TUNL - Trade-offs, Mastery, Shards and Paint</title>
+<meta name="description" content="Meet all eight TUNL ships from PEARL to SOLARIS: what each one is good at and what it costs, how mastery works, how shards and stardust unlock them, and the six paint finishes.">
+<link rel="canonical" href="https://flytunl.ch/ships/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The Eight Ships of TUNL - Trade-offs, Mastery, Shards and Paint">
+<meta property="og:description" content="Meet all eight TUNL ships from PEARL to SOLARIS: what each one is good at and what it costs, how mastery works, how shards and stardust unlock them, and the six paint finishes.">
+<meta property="og:url" content="https://flytunl.ch/ships/">
+<meta property="og:image" content="https://flytunl.ch/feature-graphic-1024x500.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png">
+<link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#04040a">
+<style>
+  * { box-sizing:border-box; }
+  body {
+    background:#04040a;
+    color:#ddd;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height:1.7;
+    margin:0;
+    padding:40px 20px 80px;
+  }
+  main { max-width:720px; margin:0 auto; }
+  .brand { display:inline-flex; align-items:center; text-decoration:none; margin-bottom:28px; }
+  .brand img { height:28px; width:auto; }
+  h1 { color:#ffe040; font-size:30px; letter-spacing:1px; margin-bottom:10px; line-height:1.25; }
+  .lead { color:#aaa; font-size:17px; margin-top:0; margin-bottom:8px; }
+  .meta { color:#666; font-size:13px; margin-bottom:34px; }
+  h2 { color:#4dd9ff; font-size:21px; margin-top:44px; margin-bottom:12px; line-height:1.3; }
+  h3 { color:#fff; font-size:16px; margin-top:28px; margin-bottom:8px; }
+  p, li { color:#ccc; font-size:15.5px; }
+  ul, ol { padding-left:22px; }
+  li { margin-bottom:10px; }
+  a { color:#4dd9ff; }
+  strong { color:#fff; }
+  em { color:#ddd; }
+  code {
+    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size:13.5px; color:#ffe040;
+    background:#12121c; border-radius:4px; padding:1px 5px;
+  }
+  pre {
+    background:#0d0d16; border:1px solid #222; border-radius:10px;
+    padding:16px; overflow-x:auto; margin:18px 0;
+  }
+  pre code { background:none; padding:0; color:#cfe8ff; font-size:13px; line-height:1.6; }
+  .note {
+    background:#0d0d16; border:1px solid #222; border-left:3px solid #4dd9ff;
+    border-radius:0 10px 10px 0; padding:14px 18px; margin:22px 0;
+  }
+  .note p { margin:0; font-size:14.5px; color:#bbb; }
+  .wrap { overflow-x:auto; margin:18px 0; }
+  table { width:100%; border-collapse:collapse; font-size:14.5px; min-width:480px; }
+  th, td { text-align:left; padding:9px 12px; border-bottom:1px solid #222; vertical-align:top; }
+  th { color:#4dd9ff; font-weight:600; }
+  td { color:#ccc; }
+  .cta {
+    display:inline-block; background:#ffe040; color:#04040a; font-weight:700;
+    text-decoration:none; padding:12px 24px; border-radius:10px; margin-top:8px;
+  }
+  .cta:hover { background:#fff06a; }
+  .post { display:block; background:#0d0d16; border:1px solid #222; border-radius:12px;
+    padding:18px 20px; margin:16px 0; text-decoration:none; }
+  .post:hover { border-color:#4dd9ff; }
+  .post h3 { color:#ffe040; font-size:18px; margin:0 0 6px; }
+  .post p { margin:0; color:#bbb; font-size:14.5px; }
+  .post .when { color:#666; font-size:12.5px; margin-bottom:6px; display:block; }
+  .swatch { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:8px; vertical-align:middle; }
+  footer {
+    margin-top:56px; color:#666; font-size:13px; line-height:1.9;
+    border-top:1px solid #222; padding-top:16px;
+  }
+  footer a { color:#888; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "The Eight Ships of TUNL",
+  "description": "All eight TUNL ships, their trade-offs, mastery, unlock economy and paint finishes.",
+  "author": {
+    "@type": "Person",
+    "name": "Theodoracatos"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "TUNL"
+  },
+  "datePublished": "2026-09-20",
+  "mainEntityOfPage": "https://flytunl.ch/ships/",
+  "image": "https://flytunl.ch/feature-graphic-1024x500.png"
+}
+</script>
+<!-- Cloudflare Web Analytics (cookieless, no consent banner needed) -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "7783839e84374212b7d76f25e1fb8e87"}'></script>
+</head>
+<body>
+<main>
+  <a class="brand" href="/">
+    <img src="/wordmark.svg" alt="TUNL">
+  </a>
+
+  <h1>The Eight Ships of TUNL</h1>
+  <p class="lead">Every ship flies the same one-button physics. What changes is a single trade:
+  one thing it does better, one thing it does worse. Here is the roster, how you earn it,
+  and how it is drawn.</p>
+  <p class="meta">Ships &middot; updated 20 September 2026 for TUNL 15.0</p>
+
+  <h2>Why the ships are trade-offs, not upgrades</h2>
+
+  <p>In a lot of games a better ship is a bigger number. TUNL deliberately avoids that. Every
+  ship pairs a <strong>buff with a drawback</strong>, so picking one is a build choice: a
+  smaller hitbox that holds less shield, a wider coin reach that is easier to clip a spike
+  with. None of them is strictly the best at everything. When an early version had one ship
+  that clearly beat the rest, I measured it against the others with a replay simulation and
+  rebalanced until it no longer did.</p>
+
+  <p>The thrust, gravity and terminal speed are identical on every ship, and every ship flies
+  the same daily cave. What differs is the margin the ship gives you when something goes
+  wrong, and what a pickup does for you. I keep the exact numbers off this page on
+  purpose. The trade is meant to be felt, and the ships are best learned by flying them.</p>
+
+  <h2>The roster</h2>
+
+  <div class="wrap">
+  <table>
+    <tr><th>Ship</th><th>What it is good at</th><th>What it costs you</th></tr>
+    <tr><td><span class="swatch" style="background:#e8eeff"></span>PEARL</td>
+        <td>Nothing in particular. The neutral baseline every player starts with.</td>
+        <td>Nothing either. It is the reference the other seven are measured against.</td></tr>
+    <tr><td><span class="swatch" style="background:#ffaa00"></span>AMBER</td>
+        <td>Reaches further for coins than any other ship.</td>
+        <td>A slightly bigger hitbox, so tight gaps are less forgiving.</td></tr>
+    <tr><td><span class="swatch" style="background:#ff1a33"></span>CRIMSON</td>
+        <td>Slips through gaps that other ships cannot fit through.</td>
+        <td>Carries less shield capacity.</td></tr>
+    <tr><td><span class="swatch" style="background:#00ccff"></span>ELECTRIC</td>
+        <td>Bends time harder and for longer whenever a slow-time (hourglass) coin lands.</td>
+        <td>A slightly shorter combo window, so coin chains are less forgiving.</td></tr>
+    <tr><td><span class="swatch" style="background:#99ff00"></span>TOXIC</td>
+        <td>Every gold coin buys more corridor room.</td>
+        <td>The extra room burns off faster, so it has to be kept topped up.</td></tr>
+    <tr><td><span class="swatch" style="background:#c080ff"></span>VOID</td>
+        <td>Every third shield coin gives two shields instead of one.</td>
+        <td>A tighter near-miss window, so the close-call bonus is harder to earn.</td></tr>
+    <tr><td><span class="swatch" style="background:#ffffff"></span>NOVA</td>
+        <td>A magnet coin pulls coins in for much longer.</td>
+        <td>Less ammo held in reserve.</td></tr>
+    <tr><td><span class="swatch" style="background:#ff6600"></span>SOLARIS</td>
+        <td>A very wide near-miss window, so the close-call bonus triggers from much further away. Built for players chasing the deepest runs.</td>
+        <td>A larger hitbox. The rarest ship in the roster.</td></tr>
+  </table>
+  </div>
+
+  <p>A practical way to read the table: AMBER and TOXIC are gold-economy ships and reward a
+  player who already routes coins well. CRIMSON is the tight-gap specialist, and is the one to
+  pick for a dense stretch of stalactites. SOLARIS and VOID are about the near-miss bonus, the
+  points paid for flying close to a wall, which SOLARIS makes easy and VOID makes hard.
+  ELECTRIC, NOVA and VOID are power-up ships that make a specific coin worth more when it
+  arrives, so they shine in a run where you are picking up plenty of that coin. PEARL is the
+  honest starting point, and a lot of strong players keep flying it.</p>
+
+  <h2>Mastery: the drawback fades, the buff grows</h2>
+
+  <p>Every ship has its own <strong>mastery</strong> track. It fills with the coins you collect
+  while flying that ship, and there are three levels above the start. At each level the
+  ship's drawback eases a little and its buff grows a little. Mastery is per ship, so time
+  spent in AMBER does nothing for CRIMSON.</p>
+
+  <p>That gives the roster a second dimension. A freshly unlocked ship is the version with its
+  edges sharp. A ship you have flown for a while is a smoother version of the same idea.
+  There is also an achievement for maxing out the whole fleet, and it requires every ship, not
+  just the ones you own. It was once possible to complete it with a single ship. That was a bug,
+  and it is fixed.</p>
+
+  <h2>How you earn a ship: shards and stardust</h2>
+
+  <p>Every paid ship needs two different things at once, and it is worth understanding why.</p>
+
+  <p><strong>Shards</strong> are the skill currency. The coins you collect during a run are
+  banked as shards when it ends. Fly better, collect more, earn faster. There is a daily cap on
+  how many run-earned shards count, so a single marathon session cannot buy the whole roster.
+  Daily missions and one optional bonus a day pay on top of that cap.</p>
+
+  <p><strong>Stardust</strong> is the time currency. You get a little for simply opening TUNL
+  on a new calendar day, plus a bonus for an unbroken week. It is never spent. It is only
+  checked as a threshold, so a ship's stardust requirement does not stack on the next ship's.
+  No amount of skill buys it.</p>
+
+  <p>Why both? Shards alone would let a strong player finish the roster in days and then have
+  nothing to come back for. Stardust alone would ignore how well you play. Together, the
+  cheap ships fall to shards quickly and the expensive ones need weeks and months of showing
+  up. SOLARIS, the last ship, is the one that takes the longest, by design. The shard prices
+  were tuned so that the calendar, not the coin count, is the binding constraint at every
+  tier.</p>
+
+  <p>If you would rather skip that, there is a one-time <strong>Unlock All Ships</strong>
+  purchase in the apps. It unlocks every ship, including any added later. It does not touch
+  your shards or stardust, and it is optional: every ship can be earned by playing.</p>
+
+  <h2>Paint: six finishes, purely cosmetic</h2>
+
+  <p>Once AMBER is unlocked, a PAINT button appears on the ship sheet. It opens the paint shop,
+  where you can buy <strong>liveries</strong> with shards. You buy a finish once for the whole
+  hangar and then choose it separately for each ship you own, so every ship keeps its own look.
+  A livery has no perk, no hitbox change and no effect on the leaderboard.</p>
+
+  <ul>
+    <li><strong>FACTORY</strong>: the ship's own colours. Free.</li>
+    <li><strong>STEALTH</strong>: a rim of light that slowly breathes and neon seams
+    along the facets.</li>
+    <li><strong>STRIPE</strong>: a band across the span with a pulse running down it, wing
+    chevrons and tip caps.</li>
+    <li><strong>SPLIT</strong>: one half of the hull re-shaded against the other, divided by a
+    clean lit seam whose colour cycles.</li>
+    <li><strong>CHROME</strong>: a hard reflected horizon and a specular sweep that throws the
+    ship's neighbouring hues.</li>
+    <li><strong>AURORA</strong>: four curtains of polar light drifting over the hull at
+    different speeds.</li>
+  </ul>
+
+  <p>Every finish is built out of big masses of colour rather than fine patterns, because in
+  flight the ship is only a few dozen pixels across. An early pass used a carbon-fibre weave
+  and pinstripes. On a phone in motion they were invisible, and the finishes read as a recolour
+  that was not worth buying. A finish also never changes the ship's hue, so you can always tell
+  which ship is which. The ghost of your best run and the wrecked ship on the death frame
+  always use the plain factory paint.</p>
+
+  <h2>How the ship is drawn</h2>
+
+  <p>The hull is a slim, SR-71-style silhouette cut into flat facets that are lit from above:
+  the top half is mixed toward white, the bottom toward near-black, all from the ship's own
+  colour. The engine plume is tinted in the ship's colour too, so orange-red is kept for the
+  <strong>ON FIRE</strong> afterburner that lights when you beat today's best.</p>
+
+  <p>Since version 15.0 the ship in flight is shown in a <strong>three-quarter side view</strong>
+  instead of from straight above, which suits a game where gravity is down and the stalactites
+  hang from the ceiling. A few things move on it:</p>
+
+  <ul>
+    <li>The <strong>wings sweep back</strong> as the cave speeds up, spread wide at the slow
+    start and folded back at full pace, like a swing-wing fighter.</li>
+    <li>The hull <strong>rolls a few degrees with your climb</strong>: climbing turns the back
+    toward you, falling turns the belly. It is a second read on your vertical speed.</li>
+    <li>A <strong>blue coin</strong> throws the wings forward like an air brake and they fold
+    back as time returns to normal.</li>
+    <li>Flying through the warp ring gives you a full <strong>barrel roll</strong>.</li>
+  </ul>
+
+  <p>The hitbox is exactly what it was before the change. The 3D view is drawn only, and none
+  of it touches collision. The hangar, the shop and the share card still show the ship from
+  above, because those are portraits of the ship rather than pictures of a flight.</p>
+
+  <p>For the rules that make the ships worth choosing between, see the
+  <a href="/how-to-play/">how-to-play guide</a>. To try the game right now,
+  <a href="/play/">play today's cave in your browser</a>.</p>
+  <p><a class="cta" href="/play/">Play today's cave</a></p>
+
+
+  <footer>
+    TUNL &middot; <a href="/">Home</a> &middot; <a href="/play/">Play</a> &middot;
+    <a href="/how-to-play/">How to play</a> &middot; <a href="/ships/">Ships</a> &middot;
+    <a href="/devlog/">Devlog</a> &middot; <a href="/changelog/">Changelog</a> &middot;
+    <a href="/about/">About</a> &middot; <a href="/support/">Support</a> &middot;
+    <a href="/privacy/">Privacy Policy</a> &middot; <a href="/press/">Press</a><br>
+    &copy; 2026 Theodoracatos. All rights reserved.
+  </footer>
+</main>
+</body>
+</html>

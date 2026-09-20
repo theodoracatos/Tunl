@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Google AdSense (site verification + ad serving) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4882203470005029"
+     crossorigin="anonymous"></script>
+<title>Too Fast, Then Too Floaty: How TUNL's Thrust Was Tuned After Player Feedback</title>
+<meta name="description" content="The hold-to-thrust constant that defines how TUNL feels was changed three times in a day after a player called the game too fast. The ratio that explains why, and how the opening now teaches release.">
+<link rel="canonical" href="https://flytunl.ch/devlog/thrust-retune/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Too Fast, Then Too Floaty: How TUNL's Thrust Was Tuned After Player Feedback">
+<meta property="og:description" content="The hold-to-thrust constant that defines how TUNL feels was changed three times in a day after a player called the game too fast. The ratio that explains why, and how the opening now teaches release.">
+<meta property="og:url" content="https://flytunl.ch/devlog/thrust-retune/">
+<meta property="og:image" content="https://flytunl.ch/feature-graphic-1024x500.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png">
+<link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#04040a">
+<style>
+  * { box-sizing:border-box; }
+  body {
+    background:#04040a;
+    color:#ddd;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height:1.7;
+    margin:0;
+    padding:40px 20px 80px;
+  }
+  main { max-width:720px; margin:0 auto; }
+  .brand { display:inline-flex; align-items:center; text-decoration:none; margin-bottom:28px; }
+  .brand img { height:28px; width:auto; }
+  h1 { color:#ffe040; font-size:30px; letter-spacing:1px; margin-bottom:10px; line-height:1.25; }
+  .lead { color:#aaa; font-size:17px; margin-top:0; margin-bottom:8px; }
+  .meta { color:#666; font-size:13px; margin-bottom:34px; }
+  h2 { color:#4dd9ff; font-size:21px; margin-top:44px; margin-bottom:12px; line-height:1.3; }
+  h3 { color:#fff; font-size:16px; margin-top:28px; margin-bottom:8px; }
+  p, li { color:#ccc; font-size:15.5px; }
+  ul, ol { padding-left:22px; }
+  li { margin-bottom:10px; }
+  a { color:#4dd9ff; }
+  strong { color:#fff; }
+  em { color:#ddd; }
+  code {
+    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size:13.5px; color:#ffe040;
+    background:#12121c; border-radius:4px; padding:1px 5px;
+  }
+  pre {
+    background:#0d0d16; border:1px solid #222; border-radius:10px;
+    padding:16px; overflow-x:auto; margin:18px 0;
+  }
+  pre code { background:none; padding:0; color:#cfe8ff; font-size:13px; line-height:1.6; }
+  .note {
+    background:#0d0d16; border:1px solid #222; border-left:3px solid #4dd9ff;
+    border-radius:0 10px 10px 0; padding:14px 18px; margin:22px 0;
+  }
+  .note p { margin:0; font-size:14.5px; color:#bbb; }
+  .wrap { overflow-x:auto; margin:18px 0; }
+  table { width:100%; border-collapse:collapse; font-size:14.5px; min-width:480px; }
+  th, td { text-align:left; padding:9px 12px; border-bottom:1px solid #222; vertical-align:top; }
+  th { color:#4dd9ff; font-weight:600; }
+  td { color:#ccc; }
+  .cta {
+    display:inline-block; background:#ffe040; color:#04040a; font-weight:700;
+    text-decoration:none; padding:12px 24px; border-radius:10px; margin-top:8px;
+  }
+  .cta:hover { background:#fff06a; }
+  .post { display:block; background:#0d0d16; border:1px solid #222; border-radius:12px;
+    padding:18px 20px; margin:16px 0; text-decoration:none; }
+  .post:hover { border-color:#4dd9ff; }
+  .post h3 { color:#ffe040; font-size:18px; margin:0 0 6px; }
+  .post p { margin:0; color:#bbb; font-size:14.5px; }
+  .post .when { color:#666; font-size:12.5px; margin-bottom:6px; display:block; }
+  .swatch { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:8px; vertical-align:middle; }
+  footer {
+    margin-top:56px; color:#666; font-size:13px; line-height:1.9;
+    border-top:1px solid #222; padding-top:16px;
+  }
+  footer a { color:#888; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Too Fast, Then Too Floaty: Tuning the Thrust",
+  "description": "How TUNL's thrust constant was retuned after player feedback and what the net-up to net-down ratio explains.",
+  "author": {
+    "@type": "Person",
+    "name": "Theodoracatos"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "TUNL"
+  },
+  "datePublished": "2026-09-20",
+  "mainEntityOfPage": "https://flytunl.ch/devlog/thrust-retune/",
+  "image": "https://flytunl.ch/feature-graphic-1024x500.png"
+}
+</script>
+<!-- Cloudflare Web Analytics (cookieless, no consent banner needed) -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "7783839e84374212b7d76f25e1fb8e87"}'></script>
+</head>
+<body>
+<main>
+  <a class="brand" href="/">
+    <img src="/wordmark.svg" alt="TUNL">
+  </a>
+
+  <h1>Too Fast, Then Too Floaty: Tuning the Thrust</h1>
+  <p class="lead">One constant decides how TUNL feels more than any other. I changed it
+  twice in a single day after a player told me the game was too fast, and the second change
+  taught me more than the first.</p>
+  <p class="meta">Devlog &middot; 20 September 2026 &middot; <a href="/devlog/">all posts</a></p>
+
+  <h2>The control is not what most people think it is</h2>
+
+  <p>In a Flappy-Bird-style game, a tap gives the bird an instant upward velocity. TUNL is
+  different. Holding does not set your speed, it sets your <em>acceleration</em>. While you
+  hold, an upward force is added on top of gravity, and while you release, only gravity
+  acts. The ship carries its momentum through the switch, so if you let go at the top of a climb
+  you keep rising for a moment. That is what gives the game its weight, and it is also what
+  makes the numbers so sensitive.</p>
+
+  <p>Three constants define it: <strong>gravity</strong> pulls down, <strong>thrust</strong>
+  pushes up while you hold, and <strong>terminal velocity</strong> caps the speed. The thing
+  that matters most for feel is the pair of net accelerations: how hard you accelerate upward
+  when holding (thrust minus gravity) against how hard you accelerate downward when releasing
+  (just gravity). The ratio of the two is the game's personality.</p>
+
+  <h2>How it got too fast</h2>
+
+  <p>Over several passes I kept tightening the numbers, chasing a snappy, Flappy-Bird-like
+  feel. Gravity went from 1,150 to 1,300, thrust from 2,400 to 3,400 and the
+  terminal velocity from 820 to 1,080. Every step felt better while I was testing, because I was
+  tuning to reduce the delay between my thumb and the ship. By the end, the net upward
+  acceleration was about 1.6 times the net downward one.</p>
+
+  <p>Then a player on Reddit said the acceleration felt too fast, and that they were dying before
+  the run's rush ever landed. That was the first unsolicited feedback the game had ever
+  received, which is why it carried weight. The thing I had optimised, responsiveness, was the thing that made the
+  game unforgiving.</p>
+
+  <h2>Too soft, then somewhere in the middle</h2>
+
+  <p>The first response was to walk thrust back to 2,700. That is much closer to gravity, with
+  the net upward acceleration only a little bigger than the net downward one. The same day, I
+  played it, and it was wrong in the opposite direction: floaty. The ship hung in the air, and
+  climbing barely felt different from falling, which is a different way of losing the feel.</p>
+
+  <p>So the second change was a compromise, chosen by looking at the two ratios rather than by
+  feel alone. The original snappy tuning was roughly 2,100 up against 1,300 down. The
+  walked-back one was 1,400 up against 1,300 down. I settled on <strong>3,100</strong> thrust,
+  which is 1,800 net up against 1,300 net down, roughly midway. Climbing still reads as more
+  responsive than falling, but there is no longer a near-instant snap to the top speed.
+  Gravity and terminal velocity did not move in any of it.</p>
+
+  <div class="note"><p>The lesson I took from it is that "too fast" and "too floaty" are two ends
+  of one ratio, not two separate problems. Once I was looking at net-up against net-down, the
+  target was obvious. Before that I was adjusting one number and re-reading it by feel.</p></div>
+
+  <h2>The second half of the answer was the opening</h2>
+
+  <p>Retuning the thrust fixed the feel but not the reason a new player dies quickly. When I
+  measured a beginner's run, the median was about one second of flight. The launch animation
+  alone was longer than that. And the pattern was clear: a beginner presses and holds, the ship
+  climbs into the ceiling, and it is over. Nothing in the game ever taught the other half of
+  the control scheme, letting go.</p>
+
+  <p>I ruled out a text hint. I had tried one, "HOLD to climb, RELEASE to fall", under the title
+  and took it out the same day, because next to the button that already says to hold it read
+  as redundant, and it crowded the row of buttons under it. The information was right. A sentence
+  was the wrong way to deliver it.</p>
+
+  <p>So the opening coins teach it instead. Over the first stretch of cave, the coin line is
+  forced onto a gentle arc that starts <em>below</em> the launch height and rises above it. To
+  take the first coin, you have to let go and glide down. To take the second, you have to hold
+  and climb. By the third you have felt both halves of the control, and nobody said a word. This
+  worked with the rest of the change, a safe opening stretch with two hull scratches, which
+  I describe in the <a href="/devlog/run-pacing/">pacing post</a>.</p>
+
+  <h2>What the tuning history is for</h2>
+
+  <p>The reason I keep the record is that a constant like this drifts. It is one number in one
+  file, it is easy to nudge, and every nudge is defensible on the day. I keep a history of every
+  value it has held and why, so that the next time someone (including me) thinks the game would
+  be better a little snappier, the answer is written down: it was, and players said it was too
+  fast.</p>
+
+  <p>The input model is also fixed. Hold-to-thrust as an acceleration is the identity of the
+  game, and the tuning is allowed to move around inside it but never to replace it with an
+  instant impulse. Screens of different sizes get the same felt trajectory through a scaling
+  rule I describe in <a href="/devlog/same-ship-every-screen/">the fairness post</a>.</p>
+
+  <p>If you want to feel the result, the ship is
+  <a href="/play/">one tap away</a>.</p>
+
+  <p><a class="cta" href="/play/">Play today's cave</a></p>
+
+
+  <footer>
+    TUNL &middot; <a href="/">Home</a> &middot; <a href="/play/">Play</a> &middot;
+    <a href="/how-to-play/">How to play</a> &middot; <a href="/ships/">Ships</a> &middot;
+    <a href="/devlog/">Devlog</a> &middot; <a href="/changelog/">Changelog</a> &middot;
+    <a href="/about/">About</a> &middot; <a href="/support/">Support</a> &middot;
+    <a href="/privacy/">Privacy Policy</a> &middot; <a href="/press/">Press</a><br>
+    &copy; 2026 Theodoracatos. All rights reserved.
+  </footer>
+</main>
+</body>
+</html>

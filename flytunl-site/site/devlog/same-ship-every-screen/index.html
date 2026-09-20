@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Google AdSense (site verification + ad serving) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4882203470005029"
+     crossorigin="anonymous"></script>
+<title>The Same Ship on Every Screen: Frame-Rate-Independent Physics and Screen-Independent Feel</title>
+<meta name="description" content="How TUNL keeps its physics identical across refresh rates from 12 to 144 Hz, scales gravity and thrust to the screen height, and caps screen width so a shared daily leaderboard stays fair.">
+<link rel="canonical" href="https://flytunl.ch/devlog/same-ship-every-screen/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The Same Ship on Every Screen: Frame-Rate-Independent Physics and Screen-Independent Feel">
+<meta property="og:description" content="How TUNL keeps its physics identical across refresh rates from 12 to 144 Hz, scales gravity and thrust to the screen height, and caps screen width so a shared daily leaderboard stays fair.">
+<meta property="og:url" content="https://flytunl.ch/devlog/same-ship-every-screen/">
+<meta property="og:image" content="https://flytunl.ch/feature-graphic-1024x500.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png">
+<link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#04040a">
+<style>
+  * { box-sizing:border-box; }
+  body {
+    background:#04040a;
+    color:#ddd;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height:1.7;
+    margin:0;
+    padding:40px 20px 80px;
+  }
+  main { max-width:720px; margin:0 auto; }
+  .brand { display:inline-flex; align-items:center; text-decoration:none; margin-bottom:28px; }
+  .brand img { height:28px; width:auto; }
+  h1 { color:#ffe040; font-size:30px; letter-spacing:1px; margin-bottom:10px; line-height:1.25; }
+  .lead { color:#aaa; font-size:17px; margin-top:0; margin-bottom:8px; }
+  .meta { color:#666; font-size:13px; margin-bottom:34px; }
+  h2 { color:#4dd9ff; font-size:21px; margin-top:44px; margin-bottom:12px; line-height:1.3; }
+  h3 { color:#fff; font-size:16px; margin-top:28px; margin-bottom:8px; }
+  p, li { color:#ccc; font-size:15.5px; }
+  ul, ol { padding-left:22px; }
+  li { margin-bottom:10px; }
+  a { color:#4dd9ff; }
+  strong { color:#fff; }
+  em { color:#ddd; }
+  code {
+    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size:13.5px; color:#ffe040;
+    background:#12121c; border-radius:4px; padding:1px 5px;
+  }
+  pre {
+    background:#0d0d16; border:1px solid #222; border-radius:10px;
+    padding:16px; overflow-x:auto; margin:18px 0;
+  }
+  pre code { background:none; padding:0; color:#cfe8ff; font-size:13px; line-height:1.6; }
+  .note {
+    background:#0d0d16; border:1px solid #222; border-left:3px solid #4dd9ff;
+    border-radius:0 10px 10px 0; padding:14px 18px; margin:22px 0;
+  }
+  .note p { margin:0; font-size:14.5px; color:#bbb; }
+  .wrap { overflow-x:auto; margin:18px 0; }
+  table { width:100%; border-collapse:collapse; font-size:14.5px; min-width:480px; }
+  th, td { text-align:left; padding:9px 12px; border-bottom:1px solid #222; vertical-align:top; }
+  th { color:#4dd9ff; font-weight:600; }
+  td { color:#ccc; }
+  .cta {
+    display:inline-block; background:#ffe040; color:#04040a; font-weight:700;
+    text-decoration:none; padding:12px 24px; border-radius:10px; margin-top:8px;
+  }
+  .cta:hover { background:#fff06a; }
+  .post { display:block; background:#0d0d16; border:1px solid #222; border-radius:12px;
+    padding:18px 20px; margin:16px 0; text-decoration:none; }
+  .post:hover { border-color:#4dd9ff; }
+  .post h3 { color:#ffe040; font-size:18px; margin:0 0 6px; }
+  .post p { margin:0; color:#bbb; font-size:14.5px; }
+  .post .when { color:#666; font-size:12.5px; margin-bottom:6px; display:block; }
+  .swatch { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:8px; vertical-align:middle; }
+  footer {
+    margin-top:56px; color:#666; font-size:13px; line-height:1.9;
+    border-top:1px solid #222; padding-top:16px;
+  }
+  footer a { color:#888; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "The Same Ship on Every Screen",
+  "description": "Frame-rate-independent physics, screen-independent feel and a width cap for a fair shared leaderboard.",
+  "author": {
+    "@type": "Person",
+    "name": "Theodoracatos"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "TUNL"
+  },
+  "datePublished": "2026-09-20",
+  "mainEntityOfPage": "https://flytunl.ch/devlog/same-ship-every-screen/",
+  "image": "https://flytunl.ch/feature-graphic-1024x500.png"
+}
+</script>
+<!-- Cloudflare Web Analytics (cookieless, no consent banner needed) -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "7783839e84374212b7d76f25e1fb8e87"}'></script>
+</head>
+<body>
+<main>
+  <a class="brand" href="/">
+    <img src="/wordmark.svg" alt="TUNL">
+  </a>
+
+  <h1>The Same Ship on Every Screen</h1>
+  <p class="lead">A daily leaderboard is only fair if flying the same stretch of cave is equally
+  hard on a small old phone, a 144 Hz tablet and a desktop browser. Here is what that took, and
+  what I could not make equal.</p>
+  <p class="meta">Devlog &middot; 20 September 2026 &middot; <a href="/devlog/">all posts</a></p>
+
+  <p>The <a href="/devlog/daily-cave/">daily cave post</a> is about making the <em>world</em>
+  identical for every player. This one is about the other half of fairness: making the
+  <em>ship</em> behave identically. There are two separate ways a device can change how the
+  game plays, and they need two separate fixes. One is how often the screen refreshes. The
+  other is how big the screen is.</p>
+
+  <h2>Problem one: the frame rate</h2>
+
+  <p>The ship has a position and a velocity. Each frame, gravity or thrust changes the velocity,
+  and the velocity changes the position. The obvious way to write that is:</p>
+
+<pre><code>vy += accel * dt;     // update velocity
+py += vy * dt;        // then move by the NEW velocity</code></pre>
+
+  <p>It looks harmless, and it is subtly wrong. The second line pretends the ship spent the
+  entire frame already travelling at its end-of-frame speed. If the ship is accelerating, that
+  overshoots by half of <code>accel &times; dt&sup2;</code> every single frame. The catch is that
+  <code>dt</code>, the frame length, is different on every device, so the overshoot is
+  different too, and a ship flew a slightly different path on every refresh rate.</p>
+
+  <p>I measured it with a held thrust over half a second. The exact answer is 225 pixels. The
+  old integrator gave 228 at 144 Hz, 232 at 60 Hz and 240 at 30 Hz. Three devices, three
+  different distances, from the same input.</p>
+
+  <p>The fix is the trapezoid rule, which uses the average of the velocity before and after the
+  frame:</p>
+
+<pre><code>const vyPrev = vy;
+vy += accel * dt;
+py += (vyPrev + vy) * 0.5 * dt;   // average speed over the frame</code></pre>
+
+  <p>For constant acceleration that is exact, whatever the frame length. Replaying an identical
+  input schedule now gives a spread of <strong>0.000 pixels</strong> across 12 to 144 Hz. It
+  was 4.1 pixels before. A test asserts both halves: that the new integrator agrees across all
+  refresh rates and that the old one genuinely diverged, so if anyone reverts it, the test fails
+  rather than the leaderboard quietly drifting.</p>
+
+  <h3>Two honest caveats</h3>
+
+  <p><strong>It did not close the score gap between refresh rates.</strong> I expected it to. A
+  simulated pilot still scored about a third higher at 144 Hz than at 60 Hz afterwards. That gap
+  is not physics. It is <em>input resolution</em>: a thumb can only change from holding to not
+  holding on a frame boundary, so a faster screen genuinely gives finer control. No integrator
+  can fix that, and a bot that flips its input every frame exaggerates it compared with a human.
+  The physics half is now exact, and the rest is a property of hardware.</p>
+
+  <p><strong>It is very slightly a nerf at 60 Hz.</strong> A half-second climb now covers 225
+  pixels instead of 232. I left that uncompensated. If real-device testing ever found the
+  ship sluggish, the lever is the thrust constant, about 3% more would restore the old
+  half-second manoeuvre. Which is a good moment to say that thrust has been changed twice
+  before on player feedback, and <a href="/devlog/thrust-retune/">that story</a> is why I am
+  cautious about touching it.</p>
+
+  <h2>Problem two: the screen height</h2>
+
+  <p>Gravity in pixels per second squared means very different things on a 375-point-tall phone
+  and a 520-point-tall tablet. If the constants were the same, the same climb would cross a
+  much smaller fraction of the screen on the tablet, and the game would feel heavier.</p>
+
+  <p>So the constants are defined against a <strong>reference height</strong> of 440 points, the
+  landscape height of the largest iPhone, where the game's feel was tuned and playtested. On
+  any other screen, gravity, thrust and terminal speed are all multiplied by
+  <code>H / 440</code>. Because the corridor's half-gap scales with height too, every trajectory
+  is geometrically similar to the reference one: the same fraction of the corridor crossed per
+  second, the same time to get from one wall to the other, the same felt snap. A bigger screen
+  gets a steeper acceleration in pixels, and a smaller one gets a gentler one, by design.</p>
+
+  <p>That comes with a rule for all future code: <strong>anything that reasons about vertical
+  motion must be ratio-based</strong>. A fraction of terminal speed, a fraction of the height.
+  Never a raw pixels-per-second constant compared against the ship's velocity, because that
+  number is only right on one device. If a literal is unavoidable it gets multiplied by the
+  same scale.</p>
+
+  <p>The web version follows the same rule. The browser build clamps its canvas to 956 by 440,
+  the same footprint as that reference phone, so the game in a browser is a pixel-and-physics
+  copy of it. An earlier web build had its own separate feel multiplier, which existed only to
+  fight floatiness caused by a different clamp, and it was deleted once the clamp matched.</p>
+
+  <h2>Problem three: the screen width</h2>
+
+  <p>Height is the vertical axis. Width is the horizontal one, and it is subtler. Obstacles
+  are spaced at fixed distances in the world. The cave scrolls at a speed that includes a
+  factor for the screen's width. So on a wider screen the same obstacles pass by faster in
+  screen terms, and the time you have to react to each one goes down in proportion to the
+  width.</p>
+
+  <p>This was a real leak. A large Android tablet at about 1,280 points wide faced the shared
+  cave roughly 1.75 times faster than a small phone. So the width is <strong>capped at 956
+  points on every platform</strong>, the width of the widest iPhone in landscape. A device
+  wider than that gets black bars left and right. It is a no-op on iPhones and clamps only
+  large Android devices and desktop browsers.</p>
+
+  <p>The cap has a residual I have not fixed. The player's collision radius scales with width
+  while the corridor scales with height, so on a squarer tablet the ship is a little smaller
+  relative to the gap than on a phone, roughly 20% more forgiving. Fixing it means changing the
+  hitbox, which is a feel change that needs its own playtest, and it errs in the forgiving
+  direction, so it can wait.</p>
+
+  <h2>Testing fairness instead of asserting it</h2>
+
+  <p>None of this is visible by playing. You cannot feel a few pixels of drift, and nobody plays the same
+  cave on six devices at once. So each claim has a test that replays it: the physics test
+  integrates a fixed input at frame rates from 12 to 144 Hz, and a cave test replays the real
+  spawners at six device sizes and diffs the result byte for byte. A fairness property you do
+  not test has, in my experience, already quietly broken.</p>
+
+  <p>The short version is that TUNL is fair across screens in three separate ways (frame rate,
+  height and width), each with a different cause, a different fix and a different residual.
+  You can see the result for yourself, on any device you have,
+  <a href="/play/">in today's cave</a>.</p>
+
+  <p><a class="cta" href="/play/">Play today's cave</a></p>
+
+
+  <footer>
+    TUNL &middot; <a href="/">Home</a> &middot; <a href="/play/">Play</a> &middot;
+    <a href="/how-to-play/">How to play</a> &middot; <a href="/ships/">Ships</a> &middot;
+    <a href="/devlog/">Devlog</a> &middot; <a href="/changelog/">Changelog</a> &middot;
+    <a href="/about/">About</a> &middot; <a href="/support/">Support</a> &middot;
+    <a href="/privacy/">Privacy Policy</a> &middot; <a href="/press/">Press</a><br>
+    &copy; 2026 Theodoracatos. All rights reserved.
+  </footer>
+</main>
+</body>
+</html>

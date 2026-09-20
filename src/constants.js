@@ -616,7 +616,7 @@ const SPAWN_W = 956;
 // sealed (an unavoidable death), which is exactly the "always a pass above AND
 // below" contract makeBoulder exists to keep.
 // test-cave.js asserts this table rather than trusting it to stay current:
-//   coins   500 +    0 +  46 =  546 <= 1550  OK  (coinBlockedByStal, no retry)
+//   coins  1500 +    0 +  46 = 1546 <= 1550  OK  (coinBlockedByStal, no retry)
 //   mines   200 +  135 + 300 =  635 <= 1550  OK  (_makeMineAt tip push)
 //   cannons 300 +  600 +  48 =  948 <= 1550  OK  (makeCannon overlap)
 //   boulder 300 + 1000 + 108 = 1408 <= 1550  OK  (makeBoulder overlap)
@@ -629,8 +629,14 @@ const SPAWN_W = 956;
 // earlier no longer reorders anyone's draws) - it only means the vetoes can now see
 // what they are vetoing against. Everything is still created well off the right edge
 // (W <= 956); the cost is a longer live stalactite array (~39 -> ~70 deep).
+// SPAWN_AHEAD_COIN is the ORDERING INVARIANT's mirror image: boulders and mines yield to
+// coins (a power-up must never sit inside a rock or a mine - 2026-09-20, measured 1% of
+// coins inside a boulder, 3% touching a mine), so every coin they could overlap has to
+// exist already. A boulder probes up to SPAWN_AHEAD_BOULDER + 1000 (retry) + 100 (half
+// length) + PLACE_COIN_CLEAR_R ahead, hence 1500. That is as far as it can go: coins
+// themselves inspect stalactites (+46), so 1500 + 46 <= SPAWN_AHEAD_STAL.
 const SPAWN_AHEAD_STAL    = 1550;
-const SPAWN_AHEAD_COIN    = 500;
+const SPAWN_AHEAD_COIN    = 1500;
 const SPAWN_AHEAD_MINE    = 200;
 const SPAWN_AHEAD_CANNON  = 300;
 const SPAWN_AHEAD_BOULDER = 300;
@@ -640,6 +646,9 @@ const _REF_TO_H    = H / _H_REF;      // reference-Y px  -> this device's px
 const _H_TO_REF    = _H_REF / H;      // this device's px -> reference-Y px
 const PLACE_PR     = _W_REF_PLACE * 0.018;
 const PLACE_COIN_R = _W_REF_PLACE * 0.009;
+// How far a coin's drawn object reaches (largest coin type x COIN_OBJECT_SCALE, draw.js),
+// in reference px. A boulder or mine is never placed closer than this to an existing coin.
+const PLACE_COIN_CLEAR_R = PLACE_COIN_R * COIN_SIZE_MAX_MULT * 1.5;
 const PLACE_MINE_R = _W_REF_PLACE * 0.011;
 // Stalactite half-width used by placement rejection only, at the reference device.
 // The drawn/collided s.width stays W-derived (see makeStal).

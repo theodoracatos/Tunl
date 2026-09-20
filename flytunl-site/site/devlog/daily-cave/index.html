@@ -100,7 +100,7 @@
   <h1>One Cave, Every Player</h1>
   <p class="lead">How TUNL builds a daily level out of nothing but a date, and the two bugs
   that quietly broke it for months.</p>
-  <p class="meta">Devlog &middot; 15 September 2026</p>
+  <p class="meta">Devlog &middot; 15 September 2026 &middot; updated 20 September 2026 for TUNL 15.0 &middot; <a href="/devlog/">all posts</a></p>
 
   <p><a href="/play/">TUNL</a> is a hold-to-thrust cave flyer. You hold to climb, release to
   fall, and try to get further down a narrowing tunnel than you did yesterday. Every player
@@ -123,12 +123,13 @@
   are computed on demand from two overlapping sine waves:</p>
 
 <pre><code>function boundsBase(wx) {
-  const p  = Math.min(Math.sqrt(wx / 14000), 1);   // difficulty ramp, sqrt eased
-  const wA1 = lerp(H * 0.07,  H * 0.12,  p);       // slow wide arc
-  const wA2 = lerp(H * 0.035, H * 0.055, p);       // faster shallow ripple
+  const p = Math.min(Math.sqrt(wx / 14000), 1);            // wave frequency ramp, sqrt eased
+  const g = Math.min(Math.max(wx - 3000, 0) / 90000, 1);   // corridor ramp, slow and linear
+  const wA1 = lerp(H * 0.07,  H * 0.12,  g);       // slow wide arc
+  const wA2 = lerp(H * 0.035, H * 0.055, g);       // faster shallow ripple
   const wF1 = lerp(0.0025,    0.0048,    p);
   const wF2 = lerp(0.0060,    0.0115,    p);
-  const hg  = lerp(H * 0.34,  H * 0.163, p);       // half-gap: 204px -&gt; 98px
+  const hg  = lerp(H * 0.34,  H * 0.163, g);       // half-gap: 68% -&gt; 33% of the height
 
   const raw = H / 2
     + wA1 * Math.sin(wx * wF1 + _wavePhase1)
@@ -138,11 +139,24 @@
   return { top: cy - hg, bot: cy + hg };
 }</code></pre>
 
+  <div class="note"><p>This is the skeleton. The shipping function adds a few more terms, such as
+  the deep-run shape morph described further down, but none of them take anything except
+  <code>wx</code> and the day.</p></div>
+
   <p>Two waves rather than one, because a single sine is immediately readable as a rhythm
   and stops being interesting after about ten seconds. A slow wide arc plus a faster shallow
   ripple at an irrational-ish frequency ratio gives long stretches that never quite repeat.
   The half-gap narrows from roughly 68% of the screen height down to 33% as you get further
-  in, on a square-root curve so the early ramp is fast and the late game plateaus.</p>
+  in, and it does that <em>slowly</em>: nothing at all for the first stretch, which is an open
+  hall, then a straight line that only bottoms out after around score 1,500.</p>
+
+  <p>It did not always work that way. The corridor first narrowed on a square-root curve that
+  hit its narrowest at score 233, which is a fast, front-loaded ramp, and feedback came back that
+  the game was far too hard. So the corridor and its wave amplitude got their own
+  slow clock, <code>g</code> above. The wave <em>frequencies</em> stayed on the old sqrt curve on
+  purpose: <code>sin(wx * f)</code> at a large <code>wx</code> is very sensitive to <code>f</code>, so
+  re-pacing a frequency midway through a run scrambles the phase of everything already
+  behind you. Amplitude and width are safe to slow down, frequency is not.</p>
 
   <p>The important property is not the shape. It is that <code>boundsBase(wx)</code> takes
   only <code>wx</code>. Ask it about world position 40,000 on the first frame of a run and
@@ -371,8 +385,11 @@ function prog2At(wx) { return Math.max(wx - 14000, 0) / 40000; }</code></pre>
 
   <footer>
     TUNL &middot; <a href="/">Home</a> &middot; <a href="/play/">Play</a> &middot;
-    <a href="/how-to-play/">How to play</a> &middot; <a href="/support">Support</a> &middot;
-    <a href="/privacy">Privacy Policy</a> &middot; &copy; 2026 Theodoracatos
+    <a href="/how-to-play/">How to play</a> &middot; <a href="/ships/">Ships</a> &middot;
+    <a href="/devlog/">Devlog</a> &middot; <a href="/changelog/">Changelog</a> &middot;
+    <a href="/about/">About</a> &middot; <a href="/support/">Support</a> &middot;
+    <a href="/privacy/">Privacy Policy</a> &middot; <a href="/press/">Press</a><br>
+    &copy; 2026 Theodoracatos. All rights reserved.
   </footer>
 </main>
 </body>

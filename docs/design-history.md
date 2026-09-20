@@ -142,6 +142,28 @@ room at all past the plateau (`stalSpacing()` floors at 50px there). Lerping it 
 over `_prog2` moved measured deep mine density 0.98 -> 2.0 per 1000 world-px. Below score
 233 every one of these changes is a measured no-op.
 
+### Coins inside boulders and on mines (2026-09-20)
+
+Reported from play: a power-up inside a mid-corridor rock. Cause: `coinBlockedByStal` only
+knows stalactites, and boulders (`_fitIsland`) and mines (`_makeMineAt`) never looked at
+coins. Coins are created first (500 ahead against 300 / 200), so the rock or mine was simply
+placed over a coin that already existed. Replay, 8 day-seeds x 60000 wx, 956x440, ~625 coins:
+7 centres inside a boulder (gold 4, shield 2, slow 1), 17 within the collection radius of one,
+20 touching a mine's bob range.
+
+Fix: the later spawner yields, the coin is never touched. Rejecting the coin instead was the
+first thought and is unsafe here: it needs the boulder to exist when the coin is made, which
+means raising the boulder horizon past SPAWN_AHEAD_STAL, and a two-way removal (boulder
+deleting coins that already exist) advances the poison/bomb/red clocks in one order and not
+the other, so the cave would depend on frame timing. Coins-first keeps one direction. Cost:
+`SPAWN_AHEAD_COIN` 500 -> 1500 (boulder probe 300 + 1000 + 100 + clearance), the most the coin's
+own stalactite budget allows (1546 <= 1550).
+
+Measured after: 0 centres in a boulder, 0 overlaps at `PLACE_COIN_CLEAR_R` (~17 ref px), boulders
+107 -> 107 (a rejected island takes a shorter stretch or the next retry offset), mines 262 -> 265,
+coins 625 -> 624. The remaining ~7 boulder / ~8 mine "touches" in a wider probe are the
+generous 30px COIN_HIT_R collection radius reaching a rock the coin does not visually touch.
+
 ---
 
 ## Coin system

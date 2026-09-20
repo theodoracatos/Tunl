@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Google AdSense (site verification + ad serving) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4882203470005029"
+     crossorigin="anonymous"></script>
+<title>Seven-Second Sectors: How TUNL Paces a Run, Measured With Simulated Players</title>
+<meta name="description" content="How TUNL replaced a pile of difficulty curves with a plan of seven-second sectors, why hull scratches forgive walls but not spikes, and what the numbers said before and after.">
+<link rel="canonical" href="https://flytunl.ch/devlog/run-pacing/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Seven-Second Sectors: How TUNL Paces a Run, Measured With Simulated Players">
+<meta property="og:description" content="How TUNL replaced a pile of difficulty curves with a plan of seven-second sectors, why hull scratches forgive walls but not spikes, and what the numbers said before and after.">
+<meta property="og:url" content="https://flytunl.ch/devlog/run-pacing/">
+<meta property="og:image" content="https://flytunl.ch/feature-graphic-1024x500.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png">
+<link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#04040a">
+<style>
+  * { box-sizing:border-box; }
+  body {
+    background:#04040a;
+    color:#ddd;
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height:1.7;
+    margin:0;
+    padding:40px 20px 80px;
+  }
+  main { max-width:720px; margin:0 auto; }
+  .brand { display:inline-flex; align-items:center; text-decoration:none; margin-bottom:28px; }
+  .brand img { height:28px; width:auto; }
+  h1 { color:#ffe040; font-size:30px; letter-spacing:1px; margin-bottom:10px; line-height:1.25; }
+  .lead { color:#aaa; font-size:17px; margin-top:0; margin-bottom:8px; }
+  .meta { color:#666; font-size:13px; margin-bottom:34px; }
+  h2 { color:#4dd9ff; font-size:21px; margin-top:44px; margin-bottom:12px; line-height:1.3; }
+  h3 { color:#fff; font-size:16px; margin-top:28px; margin-bottom:8px; }
+  p, li { color:#ccc; font-size:15.5px; }
+  ul, ol { padding-left:22px; }
+  li { margin-bottom:10px; }
+  a { color:#4dd9ff; }
+  strong { color:#fff; }
+  em { color:#ddd; }
+  code {
+    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size:13.5px; color:#ffe040;
+    background:#12121c; border-radius:4px; padding:1px 5px;
+  }
+  pre {
+    background:#0d0d16; border:1px solid #222; border-radius:10px;
+    padding:16px; overflow-x:auto; margin:18px 0;
+  }
+  pre code { background:none; padding:0; color:#cfe8ff; font-size:13px; line-height:1.6; }
+  .note {
+    background:#0d0d16; border:1px solid #222; border-left:3px solid #4dd9ff;
+    border-radius:0 10px 10px 0; padding:14px 18px; margin:22px 0;
+  }
+  .note p { margin:0; font-size:14.5px; color:#bbb; }
+  .wrap { overflow-x:auto; margin:18px 0; }
+  table { width:100%; border-collapse:collapse; font-size:14.5px; min-width:480px; }
+  th, td { text-align:left; padding:9px 12px; border-bottom:1px solid #222; vertical-align:top; }
+  th { color:#4dd9ff; font-weight:600; }
+  td { color:#ccc; }
+  .cta {
+    display:inline-block; background:#ffe040; color:#04040a; font-weight:700;
+    text-decoration:none; padding:12px 24px; border-radius:10px; margin-top:8px;
+  }
+  .cta:hover { background:#fff06a; }
+  .post { display:block; background:#0d0d16; border:1px solid #222; border-radius:12px;
+    padding:18px 20px; margin:16px 0; text-decoration:none; }
+  .post:hover { border-color:#4dd9ff; }
+  .post h3 { color:#ffe040; font-size:18px; margin:0 0 6px; }
+  .post p { margin:0; color:#bbb; font-size:14.5px; }
+  .post .when { color:#666; font-size:12.5px; margin-bottom:6px; display:block; }
+  .swatch { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:8px; vertical-align:middle; }
+  footer {
+    margin-top:56px; color:#666; font-size:13px; line-height:1.9;
+    border-top:1px solid #222; padding-top:16px;
+  }
+  footer a { color:#888; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Seven-Second Sectors: How TUNL Paces a Run",
+  "description": "How TUNL replaced separate difficulty curves with a plan of seven-second sectors, and measured the result with simulated players.",
+  "author": {
+    "@type": "Person",
+    "name": "Theodoracatos"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "TUNL"
+  },
+  "datePublished": "2026-09-20",
+  "mainEntityOfPage": "https://flytunl.ch/devlog/run-pacing/",
+  "image": "https://flytunl.ch/feature-graphic-1024x500.png"
+}
+</script>
+<!-- Cloudflare Web Analytics (cookieless, no consent banner needed) -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "7783839e84374212b7d76f25e1fb8e87"}'></script>
+</head>
+<body>
+<main>
+  <a class="brand" href="/">
+    <img src="/wordmark.svg" alt="TUNL">
+  </a>
+
+  <h1>Seven-Second Sectors: How TUNL Paces a Run</h1>
+  <p class="lead">A difficulty curve tells you how hard the game is at any moment. It does not
+  tell you what the run feels like. This is the story of replacing a pile of independent
+  curves with a plan, and measuring whether it worked.</p>
+  <p class="meta">Devlog &middot; 20 September 2026 &middot; <a href="/devlog/">all posts</a></p>
+
+  <p>For the first dozen versions, TUNL's difficulty was a set of separate curves. Stalactite
+  spacing had a curve, mine spacing had a curve, coin spacing had a curve, and each one was a
+  function of how far into the cave you were. Each curve made sense on its own. Together they
+  produced a run that felt lumpy, and when I finally measured it, the numbers said the same
+  thing the feel did.</p>
+
+  <h2>What the audit found</h2>
+
+  <p>I replayed the real spawners and the real physics with bots at four skill levels, a
+  hundred runs each, across 24 different daily seeds. Then I looked at when new things
+  happened and where the bots died. Four problems stood out:</p>
+
+  <ul>
+    <li><strong>The pacing was lumpy.</strong> Seven new elements arrived in the first nine
+    seconds. Then nothing new for thirteen seconds. Then five in the next fourteen. Then nothing
+    new, ever, for the rest of the run.</li>
+    <li><strong>The first mistake was fatal for beginners.</strong> 41% of the weakest bot's
+    runs ended within eight points of the walls turning lethal, and 91% of that bot's deaths
+    were against walls. The open safe zone at the start only bumped you back, so it could not
+    teach the one thing beginners needed to learn.</li>
+    <li><strong>The middle was a cliff.</strong> Stalactite density doubled twice between
+    score 300 and 1,150, and that ended every expert bot's run somewhere in the 500-900 range.</li>
+    <li><strong>Mines tripled by accident.</strong> Sparser stalactites stopped a placement rule
+    from vetoing mines and coins, so the mine count went up threefold without anyone asking
+    for it. That coupling matters later.</li>
+  </ul>
+
+  <h2>The idea: a run is a sequence of sectors</h2>
+
+  <p>Instead of separate curves, I wrote a plan. A run is a sequence of <strong>sectors</strong>,
+  each seven seconds long at a fixed reference speed. Sector 0 is the safe opening flight. Each
+  sector after that either introduces exactly one new thing or turns up something you already
+  know. A "SECTOR n" notice appears at each boundary from the third onward, so a player can
+  feel the structure.</p>
+
+  <p>The length is measured in <em>seconds</em>, not pixels, on purpose. The cave keeps
+  accelerating, so a fixed number of world-pixels is less and less time as a run goes on. A
+  sector defined in pixels would keep getting shorter. Defined in reference seconds, and
+  converted back to world position by integrating the reference speed trend, a sector boundary
+  is still a pure function of position. That matters because the whole game has to stay
+  identical for every player: I wrote about why in the
+  <a href="/devlog/daily-cave/">daily cave post</a>.</p>
+
+  <div class="wrap">
+  <table>
+    <tr><th>Sector</th><th>Score</th><th>What is new</th></tr>
+    <tr><td>0</td><td>0 - 50</td><td>Open corridor. Gold and hourglass coins.</td></tr>
+    <tr><td>1</td><td>50 - 110</td><td>First stalactites, shield coin</td></tr>
+    <tr><td>2</td><td>110 - 180</td><td>Ammo, magnet</td></tr>
+    <tr><td>3</td><td>180 - 250</td><td>First mine (alone, centred), bomb coin</td></tr>
+    <tr><td>4</td><td>250 - 330</td><td>Boulders</td></tr>
+    <tr><td>5</td><td>330 - 410</td><td>Chicanes, faded in</td></tr>
+    <tr><td>6</td><td>410 - 490</td><td>Cannons</td></tr>
+    <tr><td>7</td><td>490 - 580</td><td>Falling stalactites</td></tr>
+    <tr><td>8</td><td>580 - 680</td><td>Poison coin</td></tr>
+    <tr><td>9</td><td>680 - 770</td><td>Drain coin</td></tr>
+    <tr><td>10+</td><td>770 and up</td><td>Nothing new. The rates keep growing.</td></tr>
+  </table>
+  </div>
+
+  <p>Two rules decide the order. <strong>Tools come before the threat they answer.</strong> The
+  shield coin shows up a sector before the first mine, so a player has one to spend. And the
+  tools cannot come too late, because the daily missions ("collect five ammo", "grab two
+  magnets", "use three bombs") are cumulative for the day and have to stay reachable for casual
+  players, whose runs end around the second or third sector. Before I moved any coin gate, I
+  checked the mission list.</p>
+
+  <h2>Densities are rates, not spacings</h2>
+
+  <p>Inside a sector, the density of a hazard is a <strong>rate per reference second</strong>:
+  stalactite slots at two per second in sector 1, growing 14% per sector, and easing to 8% per
+  sector from sector 8 onward. Mines start at 0.28 a second in sector 3, growing 20% per sector
+  and then 10%. The spacing in pixels is derived from the rate, and it keeps a hard floor, so
+  the rates can grow without limit and every run still ends. The mine is what guarantees that,
+  because a mine can sit anywhere across the corridor, so no amount of corridor width makes a
+  fast enough cave survivable.</p>
+
+  <p>Each sector is also a <strong>sawtooth</strong>. Its first fifth runs at 55% of its
+  target density, with extra coin candidates as the payout, and then it ramps from 80% up to
+  115% toward the next boundary. So the player gets a breather at the start of every sector,
+  then rising pressure, then a new idea. A steady climb is exhausting. A climb with rests is
+  something people call fair.</p>
+
+  <div class="note"><p><strong>Tune by measured rate, never by the spacing number.</strong>
+  Placement rules veto objects that would land somewhere unfair, and the fraction they veto
+  changes with density. Halving a spacing value does not double the hazards, and the coupling
+  is exactly how the mine count tripled the first time. So every tuning pass ends with a
+  replay that counts the objects actually placed per real second.</p></div>
+
+  <h2>Hull scratches: forgiving the wall, not the spike</h2>
+
+  <p>The second big change was for the beginners who died at the first wall. A ship now has
+  two <strong>hull scratches</strong>. A wall contact spends one, bounces the ship back inside
+  and says "SCRAPE!". With none left, the next contact ends the run.</p>
+
+  <p>They started as a temporary aid that expired in sector 3. Once every run began by flying
+  into the tunnel mouth with lethal walls from the very start, it made sense for them to last
+  the whole run, and they do. The grace period after a scratch protects against
+  the wall only. Stalactites, mines, boulders and shots stay lethal, and the ship does not
+  blink. If the grace covered everything, a good player could scrape a wall on purpose to fly
+  through a stalactite field, so the rule is that scratches forgive wall mistakes and direct
+  hits are the shield's job.</p>
+
+  <p>I also tried the obvious alternative, a free shield at the same moment. It mostly
+  helped the strong tier, who used it to survive a stalactite later, and lifted their median
+  run by about 72%. It rewarded skill that did not need the help, and I dropped it.</p>
+
+  <h2>Did it work?</h2>
+
+  <p>The same bots, on the same seeds, before and after. "Average" is the tier whose behaviour
+  matched real players best in the previous version.</p>
+
+  <div class="wrap">
+  <table>
+    <tr><th>Bot tier</th><th>Median score</th><th>Reaches 100</th><th>Dies within 8 points of walls turning lethal</th></tr>
+    <tr><td>Beginner</td><td>65 &rarr; 95</td><td>4% &rarr; 39%</td><td>41% &rarr; 3%</td></tr>
+    <tr><td>Average</td><td>107 &rarr; 155</td><td>32% &rarr; 70%</td><td>16% &rarr; 2%</td></tr>
+    <tr><td>Good</td><td>205 &rarr; 401</td><td>80% &rarr; 91%</td><td>1% &rarr; 1%</td></tr>
+    <tr><td>Expert</td><td>715 &rarr; 928</td><td>100%</td><td>0%</td></tr>
+  </table>
+  </div>
+
+  <p>The average tier's death rate per sector became a ramp (38%, then 60%, then 68% in the
+  first three hazard sectors) instead of a cliff. That is the shape I wanted: a run should end
+  gradually more likely, not suddenly certain.</p>
+
+  <h2>What it did not fix</h2>
+
+  <p>Experts still hit a reaction-time wall around sectors 10 and 11, where 63% and then 77%
+  of expert runs end. Before the plan it was 100% at sectors 7 and 8, so that is a real
+  improvement, but it is not the smooth ramp the earlier sectors have. I tried two obvious
+  fixes: a slower growth of stalactite length and a slower ramp of chicane probability. Both
+  measured as no-ops. The lever that is left is the speed itself, and I have left it alone,
+  because the speed never plateaus on purpose, and a cave that stops getting faster is a cave
+  that has stopped asking anything new of a very good player.</p>
+
+  <h2>What I would keep</h2>
+
+  <p>Two habits. First, plan the sequence of what a player <em>meets</em>, not just how hard
+  each thing is: one new idea at a time reads as a game teaching you, while five at once reads
+  as a game piling on. Second, never trust a difficulty change until a simulation has told you
+  where each kind of player dies. Both of the biggest surprises here, the mine count and the
+  first-wall deaths, were invisible from playing and obvious from a table.</p>
+
+  <p>You can read the player-facing version of the same plan in the
+  <a href="/how-to-play/">how-to-play guide</a>.</p>
+
+  <p><a class="cta" href="/play/">Play today's cave</a></p>
+
+
+  <footer>
+    TUNL &middot; <a href="/">Home</a> &middot; <a href="/play/">Play</a> &middot;
+    <a href="/how-to-play/">How to play</a> &middot; <a href="/ships/">Ships</a> &middot;
+    <a href="/devlog/">Devlog</a> &middot; <a href="/changelog/">Changelog</a> &middot;
+    <a href="/about/">About</a> &middot; <a href="/support/">Support</a> &middot;
+    <a href="/privacy/">Privacy Policy</a> &middot; <a href="/press/">Press</a><br>
+    &copy; 2026 Theodoracatos. All rights reserved.
+  </footer>
+</main>
+</body>
+</html>
