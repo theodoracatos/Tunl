@@ -794,6 +794,20 @@ function drawShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
     ctx.lineWidth   = Math.max(r * 0.035, 0.7);
     ctx.lineCap     = 'round';
     ctx.stroke();
+    // Shadow-side rim: the lit leading edge above gives the top wing a crisp line, but the
+    // shadow-side facets are near-black and sit inside the skin-coloured halo, so with no
+    // edge of its own the lower wing dissolved into the glow and read as out of focus (most
+    // visible on the big title-screen hero). A thin, quiet outline of the lower half only.
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x - r * 2, y, r * 4, r * 2);
+    ctx.clip();
+    shipPath(x, y, r);
+    ctx.strokeStyle = rgb(lerpClr([sr, sg, sb], _SHIP_WHITE, 0.45), Math.min(0.55 * edgeA, 0.8));
+    ctx.lineWidth   = Math.max(r * 0.02, 0.6);
+    ctx.lineJoin    = 'round';
+    ctx.stroke();
+    ctx.restore();
 
     // Engine nacelles: two-tone faceted pods, a cheap offset shadow on the wing (no
     // blur), a shock-cone inlet, and a hot nozzle
@@ -886,17 +900,24 @@ function drawShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
         ctx.fillStyle = `rgba(${(sr+255)>>1},${(sg+255)>>1},${(sb+255)>>1},${a})`;
         ctx.fill();
     }
-    // Wingtip strobes
-    const strobe = ((now * 0.85) % 1) < 0.07 ? 0.85 : 0.10;
+    // Wingtip strobes: a hard-edged dot at rest, the soft halo only on the flash (a 10%
+    // gradient at r*0.16 just smeared the wingtip - same reasoning as drawShip3D's).
+    const flash = ((now * 0.85) % 1) < 0.07;
     for (const s of [-1, 1]) {
         const lx = x - r*0.66, ly = y + s * r * 0.955;
-        const sg2 = ctx.createRadialGradient(lx, ly, 0, lx, ly, r*0.16);
-        sg2.addColorStop(0,   `rgba(255,255,255,${strobe})`);
-        sg2.addColorStop(0.3, `rgba(${sr},${sg},${sb},${strobe * 0.7})`);
-        sg2.addColorStop(1,   `rgba(${sr},${sg},${sb},0)`);
+        if (flash) {
+            const sg2 = ctx.createRadialGradient(lx, ly, 0, lx, ly, r*0.14);
+            sg2.addColorStop(0,   'rgba(255,255,255,0.80)');
+            sg2.addColorStop(0.3, `rgba(${sr},${sg},${sb},0.55)`);
+            sg2.addColorStop(1,   `rgba(${sr},${sg},${sb},0)`);
+            ctx.beginPath();
+            ctx.arc(lx, ly, r*0.14, 0, Math.PI*2);
+            ctx.fillStyle = sg2;
+            ctx.fill();
+        }
         ctx.beginPath();
-        ctx.arc(lx, ly, r*0.16, 0, Math.PI*2);
-        ctx.fillStyle = sg2;
+        ctx.arc(lx, ly, Math.max(r * 0.04, 0.8), 0, Math.PI*2);
+        ctx.fillStyle = flash ? 'rgba(255,255,255,0.95)' : `rgba(${sr},${sg},${sb},0.45)`;
         ctx.fill();
     }
     ctx.restore();
