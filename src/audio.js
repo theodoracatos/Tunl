@@ -1761,6 +1761,92 @@ function sfxBulletFireStop() {
 // other layered impact sfx (compare sfxMineExplode's boom+crack). Now three
 // short layers: a bandpassed "snap" body, a brief high-frequency tick on the
 // attack, and a touch of low thump for weight.
+// A CRYSTAL stalactite breaking (16.0). Deliberately not sfxStalCrack: that one
+// is rock - a bandpassed 2600->1200 Hz body over 0.14s with a low thump - and a
+// crystal shattering is the opposite shape. What makes glass read as glass is not
+// the noise burst but the INHARMONIC PARTIALS THAT RING ON after it: four sines
+// at ratios 1 / 1.41 / 1.93 / 2.57 (deliberately not integers, or it sings a
+// chord), decaying over 0.15-0.34s, so the tail is high and tonal where rock's is
+// low and broadband. Around them: a brighter, shorter fracture transient, a short
+// high body, a scatter of shard ticks, and only HALF the rock's low thump, since
+// a crystal is the lighter object. The mid/high content also means it survives a
+// phone speaker on its own - see the low-end rule in CLAUDE.md.
+//
+// Level-matched to sfxStalCrack's loudest-50ms, so the hierarchy from
+// docs/design-history.md is untouched; measured, not heard.
+function sfxCrystalCrack(x) {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    const { pv, gv } = _vary(0.035, 1.5);
+    const out = _ac.createGain();
+    out.gain.value = gv * 0.74;
+    out.connect(_sfxOut(x));
+    _caveSend(out, 0.9);
+
+    // Fracture transient: brighter and shorter than the rock tick (4500 Hz, 15ms).
+    const src2 = _ac.createBufferSource();
+    src2.buffer = _noiseBuf(0.012);
+    const flt2 = _ac.createBiquadFilter();
+    flt2.type = 'highpass'; flt2.frequency.value = 6000;
+    const g2 = _ac.createGain();
+    g2.gain.setValueAtTime(0.30, t);
+    g2.gain.exponentialRampToValueAtTime(0.001, t + 0.012);
+    src2.connect(flt2); flt2.connect(g2); g2.connect(out);
+    src2.start(t); src2.stop(t + 0.012);
+
+    // Short, high body - half the rock's length, an octave above it.
+    const src = _ac.createBufferSource();
+    src.buffer = _noiseBuf(0.09);
+    const flt = _ac.createBiquadFilter();
+    flt.type = 'bandpass'; flt.Q.value = 0.9;
+    flt.frequency.setValueAtTime(4200 * pv, t);
+    flt.frequency.exponentialRampToValueAtTime(2100 * pv, t + 0.07);
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(0.22, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+    src.connect(flt); flt.connect(g); g.connect(out);
+    src.start(t); src.stop(t + 0.09);
+
+    // The signature: inharmonic partials ringing on.
+    const RING = [[1.00, 0.105, 0.34], [1.41, 0.072, 0.26], [1.93, 0.050, 0.20], [2.57, 0.034, 0.15]];
+    for (const [ratio, amp, dec] of RING) {
+        const o = _ac.createOscillator(), rg = _ac.createGain();
+        o.type = 'sine';
+        const f = 2050 * pv * ratio;   // first partial lands in the MID band on purpose
+        o.frequency.setValueAtTime(f, t);
+        o.frequency.exponentialRampToValueAtTime(f * 0.98, t + dec);   // barely, just so it lives
+        rg.gain.setValueAtTime(0.0001, t);
+        rg.gain.exponentialRampToValueAtTime(amp, t + 0.004);          // soft enough not to click
+        rg.gain.exponentialRampToValueAtTime(0.0001, t + dec);
+        o.connect(rg); rg.connect(out);
+        o.start(t); o.stop(t + dec + 0.01);
+    }
+
+    // Shards scattering after the break.
+    for (const [when, amp] of [[0.045, 0.055], [0.095, 0.042], [0.165, 0.028]]) {
+        const s3 = _ac.createBufferSource();
+        s3.buffer = _noiseBuf(0.02);
+        const f3 = _ac.createBiquadFilter();
+        f3.type = 'bandpass'; f3.Q.value = 2.2;
+        f3.frequency.value = (4200 + Math.random() * 2600) * pv;
+        const g3 = _ac.createGain();
+        g3.gain.setValueAtTime(amp, t + when);
+        g3.gain.exponentialRampToValueAtTime(0.0005, t + when + 0.02);
+        s3.connect(f3); f3.connect(g3); g3.connect(out);
+        s3.start(t + when); s3.stop(t + when + 0.02);
+    }
+
+    // Half the rock's thump: the chunk still has weight, but less of it.
+    const o4 = _ac.createOscillator(), g4 = _ac.createGain();
+    o4.type = 'sine';
+    o4.frequency.setValueAtTime(150 * pv, t);
+    o4.frequency.exponentialRampToValueAtTime(90 * pv, t + 0.07);
+    g4.gain.setValueAtTime(0.05, t);
+    g4.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+    o4.connect(g4); g4.connect(out);
+    o4.start(t); o4.stop(t + 0.08);
+}
+
 function sfxStalCrack(x) {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;

@@ -166,8 +166,13 @@ function updateFallingStals(dt) {
                 // How far that is is NOT captured here on purpose - stalFallY()
                 // recomputes it live every frame, see its doc.
                 shake += 4;
-                sfxStalCrack(sx);
+                // The break itself: a crystal fractures, it does not crumble like
+                // rock. Gated on CRYSTAL_STALS so flipping that one switch reverts
+                // the sound with the picture. The LANDING below keeps the rock
+                // thud - that is the chunk striking the floor, not the fracture.
+                (CRYSTAL_STALS ? sfxCrystalCrack : sfxStalCrack)(sx);
                 burstStalCrack(sx, b.top + s.length, crystalShardHue());
+                if (CRYSTAL_STALS) burstCrystalShards(sx, b.top + s.length, crystalShardHue(), 8);
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             }
         } else if (!s.landed) {
@@ -720,7 +725,8 @@ function updateBullets(dt) {
                 const bnd  = boundsAt(s.wx);
                 const tipY = s.isTop ? bnd.top + s.length : bnd.bot - s.length;
                 burstStalCrack(bsx, tipY, crystalShardHue());
-                sfxStalCrack(bsx);
+                if (CRYSTAL_STALS) burstCrystalShards(bsx, tipY, crystalShardHue());
+                (CRYSTAL_STALS ? sfxCrystalCrack : sfxStalCrack)(bsx);
                 bulletHitScore(bsx, tipY, BULLET_HIT_PTS.stal);
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
                 hit = true;
@@ -1398,6 +1404,7 @@ function triggerBombExplosion(cx, cy) {
         if (dx*dx + dy*dy < r2) {
             s.dying = true; s.fade = 1.0;
             burstStalCrack(sx, tipY, crystalShardHue());
+            if (CRYSTAL_STALS) burstCrystalShards(sx, tipY, crystalShardHue(), 18);
         }
     }
     for (let mi = mines.length - 1; mi >= 0; mi--) {
@@ -1512,6 +1519,27 @@ function burstCoin(x, y, baseHue = 44, count = 14) {
         const v = 70 + Math.random() * 110;
         parts.push({ x, y, vx: Math.cos(a)*v, vy: Math.sin(a)*v,
                      life: 0.75, r: 1.2+Math.random()*2.5, h: baseHue+Math.random()*20 });
+    }
+}
+
+// Crystal shards (16.0). The round debris of burstStalCrack reads as crumbling
+// rock; a crystal that takes a hit has to come apart into PIECES. Same particle
+// array and the same life/drag as everything else, plus three fields the draw
+// loop keys off: `spin` makes them tumble, `rot` is the current angle and `long`
+// the elongation, so they draw as slivers instead of dots. Thrown alongside the
+// dust, never instead of it - the dust is what sells the impact, the shards are
+// what sells the material.
+function burstCrystalShards(x, y, hue, count = 14) {
+    const h0 = hue === undefined ? 200 : hue;
+    for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const v = 90 + Math.random() * 260;
+        parts.push({ x, y, vx: Math.cos(a)*v, vy: Math.sin(a)*v,
+                     life: 0.55 + Math.random() * 0.5,
+                     r: 1.6 + Math.random() * 2.8,
+                     long: 2.2 + Math.random() * 2.6,
+                     rot: Math.random() * Math.PI, spin: (Math.random() - 0.5) * 14,
+                     h: h0 - 6 + Math.random() * 12 });
     }
 }
 

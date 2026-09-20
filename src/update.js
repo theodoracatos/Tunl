@@ -27,6 +27,7 @@ function update(dt) {
     for (let i = parts.length - 1; i >= 0; i--) {
         const p = parts[i];
         p.x += p.vx*vdt; p.y += p.vy*vdt; const d0 = 0.90 ** (vdt * 60); p.vx *= d0; p.vy *= d0;
+        if (p.spin) p.rot += p.spin * vdt;   // crystal shards tumble; round debris has no spin
         p.life -= vdt * 2.0;
         if (p.life <= 0) parts.splice(i, 1);
     }

@@ -540,6 +540,24 @@ separates a crystal from a coin is therefore **place** (welded to the wall vs a
 small moving object in the corridor), **value** (terminations lift toward white)
 and **form**, never hue.
 
+**Breaking one sounds and looks like glass, not gravel** (`sfxCrystalCrack` in
+`audio.js`, `burstCrystalShards` in `systems.js`). The sound's signature is not the
+noise burst but the four INHARMONIC PARTIALS that ring on after it (ratios
+1 / 1.41 / 1.93 / 2.57 off 2050 Hz, decaying 0.15-0.34s), around a brighter and
+shorter fracture transient, a short high body, scattering shard ticks and half the
+rock's low thump. Measured against the sound it replaces: loudest-50ms -20.8 vs
+-21.3 dB (level-matched, so the hierarchy holds), decay 0.20s vs 0.10s, and the
+band split moves from 27/22/52 to 4/17/80 low/mid/high. The fundamental sits at
+2050 Hz rather than 3100 deliberately, so the first partial lands in the MID band
+and the sound has body on a phone speaker. Judged by offline render through the
+real bus, never by ear - see the `reference_audio_method` memory.
+The visual half is `burstCrystalShards`: tumbling slivers (`long`/`rot`/`spin` on
+the ordinary particle, drawn as a triangle instead of a dot) thrown ALONGSIDE the
+round dust, never instead of it - the dust sells the impact, the shards sell the
+material. Both are gated on `CRYSTAL_STALS`, so the one switch reverts picture and
+sound together. **The LANDING keeps the rock thud** (`sfxStalCrack`): that is a
+chunk striking the floor, not a fracture.
+
 **A falling spike drops the CRYSTAL, not the rock socket.** Nest crystals and the
 rock lip stay behind on the ceiling as an empty socket - which doubles as a
 telegraph - and only the load-bearing crystals fall, so the falling picture stays

@@ -2816,9 +2816,25 @@ function drawWorld() {
 
     // Particles
     for (const p of parts) {
+        const a = Math.max(p.life, 0);
+        if (p.long) {
+            // Crystal shard: a tumbling sliver, not a dot (systems.js
+            // burstCrystalShards). Three points, no stroke - at this size a rim
+            // would be most of the pixels.
+            const r = Math.max(p.r * p.life, 0.4), L = r * p.long;
+            const c = Math.cos(p.rot), sn = Math.sin(p.rot);
+            ctx.beginPath();
+            ctx.moveTo(p.x + c*L, p.y + sn*L);
+            ctx.lineTo(p.x - sn*r*0.8 - c*r, p.y + c*r*0.8 - sn*r);
+            ctx.lineTo(p.x + sn*r*0.8 - c*r, p.y - c*r*0.8 - sn*r);
+            ctx.closePath();
+            ctx.fillStyle = `hsla(${p.h},85%,${72 + 10*p.life}%,${a})`;
+            ctx.fill();
+            continue;
+        }
         ctx.beginPath();
         ctx.arc(p.x, p.y, Math.max(p.r*p.life,0.4), 0, Math.PI*2);
-        ctx.fillStyle = `hsla(${p.h},90%,65%,${Math.max(p.life,0)})`;
+        ctx.fillStyle = `hsla(${p.h},90%,65%,${a})`;
         ctx.fill();
     }
 
