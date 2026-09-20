@@ -64,13 +64,13 @@
     "ja": "ボタンひとつの洞窟フライヤー。押して上昇、離して下降。トンネルが閉じる前に、どこまで暗闇へ進めるか。"
   },
   "hero.newTag": {
-    "en": "New in 15.0",
-    "de": "Neu in 15.0",
-    "fr": "Nouveau dans la 15.0",
-    "it": "Novità nella 15.0",
-    "es": "Novedad en la 15.0",
-    "pt": "Novo na 15.0",
-    "ja": "15.0の新機能"
+    "en": "New in 15.1",
+    "de": "Neu in 15.1",
+    "fr": "Nouveau dans la 15.1",
+    "it": "Novità nella 15.1",
+    "es": "Novedad en la 15.1",
+    "pt": "Novo na 15.1",
+    "ja": "15.1の新機能"
   },
   "hero.newBody": {
     "en": "Every run now opens over a city at dusk and flies into the tunnel mouth. From there the walls are real, but two hull scratches forgive your first mistakes. The cave starts darker, and a moon hangs over the skyline.",
