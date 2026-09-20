@@ -558,3 +558,68 @@ as the 13.0 death screen's:**
 - The band yields to the chips, not the other way round. Six chips (record + ship +
   mission + three stats) wrap to a second row and ran straight through the band's label
   at 1080x1350 before the band was placed against the chips' measured bottom edge.
+
+## Crystal stalactites (16.0, 2026-09-20)
+
+The spike had looked the same since 1.0 - a smooth bezier cone with a root-to-tip
+gradient, stone speckle, an inner glow, a `shadowBlur` edge and a specular streak -
+while the ship (K5 "Facette + Licht"), the coins and the boulders had all moved to
+flat facets lit from above. The rock was the last airbrushed object in the picture.
+It is a cluster of upright, tapered crystal prisms now. The rules live in CLAUDE.md
+and the `CRYSTAL_*` doc block; what follows is how each one was arrived at, because
+every single one came out of breaking it first.
+
+**The drawing kept disagreeing with the hitbox, in both directions.** The first
+draft gave every prism a lateral offset, including the dominant one. Measured at
+game scale (`hw` 12.4, `len` 70) the clamp then cut the main crystal to 46% of the
+spike length - so the lethal triangle ran on for another 38px below a visibly
+finished crystal. That is the unfair direction and it was the first thing the user
+saw in the hitbox overlay ("warum ist die Hitbox so merkwuerdig"). The fix is the
+rule that the main crystal sits on the axis at full length. Later the same mistake
+appeared mirrored: burying the landed chunk by TRANSLATING it 0.40*hw down sank its
+base with it, leaving the collision standing above the drawing. Burying it by
+LENGTHENING the shafts keeps the base where `stalHit()` has it.
+
+**A fat crystal in a slender triangle is a geometry problem, not a taste problem.**
+The first version read as needles and was rejected. The reason is arithmetic: a
+PARALLEL column of half-width w fits a triangle running from `0.85*hw` to zero only
+up to `t = 1 - w/(0.85*hw)`, so at `w = 0.8*HB` it is finished at 20% of the
+length. Fat therefore meant short and long meant thin. Tapered shafts follow the
+flank and are wide at the foot AND reach the tip. The same arithmetic bites
+companions: at `dx` 0.48 with a 0.24 tilt the clamp leaves 6-9% of the length,
+which is invisible at game size - the "twin" was a single crystal for one iteration
+before anyone noticed. Upright at `dx` 0.13 it keeps 70%.
+
+**"Nest crystals can never be flown through" - claimed, refuted, measured, true.**
+The nest crystals sit beside the triangle, on rock that kills anyway. Claim one was
+that a height of at most `PR` makes them provably untouchable; that was simply
+wrong arithmetic (the ship dies at `PR` from the wall and clips a crystal of height
+h from `h + PR`, so a band of thickness h always exists). Claim two, that the band
+is therefore hit regularly, was wrong the other way: the user said it was impossible
+without hitting the main crystal first, and the trajectory sweep agreed - 0 of
+682318 passes with free climb and dive phases and instant max thrust reach it, and
+0 again at flat, mid and deep spikes, under slow-time, in a warp and with nest
+height at its maximum. The reason is the acceleration ramp: over the 37px between
+the outermost nest crystal and the axis the ship can change altitude by 3px.
+Nest height is a cosmetic knob. Re-run that sweep if `PR`, `MAX_VY` or the scroll
+speed ever move.
+
+**The colour circle is full.** The measured hue distance from each world's rock to
+the nearest reserved signal colour: Rhodia 1 degree (drain), Mars 3 (ammo), Ianthe
+12 (shield), Pallas 16 (poison), Ceres 17 (coin bonus), Io 19 (magnet), Luna 41.
+Rotating away reaches at best 19-42 degrees and lands three worlds on the same
+blue-violet, which costs the daily identity. So hue is not the axis that separates
+a crystal from a coin: place, value and form are.
+
+**Cost, measured rather than estimated.** Drawn live, a floor druse is ~90 path
+operations, and at eight visible spikes that measured 1.78ms per `draw()` against
+the old cone's 0.283ms - 6.3x, and the geometry cache (which removed ~34
+`boundsAt()` calls per spike) barely moved it, because small polygon fills are what
+costs. Baking the cluster into offscreen sprites took it to 1.31ms; merging socket
+and body into ONE blit for the common attached case took it to **0.244ms, below the
+cone's 0.283ms**. Two overlapping alpha blits per spike cost five times what one
+does. Do not split that blit again without re-measuring.
+
+Numbers are headless SwiftShader, which exaggerates fill cost against a real
+GPU-composited canvas - they are a relative signal, and the device pass is still
+outstanding.

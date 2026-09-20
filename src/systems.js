@@ -167,7 +167,7 @@ function updateFallingStals(dt) {
                 // recomputes it live every frame, see its doc.
                 shake += 4;
                 sfxStalCrack(sx);
-                burstStalCrack(sx, b.top + s.length);
+                burstStalCrack(sx, b.top + s.length, crystalShardHue());
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
             }
         } else if (!s.landed) {
@@ -182,7 +182,7 @@ function updateFallingStals(dt) {
             } else {
                 s.landed = true;
                 const b = boundsAt(s.wx);
-                burstStalCrack(sx, b.top + s.length + stalFallY(s));
+                burstStalCrack(sx, b.top + s.length + stalFallY(s), crystalShardHue());
                 if (onScreen) { shake += 3; sfxStalCrack(sx); }
             }
         }
@@ -719,7 +719,7 @@ function updateBullets(dt) {
                 s.fade  = 1.0;
                 const bnd  = boundsAt(s.wx);
                 const tipY = s.isTop ? bnd.top + s.length : bnd.bot - s.length;
-                burstStalCrack(bsx, tipY);
+                burstStalCrack(bsx, tipY, crystalShardHue());
                 sfxStalCrack(bsx);
                 bulletHitScore(bsx, tipY, BULLET_HIT_PTS.stal);
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
@@ -1397,7 +1397,7 @@ function triggerBombExplosion(cx, cy) {
         const dx = sx - cx, dy = tipY - cy;
         if (dx*dx + dy*dy < r2) {
             s.dying = true; s.fade = 1.0;
-            burstStalCrack(sx, tipY);
+            burstStalCrack(sx, tipY, crystalShardHue());
         }
     }
     for (let mi = mines.length - 1; mi >= 0; mi--) {
@@ -1516,11 +1516,16 @@ function burstCoin(x, y, baseHue = 44, count = 14) {
 }
 
 // Stalactite destruction debris
-function burstStalCrack(x, y) {
+// `hue` is passed only where the thing that broke is a CRYSTAL stalactite
+// (draw.js crystalShardHue); rock hits - boulders, mines, cannon shots, a bullet
+// on the wall - keep the rock-coloured default, or the hit reads as the wrong
+// object.
+function burstStalCrack(x, y, hue) {
+    const h0 = hue === undefined ? 25 : hue - 10;
     for (let i = 0; i < 22; i++) {
         const a = Math.random() * Math.PI * 2;
         const v = 60 + Math.random() * 200;
         parts.push({ x, y, vx: Math.cos(a)*v, vy: Math.sin(a)*v,
-                     life: 0.5 + Math.random() * 0.4, r: 2 + Math.random() * 3.5, h: 25 + Math.random() * 20 });
+                     life: 0.5 + Math.random() * 0.4, r: 2 + Math.random() * 3.5, h: h0 + Math.random() * 20 });
     }
 }

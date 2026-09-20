@@ -695,6 +695,85 @@ const CANNON_SHOT_TRAVEL = 1.45;
 const FALL_LEAD = W * 0.44;
 const FALL_SPAN = W * 0.26;
 
+// ── Crystal stalactites (16.0, do not revert to the smooth cone) ──────
+// The stalactites had not been touched since 1.0: a smooth bezier cone with a
+// root->tip gradient, stone speckle, inner glow, a shadowBlur edge and a
+// specular streak. Ship, coins and boulders had all moved to flat facets lit
+// from above (draw.js K5 "Facette + Licht"); the rock was the last airbrushed
+// object on screen. It is now a CLUSTER of upright, tapered crystal prisms.
+// CRYSTAL_STALS is the kill switch, same pattern as SHIP_VIEW_3D: set it false
+// and _stalOutline's smooth cone is back with no other change.
+//
+// Four rules, each of which was arrived at by breaking it first:
+//
+// 1. THE MAIN CRYSTAL SITS ON THE AXIS AND HAS FULL LENGTH, so its tip lands
+//    exactly on the collision triangle's apex. The first draft let every prism
+//    carry a lateral offset; the tip then fell short and the lethal triangle ran
+//    on below a visibly shorter crystal - the unfair direction, and immediately
+//    spotted in playtest.
+// 2. THE SHAFTS TAPER. In a triangle running from 0.85*hw to zero, a PARALLEL
+//    column of half-width w only fits to t = 1 - w/(0.85*hw). That is why the
+//    first pass could only be fat-and-short or long-and-needle-thin. A shaft
+//    that narrows from w to w*CRYSTAL_TIP_FRAC follows the flank instead: wide
+//    at the foot and still reaching the tip.
+// 3. SIDE CRYSTALS ARE CLAMPED, VORZEICHENRICHTIG. Solving
+//    |dx + L*sin a| <= 0.85*hw*(1 - L*cos a/len) with absolute values instead of
+//    signs cost an inward-leaning prism up to half its length.
+// 4. EVERY CRYSTAL ROOTS ON THE WALL AT ITS OWN X, not on the average over
+//    +-hw. The nest crystals sit up to 3*hw out to the side, where the wall has
+//    long since moved; rooted on the average they visibly float on any sloped
+//    wall.
+//
+// The drawing may reach CRYSTAL_BASE_MAX * hw at the FOOT, against the 0.85*hw
+// the collision uses - the forgiving direction, and the same thing the old cone
+// did at 1.00. The NEST crystals sit beside the triangle entirely, on rock that
+// is lethal anyway. Statically there is a band above them where the ship would
+// clip them and live; measured over 682318 pass trajectories with free climb and
+// dive phases and instant max thrust, ZERO of them reach it, because over the
+// 37px between the outermost nest crystal and the axis the ship can change
+// altitude by 3px - TUNL's input is an acceleration ramp, not an impulse. Nest
+// height is therefore a purely cosmetic knob. Re-run that check if PR, MAX_VY or
+// the scroll speed ever move.
+//
+// Falling stalactites: WHAT BREAKS OFF IS THE CRYSTAL, NOT THE ROCK SOCKET. The
+// nest crystals and the rock lip stay behind on the ceiling as an empty socket
+// (which doubles as a telegraph), only the load-bearing crystals fall - so the
+// falling picture is congruent with the triangle that falls with it. On landing
+// NOTHING ROTATES: the chunk stays as it fell, tip buried in the rock like a nail
+// in wood, which is also the only reading consistent with stalHit(), where a
+// falling spike keeps ay = b.top + fy and ty = b.top + length + fy. The burial is
+// done by LENGTHENING the shafts (CRYSTAL_LAND_SINK), never by translating the
+// body down - translating sinks the base too and leaves the collision standing
+// above the drawing.
+const CRYSTAL_STALS      = true;
+const CRYSTAL_BASE_MAX   = 1.30;   // drawn half-width at the foot, in hw
+const CRYSTAL_LIP_MAX    = 3.10;   // same for the nest crystals beside the triangle
+const CRYSTAL_TIP_FRAC   = 0.40;   // shaft half-width at the shoulder, share of the foot
+const CRYSTAL_WIDE       = 1.70;   // overall width multiplier (playtested value)
+const CRYSTAL_NEST_MAX   = 0.80;   // tallest nest crystal, share of the spike length
+const CRYSTAL_NEST_MIN   = 0.625;  // ... times this, as the low end of the per-spike roll
+const CRYSTAL_SINK       = 0.14;   // every root this far into the rock, in hw
+const CRYSTAL_LAND_SINK  = 0.40;   // extra shaft length once it has struck, in hw
+const CRYSTAL_SAT        = 1.04;   // saturation applied to the day's stalEdge hue
+const CRYSTAL_GLOW       = 0.22;   // tip glow; one radial fill per cluster, no shadowBlur
+
+// Material profile per weekday, index-aligned with WEEKDAY_PALETTES. Same
+// geometry everywhere - only the finish changes, so each world keeps its own
+// mineral instead of seven recolours of one calcite cone. `light`/`dark` are the
+// facet spreads toward white/black, `tip` how far the termination lifts toward
+// white, `core` the strength of the light pipe along the axis, `gloss` an extra
+// hard specular edge (glassy minerals only), `bands` horizontal growth banding
+// (sinter and rhodonite), `rough` how far the outline is allowed to vary.
+const CRYSTAL_MATERIALS = [
+    { name: 'Kalzit',    light: 0.30, dark: 0.34, tip: 0.72, core: 0.40, gloss: 0,    bands: 0.55, rough: 0.10 }, // Ceres
+    { name: 'Rostquarz', light: 0.26, dark: 0.40, tip: 0.66, core: 0.30, gloss: 0,    bands: 0.20, rough: 0.16 }, // Mars
+    { name: 'Selenit',   light: 0.38, dark: 0.26, tip: 0.86, core: 0.62, gloss: 0.25, bands: 0.30, rough: 0.06 }, // Luna
+    { name: 'Obsidian',  light: 0.22, dark: 0.52, tip: 0.60, core: 0.22, gloss: 0.85, bands: 0,    rough: 0.04 }, // Io
+    { name: 'Amethyst',  light: 0.34, dark: 0.36, tip: 0.88, core: 0.75, gloss: 0.30, bands: 0,    rough: 0.08 }, // Ianthe
+    { name: 'Olivin',    light: 0.28, dark: 0.38, tip: 0.64, core: 0.34, gloss: 0,    bands: 0.15, rough: 0.20 }, // Pallas
+    { name: 'Rhodonit',  light: 0.32, dark: 0.34, tip: 0.74, core: 0.45, gloss: 0.15, bands: 0.60, rough: 0.12 }, // Rhodia
+];
+
 // ── Warp portal ("Sog") ───────────────────────────────────────────────
 // Reward set-piece, not a hazard: a hoop hangs in the corridor (systems.js
 // makePortal/maintainPortals); flying through it triggers the warp state

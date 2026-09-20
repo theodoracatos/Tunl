@@ -498,6 +498,62 @@ Two bounds functions:
 Triangle-shaped obstacles from top or bottom wall. Accurate triangle-circle collision (not AABB).
 Paired stalactites (chicane from both sides) appear after `_prog > 0.40` with 24% chance.
 
+**They are CRYSTALS since 16.0 (`CRYSTAL_STALS`, `constants.js` doc block +
+`draw.js` `drawCrystalSpike`) - do not go back to the smooth cone.** The spike had
+not been touched since 1.0 while ship, coins and boulders all moved to flat facets
+lit from above; the rock was the last airbrushed object on screen. A ceiling spike
+is now a twin (main crystal + two companions + two nest crystals), a floor spike a
+druse (main + four steps + six nest crystals), all upright, drawn from
+`_rockHash(s.wx)` - no `rng()` draw, no change to `makeStal()`, placement or
+collision, so `test-cave.js` still reports a byte-identical cave. Flip
+`CRYSTAL_STALS` to `false` and `_stalOutline`'s cone is back.
+
+Four geometry rules, each of them learned by breaking it:
+- **The main crystal sits on the axis at full length**, so its tip lands exactly on
+  the collision apex. Give it a lateral offset and the lethal triangle runs on
+  below a visibly shorter crystal - the unfair direction, spotted immediately.
+- **Shafts taper.** A parallel column of half-width w only fits a triangle running
+  from `0.85*hw` to zero up to `t = 1 - w/(0.85*hw)`; that is why the first pass
+  could only be fat-and-short or long-and-needle-thin. Companions must also stand
+  CLOSE to the axis: at `dx` 0.48 with a 0.24 tilt the clamp left 6-9% of the
+  length, invisible at game size; upright at 0.13 it keeps 70%.
+- **The side clamp is solved with signs, not absolute values** - with `Math.abs` an
+  inward-leaning prism lost up to half its length.
+- **Every crystal roots on the wall at ITS own x**, never on the average over
+  `+-hw`; nest crystals sit up to `3*hw` out, where the wall has long since moved.
+
+**The drawing is one blitted sprite per spike** (`_xtalSprites`), baked per
+stalactite and rebuilt only when the raster scale or the tone key changes. Drawn
+live it was ~90 path operations per druse and measured **6.3x the entire `draw()`
+of the old cone** at eight visible spikes; socket and body merged into one sprite
+it is **0.244ms against the cone's 0.283ms**, i.e. the crystal is now the cheaper
+of the two - it spends no gradient, no clip, no `shadowBlur` and no specular
+stroke per frame. Do not split that blit again without re-measuring.
+
+**Per-world material** (`CRYSTAL_MATERIALS`, index-aligned with
+`WEEKDAY_PALETTES`): same geometry, different finish - calcite, rust quartz,
+selenite, obsidian, amethyst, olivine, rhodonite. The hue stays the day's own
+`stalEdge`: the colour circle is measured full (`COIN_BASE_CLR` plus the state
+colours), the day rock lands within 20 degrees of a signal colour on six of seven
+worlds, and rotating away only pushes three worlds onto the same blue-violet. What
+separates a crystal from a coin is therefore **place** (welded to the wall vs a
+small moving object in the corridor), **value** (terminations lift toward white)
+and **form**, never hue.
+
+**A falling spike drops the CRYSTAL, not the rock socket.** Nest crystals and the
+rock lip stay behind on the ceiling as an empty socket - which doubles as a
+telegraph - and only the load-bearing crystals fall, so the falling picture stays
+congruent with the triangle that falls with it. That matters: the "nest crystals
+are unreachable" argument rests on the wall being in front and the main crystal
+behind, and a free-falling chunk has neither (measured 687px^2 of theoretically
+clippable nest area at the wall, 0 of it reachable by any trajectory, against
+1809px^2 in free fall). **On landing nothing rotates** - the chunk stays as it
+fell, tip buried like a nail in wood, which is also the only reading consistent
+with `stalHit()`, where a falling spike keeps `ay = b.top + fy` and
+`ty = b.top + length + fy`. The burial is done by LENGTHENING the shafts
+(`CRYSTAL_LAND_SINK`), never by translating the body down - translating sinks the
+base too and leaves the collision standing above the drawing.
+
 **Falling stalactites** (`FALL_LEAD`/`FALL_SPAN` in `constants.js`, `fallSpacing()` in
 `world.js`, `stalFallY`/`updateFallingStals` in `systems.js`): from world-x 7800
 (~score 130, `nextFallWx` set in `startPlay`; the first one actually lands a bit later,

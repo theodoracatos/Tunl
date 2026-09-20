@@ -187,6 +187,407 @@ function _paintStonePattern(scrollX, alpha = 0.5) {
     ctx.restore();
 }
 
+// ── Crystal stalactites (constants.js CRYSTAL_* doc) ──────────────────
+// A cluster of upright, tapered prisms instead of the 1.0 cone. The ceiling
+// grows a twin, the floor a druse; everything else that varies comes from the
+// seed, never from rng(), so the cave stays identical on every device and a
+// spike does not reshape as it scrolls past.
+//
+// Prism fields: a = tilt from the wall normal (0 = upright), L = length as a
+// share of the spike length (of the nest height for lip crystals), w = half
+// width at the foot in hw, wt = the share of that left at the shoulder, dx =
+// lateral offset in hw, sh = where the shaft ends and the termination begins,
+// lip = sits beside the collision triangle, on rock (see the doc block).
+// The ceiling's twin. Sparser than the floor's druse - a stalactite is a
+// slimmer thing than a stalagmite cluster - but built the same way, and for the
+// same reason: a companion crystal has to stand CLOSE to the axis or the
+// triangle's flank cuts it down. The first cut put the twin at dx 0.48 with a
+// 0.24 tilt, and clampLen left 6-9% of the length of it: invisible at game size.
+// Upright at dx 0.13 it keeps 70%.
+const CRYSTAL_ARCH_TOP = {
+    mirror: true,
+    prisms: [
+        { a: 0, L: 1.00, w: 0.72, wt: 0.34, dx:  0.00, sh: 0.55 },
+        { a: 0, L: 0.70, w: 0.26, wt: 0.40, dx:  0.13, sh: 0.58 },
+        { a: 0, L: 0.46, w: 0.24, wt: 0.40, dx: -0.19, sh: 0.58 },
+        { a: 0, L: 0.80, w: 0.30, wt: 0.42, dx: -1.05, sh: 0.54, lip: true },
+        { a: 0, L: 0.55, w: 0.26, wt: 0.42, dx:  1.12, sh: 0.54, lip: true },
+    ],
+};
+const CRYSTAL_ARCH_BOT = {          // "Druse" - what grows from the floor
+    mirror: true,
+    prisms: [
+        { a: 0, L: 1.00, w: 0.60, wt: 0.40, dx:  0.00, sh: 0.46 },
+        { a: 0, L: 0.92, w: 0.22, wt: 0.44, dx:  0.11, sh: 0.58 },
+        { a: 0, L: 0.78, w: 0.22, wt: 0.44, dx: -0.17, sh: 0.58 },
+        { a: 0, L: 0.60, w: 0.20, wt: 0.46, dx:  0.34, sh: 0.56 },
+        { a: 0, L: 0.46, w: 0.20, wt: 0.46, dx: -0.42, sh: 0.56 },
+        { a: 0, L: 1.00, w: 0.34, wt: 0.44, dx:  0.86, sh: 0.52, lip: true },
+        { a: 0, L: 0.86, w: 0.32, wt: 0.44, dx: -0.94, sh: 0.52, lip: true },
+        { a: 0, L: 0.70, w: 0.30, wt: 0.46, dx:  1.44, sh: 0.54, lip: true },
+        { a: 0, L: 0.56, w: 0.28, wt: 0.46, dx: -1.52, sh: 0.54, lip: true },
+        { a: 0, L: 0.44, w: 0.26, wt: 0.46, dx:  2.00, sh: 0.54, lip: true },
+        { a: 0, L: 0.34, w: 0.24, wt: 0.46, dx: -2.08, sh: 0.54, lip: true },
+    ],
+};
+
+// 0..1 hash off the same deterministic field the rock noise uses.
+function _cHash(i) { return 0.5 + 0.5 * _rockHash(i); }
+
+function _toHsl(c) {
+    const r = c[0]/255, g = c[1]/255, b = c[2]/255;
+    const mx = Math.max(r,g,b), mn = Math.min(r,g,b), d = mx - mn;
+    let h = 0;
+    if (d) { h = mx === r ? ((g-b)/d + (g < b ? 6 : 0)) : mx === g ? ((b-r)/d + 2) : ((r-g)/d + 4); h *= 60; }
+    const l = (mx+mn)/2;
+    return [h, d ? d/(1 - Math.abs(2*l - 1)) : 0, l];
+}
+function _fromHsl(h, sat, l) {
+    h = ((h % 360) + 360) % 360;
+    const c = (1 - Math.abs(2*l - 1)) * sat, x = c * (1 - Math.abs((h/60) % 2 - 1)), m = l - c/2;
+    let r, g, b;
+    if (h < 60)       { r=c; g=x; b=0; }
+    else if (h < 120) { r=x; g=c; b=0; }
+    else if (h < 180) { r=0; g=c; b=x; }
+    else if (h < 240) { r=0; g=x; b=c; }
+    else if (h < 300) { r=x; g=0; b=c; }
+    else              { r=c; g=0; b=x; }
+    return [(r+m)*255, (g+m)*255, (b+m)*255];
+}
+
+// Tones for one material, cached: the theme only moves on a sector step, the
+// deep palette drift or a warp, so this recomputes a few dozen times per run
+// rather than per spike per frame.
+let _crystalToneKey = '', _crystalTone = null;
+function _crystalTones(theme, mat) {
+    const key = theme.stalEdge.join(',') + '|' + mat.name;
+    if (key === _crystalToneKey) return _crystalTone;
+    const [h, sat] = _toHsl(theme.stalEdge);
+    const base = _fromHsl(h, Math.min(1, sat * CRYSTAL_SAT), 0.58);
+    const at = (l, sMul) => rgb(_fromHsl(h, Math.min(1, sat * CRYSTAL_SAT * (sMul === undefined ? 1 : sMul)), l));
+    _crystalTone = {
+        base,
+        lit:     at(0.50 + mat.light * 0.62),
+        mid:     at(0.48),
+        dark:    at(0.48 - mat.dark * 0.62, 0.9),
+        tipLit:  at(0.48 + mat.tip * 0.45, 0.62),
+        tipMid:  at(0.60),
+        tipDark: at(0.40, 0.92),
+        core:    rgb(_fromHsl(h, sat * 0.35, 0.92), 0.30 + mat.core * 0.45),
+        rim:     rgb(_fromHsl(h, sat * 0.50, 0.88), 0.75),
+        gloss:   rgb(_fromHsl(h, sat * 0.30, 0.95), 0.90),
+        band:    rgb(_fromHsl(h, sat * 0.40, 0.86), 0.16),
+        socket:  rgb(lerpClr(theme.wall, theme.stal, 0.5)),
+        shard:   rgb(lerpClr(theme.wall, base, 0.5), 0.85),
+        crack:   rgb(lerpClr(theme.wall, [0,0,0], 0.45), 0.7),
+        glow:    base,
+    };
+    _crystalToneKey = key;
+    return _crystalTone;
+}
+
+// The construction clamp. A prism's tip must stay inside the collision flank:
+//     |dx + L*sin a| <= HB * (1 - L*cos a / len),  HB = 0.85*hw
+// Two linear inequalities, both solved WITH their signs - taking absolute
+// values costs an inward-leaning prism up to half its length.
+function _crystalClampLen(L, a, dx, hw, len) {
+    const HB = hw * 0.85, sa = Math.sin(a), ca = Math.cos(a), k = HB * ca / len;
+    if (Math.abs(dx) >= HB) return 0;
+    let lim = len;
+    const d1 = sa + k; if (d1 > 1e-6) lim = Math.min(lim, (HB - dx) / d1);
+    const d2 = k - sa; if (d2 > 1e-6) lim = Math.min(lim, (HB + dx) / d2);
+    return Math.max(0, Math.min(L, lim * 0.995));
+}
+
+// Build one cluster. Prism 0 is the main crystal: on the axis, no offset, full
+// length, so its tip lands exactly on the triangle's apex.
+function _buildCluster(arch, hw, len, seed, mat) {
+    const flip = (arch.mirror && _cHash(seed * 0.007 + 3.3) < 0.5) ? -1 : 1;
+    // Nest height varies per spike (CRYSTAL_NEST_MIN..1 of CRYSTAL_NEST_MAX), so
+    // no two druses in a field stand equally tall.
+    const lipCap = len * CRYSTAL_NEST_MAX *
+        (CRYSTAL_NEST_MIN + (1 - CRYSTAL_NEST_MIN) * _cHash(seed * 0.0031 + 7.7));
+    const out = [];
+    for (let i = 0; i < arch.prisms.length; i++) {
+        const p = arch.prisms[i], main = i === 0, lip = !!p.lip;
+        const jA = (_cHash(seed * 0.017 + i * 3.1) - 0.5) * 0.14 * (1 + mat.rough * 2);
+        const jL = 0.90 + _cHash(seed * 0.029 + i * 5.7) * 0.20;
+        // A prism whose nominal angle is 0 stays at exactly 0 - the jitter only
+        // touches the deliberately turned ones, or the druse tilts again.
+        const a  = (main || p.a === 0) ? 0 : flip * (p.a + jA);
+        const dx = main ? 0 : flip * hw * p.dx * Math.min(CRYSTAL_WIDE, 1.45);
+        let   w  = hw * p.w * CRYSTAL_WIDE * (main ? 1 : 0.94 + _cHash(seed * 0.041 + i * 7.3) * 0.16);
+        w = Math.min(w, Math.max(hw * 0.16, hw * (lip ? CRYSTAL_LIP_MAX : CRYSTAL_BASE_MAX) - Math.abs(dx)));
+        const L  = main ? len
+                 : lip  ? lipCap * p.L * (0.94 + (jL - 0.90) * 0.5)
+                        : _crystalClampLen(len * p.L * jL, a, dx, hw, len);
+        out.push({ a, L, w, wt: p.wt, dx, sh: p.sh, lip });
+    }
+    // Nest behind, then outside-in, so the main crystal ends up on top.
+    out.sort((x, y) => (y.lip ? 1 : 0) - (x.lip ? 1 : 0) || Math.abs(y.dx) - Math.abs(x.dx));
+    return out;
+}
+
+// One crystal, rooted at (dx, dy), growing toward +y in the cluster's local
+// frame. Three flat longitudinal faces plus a three-faced termination, lit from
+// upper left - the same material language as the ship's facets. No shadowBlur.
+function _drawPrism(ctx, pr, C, mat, extraLen) {
+    const a = pr.a, L = pr.L + (extraLen || 0), dx = pr.dx, dy = pr.dy || 0, sh = pr.sh;
+    const w0 = pr.w, w1 = pr.w * pr.wt;
+    const ux = Math.sin(a), uy = Math.cos(a), px = uy, py = -ux;
+    const P  = (t, o) => [dx + ux*L*t + px*o, dy + uy*L*t + py*o];
+    const halfAt = (t) => t <= sh ? w0 + (w1 - w0) * (t / sh) : w1;
+    const pt = (t, f) => P(t, halfAt(t) * f);
+    const tip = P(1, 0);
+    const poly = (pts, fill) => {
+        ctx.beginPath();
+        ctx.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+        ctx.closePath();
+        ctx.fillStyle = fill;
+        ctx.fill();
+    };
+    const cut = [-1, -0.24, 0.32, 1];
+    const tone = [C.lit, C.mid, C.dark];
+    for (let i = 0; i < 3; i++)
+        poly([pt(0, cut[i]), pt(sh, cut[i]), pt(sh, cut[i+1]), pt(0, cut[i+1])], tone[i]);
+    const tipTone = [C.tipLit, C.tipMid, C.tipDark];
+    for (let i = 0; i < 3; i++)
+        poly([pt(sh, cut[i]), tip, pt(sh, cut[i+1])], tipTone[i]);
+    // Light pipe along the axis
+    ctx.beginPath();
+    ctx.moveTo(P(0.06, 0)[0], P(0.06, 0)[1]);
+    ctx.lineTo(P(0.94, 0)[0], P(0.94, 0)[1]);
+    ctx.strokeStyle = C.core;
+    ctx.lineWidth = Math.max(0.8, w1 * 0.55);
+    ctx.stroke();
+    // Growth banding (calcite, rhodonite) - one stroke per band, only where the
+    // shaft is wide enough for it to read.
+    if (mat.bands > 0 && w0 > 2.4) {
+        ctx.strokeStyle = C.band;
+        ctx.lineWidth = 1;
+        for (let k = 1; k <= 3; k++) {
+            const t = k / 4 * sh;
+            ctx.beginPath();
+            ctx.moveTo(pt(t, -0.92)[0], pt(t, -0.92)[1]);
+            ctx.lineTo(pt(t,  0.92)[0], pt(t,  0.92)[1]);
+            ctx.stroke();
+        }
+    }
+    // Rim on the lit side, plus a hard specular for the glassy minerals
+    ctx.beginPath();
+    ctx.moveTo(pt(0, -1)[0], pt(0, -1)[1]);
+    ctx.lineTo(pt(sh, -1)[0], pt(sh, -1)[1]);
+    ctx.lineTo(tip[0], tip[1]);
+    ctx.strokeStyle = C.rim;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    if (mat.gloss > 0) {
+        ctx.beginPath();
+        ctx.moveTo(pt(0.10, -0.45)[0], pt(0.10, -0.45)[1]);
+        ctx.lineTo(pt(0.90, -0.10)[0], pt(0.90, -0.10)[1]);
+        ctx.globalAlpha *= mat.gloss;
+        ctx.strokeStyle = C.gloss;
+        ctx.lineWidth = Math.max(1, w1 * 0.5);
+        ctx.stroke();
+        ctx.globalAlpha /= mat.gloss;
+    }
+}
+
+// Hue of today's crystal, for the shards a breaking one throws (systems.js
+// burstStalCrack). Undefined while CRYSTAL_STALS is off, so the rock-coloured
+// default stands - and it stays rock for boulders, mines and cannon shots,
+// which are not crystal and must not read as one.
+function crystalShardHue() {
+    if (!CRYSTAL_STALS) return undefined;
+    const mat = CRYSTAL_MATERIALS[weekdayIndex(_tunlActiveDate())];
+    return _toHsl(_crystalTones(getTheme(), mat).base)[0];
+}
+
+// Bakes one cluster into offscreen canvases: the socket (nest crystals plus the
+// rock lip, which stays behind when the spike lets go), the body, and - only once
+// it has struck - the body with its shafts lengthened into the rock. Rebuilt when
+// the raster scale or the tone key changes, never per frame.
+function _xtalSprites(s, X, C, mat, hw, len, landed) {
+    const key = _crystalToneKey;
+    let spr = X.spr;
+    if (!spr || spr.key !== key || spr.rs !== _RASTER_SCALE) {
+        // Tight bounds per sprite, computed from the cluster itself. The socket
+        // is wide and the body is narrow, so one shared box would have made both
+        // blits about twice the pixels they need.
+        const pad = 8, rs = _RASTER_SCALE;
+        const box = (wantLip) => {
+            let x0 = -2, x1 = 2, y0 = -18, y1 = 4;
+            for (const pr of X.cluster) {
+                if (!!pr.lip !== wantLip) continue;
+                const halfMax = Math.max(pr.w, pr.w * pr.wt);
+                x0 = Math.min(x0, pr.dx - halfMax); x1 = Math.max(x1, pr.dx + halfMax);
+                y0 = Math.min(y0, pr.dy);
+                y1 = Math.max(y1, pr.dy + pr.L + pr.grow + (wantLip ? 0 : hw * CRYSTAL_LAND_SINK));
+            }
+            if (wantLip) { x0 = Math.min(x0, -X.span); x1 = Math.max(x1, X.span); }
+            else         { y1 += hw * 2.4; x0 -= hw * 1.2; x1 += hw * 1.2; }   // room for the glow
+            return { x0: x0 - pad, y0: y0 - pad, w: x1 - x0 + pad * 2, h: y1 - y0 + pad * 2 };
+        };
+        const make = (b, paint) => {
+            const c = document.createElement('canvas');
+            c.width  = Math.max(1, Math.ceil(b.w * rs));
+            c.height = Math.max(1, Math.ceil(b.h * rs));
+            const g = c.getContext('2d');
+            g.setTransform(rs, 0, 0, rs, -b.x0 * rs, -b.y0 * rs);
+            paint(g);
+            return c;
+        };
+        const sb = box(true), bb = box(false);
+        // Union of the two, for the common case: as long as nothing is falling,
+        // socket and body are one picture and one blit instead of two.
+        const fb = { x0: Math.min(sb.x0, bb.x0), y0: Math.min(sb.y0, bb.y0) };
+        fb.w = Math.max(sb.x0 + sb.w, bb.x0 + bb.w) - fb.x0;
+        fb.h = Math.max(sb.y0 + sb.h, bb.y0 + bb.h) - fb.y0;
+        const paintSocket = (g) => {
+            g.beginPath();
+            g.moveTo(-X.span, -16);
+            for (const [o, y] of X.lip) g.lineTo(o, y);
+            g.lineTo(X.span, -16);
+            g.closePath();
+            g.fillStyle = C.socket;
+            g.fill();
+            for (const pr of X.cluster) if (pr.lip) _drawPrism(g, pr, C, mat, 0);
+        };
+        spr = X.spr = {
+            key, rs, sb, bb, fb,
+            socket: make(sb, paintSocket),
+            body:   make(bb, g => _xtalBody(g, X, C, mat, 0)),
+            full:   make(fb, g => { paintSocket(g); _xtalBody(g, X, C, mat, 0); }),
+            landed: null,
+            make,
+        };
+    }
+    // The landed variant is only ever needed by the handful of spikes that fall.
+    if (landed && !spr.landed)
+        spr.landed = spr.make(spr.bb, g => _xtalBody(g, X, C, mat, hw * CRYSTAL_LAND_SINK));
+    return spr;
+}
+
+// The load-bearing crystals plus the tip glow. `extra` buries the tips once the
+// chunk has struck - by LENGTHENING the shafts, never by moving the body down,
+// which would sink the base and leave the collision standing above the drawing.
+function _xtalBody(g, X, C, mat, extra) {
+    for (const pr of X.cluster) {
+        if (pr.lip) continue;
+        _drawPrism(g, pr, C, mat, pr.grow + extra);
+    }
+    if (CRYSTAL_GLOW > 0) {
+        const main = X.cluster[X.cluster.length - 1];
+        const gx = Math.sin(main.a) * main.L, gy = Math.cos(main.a) * main.L, R = X.span * 0.7;
+        const rg = g.createRadialGradient(gx, gy, 0, gx, gy, R);
+        rg.addColorStop(0, rgb(lerpClr(C.glow, [255,255,255], 0.45), 0.42 * CRYSTAL_GLOW));
+        rg.addColorStop(1, 'rgba(0,0,0,0)');
+        g.fillStyle = rg;
+        g.fillRect(gx - R, gy - R, R * 2, R * 2);
+    }
+}
+
+// Draws one stalactite as a crystal cluster. Handles the three states the old
+// cone handled in one translate: attached, falling (socket stays behind), and
+// struck (buried tip, debris). fallY is stalFallY(s), i.e. exactly what
+// stalHit() adds to the collision triangle - the picture and the hitbox move
+// together by construction.
+function drawCrystalSpike(s, sx, wobX, fallY, theme) {
+    const hw = s.width / 2, dir = s.isTop ? 1 : -1, len = s.length;
+    const wallAt = (off) => s.isTop ? boundsAt(s.wx + off).top : boundsAt(s.wx + off).bot;
+    const baseY  = (wallAt(-hw) + wallAt(hw)) / 2;
+    const mat = CRYSTAL_MATERIALS[weekdayIndex(_tunlActiveDate())];
+    const C   = _crystalTones(theme, mat);
+
+    // Everything that only depends on the spike and the cave SHAPE is built once
+    // and kept on the stalactite. Rebuilding it per frame cost ~34 boundsAt()
+    // calls per spike (21 for the rock lip alone) and allocated a fresh cluster
+    // every frame - measured 6.8x the whole draw() of the old cone at eight
+    // visible spikes. The root offsets are safe to cache because gapBonusVisual
+    // adds the same half-gap at every x, so it cancels out of every difference
+    // wallAt(off) - baseY; only baseY itself moves, and that is two calls.
+    let X = s._xtal;
+    if (!X || X.w !== W || X.h !== H) {
+        const cluster = _buildCluster(s.isTop ? CRYSTAL_ARCH_TOP : CRYSTAL_ARCH_BOT,
+                                      hw, len, s.wx, mat);
+        const SINK = hw * CRYSTAL_SINK;
+        for (const pr of cluster) {
+            const raw = (wallAt(pr.dx) - baseY) * dir;
+            // Load-bearing crystals may only be pushed deeper, never lifted, or
+            // the tip leaves the triangle; what the root loses, the shaft gets
+            // back in length (grow below).
+            pr.dy   = (pr.lip ? raw : Math.min(raw, 0)) - SINK;
+            pr.grow = pr.lip ? 0 : -pr.dy;
+        }
+        const SPAN = hw * 3.4, lip = [];
+        for (let i = 0; i <= 20; i++) {
+            const o = -SPAN + 2 * SPAN * (i / 20);
+            const bump = Math.max(0, 1 - Math.abs(o) / (hw * 1.6));
+            lip.push([o, (wallAt(o) - baseY) * dir + len * 0.030 + len * 0.075 * bump]);
+        }
+        X = s._xtal = { w: W, h: H, cluster, lip, span: SPAN };
+    }
+    const cluster = X.cluster;
+    const b = boundsAt(s.wx);
+    const fallMax = Math.max(0, (b.bot - b.top) - len);
+    const landed  = fallY > 0 && fallY >= fallMax - 0.01;
+
+    // Sprites: the cluster is baked once into two offscreen canvases and from
+    // then on blitted. Drawn live it was ~90 path operations per floor druse and
+    // measured 6.3x the entire draw() of the old cone at eight visible spikes -
+    // small polygon fills, not the geometry, are what costs. Same cut the 3D ship
+    // doc block anticipates. The sprites are keyed on the tone key, so the deep
+    // palette drift and a warp rebuild them a handful of times per run, not per
+    // frame; the raster scale matches the main canvas so nothing softens.
+    const spr = _xtalSprites(s, X, C, mat, hw, len, landed);
+
+    if (!fallY) {
+        // Attached: socket and body are one picture, so one blit.
+        ctx.save();
+        ctx.translate(sx + wobX, baseY);
+        ctx.scale(1, dir);
+        ctx.drawImage(spr.full, spr.fb.x0, spr.fb.y0, spr.fb.w, spr.fb.h);
+        ctx.restore();
+    } else {
+        // Loose: the socket stays at the wall, only the body falls.
+        ctx.save();
+        ctx.translate(sx, baseY);
+        ctx.scale(1, dir);
+        ctx.drawImage(spr.socket, spr.sb.x0, spr.sb.y0, spr.sb.w, spr.sb.h);
+        ctx.restore();
+        ctx.save();
+        ctx.translate(sx + wobX, baseY + fallY);
+        ctx.scale(1, dir);
+        ctx.drawImage(landed ? spr.landed : spr.body, spr.bb.x0, spr.bb.y0, spr.bb.w, spr.bb.h);
+        ctx.restore();
+    }
+
+    // ── Impact: shards and cracks where it went in ──────────────────────
+    if (landed) {
+        const fy0 = b.bot;
+        ctx.beginPath();
+        for (let k = 0; k < 5; k++) {
+            const o = (k - 2) / 2 * hw * 1.6 * (0.6 + _cHash(s.wx * 0.013 + k) * 0.8);
+            const h = hw * (0.18 + _cHash(s.wx * 0.017 + k) * 0.30);
+            ctx.moveTo(sx + o - h * 0.5, fy0);
+            ctx.lineTo(sx + o, fy0 - h);
+            ctx.lineTo(sx + o + h * 0.5, fy0);
+        }
+        ctx.fillStyle = C.shard;
+        ctx.fill();
+        ctx.beginPath();
+        for (let k = 0; k < 3; k++) {
+            const o = (k - 1) * hw * 1.1;
+            ctx.moveTo(sx, fy0 + 1);
+            ctx.lineTo(sx + o * 1.6, fy0 + hw * (0.5 + _cHash(s.wx * 0.019 + k) * 0.6));
+        }
+        ctx.strokeStyle = C.crack;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
+}
+
 // ── Coins ("Gegenstand", 13.0) ─────────────────────────────────────────
 // Every coin draws the thing it does - a magnet is a magnet, slow time is a
 // Sanduhr - so a player learns the type without being told. No frame (tried and
@@ -1426,6 +1827,14 @@ function drawWorld() {
             const range = W - PX - FALL_LEAD;
             const wobT  = range > 0 ? Math.max(0, Math.min(1, 1 - (sx - PX - FALL_LEAD) / range)) : 1;
             wobX = Math.sin(gtime * 27 + s.wx * 0.05) * lerp(0.7, 3.6, wobT);
+        }
+        // Crystal cluster (constants.js CRYSTAL_* doc). Flip CRYSTAL_STALS to
+        // false and the smooth 1.0 cone below runs again, unchanged.
+        if (CRYSTAL_STALS) {
+            if (s.fade < 1.0 || warpFade < 1.0) ctx.globalAlpha = s.fade * warpFade;
+            drawCrystalSpike(s, sx, wobX, fallY, theme);
+            if (s.fade < 1.0 || warpFade < 1.0) ctx.globalAlpha = 1.0;
+            continue;
         }
         if (fallY || wobX) { ctx.save(); ctx.translate(wobX, fallY); }
         if (s.fade < 1.0 || warpFade < 1.0) ctx.globalAlpha = s.fade * warpFade;
