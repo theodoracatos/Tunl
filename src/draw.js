@@ -1147,8 +1147,11 @@ function drawShip3D(x, y, r, color, sr, sg, sb, blur, fx, lv) {
     }
 
     if (!fx) return;
-    // Wingtip strobes, only on a tip that faces the camera
-    const strobe = ((gtime * 0.85) % 1) < 0.07 ? 0.85 : 0.10;
+    // Wingtip strobes, only on a tip that faces the camera. At rest a small HARD-edged dot
+    // (a soft r*0.16 gradient at 10% alpha sat on top of a wing chord only ~0.3r wide and
+    // read as the lower wing being out of focus, most visibly on the title-screen ship);
+    // the soft halo is the flash's alone, so the blink still reads as a light.
+    const flash = ((gtime * 0.85) % 1) < 0.07;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     for (const s of [-1, 1]) {
@@ -1156,11 +1159,16 @@ function drawShip3D(x, y, r, color, sr, sg, sb, blur, fx, lv) {
         const ty = tip[1], tz = tip[2];
         if (tz * sp - ty * cp < -0.05) continue;
         const lx = x + r * tip[0], ly = y - (tz * cp + ty * sp) * r;
-        const g = ctx.createRadialGradient(lx, ly, 0, lx, ly, r * 0.16);
-        g.addColorStop(0,   `rgba(255,255,255,${strobe})`);
-        g.addColorStop(0.3, `rgba(${sr},${sg},${sb},${strobe * 0.7})`);
-        g.addColorStop(1,   `rgba(${sr},${sg},${sb},0)`);
-        ctx.beginPath(); ctx.arc(lx, ly, r * 0.16, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
+        if (flash) {
+            const g = ctx.createRadialGradient(lx, ly, 0, lx, ly, r * 0.14);
+            g.addColorStop(0,   'rgba(255,255,255,0.80)');
+            g.addColorStop(0.3, `rgba(${sr},${sg},${sb},0.55)`);
+            g.addColorStop(1,   `rgba(${sr},${sg},${sb},0)`);
+            ctx.beginPath(); ctx.arc(lx, ly, r * 0.14, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
+        }
+        ctx.beginPath(); ctx.arc(lx, ly, Math.max(r * 0.04, 0.8), 0, Math.PI * 2);
+        ctx.fillStyle = flash ? 'rgba(255,255,255,0.95)' : `rgba(${sr},${sg},${sb},0.45)`;
+        ctx.fill();
     }
     ctx.restore();
 }
