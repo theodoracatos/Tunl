@@ -16,6 +16,12 @@ Promotional text (Werbetexte): UNCHANGED from 15.0, copied below so it can be pa
 leaves the field empty on every new version (see feedback_promo_text_werbetexte). Nothing about the
 core pitch changed, so it is not rewritten for a patch.
 
+**DECISION (user, 2026-09-20): the store texts stay the 15.0 texts.** 15.1 is only a fix, so Play
+Console's 15.1 release (versionCode 47) went out with the UNCHANGED 15.0 "What's New" copy from
+`store-metadata/15.0/release-notes.md` (15 locales, pasted as-is), and the store listing and
+Werbetexte were not touched. The fix-specific "What's New" below was NOT used; it is kept only as a
+fallback if a store ever insists on version-specific notes.
+
 Versions: iOS marketing 15.1 / build 53, Android versionName 15.1 / versionCode 47.
 Store assets: none new. The 15.0 screenshots, preview video and Play promo video stay as they are.
 
