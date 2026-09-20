@@ -35,6 +35,11 @@
      is only the fallback for a browser that never ran it. */
   --sc-accent:    var(--day-c, #4dd9ff);
 
+  /* One page width for the whole site: nav, content and footer line up with
+     the homepage. Running text is capped separately (below) so lines stay
+     readable at this width. */
+  --page-w:       1120px;
+
   /* The game's own two faces (src/fonts.js). Every page loads them, so the
      site and the game read as one product. */
   --tunl-ui:      "Chakra Petch", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -53,7 +58,7 @@
   /* full-bleed across the body's side padding */
   margin: 0 -20px 30px;
   /* content centred on wide screens without an extra wrapper element */
-  padding: 10px max(18px, calc((100% - 940px) / 2));
+  padding: 10px max(18px, calc((100% - var(--page-w)) / 2));
   background: rgba(7, 7, 14, 0.86);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
   backdrop-filter: blur(14px) saturate(140%);
@@ -186,7 +191,7 @@
   border-top: 1px solid var(--sc-line-soft);
   font-family: inherit;
 }
-.sf-inner { max-width: 900px; margin: 0 auto; }
+.sf-inner { max-width: var(--page-w); margin: 0 auto; }
 
 .sf-cols {
   display: grid;
@@ -250,3 +255,8 @@
    letterforms apart (the script is cursive), and Devanagari conjuncts break the
    same way, so those two get none anywhere on the site. */
 :lang(ar), :lang(ar) *, :lang(hi), :lang(hi) * { letter-spacing: normal !important; }
+
+/* ---------- page width ----------
+   The guide pages' own <style> sets `main { max-width: var(--page-w) }`. Tables,
+   figures and cards use all of it; running text stops at a readable measure. */
+main :is(p, ul, ol, blockquote) { max-width: 104ch; }
