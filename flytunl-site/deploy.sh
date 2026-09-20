@@ -46,6 +46,11 @@ echo "Building site/play/ ..."
 echo "Building localized homepage ..."
 node build-site.mjs
 
+# Localized guide pages (site/<lang>/<page>/). MUST run after build-site.mjs,
+# which rewrites site/<lang>/ and would otherwise leave only the homepage there.
+echo "Building localized guide pages ..."
+node build-pages.mjs
+
 echo "Uploading site/ to $FTP_HOST$FTP_REMOTE_DIR ..."
 lftp -u "$FTP_USER,$FTP_PASSWORD" "ftp://$FTP_HOST" <<LFTP_UPLOAD
 set ftp:ssl-force true

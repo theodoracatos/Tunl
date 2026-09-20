@@ -7,7 +7,15 @@
     "it",
     "es",
     "pt",
-    "ja"
+    "ja",
+    "ko",
+    "zh",
+    "ru",
+    "ar",
+    "tr",
+    "id",
+    "pl",
+    "hi"
   ],
   "_langNames": {
     "en": "English",
@@ -16,7 +24,15 @@
     "it": "Italiano",
     "es": "Español",
     "pt": "Português",
-    "ja": "日本語"
+    "ja": "日本語",
+    "ko": "한국어",
+    "zh": "繁體中文",
+    "ru": "Русский",
+    "ar": "العربية",
+    "tr": "Türkçe",
+    "id": "Bahasa Indonesia",
+    "pl": "Polski",
+    "hi": "हिन्दी"
   },
   "meta.title": {
     "en": "TUNL - Eternal Labyrinth",
@@ -25,7 +41,15 @@
     "it": "TUNL - Labirinto eterno",
     "es": "TUNL - Laberinto eterno",
     "pt": "TUNL - Labirinto eterno",
-    "ja": "TUNL - 終わりなき迷宮"
+    "ja": "TUNL - 終わりなき迷宮",
+    "ko": "TUNL - 영원한 미궁",
+    "zh": "TUNL - 永恆迷宮",
+    "ru": "TUNL - Вечный лабиринт",
+    "ar": "TUNL - المتاهة الأبدية",
+    "tr": "TUNL - Sonsuz Labirent",
+    "id": "TUNL - Labirin Abadi",
+    "pl": "TUNL - Wieczny labirynt",
+    "hi": "TUNL - अनंत भूलभुलैया"
   },
   "meta.desc": {
     "en": "TUNL is a hold-to-thrust cave flyer for iOS and Android. Hold to fly, release to fall, and see how deep you can go.",
@@ -34,7 +58,15 @@
     "it": "TUNL è un cave flyer per iOS e Android. Tieni premuto per salire, rilascia per cadere e scopri quanto in profondità riesci ad arrivare.",
     "es": "TUNL es un cave flyer para iOS y Android. Mantén pulsado para subir, suelta para caer y descubre hasta dónde llegas.",
     "pt": "TUNL é um cave flyer para iOS e Android. Segure para subir, solte para cair e veja até onde você consegue ir.",
-    "ja": "TUNLはiOS・Android向けの洞窟フライヤー。押して上昇、離して下降。どこまで潜れるか挑戦しよう。"
+    "ja": "TUNLはiOS・Android向けの洞窟フライヤー。押して上昇、離して下降。どこまで潜れるか挑戦しよう。",
+    "ko": "TUNL은 iOS와 Android용 홀드 추진 동굴 비행 게임입니다. 누르면 날고, 떼면 떨어지고, 얼마나 깊이 들어갈 수 있는지 도전해 보세요.",
+    "zh": "TUNL 是適用於 iOS 與 Android 的按住推進式洞穴飛行遊戲。按住飛升、放開墜落，看看你能深入多遠。",
+    "ru": "TUNL - пещерный лётный экшен с управлением одним касанием для iOS и Android. Держи, чтобы лететь, отпусти, чтобы падать, и узнай, как глубоко ты сможешь забраться.",
+    "ar": "TUNL لعبة طيران في الكهوف بلمسة واحدة لأجهزة iOS وAndroid. اضغط لتطير، وأفلت لتسقط، وانظر إلى أي عمق يمكنك أن تصل.",
+    "tr": "TUNL, iOS ve Android için basılı tutarak yükselen bir mağara uçuş oyunu. Uçmak için basılı tut, düşmek için bırak ve ne kadar derine inebileceğini gör.",
+    "id": "TUNL adalah game terbang gua dengan kontrol tahan-untuk-mendorong untuk iOS dan Android. Tahan untuk terbang, lepas untuk jatuh, dan lihat seberapa dalam kamu bisa pergi.",
+    "pl": "TUNL to jaskiniowa gra o lataniu sterowana jednym palcem na iOS i Android. Przytrzymaj, by lecieć, puść, by spadać, i zobacz, jak głęboko zajdziesz.",
+    "hi": "TUNL iOS और Android के लिए एक होल्ड-टू-थ्रस्ट केव फ्लायर गेम है। उड़ने के लिए दबाकर रखें, गिरने के लिए छोड़ें, और देखें कि आप कितना गहरे जा सकते हैं।"
   },
   "meta.ogDesc": {
     "en": "A hold-to-thrust cave flyer for iOS and Android. Hold to climb, release to fall, and see how far you can push into the dark.",
@@ -43,7 +75,15 @@
     "it": "Un cave flyer per iOS e Android. Tieni premuto per salire, rilascia per cadere e scopri fino a che punto ti spingi nel buio.",
     "es": "Un cave flyer para iOS y Android. Mantén pulsado para subir, suelta para caer y descubre hasta dónde te adentras en la oscuridad.",
     "pt": "Um cave flyer para iOS e Android. Segure para subir, solte para cair e veja até onde você avança na escuridão.",
-    "ja": "iOS・Android向けの洞窟フライヤー。押して上昇、離して下降。どこまで暗闇の奥へ進めるか。"
+    "ja": "iOS・Android向けの洞窟フライヤー。押して上昇、離して下降。どこまで暗闇の奥へ進めるか。",
+    "ko": "iOS와 Android용 홀드 추진 동굴 비행 게임. 누르면 상승, 떼면 하강. 어둠 속으로 얼마나 멀리 나아갈 수 있을까요?",
+    "zh": "適用於 iOS 與 Android 的按住推進式洞穴飛行遊戲。按住上升、放開下墜，看你能在黑暗中推進多遠。",
+    "ru": "Пещерный лётный экшен с управлением одним касанием для iOS и Android. Держи, чтобы подниматься, отпусти, чтобы падать, и посмотри, как далеко ты зайдёшь во тьму.",
+    "ar": "لعبة طيران في الكهوف بلمسة واحدة لأجهزة iOS وAndroid. اضغط لتصعد، وأفلت لتسقط، وانظر إلى أي مدى يمكنك التوغل في الظلام.",
+    "tr": "iOS ve Android için basılı tutarak yükselen bir mağara uçuş oyunu. Yükselmek için basılı tut, düşmek için bırak ve karanlığın içine ne kadar ilerleyebileceğini gör.",
+    "id": "Game terbang gua dengan kontrol tahan-untuk-mendorong untuk iOS dan Android. Tahan untuk naik, lepas untuk jatuh, dan lihat sejauh apa kamu bisa menembus kegelapan.",
+    "pl": "Jaskiniowa gra o lataniu sterowana jednym palcem na iOS i Android. Przytrzymaj, by się wznosić, puść, by spadać, i zobacz, jak daleko wedrzesz się w ciemność.",
+    "hi": "iOS और Android के लिए होल्ड-टू-थ्रस्ट केव फ्लायर। ऊपर चढ़ने के लिए दबाकर रखें, गिरने के लिए छोड़ें, और देखें कि अंधेरे में कितना आगे बढ़ सकते हैं।"
   },
   "hero.eyebrow": {
     "en": "Eternal Labyrinth",
@@ -52,34 +92,32 @@
     "it": "Labirinto eterno",
     "es": "Laberinto eterno",
     "pt": "Labirinto eterno",
-    "ja": "終わりなき迷宮"
+    "ja": "終わりなき迷宮",
+    "ko": "영원한 미궁",
+    "zh": "永恆迷宮",
+    "ru": "Вечный лабиринт",
+    "ar": "المتاهة الأبدية",
+    "tr": "Sonsuz Labirent",
+    "id": "Labirin Abadi",
+    "pl": "Wieczny labirynt",
+    "hi": "अनंत भूलभुलैया"
   },
   "hero.pitch": {
-    "en": "A hold-to-thrust cave flyer. Hold to climb, release to fall, and see how far you can push into the dark before the tunnel closes in.",
-    "de": "Ein Höhlenflieger mit einem Knopf. Halten zum Steigen, loslassen zum Fallen - und sehen, wie weit du in die Dunkelheit kommst, bevor sich der Tunnel schließt.",
-    "fr": "Un jeu de vol en grotte à un bouton. Maintiens pour monter, relâche pour tomber, et vois jusqu'où tu t'enfonces dans le noir avant que le tunnel ne se referme.",
-    "it": "Un cave flyer con un solo pulsante. Tieni premuto per salire, rilascia per cadere e scopri fino a che punto arrivi nel buio prima che il tunnel si chiuda.",
-    "es": "Un cave flyer de un solo botón. Mantén pulsado para subir, suelta para caer y descubre hasta dónde llegas en la oscuridad antes de que el túnel se cierre.",
-    "pt": "Um cave flyer de um botão só. Segure para subir, solte para cair e veja até onde você chega na escuridão antes de o túnel se fechar.",
-    "ja": "ボタンひとつの洞窟フライヤー。押して上昇、離して下降。トンネルが閉じる前に、どこまで暗闇へ進めるか。"
-  },
-  "hero.newTag": {
-    "en": "New in 15.1",
-    "de": "Neu in 15.1",
-    "fr": "Nouveau dans la 15.1",
-    "it": "Novità nella 15.1",
-    "es": "Novedad en la 15.1",
-    "pt": "Novo na 15.1",
-    "ja": "15.1の新機能"
-  },
-  "hero.newBody": {
-    "en": "Every run now opens over a city at dusk and flies into the tunnel mouth. From there the walls are real, but two hull scratches forgive your first mistakes. The cave starts darker, and a moon hangs over the skyline.",
-    "de": "Jeder Flug beginnt jetzt über einer Stadt in der Dämmerung und führt in den Tunneleingang. Ab dort sind die Wände echt, doch zwei Kratzer am Rumpf verzeihen dir die ersten Fehler. Die Höhle beginnt dunkler, und über der Skyline hängt ein Mond.",
-    "fr": "Chaque vol commence désormais au-dessus d'une ville au crépuscule et entre dans la bouche du tunnel. Dès là, les parois sont réelles, mais deux éraflures de coque pardonnent tes premières erreurs. La grotte commence plus sombre, et une lune flotte sur la ligne d'horizon.",
-    "it": "Ogni volo ora parte sopra una città al crepuscolo ed entra nella bocca del tunnel. Da lì le pareti sono vere, ma due graffi allo scafo perdonano i primi errori. La grotta inizia più buia e una luna pende sopra lo skyline.",
-    "es": "Cada vuelo empieza ahora sobre una ciudad al anochecer y entra por la boca del túnel. Desde ahí las paredes son reales, pero dos arañazos en el casco perdonan tus primeros errores. La cueva empieza más oscura y una luna cuelga sobre el horizonte.",
-    "pt": "Cada voo agora começa sobre uma cidade ao anoitecer e entra pela boca do túnel. Dali em diante as paredes são de verdade, mas dois arranhões no casco perdoam seus primeiros erros. A caverna começa mais escura e uma lua paira sobre o horizonte.",
-    "ja": "すべてのフライトが、夕暮れの街の上空から始まり、トンネルの入口へと突入します。そこから壁は本物ですが、機体の傷は2回まで、最初のミスを許してくれます。洞窟は暗めに始まり、街の空には月が浮かびます。"
+    "en": "Hold to climb, release to fall. See how far you get before the tunnel closes in.",
+    "de": "Halten zum Steigen, loslassen zum Fallen. Sieh, wie weit du kommst, bevor sich der Tunnel schließt.",
+    "fr": "Maintiens pour monter, relâche pour tomber. Vois jusqu'où tu t'enfonces avant que le tunnel ne se referme.",
+    "it": "Tieni premuto per salire, rilascia per cadere. Scopri fino a che punto arrivi prima che il tunnel si chiuda.",
+    "es": "Mantén pulsado para subir, suelta para caer. Descubre hasta dónde llegas antes de que el túnel se cierre.",
+    "pt": "Segure para subir, solte para cair. Veja até onde você chega antes de o túnel se fechar.",
+    "ja": "押して上昇、離して下降。トンネルが閉じる前に、どこまで進めるか。",
+    "ko": "누르면 상승, 떼면 하강. 터널이 닫히기 전에 얼마나 멀리 갈 수 있을까요?",
+    "zh": "按住上升，放開下墜。看看你能在隧道閉合前飛多遠。",
+    "ru": "Держи, чтобы подниматься, отпусти, чтобы падать. Узнай, как далеко ты долетишь, пока тоннель не сомкнулся.",
+    "ar": "اضغط لتصعد، وأفلت لتسقط. اكتشف إلى أي مدى تصل قبل أن ينغلق النفق.",
+    "tr": "Yükselmek için basılı tut, düşmek için bırak. Tünel kapanmadan ne kadar ileri gidebileceğini gör.",
+    "id": "Tahan untuk naik, lepas untuk jatuh. Lihat sejauh apa kamu bisa melaju sebelum terowongan menutup.",
+    "pl": "Przytrzymaj, by się wznosić, puść, by spadać. Zobacz, jak daleko dolecisz, zanim tunel się zamknie.",
+    "hi": "चढ़ने के लिए दबाकर रखें, गिरने के लिए छोड़ें। देखें कि सुरंग बंद होने से पहले आप कितनी दूर पहुँचते हैं।"
   },
   "hero.playCta": {
     "en": "Play in your browser",
@@ -88,7 +126,15 @@
     "it": "Gioca nel browser",
     "es": "Jugar en el navegador",
     "pt": "Jogar no navegador",
-    "ja": "ブラウザでプレイ"
+    "ja": "ブラウザでプレイ",
+    "ko": "브라우저에서 플레이",
+    "zh": "在瀏覽器中遊玩",
+    "ru": "Играть в браузере",
+    "ar": "العب في المتصفح",
+    "tr": "Tarayıcıda oyna",
+    "id": "Main di browser",
+    "pl": "Graj w przeglądarce",
+    "hi": "ब्राउज़र में खेलें"
   },
   "hero.orGetApp": {
     "en": "or get the app",
@@ -97,7 +143,15 @@
     "it": "oppure scarica l'app",
     "es": "o descarga la app",
     "pt": "ou baixe o app",
-    "ja": "またはアプリを入手"
+    "ja": "またはアプリを入手",
+    "ko": "또는 앱 받기",
+    "zh": "或下載 App",
+    "ru": "или скачай приложение",
+    "ar": "أو حمّل التطبيق",
+    "tr": "veya uygulamayı indir",
+    "id": "atau unduh aplikasinya",
+    "pl": "lub pobierz aplikację",
+    "hi": "या ऐप पाएँ"
   },
   "s1.head": {
     "en": "Hold. Release. Survive.",
@@ -106,7 +160,15 @@
     "it": "Tieni premuto. Rilascia. Sopravvivi.",
     "es": "Mantén. Suelta. Sobrevive.",
     "pt": "Segure. Solte. Sobreviva.",
-    "ja": "押す。離す。生き延びる。"
+    "ja": "押す。離す。生き延びる。",
+    "ko": "누르고. 떼고. 살아남기.",
+    "zh": "按住。放開。存活。",
+    "ru": "Держи. Отпускай. Выживай.",
+    "ar": "اضغط. أفلت. انجُ.",
+    "tr": "Basılı tut. Bırak. Hayatta kal.",
+    "id": "Tahan. Lepas. Bertahan.",
+    "pl": "Przytrzymaj. Puść. Przetrwaj.",
+    "hi": "दबाएँ। छोड़ें। बचें।"
   },
   "s1.k1": {
     "en": "HOLD",
@@ -115,7 +177,15 @@
     "it": "TIENI PREMUTO",
     "es": "MANTÉN",
     "pt": "SEGURE",
-    "ja": "押す"
+    "ja": "押す",
+    "ko": "누르기",
+    "zh": "按住",
+    "ru": "ДЕРЖИ",
+    "ar": "اضغط",
+    "tr": "BASILI TUT",
+    "id": "TAHAN",
+    "pl": "PRZYTRZYMAJ",
+    "hi": "दबाएँ"
   },
   "s1.d1": {
     "en": "Thrust upward",
@@ -124,7 +194,15 @@
     "it": "Spinta verso l'alto",
     "es": "Empuje hacia arriba",
     "pt": "Impulso para cima",
-    "ja": "上へ推進"
+    "ja": "上へ推進",
+    "ko": "위로 추진",
+    "zh": "向上推進",
+    "ru": "Тяга вверх",
+    "ar": "دفع للأعلى",
+    "tr": "Yukarı itiş",
+    "id": "Dorongan ke atas",
+    "pl": "Ciąg w górę",
+    "hi": "ऊपर की ओर थ्रस्ट"
   },
   "s1.k2": {
     "en": "RELEASE",
@@ -133,7 +211,15 @@
     "it": "RILASCIA",
     "es": "SUELTA",
     "pt": "SOLTE",
-    "ja": "離す"
+    "ja": "離す",
+    "ko": "떼기",
+    "zh": "放開",
+    "ru": "ОТПУСТИ",
+    "ar": "أفلت",
+    "tr": "BIRAK",
+    "id": "LEPAS",
+    "pl": "PUŚĆ",
+    "hi": "छोड़ें"
   },
   "s1.d2": {
     "en": "Gravity pulls you down",
@@ -142,7 +228,15 @@
     "it": "La gravità ti tira verso il basso",
     "es": "La gravedad te empuja hacia abajo",
     "pt": "A gravidade te puxa para baixo",
-    "ja": "重力で下へ"
+    "ja": "重力で下へ",
+    "ko": "중력이 아래로 끌어당깁니다",
+    "zh": "重力將你往下拉",
+    "ru": "Гравитация тянет вниз",
+    "ar": "الجاذبية تسحبك للأسفل",
+    "tr": "Yer çekimi seni aşağı çeker",
+    "id": "Gravitasi menarikmu ke bawah",
+    "pl": "Grawitacja ściąga cię w dół",
+    "hi": "गुरुत्वाकर्षण आपको नीचे खींचता है"
   },
   "s1.k3": {
     "en": "DODGE",
@@ -151,7 +245,15 @@
     "it": "SCHIVA",
     "es": "ESQUIVA",
     "pt": "DESVIE",
-    "ja": "かわす"
+    "ja": "かわす",
+    "ko": "피하기",
+    "zh": "閃避",
+    "ru": "УВОРАЧИВАЙСЯ",
+    "ar": "تفادَ",
+    "tr": "KAÇIN",
+    "id": "HINDARI",
+    "pl": "UNIKAJ",
+    "hi": "बचें"
   },
   "s1.d3": {
     "en": "Stalactites, mines, cannons, walls",
@@ -160,7 +262,15 @@
     "it": "Stalattiti, mine, cannoni, pareti",
     "es": "Estalactitas, minas, cañones, paredes",
     "pt": "Estalactites, minas, canhões, paredes",
-    "ja": "鍾乳石、機雷、砲台、壁"
+    "ja": "鍾乳石、機雷、砲台、壁",
+    "ko": "종유석, 지뢰, 대포, 벽",
+    "zh": "鐘乳石、地雷、砲台、牆壁",
+    "ru": "Сталактиты, мины, пушки, стены",
+    "ar": "الهوابط والألغام والمدافع والجدران",
+    "tr": "Sarkıtlar, mayınlar, toplar, duvarlar",
+    "id": "Stalaktit, ranjau, meriam, dinding",
+    "pl": "Stalaktyty, miny, działa, ściany",
+    "hi": "स्टैलेक्टाइट, माइन, तोपें, दीवारें"
   },
   "s2.head": {
     "en": "Features",
@@ -169,7 +279,15 @@
     "it": "Caratteristiche",
     "es": "Características",
     "pt": "Recursos",
-    "ja": "特徴"
+    "ja": "特徴",
+    "ko": "특징",
+    "zh": "特色",
+    "ru": "Возможности",
+    "ar": "المزايا",
+    "tr": "Özellikler",
+    "id": "Fitur",
+    "pl": "Funkcje",
+    "hi": "विशेषताएँ"
   },
   "f1.h": {
     "en": "A tunnel that never repeats",
@@ -178,16 +296,15 @@
     "it": "Un tunnel che non si ripete mai",
     "es": "Un túnel que nunca se repite",
     "pt": "Um túnel que nunca se repete",
-    "ja": "二度と同じにならないトンネル"
-  },
-  "f1.p": {
-    "en": "Procedurally generated corridors get tighter and faster the deeper you go, so no two runs feel the same.",
-    "de": "Prozedural erzeugte Korridore werden enger und schneller, je tiefer du kommst - kein Lauf fühlt sich an wie der andere.",
-    "fr": "Les couloirs générés procéduralement deviennent plus étroits et plus rapides à mesure que tu descends : aucune partie ne se ressemble.",
-    "it": "I corridoi generati proceduralmente diventano più stretti e veloci man mano che scendi: nessuna partita è uguale a un'altra.",
-    "es": "Los pasillos generados por procedimientos se vuelven más estrechos y rápidos cuanto más bajas: ninguna partida se siente igual.",
-    "pt": "Os corredores gerados proceduralmente ficam mais apertados e rápidos quanto mais fundo você vai: nenhuma partida é igual à outra.",
-    "ja": "手続き生成される通路は、進むほど狭く速くなる。同じプレイは二度とない。"
+    "ja": "二度と同じにならないトンネル",
+    "ko": "반복되지 않는 터널",
+    "zh": "永不重複的隧道",
+    "ru": "Тоннель, который никогда не повторяется",
+    "ar": "نفق لا يتكرر أبداً",
+    "tr": "Asla tekrar etmeyen bir tünel",
+    "id": "Terowongan yang tak pernah berulang",
+    "pl": "Tunel, który nigdy się nie powtarza",
+    "hi": "एक सुरंग जो कभी दोहराई नहीं जाती"
   },
   "f2.h": {
     "en": "Share the run, not the score",
@@ -196,7 +313,15 @@
     "it": "Condividi la partita, non il punteggio",
     "es": "Comparte la partida, no la puntuación",
     "pt": "Compartilhe a partida, não a pontuação",
-    "ja": "スコアではなく、走りをシェア"
+    "ja": "スコアではなく、走りをシェア",
+    "ko": "점수가 아닌 비행을 공유하세요",
+    "zh": "分享飛行，而不只是分數",
+    "ru": "Делись полётом, а не только счётом",
+    "ar": "شارك الرحلة، لا النتيجة فقط",
+    "tr": "Skoru değil, uçuşu paylaş",
+    "id": "Bagikan penerbanganmu, bukan cuma skornya",
+    "pl": "Dziel się lotem, nie tylko wynikiem",
+    "hi": "स्कोर नहीं, उड़ान साझा करें"
   },
   "f2.p": {
     "en": "End a great run and send a card of the tunnel you actually flew - the corridor narrowing, the exact spot you died, and your personal best marked just ahead of it. Everyone gets the same cave that day, so anyone you send it to can go straight at your number.",
@@ -205,7 +330,15 @@
     "it": "Concludi una bella partita e invia una card del tunnel che hai davvero volato - il corridoio che si restringe, il punto esatto in cui sei morto e il tuo record segnato poco prima. Quel giorno tutti hanno la stessa grotta, quindi chiunque può puntare direttamente al tuo numero.",
     "es": "Termina una gran partida y envía una tarjeta del túnel que volaste de verdad: el pasillo estrechándose, el punto exacto donde moriste y tu récord marcado justo delante. Ese día todos tienen la misma cueva, así que cualquiera a quien se la envíes puede ir directo a tu número.",
     "pt": "Termine uma partida boa e envie um card do túnel que você realmente voou - o corredor se estreitando, o ponto exato onde você morreu e o seu recorde marcado logo à frente. Naquele dia todos têm a mesma caverna, então qualquer pessoa pode mirar direto no seu número.",
-    "ja": "会心の走りを終えたら、実際に飛んだトンネルのカードを送ろう。狭まっていく通路、倒れた正確な地点、そのすぐ先に記された自己ベスト。その日は全員が同じ洞窟。受け取った人は、いきなりあなたの記録を狙える。"
+    "ja": "会心の走りを終えたら、実際に飛んだトンネルのカードを送ろう。狭まっていく通路、倒れた正確な地点、そのすぐ先に記された自己ベスト。その日は全員が同じ洞窟。受け取った人は、いきなりあなたの記録を狙える。",
+    "ko": "멋진 런을 마치면 실제로 비행한 터널의 카드를 보낼 수 있어요. 좁아지는 통로, 추락한 정확한 지점, 그 바로 앞에 표시된 개인 최고 기록까지 담겨 있습니다. 그날은 모두가 같은 동굴을 날기 때문에, 카드를 받은 사람은 곧바로 당신의 기록에 도전할 수 있어요.",
+    "zh": "打出精彩的一局後，可以傳送一張你實際飛過的隧道卡片：逐漸變窄的通道、你墜毀的確切位置，以及標示在前方不遠處的個人最佳紀錄。當天所有人飛的都是同一個洞穴，所以收到卡片的人可以直接挑戰你的數字。",
+    "ru": "После сильного забега отправь карточку тоннеля, который ты действительно пролетел: сужающийся коридор, точное место, где ты разбился, и твой личный рекорд чуть впереди. В этот день у всех одна и та же пещера, так что любой, кому ты её отправишь, сразу сможет бросить вызов твоему результату.",
+    "ar": "بعد جولة رائعة، أرسل بطاقة للنفق الذي حلّقت فيه فعلاً: الممر وهو يضيق، والنقطة الدقيقة التي تحطمت عندها، وأفضل رقم لك مُعلَّماً قبلها مباشرة. الجميع يحصلون على الكهف نفسه في ذلك اليوم، لذا يستطيع من ترسلها إليه أن يتحدّى رقمك مباشرة.",
+    "tr": "Harika bir koşunun ardından gerçekten uçtuğun tünelin kartını gönder: daralan koridor, düştüğün tam nokta ve hemen önünde işaretli kişisel rekorun. O gün herkes aynı mağarayı uçtuğu için kartı gönderdiğin kişi doğrudan senin rakamına meydan okuyabilir.",
+    "id": "Setelah run yang hebat, kirim kartu terowongan yang benar-benar kamu terbangi: lorong yang menyempit, titik persis tempat kamu jatuh, dan rekor pribadimu yang ditandai tepat di depannya. Semua orang mendapat gua yang sama hari itu, jadi siapa pun yang menerimanya bisa langsung menantang angkamu.",
+    "pl": "Po świetnym locie wyślij kartę z tunelem, który naprawdę przeleciał twój statek: zwężający się korytarz, dokładne miejsce katastrofy i twój rekord zaznaczony tuż przed nim. Tego dnia wszyscy dostają tę samą jaskinię, więc każdy, komu ją wyślesz, może od razu stanąć do walki z twoim wynikiem.",
+    "hi": "शानदार रन के बाद उस सुरंग का कार्ड भेजें जिसमें आपने सचमुच उड़ान भरी: तंग होता गलियारा, वह सटीक जगह जहाँ आप गिरे, और उसके ठीक पहले चिह्नित आपका निजी रिकॉर्ड। उस दिन सबके लिए गुफा एक ही होती है, इसलिए जिसे भी आप भेजें वह सीधे आपके स्कोर को चुनौती दे सकता है।"
   },
   "f3.h": {
     "en": "Race your own ghost",
@@ -214,7 +347,15 @@
     "it": "Sfida il tuo fantasma",
     "es": "Compite contra tu propio fantasma",
     "pt": "Corra contra o seu próprio fantasma",
-    "ja": "自分のゴーストと競う"
+    "ja": "自分のゴーストと競う",
+    "ko": "나만의 고스트와 경주",
+    "zh": "與自己的幽靈競速",
+    "ru": "Соревнуйся с собственным призраком",
+    "ar": "سابق شبحك الخاص",
+    "tr": "Kendi hayaletinle yarış",
+    "id": "Balapan dengan hantumu sendiri",
+    "pl": "Ścigaj się z własnym duchem",
+    "hi": "अपने ही घोस्ट से रेस करें"
   },
   "f3.p": {
     "en": "Your best run of the day flies alongside you as a ghost ship. Catch it, pass it, and the next run starts chasing the one you just set.",
@@ -223,7 +364,15 @@
     "it": "La tua partita migliore del giorno vola accanto a te come nave fantasma. Raggiungila, superala, e la partita successiva insegue quella che hai appena stabilito.",
     "es": "Tu mejor partida del día vuela a tu lado como nave fantasma. Alcánzala, supérala, y la siguiente partida empieza a perseguir la que acabas de marcar.",
     "pt": "Sua melhor partida do dia voa ao seu lado como uma nave fantasma. Alcance, ultrapasse, e a próxima partida já passa a perseguir a que você acabou de marcar.",
-    "ja": "その日のベストがゴースト機となって隣を飛ぶ。追いつき、追い抜けば、次の走りは今出した記録を追いかける。"
+    "ja": "その日のベストがゴースト機となって隣を飛ぶ。追いつき、追い抜けば、次の走りは今出した記録を追いかける。",
+    "ko": "그날의 최고 런이 고스트 기체가 되어 옆에서 함께 납니다. 따라잡고 추월하면, 다음 런은 방금 세운 기록을 쫓기 시작해요.",
+    "zh": "你當天的最佳一局會化為幽靈飛船在身旁並肩飛行。追上它、超越它，下一局就會開始追逐你剛剛創下的紀錄。",
+    "ru": "Твой лучший забег дня летит рядом как корабль-призрак. Догони его, обгони - и следующий забег начнёт гнаться за только что установленным.",
+    "ar": "أفضل جولة لك في اليوم تطير بجانبك كسفينة شبحية. الحقها وتجاوزها، وستبدأ الجولة التالية بمطاردة الرقم الذي حققته للتو.",
+    "tr": "Günün en iyi koşusu yanında hayalet bir gemi olarak uçar. Yakala, geç; bir sonraki koşu da az önce koyduğun rekorun peşine düşsün.",
+    "id": "Run terbaikmu hari itu terbang di sampingmu sebagai kapal hantu. Kejar dan lewati, lalu run berikutnya mulai mengejar rekor yang baru saja kamu buat.",
+    "pl": "Twój najlepszy lot dnia leci obok ciebie jako statek-duch. Dogoń go i wyprzedź, a następny lot zacznie ścigać nowy rekord dnia.",
+    "hi": "दिन का आपका सबसे अच्छा रन एक घोस्ट शिप बनकर आपके साथ उड़ता है। उसे पकड़ें, पार करें, और अगला रन उस रिकॉर्ड का पीछा करने लगेगा जो आपने अभी बनाया।"
   },
   "f4.h": {
     "en": "Eight coins and a warp",
@@ -232,16 +381,15 @@
     "it": "Otto monete e il Varco",
     "es": "Ocho monedas y el Warp",
     "pt": "Oito moedas e o Warp",
-    "ja": "8種のコインとワープ"
-  },
-  "f4.p": {
-    "en": "Every coin shows what it does. Gold widens the corridor, the hourglass slows the run, the violet shield blocks a hit, the crosshair loads ammo, the magnet pulls coins in, and the red bomb blasts nearby danger. Two are traps: a poison flask costs you shards, a pink whirlpool drains your score. Fly through the violet hoop hanging in the tunnel to warp ahead, untouchable. Every coin is its own object, so you can tell them apart at a glance, even colorblind.",
-    "de": "Jede Münze zeigt, was sie tut. Gold weitet den Korridor, die Sanduhr bremst den Lauf in Zeitlupe, der violette Schild fängt einen Treffer ab, das Fadenkreuz lädt Munition, der Magnet zieht Münzen an, und die rote Bombe sprengt nahe Gefahren weg. Zwei sind Fallen: eine Giftflasche kostet dich Shards, ein pinker Strudel zapft deinen Punktestand an. Und wer durch den violetten Reif im Tunnel fliegt, wird vom Sog nach vorne gerissen, unverwundbar. Jede Münze ist ein eigener Gegenstand, damit du sie auf einen Blick unterscheidest, auch mit Farbsehschwäche.",
-    "fr": "Chaque pièce montre ce qu'elle fait. L'or élargit le couloir, le sablier ralentit la partie, le bouclier violet encaisse un coup, le viseur charge des munitions, l'aimant attire les pièces et la bombe rouge fait exploser les dangers proches. Deux sont des pièges : une fiole de poison te coûte des shards, un tourbillon rose draine ton score. Traverse l'arceau violet suspendu dans le tunnel et le Sog te propulse en avant, intouchable. Chaque pièce est un objet distinct, pour les reconnaître d'un coup d'oeil, même daltonien.",
-    "it": "Ogni moneta mostra cosa fa. L'oro allarga il corridoio, la clessidra rallenta la partita, lo scudo viola para un colpo, il mirino carica munizioni, la calamita attira le monete e la bomba rossa fa esplodere i pericoli vicini. Due sono trappole: una boccetta di veleno ti costa shard, un vortice rosa prosciuga il punteggio. Attraversa il cerchio viola sospeso nel tunnel e il Varco ti scaglia in avanti, intoccabile. Ogni moneta è un oggetto diverso, per distinguerle a colpo d'occhio, anche da daltonici.",
-    "es": "Cada moneda muestra lo que hace. El oro ensancha el pasillo, el reloj de arena ralentiza la partida, el escudo morado bloquea un golpe, la mira carga munición, el imán atrae las monedas y la bomba roja hace estallar el peligro cercano. Dos son trampas: un frasco de veneno te cuesta esquirlas, un remolino rosa drena tu puntuación. Cruza el aro violeta que cuelga en el túnel y el Warp te lanza hacia delante, intocable. Cada moneda es un objeto distinto, para reconocerlas de un vistazo, incluso con daltonismo.",
-    "pt": "Cada moeda mostra o que faz. O ouro alarga o corredor, a ampulheta desacelera a partida, o escudo roxo bloqueia um golpe, a mira carrega munição, o ímã puxa as moedas e a bomba vermelha explode o perigo por perto. Duas são armadilhas: um frasco de veneno custa fragmentos, um redemoinho rosa drena sua pontuação. Atravesse o aro violeta no túnel e o Warp te lança para a frente, intocável. Cada moeda é um objeto diferente, para reconhecer num relance, mesmo com daltonismo.",
-    "ja": "コインは効果そのものの形をしている。金は通路を広げ、砂時計は走りをスローに、紫の盾は一撃を防ぎ、照準は弾を装填、磁石はコインを引き寄せ、赤い爆弾は近くの危険を吹き飛ばす。残る2種は罠 - 毒の小瓶はシャードを奪い、ピンクの渦はスコアを削る。トンネルに浮かぶ紫のゲートをくぐれば、ワープで無敵のまま一気に前へ。どのコインも別々の物の形なので、色覚に頼らず一目で見分けられる。"
+    "ja": "8種のコインとワープ",
+    "ko": "코인 여덟 종류와 워프",
+    "zh": "八種金幣與一道曲速門",
+    "ru": "Восемь монет и варп",
+    "ar": "ثماني عملات وقفزة انتقالية",
+    "tr": "Sekiz jeton ve bir warp",
+    "id": "Delapan koin dan satu warp",
+    "pl": "Osiem monet i warp",
+    "hi": "आठ सिक्के और एक वार्प"
   },
   "f5.h": {
     "en": "Stalactites, mines, boulders, cannons",
@@ -250,7 +398,15 @@
     "it": "Stalattiti, mine, massi, cannoni",
     "es": "Estalactitas, minas, rocas, cañones",
     "pt": "Estalactites, minas, rochas, canhões",
-    "ja": "鍾乳石、機雷、岩、砲台"
+    "ja": "鍾乳石、機雷、岩、砲台",
+    "ko": "종유석, 지뢰, 바위, 대포",
+    "zh": "鐘乳石、地雷、巨石、砲台",
+    "ru": "Сталактиты, мины, валуны, пушки",
+    "ar": "الهوابط والألغام والصخور والمدافع",
+    "tr": "Sarkıtlar, mayınlar, kayalar, toplar",
+    "id": "Stalaktit, ranjau, batu besar, meriam",
+    "pl": "Stalaktyty, miny, głazy, działa",
+    "hi": "स्टैलेक्टाइट, माइन, चट्टानें, तोपें"
   },
   "f5.p": {
     "en": "Sharp stalactites, paired chicanes, spikes that shake loose and fall, boulders that make you commit up or down, and rare wall-mounted cannons that open fire as you close in. Each new stretch of cave brings a new threat, and the run keeps speeding up.",
@@ -259,7 +415,15 @@
     "it": "Stalattiti affilate, chicane doppie, punte che si staccano e cadono, massi che ti costringono a scegliere tra sopra e sotto, e rari cannoni a muro che aprono il fuoco quando ti avvicini. Ogni nuovo tratto di grotta porta una nuova minaccia, e la partita continua ad accelerare.",
     "es": "Estalactitas afiladas, chicanas dobles, puntas que se sueltan y caen, rocas que te obligan a elegir entre arriba y abajo, y raros cañones montados en la pared que abren fuego cuando te acercas. Cada nuevo tramo de cueva trae una nueva amenaza, y la partida no deja de acelerar.",
     "pt": "Estalactites afiadas, chicanes duplas, pontas que se soltam e caem, rochas que obrigam você a escolher entre cima e baixo, e raros canhões na parede que abrem fogo quando você se aproxima. Cada novo trecho da caverna traz uma nova ameaça, e a partida não para de acelerar.",
-    "ja": "鋭い鍾乳石、左右から迫るシケイン、揺れて落ちてくるトゲ、上か下かの決断を迫る岩、そして接近すると火を噴く珍しい壁掛け砲台。洞窟を進むたびに新たな脅威が加わり、走りはどんどん速くなる。"
+    "ja": "鋭い鍾乳石、左右から迫るシケイン、揺れて落ちてくるトゲ、上か下かの決断を迫る岩、そして接近すると火を噴く珍しい壁掛け砲台。洞窟を進むたびに新たな脅威が加わり、走りはどんどん速くなる。",
+    "ko": "날카로운 종유석, 짝을 이룬 시케인, 흔들리다 떨어지는 가시, 위로 갈지 아래로 갈지 결단하게 만드는 바위, 가까이 가면 발포하는 드문 벽면 대포까지. 동굴 구간마다 새로운 위협이 등장하고, 런은 계속 빨라집니다.",
+    "zh": "尖銳的鐘乳石、成對的蛇行彎道、會鬆動墜落的尖刺、逼你選擇上或下的巨石，以及在你逼近時開火的罕見壁掛砲台。每一段新洞穴都帶來新的威脅，而且節奏不斷加快。",
+    "ru": "Острые сталактиты, парные шиканы, шипы, которые срываются и падают, валуны, заставляющие выбирать путь вверх или вниз, и редкие настенные пушки, открывающие огонь, когда ты приближаешься. Каждый новый участок пещеры приносит новую угрозу, а забег продолжает ускоряться.",
+    "ar": "هوابط حادة، ومنعطفات متقابلة، وأشواك تنفلت وتسقط، وصخور ضخمة تجبرك على الحسم بين الأعلى والأسفل، ومدافع جدارية نادرة تفتح النار كلما اقتربت. كل مقطع جديد من الكهف يجلب خطراً جديداً، ووتيرة الجولة تزداد سرعة.",
+    "tr": "Keskin sarkıtlar, çift taraflı şikanlar, gevşeyip düşen sivri uçlar, yukarı mı aşağı mı diye karar vermeni isteyen kayalar ve sen yaklaştıkça ateş açan nadir duvar topları. Mağaranın her yeni kesimi yeni bir tehdit getirir ve koşu giderek hızlanır.",
+    "id": "Stalaktit tajam, chicane berpasangan, duri yang lepas dan jatuh, batu besar yang memaksamu memilih naik atau turun, dan meriam dinding langka yang menembak saat kamu mendekat. Setiap bagian gua yang baru membawa ancaman baru, dan run terus bertambah cepat.",
+    "pl": "Ostre stalaktyty, sparowane szykany, kolce, które odrywają się i spadają, głazy zmuszające do decyzji: góra czy dół, oraz rzadkie działa na ścianach, które otwierają ogień, gdy się zbliżasz. Każdy nowy odcinek jaskini niesie nowe zagrożenie, a lot wciąż przyspiesza.",
+    "hi": "नुकीले स्टैलेक्टाइट, जोड़ीदार चिकेन, ढीले होकर गिरने वाले काँटे, चट्टानें जो आपको ऊपर या नीचे का फ़ैसला करने पर मजबूर करती हैं, और दीवारों पर लगी दुर्लभ तोपें जो आपके पास आते ही गोलीबारी शुरू कर देती हैं। गुफा का हर नया हिस्सा नया ख़तरा लाता है, और रन लगातार तेज़ होता जाता है।"
   },
   "f6.h": {
     "en": "One more run after you crash",
@@ -268,16 +432,15 @@
     "it": "Un altro tentativo dopo lo schianto",
     "es": "Un intento más tras estrellarte",
     "pt": "Mais uma chance depois de bater",
-    "ja": "墜落してから、もう一回"
-  },
-  "f6.p": {
-    "en": "Die deep in a strong run and, in the apps, you can watch a short optional video to continue from where you fell - once per run - with your hull repaired. A shielded hit grants a brief window of invulnerability instead of a cheap second death.",
-    "de": "Stirbst du tief in einem starken Lauf, kannst du in den Apps ein kurzes, freiwilliges Video ansehen und dort weitermachen, wo du gefallen bist - einmal pro Lauf, mit repariertem Rumpf. Ein abgefangener Treffer gibt dir ein kurzes Fenster der Unverwundbarkeit statt eines billigen zweiten Todes.",
-    "fr": "Si tu meurs loin dans une bonne partie, tu peux, dans les applis, regarder une courte vidéo facultative pour repartir d'où tu es tombé - une fois par partie, avec la coque réparée. Un coup bloqué par le bouclier t'accorde un bref instant d'invulnérabilité au lieu d'une seconde mort injuste.",
-    "it": "Se muori in profondità in una buona partita, nelle app puoi guardare un breve video facoltativo per ripartire da dove sei caduto - una volta per partita, con lo scafo riparato. Un colpo parato dallo scudo concede un breve periodo di invulnerabilità invece di una seconda morte ingiusta.",
-    "es": "Si mueres a lo hondo en una buena partida, en las apps puedes ver un vídeo corto opcional para continuar justo donde caíste - una vez por partida, con el casco reparado. Un golpe bloqueado por el escudo te da un breve momento de invulnerabilidad en lugar de una segunda muerte injusta.",
-    "pt": "Se você morrer fundo numa partida boa, nos apps dá para assistir a um vídeo curto opcional e continuar exatamente de onde caiu - uma vez por partida, com o casco reparado. Um golpe bloqueado pelo escudo dá uma breve janela de invulnerabilidade em vez de uma segunda morte injusta.",
-    "ja": "好調な走りの深いところで倒れたら、アプリでは短い任意の動画を見て、機体を修理した状態で落ちた地点から再開できる - 1回の走りにつき一度。シールドで受けた一撃は、安っぽい二度目の死ではなく、短い無敵時間になる。"
+    "ja": "墜落してから、もう一回",
+    "ko": "추락해도 한 번 더",
+    "zh": "墜毀後再來一局",
+    "ru": "Ещё один забег после крушения",
+    "ar": "جولة أخرى بعد التحطم",
+    "tr": "Çakıldıktan sonra bir koşu daha",
+    "id": "Satu run lagi setelah jatuh",
+    "pl": "Jeszcze jeden lot po rozbiciu",
+    "hi": "क्रैश के बाद एक और रन"
   },
   "f7.h": {
     "en": "Milestones and combos",
@@ -286,34 +449,32 @@
     "it": "Traguardi e combo",
     "es": "Hitos y combos",
     "pt": "Marcos e combos",
-    "ja": "マイルストーンとコンボ"
-  },
-  "f7.p": {
-    "en": "Chain coins for score multipliers, thread close calls for bonus points, and celebrate every milestone in style.",
-    "de": "Verkette Münzen für Punkte-Multiplikatoren, fliege knapp vorbei für Bonuspunkte und feiere jeden Meilenstein stilvoll.",
-    "fr": "Enchaîne les pièces pour des multiplicateurs de score, frôle les obstacles pour des points bonus, et célèbre chaque jalon avec panache.",
-    "it": "Concatena le monete per moltiplicatori di punteggio, sfiora gli ostacoli per punti bonus e celebra ogni traguardo con stile.",
-    "es": "Encadena monedas para multiplicadores de puntuación, roza los obstáculos para puntos extra y celebra cada hito con estilo.",
-    "pt": "Encadeie moedas para multiplicadores de pontuação, passe raspando para pontos de bônus e comemore cada marco com estilo.",
-    "ja": "コインを連鎖させてスコア倍率を上げ、ギリギリをかすめてボーナス点を稼ぎ、すべてのマイルストーンを華やかに祝おう。"
+    "ja": "マイルストーンとコンボ",
+    "ko": "마일스톤과 콤보",
+    "zh": "里程碑與連擊",
+    "ru": "Вехи и комбо",
+    "ar": "المحطات والكومبو",
+    "tr": "Kilometre taşları ve kombolar",
+    "id": "Pencapaian dan combo",
+    "pl": "Kamienie milowe i combo",
+    "hi": "माइलस्टोन और कॉम्बो"
   },
   "f8.h": {
     "en": "Shards and Stardust",
     "de": "Shards und Stardust",
-    "fr": "Shards et Stardust",
-    "it": "Shard e Stardust",
-    "es": "Esquirlas y Polvo estelar",
+    "fr": "Éclats et poussière d'étoiles",
+    "it": "Frammenti e polvere di stelle",
+    "es": "Fragmentos y polvo estelar",
     "pt": "Fragmentos e Poeira estelar",
-    "ja": "シャードとスターダスト"
-  },
-  "f8.p": {
-    "en": "Coins you collect bank into shards, the skill currency. Just opening TUNL each day banks stardust, the currency only time can buy. Every ship needs both, so the full roster is a real journey - or unlock everything at once with a one-time purchase.",
-    "de": "Gesammelte Münzen wandern als Shards aufs Konto - die Können-Währung. Schon das tägliche Öffnen von TUNL bringt Stardust, die Währung, die nur Zeit kaufen kann. Jedes Schiff braucht beides, die volle Flotte ist also eine echte Reise - oder schalte mit einem einmaligen Kauf alles auf einmal frei.",
-    "fr": "Les pièces que tu ramasses sont converties en shards, la monnaie du talent. Rien qu'en ouvrant TUNL chaque jour, tu gagnes du stardust, la monnaie que seul le temps achète. Chaque vaisseau demande les deux : la collection complète est un vrai voyage - ou débloque tout d'un coup avec un achat unique.",
-    "it": "Le monete che raccogli finiscono in shard, la valuta dell'abilità. Basta aprire TUNL ogni giorno per accumulare stardust, la valuta che solo il tempo può comprare. Ogni nave richiede entrambe, quindi l'intera collezione è un vero viaggio - oppure sblocca tutto in una volta con un acquisto unico.",
-    "es": "Las monedas que recoges se guardan como esquirlas, la moneda de la habilidad. Con solo abrir TUNL cada día acumulas polvo estelar, la moneda que solo el tiempo compra. Cada nave necesita ambas, así que la colección completa es un viaje de verdad - o desbloquea todo de golpe con una compra única.",
-    "pt": "As moedas que você coleta viram fragmentos, a moeda da habilidade. Só de abrir o TUNL todo dia você acumula poeira estelar, a moeda que só o tempo compra. Toda nave precisa das duas, então a coleção completa é uma jornada de verdade - ou desbloqueie tudo de uma vez com uma compra única.",
-    "ja": "集めたコインはスキル通貨シャードとして貯まる。TUNLを毎日開くだけで、時間だけが買える通貨スターダストが貯まる。どの機体にも両方が必要で、全機体そろえるのは本物の旅 - あるいは一度きりの購入ですべて解放。"
+    "ja": "シャードとスターダスト",
+    "ko": "샤드와 스타더스트",
+    "zh": "碎片與星塵",
+    "ru": "Осколки и звёздная пыль",
+    "ar": "الشظايا وغبار النجوم",
+    "tr": "Parçacıklar ve yıldız tozu",
+    "id": "Shard dan Stardust",
+    "pl": "Odłamki i pył gwiezdny",
+    "hi": "शार्ड्स और स्टारडस्ट"
   },
   "f9.h": {
     "en": "Every ship, a real build choice",
@@ -322,7 +483,15 @@
     "it": "Ogni nave è una vera scelta di build",
     "es": "Cada nave, una decisión de build real",
     "pt": "Cada nave é uma escolha de build de verdade",
-    "ja": "どの機体も、本物のビルド選択"
+    "ja": "どの機体も、本物のビルド選択",
+    "ko": "모든 기체가 진짜 빌드 선택",
+    "zh": "每艘飛船都是真正的構築選擇",
+    "ru": "Каждый корабль - настоящий выбор сборки",
+    "ar": "لكل مركبة خيار بناء حقيقي",
+    "tr": "Her gemi gerçek bir yapı seçimi",
+    "id": "Setiap kapal adalah pilihan build yang nyata",
+    "pl": "Każdy statek to prawdziwy wybór buildu",
+    "hi": "हर जहाज़ एक असली बिल्ड का चुनाव"
   },
   "f9.p": {
     "en": "8 ships, each pairing a buff with a drawback, from the free PEARL starter up through AMBER, CRIMSON, ELECTRIC, TOXIC, VOID, NOVA, and the rare SOLARIS (wide near-miss window, larger hitbox). Fly one enough and it gains mastery, easing its drawback and growing its buff.",
@@ -331,7 +500,15 @@
     "it": "8 navi, ognuna con un potenziamento e uno svantaggio, dal PEARL iniziale gratuito fino ad AMBER, CRIMSON, ELECTRIC, TOXIC, VOID, NOVA e il raro SOLARIS (ampia finestra di sfioramento, hitbox più grande). Pilotane una abbastanza e guadagna maestria: lo svantaggio si attenua, il potenziamento cresce.",
     "es": "8 naves, cada una combina una ventaja con un inconveniente, desde la PEARL inicial gratuita hasta AMBER, CRIMSON, ELECTRIC, TOXIC, VOID, NOVA y la rara SOLARIS (amplia ventana de roce, hitbox más grande). Pilota una lo suficiente y gana maestría: el inconveniente se suaviza y la ventaja crece.",
     "pt": "8 naves, cada uma junta um bônus a uma desvantagem, da PEARL inicial gratuita até AMBER, CRIMSON, ELECTRIC, TOXIC, VOID, NOVA e a rara SOLARIS (janela de quase-colisão ampla, hitbox maior). Pilote uma o bastante e ela ganha maestria: a desvantagem diminui e o bônus cresce.",
-    "ja": "8機、それぞれが強化と弱点をひとつずつ持つ。無料のスターターPEARLから、AMBER、CRIMSON、ELECTRIC、TOXIC、VOID、NOVA、そして希少なSOLARIS(広いニアミス判定、大きめの当たり判定)まで。乗り込むほど熟練度が上がり、弱点は和らぎ、強化は伸びる。"
+    "ja": "8機、それぞれが強化と弱点をひとつずつ持つ。無料のスターターPEARLから、AMBER、CRIMSON、ELECTRIC、TOXIC、VOID、NOVA、そして希少なSOLARIS(広いニアミス判定、大きめの当たり判定)まで。乗り込むほど熟練度が上がり、弱点は和らぎ、強化は伸びる。",
+    "ko": "기체 8종, 각각 장점과 단점이 짝을 이룹니다. 무료 스타터 PEARL부터 AMBER, CRIMSON, ELECTRIC, TOXIC, VOID, NOVA, 그리고 희귀한 SOLARIS(넓은 아슬아슬 판정 범위, 더 큰 히트박스)까지. 한 기체로 충분히 비행하면 숙련도가 올라 단점은 줄고 장점은 커집니다.",
+    "zh": "8 艘飛船，各自搭配一項優勢與一項代價，從免費的入門款 PEARL，到 AMBER、CRIMSON、ELECTRIC、TOXIC、VOID、NOVA，以及稀有的 SOLARIS（更寬的險過判定範圍、更大的碰撞體積）。飛得夠多，它就會累積精通度，減輕代價並強化優勢。",
+    "ru": "8 кораблей, у каждого - бонус и недостаток: от бесплатного стартового PEARL до AMBER, CRIMSON, ELECTRIC, TOXIC, VOID, NOVA и редкого SOLARIS (широкое окно «на волосок», увеличенный хитбокс). Полетай на одном достаточно долго, и он получит мастерство: недостаток смягчится, а бонус усилится.",
+    "ar": "8 مركبات، كل منها تجمع ميزة وعيباً، من المركبة المجانية PEARL وصولاً إلى AMBER وCRIMSON وELECTRIC وTOXIC وVOID وNOVA والنادرة SOLARIS (نافذة أوسع لتفادي الاصطدام بشق الأنفس، ومساحة اصطدام أكبر). حلّق بواحدة بما يكفي وستكتسب الإتقان، فيخفّ عيبها وتقوى ميزتها.",
+    "tr": "8 gemi, her biri bir avantajı bir dezavantajla eşleştirir; ücretsiz başlangıç gemisi PEARL'dan AMBER, CRIMSON, ELECTRIC, TOXIC, VOID, NOVA ve nadir SOLARIS'e kadar (geniş kıl payı penceresi, daha büyük isabet kutusu). Birini yeterince uçur, ustalık kazansın: dezavantajı hafifler, avantajı büyür.",
+    "id": "8 kapal, masing-masing memadukan keunggulan dengan kekurangan, dari PEARL starter gratis hingga AMBER, CRIMSON, ELECTRIC, TOXIC, VOID, NOVA, dan SOLARIS yang langka (jendela nyaris-kena yang lebar, hitbox lebih besar). Terbangkan satu kapal cukup lama dan ia akan mendapat penguasaan: kekurangannya mereda dan keunggulannya bertambah.",
+    "pl": "8 statków, każdy łączy zaletę z wadą: od darmowego startowego PEARL przez AMBER, CRIMSON, ELECTRIC, TOXIC, VOID, NOVA aż po rzadki SOLARIS (szerokie okno na styk, większy hitbox). Polataj jednym wystarczająco długo, a zdobędzie biegłość: wada złagodnieje, a zaleta urośnie.",
+    "hi": "8 जहाज़, हर एक में एक ख़ूबी के साथ एक कमी: मुफ़्त स्टार्टर PEARL से लेकर AMBER, CRIMSON, ELECTRIC, TOXIC, VOID, NOVA और दुर्लभ SOLARIS तक (चौड़ी बाल-बाल बचने की खिड़की, बड़ा हिटबॉक्स)। किसी एक को ख़ूब उड़ाएँ तो उसमें महारत आती है: कमी घटती है और ख़ूबी बढ़ती है।"
   },
   "f10.h": {
     "en": "Daily missions",
@@ -340,16 +517,15 @@
     "it": "Missioni giornaliere",
     "es": "Misiones diarias",
     "pt": "Missões diárias",
-    "ja": "デイリーミッション"
-  },
-  "f10.p": {
-    "en": "3 fresh challenges every day, the same for every player, each one worth a shard bonus on top of your daily cap.",
-    "de": "3 neue Herausforderungen jeden Tag, für alle gleich, jede bringt einen Shard-Bonus zusätzlich zu deinem Tageslimit.",
-    "fr": "3 nouveaux défis chaque jour, les mêmes pour tous, chacun rapportant un bonus de shards au-delà de ton plafond quotidien.",
-    "it": "3 nuove sfide ogni giorno, uguali per tutti, ognuna vale un bonus di shard oltre il tuo limite giornaliero.",
-    "es": "3 desafíos nuevos cada día, iguales para todos, cada uno da un bono de esquirlas por encima de tu límite diario.",
-    "pt": "3 desafios novos por dia, iguais para todo mundo, cada um vale um bônus de fragmentos além do seu limite diário.",
-    "ja": "毎日3つの新しいチャレンジ。全プレイヤー共通で、それぞれデイリー上限とは別にシャードボーナスがもらえる。"
+    "ja": "デイリーミッション",
+    "ko": "오늘의 미션",
+    "zh": "每日任務",
+    "ru": "Ежедневные задания",
+    "ar": "مهام يومية",
+    "tr": "Günlük görevler",
+    "id": "Misi harian",
+    "pl": "Codzienne misje",
+    "hi": "दैनिक मिशन"
   },
   "f11.h": {
     "en": "A new world every day",
@@ -358,16 +534,15 @@
     "it": "Un nuovo mondo ogni giorno",
     "es": "Un mundo nuevo cada día",
     "pt": "Um mundo novo todo dia",
-    "ja": "毎日、新しい世界"
-  },
-  "f11.p": {
-    "en": "The title screen names every calendar day its own level, like \"LEVEL 231: RUSTED CAVERN,\" and the cave changes with it - a different rock or mineral on the walls each day of the week, its own world name, and a slightly different corridor shape.",
-    "de": "Der Titelbildschirm gibt jedem Kalendertag ein eigenes Level, etwa \"LEVEL 231: RUSTED CAVERN\", und die Höhle ändert sich mit - jeden Wochentag ein anderer Fels oder ein anderes Mineral an den Wänden, ein eigener Weltname und eine leicht andere Korridorform.",
-    "fr": "L'écran-titre donne à chaque jour du calendrier son propre niveau, comme \"LEVEL 231 : RUSTED CAVERN\", et la grotte change avec lui - une roche ou un minéral différent sur les parois chaque jour de la semaine, son propre nom de monde et une forme de couloir légèrement différente.",
-    "it": "La schermata del titolo assegna a ogni giorno del calendario il suo livello, tipo \"LEVEL 231: RUSTED CAVERN\", e la grotta cambia di conseguenza - una roccia o un minerale diverso sulle pareti ogni giorno della settimana, un nome di mondo tutto suo e una forma del corridoio leggermente diversa.",
-    "es": "La pantalla de título da a cada día del calendario su propio nivel, como \"LEVEL 231: RUSTED CAVERN\", y la cueva cambia con él - una roca o mineral distinto en las paredes cada día de la semana, su propio nombre de mundo y una forma de pasillo ligeramente diferente.",
-    "pt": "A tela de título dá a cada dia do calendário o seu próprio nível, tipo \"LEVEL 231: RUSTED CAVERN\", e a caverna muda junto - uma rocha ou mineral diferente nas paredes a cada dia da semana, um nome de mundo próprio e um formato de corredor um pouco diferente.",
-    "ja": "タイトル画面は暦の各日にそれぞれのレベル名を付ける。たとえば「LEVEL 231: RUSTED CAVERN」。洞窟もそれに合わせて変わる - 曜日ごとに壁の岩や鉱物が違い、独自の世界名があり、通路の形も少しずつ異なる。"
+    "ja": "毎日、新しい世界",
+    "ko": "매일 새로운 월드",
+    "zh": "每天一個新世界",
+    "ru": "Новый мир каждый день",
+    "ar": "عالم جديد كل يوم",
+    "tr": "Her gün yeni bir dünya",
+    "id": "Dunia baru setiap hari",
+    "pl": "Nowy świat każdego dnia",
+    "hi": "हर दिन एक नई दुनिया"
   },
   "f12.h": {
     "en": "Chase your best",
@@ -376,16 +551,15 @@
     "it": "Insegui il tuo record",
     "es": "Persigue tu mejor marca",
     "pt": "Persiga o seu recorde",
-    "ja": "自己ベストを追え"
-  },
-  "f12.p": {
-    "en": "Every run compares against your last and your personal best, and the moment you die you see your exact rank in the world on today's board - and how many places you just moved. Daily streaks, a Game Center leaderboard, and iOS Challenges keep you coming back.",
-    "de": "Jeder Lauf wird mit deinem letzten und deinem Rekord verglichen, und im Moment deines Todes siehst du deinen genauen Rang in der Welt auf der heutigen Rangliste - und um wie viele Plätze du dich gerade bewegt hast. Tagesserien, eine Game-Center-Bestenliste und iOS-Herausforderungen bringen dich zurück.",
-    "fr": "Chaque partie est comparée à ta précédente et à ton record, et au moment où tu meurs tu vois ton rang exact dans le monde sur le classement du jour - et de combien de places tu viens de bouger. Séries quotidiennes, classement Game Center et défis iOS te font revenir.",
-    "it": "Ogni partita si confronta con la precedente e con il tuo record, e nel momento in cui muori vedi la tua posizione esatta nel mondo nella classifica di oggi - e di quanti posti ti sei appena spostato. Serie giornaliere, una classifica Game Center e le sfide iOS ti fanno tornare.",
-    "es": "Cada partida se compara con la anterior y con tu récord, y en el momento en que mueres ves tu puesto exacto en el mundo en la tabla de hoy - y cuántas posiciones acabas de moverte. Rachas diarias, una tabla de Game Center y los Retos de iOS te hacen volver.",
-    "pt": "Cada partida é comparada com a anterior e com o seu recorde, e no momento em que você morre vê a sua posição exata no mundo no ranking de hoje - e quantas posições você acabou de subir ou cair. Sequências diárias, um ranking do Game Center e os Desafios do iOS te trazem de volta.",
-    "ja": "毎回の走りは前回と自己ベストと比較され、倒れた瞬間に今日のボードでの世界順位が表示される - そして今、何位動いたかも。デイリー連続記録、Game Centerのリーダーボード、iOSのチャレンジが、また戻りたくさせる。"
+    "ja": "自己ベストを追え",
+    "ko": "최고 기록에 도전",
+    "zh": "挑戰你的最佳紀錄",
+    "ru": "Побей свой рекорд",
+    "ar": "تحدَّ رقمك القياسي",
+    "tr": "Rekorunu kovala",
+    "id": "Kejar rekormu",
+    "pl": "Goń swój rekord",
+    "hi": "अपने सर्वश्रेष्ठ का पीछा करें"
   },
   "f13.h": {
     "en": "Play in your language",
@@ -394,16 +568,15 @@
     "it": "Gioca nella tua lingua",
     "es": "Juega en tu idioma",
     "pt": "Jogue no seu idioma",
-    "ja": "あなたの言語でプレイ"
-  },
-  "f13.p": {
-    "en": "TUNL is available in 15 languages, including Spanish, Arabic, Russian, Chinese, French, Korean, Portuguese, Hindi, and Polish.",
-    "de": "TUNL gibt es in 15 Sprachen, darunter Spanisch, Arabisch, Russisch, Chinesisch, Französisch, Koreanisch, Portugiesisch, Hindi und Polnisch.",
-    "fr": "TUNL est disponible en 15 langues, dont l'espagnol, l'arabe, le russe, le chinois, le français, le coréen, le portugais, l'hindi et le polonais.",
-    "it": "TUNL è disponibile in 15 lingue, tra cui spagnolo, arabo, russo, cinese, francese, coreano, portoghese, hindi e polacco.",
-    "es": "TUNL está disponible en 15 idiomas, incluidos español, árabe, ruso, chino, francés, coreano, portugués, hindi y polaco.",
-    "pt": "O TUNL está disponível em 15 idiomas, incluindo espanhol, árabe, russo, chinês, francês, coreano, português, hindi e polonês.",
-    "ja": "TUNLは15言語に対応。スペイン語、アラビア語、ロシア語、中国語、フランス語、韓国語、ポルトガル語、ヒンディー語、ポーランド語などを含む。"
+    "ja": "あなたの言語でプレイ",
+    "ko": "내 언어로 플레이",
+    "zh": "用你的語言遊玩",
+    "ru": "Играй на своём языке",
+    "ar": "العب بلغتك",
+    "tr": "Kendi dilinde oyna",
+    "id": "Main dalam bahasamu",
+    "pl": "Graj w swoim języku",
+    "hi": "अपनी भाषा में खेलें"
   },
   "ships.head": {
     "en": "Eight Ships, Eight Feels",
@@ -412,7 +585,15 @@
     "it": "Otto navi, otto sensazioni",
     "es": "Ocho naves, ocho sensaciones",
     "pt": "Oito naves, oito sensações",
-    "ja": "8機、8つの感触"
+    "ja": "8機、8つの感触",
+    "ko": "기체 8종, 느낌도 8가지",
+    "zh": "八艘飛船，八種手感",
+    "ru": "Восемь кораблей, восемь ощущений",
+    "ar": "ثماني مركبات، ثمانية أحاسيس",
+    "tr": "Sekiz gemi, sekiz his",
+    "id": "Delapan kapal, delapan sensasi",
+    "pl": "Osiem statków, osiem odczuć",
+    "hi": "आठ जहाज़, आठ अहसास"
   },
   "ships.sub": {
     "en": "Same one-button feel, different tradeoffs.",
@@ -421,7 +602,15 @@
     "it": "La stessa sensazione a un pulsante, compromessi diversi.",
     "es": "La misma sensación de un botón, compensaciones distintas.",
     "pt": "A mesma sensação de um botão, trade-offs diferentes.",
-    "ja": "同じワンボタンの感触、違うトレードオフ。"
+    "ja": "同じワンボタンの感触、違うトレードオフ。",
+    "ko": "같은 원버튼 조작감, 다른 트레이드오프.",
+    "zh": "同樣的單鍵手感，不同的取捨。",
+    "ru": "Одно и то же управление одной кнопкой, разные компромиссы.",
+    "ar": "الإحساس نفسه بزر واحد، مع مقايضات مختلفة.",
+    "tr": "Aynı tek tuşlu his, farklı ödünleşimler.",
+    "id": "Rasa satu tombol yang sama, kompromi yang berbeda.",
+    "pl": "To samo sterowanie jednym przyciskiem, różne kompromisy.",
+    "hi": "वही एक-बटन वाला अहसास, अलग-अलग समझौते।"
   },
   "ships.tagPearl": {
     "en": "Starter, free",
@@ -430,7 +619,15 @@
     "it": "Starter, gratis",
     "es": "Inicial, gratis",
     "pt": "Inicial, grátis",
-    "ja": "スターター、無料"
+    "ja": "スターター、無料",
+    "ko": "스타터, 무료",
+    "zh": "入門款，免費",
+    "ru": "Стартовый, бесплатный",
+    "ar": "للبداية، مجانية",
+    "tr": "Başlangıç, ücretsiz",
+    "id": "Starter, gratis",
+    "pl": "Startowy, darmowy",
+    "hi": "स्टार्टर, मुफ़्त"
   },
   "ships.pearl": {
     "en": "The neutral baseline every run starts with - no perk, no penalty, just the feel of the ship.",
@@ -439,7 +636,15 @@
     "it": "La base neutra con cui inizia ogni partita - nessun potenziamento, nessuno svantaggio, solo la sensazione della nave.",
     "es": "La base neutra con la que empieza cada partida - sin ventaja ni inconveniente, solo la sensación de la nave.",
     "pt": "A base neutra com que toda partida começa - sem bônus, sem desvantagem, só a sensação da nave.",
-    "ja": "すべてのランがここから始まる基準機。強化も弱点もなく、純粋な機体の感触だけ。"
+    "ja": "すべてのランがここから始まる基準機。強化も弱点もなく、純粋な機体の感触だけ。",
+    "ko": "모든 런이 시작되는 중립 기준 기체. 장점도 단점도 없이 순수한 비행감만 있어요.",
+    "zh": "每一局的中性基準：沒有加成、沒有懲罰，只有飛船本身的手感。",
+    "ru": "Нейтральная основа, с которой начинается каждый забег: ни бонусов, ни штрафов, только ощущение корабля.",
+    "ar": "الأساس المحايد الذي تبدأ به كل جولة، بلا ميزة ولا عقوبة، فقط إحساس المركبة.",
+    "tr": "Her koşunun başladığı nötr taban: avantaj da ceza da yok, sadece geminin hissi.",
+    "id": "Dasar netral tempat setiap run dimulai: tanpa keunggulan, tanpa hukuman, hanya rasa terbang kapal itu sendiri.",
+    "pl": "Neutralna baza, od której zaczyna się każdy lot: bez premii, bez kary, tylko wyczucie statku.",
+    "hi": "वह तटस्थ आधार जिससे हर रन शुरू होता है: न कोई ख़ूबी, न कोई सज़ा, बस जहाज़ का अहसास।"
   },
   "ships.amber": {
     "en": "Reaches further for coins than any other ship, at the cost of a slightly bigger hitbox.",
@@ -448,7 +653,15 @@
     "it": "Raggiunge le monete da più lontano di qualsiasi altra nave, con una hitbox leggermente più grande.",
     "es": "Alcanza las monedas desde más lejos que cualquier otra nave, con una hitbox algo más grande.",
     "pt": "Alcança moedas de mais longe que qualquer outra nave, com uma hitbox um pouco maior.",
-    "ja": "どの機体よりも遠くのコインに届くが、当たり判定は少し大きめ。"
+    "ja": "どの機体よりも遠くのコインに届くが、当たり判定は少し大きめ。",
+    "ko": "다른 어떤 기체보다 멀리 있는 코인에 닿지만, 히트박스가 조금 더 큽니다.",
+    "zh": "拾取金幣的距離比任何其他飛船都遠，代價是碰撞體積略大。",
+    "ru": "Достаёт монеты дальше любого другого корабля, но хитбокс у него чуть больше.",
+    "ar": "تصل إلى العملات أبعد من أي مركبة أخرى، مقابل مساحة اصطدام أكبر قليلاً.",
+    "tr": "Jetonlara diğer tüm gemilerden daha uzaktan ulaşır, karşılığında isabet kutusu biraz daha büyüktür.",
+    "id": "Menjangkau koin lebih jauh daripada kapal lain, dengan konsekuensi hitbox yang sedikit lebih besar.",
+    "pl": "Sięga po monety dalej niż jakikolwiek inny statek, kosztem nieco większego hitboxa.",
+    "hi": "सिक्कों तक किसी भी दूसरे जहाज़ से ज़्यादा दूर पहुँचता है, बदले में हिटबॉक्स थोड़ा बड़ा है।"
   },
   "ships.crimson": {
     "en": "Slips through gaps other ships can't fit through, trading away some shield capacity for it.",
@@ -457,7 +670,15 @@
     "it": "Si infila in spazi che nessun'altra nave riesce ad attraversare, a costo di un po' di capacità dello scudo.",
     "es": "Se cuela por huecos que ninguna otra nave puede cruzar, a cambio de algo de capacidad de escudo.",
     "pt": "Passa por brechas que nenhuma outra nave atravessa, ao custo de um pouco de capacidade de escudo.",
-    "ja": "他のどの機体も通れない隙間をすり抜けられるが、その分シールド容量は少ない。"
+    "ja": "他のどの機体も通れない隙間をすり抜けられるが、その分シールド容量は少ない。",
+    "ko": "다른 기체가 지나가지 못하는 틈새를 빠져나가는 대신 실드 용량이 줄어듭니다.",
+    "zh": "能鑽過其他飛船擠不過去的縫隙，代價是護盾容量減少。",
+    "ru": "Проскальзывает в щели, куда не пролезают другие корабли, но платит частью ёмкости щита.",
+    "ar": "تنزلق عبر فجوات لا تتسع لغيرها من المركبات، مقابل التضحية بجزء من سعة الدرع.",
+    "tr": "Diğer gemilerin sığamadığı aralıklardan geçer, karşılığında kalkan kapasitesinden biraz vazgeçer.",
+    "id": "Menyelinap lewat celah yang tak muat dilalui kapal lain, dengan mengorbankan sebagian kapasitas perisai.",
+    "pl": "Prześlizguje się przez szczeliny, w które inne statki się nie mieszczą, oddając za to część pojemności osłony.",
+    "hi": "उन दरारों से निकल जाता है जिनमें दूसरे जहाज़ नहीं समा पाते, इसके बदले कुछ शील्ड क्षमता छोड़नी पड़ती है।"
   },
   "ships.electric": {
     "en": "Bends time harder and longer whenever a slow-time coin lands.",
@@ -466,7 +687,15 @@
     "it": "Rallenta il tempo più a lungo e più a fondo ogni volta che raccogli una moneta di rallentamento.",
     "es": "Ralentiza el tiempo más y durante más tiempo cada vez que recoges una moneda de cámara lenta.",
     "pt": "Deixa o tempo mais lento e por mais tempo a cada moeda de câmera lenta coletada.",
-    "ja": "スロータイムのコインを取るたび、時間をより強く、より長く引き伸ばす。"
+    "ja": "スロータイムのコインを取るたび、時間をより強く、より長く引き伸ばす。",
+    "ko": "슬로우 타임 코인을 먹을 때 시간을 더 강하게, 더 오래 늦춥니다.",
+    "zh": "吃到減速金幣時，時間扭曲得更強、更久。",
+    "ru": "Сильнее и дольше замедляет время, когда подобрана монета замедления.",
+    "ar": "تلوي الزمن بقوة ولمدة أطول كلما التُقطت عملة إبطاء الزمن.",
+    "tr": "Yavaş zaman jetonu alındığında zamanı daha güçlü ve daha uzun süre büker.",
+    "id": "Membengkokkan waktu lebih kuat dan lebih lama setiap kali koin perlambat waktu diambil.",
+    "pl": "Mocniej i dłużej zakrzywia czas za każdym razem, gdy zbierzesz monetę spowolnienia.",
+    "hi": "जब भी धीमे-समय का सिक्का मिलता है, समय को ज़्यादा ज़ोर से और ज़्यादा देर तक मोड़ता है।"
   },
   "ships.toxic": {
     "en": "Every gold coin buys more corridor room, though the bonus burns off faster too.",
@@ -475,7 +704,15 @@
     "it": "Ogni moneta d'oro allarga di più il corridoio, ma il bonus svanisce anche più in fretta.",
     "es": "Cada moneda de oro ensancha más el pasillo, aunque el bono también se agota más rápido.",
     "pt": "Cada moeda de ouro alarga mais o corredor, mas o bônus também some mais rápido.",
-    "ja": "金のコイン一枚あたりの通路拡張効果が大きいが、効果の減衰も速い。"
+    "ja": "金のコイン一枚あたりの通路拡張効果が大きいが、効果の減衰も速い。",
+    "ko": "골드 코인 하나마다 통로가 더 넓어지지만, 보너스도 더 빨리 사라집니다.",
+    "zh": "每枚金幣都能換來更寬的通道，但加成也消退得更快。",
+    "ru": "Каждая золотая монета расширяет коридор сильнее, но и бонус сгорает быстрее.",
+    "ar": "كل عملة ذهبية تمنحك مساحة أكبر في الممر، لكن المكافأة تتلاشى أسرع أيضاً.",
+    "tr": "Her altın jeton daha fazla koridor genişliği kazandırır, ancak bonus da daha hızlı erir.",
+    "id": "Setiap koin emas memberi ruang lorong lebih lebar, tetapi bonusnya juga habis lebih cepat.",
+    "pl": "Każda złota moneta daje więcej miejsca w korytarzu, ale premia wypala się też szybciej.",
+    "hi": "हर सोने का सिक्का गलियारे में ज़्यादा जगह देता है, पर बोनस भी जल्दी घिस जाता है।"
   },
   "ships.void": {
     "en": "Every third shield coin gives two shields instead of one, at the cost of some margin on close calls.",
@@ -484,7 +721,15 @@
     "it": "Una moneta scudo su tre dà due scudi invece di uno, a costo di un po' di margine sugli sfioramenti.",
     "es": "Una de cada tres monedas de escudo da dos escudos en vez de uno, a cambio de algo de margen en los roces.",
     "pt": "Uma em cada três moedas de escudo dá dois escudos em vez de um, ao custo de um pouco de margem nas quase-colisões.",
-    "ja": "3枚に1枚のシールドコインが、シールド2枚分になる。代わりにニアミスの猶予は少し狭い。"
+    "ja": "3枚に1枚のシールドコインが、シールド2枚分になる。代わりにニアミスの猶予は少し狭い。",
+    "ko": "세 번째 실드 코인마다 실드를 하나가 아닌 두 개 얻습니다. 대신 아슬아슬한 순간의 여유가 조금 줄어요.",
+    "zh": "每第三枚護盾金幣給你兩個護盾而非一個，代價是險過時的餘裕稍微變小。",
+    "ru": "Каждая третья монета щита даёт два щита вместо одного, но запас на случай «на волосок» немного меньше.",
+    "ar": "كل عملة درع ثالثة تعطيك درعين بدلاً من درع واحد، مقابل هامش أقل قليلاً في اللحظات الحرجة.",
+    "tr": "Her üçüncü kalkan jetonu bir yerine iki kalkan verir, karşılığında kıl payı anlarda marjın biraz azalır.",
+    "id": "Setiap koin perisai ketiga memberi dua perisai, bukan satu, dengan konsekuensi margin yang sedikit berkurang saat nyaris kena.",
+    "pl": "Co trzecia moneta osłony daje dwie osłony zamiast jednej, kosztem nieco mniejszego zapasu w sytuacjach na styk.",
+    "hi": "हर तीसरा शील्ड सिक्का एक की जगह दो शील्ड देता है, बदले में बाल-बाल बचने के पलों में थोड़ा कम मार्जिन मिलता है।"
   },
   "ships.nova": {
     "en": "Every magnet coin pulls coins in for much longer, with less ammo held in reserve.",
@@ -493,7 +738,15 @@
     "it": "Ogni moneta magnete attira le monete molto più a lungo, con meno munizioni di riserva.",
     "es": "Cada moneda imán atrae las monedas mucho más tiempo, con menos munición en reserva.",
     "pt": "Cada moeda ímã atrai moedas por muito mais tempo, com menos munição de reserva.",
-    "ja": "マグネットコインの効果がずっと長く続くが、弾の残量は少なめ。"
+    "ja": "マグネットコインの効果がずっと長く続くが、弾の残量は少なめ。",
+    "ko": "자석 코인 하나로 훨씬 오래 코인을 끌어당기지만, 비축 탄약은 줄어듭니다.",
+    "zh": "每枚磁鐵金幣吸引金幣的時間長得多，代價是備用彈藥較少。",
+    "ru": "Каждая монета-магнит притягивает монеты гораздо дольше, но запас патронов меньше.",
+    "ar": "كل عملة مغناطيس تجذب العملات لمدة أطول بكثير، مع ذخيرة احتياطية أقل.",
+    "tr": "Her mıknatıs jetonu jetonları çok daha uzun süre çeker, ancak yedekte tutulan mermi azalır.",
+    "id": "Setiap koin magnet menarik koin jauh lebih lama, dengan cadangan amunisi yang lebih sedikit.",
+    "pl": "Każda moneta magnesu przyciąga monety znacznie dłużej, przy mniejszym zapasie amunicji.",
+    "hi": "हर मैग्नेट सिक्का सिक्कों को कहीं ज़्यादा देर तक खींचता है, पर रिज़र्व में गोलियाँ कम रहती हैं।"
   },
   "ships.tagSolaris": {
     "en": "Rare",
@@ -502,7 +755,15 @@
     "it": "Rara",
     "es": "Rara",
     "pt": "Rara",
-    "ja": "レア"
+    "ja": "レア",
+    "ko": "희귀",
+    "zh": "稀有",
+    "ru": "Редкий",
+    "ar": "نادرة",
+    "tr": "Nadir",
+    "id": "Langka",
+    "pl": "Rzadki",
+    "hi": "दुर्लभ"
   },
   "ships.solaris": {
     "en": "The rarest ship in the roster - forgiving on close calls, built for players chasing the deepest runs.",
@@ -511,7 +772,15 @@
     "it": "La nave più rara del roster - indulgente sugli sfioramenti, pensata per chi punta alle run più profonde.",
     "es": "La nave más rara del catálogo - indulgente con los roces, pensada para quienes buscan las runs más profundas.",
     "pt": "A nave mais rara do time - tolerante com quase-colisões, feita para quem busca as runs mais profundas.",
-    "ja": "ロースター中もっとも希少な機体。ニアミスに寛容で、最深記録を狙うプレイヤー向け。"
+    "ja": "ロースター中もっとも希少な機体。ニアミスに寛容で、最深記録を狙うプレイヤー向け。",
+    "ko": "로스터에서 가장 희귀한 기체. 아슬아슬한 순간에 관대하고, 가장 깊은 런을 노리는 플레이어를 위해 만들어졌어요.",
+    "zh": "陣容中最稀有的飛船，對險過判定寬容，專為追求最深紀錄的玩家打造。",
+    "ru": "Самый редкий корабль в составе: прощает «на волосок», создан для тех, кто гонится за самыми глубокими забегами.",
+    "ar": "أندر مركبة في القائمة، متسامحة في اللحظات الحرجة، ومصممة للاعبين الذين يطاردون أعمق الجولات.",
+    "tr": "Kadrodaki en nadir gemi: kıl payı anlarda bağışlayıcı, en derin koşuların peşindeki oyuncular için tasarlandı.",
+    "id": "Kapal paling langka dalam daftar - pemaaf saat nyaris kena, dibuat untuk pemain yang mengejar run terdalam.",
+    "pl": "Najrzadszy statek w zestawie - wybacza sytuacje na styk, stworzony dla graczy, którzy gonią najgłębsze loty.",
+    "hi": "रोस्टर का सबसे दुर्लभ जहाज़: बाल-बाल बचने के पलों में उदार, सबसे गहरे रन का पीछा करने वाले खिलाड़ियों के लिए बना।"
   },
   "s3.head": {
     "en": "Screenshots",
@@ -520,7 +789,15 @@
     "it": "Screenshot",
     "es": "Capturas",
     "pt": "Capturas de tela",
-    "ja": "スクリーンショット"
+    "ja": "スクリーンショット",
+    "ko": "스크린샷",
+    "zh": "截圖",
+    "ru": "Скриншоты",
+    "ar": "لقطات الشاشة",
+    "tr": "Ekran görüntüleri",
+    "id": "Tangkapan layar",
+    "pl": "Zrzuty ekranu",
+    "hi": "स्क्रीनशॉट"
   },
   "alt1": {
     "en": "TUNL title screen - one cave, every player, every day",
@@ -529,7 +806,15 @@
     "it": "Schermata del titolo di TUNL - una grotta, tutti i giocatori, ogni giorno",
     "es": "Pantalla de título de TUNL - una cueva, todos los jugadores, cada día",
     "pt": "Tela de título do TUNL - uma caverna, todos os jogadores, todo dia",
-    "ja": "TUNLタイトル画面 - ひとつの洞窟、全プレイヤー、毎日"
+    "ja": "TUNLタイトル画面 - ひとつの洞窟、全プレイヤー、毎日",
+    "ko": "TUNL 타이틀 화면 - 하나의 동굴, 모든 플레이어, 매일",
+    "zh": "TUNL 標題畫面 - 一個洞穴，所有玩家，每一天",
+    "ru": "Титульный экран TUNL - одна пещера, все игроки, каждый день",
+    "ar": "شاشة عنوان TUNL - كهف واحد، كل اللاعبين، كل يوم",
+    "tr": "TUNL başlık ekranı - tek mağara, her oyuncu, her gün",
+    "id": "Layar judul TUNL - satu gua, semua pemain, setiap hari",
+    "pl": "Ekran tytułowy TUNL - jedna jaskinia, każdy gracz, każdego dnia",
+    "hi": "TUNL टाइटल स्क्रीन - एक गुफा, हर खिलाड़ी, हर दिन"
   },
   "altCity": {
     "en": "TUNL approach - every run takes off over the city at dusk and dives into the rock",
@@ -538,7 +823,15 @@
     "it": "Avvicinamento TUNL - ogni partita decolla sopra la città al tramonto e si tuffa nella roccia",
     "es": "Aproximación TUNL - cada partida despega sobre la ciudad al anochecer y se hunde en la roca",
     "pt": "Aproximação TUNL - cada partida decola sobre a cidade ao anoitecer e mergulha na rocha",
-    "ja": "TUNL の進入 - すべての走行は夕暮れの街の上から始まり、岩へと飛び込む"
+    "ja": "TUNL の進入 - すべての走行は夕暮れの街の上から始まり、岩へと飛び込む",
+    "ko": "TUNL 어프로치 - 모든 런은 해질녘 도시 위에서 이륙해 바위 속으로 뛰어듭니다",
+    "zh": "TUNL 進場 - 每一局都從黃昏的城市上空起飛，俯衝進岩壁",
+    "ru": "Заход TUNL - каждый забег стартует над городом в сумерках и ныряет в скалу",
+    "ar": "اقتراب TUNL - كل جولة تنطلق فوق مدينة عند الغسق وتغوص في الصخر",
+    "tr": "TUNL yaklaşma - her koşu alacakaranlıkta bir şehrin üzerinden kalkar ve kayanın içine dalar",
+    "id": "Pendekatan TUNL - setiap run lepas landas di atas kota saat senja lalu menukik ke dalam batu",
+    "pl": "Podejście w TUNL - każdy lot startuje nad miastem o zmierzchu i nurkuje w skałę",
+    "hi": "TUNL एप्रोच - हर रन शाम के धुँधलके में शहर के ऊपर से उड़ान भरता है और चट्टान में गोता लगाता है"
   },
   "alt2": {
     "en": "TUNL gameplay - hold to climb, let go to fall, one touch is the whole game",
@@ -547,7 +840,15 @@
     "it": "Gameplay di TUNL - tieni premuto per salire, lascia per cadere, un tocco è tutto il gioco",
     "es": "Gameplay de TUNL - mantén para subir, suelta para caer, un toque es todo el juego",
     "pt": "Gameplay do TUNL - segure para subir, solte para cair, um toque é o jogo inteiro",
-    "ja": "TUNLのゲームプレイ - 押して上昇、離して下降、タッチひとつがゲームのすべて"
+    "ja": "TUNLのゲームプレイ - 押して上昇、離して下降、タッチひとつがゲームのすべて",
+    "ko": "TUNL 게임플레이 - 누르면 상승, 떼면 하강, 터치 한 번이 게임의 전부",
+    "zh": "TUNL 遊戲畫面 - 按住上升、放開下墜，一次觸控就是整個遊戲",
+    "ru": "Геймплей TUNL - держи, чтобы подниматься, отпусти, чтобы падать, одно касание - вся игра",
+    "ar": "طريقة لعب TUNL - اضغط لتصعد، أفلت لتسقط، لمسة واحدة هي اللعبة كلها",
+    "tr": "TUNL oynanış - yükselmek için basılı tut, düşmek için bırak, tek dokunuş oyunun tamamı",
+    "id": "Gameplay TUNL - tahan untuk naik, lepas untuk jatuh, satu sentuhan adalah seluruh permainannya",
+    "pl": "Rozgrywka TUNL - przytrzymaj, by się wznosić, puść, by spadać, jeden dotyk to cała gra",
+    "hi": "TUNL गेमप्ले - चढ़ने के लिए दबाकर रखें, गिरने के लिए छोड़ें, एक टच ही पूरा खेल है"
   },
   "alt3": {
     "en": "TUNL warp ring - fly through for a pure-speed rush",
@@ -556,7 +857,15 @@
     "it": "Anello warp di TUNL - attraversalo per una scarica di pura velocità",
     "es": "Aro de warp de TUNL - atraviésalo para un subidón de pura velocidad",
     "pt": "Aro de warp do TUNL - atravesse para uma descarga de pura velocidade",
-    "ja": "TUNLのワープリング - くぐれば純粋なスピードの疾走"
+    "ja": "TUNLのワープリング - くぐれば純粋なスピードの疾走",
+    "ko": "TUNL 워프 링 - 통과하면 순수한 속도의 쾌감",
+    "zh": "TUNL 曲速環 - 穿過它，享受純粹的速度快感",
+    "ru": "Варп-кольцо TUNL - пролети сквозь него ради чистого ощущения скорости",
+    "ar": "حلقة الانتقال في TUNL - مرّ عبرها لتندفع بسرعة خالصة",
+    "tr": "TUNL warp halkası - içinden geç, saf hızın keyfini çıkar",
+    "id": "Cincin warp TUNL - terbanglah melewatinya untuk sensasi kecepatan murni",
+    "pl": "Pierścień warp w TUNL - przeleć przez niego dla czystego pędu",
+    "hi": "TUNL वार्प रिंग - इसके आर-पार उड़ें और शुद्ध रफ़्तार का रोमांच पाएँ"
   },
   "alt4": {
     "en": "TUNL power-ups - shields, ammo, magnets and more, going deeper",
@@ -565,7 +874,15 @@
     "it": "Potenziamenti di TUNL - scudi, munizioni, calamite e altro, sempre più in profondità",
     "es": "Mejoras de TUNL - escudos, munición, imanes y más, cada vez más hondo",
     "pt": "Power-ups do TUNL - escudos, munição, ímãs e mais, cada vez mais fundo",
-    "ja": "TUNLのパワーアップ - シールド、弾薬、マグネットなど、さらに奥へ"
+    "ja": "TUNLのパワーアップ - シールド、弾薬、マグネットなど、さらに奥へ",
+    "ko": "TUNL 파워업 - 실드, 탄약, 자석 등, 깊이 들어갈수록 더 많이",
+    "zh": "TUNL 強化道具 - 護盾、彈藥、磁鐵等等，越深入越多",
+    "ru": "Усиления TUNL - щиты, патроны, магниты и многое другое, чем глубже, тем больше",
+    "ar": "تعزيزات TUNL - دروع وذخيرة ومغناطيسات وغيرها، كلما تعمقت أكثر",
+    "tr": "TUNL güçlendirmeler - kalkanlar, mermiler, mıknatıslar ve daha fazlası, derine indikçe",
+    "id": "Power-up TUNL - perisai, amunisi, magnet, dan lainnya, makin dalam makin banyak",
+    "pl": "Wzmocnienia w TUNL - osłony, amunicja, magnesy i więcej, im głębiej, tym więcej",
+    "hi": "TUNL पावर-अप - शील्ड, गोलियाँ, मैग्नेट और बहुत कुछ, जितना गहरे जाएँ उतना ज़्यादा"
   },
   "alt5": {
     "en": "TUNL debriefing screen - check your rank, the whole world flies the same cave",
@@ -574,7 +891,15 @@
     "it": "Schermata di debriefing di TUNL - guarda il tuo rango, tutto il mondo vola nella stessa grotta",
     "es": "Pantalla de resumen de TUNL - mira tu rango, todo el mundo vuela la misma cueva",
     "pt": "Tela de resumo do TUNL - veja seu ranking, o mundo inteiro voa na mesma caverna",
-    "ja": "TUNLのデブリーフィング画面 - 順位をチェック、世界中が同じ洞窟を飛ぶ"
+    "ja": "TUNLのデブリーフィング画面 - 順位をチェック、世界中が同じ洞窟を飛ぶ",
+    "ko": "TUNL 결과 화면 - 순위를 확인하세요, 전 세계가 같은 동굴을 납니다",
+    "zh": "TUNL 結算畫面 - 查看你的排名，全世界都在飛同一個洞穴",
+    "ru": "Экран итогов TUNL - узнай свой рейтинг, весь мир летит по одной и той же пещере",
+    "ar": "شاشة ملخص TUNL - اطّلع على ترتيبك، فالعالم كله يطير في الكهف نفسه",
+    "tr": "TUNL sonuç ekranı - sıralamana bak, dünyanın tamamı aynı mağarayı uçuyor",
+    "id": "Layar hasil TUNL - cek peringkatmu, seluruh dunia terbang di gua yang sama",
+    "pl": "Ekran podsumowania TUNL - sprawdź swoje miejsce, cały świat leci tą samą jaskinią",
+    "hi": "TUNL डीब्रीफ़िंग स्क्रीन - अपनी रैंक देखें, पूरी दुनिया एक ही गुफा में उड़ती है"
   },
   "footer.support": {
     "en": "Support",
@@ -583,7 +908,15 @@
     "it": "Assistenza",
     "es": "Soporte",
     "pt": "Suporte",
-    "ja": "サポート"
+    "ja": "サポート",
+    "ko": "지원",
+    "zh": "支援",
+    "ru": "Поддержка",
+    "ar": "الدعم",
+    "tr": "Destek",
+    "id": "Dukungan",
+    "pl": "Wsparcie",
+    "hi": "सहायता"
   },
   "footer.privacy": {
     "en": "Privacy Policy",
@@ -592,7 +925,15 @@
     "it": "Privacy",
     "es": "Privacidad",
     "pt": "Privacidade",
-    "ja": "プライバシー"
+    "ja": "プライバシー",
+    "ko": "개인정보 처리방침",
+    "zh": "隱私權政策",
+    "ru": "Политика конфиденциальности",
+    "ar": "سياسة الخصوصية",
+    "tr": "Gizlilik Politikası",
+    "id": "Kebijakan Privasi",
+    "pl": "Polityka prywatności",
+    "hi": "गोपनीयता नीति"
   },
   "footer.press": {
     "en": "Press",
@@ -601,7 +942,15 @@
     "it": "Stampa",
     "es": "Prensa",
     "pt": "Imprensa",
-    "ja": "プレス"
+    "ja": "プレス",
+    "ko": "보도자료",
+    "zh": "媒體",
+    "ru": "Пресса",
+    "ar": "الصحافة",
+    "tr": "Basın",
+    "id": "Pers",
+    "pl": "Prasa",
+    "hi": "प्रेस"
   },
   "footer.devlog": {
     "en": "Devlog",
@@ -610,7 +959,15 @@
     "it": "Diario di sviluppo",
     "es": "Diario de desarrollo",
     "pt": "Diário de desenvolvimento",
-    "ja": "開発ブログ"
+    "ja": "開発ブログ",
+    "ko": "개발 일지",
+    "zh": "開發日誌",
+    "ru": "Дневник разработки",
+    "ar": "يوميات التطوير",
+    "tr": "Geliştirici günlüğü",
+    "id": "Devlog",
+    "pl": "Devlog",
+    "hi": "डेवलॉग"
   },
   "footer.howto": {
     "en": "How to play",
@@ -619,7 +976,15 @@
     "it": "Come si gioca",
     "es": "Cómo jugar",
     "pt": "Como jogar",
-    "ja": "遊び方"
+    "ja": "遊び方",
+    "ko": "플레이 방법",
+    "zh": "玩法說明",
+    "ru": "Как играть",
+    "ar": "طريقة اللعب",
+    "tr": "Nasıl oynanır",
+    "id": "Cara bermain",
+    "pl": "Jak grać",
+    "hi": "कैसे खेलें"
   },
   "footer.rights": {
     "en": "&copy; 2026 Theodoracatos. All rights reserved.",
@@ -628,7 +993,15 @@
     "it": "&copy; 2026 Theodoracatos. Tutti i diritti riservati.",
     "es": "&copy; 2026 Theodoracatos. Todos los derechos reservados.",
     "pt": "&copy; 2026 Theodoracatos. Todos os direitos reservados.",
-    "ja": "&copy; 2026 Theodoracatos. All rights reserved."
+    "ja": "&copy; 2026 Theodoracatos. All rights reserved.",
+    "ko": "&copy; 2026 Theodoracatos. 모든 권리 보유.",
+    "zh": "&copy; 2026 Theodoracatos. 保留所有權利。",
+    "ru": "&copy; 2026 Theodoracatos. Все права защищены.",
+    "ar": "&copy; 2026 Theodoracatos. جميع الحقوق محفوظة.",
+    "tr": "&copy; 2026 Theodoracatos. Tüm hakları saklıdır.",
+    "id": "&copy; 2026 Theodoracatos. Semua hak dilindungi.",
+    "pl": "&copy; 2026 Theodoracatos. Wszelkie prawa zastrzeżone.",
+    "hi": "&copy; 2026 Theodoracatos. सर्वाधिकार सुरक्षित।"
   },
   "footer.music": {
     "en": "Music by <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a> via Pixabay.",
@@ -637,7 +1010,15 @@
     "it": "Musica di <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a> via Pixabay.",
     "es": "Música de <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a> via Pixabay.",
     "pt": "Música de <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a> via Pixabay.",
-    "ja": "音楽: <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a> (Pixabay)"
+    "ja": "音楽: <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a> (Pixabay)",
+    "ko": "Pixabay의 <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a> 음악.",
+    "zh": "音樂：Pixabay 上的 <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a>。",
+    "ru": "Музыка: <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a> на Pixabay.",
+    "ar": "الموسيقى: <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a> عبر Pixabay.",
+    "tr": "Müzik: Pixabay üzerinden <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a>.",
+    "id": "Musik oleh <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a> melalui Pixabay.",
+    "pl": "Muzyka: <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a> na Pixabay.",
+    "hi": "संगीत: Pixabay पर <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a> द्वारा।"
   },
   "footer.langLabel": {
     "en": "Language",
@@ -646,7 +1027,15 @@
     "it": "Lingua",
     "es": "Idioma",
     "pt": "Idioma",
-    "ja": "言語"
+    "ja": "言語",
+    "ko": "언어",
+    "zh": "語言",
+    "ru": "Язык",
+    "ar": "اللغة",
+    "tr": "Dil",
+    "id": "Bahasa",
+    "pl": "Język",
+    "hi": "भाषा"
   },
   "aria.musicPlay": {
     "en": "Play title music",
@@ -655,7 +1044,15 @@
     "it": "Riproduci la musica del titolo",
     "es": "Reproducir música del título",
     "pt": "Tocar música do título",
-    "ja": "タイトル音楽を再生"
+    "ja": "タイトル音楽を再生",
+    "ko": "타이틀 음악 재생",
+    "zh": "播放標題音樂",
+    "ru": "Включить музыку заставки",
+    "ar": "تشغيل موسيقى الشاشة الرئيسية",
+    "tr": "Başlık müziğini çal",
+    "id": "Putar musik judul",
+    "pl": "Odtwórz muzykę z ekranu tytułowego",
+    "hi": "टाइटल संगीत चलाएँ"
   },
   "aria.musicPause": {
     "en": "Pause title music",
@@ -664,16 +1061,15 @@
     "it": "Metti in pausa la musica del titolo",
     "es": "Pausar música del título",
     "pt": "Pausar música do título",
-    "ja": "タイトル音楽を一時停止"
-  },
-  "aria.demo": {
-    "en": "TUNL gameplay demo",
-    "de": "TUNL Gameplay-Demo",
-    "fr": "Démo de gameplay de TUNL",
-    "it": "Demo di gameplay di TUNL",
-    "es": "Demo de gameplay de TUNL",
-    "pt": "Demo de gameplay do TUNL",
-    "ja": "TUNLのゲームプレイデモ"
+    "ja": "タイトル音楽を一時停止",
+    "ko": "타이틀 음악 일시정지",
+    "zh": "暫停標題音樂",
+    "ru": "Приостановить музыку заставки",
+    "ar": "إيقاف موسيقى الشاشة الرئيسية مؤقتاً",
+    "tr": "Başlık müziğini duraklat",
+    "id": "Jeda musik judul",
+    "pl": "Wstrzymaj muzykę z ekranu tytułowego",
+    "hi": "टाइटल संगीत रोकें"
   },
   "f9b.h": {
     "en": "Paint your ship",
@@ -682,16 +1078,15 @@
     "it": "Dipingi la tua nave",
     "es": "Pinta tu nave",
     "pt": "Pinte sua nave",
-    "ja": "機体をペイントしよう"
-  },
-  "f9b.p": {
-    "en": "Six liveries in the Paint shop, from a glowing stealth rim to a shifting aurora sweep. Buy a finish once with shards, then choose it for each ship you own. Purely cosmetic: no perks, no edge on the leaderboard.",
-    "de": "Sechs Lackierungen im Paint-Shop, vom leuchtenden Stealth-Rand bis zum wandernden Aurora-Schimmer. Einmal mit Shards kaufen, dann für jedes deiner Schiffe einzeln wählen. Rein kosmetisch: keine Boni, kein Vorteil in der Rangliste.",
-    "fr": "Six livrées dans l'atelier Paint, du liseré furtif lumineux au balayage d'aurore changeant. Achète une finition une fois avec des shards, puis choisis-la pour chacun de tes vaisseaux. Purement esthétique : aucun bonus, aucun avantage au classement.",
-    "it": "Sei livree nell'officina Paint, dal bordo stealth luminoso al riflesso mutevole dell'aurora. Acquista una finitura una volta con gli shard, poi scegli quale usare su ogni nave. Solo estetica: nessun bonus, nessun vantaggio in classifica.",
-    "es": "Seis acabados en el taller Paint, desde un borde sigiloso brillante hasta un barrido de aurora cambiante. Compra un acabado una vez con shards y elígelo para cada nave que tengas. Solo estético: sin ventajas ni ventaja en la clasificación.",
-    "pt": "Seis pinturas na oficina Paint, de uma borda furtiva brilhante a um varrer de aurora cambiante. Compre um acabamento uma vez com shards e escolha-o para cada nave que você tem. Apenas estético: sem bônus, sem vantagem no ranking.",
-    "ja": "ペイントショップに6種類のカラーリング。光るステルスの縁取りから、移ろうオーロラの輝きまで。シャードで一度買えば、持っている機体ごとに選べる。見た目だけで、性能もランキングへの影響もなし。"
+    "ja": "機体をペイントしよう",
+    "ko": "기체 도색",
+    "zh": "為你的飛船塗裝",
+    "ru": "Раскрась свой корабль",
+    "ar": "لوّن مركبتك",
+    "tr": "Gemini boya",
+    "id": "Cat kapalmu",
+    "pl": "Pomaluj swój statek",
+    "hi": "अपने जहाज़ को रंगें"
   },
   "guides.head": {
     "en": "Learn the cave",
@@ -700,124 +1095,15 @@
     "it": "Conoscere la grotta",
     "es": "Conoce la cueva",
     "pt": "Conheça a caverna",
-    "ja": "洞窟を知ろう"
-  },
-  "guides.sub": {
-    "en": "Guides, notes and history for players and the curious.",
-    "de": "Anleitungen, Notizen und Geschichte für Spieler und Neugierige.",
-    "fr": "Guides, notes et histoire pour les joueurs et les curieux.",
-    "it": "Guide, note e storia per giocatori e curiosi.",
-    "es": "Guías, notas e historia para jugadores y curiosos.",
-    "pt": "Guias, notas e história para jogadores e curiosos.",
-    "ja": "プレイヤーと好奇心旺盛な人のためのガイド、開発メモ、歴史。"
-  },
-  "g1.h": {
-    "en": "Learn to play",
-    "de": "Spielen lernen",
-    "fr": "Apprendre à jouer",
-    "it": "Imparare a giocare",
-    "es": "Aprende a jugar",
-    "pt": "Aprenda a jogar",
-    "ja": "遊び方をマスター"
-  },
-  "g1.p": {
-    "en": "Controls, scoring, all eight coins, every hazard in order and the strategy that raises your score.",
-    "de": "Steuerung, Wertung, alle acht Münzen, jede Gefahr der Reihe nach und die Strategie für mehr Punkte.",
-    "fr": "Commandes, score, les huit pièces, chaque danger dans l'ordre et la stratégie qui fait grimper ton score.",
-    "it": "Comandi, punteggio, tutte e otto le monete, ogni pericolo in ordine e la strategia che fa salire il punteggio.",
-    "es": "Controles, puntuación, las ocho monedas, cada peligro en orden y la estrategia que sube tu puntuación.",
-    "pt": "Controles, pontuação, as oito moedas, cada perigo em ordem e a estratégia que aumenta sua pontuação.",
-    "ja": "操作、スコア、8種類のコイン、順番に現れる障害物、そしてスコアを伸ばす戦略。"
-  },
-  "g2.h": {
-    "en": "Meet the ships",
-    "de": "Die Schiffe kennenlernen",
-    "fr": "Découvrir les vaisseaux",
-    "it": "Conoscere le navi",
-    "es": "Conoce las naves",
-    "pt": "Conheça as naves",
-    "ja": "機体を知ろう"
-  },
-  "g2.p": {
-    "en": "The roster, the trade each ship makes, how mastery, shards and stardust work, and the six paint finishes.",
-    "de": "Die Flotte, der Kompromiss jedes Schiffs, wie Meisterschaft, Shards und Stardust funktionieren, und die sechs Lackierungen.",
-    "fr": "La flotte, le compromis de chaque vaisseau, le fonctionnement de la maîtrise, des shards et du stardust, et les six peintures.",
-    "it": "La flotta, il compromesso di ogni nave, come funzionano maestria, shard e stardust, e le sei vernici.",
-    "es": "La flota, el equilibrio de cada nave, cómo funcionan la maestría, las esquirlas y el polvo estelar, y los seis acabados.",
-    "pt": "A frota, a troca de cada nave, como funcionam maestria, fragmentos e poeira estelar, e os seis acabamentos.",
-    "ja": "機体一覧、それぞれの機体のトレードオフ、マスタリー、シャード、スターダストの仕組み、6種類のペイント。"
-  },
-  "g3.h": {
-    "en": "Read the devlog",
-    "de": "Den Entwicklerblog lesen",
-    "fr": "Lire le journal de dev",
-    "it": "Leggere il diario di sviluppo",
-    "es": "Lee el diario de desarrollo",
-    "pt": "Leia o diário de desenvolvimento",
-    "ja": "開発ブログを読む"
-  },
-  "g3.p": {
-    "en": "How the daily cave is generated from a date, how a run is paced, and how the physics stays fair on every screen.",
-    "de": "Wie die Tageshöhle aus einem Datum entsteht, wie ein Lauf getaktet ist und warum die Physik auf jedem Bildschirm fair bleibt.",
-    "fr": "Comment la grotte du jour naît d'une date, comment une partie est rythmée, et pourquoi la physique reste équitable sur chaque écran.",
-    "it": "Come nasce la grotta del giorno da una data, come è scandita una partita e perché la fisica resta equa su ogni schermo.",
-    "es": "Cómo nace la cueva del día a partir de una fecha, cómo se marca el ritmo de una partida y por qué la física es justa en cualquier pantalla.",
-    "pt": "Como a caverna do dia nasce de uma data, como uma partida é ritmada e por que a física é justa em qualquer tela.",
-    "ja": "日替わりの洞窟が日付から生まれる仕組み、1回の走りのペース配分、どの画面でも物理が公平に保たれる理由。"
-  },
-  "g4.h": {
-    "en": "See what changed",
-    "de": "Änderungen ansehen",
-    "fr": "Voir les nouveautés",
-    "it": "Vedere le novità",
-    "es": "Mira qué ha cambiado",
-    "pt": "Veja o que mudou",
-    "ja": "更新内容を見る"
-  },
-  "g4.p": {
-    "en": "Every version, newest first, from optional rewards to the dusk-city approach in 15.0.",
-    "de": "Jede Version, die neueste zuerst, von den optionalen Belohnungen bis zum Anflug über die Stadt in 15.0.",
-    "fr": "Chaque version, la plus récente d'abord, des récompenses facultatives à l'approche au-dessus de la ville de la 15.0.",
-    "it": "Ogni versione, dalla più recente, dalle ricompense facoltative fino all'avvicinamento sulla città della 15.0.",
-    "es": "Cada versión, la más reciente primero, desde las recompensas opcionales hasta la aproximación sobre la ciudad de la 15.0.",
-    "pt": "Cada versão, da mais recente para a mais antiga, das recompensas opcionais até a aproximação sobre a cidade da 15.0.",
-    "ja": "新しい順に全バージョン。任意の報酬から、15.0の夕暮れの街の進入まで。"
-  },
-  "g5.h": {
-    "en": "Meet the maker",
-    "de": "Den Macher kennenlernen",
-    "fr": "Rencontrer le créateur",
-    "it": "Conoscere l'autore",
-    "es": "Conoce al creador",
-    "pt": "Conheça o criador",
-    "ja": "作者について"
-  },
-  "g5.p": {
-    "en": "Who makes TUNL, how it is built and how it is paid for.",
-    "de": "Wer TUNL macht, wie es gebaut ist und wie es sich finanziert.",
-    "fr": "Qui fait TUNL, comment il est construit et comment il est financé.",
-    "it": "Chi fa TUNL, come è costruito e come si finanzia.",
-    "es": "Quién hace TUNL, cómo está construido y cómo se financia.",
-    "pt": "Quem faz o TUNL, como ele é construído e como se financia.",
-    "ja": "TUNLを作っているのは誰か、どう作られ、どう運営されているか。"
-  },
-  "g6.h": {
-    "en": "Get answers",
-    "de": "Antworten finden",
-    "fr": "Trouver des réponses",
-    "it": "Trovare risposte",
-    "es": "Encuentra respuestas",
-    "pt": "Encontre respostas",
-    "ja": "答えを探す"
-  },
-  "g6.p": {
-    "en": "Common questions about purchases, progress, leaderboards and privacy.",
-    "de": "Häufige Fragen zu Käufen, Fortschritt, Ranglisten und Datenschutz.",
-    "fr": "Questions fréquentes sur les achats, la progression, les classements et la confidentialité.",
-    "it": "Domande frequenti su acquisti, progressi, classifiche e privacy.",
-    "es": "Preguntas frecuentes sobre compras, progreso, clasificaciones y privacidad.",
-    "pt": "Perguntas frequentes sobre compras, progresso, rankings e privacidade.",
-    "ja": "購入、進行状況、ランキング、プライバシーについてのよくある質問。"
+    "ja": "洞窟を知ろう",
+    "ko": "동굴 알아보기",
+    "zh": "認識洞穴",
+    "ru": "Изучи пещеру",
+    "ar": "تعرّف على الكهف",
+    "tr": "Mağarayı tanı",
+    "id": "Kenali gua",
+    "pl": "Poznaj jaskinię",
+    "hi": "गुफा को जानें"
   },
   "footer.ships": {
     "en": "Ships",
@@ -826,7 +1112,15 @@
     "it": "Navi",
     "es": "Naves",
     "pt": "Naves",
-    "ja": "機体"
+    "ja": "機体",
+    "ko": "기체",
+    "zh": "飛船",
+    "ru": "Корабли",
+    "ar": "المركبات",
+    "tr": "Gemiler",
+    "id": "Kapal",
+    "pl": "Statki",
+    "hi": "जहाज़"
   },
   "footer.changelog": {
     "en": "Changelog",
@@ -835,7 +1129,15 @@
     "it": "Versioni",
     "es": "Cambios",
     "pt": "Alterações",
-    "ja": "更新履歴"
+    "ja": "更新履歴",
+    "ko": "변경 내역",
+    "zh": "更新紀錄",
+    "ru": "История изменений",
+    "ar": "سجل التغييرات",
+    "tr": "Değişiklik günlüğü",
+    "id": "Riwayat perubahan",
+    "pl": "Lista zmian",
+    "hi": "बदलाव"
   },
   "footer.about": {
     "en": "About",
@@ -844,6 +1146,150 @@
     "it": "Info",
     "es": "Acerca de",
     "pt": "Sobre",
-    "ja": "TUNLについて"
+    "ja": "TUNLについて",
+    "ko": "소개",
+    "zh": "關於",
+    "ru": "О проекте",
+    "ar": "حول",
+    "tr": "Hakkında",
+    "id": "Tentang",
+    "pl": "O projekcie",
+    "hi": "परिचय"
+  },
+  "hero.pitchTikTok": {
+    "en": "You just watched it. Now fly it.",
+    "de": "Du hast es gerade gesehen. Jetzt flieg es.",
+    "fr": "Tu viens de le voir. À toi de voler.",
+    "it": "L'hai appena visto. Ora pilotalo tu.",
+    "es": "Acabas de verlo. Ahora vuélalo tú.",
+    "pt": "Você acabou de ver. Agora voe você.",
+    "ja": "さっき見たあれを、いま飛ぼう。",
+    "ko": "방금 영상으로 보셨죠. 이제 직접 날아보세요.",
+    "zh": "你剛剛才看過。現在親自飛一次。",
+    "ru": "Ты только что это видел. Теперь пролети сам.",
+    "ar": "لقد شاهدتها للتو. الآن حلّق بها بنفسك.",
+    "tr": "Az önce izledin. Şimdi sen uç.",
+    "id": "Kamu baru saja melihatnya. Sekarang terbangkan sendiri.",
+    "pl": "Obejrzane przed chwilą. Teraz poleć sam.",
+    "hi": "आपने अभी इसे देखा। अब खुद उड़ाएँ।"
+  },
+  "nav.play": {
+    "en": "Play now",
+    "de": "Jetzt spielen",
+    "fr": "Jouer",
+    "it": "Gioca",
+    "es": "Jugar",
+    "pt": "Jogar",
+    "ja": "プレイ",
+    "ko": "지금 플레이",
+    "zh": "立即遊玩",
+    "ru": "Играть",
+    "ar": "العب الآن",
+    "tr": "Şimdi oyna",
+    "id": "Main sekarang",
+    "pl": "Graj teraz",
+    "hi": "अभी खेलें"
+  },
+  "aria.menu": {
+    "en": "Menu",
+    "de": "Menü",
+    "fr": "Menu",
+    "it": "Menu",
+    "es": "Menú",
+    "pt": "Menu",
+    "ja": "メニュー",
+    "ko": "메뉴",
+    "zh": "選單",
+    "ru": "Меню",
+    "ar": "القائمة",
+    "tr": "Menü",
+    "id": "Menu",
+    "pl": "Menu",
+    "hi": "मेनू"
+  },
+  "today.world": {
+    "en": "WORLD",
+    "de": "WELT",
+    "fr": "MONDE",
+    "it": "MONDO",
+    "es": "MUNDO",
+    "pt": "MUNDO",
+    "ja": "ワールド",
+    "ko": "월드",
+    "zh": "世界",
+    "ru": "МИР",
+    "ar": "العالم",
+    "tr": "DÜNYA",
+    "id": "DUNIA",
+    "pl": "ŚWIAT",
+    "hi": "दुनिया"
+  },
+  "today.planet": {
+    "en": "PLANET",
+    "de": "PLANET",
+    "fr": "PLANETE",
+    "it": "PIANETA",
+    "es": "PLANETA",
+    "pt": "PLANETA",
+    "ja": "惑星",
+    "ko": "행성",
+    "zh": "行星",
+    "ru": "ПЛАНЕТА",
+    "ar": "كوكب",
+    "tr": "GEZEGEN",
+    "id": "PLANET",
+    "pl": "PLANETA",
+    "hi": "ग्रह"
+  },
+  "foot.colPlay": {
+    "en": "Play TUNL",
+    "de": "TUNL spielen",
+    "fr": "Jouer à TUNL",
+    "it": "Gioca a TUNL",
+    "es": "Jugar a TUNL",
+    "pt": "Jogar TUNL",
+    "ja": "TUNLで遊ぶ",
+    "ko": "TUNL 플레이",
+    "zh": "遊玩 TUNL",
+    "ru": "Играть в TUNL",
+    "ar": "العب TUNL",
+    "tr": "TUNL oyna",
+    "id": "Main TUNL",
+    "pl": "Zagraj w TUNL",
+    "hi": "TUNL खेलें"
+  },
+  "foot.colMore": {
+    "en": "The project",
+    "de": "Das Projekt",
+    "fr": "Le projet",
+    "it": "Il progetto",
+    "es": "El proyecto",
+    "pt": "O projeto",
+    "ja": "プロジェクト",
+    "ko": "프로젝트",
+    "zh": "關於專案",
+    "ru": "Проект",
+    "ar": "المشروع",
+    "tr": "Proje",
+    "id": "Proyek",
+    "pl": "Projekt",
+    "hi": "प्रोजेक्ट"
+  },
+  "aria.main": {
+    "en": "Main",
+    "de": "Hauptmenü",
+    "fr": "Principal",
+    "it": "Principale",
+    "es": "Principal",
+    "pt": "Principal",
+    "ja": "メイン",
+    "ko": "메인",
+    "zh": "主選單",
+    "ru": "Основное",
+    "ar": "الرئيسية",
+    "tr": "Ana",
+    "id": "Utama",
+    "pl": "Główne",
+    "hi": "मुख्य"
   }
 }

@@ -1226,20 +1226,75 @@ game. (Verified per-device by `test-cave.js`; see "Cross-device fairness" for th
 things that have to stay true for it.)
 The card is the other half.
 
-The image is deliberately a picture of the **run**, not a score badge: the corridor is a
-pure function of world-x (`boundsBase`), so the whole flown tunnel is redrawn compressed
-into a strip, with the death point marked and the all-time best (`bestSX`) marked beside
-it. The corridor is sampled as a rolling average whose window scales with run length -
-drawing `boundsBase()` literally is accurate but renders a deep run as a seismograph,
-since ~60 wave periods get packed into 1100px. Short runs keep their real shape; long
-runs resolve into "the corridor narrowed this much and I got this far", which is the
-only thing readable at card size.
+The image is deliberately a picture of the **run**, not a score badge. Since the 2026-09-20 rebuild it
+carries the **debriefing's own content** (`draw.js drawDeathScreen`), because that screen
+already answers "what happened" better than the card's own story did: the run's scenes
+(one real frame per sector reached, the death frame last with a red edge, then the dashed
+next-sector slot), the score against the bar it was actually playing (all-time best, or
+the next `milestoneStep()` when the run is nowhere near it), the world rank, and every
+reward as a wrapping chip row. What deliberately does **not** cross over is the death
+screen's right column - `TODAY TOP`, the run counter, the shard payout and its daily cap
+- which is the sender's own meta and means nothing to a recipient. **Do not "simplify"
+this into a screenshot of the panel**: the panel carries the button row, is a different
+shape on every target (956x600 iOS / 520 Android / 440 web) and has no wordmark, URL or
+date, which is exactly why the card composes the same blocks into a fixed frame instead.
 
-Gated by `shareWorthy()` (new best, new daily best, or score >= 200) so the button reads
-as a reward, not a nag, and by `shareAvailable()` so it never renders without somewhere
+The corridor profile (`drawRunProfile`) stays as the second picture, a strip under the
+band, and takes the band's whole slot when no death frame exists (a revive drops it). It
+is sampled as a rolling average whose window scales with run length - drawing
+`boundsBase()` literally is accurate but renders a deep run as a seismograph, since ~60
+wave periods get packed into 1100px.
+
+**Two cuts from one renderer** (`_shareCardCanvas(portrait)`): landscape 1200x630 for the
+desktop clipboard copy, **portrait 1080x1350 for a share sheet**, which is what every
+native and mobile-web share actually feeds - chats, stories and feeds are all vertical,
+and the landscape card arrives there as a thin band whose score renders at a third of its
+size. The link-preview proportion is not lost: an unfurled *link* is drawn from the site's
+own `og:image`, never from this PNG.
+
+**Every block that yields, yields to the same rule as the death screen.** The scenes band
+is placed against the chips' real bottom edge (a run that earns a record, a ship, a
+mission and three stats wraps to a second chip row) and gives up height rather than being
+drawn through; the band picks the **fewest rows** that hold every frame it has, so a run
+that died in S0 gets two big frames instead of a half-empty strip.
+
+**The footer is never conditional.** Tagline, `flytunl.ch/play` and a QR sit under a
+hairline on every card. Until 2026-09-20 the URL was the *else* branch of the world rank,
+so every card good enough to be worth sharing carried no address at all - forwarded as an
+image (screenshot, story, any picture-only network) it was a number from a stranger with
+no way back to the game. The header carries the **date** for the same reason: the tagline
+promises "the same tunnel for everyone today" and the picture never said which day.
+
+The **QR** is a self-contained encoder in `share.js` (byte mode, ECC M, versions 1-9,
+`test-share.js` proves it by reversing the placement and checking the Reed-Solomon
+syndromes, not by looking at it). It encodes `shareRunUrl(true)` - the link **without**
+the ghost, ~80 characters, version 5 - because a ghost is up to 1500 characters and would
+push the code past what is scannable at any size a card can afford.
+
+Gated by `shareWorthy()` and by `shareAvailable()` so it never renders without somewhere
 to send the card. The card crosses the JS->native boundary as a base64 PNG (the only
 channel a canvas has), which is why the background is a flat wash rather than a radial
-gradient - that one change took the payload from ~670 KB to ~180 KB.
+gradient - that one change took the payload from ~670 KB to ~180 KB. Measured again
+2026-09-20: the portrait cut with a scenes band is ~290 KB (1080x1350 is 1.9x the
+landscape cut's pixels, and the frames are photographic). If that ever needs to come
+down, the lever is the scene thumbnails, not the wash.
+
+**The app gate is the DAY, not the career** (2026-09-20). It was `score >= 200 ||
+((newBest || newDailyBest) && score >= MIN_REAL_RUN_SCORE)`, which runs backwards to the
+pride curve: a new player's every run is a personal best, so the button is on constantly
+in week one and then goes dark once the all-time best settles above what a normal session
+reaches - against the red-team sample (median real run ~22, median daily best ~70) almost
+nothing in a real player's week clears either branch. Now a run also qualifies at
+`SHARE_NEAR_BEST` (90%) of **today's** bar (`dailyBest || best`, the same `_fireBar` rule
+ON FIRE uses), which resets every morning. The web branch is untouched: there the share
+is the funnel, so any run past the floor offers it.
+
+**The link is identical on every target** (2026-09-20). The app used to share bare
+`/play/?r=`, on the stated theory that it had no way to hand a ghost off - not true:
+`web.js _tunlParseWebParams()` is not `isWeb()`-gated, `state.js` consumes `?g`/`?s`
+there too, and the Universal/App Link wiring reloads the page with the whole query
+string. So the app was stripping three parameters all three targets understand and
+shipping a card whose tagline the link could not make good on.
 
 `SHARE_URL` in `share.js` is the only place the public marketing URL is written down in
 this repo; the store listing pages themselves live in the Schedly repo's `wwwroot/tunl`.

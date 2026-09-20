@@ -16,6 +16,24 @@
 <meta name="theme-color" content="#04040a">
 <meta name="description" content="Assets, boilerplate copy, and contact info for press and creators covering TUNL - a daily hold-to-thrust cave flyer for iOS, Android and the web.">
 <link rel="canonical" href="https://flytunl.ch/press/">
+<!-- site-chrome:alt -->
+<link rel="alternate" hreflang="en" href="https://flytunl.ch/press/">
+<link rel="alternate" hreflang="de" href="https://flytunl.ch/de/press/">
+<link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/press/">
+<link rel="alternate" hreflang="it" href="https://flytunl.ch/it/press/">
+<link rel="alternate" hreflang="es" href="https://flytunl.ch/es/press/">
+<link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/press/">
+<link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/press/">
+<link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/press/">
+<link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/press/">
+<link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/press/">
+<link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/press/">
+<link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/press/">
+<link rel="alternate" hreflang="id" href="https://flytunl.ch/id/press/">
+<link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/press/">
+<link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/press/">
+<link rel="alternate" hreflang="x-default" href="https://flytunl.ch/press/">
+<!-- /site-chrome:alt -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="TUNL - Press Kit">
 <meta property="og:description" content="Assets, boilerplate copy, and contact info for press and creators covering TUNL.">
@@ -23,15 +41,22 @@
 <meta property="og:url" content="https://flytunl.ch/press/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://flytunl.ch/feature-graphic-1024x500.png">
+<!-- site-chrome:head -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="/day.js"></script>
+<!-- /site-chrome:head -->
+<link rel="stylesheet" href="/site.css">
 <style>
   * { box-sizing:border-box; }
   body {
     background:#04040a;
     color:#ddd;
-    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-family:var(--tunl-ui);
     line-height:1.6;
     margin:0;
-    padding:40px 20px 80px;
+    padding: 0 20px 80px;
   }
   main { max-width:760px; margin:0 auto; }
   .brand {
@@ -42,14 +67,14 @@
   }
   .brand img { height:28px; width:auto; }
   h1 {
-    color:#ffe040;
+    color:var(--sc-accent);
     font-size:28px;
     letter-spacing:2px;
     margin-bottom:8px;
   }
   .dek { color:#9a9aab; font-size:15px; margin-bottom:24px; }
   h2 {
-    color:#4dd9ff;
+    color:var(--sc-accent);
     font-size:18px;
     margin-top:40px;
     margin-bottom:10px;
@@ -57,7 +82,7 @@
   p, li { color:#ccc; font-size:15px; }
   ul { padding-left:20px; }
   li { margin-bottom:6px; }
-  a { color:#4dd9ff; }
+  a { color:var(--sc-accent); }
   strong { color:#fff; }
   .card {
     background:#0d0d16;
@@ -82,7 +107,7 @@
   }
   .quote-block {
     background:#0d0d16;
-    border-left:3px solid #4dd9ff;
+    border-left:3px solid var(--sc-accent);
     border-radius:6px;
     padding:16px 20px;
     margin-top:14px;
@@ -138,10 +163,34 @@
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "7783839e84374212b7d76f25e1fb8e87"}'></script>
 </head>
 <body>
+  <!-- site-chrome:nav -->
+  <header class="sitenav">
+    <a class="sn-brand" href="/"><img src="/wordmark.svg" alt="TUNL"></a>
+    <nav class="sn-links" aria-label="Main">
+      <a href="/how-to-play/">How to play</a>
+      <a href="/ships/">Ships</a>
+      <a href="/devlog/">Devlog</a>
+      <a href="/changelog/">Changelog</a>
+    </nav>
+    <span class="sn-gap"></span>
+    <a class="sn-ver" href="/changelog/">16.0</a>
+    <a class="sn-cta" href="/play/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>Play now</a>
+    <details class="sn-more">
+      <summary aria-label="Menu">&#9776;</summary>
+      <div class="sn-sheet">
+        <a href="/how-to-play/">How to play</a>
+        <a href="/ships/">Ships</a>
+        <a href="/devlog/">Devlog</a>
+        <a href="/changelog/">Changelog</a>
+        <a href="/about/">About</a>
+        <a href="/support/">Support</a>
+        <a href="/press/" aria-current="page">Press</a>
+        <a href="/privacy/">Privacy Policy</a>
+      </div>
+    </details>
+  </header>
+  <!-- /site-chrome:nav -->
 <main>
-  <a class="brand" href="/">
-    <img src="/wordmark.svg" alt="TUNL">
-  </a>
   <h1>TUNL - Press Kit</h1>
   <p class="dek">Everything to cover TUNL: boilerplate copy, screenshots, video, logos, and how to reach the developer.</p>
 
@@ -150,7 +199,7 @@
       <dt>Developer</dt><dd>Theodoracatos (solo indie developer)</dd>
       <dt>Platforms</dt><dd>iOS, Android, and the open web at <a href="https://flytunl.ch/play/">flytunl.ch/play</a></dd>
       <dt>Genre</dt><dd>Arcade / daily-challenge endless flyer</dd>
-      <dt>Current version</dt><dd>15.1 (September 2026)</dd>
+      <dt>Current version</dt><dd>16.0 (September 2026)</dd>
       <dt>Languages</dt><dd>15, including Spanish, Arabic, Russian, Chinese, French, Korean, Portuguese, Hindi and Polish</dd>
       <dt>Orientation</dt><dd>Landscape</dd>
       <dt>Price</dt><dd>Free. Optional one-time purchases: Remove Ads and Unlock All Ships. Every ship can also be earned by playing, and ships are trade-offs rather than upgrades.</dd>
@@ -258,14 +307,36 @@
     <a href="/feature-graphic-1024x500.png">Download PNG</a>
   </div>
 
-  <footer>
-    TUNL &middot; <a href="/">Home</a> &middot; <a href="/play/">Play</a> &middot;
-    <a href="/how-to-play/">How to play</a> &middot; <a href="/ships/">Ships</a> &middot;
-    <a href="/devlog/">Devlog</a> &middot; <a href="/changelog/">Changelog</a> &middot;
-    <a href="/about/">About</a> &middot; <a href="/support/">Support</a> &middot;
-    <a href="/privacy/">Privacy Policy</a> &middot; <a href="/press/">Press</a><br>
-    &copy; 2026 Theodoracatos. All rights reserved.
+  <!-- site-chrome:foot -->
+  <footer class="sitefoot">
+    <div class="sf-inner">
+      <div class="sf-cols">
+        <div class="sf-col">
+          <h4>Play TUNL</h4>
+          <a href="/play/">Play in your browser</a>
+          <a href="https://apps.apple.com/us/app/tunl-cave-flyer/id6789721765" target="_blank" rel="noopener">App Store</a>
+          <a href="https://play.google.com/store/apps/details?id=com.theodoracatos.tunl" target="_blank" rel="noopener">Google Play</a>
+        </div>
+        <div class="sf-col">
+          <h4>Learn the cave</h4>
+          <a href="/how-to-play/">How to play</a>
+          <a href="/ships/">Ships</a>
+          <a href="/devlog/">Devlog</a>
+          <a href="/changelog/">Changelog</a>
+        </div>
+        <div class="sf-col">
+          <h4>The project</h4>
+          <a href="/about/">About</a>
+          <a href="/support/">Support</a>
+          <a href="/press/">Press</a>
+          <a href="/privacy/">Privacy Policy</a>
+        </div>
+      </div>
+      <p class="sf-legal">&copy; 2026 Theodoracatos. All rights reserved.<br><span class="langsw"><label for="langsel">Language:</label> <select id="langsel" aria-label="Language"><option value="/press/" data-home="/" selected>English</option><option value="/de/press/" data-home="/de/">Deutsch</option><option value="/fr/press/" data-home="/fr/">Français</option><option value="/it/press/" data-home="/it/">Italiano</option><option value="/es/press/" data-home="/es/">Español</option><option value="/pt/press/" data-home="/pt/">Português</option><option value="/ja/press/" data-home="/ja/">日本語</option><option value="/ko/press/" data-home="/ko/">한국어</option><option value="/zh/press/" data-home="/zh/">繁體中文</option><option value="/ru/press/" data-home="/ru/">Русский</option><option value="/ar/press/" data-home="/ar/">العربية</option><option value="/tr/press/" data-home="/tr/">Türkçe</option><option value="/id/press/" data-home="/id/">Bahasa Indonesia</option><option value="/pl/press/" data-home="/pl/">Polski</option><option value="/hi/press/" data-home="/hi/">हिन्दी</option></select></span></p>
+    </div>
   </footer>
+  <script>(function(){var s=document.getElementById('langsel');if(!s)return;s.addEventListener('change',function(){try{localStorage.setItem('tunl_site_lang',s.options[s.selectedIndex].getAttribute('data-home'));}catch(e){}location.href=s.value;});})();</script>
+  <!-- /site-chrome:foot -->
 </main>
 </body>
 </html>

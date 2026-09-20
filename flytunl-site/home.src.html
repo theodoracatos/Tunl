@@ -17,14 +17,16 @@
 <meta name="theme-color" content="#04040a">
 <meta property="og:title" content="TUNL - Eternal Labyrinth">
 <meta property="og:description" content="A hold-to-thrust cave flyer for iOS and Android. Hold to climb, release to fall, and see how far you can push into the dark.">
-<meta property="og:image" content="https://flytunl.ch/feature-graphic-1024x500.png">
+<meta property="og:image" content="https://flytunl.ch/media-15.0/hero-15.0-play.jpg">
 <meta property="og:url" content="https://flytunl.ch/">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://flytunl.ch/feature-graphic-1024x500.png">
+<meta name="twitter:image" content="https://flytunl.ch/media-15.0/hero-15.0-play.jpg">
+<script src="/day.js"></script>
+<link rel="stylesheet" href="/site.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg:#04040a;
@@ -35,24 +37,41 @@
     --text:#d7d7e0;
     --text-dim:#9a9aab;
     --text-faint:#6a6a78;
-    --cyan:#4dd9ff;
+    /* ONE accent, and it is today's rock. /day.js sets --day-c from the UTC
+       date before first paint, exactly as the game's title screen, world and
+       debriefing all take the day's wallBase; the literal here is the fallback
+       for a browser that never runs it. So --cyan is no longer "cyan" - it is
+       "the accent", and it is a different colour every day of the week. */
+    --cyan:var(--day-c, #4dd9ff);
     --violet:#9d7bff;
     --gold:#ffe040;
-    --mono:"DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-    --display:"Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    --sans:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    /* The game's own faces (src/fonts.js): Chakra Petch for UI, JetBrains Mono
+       for anything that counts or lines up. Same pairing, so the site and the
+       game read as one product instead of two. */
+    --mono:var(--tunl-mono);
+    --display:var(--tunl-ui);
+    --sans:var(--tunl-ui);
   }
 
   * { box-sizing:border-box; }
 
   html { scroll-behavior:smooth; }
 
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior:auto; }
+    body { transition:none; }          /* the depth STEPS stay; only the ease goes */
+  }
+
   body {
-    background:var(--bg);
+    /* --depth-bg is stepped down by the "descent" script as you scroll; the
+       token is the resting value for a browser that never runs it. */
+    background-color:var(--depth-bg, var(--bg));
     background-image:
-      radial-gradient(900px 520px at 50% -120px, rgba(77,217,255,0.14), transparent 70%),
-      radial-gradient(700px 480px at 85% 4%, rgba(157,123,255,0.10), transparent 70%);
+      radial-gradient(900px 520px at 50% -120px, rgba(var(--day-rgb, 77,217,255), 0.13), transparent 70%),
+      radial-gradient(700px 480px at 85% 4%, rgba(157,123,255,0.09), transparent 70%);
     background-repeat:no-repeat;
+    background-attachment:fixed, fixed;
+    transition:background-color .5s ease;
     color:var(--text);
     font-family:var(--sans);
     line-height:1.65;
@@ -61,7 +80,13 @@
     -webkit-font-smoothing:antialiased;
   }
 
-  main { max-width:900px; margin:0 auto; }
+  /* Homepage column: wider than the 940px reading pages (site.css), because
+     this page is tiles and screenshots rather than long prose. Text blocks
+     keep their own ch-based limits, so line length does not grow with it. */
+  :root { --home-w:1120px; }
+  main { max-width:var(--home-w); margin:0 auto; }
+  .sitenav { padding-inline:max(18px, calc((100% - var(--home-w)) / 2)); }
+  .sitefoot .sf-inner { max-width:var(--home-w); }
 
   a { color:var(--cyan); text-decoration:none; }
   a:hover { text-decoration:underline; }
@@ -76,55 +101,80 @@
     margin:0 0 14px;
   }
 
-  /* ---------- Hero ---------- */
-  .hero {
+  /* The bar's bottom margin gives the guide pages breathing room; here the
+     hero butts straight against it, or the body colour shows as a seam. */
+  .sitenav { margin-bottom:0; }
+
+  /* ---------- Hero ----------
+     Full-bleed: the gameplay loop IS the hero, the words sit on top of it.
+     Sized by its content, never 100vh, so the CTA stays above the fold on a
+     390x844 phone with the browser chrome showing - that is the state almost
+     all TikTok traffic arrives in. */
+  .hero { margin:0 -20px 0; }
+  .hero-stage {
+    position:relative;
+    overflow:hidden;
+    padding:46px 20px 48px;
     text-align:center;
-    padding:64px 0 8px;
+    /* No colour of its own: the body's day-tinted well shows through, so the
+       top of the page and the "Hold. Release. Survive." section below it are
+       one continuous background instead of a near-black slab on top. */
+    background:transparent;
   }
+  /* A gameplay loop used to run behind this, and it was removed: the words sit
+     on top of it, and a HUD full of live numbers competes with them. The one
+     moving thing on the page is now the corridor strip a section below, where
+     nothing is written over it. What is left here is a soft well of the day's
+     own rock - light at the top, void at the bottom, the same direction the
+     descent takes as you scroll. */
+  .hero-scrim {
+    position:absolute; inset:0; z-index:1;
+    background:
+      radial-gradient(110% 80% at 50% 0%, rgba(var(--day-rgb, 77,217,255), 0.10), transparent 62%);
+  }
+  .hero-inner { position:relative; z-index:2; max-width:600px; margin:0 auto; }
   .hero img.wordmark {
-    width:300px;
-    max-width:78%;
+    width:248px;
+    max-width:70%;
     height:auto;
-    filter:drop-shadow(0 0 44px rgba(77,217,255,0.28));
-    margin-bottom:20px;
+    filter:drop-shadow(0 0 40px rgba(var(--day-rgb, 77,217,255), 0.42));
+    margin-bottom:12px;
   }
-  .hero .eyebrow { margin-bottom:22px; }
+  .hero .eyebrow { margin-bottom:16px; }
   .pitch {
     color:var(--text);
-    font-size:17px;
-    max-width:540px;
-    margin:0 auto 26px;
+    font-size:16.5px;
+    max-width:440px;
+    margin:0 auto 22px;
+    text-wrap:balance;
   }
 
-  .whatsnew {
-    position:relative;
-    text-align:left;
-    color:var(--text-dim);
-    font-size:14px;
-    max-width:560px;
-    margin:0 auto 30px;
-    background:linear-gradient(180deg, var(--panel-2), var(--panel));
-    border:1px solid var(--line);
-    border-radius:14px;
-    padding:16px 18px 16px 22px;
-    overflow:hidden;
-  }
-  .whatsnew::before {
-    content:"";
-    position:absolute;
-    left:0; top:0; bottom:0;
-    width:3px;
-    background:linear-gradient(180deg, var(--cyan), var(--violet));
-  }
-  .whatsnew .tag {
-    display:block;
+  /* ---------- Today's cave ----------
+     The one thing no other landing page can copy: the cave is a pure function
+     of the UTC date, so the site can name today's world before you press play.
+     Filled by the script at the end of this file; stays hidden without JS. */
+  .today {
+    display:inline-flex; align-items:center; justify-content:center;
+    gap:8px; flex-wrap:wrap;
     font-family:var(--mono);
-    font-size:11px;
-    letter-spacing:2px;
-    text-transform:uppercase;
-    color:var(--gold);
-    margin-bottom:4px;
+    font-size:11px; letter-spacing:.13em; text-transform:uppercase;
+    color:var(--text-faint);
+    background:rgba(9,9,17,.62);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:6px 15px;
+    margin-bottom:20px;
+    text-decoration:none;
   }
+  .today[hidden] { display:none; }
+  .today:hover { border-color:var(--cyan); text-decoration:none; }
+  .today .dot {
+    width:7px; height:7px; border-radius:50%; flex:none;
+    background:var(--cyan);
+    box-shadow:0 0 10px var(--cyan);
+  }
+  .today b { color:var(--cyan); font-weight:500; }
+  .today .sep { color:#2a2a3c; }
 
   /* ---------- Store badges ---------- */
   .badges {
@@ -149,7 +199,7 @@
   .badge:hover {
     border-color:var(--cyan);
     transform:translateY(-2px);
-    box-shadow:0 10px 30px -12px rgba(77,217,255,0.4);
+    box-shadow:0 10px 30px -12px rgba(var(--day-rgb, 77,217,255), 0.4);
     text-decoration:none;
   }
   .badge svg { width:19px; height:19px; fill:currentColor; color:#fff; flex:none; }
@@ -167,19 +217,19 @@
     font-weight:600;
     font-size:16px;
     letter-spacing:.3px;
-    color:#04040a;
-    background:linear-gradient(180deg, #82e7ff, var(--cyan));
-    border:1px solid #a9eeff;
-    box-shadow:0 12px 44px -10px rgba(77,217,255,0.5);
+    color:#05050c;
+    background:linear-gradient(180deg, color-mix(in srgb, var(--cyan) 72%, #fff), var(--cyan));
+    border:1px solid color-mix(in srgb, var(--cyan) 55%, #fff);
+    box-shadow:0 12px 44px -10px rgba(var(--day-rgb, 77,217,255), 0.5);
     transition:transform .18s, box-shadow .18s;
   }
   .play-cta:hover {
     transform:translateY(-2px);
-    box-shadow:0 18px 56px -10px rgba(77,217,255,0.72);
+    box-shadow:0 18px 56px -10px rgba(var(--day-rgb, 77,217,255), 0.72);
     text-decoration:none;
-    color:#04040a;
+    color:#05050c;
   }
-  .play-cta svg { width:20px; height:20px; fill:#04040a; flex:none; }
+  .play-cta svg { width:20px; height:20px; fill:#05050c; flex:none; }
   .badges-label {
     color:var(--text-faint);
     font-size:11.5px;
@@ -188,168 +238,264 @@
     margin:0 0 12px;
   }
 
-  /* ---------- Video ---------- */
-  .hero-frame {
-    position:relative;
-    margin-top:40px;
-    border-radius:18px;
-    padding:1px;
-    background:linear-gradient(150deg, rgba(77,217,255,0.55), rgba(157,123,255,0.35) 45%, rgba(30,30,45,0.6));
-    box-shadow:0 40px 90px -40px rgba(77,217,255,0.35);
-  }
-  .hero-shot {
-    width:100%;
-    border-radius:17px;
-    display:block;
-    background:#000;
-  }
-
   /* ---------- Section headings ---------- */
-  .section { margin-top:76px; }
-  .section-head { text-align:center; margin-bottom:32px; }
+  .section { margin-top:78px; }
+  .section-head { text-align:center; margin-bottom:34px; }
   .section-head h2 {
     font-family:var(--display);
     color:#fff;
-    font-size:26px;
+    font-size:clamp(23px,3.2vw,29px);
     font-weight:600;
     letter-spacing:-0.01em;
     margin:0 auto;
     max-width:640px;
   }
+  /* The divider is a slice of corridor, drawn from the game's own wave
+     formula by the script at the end of this file. The gradient bar below is
+     what a browser without JS keeps. */
   .section-head .rule {
     width:52px;
     height:2px;
     margin:16px auto 0;
-    background:linear-gradient(90deg, var(--cyan), var(--violet));
+    background:linear-gradient(90deg, transparent, var(--cyan), transparent);
     border-radius:2px;
   }
-
-  /* ---------- Controls ---------- */
-  .controls {
-    display:grid;
-    grid-template-columns:repeat(3, 1fr);
-    gap:14px;
+  .section-head .rule.drawn {
+    width:150px; height:22px; background:none; border-radius:0;
   }
-  .control {
-    background:linear-gradient(180deg, var(--panel-2), var(--panel));
-    border:1px solid var(--line-soft);
-    border-radius:13px;
-    padding:20px 16px;
-    text-align:center;
-  }
-  .control .k {
-    display:block;
-    font-family:var(--mono);
-    color:var(--gold);
-    font-size:15px;
-    letter-spacing:2px;
-    margin-bottom:6px;
-  }
-  .control span.d { color:var(--text-dim); font-size:14px; }
-
-  /* ---------- Features ---------- */
-  .features {
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
-    gap:16px;
-  }
-  .feature {
-    position:relative;
-    background:linear-gradient(180deg, var(--panel-2), var(--panel));
-    border:1px solid var(--line-soft);
-    border-radius:14px;
-    padding:20px;
-    transition:border-color .18s, transform .18s, box-shadow .18s;
-  }
-  .feature::before {
-    content:"";
-    position:absolute;
-    left:20px; right:20px; top:0;
-    height:1px;
-    background:linear-gradient(90deg, transparent, rgba(77,217,255,0.5), transparent);
-    opacity:0;
-    transition:opacity .18s;
-  }
-  .feature:hover {
-    border-color:#33334a;
-    transform:translateY(-3px);
-    box-shadow:0 24px 50px -30px rgba(0,0,0,0.9);
-  }
-  .feature:hover::before { opacity:1; }
-  .feature .icon {
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:38px; height:38px;
-    font-size:19px;
-    border-radius:10px;
-    background:rgba(77,217,255,0.09);
-    border:1px solid rgba(77,217,255,0.18);
-    margin-bottom:12px;
-  }
-  .feature h3 {
-    font-family:var(--display);
-    color:#fff;
-    font-size:15.5px;
-    font-weight:600;
-    margin:0 0 6px;
-  }
-  .feature p { color:var(--text-dim); font-size:13.5px; margin:0; }
-
-  /* ---------- Ships ---------- */
+  .section-head .rule svg { display:block; width:100%; height:100%; overflow:visible; }
   .section-sub {
     color:var(--text-dim);
     font-size:14px;
     max-width:520px;
     margin:14px auto 0;
   }
-  .ships {
-    display:grid;
-    grid-template-columns:repeat(4, 1fr);
-    gap:14px;
-  }
-  .ship-card {
-    position:relative;
-    background:linear-gradient(180deg, var(--panel-2), var(--panel));
+
+  /* ---------- The one control, shown instead of listed ----------
+     The canvas flies the real thing: net-up 1800 px/s^2 while holding,
+     net-down 1300 while not, the same ratio the game is tuned at, against a
+     corridor drawn from the same two-sine formula. It is the fastest way to
+     answer "what do I actually do" - and the box below it lights up with the
+     phase, so the words and the motion teach each other. */
+  .feelbox {
     border:1px solid var(--line-soft);
-    border-radius:14px;
-    padding:20px 14px;
-    text-align:center;
-    transition:border-color .18s, transform .18s, box-shadow .18s;
+    border-radius:16px;
+    background:linear-gradient(180deg, #0b0b14, #08080f);
+    overflow:hidden;
   }
-  .ship-card:hover {
-    border-color:var(--ship-color, var(--cyan));
-    transform:translateY(-3px);
-    box-shadow:0 22px 44px -28px var(--ship-color, var(--cyan));
-  }
-  .ship-chip {
+  #feelCanvas {
     display:block;
-    width:46px; height:29px;
-    margin:0 auto 12px;
+    width:100%;
+    height:170px;
+    background:transparent;
   }
-  .ship-chip svg {
-    width:100%; height:100%;
-    filter:drop-shadow(0 0 7px var(--ship-color));
+  .controls {
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    border-top:1px solid var(--line-soft);
   }
-  .ship-chip path { fill:var(--ship-color); }
-  .ship-card h3 {
-    font-family:var(--display);
-    color:#fff;
-    font-size:14px;
-    font-weight:600;
-    letter-spacing:.4px;
-    margin:0 0 6px;
+  .control {
+    padding:16px 14px;
+    text-align:center;
+    border-inline-start:1px solid var(--line-soft);
+    transition:background-color .25s, box-shadow .25s;
   }
-  .ship-tag {
+  .control:first-child { border-inline-start:0; }
+  .control .k {
     display:block;
     font-family:var(--mono);
-    font-size:9.5px;
-    letter-spacing:1.5px;
-    text-transform:uppercase;
     color:var(--text-faint);
+    font-size:13px;
+    font-weight:500;
+    letter-spacing:2px;
+    margin-bottom:5px;
+    transition:color .25s, text-shadow .25s;
+  }
+  .control span.d { color:var(--text-dim); font-size:13.5px; }
+  .control.lit { background:rgba(var(--day-rgb, 77,217,255), 0.055); }
+  .control.lit .k { color:var(--cyan); text-shadow:0 0 16px var(--cyan); }
+  @media (max-width:640px) {
+    .controls { grid-template-columns:1fr; }
+    .control { border-inline-start:0; border-top:1px solid var(--line-soft); }
+    .control:first-child { border-top:0; }
+    #feelCanvas { height:140px; }
+  }
+
+  /* ---------- Chapters ----------
+     Four things worth a picture, instead of fourteen cards that were all the
+     same size and therefore all equally unimportant. Each band ends in a link
+     into the page that says more, so the homepage feeds the site rather than
+     restating it. */
+  .chapters { display:flex; flex-direction:column; gap:14px; }
+  .chapter {
+    display:grid;
+    grid-template-columns:minmax(0,40%) minmax(0,1fr);
+    gap:30px;
+    align-items:center;
+    padding:24px 26px;
+    border-radius:18px;
+    background:linear-gradient(180deg, rgba(18,18,28,0.72), rgba(9,9,15,0.72));
+    border:1px solid var(--line-soft);
+    position:relative;
+    overflow:hidden;
+  }
+  /* the one lit edge, in the day's colour - no full frame */
+  .chapter::before {
+    content:"";
+    position:absolute; left:26px; right:26px; top:0; height:1px;
+    background:linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity:.5;
+  }
+  .chapter:nth-child(even) { grid-template-columns:minmax(0,1fr) minmax(0,40%); }
+  .chapter:nth-child(even) .ch-shot { order:2; }
+  .ch-shot {
+    margin:0;
+    border-radius:12px;
+    overflow:hidden;
+    border:1px solid #23233a;
+    background:#000;
+    line-height:0;
+  }
+  .ch-shot img { width:100%; height:auto; display:block; }
+  .ch-text { min-width:0; }
+  .ch-no {
+    display:inline-block;
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.18em;
+    color:var(--cyan);
     margin-bottom:8px;
   }
-  .ship-card p { color:var(--text-dim); font-size:12.5px; margin:0; line-height:1.5; }
+  .ch-text h3 {
+    font-family:var(--display);
+    color:#fff;
+    font-size:clamp(18px,2.4vw,21px);
+    font-weight:600;
+    margin:0 0 9px;
+    letter-spacing:-0.005em;
+    text-wrap:balance;
+  }
+  .ch-text p { color:var(--text-dim); font-size:14.5px; margin:0 0 14px; max-width:58ch; }
+  .ch-link {
+    display:inline-flex; align-items:center; gap:7px;
+    font-family:var(--mono);
+    font-size:11.5px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--cyan); text-decoration:none;
+    border-bottom:1px solid transparent;
+    padding-bottom:2px;
+  }
+  .ch-link:hover { border-bottom-color:var(--cyan); text-decoration:none; }
+  @media (max-width:700px) {
+    .chapter,
+    .chapter:nth-child(even) { grid-template-columns:1fr; gap:18px; padding:20px; }
+    .chapter:nth-child(even) .ch-shot { order:0; }
+    .ch-shot { max-width:none; }
+    .chapter::before { left:20px; right:20px; }
+  }
+
+  /* ---------- Everything else, one line each ----------
+     These used to be ten more paragraph cards. As headings alone they are a
+     contents page: enough to know it is in there, short enough to read. */
+  .alsolist {
+    list-style:none;
+    margin:0;
+    padding:0;
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0,1fr));
+    gap:1px;
+    background:var(--line-soft);
+    border:1px solid var(--line-soft);
+    border-radius:14px;
+    overflow:hidden;
+  }
+  .alsolist li {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:14px 18px;
+    background:#0a0a12;
+    color:var(--text);
+    font-size:14.5px;
+  }
+  .alsolist .icon { font-size:16px; flex:none; filter:saturate(.9); }
+  @media (max-width:620px) { .alsolist { grid-template-columns:1fr; } }
+
+  /* ---------- Ships: one at a time ----------
+     Eight identical cards told you eight things at once and none of them
+     landed. A chip row plus one portrait tells you one thing, in that ship's
+     own colour, and invites the next click. Without JS every panel simply
+     renders, so nothing is hidden behind a script. */
+  .shipsel { --ship-color:#e8eeff; }
+  .ship-chips {
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:8px;
+    margin-bottom:22px;
+  }
+  .ship-chip {
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:#0b0b13;
+    border:1px solid var(--line-soft);
+    border-radius:999px;
+    padding:7px 14px 7px 11px;
+    cursor:pointer;
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.11em;
+    color:var(--text-faint);
+    transition:border-color .16s, color .16s, background-color .16s;
+  }
+  .ship-chip svg { width:22px; height:14px; flex:none; }
+  .ship-chip path { fill:var(--ship-color); }
+  .ship-chip:hover { color:var(--text); border-color:#31314a; }
+  .ship-chip[aria-selected="true"] {
+    color:#fff;
+    border-color:var(--ship-color);
+    background:color-mix(in srgb, var(--ship-color) 10%, #0b0b13);
+  }
+  .ship-stage { position:relative; }
+  .ship-panel[hidden] { display:none; }
+  .ship-panel {
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr);
+    gap:28px;
+    align-items:center;
+    padding:26px 30px;
+    border-radius:18px;
+    border:1px solid var(--line-soft);
+    background:
+      radial-gradient(70% 140% at 16% 50%, color-mix(in srgb, var(--ship-color) 11%, transparent), transparent 70%),
+      linear-gradient(180deg, #0e0e18, #08080f);
+  }
+  .sp-art { width:140px; flex:none; }
+  .sp-art svg { width:100%; height:auto; display:block; filter:drop-shadow(0 0 18px var(--ship-color)); }
+  .sp-art path { fill:var(--ship-color); }
+  .sp-text h3 {
+    font-family:var(--display);
+    color:#fff;
+    font-size:26px;
+    font-weight:700;
+    letter-spacing:.06em;
+    margin:0 0 4px;
+  }
+  .ship-tag {
+    display:inline-block;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--ship-color);
+    margin-bottom:8px;
+  }
+  .sp-text p { color:var(--text-dim); font-size:15px; margin:0; max-width:46ch; }
+  @media (max-width:640px) {
+    .ship-panel { grid-template-columns:1fr; justify-items:center; text-align:center; padding:24px 20px; gap:16px; }
+    .sp-art { width:120px; }
+    .sp-text p { margin:0 auto; }
+  }
 
   /* ---------- Screenshots ---------- */
   .gallery {
@@ -372,6 +518,39 @@
     display:block;
     cursor:zoom-in;
   }
+  /* Narrow: a snapped strip you swipe, not six thumbnails squeezed to 40px. */
+  @media (max-width:760px) {
+    .gallery {
+      display:flex;
+      gap:12px;
+      overflow-x:auto;
+      scroll-snap-type:x mandatory;
+      -webkit-overflow-scrolling:touch;
+      padding-bottom:8px;
+      margin:0 -20px;
+      padding-inline:20px;
+      scrollbar-width:thin;
+    }
+    .gallery figure { flex:0 0 63%; scroll-snap-align:center; }
+  }
+
+  /* ---------- Closing call ----------
+     Whoever read this far should not have to scroll back up to press play. */
+  .closer {
+    margin-top:78px;
+    padding:44px 20px;
+    text-align:center;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    border-radius:20px;
+    border:1px solid var(--line-soft);
+    background:
+      radial-gradient(90% 120% at 50% 120%, rgba(var(--day-rgb, 77,217,255), 0.12), transparent 66%),
+      linear-gradient(180deg, #0b0b14, #07070e);
+  }
+  .closer .today { margin-bottom:22px; }
+  .closer .play-cta { margin:0; }
 
   .lightbox {
     display:none;
@@ -427,7 +606,7 @@
   .music-toggle.playing {
     border-color:var(--cyan);
     color:var(--cyan);
-    box-shadow:0 0 18px rgba(77,217,255,0.4);
+    box-shadow:0 0 18px rgba(var(--day-rgb, 77,217,255), 0.4);
   }
 
   footer {
@@ -439,8 +618,6 @@
     text-align:center;
   }
   footer a { color:var(--text-dim); }
-  .feature h3 a { color:inherit; text-decoration:none; }
-  .feature h3 a:hover { text-decoration:underline; }
   footer p { color:var(--text-faint); font-size:12px; margin:8px 0 0; }
 
   @media (max-width:720px) {
@@ -464,55 +641,139 @@
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "7783839e84374212b7d76f25e1fb8e87"}'></script>
 </head>
 <body>
-<main>
+  <!-- site-chrome:nav -->
+  <header class="sitenav">
+    <a class="sn-brand" href="/"><img src="/wordmark.svg" alt="TUNL"></a>
+    <nav class="sn-links" aria-label="Main">
+      <a href="/how-to-play/">How to play</a>
+      <a href="/ships/">Ships</a>
+      <a href="/devlog/">Devlog</a>
+      <a href="/changelog/">Changelog</a>
+    </nav>
+    <span class="sn-gap"></span>
+    <a class="sn-ver" href="/changelog/">15.1</a>
+    <a class="sn-cta" href="/play/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>Play now</a>
+    <details class="sn-more">
+      <summary aria-label="Menu">&#9776;</summary>
+      <div class="sn-sheet">
+        <a href="/how-to-play/">How to play</a>
+        <a href="/ships/">Ships</a>
+        <a href="/devlog/">Devlog</a>
+        <a href="/changelog/">Changelog</a>
+        <a href="/about/">About</a>
+        <a href="/support/">Support</a>
+        <a href="/press/">Press</a>
+        <a href="/privacy/">Privacy Policy</a>
+      </div>
+    </details>
+  </header>
+  <!-- /site-chrome:nav -->
 
   <section class="hero">
-    <img class="wordmark" src="/wordmark.svg" alt="TUNL">
-    <p class="eyebrow">Eternal Labyrinth</p>
-    <p class="pitch">A hold-to-thrust cave flyer. Hold to climb, release to fall, and see how far you can push into the dark before the tunnel closes in.</p>
+    <div class="hero-stage">
+      <div class="hero-scrim"></div>
 
-    <p class="whatsnew">
-      <span class="tag">New in 15.1</span>
-      Every run now opens over a city at dusk and flies into the tunnel mouth. From there the walls are real, but two hull scratches forgive your first mistakes. The cave starts darker, and a moon hangs over the skyline.
-    </p>
+      <div class="hero-inner">
+        <a class="today" href="/play/" hidden>
+          <span class="dot"></span>
+          <span>WORLD <b class="t-no"></b></span>
+          <span class="sep">&middot;</span>
+          <b class="t-name"></b>
+          <span class="sep">&middot;</span>
+          <span>PLANET <b class="t-planet"></b></span>
+        </a>
 
-    <a class="play-cta" href="/play/">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-      Play in your browser
-    </a>
-    <p class="badges-label">or get the app</p>
+        <img class="wordmark" src="/wordmark.svg" alt="TUNL">
+        <p class="eyebrow">Eternal Labyrinth</p>
+        <p class="pitch" id="heroPitch"
+           data-alt="You just watched it. Now fly it.">Hold to climb, release to fall. See how far you get before the tunnel closes in.</p>
 
-    <div class="badges">
-      <a class="badge" href="https://apps.apple.com/us/app/tunl-cave-flyer/id6789721765" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.47 2.28-1.23 3.1-.82.9-2.17 1.6-3.28 1.5-.14-1.1.44-2.28 1.16-3.02.83-.86 2.27-1.5 3.35-1.58zM20.5 17.02c-.56 1.3-.83 1.88-1.55 3.02-1.01 1.6-2.44 3.6-4.2 3.61-1.57.02-1.97-1.02-4.1-1.01-2.13.01-2.57 1.03-4.14 1.02-1.77-.02-3.12-1.82-4.13-3.42C-.02 17.4-.3 12.02 1.68 9.06c1-1.5 2.6-2.38 4.1-2.38 1.53 0 2.5 1.03 3.77 1.03 1.23 0 1.97-1.03 3.74-1.03 1.34 0 2.76.73 3.77 2-3.31 1.82-2.77 6.55.44 7.85z"/></svg>
-        <span class="platform">App Store</span>
-      </a>
-      <a class="badge" href="https://play.google.com/store/apps/details?id=com.theodoracatos.tunl" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.6 2.1c-.3.28-.47.7-.47 1.25v17.3c0 .55.17.97.47 1.25l.1.08 9.7-9.7v-.23L3.7 2.02l-.1.08zM17.1 15.7l-3.23-3.23v-.23l3.24-3.24.07.05 3.83 2.18c1.1.62 1.1 1.64 0 2.27l-3.83 2.17-.08.05zM17.02 15.65l-3.3-3.3-9.75 9.75c.36.38.96.43 1.63.06l11.42-6.5zM17.02 8.75L5.6 2.26c-.67-.38-1.27-.33-1.63.05l9.75 9.75 3.3-3.3z"/></svg>
-        <span class="platform">Google Play</span>
-      </a>
-    </div>
+        <a class="play-cta" href="/play/">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+          Play in your browser
+        </a>
+        <p class="badges-label">or get the app</p>
 
-    <div class="hero-frame">
-      <video class="hero-shot" autoplay muted loop playsinline
-             poster="/media-15.0/hero-15.0-poster.jpg"
-             aria-label="TUNL gameplay demo">
-        <source src="/media-15.0/hero-15.0.webm" type="video/webm">
-        <source src="/media-15.0/hero-15.0.mp4" type="video/mp4">
-      </video>
+        <div class="badges">
+          <a class="badge" href="https://apps.apple.com/us/app/tunl-cave-flyer/id6789721765" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.47 2.28-1.23 3.1-.82.9-2.17 1.6-3.28 1.5-.14-1.1.44-2.28 1.16-3.02.83-.86 2.27-1.5 3.35-1.58zM20.5 17.02c-.56 1.3-.83 1.88-1.55 3.02-1.01 1.6-2.44 3.6-4.2 3.61-1.57.02-1.97-1.02-4.1-1.01-2.13.01-2.57 1.03-4.14 1.02-1.77-.02-3.12-1.82-4.13-3.42C-.02 17.4-.3 12.02 1.68 9.06c1-1.5 2.6-2.38 4.1-2.38 1.53 0 2.5 1.03 3.77 1.03 1.23 0 1.97-1.03 3.74-1.03 1.34 0 2.76.73 3.77 2-3.31 1.82-2.77 6.55.44 7.85z"/></svg>
+            <span class="platform">App Store</span>
+          </a>
+          <a class="badge" href="https://play.google.com/store/apps/details?id=com.theodoracatos.tunl" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.6 2.1c-.3.28-.47.7-.47 1.25v17.3c0 .55.17.97.47 1.25l.1.08 9.7-9.7v-.23L3.7 2.02l-.1.08zM17.1 15.7l-3.23-3.23v-.23l3.24-3.24.07.05 3.83 2.18c1.1.62 1.1 1.64 0 2.27l-3.83 2.17-.08.05zM17.02 15.65l-3.3-3.3-9.75 9.75c.36.38.96.43 1.63.06l11.42-6.5zM17.02 8.75L5.6 2.26c-.67-.38-1.27-.33-1.63.05l9.75 9.75 3.3-3.3z"/></svg>
+            <span class="platform">Google Play</span>
+          </a>
+        </div>
+      </div>
     </div>
   </section>
+
+<main>
 
   <section class="section">
     <div class="section-head">
       <h2>Hold. Release. Survive.</h2>
       <div class="rule"></div>
     </div>
-    <div class="controls">
-      <div class="control"><span class="k">HOLD</span><span class="d">Thrust upward</span></div>
-      <div class="control"><span class="k">RELEASE</span><span class="d">Gravity pulls you down</span></div>
-      <div class="control"><span class="k">DODGE</span><span class="d">Stalactites, mines, cannons, walls</span></div>
+    <div class="feelbox">
+      <canvas id="feelCanvas" height="340" aria-hidden="true"></canvas>
+      <div class="controls">
+        <div class="control" id="feelHold"><span class="k">HOLD</span><span class="d">Thrust upward</span></div>
+        <div class="control" id="feelFall"><span class="k">RELEASE</span><span class="d">Gravity pulls you down</span></div>
+        <div class="control"><span class="k">DODGE</span><span class="d">Stalactites, mines, cannons, walls</span></div>
+      </div>
     </div>
+  </section>
+
+  <section class="section chapters">
+    <article class="chapter">
+      <figure class="ch-shot">
+        <img src="/media-15.0/ch-share.jpg" alt="TUNL debriefing screen - check your rank, the whole world flies the same cave" width="960" height="444" loading="lazy">
+      </figure>
+      <div class="ch-text">
+        <span class="ch-no">1</span>
+        <h3>Share the run, not the score</h3>
+        <p>End a great run and send a card of the tunnel you actually flew - the corridor narrowing, the exact spot you died, and your personal best marked just ahead of it. Everyone gets the same cave that day, so anyone you send it to can go straight at your number.</p>
+        <a class="ch-link" href="/how-to-play/">How to play<span aria-hidden="true">&#8250;</span></a>
+      </div>
+    </article>
+
+    <article class="chapter">
+      <figure class="ch-shot">
+        <img src="/media-15.0/ch-ghost.jpg" alt="TUNL gameplay - hold to climb, let go to fall, one touch is the whole game" width="960" height="444" loading="lazy">
+      </figure>
+      <div class="ch-text">
+        <span class="ch-no">2</span>
+        <h3>Race your own ghost</h3>
+        <p>Your best run of the day flies alongside you as a ghost ship. Catch it, pass it, and the next run starts chasing the one you just set.</p>
+        <a class="ch-link" href="/devlog/">Devlog<span aria-hidden="true">&#8250;</span></a>
+      </div>
+    </article>
+
+    <article class="chapter">
+      <figure class="ch-shot">
+        <img src="/media-15.0/ch-ships.jpg" alt="TUNL title screen - one cave, every player, every day" width="960" height="444" loading="lazy">
+      </figure>
+      <div class="ch-text">
+        <span class="ch-no">3</span>
+        <h3>Every ship, a real build choice</h3>
+        <p>8 ships, each pairing a buff with a drawback, from the free PEARL starter up through AMBER, CRIMSON, ELECTRIC, TOXIC, VOID, NOVA, and the rare SOLARIS (wide near-miss window, larger hitbox). Fly one enough and it gains mastery, easing its drawback and growing its buff.</p>
+        <a class="ch-link" href="/ships/">Ships<span aria-hidden="true">&#8250;</span></a>
+      </div>
+    </article>
+
+    <article class="chapter">
+      <figure class="ch-shot">
+        <img src="/media-15.0/ch-deep.jpg" alt="TUNL power-ups - shields, ammo, magnets and more, going deeper" width="960" height="444" loading="lazy">
+      </figure>
+      <div class="ch-text">
+        <span class="ch-no">4</span>
+        <h3>Stalactites, mines, boulders, cannons</h3>
+        <p>Sharp stalactites, paired chicanes, spikes that shake loose and fall, boulders that make you commit up or down, and rare wall-mounted cannons that open fire as you close in. Each new stretch of cave brings a new threat, and the run keeps speeding up.</p>
+        <a class="ch-link" href="/how-to-play/">How to play<span aria-hidden="true">&#8250;</span></a>
+      </div>
+    </article>
+
   </section>
 
   <section class="section">
@@ -520,168 +781,96 @@
       <h2>Features</h2>
       <div class="rule"></div>
     </div>
-    <div class="features">
-      <div class="feature">
-        <span class="icon">🌀</span>
-        <h3>A tunnel that never repeats</h3>
-        <p>Procedurally generated corridors get tighter and faster the deeper you go, so no two runs feel the same.</p>
-      </div>
-      <div class="feature">
-        <span class="icon">📤</span>
-        <h3>Share the run, not the score</h3>
-        <p>End a great run and send a card of the tunnel you actually flew - the corridor narrowing, the exact spot you died, and your personal best marked just ahead of it. Everyone gets the same cave that day, so anyone you send it to can go straight at your number.</p>
-      </div>
-      <div class="feature">
-        <span class="icon">👻</span>
-        <h3>Race your own ghost</h3>
-        <p>Your best run of the day flies alongside you as a ghost ship. Catch it, pass it, and the next run starts chasing the one you just set.</p>
-      </div>
-      <div class="feature">
-        <span class="icon">🪙</span>
-        <h3>Eight coins and a warp</h3>
-        <p>Every coin shows what it does. Gold widens the corridor, the hourglass slows the run, the violet shield blocks a hit, the crosshair loads ammo, the magnet pulls coins in, and the red bomb blasts nearby danger. Two are traps: a poison flask costs you shards, a pink whirlpool drains your score. Fly through the violet hoop hanging in the tunnel to warp ahead, untouchable. Every coin is its own object, so you can tell them apart at a glance, even colorblind.</p>
-      </div>
-      <div class="feature">
-        <span class="icon">⚠️</span>
-        <h3>Stalactites, mines, boulders, cannons</h3>
-        <p>Sharp stalactites, paired chicanes, spikes that shake loose and fall, boulders that make you commit up or down, and rare wall-mounted cannons that open fire as you close in. Each new stretch of cave brings a new threat, and the run keeps speeding up.</p>
-      </div>
-      <div class="feature">
-        <span class="icon">🎬</span>
-        <h3>One more run after you crash</h3>
-        <p>Die deep in a strong run and, in the apps, you can watch a short optional video to continue from where you fell - once per run - with your hull repaired. A shielded hit grants a brief window of invulnerability instead of a cheap second death.</p>
-      </div>
-      <div class="feature">
-        <span class="icon">🏆</span>
-        <h3>Milestones and combos</h3>
-        <p>Chain coins for score multipliers, thread close calls for bonus points, and celebrate every milestone in style.</p>
-      </div>
-      <div class="feature">
-        <span class="icon">💎</span>
-        <h3>Shards and Stardust</h3>
-        <p>Coins you collect bank into shards, the skill currency. Just opening TUNL each day banks stardust, the currency only time can buy. Every ship needs both, so the full roster is a real journey - or unlock everything at once with a one-time purchase.</p>
-      </div>
-      <div class="feature">
-        <span class="icon">🛩️</span>
-        <h3>Every ship, a real build choice</h3>
-        <p>8 ships, each pairing a buff with a drawback, from the free PEARL starter up through AMBER, CRIMSON, ELECTRIC, TOXIC, VOID, NOVA, and the rare SOLARIS (wide near-miss window, larger hitbox). Fly one enough and it gains mastery, easing its drawback and growing its buff.</p>
-      </div>
-      <div class="feature">
-        <span class="icon">🎨</span>
-        <h3>Paint your ship</h3>
-        <p>Six liveries in the Paint shop, from a glowing stealth rim to a shifting aurora sweep. Buy a finish once with shards, then choose it for each ship you own. Purely cosmetic: no perks, no edge on the leaderboard.</p>
-      </div>
-      <div class="feature">
-        <span class="icon">📋</span>
-        <h3>Daily missions</h3>
-        <p>3 fresh challenges every day, the same for every player, each one worth a shard bonus on top of your daily cap.</p>
-      </div>
-      <div class="feature">
-        <span class="icon">🗓️</span>
-        <h3>A new world every day</h3>
-        <p>The title screen names every calendar day its own level, like "LEVEL 231: RUSTED CAVERN," and the cave changes with it - a different rock or mineral on the walls each day of the week, its own world name, and a slightly different corridor shape.</p>
-      </div>
-      <div class="feature">
-        <span class="icon">📈</span>
-        <h3>Chase your best</h3>
-        <p>Every run compares against your last and your personal best, and the moment you die you see your exact rank in the world on today's board - and how many places you just moved. Daily streaks, a Game Center leaderboard, and iOS Challenges keep you coming back.</p>
-      </div>
-      <div class="feature">
-        <span class="icon">🌍</span>
-        <h3>Play in your language</h3>
-        <p>TUNL is available in 15 languages, including Spanish, Arabic, Russian, Chinese, French, Korean, Portuguese, Hindi, and Polish.</p>
-      </div>
-    </div>
+    <ul class="alsolist">
+      <li><span class="icon">🌀</span>A tunnel that never repeats</li>
+      <li><span class="icon">🪙</span>Eight coins and a warp</li>
+      <li><span class="icon">🎬</span>One more run after you crash</li>
+      <li><span class="icon">🏆</span>Milestones and combos</li>
+      <li><span class="icon">💎</span>Shards and Stardust</li>
+      <li><span class="icon">🎨</span>Paint your ship</li>
+      <li><span class="icon">📋</span>Daily missions</li>
+      <li><span class="icon">🗓️</span>A new world every day</li>
+      <li><span class="icon">📈</span>Chase your best</li>
+      <li><span class="icon">🌍</span>Play in your language</li>
+    </ul>
   </section>
 
-  <section class="section">
+  <section class="section shipsec" id="ships">
     <div class="section-head">
       <h2>Eight Ships, Eight Feels</h2>
       <div class="rule"></div>
       <p class="section-sub">Same one-button feel, different tradeoffs.</p>
     </div>
-    <div class="ships">
-      <div class="ship-card" style="--ship-color:#e8eeff">
-        <span class="ship-chip"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></span>
-        <span class="ship-tag">Starter, free</span>
-        <h3>PEARL</h3>
-        <p>The neutral baseline every run starts with - no perk, no penalty, just the feel of the ship.</p>
+    <div class="shipsel">
+      <div class="ship-chips" role="tablist" aria-label="Eight Ships, Eight Feels">
+        <button class="ship-chip" type="button" role="tab" id="chip-PEARL" aria-controls="panel-PEARL" aria-selected="true" style="--ship-color:#e8eeff"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg><span>PEARL</span></button>
+        <button class="ship-chip" type="button" role="tab" id="chip-AMBER" aria-controls="panel-AMBER" aria-selected="false" style="--ship-color:#ffaa00"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg><span>AMBER</span></button>
+        <button class="ship-chip" type="button" role="tab" id="chip-CRIMSON" aria-controls="panel-CRIMSON" aria-selected="false" style="--ship-color:#ff1a33"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg><span>CRIMSON</span></button>
+        <button class="ship-chip" type="button" role="tab" id="chip-ELECTRIC" aria-controls="panel-ELECTRIC" aria-selected="false" style="--ship-color:#00ccff"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg><span>ELECTRIC</span></button>
+        <button class="ship-chip" type="button" role="tab" id="chip-TOXIC" aria-controls="panel-TOXIC" aria-selected="false" style="--ship-color:#99ff00"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg><span>TOXIC</span></button>
+        <button class="ship-chip" type="button" role="tab" id="chip-VOID" aria-controls="panel-VOID" aria-selected="false" style="--ship-color:#c080ff"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg><span>VOID</span></button>
+        <button class="ship-chip" type="button" role="tab" id="chip-NOVA" aria-controls="panel-NOVA" aria-selected="false" style="--ship-color:#ffffff"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg><span>NOVA</span></button>
+        <button class="ship-chip" type="button" role="tab" id="chip-SOLARIS" aria-controls="panel-SOLARIS" aria-selected="false" style="--ship-color:#ff6600"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg><span>SOLARIS</span></button>
       </div>
-      <div class="ship-card" style="--ship-color:#ffaa00">
-        <span class="ship-chip"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></span>
-        <h3>AMBER</h3>
-        <p>Reaches further for coins than any other ship, at the cost of a slightly bigger hitbox.</p>
-      </div>
-      <div class="ship-card" style="--ship-color:#ff1a33">
-        <span class="ship-chip"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></span>
-        <h3>CRIMSON</h3>
-        <p>Slips through gaps other ships can't fit through, trading away some shield capacity for it.</p>
-      </div>
-      <div class="ship-card" style="--ship-color:#00ccff">
-        <span class="ship-chip"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></span>
-        <h3>ELECTRIC</h3>
-        <p>Bends time harder and longer whenever a slow-time coin lands.</p>
-      </div>
-      <div class="ship-card" style="--ship-color:#99ff00">
-        <span class="ship-chip"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></span>
-        <h3>TOXIC</h3>
-        <p>Every gold coin buys more corridor room, though the bonus burns off faster too.</p>
-      </div>
-      <div class="ship-card" style="--ship-color:#c080ff">
-        <span class="ship-chip"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></span>
-        <h3>VOID</h3>
-        <p>Every third shield coin gives two shields instead of one, at the cost of some margin on close calls.</p>
-      </div>
-      <div class="ship-card" style="--ship-color:#ffffff">
-        <span class="ship-chip"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></span>
-        <h3>NOVA</h3>
-        <p>Every magnet coin pulls coins in for much longer, with less ammo held in reserve.</p>
-      </div>
-      <div class="ship-card" style="--ship-color:#ff6600">
-        <span class="ship-chip"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></span>
-        <h3>SOLARIS</h3>
-        <span class="ship-tag">Rare</span>
-        <p>The rarest ship in the roster - forgiving on close calls, built for players chasing the deepest runs.</p>
-      </div>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="section-head">
-      <h2>Learn the cave</h2>
-      <div class="rule"></div>
-      <p class="section-sub">Guides, notes and history for players and the curious.</p>
-    </div>
-    <div class="features">
-      <div class="feature">
-        <span class="icon">📖</span>
-        <h3><a href="/how-to-play/">Learn to play</a></h3>
-        <p>Controls, scoring, all eight coins, every hazard in order and the strategy that raises your score.</p>
-      </div>
-      <div class="feature">
-        <span class="icon">🛩️</span>
-        <h3><a href="/ships/">Meet the ships</a></h3>
-        <p>The roster, the trade each ship makes, how mastery, shards and stardust work, and the six paint finishes.</p>
-      </div>
-      <div class="feature">
-        <span class="icon">🛠️</span>
-        <h3><a href="/devlog/">Read the devlog</a></h3>
-        <p>How the daily cave is generated from a date, how a run is paced, and how the physics stays fair on every screen.</p>
-      </div>
-      <div class="feature">
-        <span class="icon">📜</span>
-        <h3><a href="/changelog/">See what changed</a></h3>
-        <p>Every version, newest first, from optional rewards to the dusk-city approach in 15.0.</p>
-      </div>
-      <div class="feature">
-        <span class="icon">👤</span>
-        <h3><a href="/about/">Meet the maker</a></h3>
-        <p>Who makes TUNL, how it is built and how it is paid for.</p>
-      </div>
-      <div class="feature">
-        <span class="icon">❓</span>
-        <h3><a href="/support/">Get answers</a></h3>
-        <p>Common questions about purchases, progress, leaderboards and privacy.</p>
+      <div class="ship-stage">
+        <div class="ship-panel" role="tabpanel" id="panel-PEARL" aria-labelledby="chip-PEARL" style="--ship-color:#e8eeff">
+          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></div>
+          <div class="sp-text">
+            <h3>PEARL</h3>
+            <span class="ship-tag">Starter, free</span>
+            <p>The neutral baseline every run starts with - no perk, no penalty, just the feel of the ship.</p>
+          </div>
+        </div>
+        <div class="ship-panel" role="tabpanel" id="panel-AMBER" aria-labelledby="chip-AMBER" style="--ship-color:#ffaa00">
+          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></div>
+          <div class="sp-text">
+            <h3>AMBER</h3>
+            <p>Reaches further for coins than any other ship, at the cost of a slightly bigger hitbox.</p>
+          </div>
+        </div>
+        <div class="ship-panel" role="tabpanel" id="panel-CRIMSON" aria-labelledby="chip-CRIMSON" style="--ship-color:#ff1a33">
+          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></div>
+          <div class="sp-text">
+            <h3>CRIMSON</h3>
+            <p>Slips through gaps other ships can't fit through, trading away some shield capacity for it.</p>
+          </div>
+        </div>
+        <div class="ship-panel" role="tabpanel" id="panel-ELECTRIC" aria-labelledby="chip-ELECTRIC" style="--ship-color:#00ccff">
+          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></div>
+          <div class="sp-text">
+            <h3>ELECTRIC</h3>
+            <p>Bends time harder and longer whenever a slow-time coin lands.</p>
+          </div>
+        </div>
+        <div class="ship-panel" role="tabpanel" id="panel-TOXIC" aria-labelledby="chip-TOXIC" style="--ship-color:#99ff00">
+          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></div>
+          <div class="sp-text">
+            <h3>TOXIC</h3>
+            <p>Every gold coin buys more corridor room, though the bonus burns off faster too.</p>
+          </div>
+        </div>
+        <div class="ship-panel" role="tabpanel" id="panel-VOID" aria-labelledby="chip-VOID" style="--ship-color:#c080ff">
+          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></div>
+          <div class="sp-text">
+            <h3>VOID</h3>
+            <p>Every third shield coin gives two shields instead of one, at the cost of some margin on close calls.</p>
+          </div>
+        </div>
+        <div class="ship-panel" role="tabpanel" id="panel-NOVA" aria-labelledby="chip-NOVA" style="--ship-color:#ffffff">
+          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></div>
+          <div class="sp-text">
+            <h3>NOVA</h3>
+            <p>Every magnet coin pulls coins in for much longer, with less ammo held in reserve.</p>
+          </div>
+        </div>
+        <div class="ship-panel" role="tabpanel" id="panel-SOLARIS" aria-labelledby="chip-SOLARIS" style="--ship-color:#ff6600">
+          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></div>
+          <div class="sp-text">
+            <h3>SOLARIS</h3>
+            <span class="ship-tag">Rare</span>
+            <p>The rarest ship in the roster - forgiving on close calls, built for players chasing the deepest runs.</p>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -692,20 +881,63 @@
       <div class="rule"></div>
     </div>
     <div class="gallery" id="gallery">
-      <figure><img src="/shots/15.0/en/01.webp" alt="TUNL title screen - one cave, every player, every day" tabindex="0" role="button"></figure>
-      <figure><img src="/shots/15.0/en/02.webp" alt="TUNL approach - every run takes off over the city at dusk and dives into the rock" tabindex="0" role="button"></figure>
-      <figure><img src="/shots/15.0/en/03.webp" alt="TUNL gameplay - hold to climb, let go to fall, one touch is the whole game" tabindex="0" role="button"></figure>
-      <figure><img src="/shots/15.0/en/04.webp" alt="TUNL warp ring - fly through for a pure-speed rush" tabindex="0" role="button"></figure>
-      <figure><img src="/shots/15.0/en/05.webp" alt="TUNL power-ups - shields, ammo, magnets and more, going deeper" tabindex="0" role="button"></figure>
-      <figure><img src="/shots/15.0/en/06.webp" alt="TUNL debriefing screen - check your rank, the whole world flies the same cave" tabindex="0" role="button"></figure>
+      <figure><img src="/shots/15.0/en/01.webp" alt="TUNL title screen - one cave, every player, every day" loading="lazy" tabindex="0" role="button"></figure>
+      <figure><img src="/shots/15.0/en/02.webp" alt="TUNL approach - every run takes off over the city at dusk and dives into the rock" loading="lazy" tabindex="0" role="button"></figure>
+      <figure><img src="/shots/15.0/en/03.webp" alt="TUNL gameplay - hold to climb, let go to fall, one touch is the whole game" loading="lazy" tabindex="0" role="button"></figure>
+      <figure><img src="/shots/15.0/en/04.webp" alt="TUNL warp ring - fly through for a pure-speed rush" loading="lazy" tabindex="0" role="button"></figure>
+      <figure><img src="/shots/15.0/en/05.webp" alt="TUNL power-ups - shields, ammo, magnets and more, going deeper" loading="lazy" tabindex="0" role="button"></figure>
+      <figure><img src="/shots/15.0/en/06.webp" alt="TUNL debriefing screen - check your rank, the whole world flies the same cave" loading="lazy" tabindex="0" role="button"></figure>
     </div>
   </section>
 
-  <footer>
-    TUNL &middot; <a href="/how-to-play/">How to play</a> &middot; <a href="/ships/">Ships</a> &middot; <a href="/devlog/">Devlog</a> &middot; <a href="/changelog/">Changelog</a> &middot; <a href="/about/">About</a> &middot; <a href="/support/">Support</a> &middot; <a href="/privacy/">Privacy Policy</a> &middot; <a href="/press/">Press</a>
-    <p>&copy; 2026 Theodoracatos. All rights reserved.</p>
-    <p>Music by <a href="https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1" target="_blank" rel="noopener">the_mountain</a> via Pixabay.</p>
+  <section class="closer">
+    <a class="today" href="/play/" hidden>
+      <span class="dot"></span>
+      <span>WORLD <b class="t-no"></b></span>
+      <span class="sep">&middot;</span>
+      <b class="t-name"></b>
+      <span class="sep">&middot;</span>
+      <span>PLANET <b class="t-planet"></b></span>
+    </a>
+    <a class="play-cta" href="/play/">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+      Play in your browser
+    </a>
+  </section>
+
+  <!-- site-chrome:foot -->
+  <footer class="sitefoot">
+    <div class="sf-inner">
+      <div class="sf-cols">
+        <div class="sf-col">
+          <h4>Play TUNL</h4>
+          <a href="/play/">Play in your browser</a>
+          <a href="https://apps.apple.com/us/app/tunl-cave-flyer/id6789721765" target="_blank" rel="noopener">App Store</a>
+          <a href="https://play.google.com/store/apps/details?id=com.theodoracatos.tunl" target="_blank" rel="noopener">Google Play</a>
+        </div>
+        <div class="sf-col">
+          <h4>Learn the cave</h4>
+          <a href="/how-to-play/">How to play</a>
+          <a href="/ships/">Ships</a>
+          <a href="/devlog/">Devlog</a>
+          <a href="/changelog/">Changelog</a>
+        </div>
+        <div class="sf-col">
+          <h4>The project</h4>
+          <a href="/about/">About</a>
+          <a href="/support/">Support</a>
+          <a href="/press/">Press</a>
+          <a href="/privacy/">Privacy Policy</a>
+        </div>
+      </div>
+      <p class="sf-legal">
+        &copy; 2026 Theodoracatos. All rights reserved.<br>
+        Music by <a href="https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1" target="_blank" rel="noopener">the_mountain</a> via Pixabay.
+        <!-- langswitch -->
+      </p>
+    </div>
   </footer>
+  <!-- /site-chrome:foot -->
 
   <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Screenshot viewer">
     <button class="lightbox-close" id="lightboxClose" aria-label="Close">&times;</button>
@@ -770,6 +1002,265 @@
       if (e.key === 'ArrowLeft') show(currentIndex - 1);
       if (e.key === 'ArrowRight') show(currentIndex + 1);
     });
+  })();
+
+
+  /* ---------- Ships: one at a time ----------
+     Every panel is in the DOM and visible by default, so a browser without JS
+     just gets all eight stacked. This turns them into a tab strip. */
+  (function () {
+    var chips = [].slice.call(document.querySelectorAll('.ship-chip'));
+    var panels = [].slice.call(document.querySelectorAll('.ship-panel'));
+    if (chips.length !== panels.length || !chips.length) return;
+
+    function select(i, focus) {
+      chips.forEach(function (c, k) {
+        c.setAttribute('aria-selected', k === i ? 'true' : 'false');
+        c.tabIndex = k === i ? 0 : -1;
+        panels[k].hidden = k !== i;
+      });
+      if (focus) chips[i].focus();
+    }
+
+    chips.forEach(function (c, i) {
+      c.addEventListener('click', function () { select(i); });
+      c.addEventListener('keydown', function (e) {
+        var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!d) return;
+        e.preventDefault();
+        select((i + d + chips.length) % chips.length, true);
+      });
+    });
+    select(0);
+  })();
+
+  /* ---------- Section dividers are slices of corridor ----------
+     Same two-sine centreline the cave is built from (src/world.js centerAt),
+     narrowing left to right the way the corridor narrows with depth. Replaces
+     a 52px gradient bar with something only this game would have. The bar
+     stays as the no-JS fallback. */
+  (function () {
+    var W = 150, H = 22, N = 46;
+    function wall(top) {
+      var d = '', i, x, t, c, g;
+      for (i = 0; i <= N; i++) {
+        x = (i / N) * W;
+        t = i / N;
+        c = H / 2 + Math.sin(t * 5.6) * H * 0.115 + Math.sin(t * 11.4 + 1.57) * H * 0.05;
+        g = (H * 0.40) * (1 - 0.45 * t);          /* the corridor closing in */
+        d += (i ? 'L' : 'M') + x.toFixed(1) + ' ' + (top ? c - g : c + g).toFixed(1);
+      }
+      return d;
+    }
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">'
+            + '<path d="' + wall(true)  + '" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>'
+            + '<path d="' + wall(false) + '" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>'
+            + '</svg>';
+    [].forEach.call(document.querySelectorAll('.section-head .rule'), function (r) {
+      r.style.color = 'var(--cyan)';
+      r.innerHTML = svg;
+      r.classList.add('drawn');
+    });
+  })();
+
+  /* ---------- The one control, flown rather than described ----------
+     Real numbers: the game accelerates at a net 1800 px/s^2 up while you hold
+     and 1300 down while you do not (GRAVITY 1300 / THRUST 3100, constants.js),
+     quoted at a 440pt-tall screen and scaled by H/440 on every other - so this
+     strip, 170px tall, uses _FEEL_SCALE = 170/440 and flies exactly like the
+     game does on a small phone. The autopilot only ever presses and releases;
+     the corridor does the rest. */
+  (function () {
+    var cv = document.getElementById('feelCanvas');
+    if (!cv) return;
+    var ctx = cv.getContext('2d');
+    var holdBox = document.getElementById('feelHold');
+    var fallBox = document.getElementById('feelFall');
+    var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var SHIP = new Path2D('M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 '
+                        + '-1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 '
+                        + '0.3 0.2 0.95 0.13Z');
+
+    var W = 0, H = 0, dpr = 1;
+    function resize() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = cv.clientWidth; H = cv.clientHeight;
+      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    /* the cave's own centreline shape, at strip scale */
+    function centre(x) {
+      return H / 2 + Math.sin(x * 0.0062) * H * 0.115 + Math.sin(x * 0.0131 + 1.57) * H * 0.05;
+    }
+    var halfGap = function () { return H * 0.30; };
+
+    var scroll = 0, py = 0, vy = 0, holding = false, lastLit = null;
+    var SCROLL_SPD = 96;                 /* px/s of cave sliding past */
+
+    function step(dt) {
+      var scale = H / 440;               /* _FEEL_SCALE */
+      scroll += SCROLL_SPD * dt;
+
+      /* autopilot: aim a little ahead of the ship, hold when below the line */
+      var aim = centre(scroll + W * 0.34);
+      holding = py > aim;
+
+      var vPrev = vy;
+      vy += (holding ? -1800 : 1300) * scale * dt;
+      var cap = 1080 * scale;
+      if (vy >  cap) vy =  cap;
+      if (vy < -cap) vy = -cap;
+      py += (vPrev + vy) * 0.5 * dt;     /* trapezoid, same as update.js */
+
+      var c = centre(scroll + W * 0.22), g = halfGap();
+      if (py < c - g + 6) { py = c - g + 6; if (vy < 0) vy = 0; }
+      if (py > c + g - 6) { py = c + g - 6; if (vy > 0) vy = 0; }
+
+      if (holding !== lastLit) {
+        lastLit = holding;
+        if (holdBox) holdBox.classList.toggle('lit', holding);
+        if (fallBox) fallBox.classList.toggle('lit', !holding);
+      }
+    }
+
+    function draw() {
+      var day = (window.TUNL_DAY && window.TUNL_DAY.rgb) || [77, 217, 255];
+      var rgb = function (a) { return 'rgba(' + day[0] + ',' + day[1] + ',' + day[2] + ',' + a + ')'; };
+      ctx.clearRect(0, 0, W, H);
+
+      var i, x, c, g, N = Math.ceil(W / 6);
+      for (var side = 0; side < 2; side++) {
+        ctx.beginPath();
+        for (i = 0; i <= N; i++) {
+          x = i * 6;
+          c = centre(scroll + x); g = halfGap();
+          var y = side ? c + g : c - g;
+          if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+        }
+        ctx.lineTo(W, side ? H : 0);
+        ctx.lineTo(0, side ? H : 0);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(16,16,26,0.92)';
+        ctx.fill();
+        ctx.strokeStyle = rgb(0.55);
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+      }
+
+      /* ship, pitched by climb rate like the real one */
+      var px = W * 0.22, r = Math.max(9, H * 0.085);
+      var pitch = Math.max(-0.5, Math.min(0.5, vy / (1080 * (H / 440)))) * 0.6;
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(pitch);
+      ctx.scale(r, r);
+      ctx.fillStyle = '#e8eeff';
+      ctx.fill(SHIP);
+      ctx.restore();
+
+      if (holding) {                     /* the plume is the whole point */
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(pitch);
+        var grd = ctx.createLinearGradient(-r * 1.0, 0, -r * 2.6, 0);
+        grd.addColorStop(0, rgb(0.85));
+        grd.addColorStop(1, rgb(0));
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.95, -r * 0.24);
+        ctx.lineTo(-r * (2.0 + Math.random() * 0.6), 0);
+        ctx.lineTo(-r * 0.95, r * 0.24);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    var last = 0, running = false, rafId = 0;
+    function frame(now) {
+      if (!running) return;
+      var dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+      step(dt); draw();
+      rafId = requestAnimationFrame(frame);
+    }
+    function start() {
+      if (running || calm) return;
+      running = true; last = performance.now();
+      rafId = requestAnimationFrame(frame);
+    }
+    function stop() { running = false; cancelAnimationFrame(rafId); }
+
+    function init() {
+      resize();
+      py = centre(0); vy = 0;
+      if (calm) { step(0); draw(); return; }      /* one honest still frame */
+      /* fly a couple of seconds in so it opens mid-manoeuvre, not falling */
+      for (var k = 0; k < 120; k++) step(1 / 60);
+      draw();
+    }
+
+    window.addEventListener('resize', function () { resize(); draw(); });
+    init();
+
+    if (!calm && 'IntersectionObserver' in window) {
+      new IntersectionObserver(function (es) {
+        es[0].isIntersecting ? start() : stop();     /* no battery off-screen */
+      }, { threshold: 0.15 }).observe(cv);
+    } else { start(); }
+    document.addEventListener('visibilitychange', function () {
+      document.hidden ? stop() : start();
+    });
+  })();
+
+  /* ---------- The descent ----------
+     The game lifts the void toward the day's rock near the cave mouth and
+     steps it darker at each sector boundary (depthLightAt, draw.js) - steps,
+     never a fade, because a continuous fade is below what anyone notices.
+     The page does the same as you scroll: lit at the top, plain void by the
+     footer. Capped low on purpose - "never literally bright". */
+  (function () {
+    var STEPS = [0.055, 0.040, 0.026, 0.013, 0];
+    var VOID = [4, 4, 10];
+    var cur = -1, ticking = false;
+
+    function apply() {
+      ticking = false;
+      var day = (window.TUNL_DAY && window.TUNL_DAY.rgb) || null;
+      if (!day) return;
+      var max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      var t = Math.min(1, Math.max(0, window.scrollY / max));
+      var i = Math.min(STEPS.length - 1, Math.floor(t * STEPS.length));
+      if (i === cur) return;
+      cur = i;
+      var a = STEPS[i], c = [0, 1, 2].map(function (k) {
+        return Math.round(VOID[k] + (day[k] - VOID[k]) * a);
+      });
+      var col = 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
+      document.documentElement.style.setProperty('--depth-bg', col);
+      document.body.style.backgroundColor = col;
+    }
+    window.addEventListener('scroll', function () {
+      if (!ticking) { ticking = true; requestAnimationFrame(apply); }
+    }, { passive: true });
+    window.addEventListener('resize', apply);
+    apply();
+  })();
+
+  /* ---------- TikTok arrivals ----------
+     Someone who followed the bio link has just watched eight seconds of the
+     game; they do not need to be told what it is. Swapping one line is the
+     whole treatment - the button underneath is already the right one. */
+  (function () {
+    try {
+      var p = new URLSearchParams(location.search);
+      if ((p.get('utm_source') || '').toLowerCase() !== 'tiktok') return;
+      var el = document.getElementById('heroPitch');
+      var alt = el && el.getAttribute('data-alt');
+      if (alt) el.textContent = alt;
+    } catch (e) {}
   })();
 
   (function () {

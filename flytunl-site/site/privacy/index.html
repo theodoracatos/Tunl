@@ -9,6 +9,24 @@
 <title>TUNL - Privacy Policy</title>
 <meta name="description" content="What data the TUNL apps and website collect and why: advertising, analytics, purchases, leaderboards, and how to opt out or request deletion.">
 <link rel="canonical" href="https://flytunl.ch/privacy/">
+<!-- site-chrome:alt -->
+<link rel="alternate" hreflang="en" href="https://flytunl.ch/privacy/">
+<link rel="alternate" hreflang="de" href="https://flytunl.ch/de/privacy/">
+<link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/privacy/">
+<link rel="alternate" hreflang="it" href="https://flytunl.ch/it/privacy/">
+<link rel="alternate" hreflang="es" href="https://flytunl.ch/es/privacy/">
+<link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/privacy/">
+<link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/privacy/">
+<link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/privacy/">
+<link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/privacy/">
+<link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/privacy/">
+<link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/privacy/">
+<link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/privacy/">
+<link rel="alternate" hreflang="id" href="https://flytunl.ch/id/privacy/">
+<link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/privacy/">
+<link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/privacy/">
+<link rel="alternate" hreflang="x-default" href="https://flytunl.ch/privacy/">
+<!-- /site-chrome:alt -->
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
@@ -16,15 +34,22 @@
 <link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#04040a">
+<!-- site-chrome:head -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="/day.js"></script>
+<!-- /site-chrome:head -->
+<link rel="stylesheet" href="/site.css">
 <style>
   * { box-sizing:border-box; }
   body {
     background:#04040a;
     color:#ddd;
-    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-family:var(--tunl-ui);
     line-height:1.6;
     margin:0;
-    padding:40px 20px 80px;
+    padding: 0 20px 80px;
   }
   main { max-width:680px; margin:0 auto; }
   .brand {
@@ -35,14 +60,14 @@
   }
   .brand img { height:28px; width:auto; }
   h1 {
-    color:#ffe040;
+    color:var(--sc-accent);
     font-size:28px;
     letter-spacing:2px;
     margin-bottom:4px;
   }
   .updated { color:#888; font-size:13px; margin-bottom:32px; }
   h2 {
-    color:#4dd9ff;
+    color:var(--sc-accent);
     font-size:18px;
     margin-top:36px;
     margin-bottom:10px;
@@ -50,7 +75,7 @@
   p, li { color:#ccc; font-size:15px; }
   ul { padding-left:20px; }
   li { margin-bottom:8px; }
-  a { color:#4dd9ff; }
+  a { color:var(--sc-accent); }
   strong { color:#fff; }
   table { border-collapse:collapse; width:100%; margin-top:8px; }
   th, td {
@@ -60,7 +85,7 @@
     font-size:14px;
     color:#ccc;
   }
-  th { color:#ffe040; font-weight:600; }
+  th { color:var(--sc-accent); font-weight:600; }
   footer {
     margin-top:48px;
     color:#666;
@@ -73,10 +98,34 @@
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "7783839e84374212b7d76f25e1fb8e87"}'></script>
 </head>
 <body>
+  <!-- site-chrome:nav -->
+  <header class="sitenav">
+    <a class="sn-brand" href="/"><img src="/wordmark.svg" alt="TUNL"></a>
+    <nav class="sn-links" aria-label="Main">
+      <a href="/how-to-play/">How to play</a>
+      <a href="/ships/">Ships</a>
+      <a href="/devlog/">Devlog</a>
+      <a href="/changelog/">Changelog</a>
+    </nav>
+    <span class="sn-gap"></span>
+    <a class="sn-ver" href="/changelog/">16.0</a>
+    <a class="sn-cta" href="/play/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>Play now</a>
+    <details class="sn-more">
+      <summary aria-label="Menu">&#9776;</summary>
+      <div class="sn-sheet">
+        <a href="/how-to-play/">How to play</a>
+        <a href="/ships/">Ships</a>
+        <a href="/devlog/">Devlog</a>
+        <a href="/changelog/">Changelog</a>
+        <a href="/about/">About</a>
+        <a href="/support/">Support</a>
+        <a href="/press/">Press</a>
+        <a href="/privacy/" aria-current="page">Privacy Policy</a>
+      </div>
+    </details>
+  </header>
+  <!-- /site-chrome:nav -->
 <main>
-  <a class="brand" href="/">
-    <img src="/wordmark.svg" alt="TUNL">
-  </a>
   <h1>TUNL - Privacy Policy</h1>
   <p class="updated">Last updated: September 20, 2026</p>
 
@@ -234,14 +283,36 @@
   <a href="mailto:info@flytunl.ch">info@flytunl.ch</a>. Other questions are answered on the
   <a href="/support/">support page</a>.</p>
 
-  <footer>
-    TUNL &middot; <a href="/">Home</a> &middot; <a href="/play/">Play</a> &middot;
-    <a href="/how-to-play/">How to play</a> &middot; <a href="/ships/">Ships</a> &middot;
-    <a href="/devlog/">Devlog</a> &middot; <a href="/changelog/">Changelog</a> &middot;
-    <a href="/about/">About</a> &middot; <a href="/support/">Support</a> &middot;
-    <a href="/privacy/">Privacy Policy</a> &middot; <a href="/press/">Press</a><br>
-    &copy; 2026 Theodoracatos. All rights reserved.
+  <!-- site-chrome:foot -->
+  <footer class="sitefoot">
+    <div class="sf-inner">
+      <div class="sf-cols">
+        <div class="sf-col">
+          <h4>Play TUNL</h4>
+          <a href="/play/">Play in your browser</a>
+          <a href="https://apps.apple.com/us/app/tunl-cave-flyer/id6789721765" target="_blank" rel="noopener">App Store</a>
+          <a href="https://play.google.com/store/apps/details?id=com.theodoracatos.tunl" target="_blank" rel="noopener">Google Play</a>
+        </div>
+        <div class="sf-col">
+          <h4>Learn the cave</h4>
+          <a href="/how-to-play/">How to play</a>
+          <a href="/ships/">Ships</a>
+          <a href="/devlog/">Devlog</a>
+          <a href="/changelog/">Changelog</a>
+        </div>
+        <div class="sf-col">
+          <h4>The project</h4>
+          <a href="/about/">About</a>
+          <a href="/support/">Support</a>
+          <a href="/press/">Press</a>
+          <a href="/privacy/">Privacy Policy</a>
+        </div>
+      </div>
+      <p class="sf-legal">&copy; 2026 Theodoracatos. All rights reserved.<br><span class="langsw"><label for="langsel">Language:</label> <select id="langsel" aria-label="Language"><option value="/privacy/" data-home="/" selected>English</option><option value="/de/privacy/" data-home="/de/">Deutsch</option><option value="/fr/privacy/" data-home="/fr/">Français</option><option value="/it/privacy/" data-home="/it/">Italiano</option><option value="/es/privacy/" data-home="/es/">Español</option><option value="/pt/privacy/" data-home="/pt/">Português</option><option value="/ja/privacy/" data-home="/ja/">日本語</option><option value="/ko/privacy/" data-home="/ko/">한국어</option><option value="/zh/privacy/" data-home="/zh/">繁體中文</option><option value="/ru/privacy/" data-home="/ru/">Русский</option><option value="/ar/privacy/" data-home="/ar/">العربية</option><option value="/tr/privacy/" data-home="/tr/">Türkçe</option><option value="/id/privacy/" data-home="/id/">Bahasa Indonesia</option><option value="/pl/privacy/" data-home="/pl/">Polski</option><option value="/hi/privacy/" data-home="/hi/">हिन्दी</option></select></span></p>
+    </div>
   </footer>
+  <script>(function(){var s=document.getElementById('langsel');if(!s)return;s.addEventListener('change',function(){try{localStorage.setItem('tunl_site_lang',s.options[s.selectedIndex].getAttribute('data-home'));}catch(e){}location.href=s.value;});})();</script>
+  <!-- /site-chrome:foot -->
 </main>
 </body>
 </html>

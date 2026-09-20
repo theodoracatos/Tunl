@@ -22,6 +22,7 @@ import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { htmlLang, dirAttr } from './lang-meta.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const SITE = path.join(here, 'site');
@@ -29,6 +30,7 @@ const SRC  = path.join(here, 'home.src.html');
 const I18N = path.join(here, 'i18n/home.json');
 
 const ORIGIN = 'https://flytunl.ch';
+
 
 async function build() {
   // TUNL_VERSION: single source of truth in src/constants.js, shared by all three
@@ -39,6 +41,15 @@ async function build() {
   const verMatch = constantsSrc.match(/const\s+TUNL_VERSION\s*=\s*['"]([^'"]+)['"]/);
   if (!verMatch) throw new Error('src/constants.js: TUNL_VERSION const not found');
   const TUNL_VERSION = verMatch[1];
+
+  // site/day.js derives today's rock colour and world name from the UTC date the
+  // same way the game does, so the site can name today's cave and take its colour
+  // with no backend. It carries MIRRORS of WORLD_ADJ / WORLD_NOUN (src/world.js)
+  // and WEEKDAY_PALETTES' planet + wallBase columns (src/constants.js). Re-read
+  // them here and fail the build the moment they diverge - a silently stale mirror
+  // would have the site announce a different cave than the game generates that day.
+  assertDayTablesInSync(await readFile(path.join(SITE, 'day.js'), 'utf8'), constantsSrc,
+                        await readFile(path.join(here, '..', 'src', 'world.js'), 'utf8'));
 
   const raw = JSON.parse(await readFile(I18N, 'utf8'));
   const LANGS = raw._langs;                 // ["en","de",...]
@@ -59,7 +70,7 @@ async function build() {
 
   // Keys used only by the generated markup (langswitch / banner), never present
   // verbatim in home.src.html - don't templatize them or warn about them.
-  const PROGRAMMATIC = new Set(['footer.langLabel']);
+  const PROGRAMMATIC = new Set(['footer.langLabel', 'aria.main']);
 
   // Replace each key's ENGLISH value with a {{key}} marker. Longest first, so a
   // short string that is a substring of a longer one can't corrupt it.
@@ -78,7 +89,8 @@ async function build() {
   }
 
   // structural injections (anchors that exist in home.src.html)
-  tpl = tpl.replace('<html lang="en">', '<html lang="{{LANG}}">');
+  tpl = tpl.replace('aria-label="Main"', 'aria-label="{{aria.main}}"');
+  tpl = tpl.replace('<html lang="en">', '<html lang="{{HTMLLANG}}"{{DIR}}>');
   // Localized store screenshots: the 15.0 portrait frames carry a headline baked into
   // the image, and Screenshots/iOS_15.0/<locale>/ has a set per language, so a German
   // page shows German frames instead of English ones. home.src.html names the English
@@ -107,9 +119,25 @@ async function build() {
   // to their browser language, once, then never again.
   tpl = tpl.replace('<meta charset="UTF-8">', '<meta charset="UTF-8">\n{{AUTO_REDIRECT}}');
 
-  // footer language control (before </footer>): the full picker on English, a
-  // single "English" link on the localized pages.
-  tpl = tpl.replace('</footer>', '    {{LANGSWITCH}}\n  </footer>');
+  // Version pill in the sticky bar: stamped from TUNL_VERSION, so it can never
+  // go stale the way the hand-written "New in <version>" hero badge did (that
+  // badge was a per-release translation chore in 7 languages and was removed
+  // with it). home.src.html carries whatever version it was last edited with
+  // so it stays a valid standalone page; the build overwrites it either way.
+  const verPill = /(<a class="sn-ver" href="\/changelog\/">)[^<]*(<\/a>)/;
+  if (!verPill.test(tpl)) {
+    throw new Error('anchor <a class="sn-ver"> not found in home.src.html');
+  }
+  tpl = tpl.replace(verPill, `$1${TUNL_VERSION}$2`);
+
+  // footer language control: the full picker on English, a single "English"
+  // link on the localized pages. Anchored on an explicit marker inside the
+  // footer's legal line rather than on '</footer>', so the switcher lands
+  // inside the sitemap footer's own column block instead of after it.
+  if (!tpl.includes('<!-- langswitch -->')) {
+    throw new Error('anchor <!-- langswitch --> not found in home.src.html');
+  }
+  tpl = tpl.replace('<!-- langswitch -->', '{{LANGSWITCH}}');
 
   tpl = tpl.replace('</style>', LANG_CSS + '\n</style>');
   tpl = tpl.replace('</body>', LANG_JS + '\n</body>');
@@ -120,10 +148,12 @@ async function build() {
   for (const lang of LANGS) {
     let html = tpl.replace(/\{\{([a-zA-Z0-9._]+)\}\}/g, (m, key) => {
       if (key === 'LANG') return lang;
+      if (key === 'HTMLLANG') return htmlLang(lang);
+      if (key === 'DIR') return dirAttr(lang);
       if (key === 'SHOTLANG') return lang;
       if (key === 'OG_URL') return ORIGIN + langPath(lang);
       if (key === 'HEAD_ALT') return headAlt(lang);
-      if (key === 'AUTO_REDIRECT') return lang === 'en' ? REDIRECT_JS : '';
+      if (key === 'AUTO_REDIRECT') return lang === 'en' ? redirectJs(LANGS) : '';
       if (key === 'LANGSWITCH') return langSwitch(lang);
       return t(key, lang);
     });
@@ -154,7 +184,7 @@ async function build() {
   function headAlt(lang) {
     const lines = [`<link rel="canonical" href="${ORIGIN}${langPath(lang)}">`];
     for (const l of LANGS) {
-      lines.push(`<link rel="alternate" hreflang="${l}" href="${ORIGIN}${langPath(l)}">`);
+      lines.push(`<link rel="alternate" hreflang="${htmlLang(l)}" href="${ORIGIN}${langPath(l)}">`);
     }
     lines.push(`<link rel="alternate" hreflang="x-default" href="${ORIGIN}/">`);
     return lines.join('\n');
@@ -180,19 +210,26 @@ async function build() {
 // them to English; any other stored value sends them there every visit; with no
 // preference yet, detect navigator.language once and remember it. Early in <head>
 // so there is no visible flash. "en" maps to no target -> Googlebot is unaffected.
-const REDIRECT_JS = `<script>
+function redirectJs(langs) {
+  const map = {};
+  for (const l of langs) if (l !== 'en') map[l] = `/${l}/`;
+  return `<script>
 (function () {
   try {
     var LS = 'tunl_site_lang';
-    var P = { de:'/de/', fr:'/fr/', it:'/it/', es:'/es/', pt:'/pt/', ja:'/ja/' };
+    var P = ${JSON.stringify(map)};
     var pref = localStorage.getItem(LS);
     if (pref === '/') return;
     if (pref && P[pref.replace(/\\//g, '')]) { location.replace(pref); return; }
-    var l = (navigator.language || '').slice(0, 2).toLowerCase();
+    var nav = navigator.language || '';
+    var l = nav.slice(0, 2).toLowerCase();
+    /* /zh/ is Traditional Chinese: only zh-TW / zh-HK / zh-MO / zh-Hant browsers go there */
+    if (l === 'zh' && !/^zh-(tw|hk|mo|hant)/i.test(nav)) return;
     if (P[l]) { localStorage.setItem(LS, P[l]); location.replace(P[l]); }
   } catch (e) {}
 })();
 </script>`;
+}
 
 const LANG_CSS = `
   /* ---------- Language control ---------- */
@@ -221,5 +258,45 @@ const LANG_JS = `<script>
   }
 })();
 </script>`;
+
+
+// ---- day-strip table mirror check -----------------------------------
+// See the call site in build(). Compares the literal tables in site/day.js
+// against the game's own source.
+function assertDayTablesInSync(daySrc, constantsSrc, worldSrc) {
+  const list = (src, name) => {
+    const m = src.match(new RegExp(`(?:const\\s+)?${name}\\s*=\\s*\\[([\\s\\S]*?)\\];`));
+    if (!m) throw new Error(`[build-site] ${name} not found`);
+    return (m[1].match(/'([^']*)'/g) || []).map(x => x.slice(1, -1));
+  };
+  const pairs = [
+    ['WORLD_ADJ',  list(worldSrc, 'WORLD_ADJ'),  list(daySrc, 'ADJ')],
+    ['WORLD_NOUN', list(worldSrc, 'WORLD_NOUN'), list(daySrc, 'NOUN')],
+  ];
+
+  const palette = constantsSrc.match(/const WEEKDAY_PALETTES = \[([\s\S]*?)\n\];/);
+  if (!palette) throw new Error('[build-site] WEEKDAY_PALETTES not found');
+  const rows = palette[1].split('\n').filter(l => l.includes('planet:'));
+  pairs.push(['WEEKDAY_PALETTES.planet',
+              rows.map(l => l.match(/planet:\s*'([^']*)'/)[1]),
+              list(daySrc, 'PLANET')]);
+
+  const wallGame = rows.map(l => l.match(/wallBase:\s*\[([^\]]*)\]/)[1]
+                                  .split(',').map(n => Number(n.trim())).join(','));
+  const wallSite = (daySrc.match(/var WALL = \[(.*?)\];/) || [, ''])[1]
+                     .match(/\[[^\]]*\]/g) || [];
+  pairs.push(['WEEKDAY_PALETTES.wallBase', wallGame,
+              wallSite.map(x => x.slice(1, -1).split(',').map(n => Number(n.trim())).join(','))]);
+
+  for (const [name, fromGame, fromSite] of pairs) {
+    if (fromGame.join('|') !== fromSite.join('|')) {
+      throw new Error(
+        `[build-site] site/day.js's mirror of ${name} has drifted from src/.\n`
+        + `  src/  (${fromGame.length}): ${fromGame.join(', ')}\n`
+        + `  site  (${fromSite.length}): ${fromSite.join(', ')}\n`
+        + '  Update the table in site/day.js to match, then rebuild.');
+    }
+  }
+}
 
 build().catch(err => { console.error('[build-site] failed:', err); process.exit(1); });

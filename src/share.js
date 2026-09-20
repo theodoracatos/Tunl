@@ -26,7 +26,9 @@ const SHARE_URL = 'https://flytunl.ch';
 // chat apps and browsers accept.
 const SHARE_GHOST_MAX_B64 = 1500;
 
-const SHARE_W = 1200, SHARE_H = 630; // link-preview proportions; reads well in chats
+// The card's two cuts live in _shareCardCanvas below (landscape 1200x630 for the
+// desktop copy, portrait 1080x1350 for a share sheet); the old single SHARE_W/SHARE_H
+// pair is gone with them.
 
 // Share is offered only when the run is actually worth showing someone. A share button
 // on every death is a nag; on a personal best it's a reward. Kept in one place so the
@@ -37,6 +39,10 @@ const SHARE_W = 1200, SHARE_H = 630; // link-preview proportions; reads well in 
 // carrying its own copy of the number - it was a hardcoded 25, which the 12.0 safe
 // opening flight turned into a no-op, since no completed run scores under 50.
 const SHARE_MIN_SCORE = MIN_REAL_RUN_SCORE;
+// How close to the bar a run has to come to still be worth offering, as a fraction of
+// today's best (falling back to the all-time best on the day's first run, the same
+// _fireBar rule update.js uses for ON FIRE). See the gate discussion below.
+const SHARE_NEAR_BEST = 0.90;
 function shareWorthy() {
     // The web build is an acquisition funnel: every shared run is a tap-to-play
     // link for someone new, so drop the "was this a good run" gate the app uses
@@ -44,7 +50,21 @@ function shareWorthy() {
     // as the point of the thing here) and offer it on any run past the instant-
     // faceplant floor.
     if (typeof isWeb === 'function' && isWeb()) return score >= SHARE_MIN_SCORE;
-    return score >= 200 || ((newBest || newDailyBest) && score >= SHARE_MIN_SCORE);
+    // The app gate was `score >= 200 || ((newBest || newDailyBest) && score >= 75)`,
+    // which runs BACKWARDS to the pride curve. A new player's every run is a personal
+    // best by definition, so the button is on constantly in week one - and then, once
+    // the all-time best has settled above what a normal session reaches, it goes dark
+    // exactly when the player starts having runs worth showing. Measured against the
+    // red-team sample (median real run ~22, median daily best ~70) almost nothing in
+    // the long tail of a real player's week clears either branch.
+    //
+    // A daily game's share beat is the DAY, not the career: a run that lands near
+    // today's bar is the shareable one, and today's bar resets every morning, so this
+    // keeps offering without ever becoming the nag the web branch above accepts.
+    if (score < SHARE_MIN_SCORE) return false;
+    if (newBest || newDailyBest || score >= 200) return true;
+    const bar = dailyBest || best;
+    return bar > 0 && score >= bar * SHARE_NEAR_BEST;
 }
 
 // True when there's somewhere for the card to actually go: the native share sheet on
@@ -308,156 +328,613 @@ function drawRunProfile(g, x0, y0, w, h, opts) {
     }
 }
 
-// ── Card renderer ─────────────────────────────────────────────────────
+// ── QR code ───────────────────────────────────────────────────────────
+// A QR on the card, because the card keeps landing somewhere a URL cannot be
+// tapped: a phone held out to a friend, a screenshot in a story, a frame of a
+// TikTok clip. Byte mode, error correction level M, versions 1-9 - the payload
+// is shareRunUrl(true) (the link WITHOUT the ghost, see there), which runs about
+// 85 characters and lands on version 5 or 6, i.e. 37-41 modules. At the card's
+// 104pt that is ~2.8pt per module, which scans off a screen at arm's length; the
+// portrait cut gives it 200pt and scans from across a room. Carrying the ghost
+// would push it past version 40 and make it unscannable at any size the card can
+// afford, which is the whole reason for the compact variant.
+//
+// Self-contained rather than a library (no build step, no CDN in the apps) and
+// kept here rather than in a 19th src file, since nothing but the card wants it.
+const _QR_SPEC = {   // version: [data codewords, EC per block, [[blocks, data each], ...], byte capacity]
+    1: [16,  10, [[1, 16]],          14],
+    2: [28,  16, [[1, 28]],          26],
+    3: [44,  26, [[1, 44]],          42],
+    4: [64,  18, [[2, 32]],          62],
+    5: [86,  24, [[2, 43]],          84],
+    6: [108, 16, [[4, 27]],          106],
+    7: [124, 18, [[4, 31]],          122],
+    8: [154, 22, [[2, 38], [2, 39]], 152],
+    9: [182, 22, [[3, 36], [2, 37]], 180],
+};
+const _QR_ALIGN = { 1: [], 2: [6,18], 3: [6,22], 4: [6,26], 5: [6,30], 6: [6,34],
+                    7: [6,22,38], 8: [6,24,42], 9: [6,26,46] };
+const _QR_VER   = { 7: 0x07C94, 8: 0x085BC, 9: 0x09A99 };   // version info, v7+
+const _QR_FMT   = [0x5412, 0x5125, 0x5E7C, 0x5B4B, 0x45F9, 0x40CE, 0x4F97, 0x4AA0]; // level M x mask
+const _QR_MASK  = [
+    (x, y) => (x + y) % 2 === 0,
+    (x, y) => y % 2 === 0,
+    (x, y) => x % 3 === 0,
+    (x, y) => (x + y) % 3 === 0,
+    (x, y) => (((y / 2) | 0) + ((x / 3) | 0)) % 2 === 0,
+    (x, y) => (x * y) % 2 + (x * y) % 3 === 0,
+    (x, y) => ((x * y) % 2 + (x * y) % 3) % 2 === 0,
+    (x, y) => ((x + y) % 2 + (x * y) % 3) % 2 === 0,
+];
 
-function _shareCardCanvas() {
+let _qrExp = null, _qrLog = null;
+function _qrGf() {
+    if (_qrExp) return;
+    _qrExp = new Uint8Array(512); _qrLog = new Uint8Array(256);
+    let x = 1;
+    for (let i = 0; i < 255; i++) { _qrExp[i] = x; _qrLog[x] = i; x <<= 1; if (x & 0x100) x ^= 0x11d; }
+    for (let i = 255; i < 512; i++) _qrExp[i] = _qrExp[i - 255];
+}
+function _qrMul(a, b) { _qrGf(); return (a && b) ? _qrExp[_qrLog[a] + _qrLog[b]] : 0; }
+function _qrEc(data, n) {
+    _qrGf();
+    let gp = [1];
+    for (let i = 0; i < n; i++) {
+        const ng = new Array(gp.length + 1).fill(0);
+        for (let j = 0; j < gp.length; j++) { ng[j] ^= gp[j]; ng[j + 1] ^= _qrMul(gp[j], _qrExp[i]); }
+        gp = ng;
+    }
+    const res = data.slice().concat(new Array(n).fill(0));
+    for (let i = 0; i < data.length; i++) {
+        const f = res[i];
+        if (!f) continue;
+        for (let j = 0; j < gp.length; j++) res[i + j] ^= _qrMul(gp[j], f);
+    }
+    return res.slice(data.length);
+}
+
+// Penalty scoring (the four rules of the spec). A decoder reads the mask out of the
+// format bits, so any mask decodes -- the rules only decide how ROBUSTLY it scans,
+// which is the whole point of putting this on a card someone photographs off a screen.
+function _qrPenalty(m, n) {
+    let p = 0, dark = 0;
+    const PAT = [1,0,1,1,1,0,1,0,0,0,0];
+    const run = line => {
+        let c = line[0], len = 1;
+        for (let i = 1; i < n; i++) {
+            if (line[i] === c) { len++; continue; }
+            if (len >= 5) p += 3 + (len - 5);
+            c = line[i]; len = 1;
+        }
+        if (len >= 5) p += 3 + (len - 5);
+    };
+    const hasPat = (line, i, rev) => {
+        for (let k = 0; k < 11; k++) if (line[i + k] !== PAT[rev ? 10 - k : k]) return false;
+        return true;
+    };
+    for (let y = 0; y < n; y++) {
+        const row = m[y], col = [];
+        for (let x = 0; x < n; x++) { col.push(m[x][y]); dark += row[x]; }
+        run(row); run(col);
+        for (let i = 0; i + 10 < n; i++) {
+            if (hasPat(row, i, false) || hasPat(row, i, true)) p += 40;
+            if (hasPat(col, i, false) || hasPat(col, i, true)) p += 40;
+        }
+    }
+    for (let y = 0; y < n - 1; y++) for (let x = 0; x < n - 1; x++) {
+        const v = m[y][x];
+        if (m[y][x+1] === v && m[y+1][x] === v && m[y+1][x+1] === v) p += 3;
+    }
+    p += Math.floor(Math.abs(dark * 100 / (n * n) - 50) / 5) * 10;
+    return p;
+}
+
+// Returns { n, m } (m[y][x], 1 = dark) or null when the text does not fit / is not
+// ASCII. Null is a normal outcome, not an error: the card simply draws no QR and
+// gives the space back to the URL line.
+function _qrMatrix(text) {
+    const bytes = [];
+    for (let i = 0; i < text.length; i++) {
+        const cc = text.charCodeAt(i);
+        if (cc > 255) return null;
+        bytes.push(cc);
+    }
+    let ver = 0;
+    for (let v = 1; v <= 9; v++) if (bytes.length <= _QR_SPEC[v][3]) { ver = v; break; }
+    if (!ver) return null;
+    const [dcTotal, ecLen, spec] = _QR_SPEC[ver];
+
+    // Bit stream: mode 4 (byte), 8-bit length (v1-9), payload, terminator, pad.
+    const bits = [];
+    const put = (val, len) => { for (let i = len - 1; i >= 0; i--) bits.push((val >> i) & 1); };
+    put(4, 4); put(bytes.length, 8);
+    for (const b of bytes) put(b, 8);
+    for (let i = 0; i < 4 && bits.length < dcTotal * 8; i++) bits.push(0);
+    while (bits.length % 8) bits.push(0);
+    const dc = [];
+    for (let i = 0; i < bits.length; i += 8) {
+        let v = 0;
+        for (let j = 0; j < 8; j++) v = (v << 1) | bits[i + j];
+        dc.push(v);
+    }
+    for (let i = 0; dc.length < dcTotal; i++) dc.push(i % 2 === 0 ? 0xEC : 0x11);
+
+    // Blocks, then interleave data and EC the way the spec orders them.
+    const blocks = [], ecs = [];
+    let p = 0;
+    for (const [cnt, len] of spec) for (let i = 0; i < cnt; i++) {
+        const d = dc.slice(p, p + len); p += len;
+        blocks.push(d); ecs.push(_qrEc(d, ecLen));
+    }
+    const out = [];
+    let maxLen = 0;
+    for (const b of blocks) maxLen = Math.max(maxLen, b.length);
+    for (let i = 0; i < maxLen; i++) for (const b of blocks) if (i < b.length) out.push(b[i]);
+    for (let i = 0; i < ecLen; i++) for (const e of ecs) out.push(e[i]);
+
+    // Function patterns.
+    const n = 17 + 4 * ver;
+    const m = [], res = [];
+    for (let i = 0; i < n; i++) { m.push(new Array(n).fill(0)); res.push(new Array(n).fill(0)); }
+    const set = (x, y, v) => { if (x < 0 || y < 0 || x >= n || y >= n) return; m[y][x] = v; res[y][x] = 1; };
+    const finder = (ox, oy) => {
+        for (let dy = -1; dy <= 7; dy++) for (let dx = -1; dx <= 7; dx++) {
+            const inside = dx >= 0 && dx <= 6 && dy >= 0 && dy <= 6;
+            const d = Math.max(Math.abs(dx - 3), Math.abs(dy - 3));
+            set(ox + dx, oy + dy, inside && d !== 2 ? 1 : 0);
+        }
+    };
+    finder(0, 0); finder(n - 7, 0); finder(0, n - 7);
+    for (let i = 8; i < n - 8; i++) { set(i, 6, i % 2 === 0 ? 1 : 0); set(6, i, i % 2 === 0 ? 1 : 0); }
+    for (const cy of _QR_ALIGN[ver]) for (const cx of _QR_ALIGN[ver]) {
+        if ((cx <= 8 && cy <= 8) || (cx >= n - 9 && cy <= 8) || (cx <= 8 && cy >= n - 9)) continue;
+        for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++)
+            set(cx + dx, cy + dy, Math.max(Math.abs(dx), Math.abs(dy)) === 1 ? 0 : 1);
+    }
+    set(8, n - 8, 1);                                      // the one always-dark module
+    for (let i = 0; i < 9; i++) { res[8][i] = 1; res[i][8] = 1; }
+    for (let i = 0; i < 8; i++) { res[8][n - 1 - i] = 1; res[n - 1 - i][8] = 1; }
+    if (ver >= 7) {
+        const vi = _QR_VER[ver];
+        for (let i = 0; i < 18; i++) {
+            const b = (vi >> i) & 1, r = (i / 3) | 0, c = i % 3;
+            set(n - 11 + c, r, b); set(r, n - 11 + c, b);
+        }
+    }
+
+    // Data, upward-then-downward in two-column strips, skipping the timing column.
+    let bi = 0, dir = -1, y = n - 1;
+    for (let x = n - 1; x > 0; x -= 2) {
+        if (x === 6) x--;
+        for (;;) {
+            for (let k = 0; k < 2; k++) {
+                const cx = x - k;
+                if (res[y][cx]) continue;
+                m[y][cx] = bi < out.length * 8 ? (out[bi >> 3] >> (7 - (bi & 7))) & 1 : 0;
+                bi++;
+            }
+            y += dir;
+            if (y < 0 || y >= n) { y -= dir; dir = -dir; break; }
+        }
+    }
+
+    // Mask + format bits, best of eight by penalty.
+    let best = null, bestPen = Infinity;
+    for (let msk = 0; msk < 8; msk++) {
+        const t = m.map(r => r.slice());
+        for (let yy = 0; yy < n; yy++) for (let xx = 0; xx < n; xx++)
+            if (!res[yy][xx] && _QR_MASK[msk](xx, yy)) t[yy][xx] ^= 1;
+        const f = _QR_FMT[msk];
+        for (let i = 0; i < 15; i++) {
+            const b = (f >> i) & 1;
+            if (i < 6)      t[i][8] = b;
+            else if (i < 8) t[i + 1][8] = b;
+            else            t[n - 15 + i][8] = b;
+            if (i < 8)      t[8][n - i - 1] = b;
+            else if (i < 9) t[8][15 - i] = b;
+            else            t[8][14 - i] = b;
+        }
+        t[n - 8][8] = 1;
+        const pen = _qrPenalty(t, n);
+        if (pen < bestPen) { bestPen = pen; best = t; }
+    }
+    // `res` (which modules are function patterns) is returned for the QR self-check
+    // in test-share.js, which reverses the placement to prove the codeword is valid.
+    return { n: n, m: best, res: res, ver: ver };
+}
+
+// Drawn light-on-dark-ground with its own quiet zone, since the card ground is nearly
+// black and a QR needs the light field around it to be found at all.
+function _cardQR(g, text, x, y, size) {
+    const q = _qrMatrix(text);
+    if (!q) return false;
+    const quiet = 3;                       // modules; 4 is the spec, 3 buys real estate back
+    const mod = size / (q.n + quiet * 2);
+    g.save();
+    g.fillStyle = 'rgba(232,238,255,0.95)';
+    g.beginPath(); g.roundRect(x, y, size, size, Math.max(4, size * 0.05)); g.fill();
+    g.fillStyle = '#05060e';
+    for (let yy = 0; yy < q.n; yy++) for (let xx = 0; xx < q.n; xx++) {
+        if (!q.m[yy][xx]) continue;
+        // Half a pixel of overlap: neighbouring modules must not show a seam after
+        // the PNG is scaled down by a chat client.
+        g.fillRect(x + (quiet + xx) * mod, y + (quiet + yy) * mod, mod + 0.5, mod + 0.5);
+    }
+    g.restore();
+    return true;
+}
+
+// ── Card renderer ─────────────────────────────────────────────────────
+// Two cuts from one renderer:
+//   landscape 1200x630 - the link-preview proportion, used for the desktop copy
+//   portrait  1080x1350 - what a share SHEET actually feeds (chats, stories, feeds)
+// The portrait cut exists because the sheet's destinations are all vertical, and the
+// 1200x630 card arrives there as a thin band whose 96pt score renders at ~30pt. The
+// link-preview shape still matters for a posted LINK, but that unfurl is drawn from
+// the site's own og:image, never from this PNG.
+//
+// Both cuts carry the debriefing screen's content rather than the old card's own
+// separate story: the run's scenes (one real frame per sector reached, the death frame
+// last), the score against the bar it was actually playing, and the reward chips. What
+// does NOT come across from draw.js's drawDeathScreen is the right column - TODAY TOP,
+// the run counter, the daily shard cap - which is the sender's own meta and means
+// nothing to a recipient.
+const _CARD_MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+
+function _shareCardCanvas(portrait) {
+    const CW = portrait ? 1080 : 1200, CH = portrait ? 1350 : 630;
     const c = document.createElement('canvas');
-    c.width = SHARE_W; c.height = SHARE_H;
+    c.width = CW; c.height = CH;
     const g = c.getContext('2d');
 
-    const F = (sz, bold) => `${bold ? 'bold ' : ''}${sz}px ${FONT_UI}`;
+    const S = portrait ? 1.12 : 1;               // type scale: the tall cut is read smaller
+    const F = (sz, bold) => `${bold ? 'bold ' : ''}${Math.round(sz * S)}px ${FONT_UI}`;
+    const N = sz => `bold ${Math.round(sz * S)}px ${FONT_NUM}`;
+
+    const P = portrait ? {
+        hdrY: 96, wldY: 78, plnY: 120, hair: 152, mark: 52,
+        scoreY: 340, scoreSz: 132, railY: 372, railH: 14, railW: 460, targetY: 412,
+        rankY: 318, rankSz: 40, rankLblY: 362,
+        chipY: 452, chipH: 46, chipRows: 2,
+        bandLbl: 556, bandY: 576, bandH: 296, bandRows: 2,
+        profY: 912, profH: 148,
+        footHair: 1100, tagY: 1142, urlY: 1190, urlSz: 27,
+        qr: 200, qrY: 1086,
+    } : {
+        hdrY: 84, wldY: 68, plnY: 104, hair: 126, mark: 56,
+        scoreY: 412, scoreSz: 96, railY: 432, railH: 10, railW: 380, targetY: 462,
+        rankY: 400, rankSz: 34, rankLblY: 432,
+        chipY: 478, chipH: 38, chipRows: 1,
+        bandLbl: 0, bandY: 142, bandH: 160, bandRows: 1,
+        profY: 0, profH: 0,
+        footHair: 534, tagY: 562, urlY: 592, urlSz: 24,
+        qr: 104, qrY: 488,
+    };
+    const PAD = portrait ? 64 : 70;
+    const L = PAD, R = CW - PAD;
 
     // Today's rock palette (constants.js WEEKDAY_PALETTES via draw.js getTheme) -- the
     // card is tinted to the same accent the title screen, run-start banner and in-game
-    // wall glow all use now, so a shared card reads as *that day's world*, not a
-    // generic blue badge.
+    // wall glow all use, so a shared card reads as *that day's world*, not a generic
+    // blue badge.
     const theme  = getTheme();
     const accent = theme.wallBase;
-    const planet = WEEKDAY_PALETTES[weekdayIndex(_tunlActiveDate())].planet;
+    const dayDate = _tunlActiveDate();
+    const planet  = WEEKDAY_PALETTES[weekdayIndex(dayDate)].planet;
+    const dateStr = `${dayDate.getUTCDate()} ${_CARD_MONTHS[dayDate.getUTCMonth()]}`;
+    const DAY = al => `rgba(${accent[0]},${accent[1]},${accent[2]},${al})`;
 
-    // Ground + vignette, matching the game's own #04040a
+    // Ground + vignette, matching the game's own #04040a. Flat wash rather than a radial
+    // gradient: the card crosses a JS->native bridge as a base64 string (shareRun below),
+    // and a large smooth gradient is by far the most expensive thing to PNG-encode in an
+    // otherwise near-flat dark image.
     g.fillStyle = '#04040a';
-    g.fillRect(0, 0, SHARE_W, SHARE_H);
-    // Flat wash rather than a radial vignette: the card crosses a JS->native bridge as
-    // a base64 string (share.js shareRun), and a large smooth gradient is by far the
-    // most expensive thing to PNG-encode in an otherwise near-flat dark image.
+    g.fillRect(0, 0, CW, CH);
     g.fillStyle = 'rgba(16,24,52,0.42)';
-    g.fillRect(0, 0, SHARE_W, SHARE_H);
+    g.fillRect(0, 0, CW, CH);
 
-    // Rounded, lit frame -- mirrors the death-screen panel (draw.js drawDeathScreen),
-    // which moved off a flat 1px stroke to roundRect + a soft glow border. Tinted
-    // toward the day's rock accent.
     g.save();
-    g.strokeStyle = rgb(accent, 0.5);
+    g.strokeStyle = DAY(0.5);
     g.lineWidth = 2;
-    g.shadowColor = rgb(accent, 0.35);
+    g.shadowColor = DAY(0.35);
     g.shadowBlur = 16;
-    g.beginPath();
-    g.roundRect(24, 24, SHARE_W - 48, SHARE_H - 48, 18);
-    g.stroke();
+    g.beginPath(); g.roundRect(24, 24, CW - 48, CH - 48, 18); g.stroke();
     g.restore();
 
-    // ── Header ────────────────────────────────────────────────────────
+    // ── header ────────────────────────────────────────────────────────
     g.textBaseline = 'middle';
     g.textAlign = 'left';
-    g.font = F(56, true);
+    g.font = F(P.mark, true);
     g.fillStyle = 'rgba(225,238,255,0.98)';
     g.shadowColor = 'rgba(100,150,255,0.55)'; g.shadowBlur = 18;
-    g.fillText('TUNL', 70, 92);
+    g.fillText('TUNL', L, P.hdrY);
     g.shadowBlur = 0;
 
-    // Right side stacks the world line over a planet subtitle, same pairing the title
-    // screen shows: "WORLD n: <rock>" in cool blue, "<T.planet> <PLANET>" in the day's
-    // rock accent so the world name visually *is* the day's rock.
     g.textAlign = 'right';
     g.font = F(24, true);
     g.fillStyle = 'rgba(160,190,240,0.92)';
-    g.fillText(`${T.level} ${LEVEL_NUM}: ${WORLD_NAME.toUpperCase()}`, SHARE_W - 70, 74);
+    g.fillText(`${T.level} ${LEVEL_NUM}: ${WORLD_NAME.toUpperCase()}`, R, P.wldY);
+    // The DATE belongs here (2026-09-20). shareRunText's tagline says "same tunnel for
+    // everyone TODAY" and the link pins that day with ?d, but the picture itself carried
+    // no date at all, so a card forwarded tomorrow claimed a cave nobody is flying any
+    // more. Latin month abbreviation on purpose: no new i18n key, and it reads as a
+    // stamp rather than as body text.
     g.font = F(21, true);
-    g.fillStyle = rgb(accent, 0.95);
-    g.shadowColor = rgb(accent, 0.5); g.shadowBlur = 12;
-    g.fillText(`${T.planet} ${planet.toUpperCase()}`, SHARE_W - 70, 110);
+    g.fillStyle = DAY(0.95);
+    g.shadowColor = DAY(0.5); g.shadowBlur = 12;
+    g.fillText(`${T.planet} ${planet.toUpperCase()}  ·  ${dateStr}`, R, P.plnY);
     g.shadowBlur = 0;
 
-    drawRunProfile(g, 70, 178, SHARE_W - 140, 228, { scale: 1, accent });
+    g.fillStyle = 'rgba(255,255,255,0.08)';
+    g.fillRect(L, P.hair, R - L, 1);
 
-    // ── Score + stats ─────────────────────────────────────────────────
-    // The right-hand block (rank, or the URL when there's no rank) is laid out first so
-    // its left edge is known, and the stats line to the left of it is then clamped to
-    // stop short of it. Drawing the stats first and hoping meant a long stats string in
-    // a verbose locale ran straight under the rank number.
-    g.textBaseline = 'middle';
-    const statY = 505;
-    let rightEdge = SHARE_W - 70;   // left-most x the right-hand block occupies
-
-    g.textAlign = 'right';
-    if (worldRank !== null && worldRank > 0) {
-        const rankStr = worldRankTotal > 0
-            ? `#${worldRank.toLocaleString()} / ${worldRankTotal.toLocaleString()}`
-            : `#${worldRank.toLocaleString()}`;
-        // Orange, not gold -- matches the death screen, where gold/yellow is kept for
-        // shard figures only and the world rank is deliberately orange.
-        g.font = F(34, true);
-        g.fillStyle = 'rgba(255,160,80,0.98)';
-        g.shadowColor = 'rgba(255,130,40,0.40)'; g.shadowBlur = 10;
-        g.fillText(rankStr, SHARE_W - 70, statY - 14);
-        g.shadowBlur = 0;
-        rightEdge = SHARE_W - 70 - g.measureText(rankStr).width;
-        g.font = F(20, true);
-        g.fillStyle = 'rgba(150,180,235,0.82)';
-        g.fillText(T.worldRank, SHARE_W - 70, statY + 24);
-    } else {
-        const urlStr = SHARE_URL.replace(/^https:\/\//, '');
-        g.font = F(24, true);
-        g.fillStyle = 'rgba(130,160,215,0.85)';
-        g.fillText(urlStr, SHARE_W - 70, statY);
-        rightEdge = SHARE_W - 70 - g.measureText(urlStr).width;
-    }
-
+    // ── score, its scale, and the world rank ──────────────────────────
+    g.textBaseline = 'alphabetic';
     g.textAlign = 'left';
-    g.font = `bold 96px ${FONT_NUM}`;
+    g.font = N(P.scoreSz);
     g.fillStyle = newBest ? 'rgba(255,225,65,1)' : 'rgba(228,240,255,1)';
     g.shadowColor = newBest ? 'rgba(255,190,0,0.7)' : 'rgba(80,120,255,0.45)';
     g.shadowBlur = newBest ? 26 : 14;
-    g.fillText(String(score), 70, statY);
+    g.fillText(String(score), L, P.scoreY);
     g.shadowBlur = 0;
-    const statsX = 70 + g.measureText(String(score)).width + 34;
-    const statsMaxW = Math.max(rightEdge - 40 - statsX, 120);
 
+    // The rail the death screen gives the score: full to the all-time best, or - when
+    // the run is nowhere near it - to the next milestone, which is the bar a short run
+    // is actually playing against. A bare number never answered "was that good?".
+    let target = best, targetTxt = `${T.best} ${best}`;
+    if (best <= 0 || score < best * 0.55) {
+        const st = milestoneStep(score);
+        target = Math.max(st, (Math.floor(score / st) + 1) * st);
+        targetTxt = String(target);
+    }
+    const frac = target > 0 ? Math.max(0.012, Math.min(1, score / target)) : 0;
+    g.fillStyle = 'rgba(255,255,255,0.10)';
+    g.beginPath(); g.roundRect(L, P.railY, P.railW, P.railH, P.railH / 2); g.fill();
+    g.fillStyle = DAY(0.95);
+    g.beginPath(); g.roundRect(L, P.railY, P.railW * frac, P.railH, P.railH / 2); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.45)';
+    g.fillRect(L + P.railW, P.railY - P.railH * 0.9, 2, P.railH * 2.8);
+    g.textAlign = 'right';
+    g.font = F(16, true);
+    g.fillStyle = 'rgba(132,146,184,0.75)';
+    g.fillText(targetTxt, L + P.railW, P.targetY);
+
+    if (worldRank !== null && worldRank > 0) {
+        // Orange, not gold -- matches the death screen, where gold is kept for shard
+        // figures only and the world rank is deliberately orange.
+        const rankStr = worldRankTotal > 0
+            ? `#${worldRank.toLocaleString()} / ${worldRankTotal.toLocaleString()}`
+            : `#${worldRank.toLocaleString()}`;
+        g.textAlign = 'right';
+        g.font = N(P.rankSz);
+        g.fillStyle = 'rgba(255,160,80,0.98)';
+        g.shadowColor = 'rgba(255,130,40,0.40)'; g.shadowBlur = 10;
+        g.fillText(rankStr, R, P.rankY);
+        g.shadowBlur = 0;
+        g.font = F(19, true);
+        g.fillStyle = 'rgba(150,180,235,0.82)';
+        g.fillText(T.worldRank, R, P.rankLblY);
+    }
+
+    // ── chips: everything this run earned, in the death screen's own language ──
+    const chips = [];
     if (newBest || newDailyBest) {
-        g.font = F(24, true);
-        g.fillStyle = 'rgba(255,240,120,0.95)';
-        g.fillText((newBest ? T.newBest : T.newDailyBest).toUpperCase(), statsX, statY - 30);
+        chips.push({ t: (newBest ? T.newBest : T.newDailyBest).toUpperCase(), c: [255, 228, 110], solid: true });
+    }
+    if (typeof skinUnlockIdx !== 'undefined' && skinUnlockIdx >= 0) {
+        chips.push({ t: `${SKINS[skinUnlockIdx].name} ${T.unlocked}`, c: SKINS[skinUnlockIdx].shadow, solid: true });
+    } else if (typeof skinMasteryUpIdx !== 'undefined' && skinMasteryUpIdx >= 0) {
+        chips.push({ t: `${SKINS[skinMasteryUpIdx].name} ${T.masteryUp} ${masteryLevel(skinMasteryUpIdx)}`,
+                     c: SKINS[skinMasteryUpIdx].shadow });
+    }
+    if (typeof missionRewardWon !== 'undefined' && missionRewardWon > 0) {
+        chips.push({ t: `${T.missionDone} +${missionRewardWon}`, c: [120, 255, 150] });
+    }
+    // Run highlights, colour-matched to the death screen's stat line: combo orange,
+    // powerups blue, near-miss cyan. Combo first -- it is the one players brag about.
+    if (runMaxCombo > 1)   chips.push({ t: `x${runMaxCombo} ${T.combo}`, c: [255, 150, 110] });
+    if (runCoins > 0)      chips.push({ t: `${runCoins} ${runCoins !== 1 ? T.powerups : T.powerup}`, c: [175, 205, 255] });
+    if (runNearMisses > 0) chips.push({ t: `${runNearMisses} ${T.close}`, c: [110, 210, 255] });
+    // The shard payout is deliberately NOT here: it is wallet state, it exposes the
+    // daily cap, and it is the one death-screen reward a recipient cannot read.
+
+    const chipMaxW = (R - L) - (portrait ? 0 : P.qr + 30);
+    const chipBot = _cardChips(g, chips, L, P.chipY, chipMaxW, P.chipH, P.chipRows, F);
+
+    // ── the run's scenes, or the corridor profile when there is no death frame ──
+    // The band YIELDS, exactly as it does on the death screen: on the portrait cut it
+    // sits under the chips, and a run that earns a record, a mission and three stats
+    // wraps those onto a second row. So the label and the band are placed against the
+    // chips' real bottom edge and the band gives up height rather than being drawn
+    // through. (On the landscape cut the band sits above the score and has no label, so
+    // both maxima resolve to the fixed positions.)
+    const haveScenes = typeof runDeathScene !== 'undefined' && runDeathScene && runDeathScene.cv;
+    const bandLblY = P.bandLbl ? Math.max(P.bandLbl, chipBot + 34) : 0;
+    const bandTop  = P.bandLbl ? Math.max(P.bandY, bandLblY + 18) : P.bandY;
+    const bandFloor = (P.profY || (P.footHair - 20)) - 30;
+    const bandH    = Math.max(60, Math.min(P.bandH, bandFloor - bandTop));
+    let profY = P.profY, profH = P.profH;
+    if (haveScenes) {
+        if (P.bandLbl) {
+            g.textAlign = 'left';
+            g.textBaseline = 'alphabetic';
+            g.font = F(15, true);
+            g.fillStyle = 'rgba(132,146,184,0.62)';
+            try { g.letterSpacing = '1.6px'; } catch (e) {}
+            g.fillText(`${T.flown}  ·  ${T.sector} ${runDeathScene.k}`, L, bandLblY);
+            try { g.letterSpacing = '0px'; } catch (e) {}
+        }
+        _cardScenes(g, L, bandTop, R - L, bandH, P.bandRows, F, accent);
+    } else {
+        // No death frame (a revive dropped it, or the card is rendered before the
+        // capture): the corridor profile takes the band's slot at its full size.
+        profY = bandTop; profH = bandH;
+    }
+    if (profH > 0 && lastRunWx > 0) {
+        g.save();
+        g.beginPath(); g.roundRect(L, profY, R - L, profH, 8); g.clip();
+        // The crash ring lands at the END of drawRunProfile's width, so the width is
+        // pulled in by roughly its radius: clipped in half it read as a rendering fault
+        // rather than as the death point. The dark sliver it leaves on the right is the
+        // same "past the run stays dark" the function draws anyway.
+        drawRunProfile(g, L + 3, profY, R - L - 6 - profH * 0.16, profH, {
+            scale: Math.max(0.45, profH / 200), accent: accent,
+            pbLabel: haveScenes ? false : true,
+        });
+        g.restore();
+        g.strokeStyle = 'rgba(255,255,255,0.09)';
+        g.lineWidth = 1;
+        g.beginPath(); g.roundRect(L, profY, R - L, profH, 8); g.stroke();
     }
 
-    // Run highlights, colour-matched to the death screen's own stat line (draw.js
-    // drawStatLine): combo orange, powerups blue, near-miss cyan -- so a stat reads
-    // the same colour here as it did on the screen the player just came from, instead
-    // of one flat blue. Combo first: it's the one players brag about (the death screen
-    // gives it its own line for the same reason). Singular T.powerup at a count of 1,
-    // same as the death screen.
-    const bits = [];
-    if (runMaxCombo > 1)   bits.push({ t: `x${runMaxCombo} ${T.combo}`, c: [255, 150, 110] });
-    if (runCoins > 0)      bits.push({ t: `${runCoins} ${runCoins !== 1 ? T.powerups : T.powerup}`, c: [175, 205, 255] });
-    if (runNearMisses > 0) bits.push({ t: `${runNearMisses} ${T.close}`, c: [110, 210, 255] });
-    if (bits.length) {
-        const sep = '   ·   ';
-        let statsFsz = 26;
-        g.font = F(statsFsz, true);
-        const totalW = () => bits.reduce((s, b) => s + g.measureText(b.t).width, 0)
-                           + g.measureText(sep).width * (bits.length - 1);
-        // Shrink, then drop trailing stats, rather than overrun the rank block.
-        while (totalW() > statsMaxW && bits.length > 1) bits.pop();
-        const w = totalW();
-        if (w > statsMaxW) {
-            statsFsz = Math.max(statsFsz * statsMaxW / w, 15);
-            g.font = F(statsFsz, true);
-        }
-        const sepW = g.measureText(sep).width;
-        let sx = statsX;
-        bits.forEach((b, i) => {
-            g.fillStyle = `rgba(${b.c[0]},${b.c[1]},${b.c[2]},0.95)`;
-            g.fillText(b.t, sx, statY + 24);
-            sx += g.measureText(b.t).width;
-            if (i < bits.length - 1) {
-                g.fillStyle = 'rgba(140,155,190,0.62)';
-                g.fillText(sep, sx, statY + 24);
-                sx += sepW;
-            }
-        });
-    }
+
+    // ── footer: the thing the picture is FOR ──────────────────────────
+    // The URL used to be the else-branch of the world rank, so every card good enough
+    // to be worth sharing -- the ones that have a rank -- carried no address at all.
+    // Forwarded as an image (screenshot, story, any picture-only network) that card was
+    // a number from a stranger with no way back to the game. Rank and address are not
+    // alternatives; the address is a footer, and it is always there.
+    g.fillStyle = 'rgba(255,255,255,0.08)';
+    g.fillRect(L, P.footHair, R - L, 1);
+
+    const qrTxt = shareRunUrl(true);
+    const hasQR = _cardQR(g, qrTxt, R - P.qr, P.qrY, P.qr);
+    const textR = hasQR ? R - P.qr - 30 : R;
+
+    g.textAlign = 'left';
+    g.textBaseline = 'alphabetic';
+    g.font = F(18);
+    g.fillStyle = 'rgba(150,170,215,0.80)';
+    _cardFit(g, T.shareTagline, L, P.tagY, textR - L, F, 18);
+    g.font = F(P.urlSz, true);
+    g.fillStyle = 'rgba(200,220,255,0.95)';
+    _cardFit(g, SHARE_URL.replace(/^https:\/\//, '') + '/play', L, P.urlY, textR - L, F, P.urlSz, true);
 
     return c;
+}
+
+// One line, shrunk rather than overrun. Translations run long and the footer's width
+// depends on whether the QR rendered.
+function _cardFit(g, txt, x, y, maxW, F, sz, bold) {
+    let s = sz;
+    while (g.measureText(txt).width > maxW && s > sz * 0.6) { s -= 1; g.font = F(s, bold); }
+    g.fillText(txt, x, y);
+}
+
+// The run's scenes (constants.js SCENE_* doc), same picking order as the death screen's
+// band: the death frame always stays, then the next sector's empty slot, then the lit
+// mouth (S0), then the deepest sectors reached. With the depth light the strip runs from
+// the lit cave mouth into the dark, which says "how deep did I get" faster than any
+// number, and the empty slot is the next goal -- on a card sent to someone else, it is
+// also the clearest statement of what the game IS.
+function _cardScenes(g, x0, y, w, h, maxRows, F, accent) {
+    const dk = runDeathScene.k;
+    const gap = 12;
+    // The band is a SLOT, not a strip, and how it is divided depends on how much run
+    // there is to show. Its height over `rows` sets the frame height and the thumbnail's
+    // aspect sets the width, so a tall slot in one row makes very wide frames: at the
+    // portrait cut's 296pt that is 335pt each, which holds two. Fine for a run that died
+    // in S0 (big frames, no dead space) and wrong for a deep one, where it would drop
+    // every sector but the last -- the one thing the band exists to show. So: the FEWEST
+    // rows that hold everything this run has, capped at the cut's maximum.
+    const aspect = runDeathScene.cv.width / runDeathScene.cv.height;
+    const avail = 2 + runScenes.filter(s => s.k < dk).length;   // death frame + next slot + earlier
+    let rows = 1, rowH = h, fw = h * aspect, perRow = 1;
+    for (;;) {
+        rowH = (h - gap * (rows - 1)) / rows;
+        fw = rowH * aspect;
+        perRow = Math.max(1, Math.floor((w + gap) / (fw + gap)));
+        if (perRow * rows >= avail || rows >= maxRows) break;
+        rows++;
+    }
+    const fits = perRow * rows;
+    const entries = runScenes.filter(s => s.k < dk);
+    const pick = [{ k: dk, cv: runDeathScene.cv, death: true }];
+    if (pick.length < fits) pick.push({ k: dk + 1, next: true });
+    if (pick.length < fits && entries.length && entries[0].k === 0) pick.push(entries.shift());
+    while (pick.length < fits && entries.length) pick.push(entries.pop());
+    pick.sort((p, q) => p.k - q.k);
+
+    const rr = Math.min(10, rowH * 0.08);
+    // Rows are centred individually, so a half-full last row sits under the middle of
+    // the one above it rather than hanging off the left edge.
+    const rowOf = i => Math.floor(i / perRow);
+    const rowCount = i => Math.min(perRow, pick.length - rowOf(i) * perRow);
+    let idx = 0;
+    for (const s of pick) {
+        const col = idx % perRow, rw = rowCount(idx);
+        const fx = x0 + Math.max(0, (w - (rw * fw + (rw - 1) * gap)) / 2) + col * (fw + gap);
+        const fy = y + rowOf(idx) * (rowH + gap);
+        idx++;
+        if (s.next) {
+            g.save();
+            g.setLineDash([6, 6]);
+            g.strokeStyle = 'rgba(255,255,255,0.18)';
+            g.lineWidth = 1.5;
+            g.beginPath(); g.roundRect(fx + 0.5, fy + 0.5, fw - 1, rowH - 1, rr); g.stroke();
+            g.restore();
+            g.font = F(26, true);
+            g.textAlign = 'center'; g.textBaseline = 'middle';
+            g.fillStyle = `rgba(${accent[0]},${accent[1]},${accent[2]},0.60)`;
+            g.fillText(`S${s.k}`, fx + fw / 2, fy + rowH / 2);
+        } else {
+            g.save();
+            g.beginPath(); g.roundRect(fx, fy, fw, rowH, rr); g.clip();
+            g.drawImage(s.cv, fx, fy, fw, rowH);
+            // A scrim under the label only, so the frame itself stays true to the run.
+            const sg = g.createLinearGradient(0, fy + rowH * 0.55, 0, fy + rowH);
+            sg.addColorStop(0, 'rgba(4,4,14,0)');
+            sg.addColorStop(1, 'rgba(4,4,14,0.78)');
+            g.fillStyle = sg;
+            g.fillRect(fx, fy, fw, rowH);
+            g.restore();
+            g.font = F(15, true);
+            g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+            g.fillStyle = 'rgba(232,238,255,0.88)';
+            g.fillText(`S${s.k}`, fx + fw * 0.09, fy + rowH - rowH * 0.10);
+            // Red stays the death marker: only the frame the run ended in.
+            g.strokeStyle = s.death ? 'rgba(255,86,86,0.85)' : 'rgba(255,255,255,0.10)';
+            g.lineWidth = s.death ? 2 : 1;
+            g.beginPath(); g.roundRect(fx, fy, fw, rowH, rr); g.stroke();
+        }
+    }
+    g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+}
+
+// A wrapping row of chips -- the same device the death screen uses so a run that earns
+// a ship, a mission and a combo shows all three instead of one suppressing the others.
+// Chips that do not fit in `rows` rows are dropped from the END, which is why the list
+// is built in order of what a recipient cares about.
+function _cardChips(g, items, x, y, maxW, h, rows, F) {
+    const fsz = Math.round(h * 0.40);
+    const wOf = t => { g.font = F(fsz, true); return g.measureText(t).width + h * 0.88; };
+    const gap = 12;
+    let cx = x, cy = y, row = 0;
+    g.textBaseline = 'middle';
+    g.textAlign = 'left';
+    let bottom = y;
+    for (const it of items) {
+        const w = wOf(it.t);
+        if (cx + w > x + maxW && cx > x) {
+            row++;
+            if (row >= rows) break;
+            cx = x; cy += h + gap;
+        }
+        if (w > maxW) continue;
+        const cl = it.c;
+        g.fillStyle = it.solid ? `rgba(${cl[0]},${cl[1]},${cl[2]},0.15)` : 'rgba(255,255,255,0.05)';
+        g.beginPath(); g.roundRect(cx, cy, w, h, h / 2); g.fill();
+        g.strokeStyle = `rgba(${cl[0]},${cl[1]},${cl[2]},${it.solid ? 0.42 : 0.20})`;
+        g.lineWidth = 1.5;
+        g.beginPath(); g.roundRect(cx, cy, w, h, h / 2); g.stroke();
+        g.fillStyle = `rgba(${cl[0]},${cl[1]},${cl[2]},0.95)`;
+        g.font = F(fsz, true);
+        g.fillText(it.t, cx + h * 0.44, cy + h / 2);
+        cx += w + gap;
+        bottom = cy + h;
+    }
+    g.textBaseline = 'alphabetic';
+    return bottom;
 }
 
 // ── Share ─────────────────────────────────────────────────────────────
@@ -465,26 +942,33 @@ function _shareCardCanvas() {
 // The link printed on the card, always carrying a referral tag (?r=, this
 // player's web.js webPlayerId()) so a friend who plays credits them a shard
 // reward the moment that friend clears their own first real run - see web.js
-// submitReferral()/checkReferralReward(). On the open web the link also
-// deep-links straight back into the run just flown: same cave (?d), the
-// sender's ghost to race (?g), and their score so the recipient's ghost
-// readout is right (?s). A native app share instead points at bare /play/
-// with only ?r= attached - the app has no in-app equivalent to hand a ghost
-// off to, but /play/ is a real playable page regardless of platform, and for
-// a recipient who already has the app, the Universal/App Link wiring
-// (GameView.swift / MainActivity.kt) hands them straight back into it rather
-// than the web build.
-function shareRunUrl() {
+// submitReferral()/checkReferralReward(). The link also deep-links straight
+// back into the run just flown: same cave (?d), the sender's ghost to race
+// (?g), and their score so the recipient's ghost readout is right (?s).
+//
+// EVERY target builds the same link (2026-09-20). Until then a native app
+// share pointed at bare /play/?r= on the theory that "the app has no in-app
+// equivalent to hand a ghost off to" - which is simply not true: web.js's
+// _tunlParseWebParams() is not isWeb()-gated and runs in both apps, state.js
+// consumes ?g/?s the same way there, and the Universal/App Link wiring
+// (GameView.swift / MainActivity.kt) reloads the page with the link's whole
+// query string appended. So the app was stripping three parameters all three
+// targets understand, and shipping a card whose own tagline ("same tunnel for
+// everyone today, beat me") the link then could not make good on: the
+// recipient got an invitation to a duel with no cave, no score and no ghost.
+//
+// `compact` drops the ghost only. It is what the card's QR encodes: a ghost is
+// up to SHARE_GHOST_MAX_B64 characters, which pushes a QR past 40 versions of
+// module count and makes it unscannable at card size, while ?d + ?s still
+// carry the actual challenge.
+function shareRunUrl(compact) {
     const r = 'r=' + encodeURIComponent(webPlayerId());
-    if (typeof isWeb !== 'function' || !isWeb()) {
-        return SHARE_URL.replace(/\/+$/, '') + '/play/?' + r;
-    }
     // Trailing slash: the host 301-redirects /play -> /play/ (query preserved), so
     // linking straight to /play/ saves every shared link a redirect hop.
     let u = SHARE_URL.replace(/\/+$/, '') + '/play/?d=' + _tunlActiveDayInt();
     if (score > 0) u += '&s=' + Math.min(score | 0, 9999999);
     try {
-        if (typeof ghostTrack !== 'undefined' && ghostTrack && ghostTrack.length > 1) {
+        if (!compact && typeof ghostTrack !== 'undefined' && ghostTrack && ghostTrack.length > 1) {
             const enc = ghostEncode(ghostTrack);
             if (enc.length <= SHARE_GHOST_MAX_B64) {
                 // URL-safe base64, padding stripped: no %2B/%2F/%3D noise, and immune
@@ -516,12 +1000,21 @@ function shareRunText() {
 }
 
 function shareRun() {
-    let dataUrl = '';
+    // Which cut goes out (2026-09-20). A share SHEET feeds chats, stories and feeds,
+    // all of which are vertical -- the 1200x630 card lands there as a thin band whose
+    // score renders at a third of its size. The landscape cut stays for the desktop
+    // copy, where a card gets dropped into a channel and read beside text. The
+    // link-preview proportion is not lost either way: an unfurled LINK is drawn from
+    // the site's own og:image, never from this PNG.
+    const sheet = !!(window.webkit?.messageHandlers?.share)
+               || (typeof navigator !== 'undefined' && !!navigator.share);
+    let card = null, dataUrl = '';
     try {
-        dataUrl = _shareCardCanvas().toDataURL('image/png');
+        card = _shareCardCanvas(sheet);
+        dataUrl = card.toDataURL('image/png');
     } catch (e) {
         // A card that fails to render must not block the share -- fall back to text.
-        dataUrl = '';
+        card = null; dataUrl = '';
     }
     const text = shareRunText();
 
@@ -542,12 +1035,27 @@ function shareRun() {
         }
         return;
     }
-    // Desktop browser: no share sheet. The run card can't cross the clipboard as
-    // an image reliably across browsers, but the deep link is the whole viral
-    // payload, so copy that and let the death-screen button confirm it (T.linkCopied).
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(shareRunUrl())
-            .then(() => { _shareCopiedT = 1.8; })
-            .catch(() => {});
+    // Desktop browser: no share sheet, so the card is copied instead of sent. Both the
+    // image and the link go on the clipboard where ClipboardItem allows it (Ctrl+V into
+    // a chat then pastes the card, and a plain-text paste still gets the link); older
+    // browsers keep the link-only behaviour. The ClipboardItem value is a PROMISE for
+    // the blob rather than an awaited one: toBlob is async, and awaiting it first loses
+    // the user gesture the clipboard write needs.
+    if (!navigator.clipboard) return;
+    const link = shareRunUrl();
+    const ok   = () => { _shareCopiedT = 1.8; };
+    const copyText = () => {
+        if (navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(ok).catch(() => {});
+    };
+    if (card && navigator.clipboard.write && typeof ClipboardItem !== 'undefined') {
+        try {
+            const png = new Promise(res => card.toBlob(res, 'image/png'));
+            navigator.clipboard.write([new ClipboardItem({
+                'image/png':  png,
+                'text/plain': new Blob([link], { type: 'text/plain' }),
+            })]).then(ok).catch(copyText);
+            return;
+        } catch (e) { /* no ClipboardItem support for these types */ }
     }
+    copyText();
 }

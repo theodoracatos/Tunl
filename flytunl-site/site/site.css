@@ -1,0 +1,252 @@
+/* ============================================================
+   site.css - the shared chrome for flytunl.ch
+   ============================================================
+   Loaded by every page EXCEPT /play/, which is deliberately
+   full-bleed and carries no bar (see CLAUDE.md: the play area
+   stays as it is).
+
+   Scope: the sticky top bar and the sitemap footer, nothing
+   else. Each page keeps its own <style> block for its own
+   content, and that block is loaded AFTER this file, so a page
+   can still override anything here.
+
+   Fonts are deliberately NOT set: `font-family: inherit` makes
+   the bar adopt whatever face the page it sits on already uses,
+   so the homepage (Space Grotesk) and the guide pages (system
+   sans) each stay internally consistent.
+
+   The bar's MARKUP lives literally in all 14 pages, between
+   <!-- site-chrome:nav --> ... <!-- /site-chrome:nav --> markers
+   (same for the footer). A structural change to it is a scripted
+   sweep over those markers; a change to how it LOOKS is this file
+   alone.
+   ============================================================ */
+
+:root {
+  --sc-bg:        #04040a;
+  --sc-panel:     #0c0c15;
+  --sc-line:      #20202e;
+  --sc-line-soft: #191924;
+  --sc-text:      #d7d7e0;
+  --sc-dim:       #9a9aab;
+  --sc-faint:     #6a6a78;
+  /* The site has ONE accent and it is today's rock colour: /day.js sets
+     --day-c on <html> from the UTC date before the first paint. The literal
+     is only the fallback for a browser that never ran it. */
+  --sc-accent:    var(--day-c, #4dd9ff);
+
+  /* The game's own two faces (src/fonts.js). Every page loads them, so the
+     site and the game read as one product. */
+  --tunl-ui:      "Chakra Petch", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --tunl-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* ---------- sticky top bar ---------- */
+
+.sitenav {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* full-bleed across the body's side padding */
+  margin: 0 -20px 30px;
+  /* content centred on wide screens without an extra wrapper element */
+  padding: 10px max(18px, calc((100% - 940px) / 2));
+  background: rgba(7, 7, 14, 0.86);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  border-bottom: 1px solid var(--sc-line-soft);
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.sn-brand {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  text-decoration: none;
+  padding: 2px 4px;
+}
+.sn-brand img { height: 21px; width: auto; display: block; }
+
+.sn-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 10px;
+  min-width: 0;
+}
+.sn-links a {
+  color: var(--sc-dim);
+  text-decoration: none;
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  white-space: nowrap;
+}
+.sn-links a:hover { color: #fff; background: rgba(255,255,255,0.05); text-decoration: none; }
+.sn-links a[aria-current="page"] { color: #fff; }
+.sn-links a[aria-current="page"]::after {
+  content: "";
+  display: block;
+  height: 2px;
+  margin: 4px 10px -8px;
+  background: var(--sc-accent);
+  border-radius: 2px;
+}
+
+.sn-gap { flex: 1 1 auto; }
+
+/* version pill - stamped from TUNL_VERSION at build time, so it can
+   never go stale the way the old hand-written "New in X" badge did */
+.sn-ver {
+  flex: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--sc-accent);
+  text-decoration: none;
+  border: 1px solid color-mix(in srgb, var(--sc-accent) 40%, transparent);
+  border-radius: 999px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+.sn-ver:hover { border-color: var(--sc-accent); text-decoration: none; }
+
+.sn-cta {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--sc-accent);
+  color: #05050c;
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  white-space: nowrap;
+}
+.sn-cta:hover { background: color-mix(in srgb, var(--sc-accent) 75%, #fff); text-decoration: none; }
+.sn-cta svg { width: 13px; height: 13px; fill: currentColor; }
+
+/* mobile overflow menu - <details>, so it works with JS disabled */
+.sn-more { position: relative; flex: none; display: none; }
+.sn-more > summary {
+  list-style: none;
+  cursor: pointer;
+  color: var(--sc-dim);
+  border: 1px solid var(--sc-line);
+  border-radius: 8px;
+  padding: 7px 11px;
+  font-size: 15px;
+  line-height: 1;
+}
+.sn-more > summary::-webkit-details-marker { display: none; }
+.sn-more[open] > summary { color: #fff; border-color: var(--sc-accent); }
+.sn-sheet {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 9px);
+  min-width: 190px;
+  display: flex;
+  flex-direction: column;
+  background: #0a0a13;
+  border: 1px solid var(--sc-line);
+  border-radius: 11px;
+  padding: 6px;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.6);
+}
+.sn-sheet a {
+  color: var(--sc-text);
+  text-decoration: none;
+  font-size: 14.5px;
+  padding: 9px 12px;
+  border-radius: 7px;
+}
+.sn-sheet a:hover { background: rgba(255,255,255,0.06); text-decoration: none; }
+
+@media (max-width: 820px) {
+  .sitenav { margin-bottom: 22px; gap: 6px; padding: 9px 14px; }
+  .sn-links { display: none; }
+  .sn-more { display: block; }
+  .sn-ver { display: none; }
+}
+@media (max-width: 380px) {
+  .sn-cta { padding: 8px 12px; font-size: 13.5px; }
+}
+
+/* ---------- sitemap footer ---------- */
+
+.sitefoot {
+  margin: 72px 0 0;
+  padding: 34px 0 8px;
+  border-top: 1px solid var(--sc-line-soft);
+  font-family: inherit;
+}
+.sf-inner { max-width: 900px; margin: 0 auto; }
+
+.sf-cols {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 26px 32px;
+}
+@media (max-width: 620px) { .sf-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.sf-col { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; min-width: 0; }
+.sf-col h4 {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--sc-faint);
+  font-weight: 600;
+  margin: 0 0 3px;
+}
+.sf-col a {
+  color: var(--sc-dim);
+  text-decoration: none;
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+.sf-col a:hover { color: var(--sc-accent); text-decoration: underline; }
+
+.sf-legal {
+  margin: 30px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--sc-line-soft);
+  color: var(--sc-faint);
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+.sf-legal a { color: var(--sc-faint); }
+.sf-legal a:hover { color: var(--sc-dim); }
+
+/* the homepage's language switcher lives in this block too */
+.sf-legal .langsw { margin-left: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sitenav, .sn-sheet { transition: none !important; }
+}
+
+/* ---------- right-to-left (Arabic) ----------
+   Layout is flex/grid, which mirrors by itself. What does not mirror is anything
+   spelled with a physical side: the nav's gap and sheet, list indents, table
+   alignment and the accent edge on a note box. Code stays left-to-right inside
+   right-to-left prose, isolated so its punctuation does not jump around. */
+[dir="rtl"] .sn-links { margin-left: 0; margin-right: 10px; }
+[dir="rtl"] .sn-sheet { right: auto; left: 0; }
+[dir="rtl"] ul, [dir="rtl"] ol { padding-left: 0; padding-right: 22px; }
+[dir="rtl"] th, [dir="rtl"] td { text-align: right; }
+[dir="rtl"] .note {
+  border-left-width: 1px;
+  border-right: 3px solid var(--sc-accent);
+  border-radius: 10px 0 0 10px;
+}
+[dir="rtl"] code, [dir="rtl"] pre { direction: ltr; unicode-bidi: isolate; }
+
+/* Letter-spacing is a Latin/mono label habit. In Arabic it pulls the joined
+   letterforms apart (the script is cursive), and Devanagari conjuncts break the
+   same way, so those two get none anywhere on the site. */
+:lang(ar), :lang(ar) *, :lang(hi), :lang(hi) * { letter-spacing: normal !important; }

@@ -505,3 +505,56 @@ Both stores' content-rating questionnaires were redone when `unlock_all_ships` s
 6.0. It is a flat one-time digital-goods purchase, not gambling / loot-box / cash-back, so
 the "shards are never purchasable with real money" answer from the prior audit held after
 re-checking.
+
+## Daily run card (share)
+
+**The audit that produced the rebuild (2026-09-20).** The prompt was the user's:
+"the death screen looks so good it would be great for sharing - can't we just forward
+it?" The honest answer was "yes technically, no editorially", and the audit that answered
+it also challenged the rest of the share path:
+https://claude.ai/artifact/XSSaqo22neVCJxtVHXDLnt
+
+**Why not a screenshot of the panel.** It is ~40 lines of work (`cv` is readable -
+`record.js` already blits it, and a temporary resize would even give card resolution),
+and four things make it the wrong asset anyway: the button row is in the picture; the
+panel is a different shape on every target (956x600 iOS, 956x520 Android, 956x440 web),
+so the game's public face would have no constant proportion; there is no wordmark, URL or
+date anywhere on it; and three of its blocks (`TODAY TOP`, the run counter, the shard
+payout with its daily cap) are the sender's own meta. So the card composes the same
+CONTENT into a fixed frame instead of copying the panel's pixels.
+
+**The twelve findings, and what shipped.** Ranked by what they cost:
+
+| # | finding | shipped |
+|---|---------|---------|
+| F1 | URL was the *else* branch of the world rank, so every card with a rank had no address at all | always-on footer |
+| F2 | app link was bare `/play/?r=`, stripping `?d`/`?s`/`?g` that all three targets parse | one link everywhere |
+| F3 | gate `>= 200 \|\| PB` runs backwards to the pride curve | `SHARE_NEAR_BEST` of today's bar |
+| F4 | no date on a card whose tagline says "today" | `20 SEP` in the header |
+| F5 | one cut, and it was the link-preview shape | portrait 1080x1350 for share sheets |
+| F6 | no QR, and the card keeps landing on a screen | self-contained encoder |
+| F7 | the call to action existed only in the accompanying text | tagline in the footer |
+| F8 | the profile strip took half the card and said less than the scenes | scenes band leads, profile demoted |
+| F9 | desktop copied the link and threw the rendered card away | `ClipboardItem` image + text |
+| F10 | the only share entry point is after a run, never an invitation before one | open |
+| F11 | the card is in the sender's language | open, mitigated by keeping text minimal |
+| F12 | no feedback after a native share | open |
+
+**The QR is measured, not decorative.** Payload is `shareRunUrl(true)`, the link without
+the ghost: with the ghost it is up to ~1600 bytes, i.e. past version 40 (177x177 modules),
+which at the landscape cut's 104pt is 0.6pt per module - not scannable by anything.
+Without it the payload is ~80 characters, version 5 (37x37), ~2.8pt per module landscape
+and ~5pt portrait. `?d` and `?s` survive, so the QR still hands over the actual challenge.
+`test-share.js` proves the encoder by reversing it (format bits -> mask -> zigzag ->
+de-interleave -> Reed-Solomon syndromes -> payload), because a wrong QR fails silently: it
+still looks exactly like a QR, on a card that has already been shared.
+
+**Two layout rules came out of looking at the rendered cards, both the same class of bug
+as the 13.0 death screen's:**
+- The scenes band is a SLOT, not a strip. Dividing a 296pt slot into one row makes each
+  frame 335pt wide, which holds two - fine for a run that died in S0, and wrong for a deep
+  one, where it drops every sector but the last. It now takes the fewest rows that hold
+  what the run has.
+- The band yields to the chips, not the other way round. Six chips (record + ship +
+  mission + three stats) wrap to a second row and ran straight through the band's label
+  at 1080x1350 before the band was placed against the chips' measured bottom edge.

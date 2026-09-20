@@ -1,0 +1,22 @@
+{
+ "9a6913a": "İlk İki Ay: 1.0'dan 8.0'a TUNL",
+ "c3f2612": "Tek düğmeli bir mağara uçuş oyunu, 5 Temmuz 2026'daki ilk commit'ten iki ayda sekiz sürüme nasıl ulaştı, ve düzeltmesi üç deneme gerektiren ses hatası.",
+ "b980add": "Değişiklik günlüğü 1.0'da başlıyor, ama oyun birkaç gün önce başladı. İşte gerçekleştikleri sırayla, commit geçmişinden yeniden oluşturulmuş ilk sekiz sürüm.",
+ "a803fa0": "Geliştirici günlüğü &middot; 20 Eylül 2026 &middot; <a href=\"/devlog/\">tüm yazılar</a>",
+ "23ec621": "Birinci hafta: bir tarayıcı sekmesindeki oyun",
+ "05f45fd": "İlk commit 5 Temmuz 2026 tarihli. O günün sonunda oyunda ses efektleri, arka plan müziği, birkaç jeton türü ve bir kalkan vardı. Bir gün sonra gemi kaplamaları, hız çizgileri, günlük seri, bir paylaşım düğmesi ve bir iOS sarmalayıcısı vardı, ve TUNL olarak yeniden adlandırılmıştı. Günlük mağara zaten fikirdi: her koşu UTC tarihinden üretilir, bu yüzden her oyuncu aynı gün aynı tüneli uçar.",
+ "cede897": "Bazı erken kararlar saatler içinde geri alındı. Uygulama bir an için dikeye kilitlendi ve sonra yataya geri döndü, bu şimdi bozmadığım bir kural. İlk sürümde var olan bir tekrar hayaleti aynı gün kaldırıldı, ve 5.0'da günün en iyi koşusunun hayaleti olarak doğru şekilde geri geldi.",
+ "5dc027c": "1.0: mağazalar",
+ "834cd03": "İlk on beş günün geri kalanı altyapı işiydi. Oyun betiği 9 Temmuz'da modüllere ayrıldı. Game Center ve Play Games'te sıralamalar ve on dil bunu izledi, ardından tek seferlik bir Reklamları Kaldır satın alımı ve Uygulama İzleme Şeffaflığı ile GDPR onay istemlerinin arkasındaki geçiş reklamları geldi. Android bir gün sonra aynı seti aldı: faturalama, reklamlar, dokunsal geri bildirim, ve bir dizi başlatma çökmesi düzeltmesi. Bu 1.0'dı. 1.1 sadece Android derlemesini Google Play'in gerektirdiği API seviyesine taşıdı.",
+ "c3ff7b9": "2.x: düzeltmesi üç deneme gerektiren ses hatası",
+ "69d058b": "Sürüm 2.0, her iki mağazanın da eşleşmesi için bir numara değişikliğiydi. Ardından basit görünen ama öyle olmayan bir hata geldi: uygulama arka plana gittikten sonra, geri döndüğünde müzik sessiz kalıyordu. 2.1 bunu düzeltmesi gerekiyordu. Bir sonraki derleme \"gerçekten düzeltildi\" başlığını taşıyordu, ve 2.3'te üçüncü bir değişiklik geldi, çünkü ses bağlamı sadece kapatılmak yerine askıya alınabiliyordu. Üçü de geçmişte neredeyse aynı isim altında yer alıyor.",
+ "1319bbd": "2.2 ayrıca kaydırma hızının maksimum zorlukta yükselmeye devam etmesini sağladı. Bir koşu asla sabit tempoda bir dayanıklılık testine dönüşmemeli, ve bu kural kaldı.",
+ "e702b2b": "3.0'dan 4.0'a: ekonomi",
+ "4b1c33d": "Gemiler eskiden skor eşiklerinde açılırdı. Güçlü bir oyuncu tüm listeyi tek bir koşuda bitirebilir ve sonra kovalayacak hiçbir şeyi kalmazdı, bu yüzden 3.0 eşikleri toplanan jetonlardan biriken parçacıklarla değiştirdi, ve her gemiye sadece bir güç yerine bir güç ve bir zayıflık verdi. Aynı sürüm ustalık seviyelerini ve ilk günlük görevleri ekledi. Herkes eski oyunculara ayrıcalık tanınmadan sıfır parçacıkla başladı.",
+ "1c44787": "3.2, kendi karakterine sahip ilk tehlikeleri ekledi: bir zehir jetonu, bir bomba jetonu ve duvara monteli top. 4.0 sadece simgeydi, o da gemi ve onun itişi oldu.",
+ "3082dfb": "5.0'dan 8.0'a: bir koşuyu birine anlatmaya değer kılmak",
+ "e7a3e1f": "5.0, bir koşunun oyundan çıkabildiği sürümdü: uçtuğun tüneli çizen bir koşu kartı, ölüm ekranında bir dünya sıralaması, ve yarışılacak bir hayalet. 6.0, beceriden çok oynanan günleri sayan ikinci bir para birimi olan yıldız tozunu ekledi, bu yüzden skorun ne olursa olsun son gemi aylar alır. 7.0 her haftanın gününe kendi kayasını verdi, ve 8.0 başlık ekranını yeniden inşa etti ve \"+REKOR\" anını ekledi. İlk dakikanın hissine yapılan en büyük değişiklik küçüktü: 25 skorundan önce hiçbir engel yok, bu yüzden ilk ders uçmanın kendisi.",
+ "66177a5": "Sekiz sürümün ortak noktası",
+ "4334adc": "Bu sekiz sürüm döngüyü kurdu: uç, topla, aç, yarın geri dön. Bir koşunun kasıtlı temposu, sektörler ve bir uçuş planı, daha sonra geldi ve <a href=\"/devlog/run-pacing/\">tempo yazısında</a> anlatılıyor. Oyunu bugün bir arada tutan kurallar, herkes için aynı olan bir mağara ve her ekranda aynı şekilde uçan bir gemi, <a href=\"/devlog/daily-cave/\">Bir Mağara, Her Oyuncu</a> ve <a href=\"/devlog/same-ship-every-screen/\">Her Ekranda Aynı Gemi</a>'de anlatılıyor. O zamandan beri her sürüm <a href=\"/changelog/\">değişiklik günlüğünde</a>.",
+ "232e36c": "<a class=\"cta\" href=\"/play/\">Bugünün mağarasını oyna</a>"
+}

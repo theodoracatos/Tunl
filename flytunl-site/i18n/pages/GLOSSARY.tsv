@@ -1,0 +1,40 @@
+term	de	fr	it	es	pt	ja	ko	zh	ru	ar	tr	id	pl	hi
+run	Lauf	partie	partita	partida	partida	ラン	런	一局	забег	جولة	koşu	run	lot	रन
+corridor	Korridor	couloir	corridoio	pasillo	corredor	通路	통로	通道	коридор	الممر	koridor	lorong	korytarz	गलियारा
+cave	Höhle	grotte	grotta	cueva	caverna	洞窟	동굴	洞穴	пещера	الكهف	mağara	gua	jaskinia	गुफा
+tunnel	Tunnel	tunnel	tunnel	túnel	túnel	トンネル	터널	隧道	тоннель	النفق	tünel	terowongan	tunel	सुरंग
+coin	Münze	pièce	moneta	moneda	moeda	コイン	코인	金幣	монета	عملة	jeton	koin	moneta	सिक्का
+gold	Gold	or	oro	oro	ouro	ゴールド	골드	黃金	золото	الذهب	altın	emas	złoto	सोना
+hourglass	Sanduhr	sablier	clessidra	reloj de arena	ampulheta	砂時計	모래시계	沙漏	песочные часы	الساعة الرملية	kum saati	jam pasir	klepsydra	रेतघड़ी
+shield	Schild	bouclier	scudo	escudo	escudo	シールド	실드	護盾	щит	درع	kalkan	perisai	osłona	शील्ड
+ammo	Munition	munitions	munizioni	munición	munição	弾薬	탄약	彈藥	патроны	ذخيرة	mermi	amunisi	amunicja	गोलियां
+magnet	Magnet	aimant	magnete	imán	ímã	マグネット	마그넷	磁鐵	магнит	مغناطيس	mıknatıs	magnet	magnes	मैग्नेट
+bomb	Bombe	bombe	bomba	bomba	bomba	ボム	폭탄	炸彈	бомба	قنبلة	bomba	bom	bomba	बम
+poison	Gift	poison	veleno	veneno	veneno	毒	독	毒藥	яд	السم	zehir	racun	trucizna	ज़हर
+drain	Drain	drain	drain	drenaje	dreno	ドレイン	드레인	吸取	утечка	الاستنزاف	emme	drain	drenaż	ड्रेन
+hull	Hülle	coque	scafo	casco	casco	装甲	선체	船體	корпус	الهيكل	gövde	lambung	kadłub	कवच
+hull scratch	Rumpfkratzer	éraflure de coque	graffio allo scafo	rasguño en el casco	arranhão no casco	装甲の傷	선체 흠집	船體刮痕	царапина на корпусе	خدش في الهيكل	gövde çiziği	goresan lambung	rysa na kadłubie	कवच पर खरोंच
+SCRAPE! (banner)	KRATZER!	ÉRAFLURE !	GRAFFIO!	¡RASGUÑO!	ARRANHÃO!	かすった！	긁혔다!	擦傷！	ЦАРАПИНА!	خدش!	ÇİZİK!	TERGORES!	RYSA!	खरोंच!
+ENTERING THE TUNL (banner)	EINFLUG IN DEN TUNL	ENTRÉE DANS LE TUNL	INGRESSO NEL TUNL	ENTRANDO EN EL TUNL	ENTRANDO NO TUNL	TUNLへ突入	TUNL 진입	進入 TUNL	ВХОД В TUNL	الدخول إلى TUNL	TUNL'A GİRİŞ	MEMASUKI TUNL	WLOT DO TUNL	TUNL में प्रवेश
+SECTOR (notice)	SEKTOR	SECTEUR	SETTORE	SECTOR	SETOR	セクター	섹터	區段	СЕКТОР	القطاع	SEKTÖR	SEKTOR	SEKTOR	सेक्टर
+combo	Kombo	combo	combo	combo	combo	コンボ	콤보	連擊	комбо	كومبو	kombo	combo	combo	कॉम्बो
+streak	Serie	serie	serie	racha	sequência	連続	연속	連鎖	серия	سلسلة	seri	rangkaian	seria	सिलसिला
+near miss	Beinahe-Treffer	frôlement	sfioramento	roce	quase-colisão	ニアミス	아슬아슬	險過	на волосок	بشق الأنفس	kıl payı	nyaris kena	na styk	बाल-बाल बचना
+debriefing	Debriefing	débriefing	debriefing	pantalla de resumen	tela de resumo	デブリーフィング画面	결과 화면	結算畫面	экран итогов	شاشة الملخص	sonuç ekranı	layar hasil	ekran podsumowania	डीब्रीफ़िंग स्क्रीन
+leaderboard	Rangliste	classement	classifica	ranking	ranking	ランキング	랭킹	排行榜	рейтинг	التصنيف	sıralama	peringkat	ranking	रैंकिंग
+mastery	Meisterschaft	maîtrise	maestria	maestría	maestria	熟練度	숙련도	精通度	мастерство	الإتقان	ustalık	penguasaan	biegłość	महारत
+paint (finish)	Lackierung	peinture	vernice	pintura	pintura	塗装	도색	塗裝	окраска	الطلاء	boya	cat	malowanie	पेंट
+ship	Schiff	vaisseau	nave	nave	nave	機体	기체	飛船	корабль	مركبة	gemi	kapal	statek	जहाज़
+ghost	Geist	fantôme	fantasma	fantasma	fantasma	ゴースト	고스트	幽靈	призрак	شبح	hayalet	hantu	duch	घोस्ट
+warp ring/portal	Warp-Portal	portail warp	portale warp	portal warp	portal warp	ワープリング	워프 링	曲速環	варп-кольцо	حلقة الانتقال	warp halkası	cincin warp	pierścień warp	वार्प रिंग
+stalactite	Stalaktit	stalactite	stalattite	estalactita	estalactite	鍾乳石	종유석	鐘乳石	сталактит	الهوابط	sarkıt	stalaktit	stalaktyt	स्टैलेक्टाइट
+chicane	Schikane	chicane	chicane	chicana	chicane	シケイン	시케인	蛇行彎道	шикана	منعطف متقابل	şikan	chicane	szykana	चिकेन
+mine	Mine	mine	mina	mina	mina	機雷	지뢰	地雷	мина	لغم	mayın	ranjau	mina	माइन
+boulder	Felsbrocken	rocher	masso	roca	rocha	岩	바위	巨石	валун	صخرة ضخمة	kaya	batu besar	głaz	चट्टान
+cannon	Kanone	canon	cannone	cañón	canhão	砲台	대포	砲台	пушка	مدفع	top	meriam	działo	तोप
+shards	Shards	éclats	frammenti	fragmentos	fragmentos	シャード	샤드	碎片	осколки	الشظايا	parçacıklar	shard	odłamki	शार्ड्स
+stardust	Stardust	poussière d'étoiles	polvere di stelle	polvo estelar	poeira estelar	スターダスト	스타더스트	星塵	звёздная пыль	غبار النجوم	yıldız tozu	stardust	pył gwiezdny	स्टारडस्ट
+daily mission	Tagesmission	mission du jour	missione del giorno	misión diaria	missão diária	デイリーミッション	오늘의 미션	每日任務	ежедневное задание	مهمة يومية	günlük görev	misi harian	codzienna misja	दैनिक मिशन
+world	Welt	monde	mondo	mundo	mundo	ワールド	월드	世界	мир	العالم	dünya	dunia	świat	दुनिया
+hitbox	Hitbox	hitbox	hitbox	hitbox	hitbox	当たり判定	히트박스	碰撞體積	хитбокс	مساحة الاصطدام	isabet kutusu	hitbox	hitbox	हिटबॉक्स
+grace period	Schonfrist	période de grâce	tregua	periodo de gracia	período de graça	猶予時間	유예 시간	緩衝時間	льготный период	فترة سماح	ek süre	masa tenggang	okres łaski	छूट अवधि
