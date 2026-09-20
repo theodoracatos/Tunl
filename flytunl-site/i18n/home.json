@@ -271,13 +271,13 @@
     "ja": "墜落してから、もう一回"
   },
   "f6.p": {
-    "en": "Die deep in a strong run and you can watch a short ad to continue from exactly where you fell - once per run. A shielded hit now grants a brief window of invulnerability instead of a cheap second death.",
-    "de": "Stirbst du tief in einem starken Lauf, kannst du eine kurze Werbung anschauen und genau dort weitermachen, wo du gefallen bist - einmal pro Lauf. Ein abgefangener Treffer gibt dir jetzt ein kurzes Fenster der Unverwundbarkeit statt eines billigen zweiten Todes.",
-    "fr": "Si tu meurs loin dans une bonne partie, tu peux regarder une courte pub pour repartir exactement d'où tu es tombé - une fois par partie. Un coup bloqué par le bouclier t'accorde désormais un bref instant d'invulnérabilité au lieu d'une seconde mort injuste.",
-    "it": "Se muori in profondità in una buona partita, puoi guardare un breve annuncio per ripartire esattamente da dove sei caduto - una volta per partita. Un colpo parato dallo scudo ora concede un breve periodo di invulnerabilità invece di una seconda morte ingiusta.",
-    "es": "Si mueres a lo hondo en una buena partida, puedes ver un anuncio corto para continuar justo donde caíste - una vez por partida. Un golpe bloqueado por el escudo ahora te da un breve momento de invulnerabilidad en lugar de una segunda muerte injusta.",
-    "pt": "Se você morrer fundo numa partida boa, dá para assistir a um anúncio curto e continuar exatamente de onde caiu - uma vez por partida. Um golpe bloqueado pelo escudo agora dá uma breve janela de invulnerabilidade em vez de uma segunda morte injusta.",
-    "ja": "好調な走りの深いところで倒れたら、短い広告を見てちょうど落ちた地点から再開できる - 1回の走りにつき一度。シールドで受けた一撃は、安っぽい二度目の死ではなく、短い無敵時間になる。"
+    "en": "Die deep in a strong run and, in the apps, you can watch a short optional video to continue from where you fell - once per run - with your hull repaired. A shielded hit grants a brief window of invulnerability instead of a cheap second death.",
+    "de": "Stirbst du tief in einem starken Lauf, kannst du in den Apps ein kurzes, freiwilliges Video ansehen und dort weitermachen, wo du gefallen bist - einmal pro Lauf, mit repariertem Rumpf. Ein abgefangener Treffer gibt dir ein kurzes Fenster der Unverwundbarkeit statt eines billigen zweiten Todes.",
+    "fr": "Si tu meurs loin dans une bonne partie, tu peux, dans les applis, regarder une courte vidéo facultative pour repartir d'où tu es tombé - une fois par partie, avec la coque réparée. Un coup bloqué par le bouclier t'accorde un bref instant d'invulnérabilité au lieu d'une seconde mort injuste.",
+    "it": "Se muori in profondità in una buona partita, nelle app puoi guardare un breve video facoltativo per ripartire da dove sei caduto - una volta per partita, con lo scafo riparato. Un colpo parato dallo scudo concede un breve periodo di invulnerabilità invece di una seconda morte ingiusta.",
+    "es": "Si mueres a lo hondo en una buena partida, en las apps puedes ver un vídeo corto opcional para continuar justo donde caíste - una vez por partida, con el casco reparado. Un golpe bloqueado por el escudo te da un breve momento de invulnerabilidad en lugar de una segunda muerte injusta.",
+    "pt": "Se você morrer fundo numa partida boa, nos apps dá para assistir a um vídeo curto opcional e continuar exatamente de onde caiu - uma vez por partida, com o casco reparado. Um golpe bloqueado pelo escudo dá uma breve janela de invulnerabilidade em vez de uma segunda morte injusta.",
+    "ja": "好調な走りの深いところで倒れたら、アプリでは短い任意の動画を見て、機体を修理した状態で落ちた地点から再開できる - 1回の走りにつき一度。シールドで受けた一撃は、安っぽい二度目の死ではなく、短い無敵時間になる。"
   },
   "f7.h": {
     "en": "Milestones and combos",
@@ -692,5 +692,158 @@
     "es": "Seis acabados en el taller Paint, desde un borde sigiloso brillante hasta un barrido de aurora cambiante. Compra un acabado una vez con shards y elígelo para cada nave que tengas. Solo estético: sin ventajas ni ventaja en la clasificación.",
     "pt": "Seis pinturas na oficina Paint, de uma borda furtiva brilhante a um varrer de aurora cambiante. Compre um acabamento uma vez com shards e escolha-o para cada nave que você tem. Apenas estético: sem bônus, sem vantagem no ranking.",
     "ja": "ペイントショップに6種類のカラーリング。光るステルスの縁取りから、移ろうオーロラの輝きまで。シャードで一度買えば、持っている機体ごとに選べる。見た目だけで、性能もランキングへの影響もなし。"
+  },
+  "guides.head": {
+    "en": "Learn the cave",
+    "de": "Die Höhle kennenlernen",
+    "fr": "Apprendre la grotte",
+    "it": "Conoscere la grotta",
+    "es": "Conoce la cueva",
+    "pt": "Conheça a caverna",
+    "ja": "洞窟を知ろう"
+  },
+  "guides.sub": {
+    "en": "Guides, notes and history for players and the curious.",
+    "de": "Anleitungen, Notizen und Geschichte für Spieler und Neugierige.",
+    "fr": "Guides, notes et histoire pour les joueurs et les curieux.",
+    "it": "Guide, note e storia per giocatori e curiosi.",
+    "es": "Guías, notas e historia para jugadores y curiosos.",
+    "pt": "Guias, notas e história para jogadores e curiosos.",
+    "ja": "プレイヤーと好奇心旺盛な人のためのガイド、開発メモ、歴史。"
+  },
+  "g1.h": {
+    "en": "Learn to play",
+    "de": "Spielen lernen",
+    "fr": "Apprendre à jouer",
+    "it": "Imparare a giocare",
+    "es": "Aprende a jugar",
+    "pt": "Aprenda a jogar",
+    "ja": "遊び方をマスター"
+  },
+  "g1.p": {
+    "en": "Controls, scoring, all eight coins, every hazard in order and the strategy that raises your score.",
+    "de": "Steuerung, Wertung, alle acht Münzen, jede Gefahr der Reihe nach und die Strategie für mehr Punkte.",
+    "fr": "Commandes, score, les huit pièces, chaque danger dans l'ordre et la stratégie qui fait grimper ton score.",
+    "it": "Comandi, punteggio, tutte e otto le monete, ogni pericolo in ordine e la strategia che fa salire il punteggio.",
+    "es": "Controles, puntuación, las ocho monedas, cada peligro en orden y la estrategia que sube tu puntuación.",
+    "pt": "Controles, pontuação, as oito moedas, cada perigo em ordem e a estratégia que aumenta sua pontuação.",
+    "ja": "操作、スコア、8種類のコイン、順番に現れる障害物、そしてスコアを伸ばす戦略。"
+  },
+  "g2.h": {
+    "en": "Meet the ships",
+    "de": "Die Schiffe kennenlernen",
+    "fr": "Découvrir les vaisseaux",
+    "it": "Conoscere le navi",
+    "es": "Conoce las naves",
+    "pt": "Conheça as naves",
+    "ja": "機体を知ろう"
+  },
+  "g2.p": {
+    "en": "The roster, the trade each ship makes, how mastery, shards and stardust work, and the six paint finishes.",
+    "de": "Die Flotte, der Kompromiss jedes Schiffs, wie Meisterschaft, Shards und Stardust funktionieren, und die sechs Lackierungen.",
+    "fr": "La flotte, le compromis de chaque vaisseau, le fonctionnement de la maîtrise, des shards et du stardust, et les six peintures.",
+    "it": "La flotta, il compromesso di ogni nave, come funzionano maestria, shard e stardust, e le sei vernici.",
+    "es": "La flota, el equilibrio de cada nave, cómo funcionan la maestría, las esquirlas y el polvo estelar, y los seis acabados.",
+    "pt": "A frota, a troca de cada nave, como funcionam maestria, fragmentos e poeira estelar, e os seis acabamentos.",
+    "ja": "機体一覧、それぞれの機体のトレードオフ、マスタリー、シャード、スターダストの仕組み、6種類のペイント。"
+  },
+  "g3.h": {
+    "en": "Read the devlog",
+    "de": "Den Entwicklerblog lesen",
+    "fr": "Lire le journal de dev",
+    "it": "Leggere il diario di sviluppo",
+    "es": "Lee el diario de desarrollo",
+    "pt": "Leia o diário de desenvolvimento",
+    "ja": "開発ブログを読む"
+  },
+  "g3.p": {
+    "en": "How the daily cave is generated from a date, how a run is paced, and how the physics stays fair on every screen.",
+    "de": "Wie die Tageshöhle aus einem Datum entsteht, wie ein Lauf getaktet ist und warum die Physik auf jedem Bildschirm fair bleibt.",
+    "fr": "Comment la grotte du jour naît d'une date, comment une partie est rythmée, et pourquoi la physique reste équitable sur chaque écran.",
+    "it": "Come nasce la grotta del giorno da una data, come è scandita una partita e perché la fisica resta equa su ogni schermo.",
+    "es": "Cómo nace la cueva del día a partir de una fecha, cómo se marca el ritmo de una partida y por qué la física es justa en cualquier pantalla.",
+    "pt": "Como a caverna do dia nasce de uma data, como uma partida é ritmada e por que a física é justa em qualquer tela.",
+    "ja": "日替わりの洞窟が日付から生まれる仕組み、1回の走りのペース配分、どの画面でも物理が公平に保たれる理由。"
+  },
+  "g4.h": {
+    "en": "See what changed",
+    "de": "Änderungen ansehen",
+    "fr": "Voir les nouveautés",
+    "it": "Vedere le novità",
+    "es": "Mira qué ha cambiado",
+    "pt": "Veja o que mudou",
+    "ja": "更新内容を見る"
+  },
+  "g4.p": {
+    "en": "Every version, newest first, from optional rewards to the dusk-city approach in 15.0.",
+    "de": "Jede Version, die neueste zuerst, von den optionalen Belohnungen bis zum Anflug über die Stadt in 15.0.",
+    "fr": "Chaque version, la plus récente d'abord, des récompenses facultatives à l'approche au-dessus de la ville de la 15.0.",
+    "it": "Ogni versione, dalla più recente, dalle ricompense facoltative fino all'avvicinamento sulla città della 15.0.",
+    "es": "Cada versión, la más reciente primero, desde las recompensas opcionales hasta la aproximación sobre la ciudad de la 15.0.",
+    "pt": "Cada versão, da mais recente para a mais antiga, das recompensas opcionais até a aproximação sobre a cidade da 15.0.",
+    "ja": "新しい順に全バージョン。任意の報酬から、15.0の夕暮れの街の進入まで。"
+  },
+  "g5.h": {
+    "en": "Meet the maker",
+    "de": "Den Macher kennenlernen",
+    "fr": "Rencontrer le créateur",
+    "it": "Conoscere l'autore",
+    "es": "Conoce al creador",
+    "pt": "Conheça o criador",
+    "ja": "作者について"
+  },
+  "g5.p": {
+    "en": "Who makes TUNL, how it is built and how it is paid for.",
+    "de": "Wer TUNL macht, wie es gebaut ist und wie es sich finanziert.",
+    "fr": "Qui fait TUNL, comment il est construit et comment il est financé.",
+    "it": "Chi fa TUNL, come è costruito e come si finanzia.",
+    "es": "Quién hace TUNL, cómo está construido y cómo se financia.",
+    "pt": "Quem faz o TUNL, como ele é construído e como se financia.",
+    "ja": "TUNLを作っているのは誰か、どう作られ、どう運営されているか。"
+  },
+  "g6.h": {
+    "en": "Get answers",
+    "de": "Antworten finden",
+    "fr": "Trouver des réponses",
+    "it": "Trovare risposte",
+    "es": "Encuentra respuestas",
+    "pt": "Encontre respostas",
+    "ja": "答えを探す"
+  },
+  "g6.p": {
+    "en": "Common questions about purchases, progress, leaderboards and privacy.",
+    "de": "Häufige Fragen zu Käufen, Fortschritt, Ranglisten und Datenschutz.",
+    "fr": "Questions fréquentes sur les achats, la progression, les classements et la confidentialité.",
+    "it": "Domande frequenti su acquisti, progressi, classifiche e privacy.",
+    "es": "Preguntas frecuentes sobre compras, progreso, clasificaciones y privacidad.",
+    "pt": "Perguntas frequentes sobre compras, progresso, rankings e privacidade.",
+    "ja": "購入、進行状況、ランキング、プライバシーについてのよくある質問。"
+  },
+  "footer.ships": {
+    "en": "Ships",
+    "de": "Schiffe",
+    "fr": "Vaisseaux",
+    "it": "Navi",
+    "es": "Naves",
+    "pt": "Naves",
+    "ja": "機体"
+  },
+  "footer.changelog": {
+    "en": "Changelog",
+    "de": "Änderungen",
+    "fr": "Versions",
+    "it": "Versioni",
+    "es": "Cambios",
+    "pt": "Alterações",
+    "ja": "更新履歴"
+  },
+  "footer.about": {
+    "en": "About",
+    "de": "Über TUNL",
+    "fr": "À propos",
+    "it": "Info",
+    "es": "Acerca de",
+    "pt": "Sobre",
+    "ja": "TUNLについて"
   }
 }

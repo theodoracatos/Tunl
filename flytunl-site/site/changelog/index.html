@@ -66,6 +66,7 @@
   th, td { text-align:left; padding:9px 12px; border-bottom:1px solid #222; vertical-align:top; }
   th { color:#4dd9ff; font-weight:600; }
   td { color:#ccc; }
+  td:first-child { white-space:nowrap; }
   .cta {
     display:inline-block; background:#ffe040; color:#04040a; font-weight:700;
     text-decoration:none; padding:12px 24px; border-radius:10px; margin-top:8px;
@@ -77,6 +78,8 @@
   .post h3 { color:#ffe040; font-size:18px; margin:0 0 6px; }
   .post p { margin:0; color:#bbb; font-size:14.5px; }
   .post .when { color:#666; font-size:12.5px; margin-bottom:6px; display:block; }
+  .card { background:#0d0d16; border:1px solid #222; border-radius:10px; padding:20px; margin:22px 0; }
+  .card p { margin:8px 0; }
   .swatch { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:8px; vertical-align:middle; }
   footer {
     margin-top:56px; color:#666; font-size:13px; line-height:1.9;
@@ -96,7 +99,12 @@
   <h1>TUNL Changelog</h1>
   <p class="lead">What changed in each version, newest first. The browser version at
   <a href="/play/">flytunl.ch/play</a> always runs the newest build.</p>
-  <p class="meta">Changelog &middot; updated 20 September 2026 &middot; the latest version is 15.0</p>
+  <p class="meta">Changelog &middot; updated 20 September 2026 &middot; the latest version is 15.1</p>
+
+  <h2>15.1: A small fix for coins</h2>
+  <ul>
+    <li>Boulders and mines now keep clear of every coin, so a power-up can no longer sit inside a rock or on top of a mine, out of reach. The cave is still the same for every player.</li>
+  </ul>
 
   <h2>15.0: The run now begins outside the cave</h2>
   <ul>

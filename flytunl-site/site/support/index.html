@@ -6,7 +6,15 @@
 <!-- Google AdSense (site verification + ad serving) -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4882203470005029"
      crossorigin="anonymous"></script>
-<title>TUNL - Support</title>
+<title>TUNL Support and FAQ - Help, Purchases, Progress and Bugs</title>
+<meta name="description" content="Answers to common TUNL questions: how to play, why it is hard, how ships unlock, where your progress is stored, removing ads, restoring purchases, leaderboards and privacy, plus how to contact the developer.">
+<link rel="canonical" href="https://flytunl.ch/support/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="TUNL Support and FAQ - Help, Purchases, Progress and Bugs">
+<meta property="og:description" content="Answers to common TUNL questions: how to play, why it is hard, how ships unlock, where your progress is stored, removing ads, restoring purchases, leaderboards and privacy, plus how to contact the developer.">
+<meta property="og:url" content="https://flytunl.ch/support/">
+<meta property="og:image" content="https://flytunl.ch/feature-graphic-1024x500.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
@@ -20,49 +28,64 @@
     background:#04040a;
     color:#ddd;
     font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-    line-height:1.6;
+    line-height:1.7;
     margin:0;
     padding:40px 20px 80px;
   }
-  main { max-width:680px; margin:0 auto; }
-  .brand {
-    display:inline-flex;
-    align-items:center;
-    text-decoration:none;
-    margin-bottom:28px;
-  }
+  main { max-width:720px; margin:0 auto; }
+  .brand { display:inline-flex; align-items:center; text-decoration:none; margin-bottom:28px; }
   .brand img { height:28px; width:auto; }
-  h1 {
-    color:#ffe040;
-    font-size:28px;
-    letter-spacing:2px;
-    margin-bottom:24px;
-  }
-  h2 {
-    color:#4dd9ff;
-    font-size:18px;
-    margin-top:32px;
-    margin-bottom:10px;
-  }
-  p, li { color:#ccc; font-size:15px; }
-  ul { padding-left:20px; }
-  li { margin-bottom:8px; }
+  h1 { color:#ffe040; font-size:30px; letter-spacing:1px; margin-bottom:10px; line-height:1.25; }
+  .lead { color:#aaa; font-size:17px; margin-top:0; margin-bottom:8px; }
+  .meta { color:#666; font-size:13px; margin-bottom:34px; }
+  h2 { color:#4dd9ff; font-size:21px; margin-top:44px; margin-bottom:12px; line-height:1.3; }
+  h3 { color:#fff; font-size:16px; margin-top:28px; margin-bottom:8px; }
+  p, li { color:#ccc; font-size:15.5px; }
+  ul, ol { padding-left:22px; }
+  li { margin-bottom:10px; }
   a { color:#4dd9ff; }
   strong { color:#fff; }
-  .card {
-    background:#0d0d16;
-    border:1px solid #222;
-    border-radius:10px;
-    padding:20px;
-    margin-top:20px;
+  em { color:#ddd; }
+  code {
+    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size:13.5px; color:#ffe040;
+    background:#12121c; border-radius:4px; padding:1px 5px;
   }
+  pre {
+    background:#0d0d16; border:1px solid #222; border-radius:10px;
+    padding:16px; overflow-x:auto; margin:18px 0;
+  }
+  pre code { background:none; padding:0; color:#cfe8ff; font-size:13px; line-height:1.6; }
+  .note {
+    background:#0d0d16; border:1px solid #222; border-left:3px solid #4dd9ff;
+    border-radius:0 10px 10px 0; padding:14px 18px; margin:22px 0;
+  }
+  .note p { margin:0; font-size:14.5px; color:#bbb; }
+  .wrap { overflow-x:auto; margin:18px 0; }
+  table { width:100%; border-collapse:collapse; font-size:14.5px; min-width:480px; }
+  th, td { text-align:left; padding:9px 12px; border-bottom:1px solid #222; vertical-align:top; }
+  th { color:#4dd9ff; font-weight:600; }
+  td { color:#ccc; }
+  td:first-child { white-space:nowrap; }
+  .cta {
+    display:inline-block; background:#ffe040; color:#04040a; font-weight:700;
+    text-decoration:none; padding:12px 24px; border-radius:10px; margin-top:8px;
+  }
+  .cta:hover { background:#fff06a; }
+  .post { display:block; background:#0d0d16; border:1px solid #222; border-radius:12px;
+    padding:18px 20px; margin:16px 0; text-decoration:none; }
+  .post:hover { border-color:#4dd9ff; }
+  .post h3 { color:#ffe040; font-size:18px; margin:0 0 6px; }
+  .post p { margin:0; color:#bbb; font-size:14.5px; }
+  .post .when { color:#666; font-size:12.5px; margin-bottom:6px; display:block; }
+  .card { background:#0d0d16; border:1px solid #222; border-radius:10px; padding:20px; margin:22px 0; }
+  .card p { margin:8px 0; }
+  .swatch { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:8px; vertical-align:middle; }
   footer {
-    margin-top:48px;
-    color:#666;
-    font-size:13px;
-    border-top:1px solid #222;
-    padding-top:16px;
+    margin-top:56px; color:#666; font-size:13px; line-height:1.9;
+    border-top:1px solid #222; padding-top:16px;
   }
+  footer a { color:#888; }
 </style>
 <!-- Cloudflare Web Analytics (cookieless, no consent banner needed) -->
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "7783839e84374212b7d76f25e1fb8e87"}'></script>
@@ -72,45 +95,98 @@
   <a class="brand" href="/">
     <img src="/wordmark.svg" alt="TUNL">
   </a>
-  <h1>TUNL - Support</h1>
 
-  <p>TUNL is a hold-to-thrust cave flyer: hold to thrust up, release to fall.
-  Collect coins to widen the tunnel and unlock power-ups; avoid stalactites,
-  mines, boulders, cannons, and the tunnel walls.</p>
+  <h1>TUNL Support and FAQ</h1>
+  <p class="lead">Answers to the questions players ask most, and how to reach me when they do
+  not cover it.</p>
+  <p class="meta">Support &middot; updated 20 September 2026 for TUNL 15.1</p>
 
   <div class="card">
     <p><strong>Need help or found a bug?</strong></p>
     <p>Email <a href="mailto:info@flytunl.ch">info@flytunl.ch</a> and include:</p>
     <ul>
-      <li>Your device model and OS version</li>
+      <li>Your device model and OS version (or your browser, for the web version)</li>
       <li>What you were doing when the issue happened</li>
       <li>A screenshot or screen recording, if possible</li>
     </ul>
+    <p>TUNL is made by one person, and every message is read by the person who can fix it.</p>
   </div>
 
-  <h2>Common questions</h2>
+  <h2>Playing the game</h2>
 
-  <p><strong>How do I remove ads?</strong><br>
-  Open Settings from the title screen and select "Remove Ads" to purchase.
-  This is a one-time purchase that disables ads permanently on that
-  device/account.</p>
+  <h3>How do I play?</h3>
+  <p>Hold anywhere on the screen (or Space, or the up arrow on a keyboard) to climb, and release to fall. That is the entire control scheme. The <a href="/how-to-play/">how-to-play guide</a> covers scoring, all eight coins, every hazard and the strategy that raises your score.</p>
 
-  <p><strong>How do I restore my purchase on a new device?</strong><br>
-  Open Settings and select "Restore Purchases." Make sure you're signed in
-  with the same Apple ID / Google account used for the original purchase.</p>
+  <h3>The game feels too hard. Any advice?</h3>
+  <p>Every run opens with a safe stretch of cave with no hazards, and you have two hull scratches for the whole run, so the first wall you touch will not end it. Think one bend ahead rather than reacting to the bend you are in, and take gold coins: they widen the corridor. The <a href="/how-to-play/">guide</a> has a section on strategy.</p>
 
-  <p><strong>Why do I see a tracking or ad-consent prompt?</strong><br>
-  TUNL shows Apple's App Tracking Transparency prompt (and, in the EU/UK/CH, a
-  Google consent form) before requesting ads. See the
-  <a href="/privacy">Privacy Policy</a> for details. You can decline and
-  still play with non-personalized ads.</p>
+  <h3>Is the cave really the same for everyone?</h3>
+  <p>Yes. The cave is calculated from the calendar date, so every player on every platform flies the identical cave on a given day. It changes at UTC midnight. The <a href="/devlog/daily-cave/">daily cave devlog</a> explains how.</p>
 
-  <p><strong>My high score / leaderboard didn't update.</strong><br>
-  Make sure you're signed in to Game Center (iOS) or Play Games (Android) in
-  your device settings, then relaunch TUNL. TUNL tracks both a Daily and an
-  All-Time High Score leaderboard, so check you're looking at the right one.</p>
+  <h3>Why are there black bars on my tablet or desktop screen?</h3>
+  <p>The width of the playfield is capped so that a wide screen does not make the shared cave scroll past faster than on a phone. That keeps the leaderboard fair. See <a href="/devlog/same-ship-every-screen/">the fairness devlog</a>.</p>
 
-  <footer>TUNL &middot; <a href="/">Home</a> &middot; <a href="/how-to-play/">How to play</a> &middot; <a href="/devlog/daily-cave/">Devlog</a> &middot; <a href="/privacy">Privacy Policy</a> &middot; &copy; 2026 Theodoracatos</footer>
+  <h3>Why is the game landscape only?</h3>
+  <p>TUNL is built for a wide view of the tunnel ahead. On the web, rotate a portrait screen to landscape and the game resumes.</p>
+
+  <h3>Can I change the music or sound?</h3>
+  <p>Yes. Music and sound effects each have their own three-level switch in Settings: full, low and off.</p>
+
+  <h3>Does TUNL work offline?</h3>
+  <p>The apps ship with everything they need to play. Online features, such as the world leaderboard, your daily rank and ads, need a connection.</p>
+
+  <h2>Ships, shards and progress</h2>
+
+  <h3>How do I unlock ships?</h3>
+  <p>Each paid ship needs shards, which you earn from the coins you collect, and stardust, which you earn by opening the game on new days. The <a href="/ships/">ships page</a> explains both, and why every ship needs both.</p>
+
+  <h3>Where is my progress stored? Does it move between devices?</h3>
+  <p>TUNL has no accounts. Your progress, ships and settings are stored on the device you play on, so they do not move between devices or between the browser and the app. Purchases can be restored on a new device (below), and leaderboards and achievements live in Game Center or Play Games.</p>
+
+  <h3>My records were reset after updating to 15.0. Is that a bug?</h3>
+  <p>No. Version 15.0 resets your local records once, on first launch: your best score, daily best, top list and ghost. Your shards, stardust, ships, achievements and lifetime counters are untouched. The reset was deliberate: records set on earlier versions were unrealistic against the current cave.</p>
+
+  <h3>My high score or leaderboard rank did not update.</h3>
+  <p>Make sure you are signed in to Game Center (iOS) or Play Games (Android) in your device settings, then relaunch TUNL. TUNL tracks a daily and an all-time leaderboard, so check that you are looking at the right one. The world rank on the death screen is hidden until enough people have flown that day's cave for the number to be meaningful.</p>
+
+  <h2>Purchases and ads</h2>
+
+  <h3>How do I remove ads?</h3>
+  <p>Open Settings from the title screen and select "Remove Ads" to purchase. It is a one-time purchase that disables the full-screen ads permanently on that device or account. Optional videos that you choose to watch for a benefit, such as continuing a run, are still available.</p>
+
+  <h3>What does Unlock All Ships do?</h3>
+  <p>It is a one-time purchase in the shop that unlocks every ship, including any added later. It does not change your shards or stardust. It is entirely optional: every ship can be earned by playing.</p>
+
+  <h3>How do I restore my purchase on a new device?</h3>
+  <p>Open Settings and select "Restore Purchases". Make sure you are signed in with the same Apple ID or Google account used for the original purchase.</p>
+
+  <h3>How often will I see ads?</h3>
+  <p>The apps show a full-screen ad after some deaths, never more than once every couple of minutes, and only after a run that got somewhere. There are also two optional videos: one to continue a run and one for a daily shard bonus. Neither is ever forced.</p>
+
+  <h3>Why do I see a tracking or ad-consent prompt?</h3>
+  <p>TUNL shows Apple's App Tracking Transparency prompt (and, in the EU, UK and Switzerland, a Google consent form) before requesting ads. You can decline and still play with non-personalized ads. See the <a href="/privacy/">privacy policy</a> for details.</p>
+
+  <h2>Privacy and data</h2>
+
+  <h3>What data does TUNL collect? Can I have it deleted?</h3>
+  <p>Very little, and nothing is linked to your name, because there are no accounts. The <a href="/privacy/">privacy policy</a> lists exactly what each service receives and how to ask for deletion. For the data on TUNL's own servers, email <a href="mailto:info@flytunl.ch">info@flytunl.ch</a>.</p>
+
+  <h3>Are the translations reliable?</h3>
+  <p>TUNL is available in 15 languages. If a line reads oddly in yours, please <a href="mailto:info@flytunl.ch">tell me</a> and I will fix it.</p>
+
+  <p>Not here? <a href="mailto:info@flytunl.ch">Email me</a>. For logos, screenshots and a
+  description of the game for an article, see the <a href="/press/">press kit</a>, and for who
+  makes TUNL and why, see <a href="/about/">About</a>.</p>
+
+
+  <footer>
+    TUNL &middot; <a href="/">Home</a> &middot; <a href="/play/">Play</a> &middot;
+    <a href="/how-to-play/">How to play</a> &middot; <a href="/ships/">Ships</a> &middot;
+    <a href="/devlog/">Devlog</a> &middot; <a href="/changelog/">Changelog</a> &middot;
+    <a href="/about/">About</a> &middot; <a href="/support/">Support</a> &middot;
+    <a href="/privacy/">Privacy Policy</a> &middot; <a href="/press/">Press</a><br>
+    &copy; 2026 Theodoracatos. All rights reserved.
+  </footer>
 </main>
 </body>
 </html>
