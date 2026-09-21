@@ -488,27 +488,27 @@ function _xtalBody(g, X, C, mat, extra) {
     }
 }
 
-// Draws one stalactite as a crystal cluster. Handles the three states the old
-// cone handled in one translate: attached, falling (socket stays behind), and
-// struck (buried tip, debris). fallY is stalFallY(s), i.e. exactly what
-// stalHit() adds to the collision triangle - the picture and the hitbox move
-// together by construction.
-function drawCrystalSpike(s, sx, wobX, fallY, theme) {
-    const hw = s.width / 2, dir = s.isTop ? 1 : -1, len = s.length;
-    const wallAt = (off) => s.isTop ? boundsAt(s.wx + off).top : boundsAt(s.wx + off).bot;
-    const baseY  = (wallAt(-hw) + wallAt(hw)) / 2;
-    const mat = CRYSTAL_MATERIALS[weekdayIndex(_tunlActiveDate())];
-    const C   = _crystalTones(theme, mat);
-
-    // Everything that only depends on the spike and the cave SHAPE is built once
-    // and kept on the stalactite. Rebuilding it per frame cost ~34 boundsAt()
-    // calls per spike (21 for the rock lip alone) and allocated a fresh cluster
-    // every frame - measured 6.8x the whole draw() of the old cone at eight
-    // visible spikes. The root offsets are safe to cache because gapBonusVisual
-    // adds the same half-gap at every x, so it cancels out of every difference
-    // wallAt(off) - baseY; only baseY itself moves, and that is two calls.
+// Root geometry of one crystal cluster, cached on the stalactite and kept on the
+// live wall. The wall under a spike changes while it is on screen (refreshWave()
+// retunes the wave every frame), so a cache built once drifts off it. Two cheap
+// corrections instead of a per-frame rebuild:
+//   - TILT: the wall's slope across the cluster (sampled at +-XTAL_FIT_R hw) is
+//     compared with the slope the cache was built on, and the blit is sheared
+//     vertically by the difference (X.k). A vertical shear moves every root by
+//     k*dx and keeps every crystal upright and its length unchanged; the main
+//     crystal sits at dx 0, so its tip - the collision apex - does not move.
+//   - BEND: what a shear cannot follow is curvature. When the wall's sag at
+//     +-XTAL_FIT_R hw moves more than XTAL_FIT_PX from the cached one, the roots
+//     and the sprite are rebuilt - about once per spike per screen crossing.
+// Measured over S0-S10 at H 440/600: raw drift up to 19/26 px, with the fit under
+// 2 px. Only lifting shows (the wall fill is drawn over anything sunk deeper).
+const XTAL_FIT_R = 3.0, XTAL_FIT_PX = 0.5;
+function _xtalFit(s, hw, len, dir, baseY, mat, wallAt) {
+    const wL = wallAt(-hw * XTAL_FIT_R), wR = wallAt(hw * XTAL_FIT_R);
+    const slope = (wR - wL) * dir / (2 * hw * XTAL_FIT_R);
+    const sag   = ((wL + wR) / 2 - baseY) * dir;
     let X = s._xtal;
-    if (!X || X.w !== W || X.h !== H) {
+    if (!X || X.w !== W || X.h !== H || Math.abs(sag - X.sag) > XTAL_FIT_PX) {
         const cluster = _buildCluster(s.isTop ? CRYSTAL_ARCH_TOP : CRYSTAL_ARCH_BOT,
                                       hw, len, s.wx, mat);
         const SINK = hw * CRYSTAL_SINK;
@@ -526,8 +526,34 @@ function drawCrystalSpike(s, sx, wobX, fallY, theme) {
             const bump = Math.max(0, 1 - Math.abs(o) / (hw * 1.6));
             lip.push([o, (wallAt(o) - baseY) * dir + len * 0.030 + len * 0.075 * bump]);
         }
-        X = s._xtal = { w: W, h: H, cluster, lip, span: SPAN };
+        X = s._xtal = { w: W, h: H, cluster, lip, span: SPAN, slope, sag, k: 0 };
     }
+    X.k = slope - X.slope;
+    return X;
+}
+
+// Draws one stalactite as a crystal cluster. Handles the three states the old
+// cone handled in one translate: attached, falling (socket stays behind), and
+// struck (buried tip, debris). fallY is stalFallY(s), i.e. exactly what
+// stalHit() adds to the collision triangle - the picture and the hitbox move
+// together by construction.
+function drawCrystalSpike(s, sx, wobX, fallY, theme) {
+    const hw = s.width / 2, dir = s.isTop ? 1 : -1, len = s.length;
+    const wallAt = (off) => s.isTop ? boundsAt(s.wx + off).top : boundsAt(s.wx + off).bot;
+    const baseY  = (wallAt(-hw) + wallAt(hw)) / 2;
+    const mat = CRYSTAL_MATERIALS[weekdayIndex(_tunlActiveDate())];
+    const C   = _crystalTones(theme, mat);
+
+    // Everything that only depends on the spike and the cave SHAPE is built once
+    // and kept on the stalactite. Rebuilding it per frame cost ~34 boundsAt()
+    // calls per spike (21 for the rock lip alone) and allocated a fresh cluster
+    // every frame - measured 6.8x the whole draw() of the old cone at eight
+    // visible spikes. But the shape does NOT hold still: refreshWave() moves the
+    // wave frequency and amplitude with scrollX, so the wall under a spike tilts
+    // and bends while it crosses the screen. Frozen root offsets left the outer
+    // nest crystals and the rock lip up to 26 px off the wall - short crystals
+    // floating in the corridor. _xtalFit() keeps the cache honest (see there).
+    const X = _xtalFit(s, hw, len, dir, baseY, mat, wallAt);
     const cluster = X.cluster;
     const b = boundsAt(s.wx);
     const fallMax = Math.max(0, (b.bot - b.top) - len);
@@ -547,6 +573,7 @@ function drawCrystalSpike(s, sx, wobX, fallY, theme) {
         ctx.save();
         ctx.translate(sx + wobX, baseY);
         ctx.scale(1, dir);
+        ctx.transform(1, X.k, 0, 1, 0, 0);
         ctx.drawImage(spr.full, spr.fb.x0, spr.fb.y0, spr.fb.w, spr.fb.h);
         ctx.restore();
     } else {
@@ -554,6 +581,7 @@ function drawCrystalSpike(s, sx, wobX, fallY, theme) {
         ctx.save();
         ctx.translate(sx, baseY);
         ctx.scale(1, dir);
+        ctx.transform(1, X.k, 0, 1, 0, 0);
         ctx.drawImage(spr.socket, spr.sb.x0, spr.sb.y0, spr.sb.w, spr.sb.h);
         ctx.restore();
         ctx.save();

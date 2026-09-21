@@ -374,6 +374,39 @@ function touchCoin(type, setup) {
     check('an already-capped day banks nothing (no negative clamp)', r3.banked === 0 && r3.daily === r3.cap + 40);
 }
 
+// ── 9. Crystal roots stay on the moving wall (draw.js _xtalFit) ─────────────
+// Catches: freezing the cluster's root offsets at first draw. refreshWave() retunes
+// the wave every frame, so the wall under a spike tilts and bends while it crosses
+// the screen; frozen roots left nest crystals up to 26 px off the wall. Reads the
+// real cached geometry after the real draw() and compares it with boundsAt().
+// Tallest supported screen, where the drift is worst.
+{
+    const g = boot(956, 600);
+    g(AUTOPILOT);
+    g('startPlay()');
+    const r = g(`(() => {
+        let worst = 0, n = 0;
+        while (scrollX < sectorStartWx(8) || approachLeft > 0) {
+            shieldCount = 9; hullScratches = HULL_SCRATCHES; _pilot(); update(1 / 60); draw();
+            for (const s of stalactites) {
+                const X = s._xtal, sx = s.wx - scrollX;
+                if (!X || s.detached || s.fade <= 0 || sx < -70 || sx > W + 70) continue;
+                const hw = s.width / 2, dir = s.isTop ? 1 : -1;
+                const wallAt = o => s.isTop ? boundsAt(s.wx + o).top : boundsAt(s.wx + o).bot;
+                const baseY = (wallAt(-hw) + wallAt(hw)) / 2;
+                // Drawn root = cached dy sheared by X.k; > 0 means lifted into the corridor.
+                for (const pr of X.cluster) if (pr.lip) {
+                    const lift = pr.dy + X.k * pr.dx - ((wallAt(pr.dx) - baseY) * dir - hw * CRYSTAL_SINK);
+                    worst = Math.max(worst, lift); n++;
+                }
+            }
+        }
+        return { worst, n };
+    })()`);
+    check(`nest crystals stay rooted on the moving wall (worst lift ${r.worst.toFixed(2)} px over ${r.n} roots)`,
+        r.n > 1000 && r.worst < 2.5);
+}
+
 // ── 10. Repair kit (systems.js spawnRepairKit / updateRepairKits) ────────────
 // Catches: a bullet kill that drops no kit, a kit leaking into `coins` (spawner vetoes
 // read it, so the daily cave would fork per player), a kit that no longer refills the hull

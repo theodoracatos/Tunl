@@ -28,6 +28,14 @@ Four geometry rules, each of them learned by breaking it:
 - **Every crystal roots on the wall at ITS own x**, never on the average over
   `+-hw`; nest crystals sit up to `3*hw` out, where the wall has long since moved.
 
+**The cached roots must follow the moving wall** (`_xtalFit` in `draw.js`). The wall under
+a spike is NOT fixed while it is on screen: `refreshWave()` retunes wave frequency and
+amplitude with `scrollX`, so the wall tilts and bends under a cached cluster. Frozen root
+offsets left the short nest crystals and the rock lip up to 26 px off the wall (floating).
+The fix: shear the blit vertically by the slope change (`X.k`; the main crystal sits at
+dx 0, so the collision apex never moves) and rebuild roots + sprite when the curvature
+drifts past `XTAL_FIT_PX`. Guarded in `test-sim.js` section 9.
+
 **The drawing is one blitted sprite per spike** (`_xtalSprites`), baked per stalactite and
 rebuilt only when the raster scale or tone key changes. Drawn live it cost 6.3x the old
 cone's whole `draw()`; as one sprite it is cheaper than the cone. No gradient, clip,
