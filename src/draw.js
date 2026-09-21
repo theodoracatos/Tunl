@@ -5117,14 +5117,15 @@ function drawTitleScreen() {
         const panW = Math.min(W * 0.72, 460);
         // Bullet colour matches each item's own in-game colour (gold wallet, pale
         // stardust glint, the gold coin for the six helpful coins, the poison
-        // flask's green for the two hazard coins, the portal hoop's violet) so the
-        // dot itself is a second, wordless cue.
+        // flask's green for the two hazard coins, the portal hoop's violet, the repair
+        // kit's wrench) so the dot itself is a second, wordless cue.
         const rows = [
             { dot: 'rgba(255,225,110,1)', text: T.shardsInfo },
             { dot: 'rgba(200,210,255,1)', text: T.stardustInfo },
             { dot: 'rgba(255,224,64,1)',  text: T.coinsInfo },
             { dot: 'rgba(95,191,0,1)',    text: T.hazardsInfo },
             { dot: 'rgba(150,120,255,1)', text: T.portalInfo },
+            { dot: 'rgba(255,190,120,1)', text: T.repairInfo },
         ];
 
         // Greedy wrap at whatever font is currently set on ctx. Tokenises CJK/
