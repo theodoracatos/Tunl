@@ -6,7 +6,7 @@
    client with no backend: the day's rock colour, its world number, its world
    name and its planet. This file is the site's copy of that derivation.
 
-   It does two things:
+   It does three things:
 
      1. Sets --day-c on <html> BEFORE first paint (hence: loaded blocking, in
         <head>, on every page). That custom property is the site's single
@@ -14,6 +14,7 @@
         changes colour once a day on its own, the same way the game's title
         screen, world and debriefing all take the day's rock.
      2. Fills every `.today` strip in the page with WORLD n - NAME - PLANET.
+     3. Steps the page background darker as you scroll (the "descent").
 
    The four tables below MIRROR src/world.js (WORLD_ADJ, WORLD_NOUN, the
    _worldTable shuffle, _worldDayIdx) and src/constants.js (WEEKDAY_PALETTES'
@@ -101,7 +102,36 @@
       } catch (e) {}
     }
   }
+  /* The descent. The game lifts the void toward the day's rock near the cave
+     mouth and steps it darker at each sector boundary (depthLightAt, draw.js) -
+     steps, never a fade, because a continuous fade is below what anyone
+     notices. Every page does the same as you scroll: lit at the top, plain
+     void by the footer. Capped low on purpose - "never literally bright".
+     site.css paints the body from --depth-bg. */
+  var STEPS = [0.055, 0.040, 0.026, 0.013, 0];
+  var VOID = [4, 4, 10];
+  var cur = -1, ticking = false;
+
+  function descend() {
+    ticking = false;
+    if (!day || !document.body) return;
+    var max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    var t = Math.min(1, Math.max(0, window.scrollY / max));
+    var i = Math.min(STEPS.length - 1, Math.floor(t * STEPS.length));
+    if (i === cur) return;
+    cur = i;
+    var a = STEPS[i], c = [0, 1, 2].map(function (k) {
+      return Math.round(VOID[k] + (day.rgb[k] - VOID[k]) * a);
+    });
+    document.documentElement.style.setProperty('--depth-bg', 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')');
+  }
+  window.addEventListener('scroll', function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(descend); }
+  }, { passive: true });
+  window.addEventListener('resize', descend);
+
+  function ready() { fill(); descend(); }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', fill);
-  } else { fill(); }
+    document.addEventListener('DOMContentLoaded', ready);
+  } else { ready(); }
 })();

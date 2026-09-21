@@ -5,8 +5,8 @@
    full-bleed and carries no bar (see CLAUDE.md: the play area
    stays as it is).
 
-   Scope: the sticky top bar and the sitemap footer, nothing
-   else. Each page keeps its own <style> block for its own
+   Scope: the sticky top bar, the sitemap footer and the page
+   backdrop (the homepage's day-tinted well), nothing else. Each page keeps its own <style> block for its own
    content, and that block is loaded AFTER this file, so a page
    can still override anything here.
 
@@ -44,6 +44,25 @@
      site and the game read as one product. */
   --tunl-ui:      "Chakra Petch", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   --tunl-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* ---------- page backdrop ----------
+   The homepage's background, on every page: a soft well of the day's rock
+   at the top of the viewport, a violet glow off to the right, and a body
+   colour that /day.js steps darker as you scroll (the "descent"). A page's
+   own <style> must not set a body background, or it hides this. */
+
+body {
+  background-color: var(--depth-bg, var(--sc-bg));
+  background-image:
+    radial-gradient(900px 520px at 50% -120px, rgba(var(--day-rgb, 77,217,255), 0.13), transparent 70%),
+    radial-gradient(700px 480px at 85% 4%, rgba(157,123,255,0.09), transparent 70%);
+  background-repeat: no-repeat;
+  background-attachment: fixed, fixed;
+  transition: background-color .5s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  body { transition: none; }          /* the depth STEPS stay; only the ease goes */
 }
 
 /* ---------- sticky top bar ---------- */
