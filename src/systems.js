@@ -757,6 +757,7 @@ function updateBullets(dt) {
                     pushNotif(bsx, my - H*0.06, 1.1, T.boom, [255, 120, 20]);
                     sfxMineExplode(bsx);
                     bulletHitScore(bsx, my, BULLET_HIT_PTS.mine);
+                    spawnRepairKit(m.wx, my);
                     window.webkit?.messageHandlers?.haptic?.postMessage('medium');
                     hit = true;
                     break;
@@ -773,6 +774,7 @@ function updateBullets(dt) {
                     burstStalCrack(bsx, b.y);
                     sfxStalCrack(bsx);
                     bulletHitScore(bsx, b.y, BULLET_HIT_PTS.shot);
+                    spawnRepairKit(s.wx, s.y);
                     window.webkit?.messageHandlers?.haptic?.postMessage('light');
                     hit = true;
                     break;
@@ -786,6 +788,55 @@ function updateBullets(dt) {
             stalactites[i].fade = Math.max(0, stalactites[i].fade - dt * 4.5);
             if (stalactites[i].fade <= 0) stalactites.splice(i, 1);
         }
+    }
+}
+
+// ── Repair kit (constants.js REPAIR_KIT_PTS doc) ─────────────────────
+// Dropped where a bullet destroyed a mine or a cannon shot. Pulled inside the un-bonused
+// corridor (boundsBase, like any coin) so it can never sit in rock; a shot can die close
+// to a wall.
+function spawnRepairKit(wx, y) {
+    const b = boundsBase(wx), pad = PR * 1.5;
+    const lo = b.top + pad, hi = b.bot - pad;
+    repairKits.push({ wx, y: lo < hi ? Math.max(lo, Math.min(hi, y)) : (b.top + b.bot) / 2, t: 0 });
+}
+
+function updateRepairKits(dt) {
+    hullRepairFlash = Math.max(0, hullRepairFlash - dt);
+    const r = PR + COIN_HIT_R * REPAIR_KIT_SIZE;
+    for (let i = repairKits.length - 1; i >= 0; i--) {
+        const k = repairKits[i];
+        k.t += dt;
+        const sx = k.wx - scrollX;
+        if (sx < -60) { repairKits.splice(i, 1); continue; }
+        const dx = PX - sx, dy = py - k.y;
+        if (dx*dx + dy*dy >= r * r) continue;
+        repairKits.splice(i, 1);
+        const repaired = hullScratches < HULL_SCRATCHES;
+        bonusScore += REPAIR_KIT_PTS;
+        if (hudSparks.length < HUD_SPARK_MAX) hudSparks.push({ x: sx, y: k.y, t: 0, col: HUD_SPARK_COLOR.repair });
+        burstCoin(sx, k.y, 30, 22);
+        const stackY = k.y - 34 - notifStackOffset(sx);
+        notifs.push({ x: sx, y: stackY, life: 1.1, text: `+${REPAIR_KIT_PTS}`, color: HUD_SPARK_COLOR.repair });
+        if (repaired) {
+            hullScratches = HULL_SCRATCHES;
+            hullRepairFlash = 0.8;
+            notifs.push({ x: sx, y: stackY - 32, life: 1.3, text: '+' + T.hull, color: HUD_SPARK_COLOR.repair });
+        }
+        sfxHullRepair(repaired);
+        window.webkit?.messageHandlers?.haptic?.postMessage(repaired ? 'success' : 'light');
+    }
+}
+
+function drawRepairKits() {
+    for (const k of repairKits) {
+        const sx = k.wx - scrollX;
+        if (sx < -50 || sx > W + 50) continue;
+        // Pops in over 0.2s from the blast it came out of.
+        const pop = Math.min(1, k.t / 0.2);
+        ctx.globalAlpha = pop;
+        drawCoin(sx, k.y, 'repair', k.wx, 0.4 + 0.6 * pop);
+        ctx.globalAlpha = 1;
     }
 }
 

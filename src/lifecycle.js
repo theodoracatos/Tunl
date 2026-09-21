@@ -39,7 +39,7 @@ function titleScreen() {
     gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; slowPending = 0; slowFxVis = 0; slowFxPulseT = -1; shieldCount = 0; shieldFlash = 0; magnetTime = 0; notifs = []; hudSparks = []; hudBump = 0;
     invulnT = 0; wallGraceT = 0; deathCause = null;
     safeEndWx = 0; safeCloseWx = 1; wallsLiveShown = false;
-    hullScratches = 0; lastSectorShown = 0;
+    hullScratches = 0; lastSectorShown = 0; repairKits = []; hullRepairFlash = 0;
     continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;
     webPromoOn = false; webPromoT = 0;
     reviveCountdownT = 0; interruptPaused = false;
@@ -204,6 +204,7 @@ function startPlay() {
     // Safe opening flight (constants.js SAFE_START_WX doc).
     safeEndWx = SAFE_START_WX; safeCloseWx = SAFE_CLOSE_WX;
     hullScratches = HULL_SCRATCHES; lastSectorShown = 1;   // constants.js flight plan
+    repairKits = []; hullRepairFlash = 0;
     resetRunScenes();                                       // constants.js SCENE_* doc
     wallsLiveShown = false;
     // A ghost carried in on a ?g= share link (state.js _webGhostPlay) has to

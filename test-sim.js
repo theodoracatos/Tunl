@@ -136,7 +136,7 @@ function quietCave(deep = false) {
         shieldCount = 9; hullScratches = HULL_SCRATCHES; _pilot(); update(1 / 60);
     }`);
     g(`stalactites = []; mines = []; boulders = []; cannons = []; cannonShots = []; coins = []; chicaneCoins = [];
-       portals = []; bullets = [];
+       portals = []; bullets = []; repairKits = []; bulletAmmo = 0;
        invulnT = 0; wallGraceT = 0; warpTime = 0; slowTime = 0; slowPending = 0; magnetTime = 0; shieldCount = 0;
        gapBonus = 0; gapBonusVisual = 0; hullScratches = HULL_SCRATCHES; holding = false; vy = 0;
        rewardedAdReady = false;
@@ -372,6 +372,56 @@ function touchCoin(type, setup) {
     const g3 = quietCave();
     const r3 = g3(`(() => { dailyShardsEarned = DAILY_SHARD_CAP + 40; runCoins = 50; die(true); return { daily: dailyShardsEarned, banked: runShardsBanked, cap: DAILY_SHARD_CAP }; })()`);
     check('an already-capped day banks nothing (no negative clamp)', r3.banked === 0 && r3.daily === r3.cap + 40);
+}
+
+// ── 10. Repair kit (systems.js spawnRepairKit / updateRepairKits) ────────────
+// Catches: a bullet kill that drops no kit, a kit leaking into `coins` (spawner vetoes
+// read it, so the daily cave would fork per player), a kit that no longer refills the hull
+// or pays nothing on a full one.
+{
+    const shoot = what => {
+        const g = quietCave(true);
+        return g(`(() => {
+            const wx = scrollX + PX + 140;
+            ${what === 'mine'
+                ? 'mines.push({ wx, baseY: py, bobAmp: 0, phase: 0 });'
+                : 'cannonShots.push({ wx, y: py, vx: 0, vy: 0 });'}
+            bullets.push({ wx: scrollX + PX + PR * 1.6, y: py });
+            const coinsBefore = coins.length + chicaneCoins.length;
+            let n = 0;
+            for (let i = 0; i < 30 && !repairKits.length; i++) { shieldCount = 9; _pilot(); update(1 / 60); n++; }
+            return { kits: repairKits.length, dx: repairKits.length ? repairKits[0].wx - wx : NaN,
+                     coinsSame: coins.length + chicaneCoins.length === coinsBefore, n };
+        })()`);
+    };
+    for (const what of ['mine', 'cannon shot']) {
+        const r = shoot(what);
+        check(`a bullet that destroys a ${what} drops one repair kit where it died, outside the coin arrays (${r.n} frames)`,
+            r.kits === 1 && Math.abs(r.dx) < 1 && r.coinsSame);
+    }
+    const pick = hull => {
+        const g = quietCave(true);
+        return g(`(() => {
+            hullScratches = ${hull};
+            repairKits.push({ wx: scrollX + PX, y: py, t: 0 });
+            const before = bonusScore;
+            update(1 / 60);
+            return { hull: hullScratches, full: HULL_SCRATCHES, gain: bonusScore - before, pts: REPAIR_KIT_PTS, left: repairKits.length };
+        })()`);
+    };
+    const empty = pick(0), half = pick(1), full = pick(2);
+    check('a kit refills an empty hull to full and pays its points',
+        empty.hull === empty.full && empty.gain === empty.pts && empty.left === 0);
+    check('a kit refills a scratched hull to full', half.hull === half.full && half.gain === half.pts);
+    check('a kit on a full hull still pays its points and leaves the hull as it was',
+        full.hull === full.full && full.gain === full.pts && full.left === 0);
+    const g = quietCave(true);
+    const r = g(`(() => {
+        repairKits.push({ wx: scrollX + PX + W * 0.5, y: py, t: 0 }, { wx: scrollX - 100, y: py, t: 0 });
+        magnetTime = 5; update(1 / 60);
+        return { n: repairKits.length, y: repairKits[0] && repairKits[0].y };
+    })()`);
+    check('a kit ahead stays put under a magnet, a kit behind the ship is dropped', r.n === 1);
 }
 
 if (failed) { console.log(`\n${failed} check(s) failed.`); process.exit(1); }

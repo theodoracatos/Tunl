@@ -216,3 +216,19 @@ tint stays reserved for the coin bonus, so the effect never colours the walls.
   these to make the bonus merely "helpful". The fractions rewrite is not a weakening: wx=0
   is a byte-exact no-op, and deep it is now equally strong rather than disproportionately.
 - **boundsBase for coin placement**: Coins placed ignoring current bonus so they're always reachable even without a bonus. Never use `boundsAt()` for coin placement.
+
+## Repair kit (2026-09-21)
+
+A bullet that destroys a mine or a cannon shot drops a repair kit where it died
+(`systems.js` `spawnRepairKit`/`updateRepairKits`, `REPAIR_KIT_PTS` doc in `constants.js`).
+Flying through it refills the hull to `HULL_SCRATCHES` and always pays `REPAIR_KIT_PTS`,
+so it drops on a full hull too. User's calls: **no cooldown** (deep speed already makes
+kits hard to reach, and scratches only forgive walls), **no magnet pull or warp vacuum**
+(stays at its world-x, gone if missed).
+
+- **Kits never enter `coins`/`chicaneCoins`.** Spawner vetoes read those arrays, and a kit
+  exists only for a player who shot, so the shared daily cave would fork. `repairKits` is
+  its own array and draws no rng.
+- Placed with `boundsBase()` like a coin, padded so it is never inside rock.
+- Drawn through `drawCoin(..., 'repair')` (a frameless wrench in the HUD hull colour), not a plus
+  sign: the ammo crosshair already reads as one. Guarded in `test-sim.js` section 10.

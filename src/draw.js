@@ -601,6 +601,7 @@ const COIN_OBJECT_BOOST = { gold: 1.2 };
 const COIN_BASE_CLR = {
     gold: [255,225,50], blue: [60,200,255], red: [190,50,255], orange: [255,122,0],
     green: [50,255,120], bomb: [255,60,60], poison: [110,200,20], drain: [215,80,140],
+    repair: [255,190,120],   // repair kit (systems.js drawRepairKits), the HUD hull row's colour
 };
 const _COIN_WHITE = [255,255,255], _COIN_BLACK = [0,0,0];
 const _coinToneCache = new Map();
@@ -770,17 +771,47 @@ function _coinDrain(s, t, wx) {
     ctx.beginPath(); ctx.arc(0, 0, s*0.22, 0, Math.PI*2); ctx.fillStyle = 'rgba(6,2,5,0.95)'; ctx.fill();
     ctx.beginPath(); ctx.arc(0, 0, s*0.98, 0, Math.PI*2); ctx.strokeStyle = coinTone('drain', 0.2, 0.8); ctx.lineWidth = 1; ctx.stroke();
 }
+function _coinRepair(s, t, wx) {
+    // A wrench, in the HUD hull row's colour: a tool for the hull, and the row it refills.
+    // No plate behind it (the coin rule: no frame) and no plus sign - the ammo crosshair
+    // already reads as one. The glint sweeps along the handle.
+    ctx.save(); ctx.rotate(-Math.PI / 4);
+    const L = s*0.78, hw = s*0.17, jaw = s*0.46, jx = L - jaw*0.35;
+    const shape = () => {
+        ctx.beginPath();
+        ctx.rect(-L, -hw, jx + L, 2*hw);
+        ctx.moveTo(-L + hw*1.6, 0); ctx.arc(-L, 0, hw*1.6, 0, Math.PI*2);
+        // Open jaw: the circle minus a slot toward the tip, as one outline (a painted
+        // slot would show as a dark bar over whatever is behind the coin).
+        const th = Math.asin(0.34), hs = jaw * 0.34;
+        ctx.moveTo(jx, hs); ctx.lineTo(jx + jaw * Math.cos(th), hs);
+        ctx.arc(jx, 0, jaw, th, Math.PI*2 - th); ctx.lineTo(jx, -hs); ctx.closePath();
+    };
+    shape(); ctx.fillStyle = coinTone('repair', 0.1); ctx.fill();
+    // Lit upper half, same "facets lit from above" material as the other coins.
+    ctx.save(); shape(); ctx.clip();
+    ctx.fillStyle = coinTone('repair', 0.5); ctx.fillRect(-L*1.4, -jaw*1.2, L*2.8, jaw*1.2);
+    const g = ((t * 0.6 + wx * 0.001) % 1.6) - 0.3;
+    ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.fillRect(-L + g * 2*L, -jaw, s*0.16, jaw*2);
+    ctx.restore();
+    // The hole in the ring end.
+    ctx.fillStyle = coinTone('repair', -0.85);
+    ctx.beginPath(); ctx.arc(-L, 0, hw*0.7, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+}
 const COIN_OBJECTS = {
     gold: _coinGold, blue: _coinSlow, red: _coinShield, orange: _coinAmmo,
     green: _coinMagnet, bomb: _coinBomb, poison: _coinPoison, drain: _coinDrain,
+    repair: _coinRepair,
 };
 
 // One coin at screen position (x, y). Visual only: the hitbox is systems.js's
 // COIN_R * COIN_SIZE_MULT circle and is untouched by anything drawn here.
-function drawCoin(x, y, type, wx) {
+function drawCoin(x, y, type, wx, scale = 1) {
     // Object drawn at COIN_OBJECT_SCALE of the hitbox radius, no frame: at ~17pt a frame
     // around the object left the object itself too small to tell what it was.
-    const s = COIN_R * (COIN_SIZE_MULT[type] || (type === 'drain' ? 1.1 : 1.05)) * COIN_OBJECT_SCALE * (COIN_OBJECT_BOOST[type] || 1);
+    const sizeMult = type === 'repair' ? REPAIR_KIT_SIZE : COIN_SIZE_MULT[type] || (type === 'drain' ? 1.1 : 1.05);
+    const s = COIN_R * sizeMult * COIN_OBJECT_SCALE * (COIN_OBJECT_BOOST[type] || 1) * scale;
 
     const g = ctx.createRadialGradient(x, y, s * 0.2, x, y, s * 2.2);
     g.addColorStop(0,   coinTone(type, 0, 0.2));
@@ -2358,6 +2389,7 @@ function drawWorld() {
         drawCoin(sx, coin.y, coin.type, coin.wx);
         ctx.globalAlpha = 1;
     }
+    drawRepairKits();
 
     if (_apx > 0) {
         ctx.restore();
@@ -3134,13 +3166,15 @@ function drawHUD() {
         const dotY   = H * 0.910;
         const endX   = W * 0.775;
         ctx.save();
+        // A repair kit that refilled the row (systems.js updateRepairKits) swells it briefly.
+        const sz = s * (1 + 0.5 * Math.min(1, hullRepairFlash / 0.8));
         ctx.shadowColor = 'rgba(255,170,90,0.7)';
         ctx.shadowBlur  = 6;
         ctx.fillStyle   = 'rgba(255,190,120,0.85)';
         for (let i = 0; i < hullScratches; i++) {
             const cx = endX - i * (s * 3);
             ctx.beginPath();
-            ctx.moveTo(cx, dotY - s); ctx.lineTo(cx + s, dotY); ctx.lineTo(cx, dotY + s); ctx.lineTo(cx - s, dotY);
+            ctx.moveTo(cx, dotY - sz); ctx.lineTo(cx + sz, dotY); ctx.lineTo(cx, dotY + sz); ctx.lineTo(cx - sz, dotY);
             ctx.closePath();
             ctx.fill();
         }

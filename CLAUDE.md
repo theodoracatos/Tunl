@@ -138,6 +138,7 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 - Chicane gold is gated in **seconds** via `lastChicaneCoinWx`. Power-up supply has real-time floors; vetoed power-ups are skipped, never downgraded to gold; orange is exempt.
 - Poison/bomb/drain are real-time **clocks**, never per-candidate percentages.
 - Coins draw the object they do, no frame, no `shadowBlur`. Shield type id stays `'red'` (drawn violet).
+- Repair kits (bullet kill of a mine/cannon shot) live in `repairKits`, never in `coins` - they would fork the daily cave.
 
 ### Audio -> `docs/agents/audio.md`
 - **Judge by offline render, never by ear** (`reference_audio_method` memory).

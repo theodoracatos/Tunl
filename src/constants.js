@@ -992,6 +992,16 @@ const DRAIN_START_WX      = sectorStartWx(9);
 // and rejected: it mostly helped the good tier (+72% median) by eating a stalactite later.
 const HULL_SCRATCHES      = 2;
 const WALL_GRACE_SEC      = 1.0;    // wall-only grace after a scratch (HIT_INVULN_SEC's length, not its reach)
+// Repair kit (systems.js spawnRepairKit/updateRepairKits, 2026-09-21, user's design): every
+// mine or cannon shot a bullet destroys drops a kit where it died. Flying through one tops
+// the hull back up to HULL_SCRATCHES and always pays REPAIR_KIT_PTS, so it is worth taking
+// with a full hull too. No cooldown on purpose (user's call): the deep run's speed already
+// makes a kit hard to reach, and scratches only ever forgive walls, never a hazard. It stays
+// at its world-x (no magnet pull, no warp vacuum) and is gone if missed. Never enters
+// `coins`: spawner vetoes read that array, and a kit exists only for players who shot, so it
+// would fork the shared daily cave.
+const REPAIR_KIT_PTS      = 5;
+const REPAIR_KIT_SIZE     = 1.15;   // hit and draw size, x COIN_HIT_R / COIN_R, like the shield coin
 // Hazard LENGTH pace (world.js stalLenFrac/cannonSpacing): the old 14000/40000 two-leg
 // shape, starting at HAZARD_START_WX and stretched. Densities use the sector rates.
 const HAZ_RAMP_WX         = 30000;
@@ -1239,6 +1249,7 @@ const HUD_SPARK_MAX = 14;
 const HUD_SPARK_COLOR = {
     gold: [255, 214, 70], blue: [60, 210, 255], red: [190, 60, 255],
     green: [80, 255, 130], orange: [255, 122, 0], bomb: [255, 90, 90],
+    repair: [255, 190, 120],   // the HUD hull row's colour (draw.js), where the refill lands
 };
 // Points for a bullet hit (systems.js updateBullets). Flat, no combo: ammo is capped and
 // bullets auto-fire, so this is a small bonus for a shot that landed, not a score engine.

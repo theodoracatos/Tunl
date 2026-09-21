@@ -1482,6 +1482,48 @@ function sfxHullScratch() {
 }
 const SCRATCH_SCRAPE = 0.8;
 
+// Repair kit pickup (systems.js updateRepairKits, 2026-09-21): the scratch's counterpart.
+// Two quick ratchet clicks (a wrench turning), then a rising triangle G-C-G - "fixed". Sits
+// below sfxShield (0.15 per note, four notes) in the rare-reward tier. A kit picked up on
+// a full hull only pays points, so it plays the clicks and a short two-note tail at
+// routine-pickup level: same sound family, less of it. Not ear-checked or rendered yet.
+function sfxHullRepair(repaired) {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    [0, 0.055].forEach((d, i) => {
+        const n = _ac.createBufferSource();
+        n.buffer = _noiseBuf(0.03);
+        const f = _ac.createBiquadFilter();
+        f.type = 'bandpass'; f.Q.value = 8; f.frequency.value = 3000 + i * 600;
+        const g = _ac.createGain();
+        g.gain.setValueAtTime(0.0001, t + d);
+        g.gain.linearRampToValueAtTime(0.35, t + d + 0.002);
+        g.gain.exponentialRampToValueAtTime(0.001, t + d + 0.025);
+        n.connect(f); f.connect(g); g.connect(_master);
+        n.start(t + d); n.stop(t + d + 0.03);
+    });
+    const notes = repaired ? [392, 523, 784] : [523, 784];
+    const amp = repaired ? 0.12 : 0.07;
+    notes.forEach((freq, i) => {
+        const o = _ac.createOscillator(), g = _ac.createGain();
+        o.connect(g); g.connect(_master);
+        o.type = 'triangle'; o.frequency.value = freq;
+        const t0 = t + 0.10 + i * 0.06;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.linearRampToValueAtTime(amp, t0 + 0.005);
+        g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.22);
+        o.start(t0); o.stop(t0 + 0.23);
+    });
+    if (!repaired) return;
+    const lo = _ac.createOscillator(), lg = _ac.createGain();
+    lo.connect(lg); lg.connect(_master);
+    lo.type = 'sine'; lo.frequency.value = 196;
+    lg.gain.setValueAtTime(0.0001, t + 0.10);
+    lg.gain.linearRampToValueAtTime(0.07, t + 0.11);
+    lg.gain.exponentialRampToValueAtTime(0.001, t + 0.50);
+    lo.start(t + 0.10); lo.stop(t + 0.52);
+}
+
 // Rewarded continue (update.js grantRevive, 2026-09-19 sound review S2): the run is given
 // back. It layers over sfxEngineSpoolUp (which grantRevive also starts and which has nothing
 // above ~700 Hz), so this cue lives in the band above it and reads as power returning, not as

@@ -420,6 +420,9 @@ let safeEndWx = 0, safeCloseWx = 1, wallsLiveShown = false;
 // (HULL_SCRATCHES at start, spent by update.js hullScratch, never expiring), and the
 // highest sector whose "SECTOR n" notif has already fired this run.
 let hullScratches = 0, lastSectorShown = 0;
+// Repair kits dropped by bullet kills (constants.js REPAIR_KIT_PTS doc), and the HUD hull
+// row's pulse after one refilled it (seconds left).
+let repairKits = [], hullRepairFlash = 0;
 // Rewarded continue, run-scoped (constants.js CONTINUE_MIN_SCORE doc). continueOfferPending
 // is true while the offer icon is up and death's real bookkeeping (commitDeath) is on
 // hold; continueAdPending is true only while native has a rewarded ad on screen, and

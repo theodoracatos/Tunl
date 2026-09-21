@@ -855,6 +855,8 @@ function update(dt) {
 
     // Bullets
     updateBullets(dt);
+    // Repair kits the bullets just dropped (constants.js REPAIR_KIT_PTS doc)
+    updateRepairKits(dt);
 
     // Cannons: trigger any that the player has now closed within range of, and
     // advance every shot already in flight
