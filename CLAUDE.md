@@ -28,6 +28,15 @@ TUNL is an HTML5 Canvas hold-to-thrust cave flyer game.
 libraries, no modules, no build step, one shared global scope. Run `/map` for the file
 map. Open `tunl.html` in a browser to play.
 
+**Tests: `npm test`** runs all six zero-dependency suites (~7s). `test-sim.js` loads every
+script but `main.js` into a Node vm and plays: a draw()-every-frame flight through S0-S10,
+the death screen and the title, plus rule checks against the real `update()`/`die()`. It is
+the only suite that executes `update.js`, `draw.js`, `lifecycle.js` or `approach.js`.
+**Test the real function, never a copy of its formula in the test** - a 2026-09-21
+mutation audit found 12 of 14 injected regressions passing the whole suite because the
+checks asserted mirrored formulas. Its date is pinned (`TUNL_SIM_DAY` overrides); keep
+new checks day-independent and sweep a few dozen days before relying on one.
+
 **Orientation: landscape only.** The iOS app (`Info.plist`) locks to `LandscapeLeft + LandscapeRight`. Never change this to portrait.
 
 **Three targets from one `src/`.** The same `tunl.html` + `src/*.js` ships as the iOS app
@@ -81,8 +90,9 @@ end-of-frame speed, overshooting by `0.5*a*dt^2` every frame; because that error
 with FRAME LENGTH, the ship flew a measurably different trajectory on every refresh rate -
 a bigger inequity on a shared daily leaderboard than anything `_FEEL_SCALE` and the W cap
 exist to equalise. Replaying a bit-identical input schedule now gives a **0.000px** spread
-across 12-144Hz. `test-math.js` asserts both that and that the old integrator genuinely
-diverged, so a silent revert fails.
+across 12-144Hz. `test-sim.js` drives the real `update()` at eight refresh rates against
+the exact solution, so a silent revert fails. (Until 2026-09-21 `test-math.js` asserted a
+copy of the integrator instead, and a revert of the real line passed.)
 
 Two honest caveats, both left uncompensated deliberately: it did **not** close the score
 gap between frame rates (that residue is input resolution, not physics), and it is very
@@ -176,6 +186,8 @@ boulder probes 300 + 1000 retry + 100 half-length ahead; the coin's own stalacti
 caps it at 1500 + 46 <= 1550). **Do not lower it or reorder `maintainCoins()` after
 `maintainBoulders()`/`maintainMines()`**: coin and boulder verdicts would then depend on frame
 timing, i.e. on screen width. `test-cave.js` asserts both the reach budget and 0 overlaps.
+It guards the budget, not the order: its `step()` repeats update.js's call order by hand, and
+with today's 1500 budget swapping the order measurably changes nothing (checked 2026-09-21).
 Not covered: falling stalactites (they move) and portal rings.
 
 `_makeMineAt`'s tip-push radius lerps 300 -> 90 over `_prog2` for the same reason - at

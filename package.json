@@ -6,7 +6,10 @@
     "test:i18n": "node test-i18n.js",
     "test:math": "node test-math.js",
     "test:collision": "node test-collision.js",
-    "test": "npm run test:i18n && npm run test:math && npm run test:collision",
+    "test:cave": "node test-cave.js",
+    "test:share": "node test-share.js",
+    "test:sim": "node test-sim.js",
+    "test": "npm run test:i18n && npm run test:math && npm run test:collision && npm run test:cave && npm run test:share && npm run test:sim",
     "build:play": "node flytunl-site/build-play.mjs"
   },
   "devDependencies": {

@@ -41,7 +41,7 @@ function makeWorld(innerWidth, innerHeight) {
     vm.runInContext(`
         this.W = W; this.H = H; this.GRAVITY = GRAVITY; this.THRUST = THRUST;
         this.MAX_VY = MAX_VY; this.FEEL_SCALE = _FEEL_SCALE; this.H_REF = _H_REF;
-        this.lerp = lerp; this.POISON_LOSS_PCT_MIN = POISON_LOSS_PCT_MIN; this.POISON_LOSS_PCT_MAX = POISON_LOSS_PCT_MAX;
+        this.lerp = lerp;
         this.halfGapAt = halfGapAt; this.boundsBase = boundsBase; this.refreshWave = refreshWave;
         this.scrollSpd = scrollSpd; this.stalSpacing = stalSpacing; this.coinSpacing = coinSpacing;
         this.mineSpacing = mineSpacing; this.cannonSpacing = cannonSpacing; this.milestoneStep = milestoneStep;
@@ -61,7 +61,6 @@ function makeWorld(innerWidth, innerHeight) {
         this.setDeepVariety = function(on) { _deepVarietyOn = on; };
         this.waveParams = function() { return { wA1: _wA1, wA2: _wA2, wF1: _wF1, wF2: _wF2 }; };
         this.ghostEncode = ghostEncode; this.ghostDecode = ghostDecode;
-        this.DAILY_SHARD_CAP = DAILY_SHARD_CAP; this.GAP_EASE_RATE = GAP_EASE_RATE;
         this.GAP_DECAY_FRAC = GAP_DECAY_FRAC; this.GAP_PER_COIN_FRAC = GAP_PER_COIN_FRAC;
         this.GAP_BONUS_MAX_FRAC = GAP_BONUS_MAX_FRAC; this.DEEP_DECAY_PEAK = DEEP_DECAY_PEAK;
         this.gapPerCoin = gapPerCoin; this.gapBonusMax = gapBonusMax; this.gapDecay = gapDecay;
@@ -288,37 +287,9 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
     }
 }
 
-// ── Score formula (src/update.js: score = floor(scrollX/60) + bonusScore) ──
-{
-    const scoreOf = (scrollXVal, bonusScore) => Math.floor(scrollXVal / 60) + bonusScore;
-    check('score formula: distance-only at bonusScore=0', scoreOf(6000, 0) === 100);
-    check('score formula: coin/near-miss bonus adds on top of distance', scoreOf(6000, 42) === 142);
-}
-
-// ── Poison loss (src/systems.js checkCoinCollection 'poison' branch, mirrored
-// here -- keep this formula in sync with that inline block if it ever changes) ──
-{
-    const w = makeWorld(600, 600);
-    const lossAt = (runCoins, prog) => {
-        const lossPct = w.lerp(w.POISON_LOSS_PCT_MIN, w.POISON_LOSS_PCT_MAX, prog);
-        return runCoins > 0 ? Math.min(runCoins, Math.max(1, Math.ceil(runCoins * lossPct))) : 0;
-    };
-
-    check('poison loss is 0 with an empty pool (never a negative or no-op-crash)', lossAt(0, 1) === 0);
-    check('poison loss always removes at least 1 coin from a nonempty pool (no 0-coin no-op)', lossAt(1, 0) === 1 && lossAt(3, 0) === 1);
-    check('poison loss never exceeds the current pool', lossAt(2, 1) <= 2);
-    check('poison loss percentage scales with difficulty (_prog)', lossAt(100, 0) === 12 && lossAt(100, 1) === 15);
-
-    // Compounding survivor fraction: this is the whole documented point of the
-    // %-based model (CLAUDE.md: "a long run that keeps getting careless with
-    // poison can lose most of its pool") -- simulate repeated hits at max
-    // difficulty and check the pool shrinks roughly like 0.85^N, not linearly.
-    let pool = 1000;
-    for (let i = 0; i < 8; i++) pool -= lossAt(pool, 1);
-    const expected = 1000 * Math.pow(0.85, 8);
-    check('8 poison hits at max difficulty leave roughly the 0.85^N survivor fraction (compounding, not flat)',
-        Math.abs(pool - expected) / expected < 0.05);
-}
+// Score, poison/drain, shard banking, frame-rate-independent physics and gap easing
+// live in test-sim.js now, run against the real update()/systems.js. They used to be
+// mirrored here as copies of the formula, which a revert of the real line passed.
 
 // ── Deep-run variety (world.js deepMorphAt + the scrollSpd speed pulse) ──────
 // CLAUDE.md "Deep-run variety": past the score-900 plateau the corridor SHAPE
@@ -550,71 +521,6 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
     check('ghost round-trip: chunked encoding survives at/around the 1024-byte boundary', chunkOk);
 }
 
-// ── Shard banking cap (src/update.js die(), mirrored here -- keep this formula
-// in sync with that inline block if it ever changes) ────────────────────────
-// CLAUDE.md "Ship unlock economy": DAILY_SHARD_CAP is the real ceiling that
-// makes unlocks track days played, not a single grind session.
-{
-    const w = makeWorld(600, 600);
-    const bankedAt = (runCoins, dailyShardsEarned) => Math.max(0, Math.min(runCoins, w.DAILY_SHARD_CAP - dailyShardsEarned));
-
-    check('shard banking: a fresh day banks the full run pool up to the cap',
-        bankedAt(50, 0) === 50 && bankedAt(1000, 0) === w.DAILY_SHARD_CAP);
-    check('shard banking: an already-capped day banks nothing more (no negative-clamp underflow)',
-        bankedAt(50, w.DAILY_SHARD_CAP) === 0 && bankedAt(50, w.DAILY_SHARD_CAP + 40) === 0);
-    check('shard banking: a partially-earned day banks only the remaining headroom',
-        bankedAt(1000, w.DAILY_SHARD_CAP - 30) === 30);
-    check('shard banking: never exceeds the run\'s own coin pool even with headroom to spare',
-        bankedAt(10, 0) === 10);
-}
-
-// ── Physics is frame-rate independent (src/update.js, 12.0) ─────────────────
-// `py += vy * dt` AFTER the velocity update pretends the ship spent the whole frame at
-// its end-of-frame speed, overshooting by 0.5*a*dt^2 every frame - an error that scales
-// with frame length, so the ship flew a different trajectory on every refresh rate.
-// Everyone flies the same daily cave into the same leaderboard, so that mattered more
-// than anything _FEEL_SCALE and the W cap exist to equalise (measured: a good pilot's
-// median was 118 at 144Hz vs 67 at 60Hz vs 41 at 30Hz, decision rate pinned).
-// The trapezoid (average of old and new velocity) is exact for constant acceleration.
-{
-    const w = makeWorld(956, 440);
-    const A = w.THRUST - w.GRAVITY, MAXV = w.MAX_VY, T = 0.5;
-    // Integrate a pure held-thrust climb the same way update.js does, at a given fps.
-    // Compared against the exact solution for the time ACTUALLY simulated (steps*dt),
-    // not for T: a frame rate that doesn't divide T evenly (45Hz) lands a fraction of a
-    // frame past it, and measuring that as integrator error would be a bug in the test.
-    const flyFor = (fps) => {
-        const dt = 1 / fps;
-        const steps = Math.round(T / dt);
-        let py = 0, vy = 0;
-        for (let i = 0; i < steps; i++) {
-            const prev = vy;
-            vy = Math.max(-MAXV, Math.min(MAXV, vy + A * dt));
-            py += (prev + vy) * 0.5 * dt;
-        }
-        return { py, t: steps * dt };
-    };
-    let worst = 0;
-    for (const fps of [144, 120, 90, 72, 60, 45, 30, 24]) {
-        const r = flyFor(fps);
-        const exact = 0.5 * A * r.t * r.t;
-        worst = Math.max(worst, Math.abs(r.py - exact) / exact);
-    }
-    check(`held-thrust trajectory is identical at every frame rate (worst deviation ${(worst * 100).toFixed(4)}%)`,
-        worst < 1e-9);
-
-    // And the old integrator genuinely wasn't - guards against a silent revert to
-    // `py += vy * dt`, which would pass nothing else in this file.
-    const flyForOld = (fps) => {
-        const dt = 1 / fps, steps = Math.round(T / dt);
-        let py = 0, vy = 0;
-        for (let i = 0; i < steps; i++) { vy = Math.max(-MAXV, Math.min(MAXV, vy + A * dt)); py += vy * dt; }
-        return py;   // 144 and 30 both divide T evenly, so this comparison is bias-free
-    };
-    check(`the pre-12.0 integrator did diverge by frame rate (144Hz ${flyForOld(144).toFixed(1)}px vs 30Hz ${flyForOld(30).toFixed(1)}px)`,
-        Math.abs(flyForOld(144) - flyForOld(30)) > 5);
-}
-
 // ── Gap bonus scales WITH the corridor (constants.js GAP_*_FRAC, 12.0) ──────
 // The bonus used to be absolute px against a corridor that shrinks 0.34H -> 0.163H,
 // which flattened the difficulty curve by construction (measured: designed 11.0 ->
@@ -660,40 +566,6 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
     w.scrollX = 90000; w.refreshWave(); const capDeep  = w.gapBonusMax();
     check(`maxed bonus is unchanged early and materially smaller deep (${(capEarly/OLD_CAP).toFixed(2)}x -> ${(capDeep/OLD_CAP).toFixed(2)}x of the old flat cap)`,
         Math.abs(capEarly - OLD_CAP) < 1e-9 && capDeep / OLD_CAP > 0.30 && capDeep / OLD_CAP < 0.45);
-
-    // (d) the deep-decay ramp is still fully inert before the plateau - it is a
-    //     second-order tightener now, not the load-bearing fix, but it must not leak
-    //     into the band real runs actually end in.
-    let rampInert = true;
-    for (let wx = 0; wx <= 14000; wx += 500) {
-        w.scrollX = wx; w.refreshWave();
-        if (Math.max(wx - 14000, 0) / 40000 !== 0) rampInert = false;
-    }
-    check('deep-decay ramp stays inert at/below the difficulty plateau', rampInert);
-}
-
-// ── Gap-bonus easing (src/update.js gapBonusVisual, GAP_EASE_RATE) ──────────
-// CLAUDE.md "Coin system": gapBonusVisual chases the instantly-jumping gapBonus
-// target at a constant px/s rate rather than snapping, so collision/rendering
-// see the wall widen smoothly. Mirrored formula, same sync-if-it-changes rule.
-{
-    const w = makeWorld(600, 600);
-    const ease = (current, target, dt) => current + Math.max(-w.GAP_EASE_RATE * dt, Math.min(w.GAP_EASE_RATE * dt, target - current));
-
-    check('gap easing: steps toward the target, not past it, for a small dt',
-        ease(0, 100, 0.1) > 0 && ease(0, 100, 0.1) < 100);
-    check('gap easing: clamps to the rate cap and never overshoots a distant target in one frame',
-        ease(0, 100000, 1) === w.GAP_EASE_RATE);
-    check('gap easing: converges to the target after enough frames (repeated small dt steps)', (() => {
-        let v = 0;
-        for (let i = 0; i < 1000; i++) v = ease(v, 100, 1 / 60);
-        return Math.abs(v - 100) < 1e-6;
-    })());
-    check('gap easing: works symmetrically chasing downward (decay direction)', (() => {
-        let v = 200;
-        for (let i = 0; i < 1000; i++) v = ease(v, 0, 1 / 60);
-        return Math.abs(v - 0) < 1e-6;
-    })());
 }
 
 // -- Share-card run profile (src/share.js _profileBounds) ------------------
