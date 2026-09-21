@@ -68,5 +68,5 @@
  "5bd55a3": "Die Lektion, die ich behalten würde, ist die Testform. Determinismus-Bugs sind durch Spielen unsichtbar und durch Assertion trivial. Die ersten paar tausend Positionen bei sechs Bildschirmgrößen zu erzeugen und sie zu vergleichen, dauert Millisekunden und hätte beide Gerätebugs an dem Tag erwischt, an dem sie geschrieben wurden. Der Content-Gating-Fehler brauchte ein völlig anderes Werkzeug, eine Simulation davon, wie weit Spieler tatsächlich kommen, und die einzige echte Lektion dabei ist, dass eine aus deiner Schwierigkeitskurve abgeleitete Zahl keine Zahl über deine Spieler ist.",
  "b5a5829": "Die heutige Höhle ist live und setzt sich um UTC-Mitternacht zurück. Sie läuft im Browser, keine Installation nötig:",
  "952b628": "Ein tägliches Level, das eine reine Funktion des Datums ist: die Aussaat, die vier Zufallsströme, und die zwei Bugs, die die geteilte Höhle still und leise gespalten haben.",
- "f7ae9bb": "Devlog &middot; 15. September 2026 &middot; aktualisiert am 21. September 2026 für TUNL 16.0 &middot; <a href=\"/devlog/\">alle Beiträge</a>"
+ "f7393c4": "Devlog &middot; 15. September 2026 &middot; aktualisiert am 21. September 2026 für TUNL 16.1 &middot; <a href=\"/devlog/\">alle Beiträge</a>"
 }

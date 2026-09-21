@@ -68,5 +68,5 @@
  "5bd55a3": "A lição que eu manteria é o formato dos testes. Bugs de determinismo são invisíveis jogando e triviais por asserção. Gerar as primeiras milhares de posições em seis tamanhos de tela e compará-las leva milissegundos e teria pego os dois bugs de dispositivo no dia em que foram escritos. O erro do portão de conteúdo precisava de uma ferramenta totalmente diferente, uma simulação de até onde os jogadores realmente chegam, e a única lição real ali é que um número derivado da sua curva de dificuldade não é um número sobre seus jogadores.",
  "b5a5829": "A caverna de hoje está no ar e é reiniciada à meia-noite UTC. Roda no navegador, sem instalar nada:",
  "952b628": "Um nível diário que é uma função pura da data: a semeadura, os quatro fluxos aleatórios, e os dois bugs que dividiram silenciosamente a caverna compartilhada.",
- "f7ae9bb": "Devlog &middot; 15 de setembro de 2026 &middot; atualizado em 21 de setembro de 2026 para o TUNL 16.0 &middot; <a href=\"/devlog/\">todos os posts</a>"
+ "f7393c4": "Devlog &middot; 15 de setembro de 2026 &middot; atualizado em 21 de setembro de 2026 para o TUNL 16.1 &middot; <a href=\"/devlog/\">todos os posts</a>"
 }

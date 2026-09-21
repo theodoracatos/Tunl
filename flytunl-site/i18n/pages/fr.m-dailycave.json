@@ -68,5 +68,5 @@
  "5bd55a3": "La leçon que je garderais est la forme des tests. Les bugs de déterminisme sont invisibles en jouant et triviaux par assertion. Générer les premiers milliers de positions à six tailles d'écran et les comparer prend des millisecondes et aurait attrapé les deux bugs d'appareil le jour où ils ont été écrits. L'erreur de porte de contenu demandait un tout autre outil, une simulation de la distance qu'atteignent réellement les joueurs, et la seule vraie leçon là-dessus est qu'un nombre dérivé de ta courbe de difficulté n'est pas un nombre sur tes joueurs.",
  "b5a5829": "La grotte d'aujourd'hui est en ligne et elle se réinitialise à minuit UTC. Elle tourne dans le navigateur, sans installation :",
  "952b628": "Un niveau quotidien qui est une fonction pure de la date : l'ensemencement, les quatre flux aléatoires, et les deux bugs qui ont silencieusement scindé la grotte partagée.",
- "f7ae9bb": "Devlog &middot; 15 septembre 2026 &middot; mis à jour le 21 septembre 2026 pour TUNL 16.0 &middot; <a href=\"/devlog/\">tous les billets</a>"
+ "f7393c4": "Devlog &middot; 15 septembre 2026 &middot; mis à jour le 21 septembre 2026 pour TUNL 16.1 &middot; <a href=\"/devlog/\">tous les billets</a>"
 }

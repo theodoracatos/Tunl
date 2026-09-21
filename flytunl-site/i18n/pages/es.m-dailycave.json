@@ -68,5 +68,5 @@
  "5bd55a3": "La lección que conservaría es la forma de las pruebas. Los bugs de determinismo son invisibles jugando y triviales por aserción. Generar las primeras miles de posiciones en seis tamaños de pantalla y compararlas lleva milisegundos y habría atrapado ambos bugs de dispositivo el día en que se escribieron. El error de la puerta de contenido necesitaba una herramienta completamente distinta, una simulación de hasta dónde llegan realmente los jugadores, y la única lección real ahí es que un número derivado de tu curva de dificultad no es un número sobre tus jugadores.",
  "b5a5829": "La cueva de hoy está en línea y se reinicia a medianoche UTC. Funciona en el navegador, sin instalar nada:",
  "952b628": "Un nivel diario que es una función pura de la fecha: la siembra, los cuatro flujos aleatorios, y los dos bugs que dividieron silenciosamente la cueva compartida.",
- "f7ae9bb": "Devlog &middot; 15 de septiembre de 2026 &middot; actualizado el 21 de septiembre de 2026 para TUNL 16.0 &middot; <a href=\"/devlog/\">todas las entradas</a>"
+ "f7393c4": "Devlog &middot; 15 de septiembre de 2026 &middot; actualizado el 21 de septiembre de 2026 para TUNL 16.1 &middot; <a href=\"/devlog/\">todas las entradas</a>"
 }
