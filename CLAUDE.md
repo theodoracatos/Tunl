@@ -9,14 +9,15 @@
 ## How this file is organised (read first)
 
 This file holds **the rule, and when to read more**. Each topic has a file in `docs/agents/`
-with the full rationale, the constants involved and the traps already hit. **Before changing
+with the rule, the constants involved and the traps already hit. **Before changing
 anything in a topic's area, read its file** - most rules below exist because an agent (or a
 player) broke them once. `docs/design-history.md` holds the older measurement narratives
 and rejected alternatives; append to it when you change a decision.
 
 Older references of the form `CLAUDE.md "<Section>"` (in memories, design-history, commit
-messages) mean that heading in `docs/agents/` - every section was moved there verbatim
-on 2026-09-21: `grep -n '^## <Section>' docs/agents/*.md`.
+messages) mean that heading in `docs/agents/` (headings kept on 2026-09-21):
+`grep -n '^## <Section>' docs/agents/*.md`. Condensed-away text is archived verbatim at the
+end of `docs/design-history.md`.
 
 Do not copy numbers from code into these docs - name the constant (`BOULDER_START_WX`),
 not its value. Numbers copied here are what went stale.
@@ -81,15 +82,15 @@ Pick the row for the file you are about to change and read those `docs/agents/` 
 
 | file | read first |
 |------|-----------|
-| `update.js` | physics, fairness, hazards, coins |
-| `systems.js` (spawners, `make*`/`maintain*`) | fairness, hazards, coins; then run `test-cave.js` |
+| `update.js` | physics, fairness, hazards, coins, portal |
+| `systems.js` (spawners, `make*`/`maintain*`, warp) | fairness, hazards, coins, portal; then run `test-cave.js` |
 | `world.js` (curves, `boundsAt`/`boundsBase`, sectors) | difficulty, fairness, coins |
 | `constants.js` | the topic of the constant you touch (its doc block names it) |
 | `lifecycle.js`, `state.js` | fairness (rng streams, world-x cursors), onboarding |
 | `draw.js` ship / 3D hull / liveries | ship-render, economy |
-| `draw.js` walls, HUD, title, depth light | visuals, hazards (crystals) |
-| `draw.js` death screen, freeze frame | screens |
-| `share.js` | screens |
+| `draw.js` walls, HUD, title, depth light, portal ring | visuals, hazards (crystals), portal |
+| `draw.js` death screen, freeze frame | screens, share |
+| `share.js` | share |
 | `approach.js` | onboarding |
 | `audio.js` | audio |
 | `input.js` | screens (milestones), README (hard rules) |
@@ -124,8 +125,10 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 - Falling stalactites: fall distance recomputed live each frame, scrollX-indexed.
 - Boulders are rock islands with two guaranteed passes; don't push them further out without leaderboard data.
 - Cannons: barrel, shell and exit line share the **tunnel** frame. `rngCannon()` ordering invariant - re-check if spawn/fire distances move.
-- Warp portal: cadence is a **duty cycle**; no warp coin; the hit window is the drawn radius; the wall never kills during a warp.
 - **Mines are what guarantees every run ends** - never wall-anchored or bonus-aware; `MINE_RETRY_OFFSETS` keeps density up deep.
+
+### Warp portal -> `docs/agents/portal.md`
+- Cadence is a **duty cycle**; no warp coin; the hit window is the drawn radius; the wall never kills during a warp; `boundsAt()` only, never `boundsBase()`.
 
 ### Coins -> `docs/agents/coins.md`
 - Gap bonus magnitudes are **fractions of the half-gap**, not of H. Coins are a real difficulty lever - don't shrink them.
@@ -148,7 +151,7 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 - Fonts via `FONT_UI` / `FONT_NUM` only; no Courier. Test layout on **WebKit**, not only Chrome.
 - **No parallax background** (tried, removed). Depth light: never bright, steps not fades, light behind the ship only.
 
-### Scoring, share card, death screen, ghost -> `docs/agents/screens.md`
+### Scoring, death screen, ghost -> `docs/agents/screens.md` (share card: `share.md`)
 - Milestone ladder seeded at 75; ON FIRE and all-time record are **score** crossings, not positions.
 - Death screen: 5 type steps, day accent, every vertical step `max(H-fraction, type-derived)`, rewards as a wrapping chip row.
 - Share card carries the debriefing content; the footer (URL + QR) is never conditional.

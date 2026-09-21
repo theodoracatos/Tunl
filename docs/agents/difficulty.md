@@ -1,28 +1,19 @@
 # Tunnel, flight plan, difficulty curves, deep run
 
-Moved verbatim from CLAUDE.md on 2026-09-21 (progressive disclosure). CLAUDE.md keeps the one-line rule and points here.
+Rules, constants and traps for this area. CLAUDE.md keeps a one-line version of each rule; the measurements and rejected alternatives behind them are in `docs/design-history.md` (the 2026-09-21 condensing moved the removed paragraphs there verbatim, under "Narratives moved out of docs/agents").
 
 ## Procedural tunnel
-Two overlapping sin waves, amplitude and frequency scale with difficulty (`_prog`).
-`_prog = Math.min(Math.sqrt(scrollX / 14000), 1)` - sqrt easing: fast early ramp, plateau near max. Reaches max difficulty at 14000 world px (~score 233).
-
-```javascript
-_wA1     = lerp(H * 0.07,  H * 0.12,  _prog);   // wave amplitude 1
-_wA2     = lerp(H * 0.035, H * 0.055, _prog);   // wave amplitude 2
-_wF1     = lerp(0.0025,    0.0048,    _prog);    // wave frequency 1
-_wF2     = lerp(0.0060,    0.0115,    _prog);    // wave frequency 2
-```
+Two overlapping sin waves (`refreshWave()` in `world.js`: `_wA1/_wA2` amplitudes,
+`_wF1/_wF2` frequencies). `_prog` = sqrt-eased 0->1 over the first 14000 world-px
+(~score 233); `_prog2` = linear 0->1 from 14000 to 54000.
 
 **Easier pacing: corridor, bends and hazards each have their own slower clock
 (2026-09-13, two passes on player feedback "the game is far too hard" - do not merge
 back into `_prog`).**
-- **Corridor width + wave amplitude** use `gapProgAt(wx)` (`world.js`): flat at 0
-  (widest, `H*0.34`) through `GAP_EASY_WX` = `SAFE_START_WX` = 3000 (~score 50, where the safe flight ends), then **linear** (a sqrt
-  ease front-loads the narrowing, which was the complaint) over `GAP_RAMP_WX` = 90000,
-  so `H*0.163` is only reached at wx=93000 (~score 1550, was ~233). Half-gap
-  old -> new: score 200 0.176 -> 0.328, 500 0.163 -> 0.293, 800 0.163 -> 0.257.
-  `EARLY_WIDEN_WX` 12000 -> 24000. Wave *frequencies* stay on `_prog` (re-pacing
-  `sin(wx*f)` at large wx scrambles phase).
+- **Corridor width + wave amplitude** use `gapProgAt(wx)` (`world.js`): flat (widest)
+  through `GAP_EASY_WX` (= `SAFE_START_WX`), then **linear** over `GAP_RAMP_WX` - a sqrt
+  ease front-loads the narrowing, which was the complaint. Wave *frequencies* stay on
+  `_prog` (re-pacing `sin(wx*f)` at large wx scrambles phase).
 - **Hazard and coin DENSITY, and every hazard's start point, now come from the flight
   plan** - see "Flight plan (sectors)" right below. `hazProgAt`/`hazProg2At` survive only
   for `stalLenFrac` and `cannonSpacing`.
@@ -64,33 +55,27 @@ gate.** Bomb/poison/drain clocks start at their sector (`lifecycle.js`), the fir
 at each boundary from S2 on (i18n key `sector`).
 
 **Densities are rates per reference second, not world-px spacings** (`world.js`
-`sectorRate` / `sectorEnvelope`): `spacing = worldPxForSec(1 / rate)`. Stalactite slots
-`STAL_RATE_S1` 2.0/s x `STAL_GROWTH` 1.14 per sector, 1.08 from `SECTOR_GROWTH_TAPER`
-(S8); mines `MINE_RATE_S3` 0.28/s x 1.2, then 1.1; floors 50 / 200 px unchanged, so rates
-grow without limit and every run still ends ("mines guarantee an eventual death" holds).
-Each sector is a **sawtooth**: the first 20% runs at 55% density (the breather, with 1.5x
-coin candidates as the payout), then ramps 80% -> 115%. Coins: `COIN_RATE_SAFE` 0.75/s in
-S0, 0.95/s in S1-S3, x0.985 per sector after, floor 0.8/s.
+`sectorRate` / `sectorEnvelope`): `spacing = worldPxForSec(1 / rate)`. Rates start at
+`STAL_RATE_S1` / `MINE_RATE_S3` / `COIN_RATE_SAFE` and grow per sector (`STAL_GROWTH`,
+tapering from `SECTOR_GROWTH_TAPER`); the px floors stay, so rates grow without limit and
+every run still ends. Each sector is a **sawtooth**: a breather at the start (low density,
+more coin candidates as the payout), then a ramp past 100%.
 
 The placement vetoes still apply but only decide geometry - **retune by the measured rate
 (the replay-harness method), never by the spacing number**; that coupling is exactly how
 12.0 accidentally tripled the mine count.
 
-**Hull scratches** (`HULL_SCRATCHES` = 2, from the tunnel entry, for the **whole run**;
+**Hull scratches** (`HULL_SCRATCHES`, from the tunnel entry, for the **whole run**;
 `update.js` `hullScratch`): a lethal-wall contact spends one - clamp, bounce, "SCRAPE!"
-notif, HUD diamonds bottom-right - instead of ending the run. Counts as a hit for the
-No-Hit achievement. **A rewarded continue repairs them** - see Ad cadence. **The grace after a scratch is wall-only** (`WALL_GRACE_SEC`,
-`state.js wallGraceT`): the wall clamps instead of scratching again, but stalactites,
-mines, boulders and shots stay lethal and the ship does not blink. It was the full
-`HIT_INVULN_SEC` while scratches expired at S3; carried into the deep run that would let a
-player scrape a wall on purpose to pass through a stalactite field. **Scratches forgive
-wall mistakes only; direct hits are the shield's job.** A plain shield at the same moment
-was measured and rejected - it mostly boosted the good tier (+72% median) by eating a
-stalactite later.
+notif, HUD diamonds - instead of ending the run. Counts as a hit for No-Hit. **A rewarded
+continue repairs them** (see `economy.md`). **The grace after a scratch is wall-only**
+(`WALL_GRACE_SEC`, `state.js wallGraceT`): the wall clamps, but stalactites, mines, boulders
+and shots stay lethal and the ship does not blink - a full invuln would let a player scrape
+on purpose to pass a stalactite field. **Scratches forgive wall mistakes only; direct hits
+are the shield's job** (a shield here was measured and rejected).
 
-**Known residual:** experts still hit a reaction-time wall at S10-S11 (death 63% / 77% per
-sector, was 100% at S7-S8). A slower `stalLenFrac` leg and a slower chicane-probability
-ramp were both tried and measured as no-ops, so the lever left is speed itself.
+**Known residual:** experts hit a reaction-time wall around S10-S11. A slower `stalLenFrac`
+leg and a slower chicane ramp were measured as no-ops; the lever left is speed itself.
 
 The audit that produced this and the measured before/after per tier:
 `docs/design-history.md` -> "Flight plan (sectors)". Concept + evidence:
@@ -100,63 +85,40 @@ Two bounds functions:
 - `boundsAt(wx)` - includes coin bonus - used for rendering AND collision
 - `boundsBase(wx)` - base only (no bonus) - used only for placing coins safely
 
-
 ## Difficulty scaling functions
 
-Two-phase difficulty system:
-- `_prog  = Math.min(Math.sqrt(scrollX / 14000), 1)` - main ramp (sqrt eased), 0→1 over first 14000px (~score 233)
-- `_prog2 = Math.min(Math.max(scrollX - 14000, 0) / 40000, 1)` - inferno, 0→1 from 14000→54000px
+All curves live in `world.js` and are multiplied by the day's `DAY_ARCHETYPES` entry.
+`stalSpacing` / `coinSpacing` / `mineSpacing` are sector rates (see Flight plan);
+`stalLenFrac` (hard cap 0.80) and `cannonSpacing` still ride `hazProgAt`/`hazProg2At`;
+`chicaneProb` fades in from `CHICANE_START_WX` (hard cap 0.62); `scrollSpd()` scales by
+W/600 with W capped, then an uncapped sqrt tail.
 
-All of these are then multiplied by the day's `DAY_ARCHETYPES` entry (`world.js`), so a
-given day runs a bit denser or sparser than the base curve.
+A maxed `gapBonus` widens the corridor by the same factor at every depth
+(`GAP_BONUS_MAX_FRAC`); pre-12.0 a flat bonus more than doubled the plateau corridor.
 
-```javascript
-scrollSpd()    // 230 → 400 → 560 px/s at W=600, scaled by W/600 (W capped at 956), then an uncapped sqrt tail
-stalSpacing()  // rate per ref second per sector, see Flight plan (floor 50)
-stalLenFrac()  // 0.46 → 0.64 → 0.76 fraction of halfGap (hard cap 0.80)
-coinSpacing()  // rate per ref second per sector, see Flight plan (floor 175)
-mineSpacing()  // rate per ref second from S3, see Flight plan (floor 200)
-cannonSpacing()// 4200 → 2400 → 1500 px between cannons (floor 1200)
-chicaneProb    // 0 from CHICANE_START_WX, faded in over 6000px, 0.24 → 0.42 (hard cap 0.62)
-```
-
-At score 233 (`_prog` = 1) the full corridor is `2 * H * 0.163`. A maxed `gapBonus`
-widens it by `GAP_BONUS_MAX_FRAC` (1.44x), the same factor it widens the wx=0 corridor
-by - coins matter just as much at high difficulty as they ever did, they just no longer
-matter *disproportionately* there. Pre-12.0 this same maxed bonus was a flat `H*0.19`
-at every depth, which at the plateau was **2.17x** - more than doubling the corridor
-the difficulty curve had just spent 233 points narrowing.
-
-**Onboarding corridor widen** (`earlyWidenAt()`, `world.js`): the base curve's wx=0
-half-gap (`H*0.34`, corridor 68% of screen height) already reads as narrow to a player
-who hasn't yet found the hold-to-thrust feel, so `earlyWidenAt(wx)` adds extra half-gap
-on top of the base curve - `H*0.09` at wx=0 (walls reduced to a sliver each side, corridor
-~86% of screen height), smoothstepped down to 0 by `EARLY_WIDEN_WX` (`world.js`, 24000 / ~score 400 since
-2026-09-13) so it rejoins the hand-tuned base curve exactly, with no kink. Added in both `refreshWave()` and `halfGapAt()` so rendering/
-collision (`boundsAt`) and placement (`boundsBase`, via `halfGapAt`) agree - same pattern
-as `deepChamberAt`.
+**Onboarding corridor widen** (`earlyWidenAt()`, `world.js`): extra half-gap
+(`EARLY_WIDEN_FRAC` of H at wx=0, walls reduced to a sliver) smoothstepped to 0 by
+`EARLY_WIDEN_WX`, rejoining the base curve with no kink. Added in both `refreshWave()` and
+`halfGapAt()` so rendering/collision (`boundsAt`) and placement (`boundsBase`) agree - same
+pattern as `deepChamberAt`.
 
 ## Speed never plateaus (key design decision, do not revert)
 
-- **`scrollSpd()` never plateaus**: every other difficulty knob (`stalSpacing`, `stalLenFrac`, `coinSpacing`, `mineSpacing`, wave amplitude/frequency) caps once `_prog2` saturates, because those define corridor *geometry* and pushing them further would make the tunnel unnavigable. Scroll speed has no such ceiling - it only shrinks reaction time - so past `_prog2 > 1` (score ~900) it keeps climbing forever via a sqrt-eased tail (`base + sqrt(_prog2-1)*90`), intentionally so a long enough run is never merely "endurance at a fixed pace." Don't re-add a hard cap here.
+- **`scrollSpd()` never plateaus**: every geometry knob caps once `_prog2` saturates
+  (pushing geometry further makes the tunnel unnavigable), but speed only shrinks reaction
+  time, so past `_prog2 > 1` it climbs forever on a sqrt tail - a long run is never mere
+  endurance at a fixed pace. Don't re-add a hard cap.
 
 ## Deep-run variety (score ~150+, do not revert)
 
-Past `_prog2 = 1` (score ~900) every corridor geometry knob is capped and only
-`scrollSpd()` moves - so a five-digit run was one variable, speed, getting twitchier
-against a frozen corridor. `DEEP_VARIETY_WX` (the switch-on point for the shape morph,
-chambers, deep coin-line shapes and the palette drift) is **9000 (~score 150)**, moved
-there from 54000 -> 30000 -> 9000 on the same leaderboard argument as the Boulders
-section: at the old values essentially no real player had ever seen any of it. Full
-numbers in the doc comment above `DEEP_VARIETY_WX` in `world.js`.
+Past `_prog2 = 1` every geometry knob is capped and only speed moves, so the deep run was
+one variable getting twitchier. `DEEP_VARIETY_WX` switches on the shape morph, chambers,
+deep coin-line shapes and the palette drift; it was moved early on the leaderboard argument
+(no real player reached the old value) - see the doc comment above it in `world.js`.
 
 It is safe at any value because every feature is bounded *relative to the same wx
-unmorphed* (the `test-math` energy guard holds at any wx, chambers only ever widen). Two
-things deliberately did NOT move with it: the **speed pulse** (still gated on
-`_prog2 > 1` in `scrollSpd()` - surging above a still-ramping trend is a different
-proposition from surging above a flat one) and the **apex-biased mines**, which keep
-their own `DEEP_APEX_WX` = 54000 because that one is flagged below as an unplaytested
-fairness risk.
+unmorphed*. Two things deliberately did NOT move with it: the **speed pulse** (gated on
+`_prog2 > 1`) and the **apex-biased mines** (`DEEP_APEX_WX`, an unplaytested fairness risk).
 
 All of it lives in `world.js` (`DEEP_*` consts + `_deepHash` + `deepMorphAt`) and is a
 pure function of `scrollX` + `_deepDay` (captured in `seedDailyVariety`, independent of
@@ -164,33 +126,21 @@ the `rng()` obstacle stream and the `h`-chain), so every player flies the identi
 sequence and the scrollX-indexed ghost stays locked. **`_deepVarietyOn` (default true) is
 the master kill switch for all of it.**
 
-- **Shape morph** (`deepMorphAt`, folded into `refreshWave` and `boundsBase`): the two
-  corridor waves' **amplitudes** are rescaled by a seeded per-day sequence of characters
-  (`DEEP_CHARS`: even / sweeps / chop / near-straight), each holding
-  `DEEP_CHAR_WAVELEN` world-px then smoothstepping into the next. The a1/a2 splits are
-  picked so `wA1*wF1 + wA2*wF2` (peak corridor velocity) never exceeds ~1.02x the
-  same-`wx` unmorphed value - a different *ride*, never more wiggle-energy than today.
-  **Frequencies are deliberately left untouched**: changing the frequency of `sin(wx*f)`
-  at large `wx` scrambles accumulated phase and needs a phase-integral rework.
-  `test-math.js` guards inertness below the plateau, the <4% energy ceiling across 40
-  day-seeds, and boundary continuity. Segment 0 has its own entry ramp (the same
-  30%-of-wavelength blend later segments spend blending OUT, spent blending IN), so
-  `wx <= DEEP_VARIETY_WX` stays exactly inert and everything past it is seamless - without
-  it the morph jumped from inert to fully-hashed in a single world-px at the boundary.
-- **Speed pulse** (`scrollSpd()`): past `_prog2 > 1`, a seeded swell of up to
-  `+DEEP_PULSE_AMP` (12%) **above** the trend over `DEEP_PULSE_WAVELEN` world-px
-  (`swell = 0.5 - 0.5*cos(...)`, in `[0,1]`). **Surge-only - it never dips below the
-  trend** (it was +-8% around the trend until 2026-09-08, i.e. half of every cycle the
-  deep run decelerated, which reads as the game getting easier). Each breath's trough
-  sits exactly on the trend, and the trend itself still climbs forever, so the speed
-  envelope only ever rises; only the within-breath ease-back varies.
-- **Chambers** (`deepChamberAt`, `DEEP_CHAMBER_PERIOD`/`DEEP_CHAMBER_PEAK`): a rare
-  seeded window (~55% of 15000px periods) where the half-gap balloons to 2.1x on a sine
-  bump then settles - a breather, never a hazard (wider is always navigable). Applied to
-  `_halfGap` in `refreshWave` **and** `halfGapAt()` so `boundsBase` / coin+mine placement
-  follow the room. The sub-window never touches a period boundary, so the factor is
-  always 1 (continuous) at the seams. This is the one thing that legitimately breaks
-  "the corridor only ever narrows" past the plateau, by design.
+- **Shape morph** (`deepMorphAt`, folded into `refreshWave` and `boundsBase`): the waves'
+  **amplitudes** follow a seeded per-day sequence of characters (`DEEP_CHARS`), each holding
+  `DEEP_CHAR_WAVELEN` then smoothstepping into the next. Splits are picked so peak corridor
+  velocity (`wA1*wF1 + wA2*wF2`) never exceeds ~1.02x the unmorphed value - a different
+  ride, never more wiggle energy. **Frequencies are untouched** (phase scramble). Segment 0
+  has its own entry ramp so `wx <= DEEP_VARIETY_WX` stays exactly inert. `test-math.js`
+  guards inertness, the energy ceiling and continuity.
+- **Speed pulse** (`scrollSpd()`): past `_prog2 > 1`, a seeded swell up to
+  `DEEP_PULSE_AMP` **above** the trend over `DEEP_PULSE_WAVELEN`. **Surge-only - never dips
+  below the trend** (a +- pulse decelerated half of every cycle, which reads as the game
+  getting easier).
+- **Chambers** (`deepChamberAt`, `DEEP_CHAMBER_PERIOD`/`DEEP_CHAMBER_PEAK`): a rare seeded
+  window where the half-gap balloons on a sine bump - a breather, never a hazard. Applied in
+  `refreshWave` **and** `halfGapAt()` so placement follows the room; the factor is 1 at
+  every period seam. The one sanctioned exception to "the corridor only narrows".
 - **Coin-line shapes** (`makeCoin`): deep coin `y` follows a seeded slow sine arc per
   ~3200px band instead of scattering independently - a line to follow. `rng()` is still
   consumed, so coin *types* are unchanged; only positions move.
@@ -201,17 +151,4 @@ the master kill switch for all of it.**
   neighbours both on one side) ~60% of mines snap toward the centreline - where the
   corridor shape already forces the player. Same count/speed. **Watch in playtest for a
   "the game is cheating" read** - cut it if it feels unfair.
-- **Boulders**: see the Boulders section above.
-
-**Blue coin "Zeitblase" (draw-only, `constants.js` `SLOW_FX_*` doc).** The slow already
-sagged the scroll, the music and drew a HUD bar, but nothing else on screen slowed, so it
-read as a stutter. Three presentation layers ride one eased intensity `slowFxVis`
-(`state.js`, chases `slowTime / slowTimeMax`, so they fade with the glide back to full
-speed): particles, thruster exhaust and coin animations run on a slowed clock (`vtime`,
-and `vdt` in `update.js`; exhaust spawn is thinned so the live count stays flat); a
-one-shot double ring on pickup plus thin time ripples around the ship; a faint ice-blue
-wash on the LEFT only (hazards arrive from the right, same rule as the depth light).
-**`gtime` is deliberately NOT slowed** - mines bob off it and collide against it, so that
-would be a gameplay change. No `shadowBlur`, no `rng()`, no placement decision. Cyan wall
-tint stays reserved for the coin bonus, so the effect never colours the walls.
-
+- **Boulders**: see `hazards.md` -> Boulders.
