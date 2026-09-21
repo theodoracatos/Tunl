@@ -2,7 +2,6 @@
  "9895ba3": "Registro de cambios de TUNL - Notas de versión de cada versión",
  "6f5e1da": "Registro de cambios de TUNL",
  "a2986e8": "Qué cambió en cada versión, la más reciente primero. La versión de navegador en <a href=\"/play/\">flytunl.ch/play</a> siempre ejecuta la compilación más reciente.",
- "a7e912e": "Registro de cambios &middot; actualizado el 20 de septiembre de 2026 &middot; la versión actual es la 16.0",
  "d2ab440": "15.0: la partida ahora empieza fuera de la cueva",
  "75a0c81": "Cada partida se abre sobre la ciudad del día al atardecer y vuela hacia una boca de roca. Un banner \"ENTRANDO EN EL TUNL\" marca la entrada. La cueva, la puntuación y la semilla diaria son exactamente como antes.",
  "7cef847": "La nave en vuelo se dibuja en una vista lateral de tres cuartos: sus alas se pliegan hacia atrás con la velocidad, el casco rueda con tu subida y el anillo warp regala un tonel. Hitbox sin cambios.",
@@ -115,5 +114,6 @@
  "0b7a3fa": "La 1.1 (Android) subió la app al nivel de API de Android 16 para cumplir el requisito de Google Play.",
  "8c4fa10": "Las versiones 1.0 a 8.0 son también la historia contada en la entrada del devlog <a href=\"/devlog/first-two-months/\">Los dos primeros meses</a>.",
  "9e34dba": "Para saber cómo se juega ahora, consulta la <a href=\"/how-to-play/\">guía de cómo jugar</a>. Si algo en una versión nueva te estropeó la partida, dímelo en <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a>.",
- "6a125da": "Qué cambió en cada versión de TUNL, la más reciente primero: la aproximación a la ciudad al atardecer y la nave 3D en la 15.0, los acabados de pintura en la 14.0, el portal warp en la 11.0, y todo hasta el primer lanzamiento."
+ "6a125da": "Qué cambió en cada versión de TUNL, la más reciente primero: la aproximación a la ciudad al atardecer y la nave 3D en la 15.0, los acabados de pintura en la 14.0, el portal warp en la 11.0, y todo hasta el primer lanzamiento.",
+ "a99e0c0": "Registro de cambios &middot; actualizado el 21 de septiembre de 2026 &middot; la versión actual es la 16.0"
 }

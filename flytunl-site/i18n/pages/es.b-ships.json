@@ -3,7 +3,6 @@
  "192cf57": "Las ocho naves de TUNL, sus compromisos, la maestría, la economía de desbloqueo y las pinturas.",
  "c37051a": "Las ocho naves de TUNL - Compromisos, maestría, fragmentos y pintura",
  "6c0fdb9": "Cada nave vuela con la misma física de un botón. Lo que cambia es un único intercambio: algo que hace mejor, algo que hace peor. Aquí está la plantilla, cómo te la ganas y cómo está dibujada.",
- "d555b80": "Naves &middot; actualizado el 20 de septiembre de 2026 para TUNL 15.1",
  "90e2d6f": "Por qué las naves son compromisos, no mejoras",
  "b11888b": "En muchos juegos, una nave mejor es solo un número más grande. TUNL evita eso a propósito. Cada nave combina una <strong>ventaja con un inconveniente</strong>, así que elegir una es una decisión de build: una hitbox más pequeña que aguanta menos escudo, un alcance de monedas mayor con el que es más fácil rozar un pincho. Ninguna es estrictamente la mejor en todo. Cuando una versión temprana tenía una nave que claramente superaba a las demás, la medí frente a las otras con una simulación de repetición y la reequilibré hasta que dejó de ser así.",
  "96971cd": "El impulso, la gravedad y la velocidad límite son idénticos en todas las naves, y todas vuelan la misma cueva del día. Lo que difiere es el margen que la nave te da cuando algo sale mal, y lo que hace por ti un bono. Mantengo las cifras exactas fuera de esta página a propósito. El intercambio está pensado para sentirse, y las naves se aprenden mejor volándolas.",
@@ -56,5 +55,6 @@
  "a8699c8": "La hitbox es exactamente la misma que antes del cambio. La vista 3D es solo visual, no toca ninguna colisión. El hangar, la tienda y la tarjeta para compartir siguen mostrando la nave desde arriba, porque son retratos de la nave, no imágenes de un vuelo.",
  "f3ae018": "Para las reglas que hacen que valga la pena elegir entre naves, consulta la <a href=\"/how-to-play/\">guía de cómo jugar</a>. Para probar el juego ahora mismo, <a href=\"/play/\">juega la cueva de hoy en tu navegador</a>.",
  "232e36c": "<a class=\"cta\" href=\"/play/\">Juega la cueva de hoy</a>",
- "8d3d8dc": "Conoce las ocho naves de TUNL, de PEARL a SOLARIS: en qué destaca cada una y qué cuesta, cómo funciona la maestría, cómo las desbloquean los fragmentos y el polvo estelar, y los seis acabados de pintura."
+ "8d3d8dc": "Conoce las ocho naves de TUNL, de PEARL a SOLARIS: en qué destaca cada una y qué cuesta, cómo funciona la maestría, cómo las desbloquean los fragmentos y el polvo estelar, y los seis acabados de pintura.",
+ "2de3e17": "Naves &middot; actualizado el 21 de septiembre de 2026 para TUNL 16.0"
 }

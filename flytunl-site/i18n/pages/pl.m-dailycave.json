@@ -3,7 +3,6 @@
  "2adea07": "TUNL generuje identyczną co do piksela dzienną jaskinię dla każdego gracza na Ziemi z samej daty UTC. Jak działa zasiewanie, dlaczego używa czterech oddzielnych strumieni losowych i dwa błędy, które po cichu rozdzieliły wspólną jaskinię.",
  "b7cf03e": "Jedna jaskinia, każdy gracz - jak TUNL buduje dzienny poziom z daty",
  "983a46f": "Jak TUNL buduje dzienny poziom z samej daty i dwa błędy, które po cichu psuły go przez miesiące.",
- "80744e2": "Devlog &middot; 15 września 2026 &middot; zaktualizowano 20 września 2026 dla TUNL 15.1 &middot; <a href=\"/devlog/\">wszystkie wpisy</a>",
  "8d750c8": "<a href=\"/play/\">TUNL</a> to gra o lataniu po jaskini z ciągiem przy przytrzymaniu. Przytrzymujesz, żeby się wznosić, puszczasz, żeby opadać, i próbujesz dolecieć dalej w zwężającym się tunelu niż wczoraj. Każdy gracz leci przez <strong>tę samą jaskinię tego samego dnia</strong>, a na granicy północy UTC staje się ona inną.",
  "6a94d06": "Nie ma pliku poziomu. Żaden serwer nie rozdaje mapy, nic nie jest pobierane, a gra nie przechowuje tunelu, który właśnie wygenerowała. Jaskinia jest czystą funkcją daty, a cały \"świat\" to około czterdziestu linii arytmetyki.",
  "414c041": "Ten projekt kupuje zaskakująco dużo: uczciwy globalny ranking, powtórkę ducha, która kosztuje kilkaset bajtów, i obraz twojego przelotu, którym można się dzielić. Narzuca też ograniczenie o wiele surowsze, niż się początkowo wydaje, a ja złamałem je dwukrotnie, nie zauważając. Ten wpis dotyczy obu połówek.",
@@ -68,5 +67,6 @@
  "123f4db": "Generator był łatwą częścią. Dwie fale i hasz to jedno popołudnie. Wszystko, co było kosztowne, pochodziło z obietnicy owiniętej wokół niego, że jaskinia jest <em>taka sama</em>, co zamienia każdą przyszłą funkcję w pytanie, czy przecieka niedeterminizm do rozmieszczania.",
  "5bd55a3": "Lekcja, którą bym zachował, to kształt testów. Błędy determinizmu są niewidoczne w grze i trywialne przy asercji. Wygenerowanie pierwszych kilku tysięcy pozycji przy sześciu rozmiarach ekranu i porównanie ich zajmuje milisekundy i wyłapałoby oba błędy urządzeń w dniu, w którym zostały napisane. Błąd bramki treści wymagał zupełnie innego narzędzia, symulacji tego, jak daleko gracze faktycznie docierają, a jedyną prawdziwą lekcją jest to, że liczba wyprowadzona z twojej krzywej trudności nie jest liczbą o twoich graczach.",
  "b5a5829": "Dzisiejsza jaskinia jest dostępna i resetuje się o północy UTC. Działa w przeglądarce, bez instalacji:",
- "952b628": "Dzienny poziom będący czystą funkcją daty: zasiewanie, cztery strumienie losowe i dwa błędy, które po cichu rozdzieliły wspólną jaskinię."
+ "952b628": "Dzienny poziom będący czystą funkcją daty: zasiewanie, cztery strumienie losowe i dwa błędy, które po cichu rozdzieliły wspólną jaskinię.",
+ "f7ae9bb": "Devlog &middot; 15 września 2026 &middot; zaktualizowano 21 września 2026 dla TUNL 16.0 &middot; <a href=\"/devlog/\">wszystkie wpisy</a>"
 }

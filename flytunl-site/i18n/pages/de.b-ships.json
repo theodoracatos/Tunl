@@ -3,7 +3,6 @@
  "192cf57": "Alle acht TUNL-Schiffe, ihre Kompromisse, Meisterschaft, Freischalt-Ökonomie und Lackierungen.",
  "c37051a": "Die acht Schiffe von TUNL - Kompromisse, Meisterschaft, Shards und Lackierung",
  "6c0fdb9": "Jedes Schiff fliegt mit derselben Ein-Knopf-Physik. Was sich ändert, ist ein einzelner Tausch: eine Sache, die es besser macht, eine Sache, die es schlechter macht. Hier ist das Aufgebot, wie du es verdienst und wie es gezeichnet ist.",
- "d555b80": "Schiffe &middot; aktualisiert am 20. September 2026 für TUNL 15.1",
  "90e2d6f": "Warum die Schiffe Kompromisse sind, keine Upgrades",
  "b11888b": "In vielen Spielen ist ein besseres Schiff einfach eine größere Zahl. TUNL vermeidet das bewusst. Jedes Schiff paart einen <strong>Vorteil mit einem Nachteil</strong>, sodass die Wahl eine Build-Entscheidung ist: eine kleinere Hitbox, die weniger Schild hält, eine größere Münzreichweite, mit der man leichter an einer Spitze streift. Keines ist in allem strikt am besten. Als eine frühe Version ein Schiff hatte, das klar besser war als der Rest, habe ich es mit einer Replay-Simulation gegen die anderen gemessen und neu ausbalanciert, bis das nicht mehr galt.",
  "96971cd": "Schub, Schwerkraft und Höchstgeschwindigkeit sind bei jedem Schiff identisch, und jedes Schiff fliegt dieselbe Tageshöhle. Was sich unterscheidet, ist der Spielraum, den das Schiff dir gibt, wenn etwas schiefgeht, und was ein Pickup für dich tut. Ich lasse die genauen Zahlen absichtlich von dieser Seite fern. Der Tausch soll gefühlt werden, und die Schiffe lernt man am besten durch Fliegen.",
@@ -56,5 +55,6 @@
  "a8699c8": "Die Hitbox ist genau die, die sie vor der Änderung war. Die 3D-Ansicht ist reine Darstellung, sie berührt keine Kollision. Hangar, Shop und die Teilen-Karte zeigen das Schiff weiterhin von oben, denn das sind Porträts des Schiffs, keine Bilder eines Flugs.",
  "f3ae018": "Für die Regeln, die die Wahl zwischen den Schiffen lohnend machen, siehe den <a href=\"/how-to-play/\">So spielst du TUNL-Guide</a>. Um das Spiel gleich auszuprobieren: <a href=\"/play/\">spiel die heutige Höhle im Browser</a>.",
  "232e36c": "<a class=\"cta\" href=\"/play/\">Spiele die heutige Höhle</a>",
- "8d3d8dc": "Lerne alle acht TUNL-Schiffe von PEARL bis SOLARIS kennen: worin jedes gut ist und was es kostet, wie Meisterschaft funktioniert, wie Shards und Stardust sie freischalten, und die sechs Lackierungen."
+ "8d3d8dc": "Lerne alle acht TUNL-Schiffe von PEARL bis SOLARIS kennen: worin jedes gut ist und was es kostet, wie Meisterschaft funktioniert, wie Shards und Stardust sie freischalten, und die sechs Lackierungen.",
+ "2de3e17": "Schiffe &middot; aktualisiert am 21. September 2026 für TUNL 16.0"
 }

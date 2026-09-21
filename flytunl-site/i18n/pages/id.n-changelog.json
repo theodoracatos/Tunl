@@ -2,7 +2,6 @@
  "9895ba3": "Changelog TUNL - Catatan Rilis untuk Setiap Versi",
  "6f5e1da": "Changelog TUNL",
  "a2986e8": "Apa yang berubah di setiap versi, yang terbaru di atas. Versi browser di <a href=\"/play/\">flytunl.ch/play</a> selalu menjalankan build terbaru.",
- "a7e912e": "Changelog &middot; diperbarui 20 September 2026 &middot; versi saat ini adalah 16.0",
  "d2ab440": "15.0: Run kini dimulai di luar gua",
  "75a0c81": "Setiap run dibuka di atas kota hari itu saat senja dan terbang masuk ke mulut batu. Banner \"MEMASUKI TUNL\" menandai jalan masuk. Gua, skor, dan seed harian persis seperti sebelumnya.",
  "7cef847": "Kapal saat terbang digambar dalam tampilan samping tiga perempat: sayapnya menyapu ke belakang seiring kecepatan, lambung berguling mengikuti pendakianmu, dan cincin warp memberi barrel roll. Hitbox tidak berubah.",
@@ -115,5 +114,6 @@
  "0b7a3fa": "1.1 (Android) membawa aplikasi ke level API Android 16 untuk memenuhi persyaratan Google Play.",
  "8c4fa10": "Versi 1.0 sampai 8.0 juga adalah kisah yang diceritakan dalam tulisan devlog <a href=\"/devlog/first-two-months/\">Dua Bulan Pertama</a>.",
  "9e34dba": "Untuk cara game saat ini dimainkan, lihat <a href=\"/how-to-play/\">panduan cara bermain</a>. Jika sesuatu di versi baru merusak run-mu, beri tahu saya di <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a>.",
- "6a125da": "Apa yang berubah di setiap versi TUNL, yang terbaru di atas: pendekatan kota senja dan kapal 3D di 15.0, hasil akhir cat di 14.0, portal warp di 11.0, dan segalanya sampai rilis pertama."
+ "6a125da": "Apa yang berubah di setiap versi TUNL, yang terbaru di atas: pendekatan kota senja dan kapal 3D di 15.0, hasil akhir cat di 14.0, portal warp di 11.0, dan segalanya sampai rilis pertama.",
+ "a99e0c0": "Changelog &middot; diperbarui 21 September 2026 &middot; versi saat ini adalah 16.0"
 }

@@ -13,7 +13,6 @@
  "a713758": "Les pièces ramassées à moins de deux secondes d'intervalle construisent un multiplicateur.",
  "cb766ea": "Comment jouer à TUNL - commandes, pièces, dangers et score",
  "4290c33": "Un seul bouton, une grotte qui se rétrécit et huit sortes de pièces, dont deux te mentent. Voici tout ce que le jeu ne prend pas le temps d'expliquer.",
- "bd2271f": "Mis à jour le 20 septembre 2026 pour TUNL 15.1.",
  "e50bd3c": "La commande unique",
  "65aa740": "<strong>Maintiens pour monter. Relâche pour tomber.</strong> C'est tout le schéma de commande. Touche et maintiens n'importe où sur l'écran, ou maintiens Espace ou la flèche haut au clavier.",
  "9911f87": "Ce qui compte, c'est que maintenir n'est pas un saut. C'est une <em>accélération</em>. Tu ne fixes pas ta position, tu fixes dans quelle direction ta vitesse change, et ton vaisseau garde son élan à travers le changement. Relâcher au sommet d'une montée signifie que tu continues de monter un instant avant que la gravité ne l'emporte. Les nouveaux joueurs réagissent presque toujours trop tard, puis corrigent trop, ce qui est l'oscillation classique de tout le monde lors des premières parties.",
@@ -121,5 +120,6 @@
  "33ecbb9": "Si tu veux la version technique de tout cela, y compris deux bugs qui l'ont cassé en douce, il y a un <a href=\"/devlog/daily-cave/\">article du devlog sur le générateur de la grotte du jour</a>.",
  "232e36c": "<a class=\"cta\" href=\"/play/\">Joue la grotte du jour</a>",
  "f50a892": "Un guide complet de TUNL : la commande unique, le début et les éraflures de coque, le rythme d'une partie en secteurs, le fonctionnement du score et des combos de pièces, ce que font les huit types de pièces, chaque danger dans l'ordre d'apparition et la stratégie qui fait monter ton score.",
- "5d01bd5": "La commande unique, le fonctionnement du score, ce que font les huit pièces, chaque danger dans l'ordre et la stratégie qui fait vraiment monter ton score."
+ "5d01bd5": "La commande unique, le fonctionnement du score, ce que font les huit pièces, chaque danger dans l'ordre et la stratégie qui fait vraiment monter ton score.",
+ "dec988d": "Mis à jour le 21 septembre 2026 pour TUNL 16.0."
 }

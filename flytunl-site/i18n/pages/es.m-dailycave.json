@@ -3,7 +3,6 @@
  "2adea07": "TUNL genera una cueva diaria idéntica al píxel para cada jugador en la Tierra a partir de nada más que una fecha UTC. Cómo funciona la siembra, por qué usa cuatro flujos aleatorios separados, y los dos bugs que dividieron silenciosamente la cueva compartida.",
  "b7cf03e": "Una cueva, cada jugador - Cómo TUNL construye un nivel diario a partir de una fecha",
  "983a46f": "Cómo TUNL construye un nivel diario a partir de nada más que una fecha, y los dos bugs que lo rompieron silenciosamente durante meses.",
- "80744e2": "Devlog &middot; 15 de septiembre de 2026 &middot; actualizado el 20 de septiembre de 2026 para TUNL 15.1 &middot; <a href=\"/devlog/\">todas las entradas</a>",
  "8d750c8": "<a href=\"/play/\">TUNL</a> es un juego de vuelo en cuevas de empuje sostenido. Mantienes pulsado para subir, sueltas para caer, e intentas llegar más lejos por un túnel que se estrecha que ayer. Cada jugador vuela por la <strong>misma cueva el mismo día</strong>, y en el límite de la medianoche UTC se convierte en otra.",
  "6a94d06": "No hay archivo de nivel. Ningún servidor reparte un mapa, nada se descarga, y el juego no almacena el túnel que acaba de generar. La cueva es una función pura de la fecha, y todo el \"mundo\" son unas cuarenta líneas de aritmética.",
  "414c041": "Ese diseño compra sorprendentemente mucho: una tabla de clasificación global justa, una repetición fantasma que cuesta unos cientos de bytes, y una imagen compartible de tu partida. También impone una restricción mucho más dura de lo que parece al principio, y la rompí dos veces sin darme cuenta. Esta entrada trata de ambas mitades.",
@@ -68,5 +67,6 @@
  "123f4db": "El generador era la parte fácil. Dos ondas y un hash son una tarde. Todo lo caro vino de la promesa envuelta alrededor, que la cueva es <em>la misma</em>, lo que convierte cada función futura en una pregunta sobre si filtra no determinismo en la colocación.",
  "5bd55a3": "La lección que conservaría es la forma de las pruebas. Los bugs de determinismo son invisibles jugando y triviales por aserción. Generar las primeras miles de posiciones en seis tamaños de pantalla y compararlas lleva milisegundos y habría atrapado ambos bugs de dispositivo el día en que se escribieron. El error de la puerta de contenido necesitaba una herramienta completamente distinta, una simulación de hasta dónde llegan realmente los jugadores, y la única lección real ahí es que un número derivado de tu curva de dificultad no es un número sobre tus jugadores.",
  "b5a5829": "La cueva de hoy está en línea y se reinicia a medianoche UTC. Funciona en el navegador, sin instalar nada:",
- "952b628": "Un nivel diario que es una función pura de la fecha: la siembra, los cuatro flujos aleatorios, y los dos bugs que dividieron silenciosamente la cueva compartida."
+ "952b628": "Un nivel diario que es una función pura de la fecha: la siembra, los cuatro flujos aleatorios, y los dos bugs que dividieron silenciosamente la cueva compartida.",
+ "f7ae9bb": "Devlog &middot; 15 de septiembre de 2026 &middot; actualizado el 21 de septiembre de 2026 para TUNL 16.0 &middot; <a href=\"/devlog/\">todas las entradas</a>"
 }

@@ -3,7 +3,6 @@
  "2adea07": "TUNL genera una grotta giornaliera identica al pixel per ogni giocatore sulla Terra a partire da nient'altro che una data UTC. Come funziona il seeding, perché usa quattro flussi casuali separati, e i due bug che hanno silenziosamente diviso la grotta condivisa.",
  "b7cf03e": "Una grotta, ogni giocatore - Come TUNL costruisce un livello giornaliero da una data",
  "983a46f": "Come TUNL costruisce un livello giornaliero da nient'altro che una data, e i due bug che l'hanno silenziosamente rotto per mesi.",
- "80744e2": "Devlog &middot; 15 settembre 2026 &middot; aggiornato il 20 settembre 2026 per TUNL 15.1 &middot; <a href=\"/devlog/\">tutti i post</a>",
  "8d750c8": "<a href=\"/play/\">TUNL</a> è un volo in grotta a spinta mantenuta. Tieni premuto per salire, rilascia per cadere, e cerchi di arrivare più lontano in un tunnel che si restringe rispetto a ieri. Ogni giocatore vola nella <strong>stessa grotta lo stesso giorno</strong>, e al confine della mezzanotte UTC diventa un'altra.",
  "6a94d06": "Non c'è nessun file di livello. Nessun server distribuisce una mappa, niente viene scaricato, e il gioco non memorizza il tunnel appena generato. La grotta è una funzione pura della data, e l'intero \"mondo\" sono circa quaranta righe di aritmetica.",
  "414c041": "Questo design compra sorprendentemente molto: una classifica globale equa, un replay fantasma che costa poche centinaia di byte, e un'immagine condivisibile della tua partita. Impone anche un vincolo molto più duro di quanto sembri all'inizio, e l'ho infranto due volte senza accorgermene. Questo post parla di entrambe le metà.",
@@ -68,5 +67,6 @@
  "123f4db": "Il generatore era la parte facile. Due onde e un hash sono un pomeriggio. Tutto ciò che è stato costoso veniva dalla promessa avvolta intorno, che la grotta è <em>la stessa</em>, il che trasforma ogni funzionalità futura in una domanda su se infiltri non determinismo nel posizionamento.",
  "5bd55a3": "La lezione che terrei è la forma dei test. I bug di determinismo sono invisibili giocando e banali per asserzione. Generare le prime migliaia di posizioni a sei dimensioni di schermo e confrontarle richiede millisecondi e avrebbe individuato entrambi i bug dei dispositivi il giorno in cui sono stati scritti. L'errore del cancello dei contenuti richiedeva uno strumento completamente diverso, una simulazione di quanto arrivano davvero i giocatori, e l'unica vera lezione è che un numero derivato dalla tua curva di difficoltà non è un numero sui tuoi giocatori.",
  "b5a5829": "La grotta di oggi è online e si azzera alla mezzanotte UTC. Funziona nel browser, senza installazione:",
- "952b628": "Un livello giornaliero che è una funzione pura della data: il seeding, i quattro flussi casuali, e i due bug che hanno silenziosamente diviso la grotta condivisa."
+ "952b628": "Un livello giornaliero che è una funzione pura della data: il seeding, i quattro flussi casuali, e i due bug che hanno silenziosamente diviso la grotta condivisa.",
+ "f7ae9bb": "Devlog &middot; 15 settembre 2026 &middot; aggiornato il 21 settembre 2026 per TUNL 16.0 &middot; <a href=\"/devlog/\">tutti i post</a>"
 }

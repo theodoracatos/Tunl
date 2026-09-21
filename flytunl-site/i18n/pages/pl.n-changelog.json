@@ -2,7 +2,6 @@
  "9895ba3": "Lista zmian TUNL - notatki do wydań każdej wersji",
  "6f5e1da": "Lista zmian TUNL",
  "a2986e8": "Co zmieniło się w każdej wersji, od najnowszej. Wersja przeglądarkowa pod adresem <a href=\"/play/\">flytunl.ch/play</a> zawsze działa na najnowszej kompilacji.",
- "a7e912e": "Lista zmian &middot; zaktualizowana 20 września 2026 &middot; obecna wersja to 16.0",
  "d2ab440": "15.0: przelot zaczyna się teraz poza jaskinią",
  "75a0c81": "Każdy przelot otwiera się nad miastem dnia o zmierzchu i wlatuje w skalne wejście. Baner „WLOT DO TUNL\" oznacza drogę do środka. Jaskinia, wynik i dzienne ziarno są dokładnie takie jak wcześniej.",
  "7cef847": "Statek w locie jest rysowany w widoku z boku w trzech czwartych: jego skrzydła odchylają się do tyłu wraz z prędkością, kadłub przechyla się z twoim wznoszeniem, a pierścień warpu daje beczkę. Hitbox bez zmian.",
@@ -115,5 +114,6 @@
  "0b7a3fa": "1.1 (Android) podniosła aplikację do poziomu API Androida 16, by spełnić wymóg Google Play.",
  "8c4fa10": "Wersje od 1.0 do 8.0 to także historia opowiedziana we wpisie devloga <a href=\"/devlog/first-two-months/\">Pierwsze dwa miesiące</a>.",
  "9e34dba": "Jak gra się w obecną wersję, zobacz w <a href=\"/how-to-play/\">poradniku jak grać</a>. Jeśli coś w nowej wersji zepsuło ci przelot, napisz do mnie na <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a>.",
- "6a125da": "Co zmieniło się w każdej wersji TUNL, od najnowszej: podejście nad miasto o zmierzchu i statek 3D w 15.0, wykończenia malarskie w 14.0, portal warpu w 11.0 i wszystko aż do pierwszego wydania."
+ "6a125da": "Co zmieniło się w każdej wersji TUNL, od najnowszej: podejście nad miasto o zmierzchu i statek 3D w 15.0, wykończenia malarskie w 14.0, portal warpu w 11.0 i wszystko aż do pierwszego wydania.",
+ "a99e0c0": "Lista zmian &middot; zaktualizowana 21 września 2026 &middot; obecna wersja to 16.0"
 }

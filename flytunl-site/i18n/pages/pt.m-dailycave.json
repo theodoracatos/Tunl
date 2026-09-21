@@ -3,7 +3,6 @@
  "2adea07": "O TUNL gera uma caverna diária idêntica ao pixel para cada jogador na Terra a partir de nada além de uma data UTC. Como funciona a semeadura, por que usa quatro fluxos aleatórios separados, e os dois bugs que dividiram silenciosamente a caverna compartilhada.",
  "b7cf03e": "Uma caverna, cada jogador - Como o TUNL constrói um nível diário a partir de uma data",
  "983a46f": "Como o TUNL constrói um nível diário a partir de nada além de uma data, e os dois bugs que o quebraram silenciosamente por meses.",
- "80744e2": "Devlog &middot; 15 de setembro de 2026 &middot; atualizado em 20 de setembro de 2026 para o TUNL 15.1 &middot; <a href=\"/devlog/\">todos os posts</a>",
  "8d750c8": "<a href=\"/play/\">TUNL</a> é um jogo de voo em cavernas de empuxo mantido. Você segura para subir, solta para cair, e tenta ir mais longe por um túnel que se estreita do que foi ontem. Todo jogador voa pela <strong>mesma caverna no mesmo dia</strong>, e no limite da meia-noite UTC ela se torna outra.",
  "6a94d06": "Não há arquivo de nível. Nenhum servidor distribui um mapa, nada é baixado, e o jogo não armazena o túnel que acabou de gerar. A caverna é uma função pura da data, e todo o \"mundo\" são cerca de quarenta linhas de aritmética.",
  "414c041": "Esse design compra surpreendentemente muito: uma classificação global justa, um replay fantasma que custa poucas centenas de bytes, e uma imagem compartilhável da sua corrida. Ele também impõe uma restrição muito mais dura do que parece à primeira vista, e eu a quebrei duas vezes sem perceber. Este post fala sobre as duas metades.",
@@ -68,5 +67,6 @@
  "123f4db": "O gerador foi a parte fácil. Duas ondas e um hash são uma tarde. Tudo o que foi caro veio da promessa embrulhada ao redor, de que a caverna é <em>a mesma</em>, o que transforma cada recurso futuro numa pergunta sobre se ele vaza não determinismo para o posicionamento.",
  "5bd55a3": "A lição que eu manteria é o formato dos testes. Bugs de determinismo são invisíveis jogando e triviais por asserção. Gerar as primeiras milhares de posições em seis tamanhos de tela e compará-las leva milissegundos e teria pego os dois bugs de dispositivo no dia em que foram escritos. O erro do portão de conteúdo precisava de uma ferramenta totalmente diferente, uma simulação de até onde os jogadores realmente chegam, e a única lição real ali é que um número derivado da sua curva de dificuldade não é um número sobre seus jogadores.",
  "b5a5829": "A caverna de hoje está no ar e é reiniciada à meia-noite UTC. Roda no navegador, sem instalar nada:",
- "952b628": "Um nível diário que é uma função pura da data: a semeadura, os quatro fluxos aleatórios, e os dois bugs que dividiram silenciosamente a caverna compartilhada."
+ "952b628": "Um nível diário que é uma função pura da data: a semeadura, os quatro fluxos aleatórios, e os dois bugs que dividiram silenciosamente a caverna compartilhada.",
+ "f7ae9bb": "Devlog &middot; 15 de setembro de 2026 &middot; atualizado em 21 de setembro de 2026 para o TUNL 16.0 &middot; <a href=\"/devlog/\">todos os posts</a>"
 }

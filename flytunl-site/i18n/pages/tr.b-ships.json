@@ -3,7 +3,6 @@
  "192cf57": "TUNL'ın sekiz gemisinin tamamı, ödünleşimleri, ustalık, açılış ekonomisi ve boya kaplamaları.",
  "c37051a": "TUNL'ın sekiz gemisi - ödünleşimler, ustalık, parçacıklar ve boya",
  "6c0fdb9": "Her gemi aynı tek düğmeli fizikle uçar. Değişen tek şey bir değiş tokuş: bir şeyi daha iyi yapar, bir şeyi daha kötü yapar. İşte kadro, onu nasıl kazandığın ve nasıl çizildiği.",
- "d555b80": "Gemiler &middot; TUNL 15.1 için 20 Eylül 2026 tarihinde güncellendi",
  "90e2d6f": "Gemiler neden yükseltme değil ödünleşim",
  "b11888b": "Birçok oyunda daha iyi bir gemi sadece daha büyük bir sayıdır. TUNL bunu bilerek önler. Her gemi bir <strong>artıyı bir eksiyle</strong> eşleştirir: daha az kalkan tutan daha küçük bir isabet kutusu, bir dikene takılmayı kolaylaştıran daha geniş jeton erişimi. Hiçbiri her şeyde kesinlikle en iyi değildir. Erken bir sürümde diğerlerini açıkça geçen bir gemi olduğunda, onu bir tekrar simülasyonuyla diğerlerine karşı ölçtüm ve bu artık geçerli olmayana kadar yeniden dengeledim.",
  "96971cd": "İtiş, yer çekimi ve sınır hız her gemide aynıdır ve her gemi aynı günlük mağarayı uçar. Değişen şey, bir şeyler ters gittiğinde geminin sana verdiği pay ve bir öğenin senin için ne yaptığıdır. Kesin sayıları bilerek bu sayfanın dışında tutuyorum. Değiş tokuşun hissedilmesi amaçlanmıştır, gemiler en iyi uçurularak öğrenilir.",
@@ -56,5 +55,6 @@
  "a8699c8": "İsabet kutusu değişiklikten önceki ile tam olarak aynıdır. 3D görünüm sadece görseldir ve hiçbir çarpışmaya dokunmaz. Hangar, mağaza ve paylaşım kartı hâlâ gemiyi tepeden gösterir, çünkü bunlar bir uçuşun resimleri değil, geminin portreleridir.",
  "f3ae018": "Gemiler arasında seçim yapmayı değerli kılan kurallar için <a href=\"/how-to-play/\">nasıl oynanır rehberine</a> bak. Oyunu hemen denemek için <a href=\"/play/\">bugünün mağarasını tarayıcında oyna</a>.",
  "232e36c": "<a class=\"cta\" href=\"/play/\">Bugünün mağarasını oyna</a>",
- "8d3d8dc": "PEARL'dan SOLARIS'e kadar TUNL'ın sekiz gemisiyle tanış: her birinin neyde iyi olduğu ve maliyeti, ustalığın nasıl işlediği, parçacıkların ve yıldız tozunun onları nasıl açtığı ve altı boya kaplaması."
+ "8d3d8dc": "PEARL'dan SOLARIS'e kadar TUNL'ın sekiz gemisiyle tanış: her birinin neyde iyi olduğu ve maliyeti, ustalığın nasıl işlediği, parçacıkların ve yıldız tozunun onları nasıl açtığı ve altı boya kaplaması.",
+ "2de3e17": "Gemiler &middot; TUNL 16.0 için 21 Eylül 2026 tarihinde güncellendi"
 }

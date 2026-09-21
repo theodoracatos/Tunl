@@ -13,7 +13,6 @@
  "a713758": "Koin yang diambil dalam jarak dua detik satu sama lain membangun pengali.",
  "cb766ea": "Cara bermain TUNL - kontrol, koin, bahaya, dan skor",
  "4290c33": "Satu tombol, gua yang makin menyempit, dan delapan jenis koin, dua di antaranya berbohong padamu. Ini semua yang tidak berhenti dijelaskan oleh game.",
- "bd2271f": "Diperbarui 20 September 2026 untuk TUNL 15.1.",
  "e50bd3c": "Satu-satunya kontrol",
  "65aa740": "<strong>Tahan untuk naik. Lepas untuk jatuh.</strong> Itulah seluruh skema kontrolnya. Ketuk dan tahan di mana saja pada layar, atau tahan Spasi atau panah atas pada keyboard.",
  "9911f87": "Yang penting, menahan bukanlah lompatan. Itu adalah <em>percepatan</em>. Kamu tidak menentukan posisimu, kamu menentukan ke arah mana kecepatanmu berubah, dan kapalmu membawa momentumnya melewati pergantian itu. Melepas di puncak pendakian berarti kamu masih naik sesaat sebelum gravitasi menang. Pemain baru hampir selalu bereaksi terlalu lambat lalu mengoreksi berlebihan, osilasi klasik yang dialami semua orang di beberapa run pertama.",
@@ -121,5 +120,6 @@
  "33ecbb9": "Jika kamu ingin versi teknis tentang cara kerjanya, termasuk dua bug yang diam-diam merusaknya, ada <a href=\"/devlog/daily-cave/\">postingan devlog tentang generator gua harian</a>.",
  "232e36c": "<a class=\"cta\" href=\"/play/\">Mainkan gua hari ini</a>",
  "f50a892": "Panduan lengkap TUNL: satu-satunya kontrol, awal permainan dan goresan lambung, bagaimana ritme run diatur dalam sektor, cara kerja skor dan combo koin, apa yang dilakukan kedelapan jenis koin, setiap bahaya sesuai urutan kemunculan, dan strategi yang menaikkan skormu.",
- "5d01bd5": "Satu-satunya kontrol, cara kerja skor, apa yang dilakukan kedelapan koin, setiap bahaya secara berurutan, dan strategi yang benar-benar menaikkan skormu."
+ "5d01bd5": "Satu-satunya kontrol, cara kerja skor, apa yang dilakukan kedelapan koin, setiap bahaya secara berurutan, dan strategi yang benar-benar menaikkan skormu.",
+ "dec988d": "Diperbarui 21 September 2026 untuk TUNL 16.0."
 }

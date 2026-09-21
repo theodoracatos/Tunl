@@ -3,7 +3,6 @@
  "192cf57": "Wszystkie osiem statków TUNL, ich kompromisy, biegłość, ekonomia odblokowania i malowania.",
  "c37051a": "Osiem statków TUNL - kompromisy, biegłość, odłamki i malowanie",
  "6c0fdb9": "Każdy statek lata na tej samej fizyce jednego przycisku. Zmienia się tylko jeden handel: coś robi lepiej, coś robi gorzej. Oto skład, jak go zdobyć i jak jest narysowany.",
- "d555b80": "Statki &middot; zaktualizowano 20 września 2026 dla TUNL 15.1",
  "90e2d6f": "Dlaczego statki to kompromisy, a nie ulepszenia",
  "b11888b": "W wielu grach lepszy statek to po prostu większa liczba. TUNL celowo tego unika. Każdy statek łączy <strong>zaletę z wadą</strong>: mniejszy hitbox, który mieści mniej osłony, szerszy zasięg do monet, przez który łatwiej zahaczyć o kolec. Żaden nie jest ściśle najlepszy we wszystkim. Gdy we wczesnej wersji jeden statek wyraźnie przewyższał resztę, mierzyłem go względem innych symulacją powtórek i przebalansowywałem, aż przestało tak być.",
  "96971cd": "Ciąg, grawitacja i prędkość graniczna są identyczne na każdym statku, i każdy statek leci przez tę samą jaskinię dnia. Różni się margines, jaki statek daje, gdy coś pójdzie nie tak, i to, co robi dla ciebie dany przedmiot. Celowo trzymam dokładne liczby z dala od tej strony. Handel ma być odczuwalny, a statki najlepiej poznaje się, latając nimi.",
@@ -56,5 +55,6 @@
  "a8699c8": "Hitbox jest dokładnie taki sam jak przed zmianą. Widok 3D jest czysto wizualny i nie dotyka żadnej kolizji. Hangar, sklep i karta do udostępnienia nadal pokazują statek z góry, bo to portrety statku, a nie zdjęcia lotu.",
  "f3ae018": "Zasady, które sprawiają, że wybór między statkami ma znaczenie, znajdziesz w <a href=\"/how-to-play/\">przewodniku jak grać</a>. Aby spróbować gry od razu, <a href=\"/play/\">zagraj w dzisiejszą jaskinię w przeglądarce</a>.",
  "232e36c": "<a class=\"cta\" href=\"/play/\">Zagraj w dzisiejszą jaskinię</a>",
- "8d3d8dc": "Poznaj wszystkie osiem statków TUNL, od PEARL do SOLARIS: w czym każdy jest dobry i co kosztuje, jak działa biegłość, jak odłamki i pył gwiezdny je odblokowują, oraz sześć malowań."
+ "8d3d8dc": "Poznaj wszystkie osiem statków TUNL, od PEARL do SOLARIS: w czym każdy jest dobry i co kosztuje, jak działa biegłość, jak odłamki i pył gwiezdny je odblokowują, oraz sześć malowań.",
+ "2de3e17": "Statki &middot; zaktualizowano 21 września 2026 dla TUNL 16.0"
 }

@@ -13,7 +13,6 @@
  "a713758": "Birbirinden iki saniye içinde toplanan jetonlar bir çarpan oluşturur.",
  "cb766ea": "TUNL nasıl oynanır - kontroller, jetonlar, tehlikeler ve puanlama",
  "4290c33": "Tek bir düğme, daralan bir mağara ve sekiz çeşit jeton, bunların ikisi sana yalan söyler. Oyunun durup açıklamadığı her şey burada.",
- "bd2271f": "TUNL 15.1 için 20 Eylül 2026 tarihinde güncellendi.",
  "e50bd3c": "Tek kontrol",
  "65aa740": "<strong>Yükselmek için basılı tut. Düşmek için bırak.</strong> Kontrol şemasının tamamı bu. Ekranın herhangi bir yerine dokunup basılı tut ya da klavyede Boşluk veya yukarı ok tuşuna basılı tut.",
  "9911f87": "Önemli olan, basılı tutmanın bir zıplama olmadığıdır. Bu bir <em>ivmelenmedir</em>. Konumunu belirlemiyorsun, hızının hangi yönde değiştiğini belirliyorsun ve geminin ivmesini geçiş boyunca korur. Bir yükselişin tepesinde bırakmak, yer çekimi galip gelmeden önce bir an daha yükselmeye devam ettiğin anlamına gelir. Yeni oyuncular neredeyse her zaman geç tepki verir, sonra aşırı düzeltir; herkesin ilk birkaç koşuda yaşadığı klasik salınım budur.",
@@ -121,5 +120,6 @@
  "33ecbb9": "Bunun nasıl çalıştığının teknik sürümünü, onu sessizce bozan iki hata dahil, istersen günlük mağara üreteci üzerine bir <a href=\"/devlog/daily-cave/\">geliştirici günlüğü yazısı</a> var.",
  "232e36c": "<a class=\"cta\" href=\"/play/\">Bugünün mağarasını oyna</a>",
  "f50a892": "TUNL için eksiksiz bir rehber: tek kontrol, başlangıç ve gövde çizikleri, bir koşunun sektörlerle nasıl tempolandığı, puanlama ve jeton kombolarının nasıl çalıştığı, sekiz jeton türünün her birinin ne yaptığı, görünme sırasıyla her tehlike ve puanını yükselten strateji.",
- "5d01bd5": "Tek kontrol, puanlamanın nasıl işlediği, sekiz jetonun her birinin ne yaptığı, sırayla her tehlike ve puanını gerçekten yükselten strateji."
+ "5d01bd5": "Tek kontrol, puanlamanın nasıl işlediği, sekiz jetonun her birinin ne yaptığı, sırayla her tehlike ve puanını gerçekten yükselten strateji.",
+ "dec988d": "TUNL 16.0 için 21 Eylül 2026 tarihinde güncellendi."
 }

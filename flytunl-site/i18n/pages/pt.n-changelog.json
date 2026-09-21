@@ -2,7 +2,6 @@
  "9895ba3": "Changelog do TUNL - Notas de versão de cada versão",
  "6f5e1da": "Changelog do TUNL",
  "a2986e8": "O que mudou em cada versão, a mais recente primeiro. A versão de navegador em <a href=\"/play/\">flytunl.ch/play</a> sempre roda a build mais recente.",
- "a7e912e": "Changelog &middot; atualizado em 20 de setembro de 2026 &middot; a versão atual é a 16.0",
  "d2ab440": "15.0: a corrida agora começa fora da caverna",
  "75a0c81": "Cada corrida se abre sobre a cidade do dia ao entardecer e voa para dentro de uma boca de rocha. Um banner \"ENTRANDO NO TUNL\" marca a entrada. A caverna, a pontuação e a semente diária são exatamente como antes.",
  "7cef847": "A nave em voo é desenhada numa vista lateral de três quartos: as asas recuam com a velocidade, o casco rola com a sua subida e o anel de warp dá um parafuso. Hitbox inalterada.",
@@ -115,5 +114,6 @@
  "0b7a3fa": "A 1.1 (Android) levou o app ao nível de API do Android 16 para atender à exigência do Google Play.",
  "8c4fa10": "As versões 1.0 a 8.0 também são a história contada no post do devlog <a href=\"/devlog/first-two-months/\">Os dois primeiros meses</a>.",
  "9e34dba": "Para saber como o jogo atual funciona, veja o <a href=\"/how-to-play/\">guia de como jogar</a>. Se algo numa versão nova estragou sua corrida, me diga em <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a>.",
- "6a125da": "O que mudou em cada versão do TUNL, a mais recente primeiro: a aproximação da cidade ao entardecer e a nave 3D na 15.0, os acabamentos de pintura na 14.0, o portal de warp na 11.0, e tudo até o primeiro lançamento."
+ "6a125da": "O que mudou em cada versão do TUNL, a mais recente primeiro: a aproximação da cidade ao entardecer e a nave 3D na 15.0, os acabamentos de pintura na 14.0, o portal de warp na 11.0, e tudo até o primeiro lançamento.",
+ "a99e0c0": "Changelog &middot; atualizado em 21 de setembro de 2026 &middot; a versão atual é a 16.0"
 }

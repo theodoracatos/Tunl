@@ -3,7 +3,6 @@
  "192cf57": "Todas as oito naves do TUNL, seus compromissos, maestria, economia de desbloqueio e pinturas.",
  "c37051a": "As oito naves do TUNL - Compromissos, maestria, fragmentos e pintura",
  "6c0fdb9": "Toda nave voa com a mesma física de um botão. O que muda é uma única troca: uma coisa que ela faz melhor, uma coisa que ela faz pior. Aqui está o elenco, como você o conquista e como é desenhado.",
- "d555b80": "Naves &middot; atualizado em 20 de setembro de 2026 para o TUNL 15.1",
  "90e2d6f": "Por que as naves são compromissos, não upgrades",
  "b11888b": "Em muitos jogos, uma nave melhor é só um número maior. O TUNL evita isso de propósito. Cada nave junta um <strong>bônus a uma desvantagem</strong>, então escolher uma é uma decisão de build: uma hitbox menor que aguenta menos escudo, um alcance de moedas maior com o qual é mais fácil raspar num espinho. Nenhuma delas é estritamente a melhor em tudo. Quando uma versão inicial tinha uma nave que claramente superava as outras, eu a medi contra as outras com uma simulação de replay e reequilibrei até deixar de ser assim.",
  "96971cd": "O impulso, a gravidade e a velocidade limite são idênticos em todas as naves, e todas voam a mesma caverna do dia. O que difere é a folga que a nave dá quando algo dá errado, e o que um item faz por você. Mantenho os números exatos fora desta página de propósito. A troca deve ser sentida, e as naves se aprendem melhor pilotando-as.",
@@ -56,5 +55,6 @@
  "a8699c8": "A hitbox é exatamente a mesma de antes da mudança. A visão 3D é só visual, e não mexe em nenhuma colisão. O hangar, a loja e o cartão de compartilhamento continuam mostrando a nave de cima, porque são retratos da nave, não imagens de um voo.",
  "f3ae018": "Para as regras que tornam a escolha entre naves interessante, veja o <a href=\"/how-to-play/\">guia de como jogar</a>. Para experimentar o jogo agora, <a href=\"/play/\">jogue a caverna de hoje no navegador</a>.",
  "232e36c": "<a class=\"cta\" href=\"/play/\">Jogue a caverna de hoje</a>",
- "8d3d8dc": "Conheça as oito naves do TUNL, da PEARL à SOLARIS: em que cada uma é boa e o que custa, como funciona a maestria, como fragmentos e poeira estelar as desbloqueiam, e as seis pinturas."
+ "8d3d8dc": "Conheça as oito naves do TUNL, da PEARL à SOLARIS: em que cada uma é boa e o que custa, como funciona a maestria, como fragmentos e poeira estelar as desbloqueiam, e as seis pinturas.",
+ "2de3e17": "Naves &middot; atualizado em 21 de setembro de 2026 para o TUNL 16.0"
 }

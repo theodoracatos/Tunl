@@ -13,7 +13,6 @@
  "a713758": "Monety zebrane w odstępie mniejszym niż dwie sekundy budują mnożnik.",
  "cb766ea": "Jak grać w TUNL - sterowanie, monety, zagrożenia i punktacja",
  "4290c33": "Jeden przycisk, zwężająca się jaskinia i osiem rodzajów monet, z których dwie kłamią. Oto wszystko, czego gra nie zatrzymuje się, by wyjaśnić.",
- "bd2271f": "Zaktualizowano 20 września 2026 dla TUNL 15.1.",
  "e50bd3c": "Jedyne sterowanie",
  "65aa740": "<strong>Przytrzymaj, by się wznosić. Puść, by spadać.</strong> To cały schemat sterowania. Dotknij i przytrzymaj w dowolnym miejscu ekranu albo przytrzymaj spację lub strzałkę w górę na klawiaturze.",
  "9911f87": "Ważne, że przytrzymanie to nie skok. To <em>przyspieszenie</em>. Nie ustawiasz pozycji, tylko kierunek, w którym zmienia się twoja prędkość, a statek niesie swój pęd przez zmianę. Puszczenie na szczycie wznoszenia oznacza, że jeszcze przez chwilę się wznosisz, zanim wygra grawitacja. Nowi gracze niemal zawsze reagują za późno, a potem przesterowują, czyli klasyczne kołysanie, które każdy przechodzi w pierwszych lotach.",
@@ -121,5 +120,6 @@
  "33ecbb9": "Jeśli chcesz techniczną wersję tego, jak to działa, razem z dwoma błędami, które po cichu to psuły, jest <a href=\"/devlog/daily-cave/\">wpis w devlogu o generatorze dziennej jaskini</a>.",
  "232e36c": "<a class=\"cta\" href=\"/play/\">Zagraj w dzisiejszą jaskinię</a>",
  "f50a892": "Kompletny przewodnik po TUNL: jedyne sterowanie, początek i rysy na kadłubie, jak tempo lotu wyznaczają sektory, jak działają punktacja i combo monet, co robi osiem rodzajów monet, każde zagrożenie w kolejności pojawiania się i strategia, która podnosi twój wynik.",
- "5d01bd5": "Jedyne sterowanie, jak działa punktacja, co robi osiem monet, każde zagrożenie po kolei i strategia, która naprawdę podnosi twój wynik."
+ "5d01bd5": "Jedyne sterowanie, jak działa punktacja, co robi osiem monet, każde zagrożenie po kolei i strategia, która naprawdę podnosi twój wynik.",
+ "dec988d": "Zaktualizowano 21 września 2026 dla TUNL 16.0."
 }

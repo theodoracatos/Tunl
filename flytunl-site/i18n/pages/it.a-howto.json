@@ -13,7 +13,6 @@
  "a713758": "Le monete raccolte a meno di due secondi l'una dall'altra costruiscono un moltiplicatore.",
  "cb766ea": "Come si gioca a TUNL - comandi, monete, pericoli e punteggio",
  "4290c33": "Un solo pulsante, una grotta che si restringe e otto tipi di moneta, due delle quali ti mentono. Ecco tutto ciò che il gioco non si ferma a spiegare.",
- "bd2271f": "Aggiornato il 20 settembre 2026 per TUNL 15.1.",
  "e50bd3c": "L'unico comando",
  "65aa740": "<strong>Tieni premuto per salire. Rilascia per scendere.</strong> Questo è l'intero schema di controllo. Tocca e tieni premuto in un punto qualsiasi dello schermo, oppure tieni premuto Spazio o la freccia su sulla tastiera.",
  "9911f87": "Ciò che conta è che tenere premuto non è un salto. È un'<em>accelerazione</em>. Non stai impostando la tua posizione, stai impostando in quale direzione cambia la tua velocità, e la tua nave porta con sé la propria inerzia attraverso il cambio. Rilasciare in cima a una salita significa continuare a salire per un momento prima che vinca la gravità. I nuovi giocatori reagiscono quasi sempre troppo tardi e poi correggono troppo, la classica oscillazione di tutti nelle prime partite.",
@@ -121,5 +120,6 @@
  "33ecbb9": "Se vuoi la versione tecnica di come funziona, compresi due bug che l'hanno rotta in silenzio, c'è un <a href=\"/devlog/daily-cave/\">articolo del devlog sul generatore della grotta giornaliera</a>.",
  "232e36c": "<a class=\"cta\" href=\"/play/\">Gioca la grotta di oggi</a>",
  "f50a892": "Una guida completa a TUNL: l'unico comando, l'inizio e i graffi allo scafo, il ritmo di una partita a settori, come funzionano punteggio e combo di monete, cosa fanno tutti gli otto tipi di moneta, ogni pericolo in ordine di comparsa e la strategia che fa salire il tuo punteggio.",
- "5d01bd5": "L'unico comando, come funziona il punteggio, cosa fanno tutte e otto le monete, ogni pericolo in ordine e la strategia che fa davvero salire il tuo punteggio."
+ "5d01bd5": "L'unico comando, come funziona il punteggio, cosa fanno tutte e otto le monete, ogni pericolo in ordine e la strategia che fa davvero salire il tuo punteggio.",
+ "dec988d": "Aggiornato il 21 settembre 2026 per TUNL 16.0."
 }

@@ -2,7 +2,6 @@
  "9895ba3": "Changelog di TUNL - Note di rilascio per ogni versione",
  "6f5e1da": "Changelog di TUNL",
  "a2986e8": "Cosa è cambiato in ogni versione, la più recente per prima. La versione browser su <a href=\"/play/\">flytunl.ch/play</a> esegue sempre l'ultima build.",
- "a7e912e": "Changelog &middot; aggiornato il 20 settembre 2026 &middot; la versione attuale è la 16.0",
  "d2ab440": "15.0: la partita ora inizia fuori dalla grotta",
  "75a0c81": "Ogni partita si apre sopra la città del giorno al crepuscolo e vola dentro una bocca di roccia. Un banner \"INGRESSO NEL TUNL\" segna l'ingresso. La grotta, il punteggio e il seme giornaliero sono esattamente come prima.",
  "7cef847": "La navicella in volo è disegnata in una vista laterale a tre quarti: le sue ali si piegano all'indietro con la velocità, lo scafo rolla con la tua salita e l'anello warp regala un tonneau. Hitbox invariata.",
@@ -115,5 +114,6 @@
  "0b7a3fa": "La 1.1 (Android) ha portato l'app al livello API di Android 16 per rispettare il requisito di Google Play.",
  "8c4fa10": "Le versioni da 1.0 a 8.0 sono anche la storia raccontata nel post del devlog <a href=\"/devlog/first-two-months/\">I primi due mesi</a>.",
  "9e34dba": "Per come si gioca oggi, vedi la <a href=\"/how-to-play/\">guida come giocare</a>. Se qualcosa in una nuova versione ha rovinato la tua partita, dimmelo a <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a>.",
- "6a125da": "Cosa è cambiato in ogni versione di TUNL, la più recente per prima: l'avvicinamento alla città al crepuscolo e la navicella 3D nella 15.0, le finiture di vernice nella 14.0, il portale warp nella 11.0, e tutto fino al primo rilascio."
+ "6a125da": "Cosa è cambiato in ogni versione di TUNL, la più recente per prima: l'avvicinamento alla città al crepuscolo e la navicella 3D nella 15.0, le finiture di vernice nella 14.0, il portale warp nella 11.0, e tutto fino al primo rilascio.",
+ "a99e0c0": "Changelog &middot; aggiornato il 21 settembre 2026 &middot; la versione attuale è la 16.0"
 }

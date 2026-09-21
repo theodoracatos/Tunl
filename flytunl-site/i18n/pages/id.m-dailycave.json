@@ -3,7 +3,6 @@
  "2adea07": "TUNL menghasilkan gua harian yang identik piksel demi piksel untuk setiap pemain di Bumi hanya dari tanggal UTC. Bagaimana penyemaian bekerja, mengapa ia memakai empat aliran acak terpisah, dan dua bug yang diam-diam memecah gua bersama.",
  "b7cf03e": "Satu Gua, Setiap Pemain - Bagaimana TUNL Membangun Level Harian dari Sebuah Tanggal",
  "983a46f": "Bagaimana TUNL membangun level harian hanya dari sebuah tanggal, dan dua bug yang diam-diam merusaknya selama berbulan-bulan.",
- "80744e2": "Devlog &middot; 15 September 2026 &middot; diperbarui 20 September 2026 untuk TUNL 15.1 &middot; <a href=\"/devlog/\">semua tulisan</a>",
  "8d750c8": "<a href=\"/play/\">TUNL</a> adalah game terbang di gua dengan dorongan tahan. Kamu menahan untuk naik, melepas untuk jatuh, dan mencoba melaju lebih jauh di terowongan yang menyempit dibanding kemarin. Setiap pemain terbang di <strong>gua yang sama pada hari yang sama</strong>, dan pada batas tengah malam UTC gua itu berganti menjadi yang lain.",
  "6a94d06": "Tidak ada file level. Tidak ada server yang membagikan peta, tidak ada yang diunduh, dan game tidak menyimpan terowongan yang baru saja dihasilkannya. Gua adalah fungsi murni dari tanggal, dan seluruh \"dunia\" adalah sekitar empat puluh baris aritmetika.",
  "414c041": "Desain itu membeli banyak hal yang mengejutkan: papan peringkat global yang adil, replay hantu yang hanya beberapa ratus byte, dan gambar run kamu yang bisa dibagikan. Desain itu juga memaksakan batasan yang jauh lebih keras daripada kelihatannya, dan saya melanggarnya dua kali tanpa sadar. Tulisan ini membahas kedua bagiannya.",
@@ -68,5 +67,6 @@
  "123f4db": "Generatornya adalah bagian yang mudah. Dua gelombang dan sebuah hash itu satu sore. Semua yang mahal datang dari janji yang terbungkus di sekitarnya, bahwa gua itu <em>sama</em>, yang mengubah setiap fitur di masa depan menjadi pertanyaan apakah ia membocorkan non-determinisme ke penempatan.",
  "5bd55a3": "Pelajaran yang akan saya simpan adalah bentuk pengujian. Bug determinisme tidak terlihat dengan bermain dan sepele dengan asersi. Menghasilkan beberapa ribu posisi pertama pada enam ukuran layar dan membandingkannya hanya memakan milidetik dan akan menangkap kedua bug perangkat pada hari keduanya ditulis. Kesalahan gerbang konten membutuhkan alat yang sama sekali berbeda, simulasi seberapa jauh pemain benar-benar sampai, dan satu-satunya pelajaran nyata di sana adalah bahwa angka yang diturunkan dari kurva kesulitanmu bukanlah angka tentang para pemainmu.",
  "b5a5829": "Gua hari ini sedang berjalan dan diatur ulang pada tengah malam UTC. Berjalan di browser, tanpa instalasi:",
- "952b628": "Level harian yang merupakan fungsi murni dari tanggal: penyemaian, empat aliran acak, dan dua bug yang diam-diam memecah gua bersama."
+ "952b628": "Level harian yang merupakan fungsi murni dari tanggal: penyemaian, empat aliran acak, dan dua bug yang diam-diam memecah gua bersama.",
+ "f7ae9bb": "Devlog &middot; 15 September 2026 &middot; diperbarui 21 September 2026 untuk TUNL 16.0 &middot; <a href=\"/devlog/\">semua tulisan</a>"
 }

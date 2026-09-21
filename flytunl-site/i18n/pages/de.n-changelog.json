@@ -2,7 +2,6 @@
  "9895ba3": "TUNL Changelog - Release Notes zu jeder Version",
  "6f5e1da": "TUNL Changelog",
  "a2986e8": "Was sich in jeder Version geändert hat, neueste zuerst. Die Browser-Version auf <a href=\"/play/\">flytunl.ch/play</a> läuft immer mit dem neuesten Build.",
- "a7e912e": "Changelog &middot; aktualisiert am 20. September 2026 &middot; die aktuelle Version ist 16.0",
  "d2ab440": "15.0: Der Lauf beginnt jetzt außerhalb der Höhle",
  "75a0c81": "Jeder Lauf beginnt über der Stadt des Tages in der Dämmerung und fliegt in einen Felsschlund. Ein „EINFLUG IN DEN TUNL\"-Banner markiert den Weg hinein. Die Höhle, die Punktzahl und der tägliche Seed sind genau wie zuvor.",
  "7cef847": "Das Schiff im Flug wird in einer Dreiviertel-Seitenansicht gezeichnet: Seine Flügel schwenken mit der Geschwindigkeit zurück, der Rumpf rollt mit deinem Steigen, und der Warp-Ring gibt eine Fassrolle. Hitbox unverändert.",
@@ -115,5 +114,6 @@
  "0b7a3fa": "1.1 (Android) hob die App auf die API-Stufe von Android 16 an, um die Anforderung von Google Play zu erfüllen.",
  "8c4fa10": "Die Versionen 1.0 bis 8.0 sind auch die Geschichte, die der Devlog-Beitrag <a href=\"/devlog/first-two-months/\">Die ersten zwei Monate</a> erzählt.",
  "9e34dba": "Wie das aktuelle Spiel funktioniert, steht in der <a href=\"/how-to-play/\">Spielanleitung</a>. Wenn etwas in einer neuen Version deinen Lauf kaputt gemacht hat, sag es mir unter <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a>.",
- "6a125da": "Was sich in jeder Version von TUNL geändert hat, neueste zuerst: der Dämmerungsstadt-Anflug und das 3D-Schiff in 15.0, Lackierungen in 14.0, das Warp-Portal in 11.0 und alles bis zurück zur ersten Veröffentlichung."
+ "6a125da": "Was sich in jeder Version von TUNL geändert hat, neueste zuerst: der Dämmerungsstadt-Anflug und das 3D-Schiff in 15.0, Lackierungen in 14.0, das Warp-Portal in 11.0 und alles bis zurück zur ersten Veröffentlichung.",
+ "a99e0c0": "Changelog &middot; aktualisiert am 21. September 2026 &middot; die aktuelle Version ist 16.0"
 }

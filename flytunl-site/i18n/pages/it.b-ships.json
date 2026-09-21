@@ -3,7 +3,6 @@
  "192cf57": "Tutte e otto le navi di TUNL, i loro compromessi, la maestria, l'economia di sblocco e le vernici.",
  "c37051a": "Le otto navi di TUNL - Compromessi, maestria, frammenti e vernice",
  "6c0fdb9": "Ogni nave vola con la stessa fisica a un pulsante. Ciò che cambia è un unico scambio: una cosa che fa meglio, una cosa che fa peggio. Ecco il roster, come lo guadagni e come è disegnato.",
- "d555b80": "Navi &middot; aggiornato il 20 settembre 2026 per TUNL 15.1",
  "90e2d6f": "Perché le navi sono compromessi, non potenziamenti",
  "b11888b": "In molti giochi una nave migliore è solo un numero più grande. TUNL evita questo di proposito. Ogni nave abbina un <strong>potenziamento a uno svantaggio</strong>, quindi sceglierne una è una scelta di build: una hitbox più piccola che regge meno scudo, una portata delle monete più ampia con cui è più facile sfiorare una punta. Nessuna è rigorosamente la migliore in tutto. Quando una versione iniziale aveva una nave che batteva chiaramente le altre, l'ho misurata contro le altre con una simulazione a replay e ribilanciata finché non è stato più così.",
  "96971cd": "Spinta, gravità e velocità limite sono identiche su ogni nave, e ogni nave vola nella stessa grotta del giorno. Ciò che cambia è il margine che la nave ti dà quando qualcosa va storto, e cosa fa per te un bonus. Tengo di proposito i numeri esatti fuori da questa pagina. Lo scambio è pensato per essere sentito, e le navi si imparano meglio pilotandole.",
@@ -56,5 +55,6 @@
  "a8699c8": "La hitbox è esattamente quella di prima del cambiamento. La vista 3D è solo grafica e non tocca alcuna collisione. L'hangar, il negozio e la scheda da condividere mostrano ancora la nave dall'alto, perché sono ritratti della nave, non immagini di un volo.",
  "f3ae018": "Per le regole che rendono la scelta tra le navi interessante, vedi la <a href=\"/how-to-play/\">guida come si gioca</a>. Per provare subito il gioco, <a href=\"/play/\">gioca la grotta di oggi nel browser</a>.",
  "232e36c": "<a class=\"cta\" href=\"/play/\">Gioca la grotta di oggi</a>",
- "8d3d8dc": "Scopri tutte e otto le navi di TUNL, da PEARL a SOLARIS: in cosa eccelle ognuna e cosa costa, come funziona la maestria, come frammenti e polvere di stelle le sbloccano, e le sei vernici."
+ "8d3d8dc": "Scopri tutte e otto le navi di TUNL, da PEARL a SOLARIS: in cosa eccelle ognuna e cosa costa, come funziona la maestria, come frammenti e polvere di stelle le sbloccano, e le sei vernici.",
+ "2de3e17": "Navi &middot; aggiornato il 21 settembre 2026 per TUNL 16.0"
 }

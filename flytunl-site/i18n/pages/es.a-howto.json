@@ -13,7 +13,6 @@
  "a713758": "Las monedas recogidas con menos de dos segundos de diferencia acumulan un multiplicador.",
  "cb766ea": "Cómo jugar a TUNL - controles, monedas, peligros y puntuación",
  "4290c33": "Un botón, una cueva que se estrecha y ocho tipos de moneda, dos de las cuales te mienten. Aquí está todo lo que el juego no se detiene a explicar.",
- "bd2271f": "Actualizado el 20 de septiembre de 2026 para TUNL 15.1.",
  "e50bd3c": "El único control",
  "65aa740": "<strong>Mantén para subir. Suelta para caer.</strong> Ese es todo el esquema de control. Toca y mantén en cualquier parte de la pantalla, o mantén Espacio o la flecha arriba en un teclado.",
  "9911f87": "Lo importante es que mantener no es un salto. Es una <em>aceleración</em>. No estás fijando tu posición, estás fijando en qué dirección cambia tu velocidad, y tu nave arrastra su impulso a través del cambio. Soltar en lo alto de una subida significa que sigues subiendo un instante antes de que gane la gravedad. Los jugadores nuevos casi siempre reaccionan tarde y luego corrigen de más, la oscilación clásica que todos tienen en sus primeras partidas.",
@@ -121,5 +120,6 @@
  "33ecbb9": "Si quieres la versión técnica de cómo funciona, incluidos dos errores que la rompieron sin que nadie lo notara, hay una <a href=\"/devlog/daily-cave/\">entrada del devlog sobre el generador de la cueva diaria</a>.",
  "232e36c": "<a class=\"cta\" href=\"/play/\">Juega la cueva de hoy</a>",
  "f50a892": "Una guía completa de TUNL: el único control, el comienzo y los rasguños de casco, cómo se marca el ritmo de una partida en sectores, cómo funcionan la puntuación y los combos de monedas, qué hacen los ocho tipos de moneda, cada peligro en orden de aparición y la estrategia que sube tu puntuación.",
- "5d01bd5": "El único control, cómo funciona la puntuación, qué hacen las ocho monedas, cada peligro en orden y la estrategia que de verdad sube tu puntuación."
+ "5d01bd5": "El único control, cómo funciona la puntuación, qué hacen las ocho monedas, cada peligro en orden y la estrategia que de verdad sube tu puntuación.",
+ "dec988d": "Actualizado el 21 de septiembre de 2026 para TUNL 16.0."
 }

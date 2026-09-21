@@ -2,7 +2,6 @@
  "9895ba3": "Changelog de TUNL - Notes de version pour chaque version",
  "6f5e1da": "Changelog de TUNL",
  "a2986e8": "Ce qui a changé dans chaque version, la plus récente en premier. La version navigateur sur <a href=\"/play/\">flytunl.ch/play</a> exécute toujours le tout dernier build.",
- "a7e912e": "Changelog &middot; mis à jour le 20 septembre 2026 &middot; la version actuelle est la 16.0",
  "d2ab440": "15.0 : la partie commence désormais hors de la grotte",
  "75a0c81": "Chaque partie s'ouvre au-dessus de la ville du jour au crépuscule et s'engouffre dans une bouche de roche. Une bannière « ENTRÉE DANS LE TUNL » marque le passage. La grotte, le score et la graine quotidienne sont exactement comme avant.",
  "7cef847": "Le vaisseau en vol est dessiné en vue de trois quarts de côté : ses ailes se replient avec la vitesse, la coque roule avec ta montée, et l'anneau warp donne un tonneau. Hitbox inchangée.",
@@ -115,5 +114,6 @@
  "0b7a3fa": "1.1 (Android) a mis l'app au niveau d'API d'Android 16 pour satisfaire à l'exigence de Google Play.",
  "8c4fa10": "Les versions 1.0 à 8.0 sont aussi l'histoire racontée dans le billet de devlog <a href=\"/devlog/first-two-months/\">Les deux premiers mois</a>.",
  "9e34dba": "Pour savoir comment le jeu actuel se joue, voir le <a href=\"/how-to-play/\">guide comment jouer</a>. Si quelque chose dans une nouvelle version a cassé ta partie, dis-le-moi à <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a>.",
- "6a125da": "Ce qui a changé dans chaque version de TUNL, la plus récente en premier : l'approche de la ville au crépuscule et le vaisseau 3D dans la 15.0, les finitions de peinture dans la 14.0, le portail warp dans la 11.0, et tout jusqu'à la première version."
+ "6a125da": "Ce qui a changé dans chaque version de TUNL, la plus récente en premier : l'approche de la ville au crépuscule et le vaisseau 3D dans la 15.0, les finitions de peinture dans la 14.0, le portail warp dans la 11.0, et tout jusqu'à la première version.",
+ "a99e0c0": "Changelog &middot; mis à jour le 21 septembre 2026 &middot; la version actuelle est la 16.0"
 }

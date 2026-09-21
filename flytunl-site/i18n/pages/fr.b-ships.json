@@ -3,7 +3,6 @@
  "192cf57": "Les huit vaisseaux de TUNL, leurs compromis, la maîtrise, l'économie de déblocage et les peintures.",
  "c37051a": "Les huit vaisseaux de TUNL - compromis, maîtrise, éclats et peinture",
  "6c0fdb9": "Chaque vaisseau vole avec la même physique à un bouton. Ce qui change, c'est un seul échange : une chose qu'il fait mieux, une chose qu'il fait moins bien. Voici la liste, comment tu la gagnes, et comment elle est dessinée.",
- "d555b80": "Vaisseaux &middot; mis à jour le 20 septembre 2026 pour TUNL 15.1",
  "90e2d6f": "Pourquoi les vaisseaux sont des compromis, pas des améliorations",
  "b11888b": "Dans beaucoup de jeux, un meilleur vaisseau est juste un plus grand chiffre. TUNL évite ça délibérément. Chaque vaisseau associe un <strong>bonus à un inconvénient</strong>, donc en choisir un est un choix de build : une hitbox plus petite qui tient moins de bouclier, une portée de pièces plus large avec laquelle on accroche plus facilement une pointe. Aucun n'est strictement le meilleur en tout. Quand une version précoce avait un vaisseau qui battait clairement les autres, je l'ai mesuré face aux autres avec une simulation de replay et rééquilibré jusqu'à ce que ce ne soit plus le cas.",
  "96971cd": "La poussée, la gravité et la vitesse limite sont identiques sur chaque vaisseau, et chaque vaisseau vole dans la même grotte du jour. Ce qui diffère, c'est la marge que le vaisseau te donne quand quelque chose tourne mal, et ce qu'un bonus fait pour toi. Je garde volontairement les chiffres exacts hors de cette page. L'échange est fait pour être ressenti, et les vaisseaux s'apprennent mieux en les pilotant.",
@@ -56,5 +55,6 @@
  "a8699c8": "La hitbox est exactement celle d'avant le changement. La vue 3D n'est que visuelle, elle ne touche à aucune collision. Le hangar, la boutique et la carte à partager montrent toujours le vaisseau du dessus, car ce sont des portraits du vaisseau, pas des images d'un vol.",
  "f3ae018": "Pour les règles qui rendent le choix entre les vaisseaux intéressant, voir le <a href=\"/how-to-play/\">guide comment jouer</a>. Pour essayer le jeu tout de suite, <a href=\"/play/\">joue la grotte du jour dans ton navigateur</a>.",
  "232e36c": "<a class=\"cta\" href=\"/play/\">Joue la grotte du jour</a>",
- "8d3d8dc": "Découvre les huit vaisseaux de TUNL, de PEARL à SOLARIS : en quoi chacun excelle et ce qu'il coûte, comment fonctionne la maîtrise, comment les éclats et la poussière d'étoiles les débloquent, et les six peintures."
+ "8d3d8dc": "Découvre les huit vaisseaux de TUNL, de PEARL à SOLARIS : en quoi chacun excelle et ce qu'il coûte, comment fonctionne la maîtrise, comment les éclats et la poussière d'étoiles les débloquent, et les six peintures.",
+ "2de3e17": "Vaisseaux &middot; mis à jour le 21 septembre 2026 pour TUNL 16.0"
 }

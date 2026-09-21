@@ -3,7 +3,6 @@
  "192cf57": "Kedelapan kapal TUNL, trade-off-nya, penguasaan, ekonomi pembukaan, dan cat.",
  "c37051a": "Delapan kapal TUNL - Trade-off, penguasaan, shard, dan cat",
  "6c0fdb9": "Setiap kapal terbang dengan fisika satu tombol yang sama. Yang berubah adalah satu pertukaran tunggal: satu hal yang dilakukannya lebih baik, satu hal yang dilakukannya lebih buruk. Berikut daftarnya, cara mendapatkannya, dan cara ia digambar.",
- "d555b80": "Kapal &middot; diperbarui 20 September 2026 untuk TUNL 15.1",
  "90e2d6f": "Mengapa kapal adalah trade-off, bukan peningkatan",
  "b11888b": "Di banyak game, kapal yang lebih baik hanyalah angka yang lebih besar. TUNL sengaja menghindari itu. Setiap kapal memadukan <strong>keunggulan dengan kekurangan</strong>, jadi memilih satu adalah keputusan build: hitbox lebih kecil yang menampung lebih sedikit perisai, jangkauan koin lebih luas yang lebih mudah tersangkut duri. Tidak ada yang secara ketat terbaik dalam segala hal. Ketika versi awal punya satu kapal yang jelas mengalahkan yang lain, saya mengukurnya terhadap yang lain dengan simulasi replay dan menyeimbangkan ulang sampai itu tidak lagi terjadi.",
  "96971cd": "Dorongan, gravitasi, dan kecepatan maksimum identik di setiap kapal, dan setiap kapal terbang di gua hari yang sama. Yang berbeda adalah margin yang diberikan kapal saat sesuatu salah, dan apa yang dilakukan sebuah item untukmu. Saya sengaja menjauhkan angka pasti dari halaman ini. Pertukaran ini dimaksudkan untuk dirasakan, dan kapal paling baik dipelajari dengan menerbangkannya.",
@@ -56,5 +55,6 @@
  "a8699c8": "Hitbox persis seperti sebelum perubahan. Tampilan 3D hanya visual, dan tidak menyentuh tabrakan sama sekali. Hanggar, toko, dan kartu bagikan tetap menampilkan kapal dari atas, karena itu adalah potret kapal, bukan gambar sebuah penerbangan.",
  "f3ae018": "Untuk aturan yang membuat pemilihan antar kapal berarti, lihat <a href=\"/how-to-play/\">panduan cara bermain</a>. Untuk mencoba game sekarang, <a href=\"/play/\">mainkan gua hari ini di browser</a>.",
  "232e36c": "<a class=\"cta\" href=\"/play/\">Mainkan gua hari ini</a>",
- "8d3d8dc": "Kenali kedelapan kapal TUNL dari PEARL sampai SOLARIS: keunggulan masing-masing dan biayanya, cara kerja penguasaan, cara shard dan stardust membukanya, dan enam finishing cat."
+ "8d3d8dc": "Kenali kedelapan kapal TUNL dari PEARL sampai SOLARIS: keunggulan masing-masing dan biayanya, cara kerja penguasaan, cara shard dan stardust membukanya, dan enam finishing cat.",
+ "2de3e17": "Kapal &middot; diperbarui 21 September 2026 untuk TUNL 16.0"
 }
