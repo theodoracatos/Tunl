@@ -1486,10 +1486,16 @@ const SCRATCH_SCRAPE = 0.8;
 // Two quick ratchet clicks (a wrench turning), then a rising triangle G-C-G - "fixed". Sits
 // below sfxShield (0.15 per note, four notes) in the rare-reward tier. A kit picked up on
 // a full hull only pays points, so it plays the clicks and a short two-note tail at
-// routine-pickup level: same sound family, less of it. Not ear-checked or rendered yet.
+// routine-pickup level: same sound family, less of it. Levels set by offline render through
+// the real bus (loudest 50 ms): a refill -18 dB like sfxShield/sfxMagnet, points only -21 dB
+// like sfxCoin (both were 2-6 dB under their tier before the gains).
+const REPAIR_SFX_GAIN = 1.3, REPAIR_SFX_GAIN_PTS = 1.95;
 function sfxHullRepair(repaired) {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
+    const out = _ac.createGain();
+    out.gain.value = repaired ? REPAIR_SFX_GAIN : REPAIR_SFX_GAIN_PTS;
+    out.connect(_master);
     [0, 0.055].forEach((d, i) => {
         const n = _ac.createBufferSource();
         n.buffer = _noiseBuf(0.03);
@@ -1499,14 +1505,14 @@ function sfxHullRepair(repaired) {
         g.gain.setValueAtTime(0.0001, t + d);
         g.gain.linearRampToValueAtTime(0.35, t + d + 0.002);
         g.gain.exponentialRampToValueAtTime(0.001, t + d + 0.025);
-        n.connect(f); f.connect(g); g.connect(_master);
+        n.connect(f); f.connect(g); g.connect(out);
         n.start(t + d); n.stop(t + d + 0.03);
     });
     const notes = repaired ? [392, 523, 784] : [523, 784];
     const amp = repaired ? 0.12 : 0.07;
     notes.forEach((freq, i) => {
         const o = _ac.createOscillator(), g = _ac.createGain();
-        o.connect(g); g.connect(_master);
+        o.connect(g); g.connect(out);
         o.type = 'triangle'; o.frequency.value = freq;
         const t0 = t + 0.10 + i * 0.06;
         g.gain.setValueAtTime(0.0001, t0);
@@ -1516,7 +1522,7 @@ function sfxHullRepair(repaired) {
     });
     if (!repaired) return;
     const lo = _ac.createOscillator(), lg = _ac.createGain();
-    lo.connect(lg); lg.connect(_master);
+    lo.connect(lg); lg.connect(out);
     lo.type = 'sine'; lo.frequency.value = 196;
     lg.gain.setValueAtTime(0.0001, t + 0.10);
     lg.gain.linearRampToValueAtTime(0.07, t + 0.11);
