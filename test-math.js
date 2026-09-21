@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Zero-dependency check on the pure math CLAUDE.md calls out as load-bearing: the
+// Zero-dependency check on the pure math CLAUDE.md and docs/agents/ call out as load-bearing: the
 // difficulty curves, corridor bounds, and scoring/penalty formulas in
 // src/constants.js + src/world.js. These are plain functions of scrollX/wx and a
 // screen size, so they run fine in a stubbed sandbox without a real canvas -- this
@@ -84,7 +84,7 @@ function check(name, cond) {
 }
 
 // ── Physics: base constants, screen-independent feel, and net-force direction ──
-// CLAUDE.md "Screen-independent feel (do not revert)": GRAVITY/THRUST/MAX_VY are quoted
+// docs/agents/physics.md "Screen-independent feel (do not revert)": GRAVITY/THRUST/MAX_VY are quoted
 // at _H_REF (440) and every device multiplies by _FEEL_SCALE = H/_H_REF. So the checks
 // divide the scaled value back down to the base before comparing.
 {
@@ -105,7 +105,7 @@ function check(name, cond) {
 }
 
 // ── Cross-device fairness: W is capped at 956 on every platform ──────────────
-// CLAUDE.md "Cross-device fairness": scrollSpd() scales by W/600, so an uncapped wide
+// docs/agents/fairness.md "Cross-device fairness": scrollSpd() scales by W/600, so an uncapped wide
 // screen would scroll the shared daily cave past faster at a given score. W must clamp.
 {
     check('W caps at 956 on a wide screen', makeWorld(1512, 700).W === 956 && makeWorld(2000, 900).W === 956);
@@ -151,7 +151,7 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
     check(`[${iw}x${ih}] boundsBase() gap matches halfGapAt() at every stage`, boundsOk);
 }
 
-// ── scrollSpd (CLAUDE.md: "scrollSpd() never plateaus ... don't re-add a cap") ──
+// ── scrollSpd (docs/agents/difficulty.md: "scrollSpd() never plateaus ... don't re-add a cap") ──
 {
     const w = makeWorld(600, 600);
     const speedAt = (wx) => { w.scrollX = wx; w.refreshWave(); return w.scrollSpd(); };
@@ -249,7 +249,7 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
         w.cannonSpacing() > w.stalSpacing() * 10 && w.cannonSpacing() > w.mineSpacing() * 5);
 }
 
-// ── Milestone step (world.js milestoneStep, tiers documented in CLAUDE.md) ──
+// ── Milestone step (world.js milestoneStep, tiers documented in docs/agents/screens.md) ──
 {
     const w = makeWorld(600, 600);
     // 25-point band below 100 (restored in 12.0 -- see the milestoneStep doc comment
@@ -292,7 +292,7 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
 // mirrored here as copies of the formula, which a revert of the real line passed.
 
 // ── Deep-run variety (world.js deepMorphAt + the scrollSpd speed pulse) ──────
-// CLAUDE.md "Deep-run variety": past the score-900 plateau the corridor SHAPE
+// docs/agents/difficulty.md "Deep-run variety": past the score-900 plateau the corridor SHAPE
 // and scroll PACE vary by a seeded per-day sequence, but neither may breach the
 // navigability wall the geometry caps exist to hold. Guards: the amplitude morph
 // is fully inert before the plateau, continuous across band boundaries, and
@@ -489,13 +489,13 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
 
     // The apex-mine bias stayed on the old score-900 line while the rest of the deep
     // variety moved to 30000 - it is the one piece flagged as an unplaytested
-    // fairness risk (CLAUDE.md), so it must not ride along.
+    // fairness risk (docs/agents/difficulty.md), so it must not ride along.
     check('apex-mine bias did not move earlier with DEEP_VARIETY_WX',
         w.DEEP_APEX_WX === 54000 && w.DEEP_VARIETY_WX < w.DEEP_APEX_WX);
 }
 
 // ── Ghost round-trip (constants.js ghostEncode/ghostDecode) ─────────────────
-// CLAUDE.md "Ghost run": one byte per GHOST_STEP world-px, quantised over [0,H],
+// docs/agents/screens.md "Ghost run": one byte per GHOST_STEP world-px, quantised over [0,H],
 // so a ghost recorded on one screen replays correctly on any other size. The
 // only invariant that actually matters is that encode/decode is a lossless
 // round-trip for any byte sequence a track can legitimately contain.

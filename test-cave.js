@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Zero-dependency check on the single claim the whole daily leaderboard rests on
-// (CLAUDE.md "Cross-device fairness"): given the same UTC day, every player flies the
+// (docs/agents/fairness.md "Cross-device fairness"): given the same UTC day, every player flies the
 // SAME cave, whatever their screen size. score = floor(scrollX/60) + bonusScore is
 // pure world-distance, so if a narrower phone gets a different set of obstacles in the
 // same stretch of world-x, the global daily ranking is comparing different games.
@@ -229,7 +229,7 @@ for (const day of DAYS) {
 
 // ── Boulders keep their contract ──────────────────────────────────────
 // makeBoulder's whole reason to exist is "there is always a pass above AND below, so
-// it asks commit-up-or-down rather than react" (CLAUDE.md). The corridor bound alone
+// it asks commit-up-or-down rather than react" (docs/agents/hazards.md). The corridor bound alone
 // only guarantees that against a BARE corridor - a stalactite overlapping the rock can
 // seal a pass, and that is exactly what the blind veto above was letting through.
 {

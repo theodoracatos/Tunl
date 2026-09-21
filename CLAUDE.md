@@ -79,6 +79,8 @@ the corridor), avoid stalactites, mines, boulders, cannon shots and walls.
 ## Which docs to read before editing a file
 
 Pick the row for the file you are about to change and read those `docs/agents/` files first.
+A PreToolUse hook (`.claude/hooks/docs-pointer.js`, wired in `.claude/settings.json`) prints
+the row before every `src/*.js` edit - **change its `MAP` whenever this table changes.**
 
 | file | read first |
 |------|-----------|

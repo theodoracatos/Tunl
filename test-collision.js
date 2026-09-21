@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Zero-dependency check on the triangle-circle collision geometry CLAUDE.md calls
+// Zero-dependency check on the triangle-circle collision geometry docs/agents/hazards.md calls
 // out as load-bearing ("Accurate triangle-circle collision (not AABB) ... would
 // make invisible collisions at the edges"): src/systems.js's ptSeg2 (point-to-
 // segment squared distance) and inTri (point-in-triangle test). Both are fully
@@ -88,7 +88,7 @@ function check(name, cond) {
 }
 
 // -- Falling stalactite drop geometry (systems.js stalFallY) --------------------
-// CLAUDE.md: a detached falling stalactite "falls the full corridor until the tip
+// docs/agents/hazards.md: a detached falling stalactite "falls the full corridor until the tip
 // meets the far wall (becomes a floor spike - the dodge is unambiguously 'go over
 // it')". The travel distance therefore has to track the LIVE corridor, not a value
 // frozen at detach: gapBonusVisual, deep chambers and _halfGap all keep moving the
@@ -137,7 +137,7 @@ function check(name, cond) {
     check('a landed spike stays on the floor as the corridor keeps moving', held);
 }
 
-// ── Drawn 3D ship vs the PR hitbox (CLAUDE.md "3/4 side view") ────────
+// ── Drawn 3D ship vs the PR hitbox (docs/agents/ship-render.md "3/4 side view") ────────
 // The flat hull's envelope rule is span +-0.98r / nose +1.40r: the picture must sit just
 // inside the circle it is collided with, and never reach past what update.js's forward
 // probe covers. The 3D hull has to hold the same line at every roll and every wing sweep,

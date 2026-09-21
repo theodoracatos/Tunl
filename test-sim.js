@@ -14,7 +14,7 @@
 //  1. a smoke flight through every sector with draw() on every frame, then the death
 //     screen and the title screen - a thrown ReferenceError anywhere in a render or
 //     update path fails here, where it used to ship;
-//  2. state-level checks of rules CLAUDE.md marks "do not revert", run against the
+//  2. state-level checks of rules CLAUDE.md / docs/agents mark "do not revert", run against the
 //     real update()/die()/commitDeath().
 const fs   = require('fs');
 const path = require('path');
@@ -250,7 +250,7 @@ function quietCave(deep = false) {
     check('a wall contact with no scratches left is fatal', g('phase') === 'dead');
 }
 {
-    // Catches: dropping `warpTime > 0` from the wall clamp (CLAUDE.md: "the wall is
+    // Catches: dropping `warpTime > 0` from the wall clamp (docs/agents/portal.md: "the wall is
     // never a warp-caused death, by construction").
     const g = quietCave(true);
     g('hullScratches = 0; warpTime = 1.0; { const _b = boundsAt(scrollX + PX); py = _b.top - 4; } update(1 / 60);');
