@@ -3,8 +3,8 @@
 // difficulty curves, corridor bounds, and scoring/penalty formulas in
 // src/constants.js + src/world.js. These are plain functions of scrollX/wx and a
 // screen size, so they run fine in a stubbed sandbox without a real canvas -- this
-// is NOT a game-feel test (see CLAUDE.md's own "canvas rendering ... needs a human
-// eyeballing it" note), just a guard against silently breaking a documented
+// is NOT a game-feel test (canvas rendering and feel still need a human eyeballing
+// it), just a guard against silently breaking a documented
 // invariant (a ratio, a floor, a cap) while touching this math.
 const fs   = require('fs');
 const path = require('path');
