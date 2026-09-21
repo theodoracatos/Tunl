@@ -1,13 +1,15 @@
 # TUNL design history
 
-Long-form rationale for decisions that CLAUDE.md states as rules. CLAUDE.md is loaded
-into every session, so it holds **the rule, the number and the "do not revert"**; the
+Long-form rationale for decisions that CLAUDE.md and `docs/agents/*.md` state as rules.
+CLAUDE.md is loaded into every session, so it holds only the one-line rule and a pointer;
+`docs/agents/<topic>.md` holds the rule, the constants and the "do not revert"; the
 measurement narrative, the rejected alternatives and the before/after tables live here.
+A `CLAUDE.md: "<Section>"` reference below means that heading in `docs/agents/`.
 
 Read the matching section here before re-opening a decision - the numbers are what stop
-a change from being re-litigated on intuition. If you change a rule, update CLAUDE.md
-*and* append here; if a section here contradicts CLAUDE.md, CLAUDE.md wins and this file
-is stale.
+a change from being re-litigated on intuition. If you change a rule, update its `docs/agents` file
+*and* append here; if a section here contradicts `docs/agents`, `docs/agents` wins and this
+file is stale.
 
 ---
 
