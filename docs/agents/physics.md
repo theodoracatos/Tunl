@@ -59,6 +59,3 @@ deleted (it only existed to fight the floatiness of web's earlier 520 clamp).
 const PX = W * 0.22;   // fixed horizontal position on screen (W capped at 956)
 const PR = W * 0.018;  // radius (≈10.8px at W=600, ≈17.2px at the W=956 cap)
 ```
-
-
-- **`scrollSpd()` never plateaus**: every other difficulty knob (`stalSpacing`, `stalLenFrac`, `coinSpacing`, `mineSpacing`, wave amplitude/frequency) caps once `_prog2` saturates, because those define corridor *geometry* and pushing them further would make the tunnel unnavigable. Scroll speed has no such ceiling - it only shrinks reaction time - so past `_prog2 > 1` (score ~900) it keeps climbing forever via a sqrt-eased tail (`base + sqrt(_prog2-1)*90`), intentionally so a long enough run is never merely "endurance at a fixed pace." Don't re-add a hard cap here.

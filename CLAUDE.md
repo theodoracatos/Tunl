@@ -75,6 +75,28 @@ the corridor), avoid stalactites, mines, boulders, cannon shots and walls.
 - **No score gate at or below 50** (`MIN_REAL_RUN_SCORE` doc in `constants.js`): the safe
   opening flight makes 50 free.
 
+## Which docs to read before editing a file
+
+Pick the row for the file you are about to change and read those `docs/agents/` files first.
+
+| file | read first |
+|------|-----------|
+| `update.js` | physics, fairness, hazards, coins |
+| `systems.js` (spawners, `make*`/`maintain*`) | fairness, hazards, coins; then run `test-cave.js` |
+| `world.js` (curves, `boundsAt`/`boundsBase`, sectors) | difficulty, fairness, coins |
+| `constants.js` | the topic of the constant you touch (its doc block names it) |
+| `lifecycle.js`, `state.js` | fairness (rng streams, world-x cursors), onboarding |
+| `draw.js` ship / 3D hull / liveries | ship-render, economy |
+| `draw.js` walls, HUD, title, depth light | visuals, hazards (crystals) |
+| `draw.js` death screen, freeze frame | screens |
+| `share.js` | screens |
+| `approach.js` | onboarding |
+| `audio.js` | audio |
+| `input.js` | screens (milestones), README (hard rules) |
+| `ads-web.js`, `main.js` web frame, ad/IAP native code | economy |
+| `fonts.js` | visuals |
+| `branding/` | ship-render |
+
 ## Topic rules and where the detail lives
 
 ### Physics and canvas -> `docs/agents/physics.md`
@@ -82,7 +104,6 @@ the corridor), avoid stalactites, mines, boulders, cannon shots and walls.
 - **THRUST has been walked back twice on player feedback** - read the tuning history before touching it. Hold-to-thrust is an acceleration ramp, not an impulse.
 - **Trapezoid integration** in `update.js` (`py += (vyPrev + vy) * 0.5 * dt`) - do not revert; `test-sim.js` guards it.
 - **GRAVITY/THRUST/MAX_VY scale by `_FEEL_SCALE = H / _H_REF`** on every device. New vertical-motion code stays ratio-based - never compare `vy` against an unscaled px/s literal.
-- `scrollSpd()` never plateaus. Don't re-add a cap.
 
 ### Cross-device fairness -> `docs/agents/fairness.md`
 Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / difficulty curve.
@@ -94,6 +115,7 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 
 ### Difficulty, tunnel, flight plan -> `docs/agents/difficulty.md`
 - A run is **sectors of `SECTOR_SEC`**; densities are rates per reference second (`sectorRate`). Do not revert to per-hazard world-px curves. **Check `MISSION_DEFS` before moving a coin gate.**
+- `scrollSpd()` never plateaus. Don't re-add a cap.
 - Corridor width uses its own slower clock (`gapProgAt`); don't merge back into `_prog`. Wave frequencies stay on `_prog`.
 - Deep-run variety (`_deepVarietyOn` kill switch): the morph never adds wiggle energy, frequencies untouched, the speed pulse is surge-only.
 

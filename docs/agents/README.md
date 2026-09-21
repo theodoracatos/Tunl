@@ -7,9 +7,9 @@ headings unchanged, so an old `CLAUDE.md "<Section>"` reference means that headi
 
 | file | covers |
 |------|--------|
-| `physics.md` | canvas size, GRAVITY/THRUST/MAX_VY, trapezoid integration, `_FEEL_SCALE`, player, `scrollSpd()` never plateaus |
+| `physics.md` | canvas size, GRAVITY/THRUST/MAX_VY, trapezoid integration, `_FEEL_SCALE`, player |
 | `fairness.md` | cross-device fairness, rng streams, `SPAWN_AHEAD_*` budget, coins as fixed point |
-| `difficulty.md` | procedural tunnel, flight plan (sectors), difficulty curves, onboarding widen, deep-run variety |
+| `difficulty.md` | procedural tunnel, flight plan (sectors), difficulty curves, onboarding widen, `scrollSpd()` never plateaus, deep-run variety |
 | `hazards.md` | crystal stalactites, falling stalactites, boulders, cannons, warp portal, mines |
 | `coins.md` | gap bonus, chicane gold, power-up supply, coin types and rendering, poison/bomb/drain |
 | `audio.md` | bus, limiter, loudness hierarchy, loops, outro, reverb, settings |

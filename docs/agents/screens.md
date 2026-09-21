@@ -292,6 +292,8 @@ applies a `rotate()` pivoted on the player's position, which would swing the gho
 the live ship on every pitch change.
 
 
+## Death screen rewards (key design decision, do not revert)
+
 - **The death screen's rewards are a wrapping chip row, not stacked lines**: ship unlock,
   mastery level-up, mission payout and shards used to be three `if`s all targeting `H*0.78`
   and all suppressing each other, so a good run could earn all three and be shown one; the

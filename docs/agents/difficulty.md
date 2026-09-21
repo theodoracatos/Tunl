@@ -136,6 +136,10 @@ on top of the base curve - `H*0.09` at wx=0 (walls reduced to a sliver each side
 collision (`boundsAt`) and placement (`boundsBase`, via `halfGapAt`) agree - same pattern
 as `deepChamberAt`.
 
+## Speed never plateaus (key design decision, do not revert)
+
+- **`scrollSpd()` never plateaus**: every other difficulty knob (`stalSpacing`, `stalLenFrac`, `coinSpacing`, `mineSpacing`, wave amplitude/frequency) caps once `_prog2` saturates, because those define corridor *geometry* and pushing them further would make the tunnel unnavigable. Scroll speed has no such ceiling - it only shrinks reaction time - so past `_prog2 > 1` (score ~900) it keeps climbing forever via a sqrt-eased tail (`base + sqrt(_prog2-1)*90`), intentionally so a long enough run is never merely "endurance at a fixed pace." Don't re-add a hard cap here.
+
 ## Deep-run variety (score ~150+, do not revert)
 
 Past `_prog2 = 1` (score ~900) every corridor geometry knob is capped and only
