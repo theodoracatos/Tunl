@@ -24,10 +24,12 @@ pasted. Nothing about the core pitch (one shared daily cave, dusk launch, hold-t
 changed, so it is not rewritten.
 
 Versions: iOS marketing 16.0 / build 54, Android versionName 16.0 / versionCode 48.
-Store assets: none new. Flag for the user: the current screenshots and preview video
-still show the old smooth-cone stalactites - they are not wrong, but they no longer
-match what a player sees in the first few seconds of a run. Recapturing them needs the
-user's own simulator/device, same as flagged for the flytunl.ch screenshots.
+Store assets: none new.
+
+**DECISION (user, 2026-09-21): keep the old screenshots and preview video as they are.**
+They still show the smooth-cone stalactites rather than the new crystal clusters. Raised
+once as a flag, not a request; the user's call was to leave them - do not re-raise this
+on a future release unless the user brings it up.
 
 ---
 
