@@ -23,7 +23,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://flytunl.ch/media-15.0/hero-15.0-play.jpg">
 <script src="/day.js?v=20260921a"></script>
-<link rel="stylesheet" href="/site.css?v=20260921a">
+<link rel="stylesheet" href="/site.css?v=20260921b">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -116,14 +116,8 @@
   /* A gameplay loop used to run behind this, and it was removed: the words sit
      on top of it, and a HUD full of live numbers competes with them. The one
      moving thing on the page is now the corridor strip a section below, where
-     nothing is written over it. What is left here is a soft well of the day's
-     own rock - light at the top, void at the bottom, the same direction the
-     descent takes as you scroll. */
-  .hero-scrim {
-    position:absolute; inset:0; z-index:1;
-    background:
-      radial-gradient(110% 80% at 50% 0%, rgba(var(--day-rgb, 77,217,255), 0.10), transparent 62%);
-  }
+     nothing is written over it. What is left behind the hero is the soft well
+     of the day's own rock that site.css paints at the top of every page. */
   .hero-inner { position:relative; z-index:2; max-width:600px; margin:0 auto; }
   .hero img.wordmark {
     width:248px;
@@ -672,7 +666,6 @@
 
   <section class="hero">
     <div class="hero-stage">
-      <div class="hero-scrim"></div>
 
       <div class="hero-inner">
         <a class="today" href="/play/" hidden>
