@@ -31,8 +31,15 @@ a "Knallfrosch" twice. Method, metrics and traps: `reference_audio_method` memor
   partner (`THRUST_PRESENCE_GAIN`, the crunch layers in `sfxDie`/`sfxBomb`/
   `sfxMineExplode`). The thrust presence layer is shared by all ships, keeping per-ship
   balance intact.
-- **The death impact is on frame 0.** Hull thump, mid crunch and crack fire at `t`; only a
-  quiet debris settle is left at the tail (it once landed after the freeze frame ended).
+- **The death impact is on frame 0.** It once landed after the freeze frame ended.
+- **Death is a crash ("Crash"), neither a pop nor a drum** (`sfxDie`, `DIE_LEVEL`): a
+  low-passed noise thud, a thinning cluster of crunch grains, crumpling and tearing metal,
+  the ship's buzz-saw engine dying sputtering, a short fireball tail, low debris. **No short
+  bright crack or band-passed noise burst on the hit** (with the sub inaudible on a phone
+  that pair read as a bursting balloon) **and no tonal sine drop dominating the onset** (read
+  as a timpani hit). `DIE_LEVEL` is matched at phone-speaker level (400 Hz highpass), not
+  full-band. Study page with the rejected variants:
+  https://claude.ai/artifact/DyhLCjt75X7s12u9m8oT5A
 - **Spool-up is a low turbofan, "rollendes Grollen"** (`sfxEngineSpoolUp`): lowpassed air
   roar + rumble under a slow tremolo, a buzz-saw and one quiet sine, on a slow-start rev
   curve. User's brief: "low, may stay low, like an airliner turbine" - **no partials above

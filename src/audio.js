@@ -836,93 +836,221 @@ function sfxEngineSpoolUp(dur) {
     wh.start(t); wh.stop(end + rel + 0.02);
 }
 
+// Death, variant "Crash" (2026-09-21, two rounds of browser proposals). The sound before read
+// as a popping balloon: 96% of its impact energy sat below 200 Hz, which a phone speaker does
+// not play, so a device played only a 0.26 s 1.4 kHz crunch plus a 30 ms 2.6 kHz crack.
+// Round one picked "Absturz" (dying engine + crumpling hull + fireball); it read as a
+// timpani hit ("Paukenschlag") because its first 150 ms were one tonal 100-140 Hz peak (a sine
+// drop plus the fireball bloom). So the hit is now low-passed noise with only a small sine
+// under it, and the crash itself is a thinning cluster of crunch grains plus tearing metal;
+// the fireball is only a short tail. Impact on frame 0, no bright snap.
+// DIE_LEVEL is matched to "Absturz" through a 400 Hz highpass (phone-speaker level), not
+// full-band: a flat match would have been ~10 dB louder on a phone, since the old full-band
+// number was mostly sub.
+const DIE_LEVEL = 0.38;
+
+// Non-tonal hull hit: low-passed noise, so the hit is a thud of mass, not a pitched drum.
+// A small sine underneath only for weight on headphones.
+function _dieThud(t, out, amp) {
+    const s = _ac.createBufferSource(); s.buffer = _noiseBuf(0.3);
+    const f = _ac.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 0.7;
+    f.frequency.setValueAtTime(900, t);
+    f.frequency.exponentialRampToValueAtTime(160, t + 0.22);
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(1.1 * amp, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.45 * amp, t + 0.06);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.30);
+    s.connect(f); f.connect(g); g.connect(out);
+    s.start(t); s.stop(t + 0.3);
+    const o = _ac.createOscillator(), og = _ac.createGain();
+    o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.12);
+    og.gain.setValueAtTime(0.0001, t);
+    og.gain.linearRampToValueAtTime(0.12 * amp, t + 0.005);
+    og.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+    o.connect(og); og.connect(out); o.start(t); o.stop(t + 0.2);
+}
+
+// The crash texture: a thinning cluster of short crunch grains (metal and structure
+// breaking), dense at the hit and spreading out. Soft 2 ms attacks so no grain clicks;
+// band-passed 500-2800 Hz, the band a phone plays.
+function _dieCrunch(t, out, amp, len, n) {
+    const buf = _noiseBuf(0.5);
+    for (let i = 0; i < n; i++) {
+        const u = i / n, td = t + len * u * u + Math.random() * 0.012;
+        const d = 0.025 + Math.random() * 0.05;
+        const s = _ac.createBufferSource(); s.buffer = buf;
+        const f = _ac.createBiquadFilter(); f.type = 'bandpass';
+        f.frequency.value = 500 + Math.random() * 2300; f.Q.value = 1.5 + Math.random() * 3;
+        const g = _ac.createGain();
+        const a = amp * (1 - 0.8 * u) * (0.5 + Math.random() * 0.5);
+        g.gain.setValueAtTime(0.0001, td);
+        g.gain.linearRampToValueAtTime(a, td + 0.002);
+        g.gain.exponentialRampToValueAtTime(0.001, td + d);
+        s.connect(f); f.connect(g); g.connect(out);
+        s.start(td, Math.random() * 0.4); s.stop(td + d + 0.01);
+    }
+}
+
+// Tearing metal: noise through a resonant band that wanders downward with a jittery
+// sweep, driven for rasp.
+function _dieTear(t, out, amp, len) {
+    const s = _ac.createBufferSource(); s.buffer = _noiseBuf(len + 0.05);
+    const f = _ac.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 4;
+    const N = 48, curve = new Float32Array(N);
+    for (let i = 0; i < N; i++) curve[i] = 1900 * Math.pow(0.4, i / (N - 1)) * (0.8 + Math.random() * 0.4);
+    f.frequency.setValueCurveAtTime(curve, t, len);
+    const sh = _ac.createWaveShaper(); sh.curve = _distortionCurve(2.5);
+    const lp = _ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3000;
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(amp, t + 0.03);
+    g.gain.linearRampToValueAtTime(0.7 * amp, t + len * 0.5);
+    g.gain.exponentialRampToValueAtTime(0.001, t + len);
+    s.connect(f); f.connect(sh); sh.connect(lp); lp.connect(g); g.connect(out);
+    s.start(t); s.stop(t + len + 0.05);
+}
+
+// Crumpling sheet metal: noise through a bank of resonant bands that bend downward
+// (the hull buckling), chopped by two detuned LFOs into a crumple, then driven for grit.
+function _dieMetal(t, out, amp, len) {
+    const src = _ac.createBufferSource();
+    src.buffer = _noiseBuf(len + 0.05);
+    const sum = _ac.createGain();
+    [[380, 9, 1.0], [610, 10, 0.8], [940, 11, 0.6], [1430, 12, 0.35]].forEach(([hz, q, a]) => {
+        const bp = _ac.createBiquadFilter();
+        bp.type = 'bandpass'; bp.Q.value = q;
+        bp.frequency.setValueAtTime(hz, t);
+        bp.frequency.exponentialRampToValueAtTime(hz * 0.78, t + len);
+        const bg = _ac.createGain(); bg.gain.value = a;
+        src.connect(bp); bp.connect(bg); bg.connect(sum);
+    });
+    const chop = _ac.createGain(); chop.gain.value = 0.55;
+    [[23, 0.25], [37, 0.2]].forEach(([hz, d]) => {
+        const l = _ac.createOscillator(), lg = _ac.createGain();
+        l.type = 'sawtooth'; l.frequency.setValueAtTime(hz, t);
+        l.frequency.linearRampToValueAtTime(hz * 0.5, t + len);
+        lg.gain.value = d;
+        l.connect(lg); lg.connect(chop.gain);
+        l.start(t); l.stop(t + len + 0.05);
+    });
+    const sh = _ac.createWaveShaper(); sh.curve = _distortionCurve(2.2);
+    const lp = _ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200;
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(1.6 * amp, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.7 * amp, t + len * 0.35);
+    g.gain.exponentialRampToValueAtTime(0.001, t + len);
+    sum.connect(chop); chop.connect(sh); sh.connect(lp); lp.connect(g); g.connect(out);
+    src.start(t); src.stop(t + len + 0.05);
+    // Ring-modulated clank: two inharmonic partials multiplied give the sum/difference
+    // sidebands that read as struck metal rather than as a tone.
+    const c1 = _ac.createOscillator(), c2 = _ac.createOscillator();
+    c1.type = 'triangle'; c1.frequency.setValueAtTime(233, t); c1.frequency.exponentialRampToValueAtTime(190, t + 0.3);
+    c2.type = 'sine'; c2.frequency.value = 347;
+    const rm = _ac.createGain(); rm.gain.value = 0;
+    c2.connect(rm.gain);
+    const cg = _ac.createGain();
+    cg.gain.setValueAtTime(0.0001, t);
+    cg.gain.linearRampToValueAtTime(0.16 * amp, t + 0.006);
+    cg.gain.exponentialRampToValueAtTime(0.001, t + 0.34);
+    c1.connect(rm); rm.connect(cg); cg.connect(out);
+    c1.start(t); c1.stop(t + 0.36); c2.start(t); c2.stop(t + 0.36);
+}
+
+// Fireball: a lowpass that blooms open and then closes over a long tail ("whoomph"),
+// driven for body, with a slow-tremolo rumble under it.
+function _dieFire(t, out, amp, len) {
+    const src = _ac.createBufferSource();
+    src.buffer = _noiseBuf(len + 0.05);
+    const lp = _ac.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 1.1;
+    lp.frequency.setValueAtTime(220, t);
+    lp.frequency.exponentialRampToValueAtTime(1500, t + 0.10);
+    lp.frequency.exponentialRampToValueAtTime(130, t + len * 0.85);
+    const sh = _ac.createWaveShaper(); sh.curve = _distortionCurve(3);
+    const lp2 = _ac.createBiquadFilter(); lp2.type = 'lowpass'; lp2.frequency.value = 1700;
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.55 * amp, t + 0.07);
+    g.gain.linearRampToValueAtTime(0.42 * amp, t + 0.30);
+    g.gain.exponentialRampToValueAtTime(0.001, t + len);
+    src.connect(lp); lp.connect(sh); sh.connect(lp2); lp2.connect(g); g.connect(out);
+    src.start(t); src.stop(t + len + 0.05);
+    const rum = _ac.createBufferSource();
+    rum.buffer = _noiseBuf(len + 0.05);
+    const rf = _ac.createBiquadFilter(); rf.type = 'lowpass';
+    rf.frequency.setValueAtTime(300, t);
+    rf.frequency.exponentialRampToValueAtTime(50, t + len);
+    const trem = _ac.createGain(); trem.gain.value = 0.7;
+    const lfo = _ac.createOscillator(), ld = _ac.createGain();
+    lfo.frequency.value = 11; ld.gain.value = 0.3;
+    lfo.connect(ld); ld.connect(trem.gain);
+    const rg = _ac.createGain();
+    rg.gain.setValueAtTime(0.0001, t);
+    rg.gain.linearRampToValueAtTime(0.35 * amp, t + 0.06);
+    rg.gain.exponentialRampToValueAtTime(0.001, t + len);
+    rum.connect(rf); rf.connect(trem); trem.connect(rg); rg.connect(out);
+    rum.start(t); rum.stop(t + len + 0.05); lfo.start(t); lfo.stop(t + len + 0.05);
+}
+
+// Low debris thuds (soft 6 ms attack, no clicks) plus, optionally, two quiet metal tinks.
+function _dieDebris(t, out, amp, list) {
+    list.forEach(([dt, a, hz, q]) => {
+        const td = t + dt;
+        const s = _ac.createBufferSource(); s.buffer = _noiseBuf(0.14);
+        const f = _ac.createBiquadFilter();
+        f.type = q > 5 ? 'bandpass' : 'lowpass'; f.frequency.value = hz; f.Q.value = q;
+        const g = _ac.createGain();
+        g.gain.setValueAtTime(0.0001, td);
+        g.gain.linearRampToValueAtTime(a * amp, td + 0.006);
+        g.gain.exponentialRampToValueAtTime(0.001, td + (q > 5 ? 0.13 : 0.08));
+        s.connect(f); f.connect(g); g.connect(out);
+        s.start(td); s.stop(td + 0.14);
+    });
+}
+
+// Dying engine: the ship's buzz-saw turbofan (sfxEngineSpoolUp's layer) revving down and
+// sputtering - an LFO that chops it, slowing as it dies.
+function _dieEngine(t, out, amp, len) {
+    const o = _ac.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(150, t);
+    o.frequency.exponentialRampToValueAtTime(32, t + len);
+    const f = _ac.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 0.8;
+    f.frequency.setValueAtTime(900, t);
+    f.frequency.exponentialRampToValueAtTime(140, t + len);
+    const sp = _ac.createGain(); sp.gain.value = 0.5;
+    const l = _ac.createOscillator(), lg = _ac.createGain();
+    l.type = 'square'; l.frequency.setValueAtTime(16, t); l.frequency.exponentialRampToValueAtTime(4, t + len);
+    lg.gain.value = 0.5;
+    l.connect(lg); lg.connect(sp.gain);
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.20 * amp, t + 0.02);
+    g.gain.linearRampToValueAtTime(0.14 * amp, t + len * 0.6);
+    g.gain.exponentialRampToValueAtTime(0.001, t + len);
+    const sm = _ac.createBiquadFilter(); sm.type = 'lowpass'; sm.frequency.value = 1200;   // rounds the square's edges
+    o.connect(f); f.connect(sp); sp.connect(sm); sm.connect(g); g.connect(out);
+    o.start(t); o.stop(t + len + 0.02); l.start(t); l.stop(t + len + 0.02);
+}
+
 function sfxDie() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
     const out = _ac.createGain();   // dry bus, so one send feeds the cave reverb
-    out.connect(_master);
+    out.gain.value = DIE_LEVEL;
+    const dc = _ac.createBiquadFilter();   // _distortionCurve's midpoint is not exactly 0: strip the DC it leaves
+    dc.type = 'highpass'; dc.frequency.value = 25;
+    out.connect(dc); dc.connect(_master);
     _caveSend(out, 0.6);
-    const dur = 1.3;  // matches sfxEngineSpoolUp's duration - this is that sound played in reverse
-    // Deep broadband roar - literal time-reversal of the spool-up's roar layer:
-    // frequency ramp reversed (420->160, mirroring the up-sweep's 160->420),
-    // and the gain envelope's three segments reversed in order and direction.
-    const src = _ac.createBufferSource();
-    src.buffer = _noiseBuf(dur);
-    const flt = _ac.createBiquadFilter();
-    flt.type = 'lowpass';
-    flt.frequency.setValueAtTime(420, t);
-    flt.frequency.linearRampToValueAtTime(160, t + dur);
-    const g = _ac.createGain();
-    g.gain.setValueAtTime(0.001, t);
-    g.gain.exponentialRampToValueAtTime(0.40, t + 0.13);
-    g.gain.linearRampToValueAtTime(0.30, t + dur - 0.12);
-    g.gain.linearRampToValueAtTime(0.001, t + dur);
-    src.connect(flt); flt.connect(g); g.connect(out);
-    src.start(t); src.stop(t + dur + 0.05);
-    // Mid roar color - reversed gain envelope of the spool-up's growl layer
-    const src2 = _ac.createBufferSource();
-    src2.buffer = _noiseBuf(dur);
-    const flt2 = _ac.createBiquadFilter();
-    flt2.type = 'bandpass'; flt2.Q.value = 0.6; flt2.frequency.value = 480;
-    const g2 = _ac.createGain();
-    g2.gain.setValueAtTime(0.001, t);
-    g2.gain.exponentialRampToValueAtTime(0.14, t + dur - 0.15);
-    g2.gain.linearRampToValueAtTime(0.001, t + dur);
-    src2.connect(flt2); flt2.connect(g2); g2.connect(out);
-    src2.start(t); src2.stop(t + dur + 0.05);
-    // ── The impact itself, on frame 0 (2026-09-17 audio audit) ──────────────
-    // The crash used to sit at t + dur - 0.08, i.e. 1.22s AFTER the collision: the
-    // reverse-spool roar had to run its length first, so the loudest moment of the death
-    // sound landed once drawDeathFreeze() had already finished and the debriefing panel
-    // was fading in. The hit itself made no sound at all. The roar and its reversal are
-    // kept (that mirror of sfxEngineSpoolUp is the identity of the sound) - what moved
-    // is the impact: hull thump, mid crunch and a bright crack all on the hit frame,
-    // with only a quiet debris settle left at the tail.
-    // Three layers rather than one because the thump alone is a 180->45 Hz sine, which a
-    // phone speaker barely reproduces - the 900 Hz crunch and the crack are what carry
-    // the hit on a device, the sub is what carries it on headphones.
-    const thump = _ac.createOscillator(), thumpG = _ac.createGain();
-    thump.type = 'sine';
-    thump.frequency.setValueAtTime(180, t);
-    thump.frequency.exponentialRampToValueAtTime(45, t + 0.18);
-    thumpG.gain.setValueAtTime(0.28, t);
-    thumpG.gain.exponentialRampToValueAtTime(0.001, t + 0.30);
-    thump.connect(thumpG); thumpG.connect(out);
-    thump.start(t); thump.stop(t + 0.32);
-    const crunch = _ac.createBufferSource();
-    crunch.buffer = _noiseBuf(0.26);
-    const crunchFlt = _ac.createBiquadFilter();
-    crunchFlt.type = 'bandpass'; crunchFlt.Q.value = 0.8;
-    crunchFlt.frequency.setValueAtTime(1400, t);
-    crunchFlt.frequency.exponentialRampToValueAtTime(420, t + 0.22);
-    const crunchG = _ac.createGain();
-    crunchG.gain.setValueAtTime(0.26, t);
-    crunchG.gain.exponentialRampToValueAtTime(0.001, t + 0.26);
-    crunch.connect(crunchFlt); crunchFlt.connect(crunchG); crunchG.connect(out);
-    crunch.start(t); crunch.stop(t + 0.28);
-    const snap = _ac.createBufferSource();
-    snap.buffer = _noiseBuf(0.03);
-    const snapFlt = _ac.createBiquadFilter();
-    snapFlt.type = 'highpass'; snapFlt.frequency.value = 2600;
-    const snapG = _ac.createGain();
-    snapG.gain.setValueAtTime(0.18, t);
-    snapG.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
-    snap.connect(snapFlt); snapFlt.connect(snapG); snapG.connect(out);
-    snap.start(t); snap.stop(t + 0.03);
-    // Debris settling as the roar runs out - what the old crash was, at less than half
-    // the level, since it is now a tail and not the event.
-    const tSettle = t + dur - 0.08;
-    const crash = _ac.createBufferSource();
-    crash.buffer = _noiseBuf(0.3);
-    const crashFlt = _ac.createBiquadFilter();
-    crashFlt.type = 'lowpass';
-    crashFlt.frequency.setValueAtTime(700, tSettle);
-    crashFlt.frequency.exponentialRampToValueAtTime(60, tSettle + 0.22);
-    const crashGain = _ac.createGain();
-    crashGain.gain.setValueAtTime(0.14, tSettle);
-    crashGain.gain.exponentialRampToValueAtTime(0.001, tSettle + 0.26);
-    crash.connect(crashFlt); crashFlt.connect(crashGain); crashGain.connect(out);
-    crash.start(tSettle); crash.stop(tSettle + 0.28);
+    _dieThud(t, out, 1.0);
+    _dieCrunch(t, out, 0.55, 0.55, 34);
+    _dieMetal(t, out, 0.8, 0.8);
+    _dieTear(t + 0.03, out, 0.10, 0.6);
+    _dieEngine(t, out, 0.9, 1.0);
+    _dieFire(t + 0.06, out, 0.35, 1.3);
+    _dieDebris(t, out, 1.0, [[0.22, 0.14, 700, 0.9], [0.31, 0.07, 2300, 14], [0.46, 0.10, 550, 0.9],
+                             [0.58, 0.06, 1800, 14], [0.80, 0.07, 480, 0.9], [1.02, 0.05, 420, 0.9]]);
 }
 
 function sfxSlow() {

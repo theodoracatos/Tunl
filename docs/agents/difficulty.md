@@ -67,7 +67,12 @@ The placement vetoes still apply but only decide geometry - **retune by the meas
 
 **Hull scratches** (`HULL_SCRATCHES`, from the tunnel entry, for the **whole run**;
 `update.js` `hullScratch`): a lethal-wall contact spends one - clamp, bounce, "SCRAPE!"
-notif, HUD diamonds - instead of ending the run. Counts as a hit for No-Hit. **A rewarded
+notif, HUD diamonds - instead of ending the run. **A shield is spent first** (user's call
+2026-09-21, "the hull is the ship"): with a shield up the wall costs the shield (recentre,
+`HIT_INVULN_SEC`), the hull only scratches once no shield is left. It used to be the other
+way round, which saved shields for hazards; the user chose readability over that.
+A scratched hull shows it: `drawHullDamage` marks per scratch lost, and `emitHullSmoke` smoke
+(user: smoke, not sparks) that stops while a shield is up and returns when it breaks. Counts as a hit for No-Hit. **A rewarded
 continue repairs them** (see `economy.md`). **The grace after a scratch is wall-only**
 (`WALL_GRACE_SEC`, `state.js wallGraceT`): the wall clamps, but stalactites, mines, boulders
 and shots stay lethal and the ship does not blink - a full invuln would let a player scrape

@@ -182,9 +182,9 @@ function approachUpdate(dt) {
     if (py - r < top || py + r > bot) {
         const hitTop = py - r < top, edge = hitTop ? top : bot;
         if (PX - approachLeft >= -APPROACH_LIP) {
-            // In the mouth: the tunnel's own wall rule (update.js), scratches first.
+            // In the mouth: the tunnel's own wall rule (update.js), shield first, then scratches.
             if (invulnT > 0 || wallGraceT > 0) py = Math.max(top + r, Math.min(bot - r, py));
-            else if (hullScratches > 0) hullScratch(top, bot, r);
+            else if (hullScratches > 0 && shieldCount === 0) hullScratch(top, bot, r);
             else {
                 deathCause = hitTop ? 'wallTop' : 'wallBot';
                 markDeathHit(PX, edge, r);

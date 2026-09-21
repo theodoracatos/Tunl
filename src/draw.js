@@ -1489,6 +1489,78 @@ function shipNozzleDY(ns) {
     return -(ns * SHIP_NOZZLE_Y * Math.sin(a) - _SHIP3D.dz * Math.cos(a));
 }
 
+// Hull smoke wisps (systems.js emitHullSmoke): three soft, lumpy grey blobs, built once.
+// Several overlapping radial fades per sprite so no puff has an edge or a round outline.
+const _SMOKE_LUMPS = [
+    [[0, 0, 0.62], [-0.28, -0.12, 0.44], [0.26, 0.10, 0.46], [0.04, -0.28, 0.36], [-0.12, 0.26, 0.34]],
+    [[0.05, 0.02, 0.58], [-0.30, 0.14, 0.42], [0.30, -0.08, 0.40], [-0.06, -0.30, 0.32]],
+    [[-0.04, 0, 0.55], [0.30, 0.18, 0.40], [-0.26, -0.20, 0.42], [0.18, -0.26, 0.30], [-0.30, 0.22, 0.28]],
+];
+const _smokeSprites = [];
+function smokeSprite(v) {
+    if (_smokeSprites[v]) return _smokeSprites[v];
+    const S = 64, c = document.createElement('canvas');
+    c.width = c.height = S;
+    const g = c.getContext('2d');
+    for (const [ox, oy, rr] of _SMOKE_LUMPS[v]) {
+        const x = S / 2 + ox * S / 2, y = S / 2 + oy * S / 2, r = rr * S / 2;
+        const gr = g.createRadialGradient(x, y, 0, x, y, r);
+        gr.addColorStop(0, 'rgba(175,172,168,0.55)');
+        gr.addColorStop(0.5, 'rgba(160,157,153,0.25)');
+        gr.addColorStop(1, 'rgba(150,147,143,0)');
+        g.fillStyle = gr;
+        g.fillRect(0, 0, S, S);
+    }
+    return (_smokeSprites[v] = c);
+}
+
+// Hull damage (2026-09-21, user's idea): a scratched hull shows it. Each lost scratch adds
+// marks on the fuselage, in PR units along the nose (x) and across the planform (y), kept
+// inside |y| <= 0.15 so they never leave the hull at any roll. systems.js emitHullSmoke
+// puffs its smoke from the same points. Draw-only, no rng().
+const HULL_DAMAGE_MARKS = [
+    [[[0.46,-0.06],[0.32,0.03],[0.20,-0.03],[0.05,0.05]], [[-0.34,0.10],[-0.48,0.02],[-0.62,0.09]]],
+    [[[0.72,0.04],[0.60,-0.05],[0.50,0.02]], [[-0.12,-0.12],[-0.26,-0.04],[-0.42,-0.12],[-0.56,-0.05]]],
+];
+// Screen offset of a mark point in PR units, before pitch (the 3D roll squashes y).
+function hullMarkPt(q) {
+    if (!_SHIP3D) return [q[0], q[1]];
+    const a = shipRollDeg() * Math.PI / 180;
+    return [q[0], -(q[1] * Math.sin(a) - _SHIP3D.dz * Math.cos(a))];
+}
+function drawHullDamage(x, y, r, lost) {
+    if (_SHIP3D && Math.abs(Math.sin(shipRollDeg() * Math.PI / 180)) < 0.3) return;   // edge-on mid barrel roll
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    if (lost >= 2) {
+        // Scorch under the second set of marks: a soft dark smudge, no shadowBlur.
+        const [sx, sy] = hullMarkPt([-0.20, 0]);
+        const g = ctx.createRadialGradient(x + sx * r, y + sy * r, 0, x + sx * r, y + sy * r, r * 0.45);
+        g.addColorStop(0, 'rgba(20,12,8,0.45)');
+        g.addColorStop(1, 'rgba(20,12,8,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(x + sx * r - r * 0.45, y + sy * r - r * 0.45, r * 0.9, r * 0.9);
+    }
+    for (let lvl = 0; lvl < Math.min(lost, HULL_DAMAGE_MARKS.length); lvl++) {
+        for (const m of HULL_DAMAGE_MARKS[lvl]) {
+            const pts = m.map(hullMarkPt);
+            // Dark gouge, then a lit lower lip so it reads as cut metal, not ink.
+            for (const [col, w, off] of [['rgba(18,10,6,0.85)', 0.075, 0], ['rgba(255,210,170,0.55)', 0.025, 0.035]]) {
+                ctx.beginPath();
+                pts.forEach(([px, qy], i) => (i ? ctx.lineTo : ctx.moveTo).call(ctx, x + px * r, y + (qy + off) * r));
+                ctx.strokeStyle = col; ctx.lineWidth = Math.max(1, r * w);
+                ctx.stroke();
+            }
+            // A hot ember where the gouge starts, flickering.
+            const [ex, ey] = pts[0];
+            const f = 0.55 + 0.45 * Math.sin(gtime * 23 + lvl * 2.1 + ex * 7);
+            ctx.beginPath();
+            ctx.arc(x + ex * r, y + ey * r, Math.max(1, r * 0.06), 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255,${150 + 60 * f | 0},60,${0.5 + 0.5 * f})`;
+            ctx.fill();
+        }
+    }
+}
+
 // The flying ship: player, ghost and wreck. Hangar/hero/shop keep calling drawShip.
 function drawFlightShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
     if (_SHIP3D) drawShip3D(x, y, r, color, sr, sg, sb, blur, fx, lv);
@@ -2725,6 +2797,7 @@ function drawWorld() {
         // is a bright foreground portrait), not a confusing duplicate.
         ctx.globalAlpha = invulnAlpha;
         drawFlightShip(PX, py, PR, phase === 'dead' ? '#ff4040' : sk.color, sr, sg, sb, 20, phase !== 'dead', phase === 'dead' ? 0 : liveryOf(activeSkin));
+        if (phase === 'play' && hullScratches < HULL_SCRATCHES) drawHullDamage(PX, py, PR, HULL_SCRATCHES - hullScratches);
         ctx.globalAlpha = 1;
         ctx.restore();
     }
@@ -2877,6 +2950,19 @@ function drawWorld() {
     // Particles
     for (const p of parts) {
         const a = Math.max(p.life, 0);
+        if (p.smoke) {
+            // Hull smoke (systems.js emitHullSmoke): a soft, lumpy wisp that swells, turns
+            // and smears back as it fades. Hard-edged circles read as rings (user, 2026-09-21).
+            const age = 1 - a / p.life0, sz = p.r * (1 + age * 3) * 2;
+            ctx.save();
+            ctx.globalAlpha = p.smoke * (1 - age);
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot);
+            ctx.scale(1 + age * 0.8, 1 - age * 0.25);
+            ctx.drawImage(smokeSprite(p.v), -sz / 2, -sz / 2, sz, sz);
+            ctx.restore();
+            continue;
+        }
         if (p.long) {
             // Crystal shard: a tumbling sliver, not a dot (systems.js
             // burstCrystalShards). Three points, no stroke - at this size a rim

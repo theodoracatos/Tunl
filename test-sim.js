@@ -250,6 +250,23 @@ function quietCave(deep = false) {
     check('a wall contact with no scratches left is fatal', g('phase') === 'dead');
 }
 {
+    // Catches: the hull scratching while a shield is up (user's call 2026-09-21: shield first).
+    const g = quietCave(true);
+    g('shieldCount = 1; { const _b = boundsAt(scrollX + PX); py = _b.bot + 2; } update(1 / 60);');
+    check('a wall contact with a shield up spends the shield and leaves the hull whole',
+        g('phase') === 'play' && g('shieldCount') === 0 && g('hullScratches') === g('HULL_SCRATCHES'));
+    g('invulnT = 0; wallGraceT = 0; { const _b = boundsAt(scrollX + PX); py = _b.bot + 2; } update(1 / 60);');
+    check('with the shield gone the next wall contact scratches the hull',
+        g('phase') === 'play' && g('hullScratches') === g('HULL_SCRATCHES') - 1);
+    // Catches: a scratched hull that shows nothing, smoke through a shield, or a draw that throws.
+    const smoke = sh => g(`(() => { invulnT = 0; wallGraceT = 1; hullScratches = 0; shieldCount = ${sh}; parts = [];
+        for (let i = 0; i < 60; i++) { _pilot(); update(1 / 60); } draw(); return parts.filter(p => p.smoke).length; })()`);
+    const bare = smoke(0), shielded = smoke(1);
+    check(`a scratched hull smokes and draws its damage (${bare} puffs alive after 1 s)`,
+        g('phase') === 'play' && bare > 5);
+    check(`no smoke while a shield is up (${shielded} puffs)`, shielded === 0);
+}
+{
     // Catches: dropping `warpTime > 0` from the wall clamp (docs/agents/portal.md: "the wall is
     // never a warp-caused death, by construction").
     const g = quietCave(true);
@@ -443,9 +460,9 @@ function touchCoin(type, setup) {
         })()`);
     };
     const empty = pick(0), half = pick(1), full = pick(2);
-    check('a kit refills an empty hull to full and pays its points',
-        empty.hull === empty.full && empty.gain === empty.pts && empty.left === 0);
-    check('a kit refills a scratched hull to full', half.hull === half.full && half.gain === half.pts);
+    check('a kit gives an empty hull back exactly one scratch and pays its points',
+        empty.hull === 1 && empty.gain === empty.pts && empty.left === 0);
+    check('a kit tops a once-scratched hull up to full', half.hull === half.full && half.gain === half.pts);
     check('a kit on a full hull still pays its points and leaves the hull as it was',
         full.hull === full.full && full.gain === full.pts && full.left === 0);
     const g = quietCave(true);

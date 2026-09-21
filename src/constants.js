@@ -982,7 +982,9 @@ const DRAIN_START_WX      = sectorStartWx(9);
 // Hull (update.js wall collision, approach.js in the mouth): from the tunnel entry the ship
 // carries HULL_SCRATCHES wall-only "scratches" for the WHOLE run (2026-09-19; they used to
 // expire at the start of sector 3, and to start where the soft walls ended). A wall contact
-// spends one - bounce plus WALL_GRACE_SEC in which only the WALL is harmless (the ship is
+// with a shield up spends the SHIELD first (user's call 2026-09-21: the hull is the ship, it
+// only scratches once nothing shields it; it used to be scratches first). Without one it
+// spends a scratch - bounce plus WALL_GRACE_SEC in which only the WALL is harmless (the ship is
 // held off it so it cannot scrape twice). Hazards stay lethal throughout: a scratch must
 // never be a way through a stalactite field, which the old full HIT_INVULN_SEC grace was
 // once the scratches reached the deep run. Direct hits are for the shield coin. Measured with
@@ -993,9 +995,9 @@ const DRAIN_START_WX      = sectorStartWx(9);
 const HULL_SCRATCHES      = 2;
 const WALL_GRACE_SEC      = 1.0;    // wall-only grace after a scratch (HIT_INVULN_SEC's length, not its reach)
 // Repair kit (systems.js spawnRepairKit/updateRepairKits, 2026-09-21, user's design): every
-// mine or cannon shot a bullet destroys drops a kit where it died. Flying through one tops
-// the hull back up to HULL_SCRATCHES and always pays REPAIR_KIT_PTS, so it is worth taking
-// with a full hull too. No cooldown on purpose (user's call): the deep run's speed already
+// mine or cannon shot a bullet destroys drops a kit where it died. Flying through one gives
+// back ONE scratch (capped at HULL_SCRATCHES; user's call 2026-09-21, it used to refill to
+// full) and always pays REPAIR_KIT_PTS, so it is worth taking with a full hull too. No cooldown on purpose (user's call): the deep run's speed already
 // makes a kit hard to reach, and scratches only ever forgive walls, never a hazard. It stays
 // at its world-x (no magnet pull, no warp vacuum) and is gone if missed. Never enters
 // `coins`: spawner vetoes read that array, and a kit exists only for players who shot, so it

@@ -26,9 +26,10 @@ function update(dt) {
     // Particles (always running)
     for (let i = parts.length - 1; i >= 0; i--) {
         const p = parts[i];
-        p.x += p.vx*vdt; p.y += p.vy*vdt; const d0 = 0.90 ** (vdt * 60); p.vx *= d0; p.vy *= d0;
+        // Hull smoke (systems.js emitHullSmoke) drifts on and lingers; debris stops short.
+        p.x += p.vx*vdt; p.y += p.vy*vdt; const d0 = (p.smoke ? 0.985 : 0.90) ** (vdt * 60); p.vx *= d0; p.vy *= d0;
         if (p.spin) p.rot += p.spin * vdt;   // crystal shards tumble; round debris has no spin
-        p.life -= vdt * 2.0;
+        p.life -= vdt * (p.smoke ? 1.0 : 2.0);
         if (p.life <= 0) parts.splice(i, 1);
     }
 
@@ -658,8 +659,9 @@ function update(dt) {
             // WARP_GAP_MULT doc) - the clamp is what actually guarantees "the reward
             // never kills you," the widened corridor is just breathing room on top.
             if (invulnT > 0 || warpTime > 0 || wallGraceT > 0) { py = Math.max(b.top + cPR, Math.min(b.bot - cPR, py)); break; }
-            // Flight plan: early wall mistakes cost a scratch, not the run (constants.js HULL_SCRATCHES).
-            if (hullScratches > 0) { hullScratch(b.top, b.bot, cPR); break; }
+            // Flight plan: wall mistakes cost a scratch, not the run (constants.js HULL_SCRATCHES).
+            // A shield goes first (die() spends it), the hull only scratches once it is gone.
+            if (hullScratches > 0 && shieldCount === 0) { hullScratch(b.top, b.bot, cPR); break; }
             deathCause = (py - cPR < b.top) ? 'wallTop' : 'wallBot';
             markDeathHit(PX + dx, (py - cPR < b.top) ? b.top : b.bot, cPR);
             if (die()) return;
@@ -668,7 +670,7 @@ function update(dt) {
     }
     if (py - cPR < 0 || py + cPR > H) {
         if (invulnT > 0 || warpTime > 0 || wallGraceT > 0) { py = Math.max(cPR, Math.min(H - cPR, py)); }
-        else if (hullScratches > 0) hullScratch(0, H, cPR);
+        else if (hullScratches > 0 && shieldCount === 0) hullScratch(0, H, cPR);
         else {
             deathCause = (py - cPR < 0) ? 'wallTop' : 'wallBot';
             markDeathHit(PX, (py - cPR < 0) ? 0 : H, cPR);
@@ -857,6 +859,7 @@ function update(dt) {
     updateBullets(dt);
     // Repair kits the bullets just dropped (constants.js REPAIR_KIT_PTS doc)
     updateRepairKits(dt);
+    emitHullSmoke(dt);
 
     // Cannons: trigger any that the player has now closed within range of, and
     // advance every shot already in flight
@@ -885,8 +888,8 @@ function update(dt) {
 // harmless, since it is only ever read once phase is 'dead'. The radius is the KILLER's
 // size, not the ship's, so the ring reads as "this is what got you" rather than as a
 // second ship outline; for a wall hit there is no object, so the ship radius is passed.
-// Hull (constants.js HULL_SCRATCHES): a lethal-wall contact while scratches remain, at
-// any depth. Clamp and bounce, plus WALL_GRACE_SEC in which only the wall is harmless, so
+// Hull (constants.js HULL_SCRATCHES): a lethal-wall contact while scratches remain and no
+// shield is up (a shield is spent first), at any depth. Clamp and bounce, plus WALL_GRACE_SEC in which only the wall is harmless, so
 // the ship cannot scrape the same wall twice in a row - hazards stay lethal (no invulnT,
 // no blink). It counts as a hit for the No-Hit achievement like every other absorbed collision.
 function hullScratch(top, bot, r) {

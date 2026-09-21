@@ -221,7 +221,8 @@ tint stays reserved for the coin bonus, so the effect never colours the walls.
 
 A bullet that destroys a mine or a cannon shot drops a repair kit where it died
 (`systems.js` `spawnRepairKit`/`updateRepairKits`, `REPAIR_KIT_PTS` doc in `constants.js`).
-Flying through it refills the hull to `HULL_SCRATCHES` and always pays `REPAIR_KIT_PTS`,
+Flying through it gives back **one** scratch (capped at `HULL_SCRATCHES`; user's call 2026-09-21,
+it refilled to full in 16.1) and always pays `REPAIR_KIT_PTS`,
 so it drops on a full hull too. User's calls: **no cooldown** (deep speed already makes
 kits hard to reach, and scratches only forgive walls), **no magnet pull or warp vacuum**
 (stays at its world-x, gone if missed).

@@ -1788,3 +1788,23 @@ const PX = W * 0.22;   // fixed horizontal position on screen (W capped at 956)
 const PR = W * 0.018;  // radius (≈10.8px at W=600, ≈17.2px at the W=956 cap)
 ```
 
+## Death sound: "Crash" replaces the balloon pop (2026-09-21)
+
+User: the death sound "ist wie wenn ein Ballon zerplatzt", asked for a plane crash. Offline
+render showed why: 96% of the old hit's energy sat below 200 Hz (inaudible on a phone), so a
+device played only a 0.26 s 1.4 kHz crunch plus a 30 ms 2.6 kHz crack. Three level-matched
+proposals (A Blechschaden: metal only, ~1.0 s; B Feuerball: impact + fireball, ~1.4 s;
+C Absturz: dying engine + crumple + fireball, ~1.5 s) went to a listening page; the user
+picked C. `DIE_LEVEL` matches the old sound's loudest 50 ms. The reverse-spool noise roar
+that used to be the sound's identity is gone; the dying buzz-saw engine carries that link to
+`sfxEngineSpoolUp` instead. A 25 Hz highpass on the death bus strips the DC offset the
+`_distortionCurve` shapers leave after their sources stop. Not ear-checked on a device.
+
+Round two, same day: C read as a timpani hit ("Paukenschlag", user). Its first 150 ms were
+86-96% one tonal 100-140 Hz peak (spectral flatness 0.002): the sine-drop impact plus the
+fireball bloom. Two new proposals, D Crash and E Crash hart, swapped the sine for a
+low-passed noise thud and added a crunch-grain cluster (`_dieCrunch`) and tearing metal
+(`_dieTear`); onset energy below 200 Hz went 94% -> 23%. The user picked D. Levels were
+matched through a 400 Hz highpass (phone level) this time: a full-band match would have made
+D ~10 dB louder on a phone, because C's full-band number was mostly sub.
+

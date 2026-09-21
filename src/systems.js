@@ -819,12 +819,35 @@ function updateRepairKits(dt) {
         const stackY = k.y - 34 - notifStackOffset(sx);
         notifs.push({ x: sx, y: stackY, life: 1.1, text: `+${REPAIR_KIT_PTS}`, color: HUD_SPARK_COLOR.repair });
         if (repaired) {
-            hullScratches = HULL_SCRATCHES;
+            hullScratches = Math.min(HULL_SCRATCHES, hullScratches + 1);
             hullRepairFlash = 0.8;
             notifs.push({ x: sx, y: stackY - 32, life: 1.3, text: '+' + T.hull, color: HUD_SPARK_COLOR.repair });
         }
         sfxHullRepair(repaired);
         window.webkit?.messageHandlers?.haptic?.postMessage(repaired ? 'success' : 'light');
+    }
+}
+
+// Smoke off a scratched hull (draw.js HULL_DAMAGE_MARKS doc, user's call 2026-09-21: smoke,
+// not sparks): grey puffs from the marks, drifting back and up behind the ship, denser per
+// scratch lost. None while a shield is up - the shield covers the damage, the smoke comes
+// back once it breaks. Math.random only, like burst(): cosmetic, never rng().
+let _hullSmokeAcc = 0;
+function emitHullSmoke(dt) {
+    const lost = HULL_SCRATCHES - hullScratches;
+    if (lost <= 0 || shieldCount > 0 || phase !== 'play') { _hullSmokeAcc = 0; return; }
+    _hullSmokeAcc += dt * (lost >= 2 ? 26 : 14);   // many faint wisps merge into one plume
+    const c = Math.cos(shipPitch), sn = Math.sin(shipPitch);
+    while (_hullSmokeAcc >= 1) {
+        _hullSmokeAcc -= 1;
+        const set = HULL_DAMAGE_MARKS[Math.floor(Math.random() * Math.min(lost, HULL_DAMAGE_MARKS.length))];
+        const [mx, my] = hullMarkPt(set[Math.floor(Math.random() * set.length)][0]);
+        const life = 1.1 + Math.random() * 0.5;
+        parts.push({ x: PX + (mx * c - my * sn) * PR, y: py + (mx * sn + my * c) * PR,
+                     vx: -(70 + Math.random() * 60), vy: -(15 + Math.random() * 30),
+                     life, life0: life, r: PR * (0.16 + Math.random() * 0.12),
+                     v: Math.floor(Math.random() * 3), rot: Math.random() * Math.PI * 2,
+                     spin: (Math.random() - 0.5) * 1.2, smoke: lost >= 2 ? 0.75 : 0.55, h: 0 });
     }
 }
 
