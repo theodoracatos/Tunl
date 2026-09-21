@@ -154,7 +154,16 @@
      of the UTC date, so the site can name today's world before you press play.
      Filled by the script at the end of this file; stays hidden without JS. */
   .today {
-    display:inline-flex; align-items:center; justify-content:center;
+    /* Block-level (not inline-flex) + width:fit-content + margin-inline:auto,
+       not just the parent's text-align:center: an inline-level box shares its
+       LINE with whatever inline content follows it, and once the "PLANET x"
+       segment was added the pill (~343px) plus the wordmark (248px) started
+       fitting side by side inside the 600px hero column - one shared centred
+       line instead of two stacked ones, so the wordmark rendered ~170px off
+       centre. Forcing this element onto its own line and centering it
+       independently is what actually fixes that, not a tweak to the wordmark. */
+    display:flex; width:fit-content; margin-inline:auto;
+    align-items:center; justify-content:center;
     gap:8px; flex-wrap:wrap;
     font-family:var(--mono);
     font-size:11px; letter-spacing:.13em; text-transform:uppercase;

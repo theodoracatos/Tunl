@@ -115,5 +115,9 @@
  "8c4fa10": "As versões 1.0 a 8.0 também são a história contada no post do devlog <a href=\"/devlog/first-two-months/\">Os dois primeiros meses</a>.",
  "9e34dba": "Para saber como o jogo atual funciona, veja o <a href=\"/how-to-play/\">guia de como jogar</a>. Se algo numa versão nova estragou sua corrida, me diga em <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a>.",
  "6a125da": "O que mudou em cada versão do TUNL, a mais recente primeiro: a aproximação da cidade ao entardecer e a nave 3D na 15.0, os acabamentos de pintura na 14.0, o portal de warp na 11.0, e tudo até o primeiro lançamento.",
- "a99e0c0": "Changelog &middot; atualizado em 21 de setembro de 2026 &middot; a versão atual é a 16.0"
+ "a99e0c0": "Changelog &middot; atualizado em 21 de setembro de 2026 &middot; a versão atual é a 16.0",
+ "8a44056": "16.0: as estalactites agora são de cristal",
+ "0242984": "Cada estalactite e estalagmite agora é um aglomerado de prismas de cristal eretos no lugar do cone liso que a caverna tinha desde a versão 1.0, com um mineral próprio para cada um dos sete mundos do dia - calcita, quartzo enferrujado, selenita, obsidiana, ametista, olivina, rodonita. A área de colisão não muda: mesmo triângulo, mesmo tamanho, mesma equidade.",
+ "0162342": "Ao quebrar uma, agora ela soa e se comporta como vidro, não como cascalho - seja ao atirar nela, atravessá-la com um escudo ou morrer nela.",
+ "3cb017b": "Uma estalactite que cai agora deixa sua base de rocha no teto ao se soltar, e pousa com a ponta primeiro, cravada no chão como se realmente tivesse atingido algo."
 }

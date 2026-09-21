@@ -115,5 +115,9 @@
  "8c4fa10": "Wersje od 1.0 do 8.0 to także historia opowiedziana we wpisie devloga <a href=\"/devlog/first-two-months/\">Pierwsze dwa miesiące</a>.",
  "9e34dba": "Jak gra się w obecną wersję, zobacz w <a href=\"/how-to-play/\">poradniku jak grać</a>. Jeśli coś w nowej wersji zepsuło ci przelot, napisz do mnie na <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a>.",
  "6a125da": "Co zmieniło się w każdej wersji TUNL, od najnowszej: podejście nad miasto o zmierzchu i statek 3D w 15.0, wykończenia malarskie w 14.0, portal warpu w 11.0 i wszystko aż do pierwszego wydania.",
- "a99e0c0": "Lista zmian &middot; zaktualizowana 21 września 2026 &middot; obecna wersja to 16.0"
+ "a99e0c0": "Lista zmian &middot; zaktualizowana 21 września 2026 &middot; obecna wersja to 16.0",
+ "8a44056": "16.0: stalaktyty są teraz kryształowe",
+ "0242984": "Każdy stalaktyt i stalagmit to teraz skupisko stojących pionowo kryształowych pryzmatów zamiast gładkiego stożka, jaki jaskinia miała od wersji 1.0, z osobnym minerałem dla każdego z siedmiu codziennych światów - kalcyt, zardzewiały kwarc, selenit, obsydian, ametyst, oliwin, rodonit. Obszar kolizji się nie zmienił: ten sam trójkąt, ten sam rozmiar, ta sama sprawiedliwość.",
+ "0162342": "Gdy go rozbijesz, teraz brzmi i wygląda jak szkło, a nie żwir - niezależnie czy go zestrzelisz, przelecisz przez niego z tarczą, czy na nim zginiesz.",
+ "3cb017b": "Spadający stalaktyt zostawia teraz swoje skalne gniazdo na suficie, gdy się odrywa, i ląduje czubkiem w dół, wbity w podłogę, jakby naprawdę w coś uderzył."
 }
