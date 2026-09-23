@@ -68,5 +68,5 @@
  "5bd55a3": "Lekcja, którą bym zachował, to kształt testów. Błędy determinizmu są niewidoczne w grze i trywialne przy asercji. Wygenerowanie pierwszych kilku tysięcy pozycji przy sześciu rozmiarach ekranu i porównanie ich zajmuje milisekundy i wyłapałoby oba błędy urządzeń w dniu, w którym zostały napisane. Błąd bramki treści wymagał zupełnie innego narzędzia, symulacji tego, jak daleko gracze faktycznie docierają, a jedyną prawdziwą lekcją jest to, że liczba wyprowadzona z twojej krzywej trudności nie jest liczbą o twoich graczach.",
  "b5a5829": "Dzisiejsza jaskinia jest dostępna i resetuje się o północy UTC. Działa w przeglądarce, bez instalacji:",
  "952b628": "Dzienny poziom będący czystą funkcją daty: zasiewanie, cztery strumienie losowe i dwa błędy, które po cichu rozdzieliły wspólną jaskinię.",
- "f7393c4": "Devlog &middot; 15 września 2026 &middot; zaktualizowano 21 września 2026 dla TUNL 16.1 &middot; <a href=\"/devlog/\">wszystkie wpisy</a>"
+ "efc8c95": "Devlog &middot; 15 września 2026 &middot; zaktualizowano 23 września 2026 dla TUNL 17.0 &middot; <a href=\"/devlog/\">wszystkie wpisy</a>"
 }
