@@ -546,6 +546,7 @@ function checkCoinCollection() {
             runCoins++;
             skinXP[activeSkin] = (skinXP[activeSkin] || 0) + 1;
             runCoinsByType[coin.type] = (runCoinsByType[coin.type] || 0) + 1; // daily missions
+            paintCoinFx.col = HUD_SPARK_COLOR[coin.type] || HUD_SPARK_COLOR.gold; paintCoinFx.t = gtime;   // PULSE paint
             if (coinCombo > runMaxCombo) runMaxCombo = coinCombo;
             if (coin.type === 'blue') {
                 // Cap cut 8.0 -> 6.0 on 2026-09-11 (ELECTRIC's 12/15 scaled with it to
@@ -1004,6 +1005,21 @@ function _makeMineAt(wx) {
         const dy = Math.max(0, Math.abs(c.y - baseY) - bobAmp) * _H_TO_REF;
         if (dx * dx + dy * dy < clear * clear) return null;
     }
+    // Never inside an existing boulder. Boulders reach their spawn horizon before
+    // mines do (SPAWN_AHEAD_BOULDER 300 > SPAWN_AHEAD_MINE 200), so by the time a
+    // candidate mine x is tried, any boulder covering it already exists - the mine
+    // is the one that must yield here (the retry offsets shuffle it on), the mirror
+    // image of _fitIsland's own mine veto (below), which covers the rarer case of a
+    // mine that got there first. Bob-aware like the coin check above: the boulder's
+    // H-space island math (boulderHit) wants the point closest to it within the
+    // mine's bob range, not baseY itself.
+    for (const bo of boulders) {
+        const dx = wx - bo.wx;
+        if (Math.abs(dx) >= bo.hl + PLACE_MINE_R * _REF_TO_H) continue;
+        const diff = baseY - bo.y;
+        const dy = diff > 0 ? Math.max(0, diff - bobAmp) : Math.min(0, diff + bobAmp);
+        if (boulderHit(bo, dx, dy, PLACE_MINE_R * _REF_TO_H)) return null;
+    }
     return { wx, baseY, phase: rngMine() * Math.PI * 2, bobAmp };
 }
 
@@ -1356,6 +1372,18 @@ function _fitIsland(wx, y, r, hl, prof) {
     for (const arr of [coins, chicaneCoins]) for (const c of arr) {
         if (Math.abs(c.wx - wx) >= hl + PLACE_COIN_CLEAR_R) continue;
         if (boulderHit(ref, c.wx - wx, (c.y - y) * _H_TO_REF, PLACE_COIN_CLEAR_R)) return null;
+    }
+    // A mine the rock would swallow. Mines are created first every frame
+    // (maintainMines() before maintainBoulders(), update.js), so like coins they are
+    // the fixed point here and the ROCK yields - a shorter island, the next retry
+    // offset, or none. Neither spawner checked the other before this (2026-09-23):
+    // a 30-day replay found ~0.4% of mines landing inside a boulder's outline,
+    // invisible against the rock and outside the boulder's "always a pass above and
+    // below" contract. Bob-aware exactly like _makeMineAt's own coin veto.
+    for (const m of mines) {
+        if (Math.abs(m.wx - wx) >= hl + PLACE_MINE_R) continue;
+        const dy = Math.max(0, Math.abs(m.baseY - y) - m.bobAmp) * _H_TO_REF;
+        if (boulderHit(ref, m.wx - wx, dy, PLACE_MINE_R)) return null;
     }
     return {
         wx, y, r, hl, up, dn, fTop: prof.top, fBot: prof.bot,
