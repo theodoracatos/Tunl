@@ -117,7 +117,7 @@ function _profileBounds(wx) {
 // `accent` (RGB triplet) tints the lit corridor to the day's rock colour the same way
 // the in-game wall glow does -- passed by the share card so it carries the day's world
 // identity, not a fixed blue. Defaults to the old blue when omitted.
-// Compact SR-71 silhouette on an *arbitrary* 2D context. draw.js's shipPath() and
+// Compact F-14 silhouette on an *arbitrary* 2D context. draw.js's shipPath() and
 // drawShip() are both hard-bound to the game's `ctx` const, so they can't render onto
 // the share card's offscreen canvas -- this is a trimmed copy (hull fill + a
 // top-lit shading split + a canopy glint; no facets or nacelle pods) that takes the context
@@ -125,10 +125,12 @@ function _profileBounds(wx) {
 // self-contained. `k` scales the glow with the caller's overall scale factor.
 function _shipGlyph(g, x, y, r, color, glow, k) {
     k = k || 1;
-    // Same outline as draw.js SHIP_OUTLINE (the K5 hull), copied for the reason above.
-    const pts = [[1.40,0],[0.95,-0.13],[0.30,-0.20],[-0.60,-0.98],[-0.72,-0.94],[-1.00,-0.24],
-                 [-1.22,-0.38],[-1.04,-0.10],[-0.92,0],[-1.04,0.10],[-1.22,0.38],[-1.00,0.24],
-                 [-0.72,0.94],[-0.60,0.98],[0.30,0.20],[0.95,0.13]];
+    // Same outline as draw.js SHIP_OUTLINE (the F-14 hull), copied for the reason above.
+    const top = [[1.40,0],[1.22,-0.068],[1.02,-0.118],[0.80,-0.145],[0.02,-0.33],
+                 [-0.058,-0.405],[-0.585,-0.785],[-0.674,-0.719],[-0.554,-0.347],
+                 [-0.649,-0.303],[-0.92,-0.60],[-1.05,-0.60],[-1.00,-0.25],
+                 [-0.99,-0.074],[-1.07,-0.044],[-1.07,0]];
+    const pts = top.concat(top.slice(1, -1).reverse().map(p => [p[0], -p[1]]));
     const hull = () => {
         g.beginPath();
         g.moveTo(x + r*pts[0][0], y + r*pts[0][1]);
@@ -159,7 +161,7 @@ function _shipGlyph(g, x, y, r, color, glow, k) {
     g.lineJoin = 'round';
     g.stroke();
     g.beginPath();
-    g.ellipse(x + r*0.86, y - r*0.02, r*0.24, r*0.07, 0, 0, Math.PI*2);
+    g.ellipse(x + r*0.76, y - r*0.02, r*0.30, r*0.06, 0, 0, Math.PI*2);
     g.fillStyle = 'rgba(210,240,255,0.55)';
     g.fill();
     g.restore();
@@ -323,7 +325,10 @@ function drawRunProfile(g, x0, y0, w, h, opts) {
         g.lineWidth = Math.max(1.2, 2.3 * k);
         g.beginPath(); g.arc(dx, dy, ringR, 0, Math.PI * 2); g.stroke();
         g.restore();
-        _shipGlyph(g, dx, dy, r, sk.color,
+        // Hull in the player's paint (paint.js), glow in the ship's own light - the same
+        // split the game draws, so a repainted ship still reads as itself.
+        const kit = typeof paintOf === 'function' ? paintOf(activeSkin) : 0;
+        _shipGlyph(g, dx, dy, r, kit && kit.c ? rgb(paintHullRgb(sk.color, kit)) : sk.color,
             `rgba(${sk.shadow[0]},${sk.shadow[1]},${sk.shadow[2]},${0.90 * A})`, k);
     }
 }
@@ -962,10 +967,15 @@ function _cardChips(g, items, x, y, maxW, h, rows, F) {
 // module count and makes it unscannable at card size, while ?d + ?s still
 // carry the actual challenge.
 function shareRunUrl(compact) {
-    const r = 'r=' + encodeURIComponent(webPlayerId());
+    // Packed to 22 chars instead of the 36-char UUID (_uuidPack, web.js) - the
+    // link is display/tap-only, webPlayerId() itself and what's sent to the
+    // leaderboard worker both stay the plain UUID.
+    const r = 'r=' + encodeURIComponent(_uuidPack(webPlayerId()));
     // Trailing slash: the host 301-redirects /play -> /play/ (query preserved), so
     // linking straight to /play/ saves every shared link a redirect hop.
-    let u = SHARE_URL.replace(/\/+$/, '') + '/play/?d=' + _tunlActiveDayInt();
+    // Day as a base36 offset from WEB_DAY_EPOCH_MS (web.js), not YYYYMMDD - a
+    // handful of chars instead of 8.
+    let u = SHARE_URL.replace(/\/+$/, '') + '/play/?d=' + _dayIntToOffset(_tunlActiveDayInt()).toString(36);
     if (score > 0) u += '&s=' + Math.min(score | 0, 9999999);
     try {
         if (!compact && typeof ghostTrack !== 'undefined' && ghostTrack && ghostTrack.length > 1) {
@@ -995,7 +1005,11 @@ function shareRunText() {
     // the same one for them today, which is the only reason a stranger's score means
     // anything. Without it this is just a screenshot of a number.
     lines.push(T.shareTagline);
-    lines.push(shareRunUrl());
+    // Compact: the ghost pushes this link past 1000 chars on a good run, which
+    // chat clients mangle or truncate. The card's QR already drops it for the
+    // same reason; ?d + ?s still hand the recipient the same cave and a score
+    // to beat.
+    lines.push(shareRunUrl(true));
     return lines.join('\n');
 }
 

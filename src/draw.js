@@ -855,9 +855,9 @@ function drawCoin(x, y, type, wx, scale = 1) {
 
 // ── Draw helpers ──────────────────────────────────────────────────────
 
-// ── Ship (K5 "Facette + Licht", 12.0) ──────────────────────────────────
-// SR-71 silhouette, cut into flat facets lit from above, plus a few emissive
-// details in the skin's own glow colour. See CLAUDE.md "Ship rendering".
+// ── Ship (K5 "Facette + Licht", 12.0; F-14 hull 2026-09-22) ─────────────
+// Grumman F-14 planform (wings spread), cut into flat facets lit from above, plus a few
+// emissive details in the skin's own glow colour. See docs/agents/ship-render.md.
 //
 // Envelope (do not grow it): span +-0.98r, nose +1.40r. The span sits just inside
 // the PR hitbox circle (it used to stop at 0.92r, so you died ~8% before the wing
@@ -867,41 +867,46 @@ function drawCoin(x, y, type, wx, scale = 1) {
 // Facet points are in r units for the TOP half (y <= 0); the bottom half is the
 // same list mirrored. top/bot are tone() amounts: >0 mixes toward white, <0 toward
 // near-black, so every skin keeps its own paint and only the lighting is shared.
+// The planform is the 3D model's (_ship3dFaces) seen from above, with the outer panels
+// SWEPT to the speed position (user's call, 2026-09-22: the hangar portrait should read as
+// speed, not as a parked jet). The panel points are the spread ones turned SHIP3D_SWEEP_MAX
+// about SHIP3D_PIVOT, so hangar and flight show the same aircraft at full pace; the panel
+// root tucks under the glove exactly as it does in 3D. The nacelles and fins are drawn on
+// top in drawShip.
+// Keep the facet ORDER: paint.js's WINGTIPS pattern fills facets 1, 5 and 6 by index.
 const SHIP_OUTLINE = (() => {
-    const top = [[1.40,0],[0.95,-0.13],[0.30,-0.20],[-0.60,-0.98],[-0.72,-0.94],
-                 [-1.00,-0.24],[-1.22,-0.38],[-1.04,-0.10],[-0.92,0]];
+    const top = [[1.40,0],[1.22,-0.068],[1.02,-0.118],[0.80,-0.145],[0.02,-0.33],
+                 [-0.058,-0.405],[-0.585,-0.785],[-0.674,-0.719],[-0.554,-0.347],
+                 [-0.649,-0.303],[-0.92,-0.60],[-1.05,-0.60],[-1.00,-0.25],
+                 [-0.99,-0.074],[-1.07,-0.044],[-1.07,0]];
     return top.concat(top.slice(1, -1).reverse().map(p => [p[0], -p[1]]));
 })();
 const SHIP_FACETS = [
-    { p: [[1.40,0],[0.95,-0.13],[0.95,0]],                          top: 0.46, bot: -0.04 }, // nose cone
-    { p: [[0.95,0],[0.95,-0.13],[0.30,-0.20],[0.30,0]],             top: 0.30, bot: -0.20 }, // forward chine
-    { p: [[0.30,0],[0.30,-0.20],[-1.00,-0.24],[-1.04,-0.10],[-0.92,0]], top: 0.16, bot: -0.32 }, // rear fuselage
-    { p: [[0.30,-0.20],[-0.15,-0.59],[-0.86,-0.59],[-1.00,-0.24]],  top: 0.06, bot: -0.40 }, // inner wing
-    { p: [[0.30,-0.20],[-0.60,-0.98],[-0.50,-0.72],[0.12,-0.26]],   top: 0.26, bot: -0.22 }, // leading-edge strip
-    { p: [[-0.15,-0.59],[-0.60,-0.98],[-0.72,-0.94],[-0.86,-0.59]], top: -0.08, bot: -0.54 }, // outer wing
-    { p: [[-1.00,-0.24],[-1.22,-0.38],[-1.04,-0.10]],               top: 0.22, bot: -0.26 }, // canted fin
+    { p: [[1.40,0],[1.22,-0.045],[1.02,-0.075],[1.02,0]],                              top: 0.46, bot: -0.04 }, // nose cone
+    { p: [[-0.649,-0.303],[-0.92,-0.60],[-1.05,-0.60],[-1.00,-0.25],[-0.72,-0.25]],    top: -0.08, bot: -0.54 }, // taileron
+    { p: [[1.02,0],[1.02,-0.118],[0.80,-0.145],[-0.72,-0.148],[-0.99,-0.084],[-1.07,-0.050],[-1.07,0]], top: 0.30, bot: -0.20 }, // fuselage + beaver tail
+    { p: [[0.80,-0.145],[0.02,-0.33],[-0.10,-0.39],[-0.46,-0.39],[-0.70,-0.28],[-0.70,-0.148]], top: 0.16, bot: -0.32 }, // glove
+    { p: [[0.80,-0.145],[0.02,-0.33],[-0.04,-0.30],[0.66,-0.155]],                     top: 0.26, bot: -0.22 }, // glove leading edge
+    // Swept outer panel: only the part outside the glove, since the panel slides UNDER the
+    // glove when it folds (z 0.060 against the glove's 0.068 in the 3D model).
+    { p: [[-0.058,-0.405],[-0.585,-0.785],[-0.674,-0.719],[-0.554,-0.347],[-0.46,-0.39],[-0.10,-0.39]], top: 0.06, bot: -0.40 }, // outer wing
+    { p: [[-0.058,-0.405],[-0.585,-0.785],[-0.616,-0.762],[-0.105,-0.399]],            top: 0.26, bot: -0.22 }, // wing leading edge
 ];
 
 const _SHIP_DARK = [6, 8, 16], _SHIP_WHITE = [255, 255, 255];
 const _shipToneCache = new Map();
 // Facet colours per (colour, glow) pair, computed once - drawShip runs every frame
 // for the player, ghost, hero and every shop cell.
-function _shipTones(color, sr, sg, sb, lv) {
-    lv = lv || 0;
-    const key = color + sr + ',' + sg + ',' + sb + '/' + lv;
+function _shipTones(color, sr, sg, sb, kit) {
+    const key = color + sr + ',' + sg + ',' + sb + '/' + paintToneKey(kit);
     let t = _shipToneCache.get(key);
     if (t) return t;
-    let base    = [parseInt(color.substr(1,2),16), parseInt(color.substr(3,2),16), parseInt(color.substr(5,2),16)];
     const light = lerpClr(_SHIP_WHITE, [sr, sg, sb], 0.15);
-    // Livery re-shading (constants.js LIVERIES): STEALTH sinks the paint and flattens the
-    // light, CHROME pushes both ends of the ramp, CARBON darkens the shadow side for its
-    // weave. Hue never moves, so the ship stays recognisably itself.
-    let kUp = 1, kDn = 1, kOff = 0;
-    if (lv === 1) { base = lerpClr(base, _SHIP_DARK, 0.62); kUp = 0.30; kDn = 0.55; }
-    else if (lv === 3) { kUp = 0.85; kDn = 0.85; }
-    else if (lv === 4) { base = lerpClr(base, _SHIP_WHITE, 0.10); kUp = 1.5; kDn = 1.35; }
+    // Hangar paint (paint.js): the kit's hull colour, re-shaded by its material. The glow
+    // (sr, sg, sb) is untouched, so the ship's light stays its identity.
+    const [base, kUp, kDn] = _paintShade(paintHullRgb(color, kit), kit);
     const tone  = k0 => {
-        const k = Math.max(-0.92, Math.min(0.92, (k0 >= 0 ? k0 * kUp : k0 * kDn) + (k0 < 0 ? kOff : 0)));
+        const k = Math.max(-0.92, Math.min(0.92, k0 >= 0 ? k0 * kUp : k0 * kDn));
         return rgb(k >= 0 ? lerpClr(base, light, k) : lerpClr(base, _SHIP_DARK, -k));
     };
     t = {
@@ -911,16 +916,13 @@ function _shipTones(color, sr, sg, sb, lv) {
         podUp:  tone(0.24),
         podDn:  tone(-0.42),
         podSh:  rgb(lerpClr(base, _SHIP_DARK, 0.75), 0.45),
-        intake: rgb(lerpClr(base, _SHIP_DARK, 0.62), 0.9),
-        spike:  rgb(lerpClr(base, light, 0.5), 0.9),
     };
     _shipToneCache.set(key, t);
     return t;
 }
 
-// Pattern layer of a livery, painted over the facets and under the spine/leading-edge
-// highlights, clipped to the hull. No shadowBlur anywhere (the expensive call on
-// WKWebView); the animated ones are one gradient fill each.
+// Hue neighbours of a ship's glow, used by the paint layer (paint.js) for sheens that throw
+// colour. Cached per glow.
 const _auroraCache = new Map();
 function _auroraPair(sr, sg, sb) {
     const key = sr + ',' + sg + ',' + sb;
@@ -968,225 +970,6 @@ function _auroraTrio(sr, sg, sb) {
     return t;
 }
 
-// `hull` (drawShip3D) swaps the two things that cannot be expressed in planform
-// coordinates: the facet seams and the rim outline, both traced in screen space on the 3D
-// silhouette. Without it (the flat hull, hangar and shop) the overlay clips itself to
-// shipPath and uses SHIP_FACETS, exactly as before.
-function _drawLiveryOverlay(x, y, r, lv, sr, sg, sb, hull) {
-    // Every finish is built from BIG masses - a whole half of the hull, a rim, a band
-    // across the span - because in flight the ship is only ~2*PR across (~35px at the W
-    // cap). Fine detail (a weave, a pinstripe) is invisible there, which is what made the
-    // first pass not worth buying. Detail that only resolves on the hero ship is allowed
-    // on top of a mass, never instead of one.
-    //
-    // Each one also MOVES, in colour: paint that only sits there reads as a recolour, and a
-    // recolour is not worth shards. The motion is always one cheap fill or stroke per frame
-    // (a gradient whose stops ride gtime), never a particle or a second pass over the hull.
-    const lt = `${(sr+255)>>1},${(sg+255)>>1},${(sb+255)>>1}`;
-    const [hueA, hueB] = _auroraPair(sr, sg, sb);
-    // Rim of the hull, stroked with the caller's style: shipPath on the flat hull, the
-    // silhouette of the visible 3D faces otherwise.
-    const rimStroke = style => {
-        const paint = () => {
-            hull ? hull.rimPath() : shipPath(x, y, r);
-            ctx.strokeStyle = style.color;
-            ctx.lineWidth   = style.w;
-            ctx.lineJoin    = 'round';
-            ctx.stroke();
-        };
-        hull ? hull.screen(paint) : paint();
-    };
-    ctx.save();
-    if (!hull) { shipPath(x, y, r); ctx.clip(); }
-    if (lv === 1) {
-        // STEALTH: matte black hull read back by an edge-lit rim that breathes between the
-        // ship's glow and its lighter neighbour - a cooling-metal pulse.
-        ctx.fillStyle = 'rgba(0,0,0,0.62)';
-        ctx.fillRect(x - r*1.3, y - r, r*2.8, r*2);
-        const br = 0.55 + 0.45 * (0.5 - 0.5 * Math.cos(gtime * 1.6));
-        ctx.save();
-        ctx.globalCompositeOperation = 'lighter';
-        // Neon seams: the hull's own facet edges lit from inside, charging nose to tail.
-        const seam = (tracePath, i) => {
-            const wv = 0.45 + 0.55 * Math.max(0, Math.sin(gtime * 2.2 - i * 0.55));
-            tracePath();
-            ctx.strokeStyle = `rgba(${sr},${sg},${sb},${0.30 * wv})`;
-            ctx.lineWidth   = Math.max(r * 0.05, 1);
-            ctx.lineJoin    = 'round';
-            ctx.stroke();
-            ctx.strokeStyle = `rgba(${lt},${0.42 * wv})`;
-            ctx.lineWidth   = Math.max(r * 0.016, 0.4);
-            ctx.stroke();
-        };
-        if (hull) hull.screen(() => { ctx.globalCompositeOperation = 'lighter'; hull.eachFace(seam); });
-        else for (const sy of [-1, 1]) {
-            for (let i = 0; i < SHIP_FACETS.length; i++) {
-                seam(() => { ctx.beginPath(); _shipPoly(x, y, r, SHIP_FACETS[i].p, -sy); }, i);
-            }
-        }
-        ctx.restore();
-        ctx.save();
-        ctx.globalCompositeOperation = 'lighter';
-        rimStroke({ color: `rgba(${sr},${sg},${sb},${0.55 * br + 0.30})`, w: Math.max(r * 0.14, 2) });
-        rimStroke({ color: `rgba(${lt},${0.45 + 0.50 * br})`, w: Math.max(r * 0.045, 0.8) });
-        ctx.restore();
-    } else if (lv === 2) {
-        // STRIPE: a wide centre band plus solid wingtip caps - two masses, not pinstripes.
-        // The band flips dark on a pale ship (PEARL, NOVA): a light stripe on a light hull
-        // is the one case where a big mass still disappears. A colour pulse runs the band
-        // nose-to-tail, so the stripe reads as lit rather than painted on.
-        const pale2 = (sr * 0.299 + sg * 0.587 + sb * 0.114) > 200;
-        const band  = pale2 ? 'rgba(10,12,24,0.80)' : `rgba(${lt},0.92)`;
-        const edge  = pale2 ? `rgba(${lt},0.85)` : 'rgba(0,0,0,0.30)';
-        ctx.fillStyle = band;
-        ctx.fillRect(x - r*1.0, y - r*0.17, r*2.3, r*0.34);
-        ctx.fillStyle = edge;
-        ctx.fillRect(x - r*1.0, y - r*0.215, r*2.3, r*0.045);
-        ctx.fillRect(x - r*1.0, y + r*0.17,  r*2.3, r*0.045);
-        ctx.fillStyle = pale2 ? 'rgba(10,12,24,0.88)' : `rgba(${lt},0.98)`;
-        for (const sy of [-1, 1]) {
-            ctx.beginPath();
-            ctx.moveTo(x - r*0.30, y + sy*r*0.62);
-            ctx.lineTo(x - r*0.62, y + sy*r*1.05);
-            ctx.lineTo(x - r*0.92, y + sy*r*1.05);
-            ctx.lineTo(x - r*0.62, y + sy*r*0.62);
-            ctx.closePath();
-            ctx.fill();
-        }
-        // Chevrons on the WINGS, not the nose: the canopy and the leading-edge highlight
-        // draw after this overlay and swallowed a nose mark completely.
-        ctx.strokeStyle = pale2 ? 'rgba(10,12,24,0.85)' : `rgba(${lt},0.95)`;
-        ctx.lineWidth   = Math.max(r * 0.07, 1.2);
-        ctx.lineJoin    = 'miter';
-        for (const sy of [-1, 1]) {
-            for (let c = 0; c < 2; c++) {
-                const bx = x - r * (0.12 + c * 0.30);
-                ctx.beginPath();
-                ctx.moveTo(bx + r*0.10, y + sy*r*0.30);
-                ctx.lineTo(bx - r*0.16, y + sy*r*0.56);
-                ctx.lineTo(bx + r*0.10, y + sy*r*0.82);
-                ctx.stroke();
-            }
-        }
-        const u  = 1 - (gtime * 0.55) % 1;
-        const px = x + r * (-1.1 + u * 2.6);
-        const pg = ctx.createLinearGradient(px - r*0.5, 0, px + r*0.5, 0);
-        pg.addColorStop(0,   `rgba(${lt},0)`);
-        pg.addColorStop(0.5, hueA);
-        pg.addColorStop(1,   `rgba(${lt},0)`);
-        ctx.save();
-        ctx.globalCompositeOperation = 'lighter';
-        ctx.globalAlpha = 0.85;
-        ctx.fillStyle = pg;
-        ctx.fillRect(x - r*1.0, y - r*0.215, r*2.3, r*0.43);
-        ctx.restore();
-    } else if (lv === 3) {
-        // SPLIT: one wing dark, one wing bright, one clean divide down the spine. The most
-        // legible finish at gameplay size - the silhouette itself changes weight. The
-        // sawtooth this used to have was reported as odd and it was: teeth on a top-down
-        // planform read as damage, not paint, and at flight size they turned to fuzz. The
-        // mark is now the seam itself - a thin dark shadow with a bright core that cycles
-        // between the ship's two hue neighbours, plus a matching lip along each wing root.
-        ctx.fillStyle = 'rgba(0,0,0,0.70)';
-        ctx.fillRect(x - r*1.3, y - r, r*2.8, r);
-        ctx.fillStyle = `rgba(${lt},0.46)`;
-        ctx.fillRect(x - r*1.3, y, r*2.8, r);
-        ctx.fillStyle = 'rgba(0,0,0,0.55)';
-        ctx.fillRect(x - r*1.30, y - r*0.115, r*2.6, r*0.115);
-        const lg = ctx.createLinearGradient(x + r*1.4, 0, x - r*1.1, 0);
-        const w  = 0.5 + 0.5 * Math.sin(gtime * 1.1);
-        lg.addColorStop(0, hueA);
-        lg.addColorStop(Math.max(0.06, Math.min(0.94, w)), hueB);
-        lg.addColorStop(1, hueA);
-        ctx.save();
-        ctx.globalCompositeOperation = 'lighter';
-        ctx.fillStyle = lg;
-        ctx.fillRect(x - r*1.30, y - r*0.055, r*2.6, r*0.110);
-        ctx.globalAlpha = 0.5;
-        ctx.fillRect(x - r*0.95, y - r*0.30, r*1.7, r*0.022);
-        ctx.fillRect(x - r*0.95, y + r*0.28, r*1.7, r*0.022);
-        ctx.globalAlpha = 1;
-        ctx.restore();
-    } else if (lv === 4) {
-        // CHROME: mirror gradient (sky above, ground below), a hard horizon and a specular
-        // streak sweeping the hull every ~3.4s, its edges split into the two hue neighbours
-        // the way a real polished edge throws colour.
-        const g0 = ctx.createLinearGradient(0, y - r, 0, y + r);
-        g0.addColorStop(0,    'rgba(255,255,255,0.72)');
-        g0.addColorStop(0.42, 'rgba(255,255,255,0.10)');
-        g0.addColorStop(0.5,  `rgba(${lt},0.55)`);
-        g0.addColorStop(0.58, 'rgba(0,0,0,0.30)');
-        g0.addColorStop(1,    'rgba(0,0,0,0.62)');
-        ctx.fillStyle = g0;
-        ctx.fillRect(x - r*1.3, y - r, r*2.8, r*2);
-        ctx.fillStyle = `rgba(${lt},0.95)`;
-        ctx.fillRect(x - r*1.3, y - r*0.022, r*2.8, r*0.044);   // the horizon a mirror reflects
-        const u  = (gtime * 0.30) % 1;
-        const bx = x + r * (-2.0 + u * 4.2);
-        const g  = ctx.createLinearGradient(bx - r*0.40, y - r, bx + r*0.40, y + r);
-        g.addColorStop(0,    'rgba(255,255,255,0)');
-        g.addColorStop(0.28, hueA);
-        g.addColorStop(0.5,  'rgba(255,255,255,0.80)');
-        g.addColorStop(0.72, hueB);
-        g.addColorStop(1,    'rgba(255,255,255,0)');
-        ctx.save();
-        ctx.globalCompositeOperation = 'lighter';
-        ctx.fillStyle = g;
-        ctx.fillRect(x - r*1.3, y - r, r*2.8, r*2);
-        ctx.restore();
-    } else if (lv === 5) {
-        // AURORA: polar-light curtains, not a tint. Four soft-edged bands sweep the hull
-        // nose to tail at different rates and widths, each in one of three hues at +-45
-        // around the ship's own (the other finishes borrow +-24), over a gentle base wash -
-        // so the colour never repeats and the finish reads as lit from outside. Rim and
-        // sparkles ride the same curtains. This is the dearest finish: a single drifting
-        // gradient was correctly called boring next to CHROME's sweep.
-        const trio = _auroraTrio(sr, sg, sb);
-        const mx0 = Math.max(sr, sg, sb), pale = mx0 - Math.min(sr, sg, sb) < mx0 * 0.3;
-        ctx.globalCompositeOperation = pale ? 'multiply' : 'overlay';
-        ctx.globalAlpha = pale ? 0.45 : 0.70;
-        ctx.fillStyle = rgb(trio[1]);
-        ctx.fillRect(x - r*1.3, y - r, r*2.8, r*2);
-        ctx.globalAlpha = 1;
-        // A white hull has no headroom left: adding light there blows the curtains out to
-        // plain white and the colour disappears (measured on PEARL). Pale ships get the
-        // same curtains painted ON the paint instead of added to it.
-        ctx.globalCompositeOperation = pale ? 'source-over' : 'lighter';
-        const CURT = [[0.31, 0.00, 0.62, 0], [0.19, 0.35, 0.90, 2], [0.43, 0.68, 0.48, 1], [0.25, 0.12, 1.15, 2]];
-        for (let c = 0; c < CURT.length; c++) {
-            const spd = CURT[c][0], ph = CURT[c][1], wid = CURT[c][2], col = trio[CURT[c][3]];
-            const u  = (gtime * spd + ph) % 1;
-            const bx = x + r * (1.45 - u * 3.1);
-            const hw = r * wid * 0.5;
-            const g  = ctx.createLinearGradient(bx - hw, y - r*0.8, bx + hw, y + r*0.8);
-            const aC = pale ? 0.42 : 0.55, aW = pale ? 0.10 : 0.32;
-            g.addColorStop(0,    rgb(col, 0));
-            g.addColorStop(0.42, rgb(col, aC));
-            g.addColorStop(0.55, `rgba(255,255,255,${aW})`);
-            g.addColorStop(0.68, rgb(col, aC));
-            g.addColorStop(1,    rgb(col, 0));
-            ctx.fillStyle = g;
-            ctx.fillRect(x - r*1.3, y - r, r*2.8, r*2);
-        }
-        ctx.globalCompositeOperation = 'lighter';
-        const rimHue = trio[((gtime * 0.31) % 1) < 0.5 ? 0 : 2];
-        rimStroke({ color: rgb(rimHue, 0.55 + 0.35 * Math.sin(gtime * 1.3)), w: Math.max(r * 0.10, 1.5) });
-        ctx.fillStyle = 'rgba(255,255,255,0.9)';
-        for (let k = 0; k < 9; k++) {
-            const t   = (gtime * 0.35 + k * 0.111) % 1;
-            const sx  = x + r * (1.25 - t * 2.4);
-            const syq = y + r * (0.78 * Math.sin(k * 2.4 + gtime * 0.5));
-            const a   = Math.sin(t * Math.PI);
-            ctx.globalAlpha = a * a * 0.95;
-            ctx.beginPath();
-            ctx.arc(sx, syq, Math.max(r * 0.024, 0.6), 0, Math.PI * 2);
-            ctx.fill();
-        }
-        ctx.globalAlpha = 1;
-    }
-    ctx.restore();
-}
-
 function _shipPoly(x, y, r, pts, sy) {
     ctx.moveTo(x + pts[0][0]*r, y + pts[0][1]*r*sy);
     for (let i = 1; i < pts.length; i++) ctx.lineTo(x + pts[i][0]*r, y + pts[i][1]*r*sy);
@@ -1198,15 +981,15 @@ function shipPath(x, y, r) {
     _shipPoly(x, y, r, SHIP_OUTLINE, 1);
 }
 
-// `fx` (default true) enables the emissive details (intake rings, wingtip strobes,
-// spine lights). The ghost and the wrecked death-frame ship pass false - a ghost
-// with running lights reads as a second live ship.
+// `fx` (default true) enables the emissive details (wingtip strobes, spine lights).
+// The ghost and the wrecked death-frame ship pass false - a ghost with running lights
+// reads as a second live ship.
 function drawShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
     blur = blur === undefined ? 20 : blur;
     fx   = fx === undefined ? true : fx;
-    lv   = lv || 0;
+    lv   = lv || 0;   // paint kit (paint.js), falsy = FACTORY
     const T = _shipTones(color, sr, sg, sb, lv);
-    const edgeA = lv === 1 ? 0.45 : lv === 4 ? 1.3 : 1;
+    const edgeA = lv && lv.m === 1 ? 0.45 : lv && lv.m === 5 ? 1.3 : 1;
     const lw = Math.max(r * 0.016, 0.45);
 
     // Base fill with glow (the one shadowBlur this function spends)
@@ -1236,7 +1019,7 @@ function drawShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
         ctx.stroke();
     }
 
-    if (lv) _drawLiveryOverlay(x, y, r, lv, sr, sg, sb);
+    if (paintHasOverlay(lv)) _drawPaintOverlay(x, y, r, lv, color, sr, sg, sb);
 
     // Spine ridge + lit leading edge
     ctx.beginPath();
@@ -1247,9 +1030,11 @@ function drawShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
     ctx.stroke();
     ctx.beginPath();
     ctx.moveTo(x + r*1.40, y);
-    ctx.lineTo(x + r*0.95, y - r*0.13);
-    ctx.lineTo(x + r*0.30, y - r*0.20);
-    ctx.lineTo(x - r*0.60, y - r*0.98);
+    ctx.lineTo(x + r*1.02, y - r*0.118);
+    ctx.lineTo(x + r*0.80, y - r*0.145);
+    ctx.lineTo(x + r*0.02, y - r*0.33);
+    ctx.lineTo(x - r*0.058, y - r*0.405);
+    ctx.lineTo(x - r*0.585, y - r*0.785);
     ctx.strokeStyle = `rgba(255,255,255,${Math.min(0.55 * edgeA, 0.85)})`;
     ctx.lineWidth   = Math.max(r * 0.035, 0.7);
     ctx.lineCap     = 'round';
@@ -1269,81 +1054,69 @@ function drawShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
     ctx.stroke();
     ctx.restore();
 
-    // Engine nacelles: two-tone faceted pods, a cheap offset shadow on the wing (no
-    // blur), a shock-cone inlet, and a hot nozzle
+    // Engines, seen from ABOVE: on a real F-14 the nacelles disappear under the flat
+    // centre body, so there are no pods lying on top of the hull here (they used to be
+    // drawn as two pointed tubes and read as exactly that - user, 2026-09-22). What is
+    // left is what you would actually see: the tunnel seam each side of the fuselage, the
+    // raked intake mouth peeking out ahead of the glove, and the hot nozzles at the tail.
     const now = gtime;
     for (const s of [-1, 1]) {
         const cy = y + s * r * SHIP_NOZZLE_Y;
-        const x0 = x + SHIP_NOZZLE_X * r, x1 = x + r * 0.12, xm = x + r * 0.02, xr = x - r * 0.80;
-        const h = r * 0.09;
+        // Tunnel seam: where the fuselage meets the nacelle deck
         ctx.beginPath();
-        ctx.moveTo(x1, cy + r*0.03); ctx.lineTo(xm, cy - h + r*0.03); ctx.lineTo(xr, cy - h + r*0.03);
-        ctx.lineTo(x0, cy + r*0.03); ctx.lineTo(xr, cy + h + r*0.03); ctx.lineTo(xm, cy + h + r*0.03);
+        ctx.moveTo(x + r*0.62, y + s * r*0.156);
+        ctx.lineTo(x - r*0.86, y + s * r*0.156);
+        ctx.strokeStyle = s < 0 ? 'rgba(255,255,255,0.13)' : 'rgba(0,0,0,0.16)';
+        ctx.lineWidth   = lw;
+        ctx.stroke();
+        // Intake: the raked mouth reads from above as a dark slot just inside the glove
+        // leading edge, between the fuselage side and that edge. It has to sit INSIDE the
+        // silhouette - this pass is not clipped to the hull.
+        ctx.beginPath();
+        ctx.moveTo(x + r*0.660, y + s * r*0.168);
+        ctx.lineTo(x + r*0.380, y + s * r*0.238);
+        ctx.lineTo(x + r*0.320, y + s * r*0.226);
+        ctx.lineTo(x + r*0.610, y + s * r*0.158);
         ctx.closePath();
         ctx.fillStyle = T.podSh;
         ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(x1, cy); ctx.lineTo(xm, cy - h); ctx.lineTo(xr, cy - h);
-        ctx.lineTo(x0, cy - h*0.45); ctx.lineTo(x0, cy); ctx.closePath();
-        ctx.fillStyle = T.podUp;
-        ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(x1, cy); ctx.lineTo(xm, cy + h); ctx.lineTo(xr, cy + h);
-        ctx.lineTo(x0, cy + h*0.45); ctx.lineTo(x0, cy); ctx.closePath();
-        ctx.fillStyle = T.podDn;
-        ctx.fill();
-
-        const ix = x + r * 0.03;
-        ctx.beginPath();
-        ctx.ellipse(ix, cy, r*0.03, r*0.062, 0, 0, Math.PI*2);
-        ctx.fillStyle = T.intake;
-        ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(ix + r*0.10, cy); ctx.lineTo(ix, cy - r*0.03); ctx.lineTo(ix, cy + r*0.03);
-        ctx.closePath();
-        ctx.fillStyle = T.spike;
-        ctx.fill();
-
-        const ng = ctx.createRadialGradient(x0, cy, 0, x0, cy, r*0.12);
+        // Nozzle: hot ring at the tail
+        const ng = ctx.createRadialGradient(x + SHIP_NOZZLE_X * r, cy, 0, x + SHIP_NOZZLE_X * r, cy, r*0.11);
         ng.addColorStop(0,   'rgba(255,250,225,0.95)');
         ng.addColorStop(0.5, `rgba(${sr},${sg},${sb},0.6)`);
         ng.addColorStop(1,   `rgba(${sr},${sg},${sb},0)`);
         ctx.beginPath();
-        ctx.ellipse(x0, cy, r*0.05, r*0.095, 0, 0, Math.PI*2);
+        ctx.ellipse(x + SHIP_NOZZLE_X * r, cy, r*0.055, r*0.05, 0, 0, Math.PI*2);
         ctx.fillStyle = ng;
         ctx.fill();
-
-        if (fx) {
-            // Skin-coloured intake ring: a wide soft stroke under a thin bright one
-            // instead of shadowBlur, which is the expensive call on WKWebView
-            ctx.save();
-            ctx.globalCompositeOperation = 'lighter';
-            ctx.beginPath();
-            ctx.ellipse(ix, cy, r*0.045, r*0.075, 0, 0, Math.PI*2);
-            ctx.strokeStyle = `rgba(${sr},${sg},${sb},0.16)`;
-            ctx.lineWidth   = Math.max(r * 0.06, 1.2);
-            ctx.stroke();
-            ctx.strokeStyle = `rgba(${sr},${sg},${sb},0.75)`;
-            ctx.lineWidth   = Math.max(r * 0.022, 0.7);
-            ctx.stroke();
-            ctx.restore();
-        }
+        // Fin: root on the nacelle deck, tip leaning 0.03r outboard
+        const fy0 = y + s * r * 0.21, fy1 = y + s * r * 0.24;
+        ctx.beginPath();
+        ctx.moveTo(x - r*0.42, fy0); ctx.lineTo(x - r*0.90, fy0);
+        ctx.lineTo(x - r*0.98, fy1); ctx.lineTo(x - r*0.80, fy1); ctx.closePath();
+        ctx.fillStyle = s < 0 ? T.top[0] : T.podDn;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x - r*0.42, fy0); ctx.lineTo(x - r*0.80, fy1);
+        ctx.strokeStyle = s < 0 ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)';
+        ctx.lineWidth   = lw;
+        ctx.stroke();
     }
 
-    // Cockpit canopy: two glass facets and a glint
+    // Cockpit canopy: long tandem glass in two facets and a glint
     ctx.beginPath();
-    ctx.moveTo(x + r*1.12, y); ctx.lineTo(x + r*0.93, y - r*0.078);
-    ctx.lineTo(x + r*0.66, y - r*0.052); ctx.lineTo(x + r*0.60, y); ctx.closePath();
+    ctx.moveTo(x + r*1.07, y); ctx.lineTo(x + r*0.90, y - r*0.068);
+    ctx.lineTo(x + r*0.56, y - r*0.060); ctx.lineTo(x + r*0.44, y); ctx.closePath();
     ctx.fillStyle = 'rgba(175,225,250,0.97)';
     ctx.fill();
     ctx.beginPath();
-    ctx.moveTo(x + r*1.12, y); ctx.lineTo(x + r*0.60, y);
-    ctx.lineTo(x + r*0.66, y + r*0.052); ctx.lineTo(x + r*0.93, y + r*0.078); ctx.closePath();
+    ctx.moveTo(x + r*1.07, y); ctx.lineTo(x + r*0.44, y);
+    ctx.lineTo(x + r*0.56, y + r*0.060); ctx.lineTo(x + r*0.90, y + r*0.068); ctx.closePath();
     ctx.fillStyle = 'rgba(14,34,62,0.96)';
     ctx.fill();
     ctx.beginPath();
-    ctx.moveTo(x + r*0.98, y - r*0.052);
-    ctx.lineTo(x + r*0.76, y - r*0.046);
+    ctx.moveTo(x + r*0.95, y - r*0.045);
+    ctx.lineTo(x + r*0.66, y - r*0.042);
     ctx.strokeStyle = 'rgba(255,255,255,0.95)';
     ctx.lineWidth   = Math.max(r * 0.022, 0.5);
     ctx.stroke();
@@ -1364,7 +1137,7 @@ function drawShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
     // gradient at r*0.16 just smeared the wingtip - same reasoning as drawShip3D's).
     const flash = ((now * 0.85) % 1) < 0.07;
     for (const s of [-1, 1]) {
-        const lx = x - r*0.66, ly = y + s * r * 0.955;
+        const lx = x - r*0.630, ly = y + s * r * 0.752;
         if (flash) {
             const sg2 = ctx.createRadialGradient(lx, ly, 0, lx, ly, r*0.14);
             sg2.addColorStop(0,   'rgba(255,255,255,0.80)');
@@ -1384,68 +1157,84 @@ function drawShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
 }
 
 // ── 3/4 side view (constants.js SHIP_VIEW_3D) ──────────────────────────
-// The K5 hull as a small 3D model: x forward (nose +1.40), y span (+-0.98), z up, all
+// The F-14 hull as a small 3D model: x forward (nose +1.40), y span (+-0.98), z up, all
 // in r units, matching SHIP_OUTLINE's planform. Rolled SHIP3D_ROLL_BASE (+ shipRoll's
 // swing) about the long axis and projected orthographically, flat-shaded and lit from
-// screen-up like the facets above. Ported from the view study, variant D. Drawn in the
-// caller's pitch-rotated frame, so shipPitch works exactly as it does for drawShip.
+// screen-up like the facets above. Ported from the F-14 concept study (2026-09-22,
+// https://claude.ai/artifact/83BUEJDUKVSVMjS6HVtUUE). Drawn in the caller's pitch-rotated
+// frame, so shipPitch works exactly as it does for drawShip.
 // Fin points carry the z of their root as a 4th value so SHIP3D_FIN_SCALE stretches the
 // fins without fattening the body.
 function _ship3dFaces() {
     const F = [];
     const add = (p, kind, ref, fin) => F.push({ p, kind, ref, fin: !!fin });
     const finBox = (Q, ny, nz) => {
-        const l = Math.hypot(ny, nz), oy = ny / l * 0.013, oz = nz / l * 0.013;
+        const l = Math.hypot(ny, nz), oy = ny / l * 0.012, oz = nz / l * 0.012;
         const A = Q.map(q => [q[0], q[1] + oy, q[2] + oz, q[3]]), B = Q.map(q => [q[0], q[1] - oy, q[2] - oz, q[3]]);
         const ref = [0, 1, 2].map(k => Q.reduce((s, q) => s + q[k], 0) / 4).concat(Q[0][3]);
         add(A, 'hull', ref, true); add(B, 'hull', ref, true);
         for (let k = 0; k < 4; k++) { const k2 = (k + 1) % 4; add([A[k], A[k2], B[k2], B[k]], 'hull', ref, true); }
     };
-    // Fuselage: hexagonal chine section lofted along x
-    const st = [[1.40,0.004,0.004,-0.004],[1.18,0.07,0.055,-0.035],[0.95,0.13,0.085,-0.055],[0.60,0.17,0.10,-0.07],
-                [0.30,0.20,0.105,-0.075],[-0.30,0.22,0.10,-0.08],[-0.92,0.18,0.07,-0.06]];
+    // Thin slab around a 3D mid-surface polygon (glove, wing panels, tailerons, beaver
+    // tail); `swing` (= side) marks the outer wing panels that turn about SHIP3D_PIVOT.
+    const slab = (pts, t, swing) => {
+        const up = pts.map(q => [q[0], q[1], q[2] + t]), dn = pts.map(q => [q[0], q[1], q[2] - t]);
+        const ref = [0, 1, 2].map(k => pts.reduce((s, q) => s + q[k], 0) / pts.length);
+        const fs = [up, dn];
+        for (let k = 0; k < pts.length; k++) { const k2 = (k + 1) % pts.length; fs.push([up[k], up[k2], dn[k2], dn[k]]); }
+        for (const f of fs) { add(f, 'hull', ref); if (swing) F[F.length - 1].swing = swing; }
+    };
+    // Fuselage: hexagonal section lofted along x - slim radome and tandem cockpit, then
+    // the wide flat centre body ("pancake") tapering into the beaver tail
     const ring = ([x, w, zt, zb]) => [[x,w,0],[x,0.5*w,zt],[x,-0.5*w,zt],[x,-w,0],[x,-0.5*w,zb],[x,0.5*w,zb]];
+    const st = [[1.40,0.006,-0.004,-0.016],[1.24,0.070,0.032,-0.046],[1.05,0.122,0.060,-0.058],[0.85,0.142,0.080,-0.064],
+                [0.60,0.150,0.084,-0.068],[0.35,0.152,0.082,-0.068],[0.00,0.150,0.078,-0.060],[-0.40,0.138,0.068,-0.050],
+                [-0.72,0.096,0.046,-0.034]];
     for (let i = 0; i < st.length - 1; i++) {
         const a = ring(st[i]), b = ring(st[i + 1]), xm = (st[i][0] + st[i + 1][0]) / 2;
         for (let k = 0; k < 6; k++) { const k2 = (k + 1) % 6; add([a[k], a[k2], b[k2], b[k]], 'hull', [xm, 0, 0.01]); }
     }
-    add(ring(st[st.length - 1]), 'dark', [-0.5, 0, 0]);
-    // Canopy
-    const cF = [1.12,0,0.062], cR = [0.62,0,0.10], t1 = [0.95,0,0.15], t2 = [0.72,0,0.148];
-    const cL = [0.86,0.065,0.093], cRt = [0.86,-0.065,0.093], cref = [0.86,0,0.08];
+    // Beaver tail: the flat paddle between the nozzles
+    slab([[-0.72,0.092,0.006],[-0.99,0.084,0.004],[-1.07,0.050,0.002],[-1.07,-0.050,0.002],[-0.99,-0.084,0.004],[-0.72,-0.092,0.006]], 0.010);
+    // Tandem canopy
+    const cF = [1.04,0,0.062], t1 = [0.88,0,0.190], t2 = [0.60,0,0.184], cR = [0.40,0,0.092];
+    const cL = [0.74,0.078,0.108], cRt = [0.74,-0.078,0.108], cref = [0.74,0,0.07];
     [[cF,t1,cL],[cF,cRt,t1],[t1,t2,cL],[t1,cRt,t2],[t2,cR,cL],[t2,cRt,cR]].forEach(p => add(p, 'glass', cref));
     for (const s of [-1, 1]) {
-        // Wing: thin prisms - the fixed inner delta of the SHIP_OUTLINE planform as a glove
-        // (carries the nacelle) and a slender outer panel that swings back about
-        // SHIP3D_PIVOT, sitting a hair lower so it slides under the glove when swept.
-        // Spread it points ~14 deg aft; a long-chord delta panel would vanish under the
-        // glove when swept, so the panel is slender, like an F-14's.
-        const prism = (pts, z0, ref, swing) => {
-            const wp = pts.map(q => [q[0], q[1] * s]);
-            const up = wp.map(q => [q[0], q[1], z0 + 0.012]), dn = wp.map(q => [q[0], q[1], z0 - 0.012]);
-            const fs = [up, dn];
-            for (let k = 0; k < wp.length; k++) { const k2 = (k + 1) % wp.length; fs.push([up[k], up[k2], dn[k2], dn[k]]); }
-            for (const f of fs) { add(f, 'hull', ref); if (swing) F[F.length - 1].swing = s; }
+        // Nacelle: no box and no blunt face (user's call, 2026-09-22). The pod starts as a
+        // slim fairing tucked against the fuselage side and swells outward and aft into the
+        // engine, round all the way (c 0.586 ~ regular octagon); the intake is only a dark
+        // sliver at its tip. Section = rectangle chamfered by c, pulled `inset` inboard.
+        const cy = s * SHIP_NOZZLE_Y, cz = -0.010;
+        const sec = (x, hw, hh, c, inset, drop) => {
+            const u = [[hw,-hh*(1-c)],[hw,hh*(1-c)],[hw*(1-c),hh],[-hw*(1-c),hh],[-hw,hh*(1-c)],[-hw,-hh*(1-c)],[-hw*(1-c),-hh],[hw*(1-c),-hh]];
+            return u.map(([dy, dz]) => [x, cy - s * inset + dy, cz - (drop || 0) + dz]);
         };
-        prism([[0.30,0.20],[-0.15,0.59],[-0.86,0.59],[-1.00,0.24]], 0, [-0.45, s * 0.40, 0], false);
-        prism([[-0.18,0.585],[-0.25,0.98],[-0.42,0.975],[-0.58,0.585]], -0.006, [-0.36, s * 0.78, -0.006], true);
-        // Nacelle: octagon loft, dark intake, hot nozzle, inlet spike
-        const ny = s * SHIP_NOZZLE_Y, nst = [[0.12,0.075],[0.0,0.095],[-0.40,0.10],[-0.80,0.09],[-0.92,0.085]];
-        const oct = (x, rad) => { const o = []; for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2 + Math.PI / 8; o.push([x, ny + rad * Math.cos(a), rad * Math.sin(a)]); } return o; };
+        const nst = [[0.70,0.010,0.014,0.586,0.070,0.010],[0.62,0.030,0.044,0.586,0.050,0.016],[0.50,0.052,0.072,0.586,0.028,0.020],
+                     [0.34,0.066,0.086,0.586,0.010,0.018],[0.00,0.078,0.086,0.586,0,0.008],
+                     [-0.40,0.078,0.078,0.586,0,0],[-0.80,0.070,0.070,0.586,0,0],[SHIP_NOZZLE_X,0.058,0.058,0.586,0,0]];
         for (let i = 0; i < nst.length - 1; i++) {
-            const a = oct(...nst[i]), b = oct(...nst[i + 1]), xm = (nst[i][0] + nst[i + 1][0]) / 2;
-            for (let k = 0; k < 8; k++) { const k2 = (k + 1) % 8; add([a[k], a[k2], b[k2], b[k]], 'pod', [xm, ny, 0]); }
+            const a = sec(...nst[i]), b = sec(...nst[i + 1]), xm = (nst[i][0] + nst[i + 1][0]) / 2;
+            for (let k = 0; k < 8; k++) { const k2 = (k + 1) % 8; add([a[k], a[k2], b[k2], b[k]], 'pod', [xm, cy - s * nst[i][4], cz - nst[i][5]]); }
         }
-        add(oct(...nst[0]), 'dark', [-0.3, ny, 0]);
-        add(oct(...nst[nst.length - 1]), 'hot', [0, ny, 0]);
-        const sp = oct(0.11, 0.04), tip = [0.24, ny, 0];
-        for (let k = 0; k < 8; k++) add([tip, sp[k], sp[(k + 1) % 8]], 'spike', [0.15, ny, 0]);
-        // Fin on the nacelle, canted inward
-        const zb = 0.085, zt = 0.42, yb = s * 0.50, yt = s * 0.40;
-        finBox([[-0.40,yb,zb,zb],[-0.90,yb,zb,zb],[-0.97,yt,zt,zb],[-0.68,yt,zt,zb]], zt - zb, -(yt - yb));
+        add(sec(...nst[0]), 'dark', [0.9, cy, cz]);
+        add(sec(...nst[nst.length - 1]), 'hot', [-0.5, cy, cz]);
+        // Glove: the fixed inboard wing, 68 deg leading edge from the canopy to the pivot
+        // box, shoulder-mounted on top of the nacelles
+        slab([[0.80,0.145],[0.02,0.33],[-0.10,0.39],[-0.46,0.39],[-0.70,0.28],[-0.70,0.145]].map(q => [q[0], s * q[1], 0.068]), 0.012);
+        // Outer wing panel: long and slender, 20 deg leading edge spread, sitting a hair
+        // under the glove so it slides beneath it when swept. Tip at 0.95 r so the brake
+        // (swung forward past spread) still stays inside the circle.
+        slab([[-0.05,0.34],[-0.275,0.95],[-0.385,0.945],[-0.56,0.34]].map(q => [q[0], s * q[1], 0.060]), 0.010, s);
+        // All-moving tailerons on the nacelle flanks, a little anhedral
+        slab([[-0.60,0.25,-0.010],[-0.92,0.60,-0.040],[-1.05,0.60,-0.040],[-1.00,0.25,-0.010]].map(q => [q[0], s * q[1], q[2]]), 0.009);
+        // Twin fins on the nacelles, canted 5 deg OUTWARD
+        const zb = 0.068, zt = 0.44, yb = s * 0.21, yt = s * 0.24;
+        finBox([[-0.42,yb,zb,zb],[-0.90,yb,zb,zb],[-0.98,yt,zt,zb],[-0.80,yt,zt,zb]], zt - zb, -(yt - yb));
+        // Ventral fins under the nacelles, canted outward
+        const vb = -0.082, vt = -0.19, vyb = s * 0.21, vyt = s * 0.25;
+        finBox([[-0.56,vyb,vb,vb],[-0.86,vyb,vb,vb],[-0.89,vyt,vt,vb],[-0.72,vyt,vt,vb]], vt - vb, -(vyt - vyb));
     }
-    // Ventral fin on the centreline
-    finBox([[-0.30,0,-0.07,-0.07],[-0.86,0,-0.06,-0.07],[-0.92,0,-0.30,-0.07],[-0.66,0,-0.30,-0.07]], 1, 0);
     return F;
 }
 function _buildShip3D(finScale, centerDeg) {
@@ -1474,8 +1263,9 @@ function _buildShip3D(finScale, centerDeg) {
     return { faces, dz };
 }
 const _SHIP3D = SHIP_VIEW_3D ? _buildShip3D(SHIP3D_FIN_SCALE, SHIP3D_ROLL_BASE) : null;
-// Pivot of the swinging outer wing panel (x, |y|), near the root of its leading edge.
-const SHIP3D_PIVOT = [-0.22, 0.59];
+// Pivot of the swinging outer wing panel (x, |y|): the F-14's glove box, well inboard,
+// so almost the whole wing swings.
+const SHIP3D_PIVOT = [-0.16, 0.36];
 // Rotate a model point of the outer panel on side s about the pivot, in the wing plane.
 function _swingPt(q, s, c, sn) {
     const dx = q[0] - SHIP3D_PIVOT[0], dy = q[1] - s * SHIP3D_PIVOT[1];
@@ -1568,23 +1358,14 @@ function drawFlightShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
 }
 
 const _ship3dVis = [];
-const _ship3dEdges = new Map();
-// Livery re-shading, the 3D twin of _shipTones' kUp/kDn (same numbers, same reasoning:
-// hue never moves, so the ship stays recognisably itself).
-function _ship3dPaint(base, lv) {
-    if (lv === 1) return [lerpClr(base, _SHIP_DARK, 0.62), 0.30, 0.55];
-    if (lv === 3) return [base, 0.85, 0.85];
-    if (lv === 4) return [lerpClr(base, _SHIP_WHITE, 0.10), 1.5, 1.35];
-    return [base, 1, 1];
-}
 function drawShip3D(x, y, r, color, sr, sg, sb, blur, fx, lv) {
     fx = fx === undefined ? true : fx;
-    lv = lv || 0;
+    lv = lv || 0;   // paint kit (paint.js), falsy = FACTORY
     const M = _SHIP3D, a = shipRollDeg() * Math.PI / 180, cp = Math.cos(a), sp = Math.sin(a);
     // The caller rotated the canvas by shipPitch around (PX, py); light stays screen-up.
     const ct = Math.cos(shipPitch), st = Math.sin(shipPitch);
-    const [base, kUp, kDn] = _ship3dPaint(
-        [parseInt(color.substr(1,2),16), parseInt(color.substr(3,2),16), parseInt(color.substr(5,2),16)], lv);
+    // Same paint re-shading as the flat hull's _shipTones (paint.js _paintShade).
+    const [base, kUp, kDn] = _paintShade(paintHullRgb(color, lv), lv);
     const light = lerpClr(_SHIP_WHITE, [sr, sg, sb], 0.15);
     // Glow behind the hull: a radial fill instead of shadowBlur (expensive on WKWebView)
     if (blur > 0) {
@@ -1625,7 +1406,6 @@ function drawShip3D(x, y, r, color, sr, sg, sb, blur, fx, lv) {
         if (kind === 'glass') col = k >= 0 ? lerpClr([150,210,245], _SHIP_WHITE, k * 0.7) : lerpClr([150,210,245], [14,34,62], -k);
         else if (kind === 'dark') col = lerpClr(base, _SHIP_DARK, 0.72);
         else if (kind === 'hot') col = lerpClr([sr, sg, sb], [255,250,225], 0.55);
-        else if (kind === 'spike') col = lerpClr(base, light, 0.5);
         else { const kk = Math.max(-0.92, Math.min(0.92, kind === 'pod' ? k - 0.06 : k)); col = kk >= 0 ? lerpClr(base, light, kk) : lerpClr(base, _SHIP_DARK, -kk); }
         v.col = rgb(col);
         ctx.beginPath(); trace(v.P);
@@ -1633,38 +1413,24 @@ function drawShip3D(x, y, r, color, sr, sg, sb, blur, fx, lv) {
         ctx.strokeStyle = v.col; ctx.stroke();   // same colour: hides the anti-alias seams between faces
     }
 
-    // Livery pattern. The finishes are authored in planform coordinates (a band across the
-    // span, one half of the hull, a sweeping highlight), and at roll `a` the top surface
+    // Paint layer (paint.js). Patterns and sheens are authored in planform coordinates (a band
+    // across the span, one half of the hull, a sweeping highlight), and at roll `a` the top surface
     // projects to exactly that planform squashed by sin(a) - so the same code paints them
     // here under a scale, clipped to the 3D silhouette instead of shipPath. `hull` hands
-    // _drawLiveryOverlay the two things it cannot express that way: the facet seams and the
+    // _drawPaintOverlay the two things it cannot express that way: the facet seams and the
     // rim, both traced in screen space. Near edge-on (mid barrel roll) there is no top
     // surface to paint, so the pattern is skipped for those few frames.
-    if (lv && Math.abs(sp) > 0.22) {
+    if (paintHasOverlay(lv) && Math.abs(sp) > 0.22) {
         ctx.save();
         ctx.beginPath();
         for (const v of vis) if (v.kind !== 'glass') trace(v.P);
         ctx.clip();
         const m = ctx.getTransform();
         const screen = fn => { ctx.save(); ctx.setTransform(m); fn(); ctx.restore(); };
-        const rimPath = () => {
-            const ed = _ship3dEdges; ed.clear();
-            for (const v of vis) {
-                if (v.kind === 'glass') continue;
-                for (let i = 0; i < v.p.length; i++) {
-                    const A = v.p[i], B = v.p[(i + 1) % v.p.length];
-                    const ka = `${A[0].toFixed(3)},${A[1].toFixed(3)},${A[2].toFixed(3)}`;
-                    const kb = `${B[0].toFixed(3)},${B[1].toFixed(3)},${B[2].toFixed(3)}`;
-                    const key = ka < kb ? ka + '|' + kb : kb + '|' + ka;
-                    const e = ed.get(key);
-                    if (e) e.n++; else ed.set(key, { n: 1, a: v.P[i], b: v.P[(i + 1) % v.P.length] });
-                }
-            }
-            ctx.beginPath();
-            for (const e of ed.values()) if (e.n === 1) { ctx.moveTo(e.a[0], e.a[1]); ctx.lineTo(e.b[0], e.b[1]); }
-        };
+        // The rim is not traced here: paint.js strokes the planform outline under the squash
+        // (the F-14 model's parts share no edges, so its open edges run through the hull).
         const hull = {
-            screen, rimPath,
+            screen,
             // Facet seams (STEALTH): the big visible faces, charging nose to tail - the wave
             // index comes from where a face sits along x, not from a facet list. The 3D hull
             // has ~90 faces against the flat one's 7, so the small ones are skipped and the
@@ -1688,7 +1454,7 @@ function drawShip3D(x, y, r, color, sr, sg, sb, blur, fx, lv) {
         ctx.translate(0, y + M.dz * cp * r);
         ctx.scale(1, sp);
         ctx.translate(0, -y);
-        _drawLiveryOverlay(x, y, r, lv, sr, sg, sb, hull);
+        _drawPaintOverlay(x, y, r, lv, color, sr, sg, sb, hull);
         ctx.restore();
         // The canopy sits on top of the paint, as it does on the flat hull.
         for (const v of vis) {
@@ -1708,7 +1474,7 @@ function drawShip3D(x, y, r, color, sr, sg, sb, blur, fx, lv) {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     for (const s of [-1, 1]) {
-        const tip = _swingPt([-0.33, s * 0.97, -M.dz - 0.006], s, swc, s * sws);
+        const tip = _swingPt([-0.330, s * 0.945, 0.060 - M.dz], s, swc, s * sws);
         const ty = tip[1], tz = tip[2];
         if (tz * sp - ty * cp < -0.05) continue;
         const lx = x + r * tip[0], ly = y - (tz * cp + ty * sp) * r;
@@ -2796,7 +2562,7 @@ function drawWorld() {
         // drawTitleScreen() (dim, in the tunnel, part of the "world"; the hero
         // is a bright foreground portrait), not a confusing duplicate.
         ctx.globalAlpha = invulnAlpha;
-        drawFlightShip(PX, py, PR, phase === 'dead' ? '#ff4040' : sk.color, sr, sg, sb, 20, phase !== 'dead', phase === 'dead' ? 0 : liveryOf(activeSkin));
+        drawFlightShip(PX, py, PR, phase === 'dead' ? '#ff4040' : sk.color, sr, sg, sb, 20, phase !== 'dead', phase === 'dead' ? 0 : paintOf(activeSkin));
         if (phase === 'play' && hullScratches < HULL_SCRATCHES) drawHullDamage(PX, py, PR, HULL_SCRATCHES - hullScratches);
         ctx.globalAlpha = 1;
         ctx.restore();
@@ -3604,6 +3370,19 @@ function drawMenuPanel(x, y, w, h, r) {
     ctx.fillRect(x + r, y + 0.5, w - 2 * r, 1);
 }
 
+// The next ship still waiting on days rather than shards: the lowest locked tier whose
+// `stardustGate` (constants.js Stardust block) is not met yet. Null once every gate is
+// behind the player -- then stardust has nothing left to open and the UI says nothing.
+// Used by the arrival card, the ALL SHIPS wallet and the stardust path.
+function nextStardustGoal() {
+    for (let i = 0; i < SKINS.length; i++) {
+        if (unlockedSkins & (1 << i)) continue;
+        const gate = SKINS[i].stardustGate || 0;
+        if (gate > stardust) return { idx: i, name: SKINS[i].name, gate: gate };
+    }
+    return null;
+}
+
 function drawTitleScreen() {
     // In landscape (W > H*1.15) use a two-column layout to avoid vertical crowding.
     // In portrait keep a centered stack but anchor the skin picker to the bottom.
@@ -4055,7 +3834,7 @@ function drawTitleScreen() {
     ctx.stroke();
     ctx.shadowBlur  = 0;
 
-    drawShip(shipStageX, shipStageY, heroR, SKINS[activeSkin].color, hr, hg, hb, 22, true, liveryOf(activeSkin));
+    drawShip(shipStageX, shipStageY, heroR, SKINS[activeSkin].color, hr, hg, hb, 22, true, paintOf(activeSkin));
 
     // Mastery pips above the hero ship (constants.js masteryLevel/masteryLerp).
     // PEARL has no perk to master.
@@ -4430,27 +4209,40 @@ function drawTitleScreen() {
         {
             ctx.font = `bold ${FS * 0.024}px ${FONT_UI}`;
             const shardTxt = `${shards} ⧫`;
-            const showStar = stardust > 0 && !(unlockedSkins & (1 << (SKINS.length - 1)));
-            const starTxt  = showStar ? `    ${stardust} ✦` : '';
+            // Stardust is shown unconditionally now (2026-09-22). It used to hide at 0
+            // and again once SOLARIS was owned, so the number a new player most needs
+            // explained was invisible on exactly the day they could first ask about it.
+            // The label says what the number counts; ✦ alone never did.
+            const starTxt  = `${stardust} ✦`;
+            const starLbl  = T.flightDays;
+            const gapW     = FS * 0.026;
             const shardW = ctx.measureText(shardTxt).width;
-            const starW  = starTxt ? ctx.measureText(starTxt).width : 0;
+            const starW  = ctx.measureText(starTxt).width;
+            ctx.font = `bold ${FS * 0.016}px ${FONT_UI}`;
+            const lblW = ctx.measureText(starLbl).width;
             const walletY = shipPanY + H * 0.06 + FS * 0.040;
             ctx.textAlign = 'left';
-            const startXw = W / 2 - (shardW + starW) / 2;
+            const startXw = W / 2 - (shardW + gapW + starW + FS * 0.010 + lblW) / 2;
+            ctx.font = `bold ${FS * 0.024}px ${FONT_UI}`;
             ctx.fillStyle = 'rgba(255,225,110,0.95)';
             ctx.fillText(shardTxt, startXw, walletY);
-            if (starTxt) {
-                ctx.fillStyle = 'rgba(120,225,255,0.95)';
-                ctx.fillText(starTxt, startXw + shardW, walletY);
-            }
+            const starX = startXw + shardW + gapW;
+            ctx.fillStyle = 'rgba(120,225,255,0.95)';
+            ctx.fillText(starTxt, starX, walletY);
+            ctx.font = `bold ${FS * 0.016}px ${FONT_UI}`;
+            ctx.fillStyle = 'rgba(120,225,255,0.62)';
+            ctx.fillText(starLbl, starX + starW + FS * 0.010, walletY + FS * 0.002);
             ctx.textAlign = 'center';
-            // The shards/stardust/coins explainer that used to hang off a tiny "?"
-            // here now lives as a "HOW IT WORKS" row in the Settings panel -- see
-            // _settingsGuideBtnRect. Ship shopping was the wrong context for the
-            // coin/hazard half of that panel, and it sat two taps deep.
+            // Tapping the ✦ half opens the stardust path (below): "what is this number
+            // for?" answered where the number is, not in the Settings explainer two
+            // panels away. The shards half stays inert - its answer is the grid below it.
+            _stardustBtnRect = {
+                x: starX - FS * 0.012, y: walletY - FS * 0.024,
+                w: starW + FS * 0.010 + lblW + FS * 0.024, h: FS * 0.048,
+            };
         }
 
-        // PAINT pill (Hangar liveries, constants.js LIVERIES): top-right of the card, in the
+        // PAINT pill (Hangar paint, constants.js PAINT_*): top-right of the card, in the
         // flown ship's glow. Hidden until the first paid ship is owned.
         _paintBtnRect = null;
         if (unlockedSkins & (1 << LIVERY_GATE_SKIN)) {
@@ -4533,11 +4325,22 @@ function drawTitleScreen() {
                     ctx.fillStyle = 'rgba(255,225,110,0.95)';
                     ctx.fillText(`${SKINS[i].cost} ⧫`, cx, cy + cellR * 1.35);
                 }
-                if (SKINS[i].stardustGate) {
+                // The gate used to read "3/5 ✦", which is the player doing arithmetic the
+                // game already knows the answer to. It now says how many days are left,
+                // over a thin bar for the shape of the wait; a met gate says nothing at
+                // all, because by then only shards are still missing.
+                if (SKINS[i].stardustGate && stardust < SKINS[i].stardustGate) {
+                    const left  = SKINS[i].stardustGate - stardust;
+                    const gateY = SKINS[i].cost ? cy + cellR * 1.75 : cy + cellR * 1.35;
                     ctx.font      = `bold ${FS * 0.015}px ${FONT_UI}`;
                     ctx.fillStyle = 'rgba(120,225,255,0.95)';
-                    const gateY = SKINS[i].cost ? cy + cellR * 1.75 : cy + cellR * 1.35;
-                    ctx.fillText(`${Math.min(stardust, SKINS[i].stardustGate)}/${SKINS[i].stardustGate} ✦`, cx, gateY);
+                    ctx.fillText(left <= 1 ? T.tomorrow : T.inDays.replace('{n}', left), cx, gateY);
+                    const barW = cellR * 1.6, barH = Math.max(1.5, FS * 0.003);
+                    const barY = gateY + FS * 0.013;
+                    ctx.fillStyle = 'rgba(120,225,255,0.22)';
+                    ctx.fillRect(cx - barW / 2, barY, barW, barH);
+                    ctx.fillStyle = 'rgba(120,225,255,0.85)';
+                    ctx.fillRect(cx - barW / 2, barY, barW * Math.min(1, stardust / SKINS[i].stardustGate), barH);
                 }
                 ctx.shadowBlur = 0;
                 continue;
@@ -4558,7 +4361,7 @@ function drawTitleScreen() {
                 ctx.shadowBlur  = 0;
                 ctx.restore();
             }
-            drawShip(cx, cy, cellR * 0.70, SKINS[i].color, sr, sg, sb, selected ? 22 : 8, true, liveryOf(i));
+            drawShip(cx, cy, cellR * 0.70, SKINS[i].color, sr, sg, sb, selected ? 22 : 8, true, paintOf(i));
             if (selected && i > 0) {
                 const lvl   = masteryLevel(i);
                 const pipR  = cellR * 0.065, pipGap = cellR * 0.22;
@@ -4620,124 +4423,8 @@ function drawTitleScreen() {
         ctx.textAlign = 'center';
     }
 
-    // ── Paint sheet (Hangar liveries) ────────────────────────────────────
-    // Layered on the ALL SHIPS sheet. Left: the flown ship, big, in the finish being
-    // looked at. Right: a 3x2 grid of finishes. Owned -> tap equips. Unowned -> the first
-    // tap previews it on the big ship and shows the price, a second tap buys it.
-    _paintPanelRect = null;
-    _paintSwatchRects = [];
-    if (showShipPicker && showPaint) {
-        drawMenuBackdrop();
-        const panW = W * 0.74, panH = H * 0.80;
-        const panX = W / 2 - panW / 2, panY = H / 2 - panH / 2;
-        drawMenuPanel(panX, panY, panW, panH, 14);
-        _paintPanelRect = { x: panX, y: panY, w: panW, h: panH };
-        const sk = SKINS[activeSkin];
-        const [sr, sg, sb] = sk.shadow;
-        const shown = paintPreview >= 0 ? paintPreview : liveryOf(activeSkin);
-        const shownOwned = !!(ownedLiveries & (1 << shown));
-
-        ctx.textAlign   = 'center';
-        ctx.textBaseline = 'alphabetic';
-        ctx.font        = `bold ${FS * 0.032}px ${FONT_UI}`;
-        ctx.fillStyle   = 'rgba(255,225,110,0.95)';
-        ctx.fillText(`${T.paint}  ${sk.name}`, W / 2, panY + H * 0.075);   // named, since a finish is equipped per ship
-        ctx.font        = `bold ${FS * 0.022}px ${FONT_NUM}`;
-        ctx.fillText(`${shards} ⧫`, W / 2, panY + H * 0.075 + Math.max(H * 0.06, FS * 0.036));
-
-        // Preview
-        const leftCX = panX + panW * 0.27;
-        const prevR  = Math.min(H * 0.12, panW * 0.10);
-        const prevCY = panY + panH * 0.50;
-        ctx.beginPath();
-        ctx.ellipse(leftCX, prevCY + prevR * 1.25, prevR * 1.5, prevR * 0.22, 0, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${sr},${sg},${sb},0.10)`;
-        ctx.fill();
-        drawShip(leftCX - prevR * 0.1, prevCY, prevR, sk.color, sr, sg, sb, 18, true, shown);
-
-        const nameY = prevCY + prevR * 1.25 + Math.max(H * 0.07, FS * 0.040);
-        ctx.font      = `bold ${FS * 0.026}px ${FONT_UI}`;
-        ctx.fillStyle = `rgba(${sr},${sg},${sb},0.95)`;
-        ctx.fillText(LIVERIES[shown].name, leftCX, nameY);
-        const infoY = nameY + Math.max(H * 0.055, FS * 0.032);
-        if (!shownOwned) {
-            const cost = LIVERIES[shown].cost;
-            const canBuy = shards >= cost;
-            ctx.font      = `bold ${FS * 0.022}px ${FONT_NUM}`;
-            ctx.fillStyle = canBuy ? 'rgba(255,225,110,0.95)' : 'rgba(170,175,200,0.55)';
-            ctx.fillText(`${cost} ⧫`, leftCX, infoY);
-            if (canBuy) {
-                const pulse = 0.65 + 0.35 * Math.sin(gtime * 5);
-                ctx.font = `bold ${FS * 0.017}px ${FONT_UI}`;
-                ctx.fillStyle = `rgba(255,225,110,${pulse})`;
-                let txt = T.tapToBuy;
-                const maxW = panW * 0.44;
-                if (ctx.measureText(txt).width > maxW) {
-                    ctx.font = `bold ${FS * 0.017 * maxW / ctx.measureText(txt).width}px ${FONT_UI}`;
-                }
-                ctx.fillText(txt, leftCX, infoY + Math.max(H * 0.045, FS * 0.028));
-            }
-        } else if (shown === liveryOf(activeSkin)) {
-            ctx.font      = `bold ${FS * 0.024}px ${FONT_UI}`;
-            ctx.fillStyle = 'rgba(140,235,170,0.90)';
-            ctx.fillText('\u2713', leftCX, infoY);   // worn by THIS ship
-        } else {
-            // Owned, but this ship isn't wearing it: same quiet dot as the tiles, so the
-            // green tick never means two different things on one screen.
-            ctx.beginPath();
-            ctx.arc(leftCX, infoY - FS * 0.008, Math.max(FS * 0.004, 1.6), 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(170,180,215,0.55)';
-            ctx.fill();
-        }
-
-        // Finish grid
-        const cols = 3;
-        const gx0 = panX + panW * 0.50, gw = panW * 0.46;
-        const cellW = gw / cols;
-        const gy0 = panY + panH * 0.28, gh = panH * 0.64;
-        const cellH = gh / 2;
-        for (let i = 0; i < LIVERIES.length; i++) {
-            const cx = gx0 + cellW * (i % cols) + cellW / 2;
-            const cy = gy0 + cellH * Math.floor(i / cols) + cellH / 2;
-            const owned = !!(ownedLiveries & (1 << i));
-            const equipped = i === liveryOf(activeSkin);
-            const focus = i === shown;
-            const tw = cellW * 0.88, th = cellH * 0.86;
-            ctx.beginPath(); ctx.roundRect(cx - tw / 2, cy - th / 2, tw, th, 10);
-            ctx.fillStyle = focus ? `rgba(${sr},${sg},${sb},0.14)` : 'rgba(255,255,255,0.04)';
-            ctx.fill();
-            ctx.strokeStyle = equipped ? `rgba(${sr},${sg},${sb},0.85)`
-                            : focus ? 'rgba(255,225,110,0.70)' : 'rgba(150,160,205,0.22)';
-            ctx.lineWidth = equipped || focus ? 2 : 1;
-            ctx.stroke();
-            const shipR = Math.min(th * 0.25, tw * 0.28);
-            ctx.save();
-            if (!owned) ctx.globalAlpha = 0.55;
-            drawShip(cx - shipR * 0.1, cy - th * 0.10, shipR, sk.color, sr, sg, sb, 0, false, i);
-            ctx.restore();
-            const lblFs = Math.min(FS * 0.016, th * 0.13);
-            ctx.font = `bold ${lblFs}px ${FONT_UI}`;
-            ctx.fillStyle = owned ? 'rgba(225,232,255,0.90)' : 'rgba(170,178,210,0.70)';
-            ctx.fillText(LIVERIES[i].name, cx, cy + th * 0.22);
-            ctx.font = `bold ${lblFs}px ${FONT_NUM}`;
-            if (equipped) {
-                ctx.fillStyle = 'rgba(140,235,170,0.90)';
-                ctx.fillText('\u2713', cx, cy + th * 0.40);
-            } else if (!owned) {
-                ctx.fillStyle = shards >= LIVERIES[i].cost ? 'rgba(255,225,110,0.95)' : 'rgba(170,175,200,0.50)';
-                ctx.fillText(`${LIVERIES[i].cost} ⧫`, cx, cy + th * 0.40);
-            } else {
-                // Owned, worn by another ship or none: a quiet dot, so "bought" never reads
-                // as "locked" just because this ship isn't wearing it.
-                ctx.beginPath();
-                ctx.arc(cx, cy + th * 0.36, Math.max(lblFs * 0.14, 1.2), 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(170,180,215,0.55)';
-                ctx.fill();
-            }
-            _paintSwatchRects.push({ x: cx - tw / 2, y: cy - th / 2, w: tw, h: th });
-        }
-        ctx.textAlign = 'center';
-    }
+    // ── Paint sheet (Hangar paint, paint.js drawPaintSheet) ──────────────
+    drawPaintSheet();
 
     // Shared pill-button helper, used by the Settings panel's Music/FX toggle
     // row below. Used to also draw the base screen's own button rows before
@@ -5013,7 +4700,7 @@ function drawTitleScreen() {
             ctx.strokeStyle = 'rgba(120,140,200,0.50)';
             ctx.lineWidth   = 1;
             ctx.beginPath(); ctx.roundRect(gbx, gby, gbw, guideBtnH, 7); ctx.stroke();
-            const gLabel = `${T.howItWorks}  ?`;
+            const gLabel = T.howItWorks;
             let gFs = FS * 0.019;
             ctx.font = `${gFs}px ${FONT_UI}`;
             const gLabelW = ctx.measureText(gLabel).width;
@@ -5306,14 +4993,196 @@ function drawTitleScreen() {
         ctx.textAlign = 'center';
     }
 
+    // ── Stardust path (2026-09-22) ───────────────────────────────────────
+    // Opened by tapping the ✦ wallet on the ALL SHIPS sheet. The whole point of
+    // stardust is a months-long schedule of days (constants.js Stardust block), and
+    // until now the player only ever saw one number of it at a time. This draws the
+    // schedule itself: every tier's gate day on one track, the earned paint's day on
+    // it too, and where the player stands. No new numbers are invented here - every
+    // mark reads its day straight off SKINS/PAINT_COLORS.
+    _stardustPathPanelRect = null;
+    if (showStardustPath) {
+        drawMenuBackdrop();
+        ctx.save();
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'middle';
+
+        const panW = Math.min(W * 0.80, 640), panH = Math.min(H * 0.82, 460);
+        const panX = W / 2 - panW / 2, panY = H / 2 - panH / 2;
+        drawMenuPanel(panX, panY, panW, panH, 14);
+        _stardustPathPanelRect = { x: panX, y: panY, w: panW, h: panH };
+
+        ctx.font        = `bold ${FS * 0.030}px ${FONT_UI}`;
+        ctx.fillStyle   = 'rgba(120,225,255,0.95)';
+        ctx.shadowColor = 'rgba(0,0,0,0.9)';
+        ctx.shadowBlur  = 5;
+        ctx.fillText(T.stardustPath, W / 2, panY + panH * 0.085);
+        ctx.shadowBlur  = 0;
+
+        // Where the player stands: the bank, then the streak under it.
+        ctx.font      = `bold ${FS * 0.042}px ${FONT_NUM}`;
+        ctx.fillStyle = 'rgba(160,232,255,0.98)';
+        ctx.fillText(`${stardust} ✦`, W / 2, panY + panH * 0.185);
+        ctx.font      = `bold ${FS * 0.016}px ${FONT_UI}`;
+        ctx.fillStyle = 'rgba(224,233,255,0.72)';
+        ctx.fillText(`${T.flightDays}   ·   ${T.streakDay.replace('{n}', streak)}`, W / 2, panY + panH * 0.255);
+
+        // The track. Marks: every paid tier's gate, plus any paint part earned on days
+        // (constants.js `earn: 'days'`), which is otherwise invisible until it lands.
+        const marks = [];
+        for (let i = 0; i < SKINS.length; i++) {
+            if (SKINS[i].stardustGate) marks.push({ d: SKINS[i].stardustGate, name: SKINS[i].name, owned: !!(unlockedSkins & (1 << i)), ship: true });
+        }
+        for (const part of PAINT_COLORS.concat(PAINT_MATERIALS)) {
+            if (part.earn === 'days') marks.push({ d: part.need, name: part.name, owned: stardust >= part.need, ship: false });
+        }
+        marks.sort((m1, m2) => m1.d - m2.d);
+        const maxD  = Math.max(marks.length ? marks[marks.length - 1].d : 1, stardust, 1);
+        const trX0  = panX + panW * 0.09, trX1 = panX + panW * 0.91;
+        const trY   = panY + panH * 0.45;
+        const xOf   = d => trX0 + (trX1 - trX0) * Math.min(1, d / maxD);
+
+        ctx.strokeStyle = 'rgba(120,225,255,0.22)';
+        ctx.lineWidth   = 2;
+        ctx.beginPath(); ctx.moveTo(trX0, trY); ctx.lineTo(trX1, trY); ctx.stroke();
+        ctx.strokeStyle = 'rgba(120,225,255,0.80)';
+        ctx.beginPath(); ctx.moveTo(trX0, trY); ctx.lineTo(xOf(stardust), trY); ctx.stroke();
+
+        // The track is linear in days on purpose - the point of the panel is how far
+        // SOLARIS really is - which packs the first gates (day 1, 5, 15 of 180) into a
+        // finger's width at the left end. Names alternate above and below, and a name
+        // that would still touch the last one on its own side steps out one more row:
+        // two rows per side, measured, so no locale can overprint itself.
+        const rowStep = FS * 0.026;
+        const lastRight = [[-Infinity, -Infinity], [-Infinity, -Infinity]];   // [side][row]
+        marks.forEach((m, i) => {
+            const mx = xOf(m.d);
+            const side = i % 2;                       // 0 = above, 1 = below
+            ctx.font = `bold ${FS * (m.ship ? 0.013 : 0.011)}px ${FONT_UI}`;
+            const halfW = ctx.measureText(m.name).width / 2 + FS * 0.006;
+            const row = mx - halfW > lastRight[side][0] ? 0 : 1;
+            lastRight[side][row] = mx + halfW;
+            const dir  = side === 0 ? -1 : 1;
+            const nameY = trY + dir * (FS * 0.021 + row * rowStep);
+
+            ctx.beginPath();
+            ctx.arc(mx, trY, m.ship ? FS * 0.006 : FS * 0.004, 0, Math.PI * 2);
+            ctx.fillStyle = m.owned ? 'rgba(120,225,255,0.95)'
+                                    : m.ship ? 'rgba(224,233,255,0.55)' : 'rgba(224,233,255,0.35)';
+            ctx.fill();
+            // A stem to its own row, so a stepped-out name still reads as this mark's.
+            if (row > 0) {
+                ctx.strokeStyle = 'rgba(224,233,255,0.20)';
+                ctx.lineWidth   = 1;
+                ctx.beginPath();
+                ctx.moveTo(mx, trY + dir * FS * 0.010);
+                ctx.lineTo(mx, nameY - dir * FS * 0.008);
+                ctx.stroke();
+            }
+            ctx.fillStyle = m.owned ? 'rgba(120,225,255,0.85)' : 'rgba(224,233,255,0.62)';
+            ctx.fillText(m.name, mx, nameY);
+            ctx.font      = `${FS * 0.011}px ${FONT_NUM}`;
+            ctx.fillStyle = 'rgba(224,233,255,0.40)';
+            ctx.fillText(m.d, mx, nameY + dir * FS * 0.014);
+        });
+
+        // "You are here": a day accent tick on the track, labelled underneath.
+        const hx = xOf(stardust);
+        ctx.strokeStyle = 'rgba(160,232,255,0.95)';
+        ctx.lineWidth   = 2.5;
+        ctx.beginPath(); ctx.moveTo(hx, trY - FS * 0.014); ctx.lineTo(hx, trY + FS * 0.014); ctx.stroke();
+        ctx.font      = `bold ${FS * 0.012}px ${FONT_UI}`;
+        ctx.fillStyle = 'rgba(160,232,255,0.90)';
+        ctx.fillText(T.youAreHere, Math.min(Math.max(hx, trX0 + FS * 0.030), trX1 - FS * 0.030), trY + FS * 0.055);
+
+        // The two rules of the system, in the place the question gets asked.
+        const bodyFs = FS * 0.017, maxTextW = panW * 0.86;
+        ctx.font = `${bodyFs}px ${FONT_UI}`;
+        const para = _wrapLines(T.stardustInfo, maxTextW)
+            .concat(_wrapLines(T.streakInfo.replace('{c}', STREAK_WEEK_SHARDS), maxTextW));
+        let py2 = panY + panH * 0.70;
+        ctx.fillStyle = 'rgba(220,225,245,0.88)';
+        for (const ln of para) {
+            if (py2 > panY + panH - bodyFs) break;   // a very long locale simply stops
+            ctx.fillText(ln, W / 2, py2);
+            py2 += bodyFs * 1.45;
+        }
+        ctx.restore();
+    }
+
+    // ── Arrival card: what this new day granted (2026-09-22) ─────────────
+    // The stardust grant used to be a silent `stardust += 1` inside startPlay() with
+    // nothing on screen: the one system built to make a player come back tomorrow never
+    // said thank you when they did. This card is that moment -- the amount, the streak,
+    // and what the next ship is waiting for, for DAY_GRANT_SEC. It never blocks input
+    // (no backdrop, no rects): a tap through it starts the run as usual.
+    if (dayGrantT > 0 && dayGrant && !showSettings && !showShop && !showMissions
+        && !showShipPicker && !showCurrencyInfo && !showStardustPath) {
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        // Fade in fast, hold, fade out over the last half second.
+        const ga = a * Math.min(1, (DAY_GRANT_SEC - dayGrantT) * 4, dayGrantT * 2);
+
+        const lines = [];
+        lines.push({ t: T.streakDay.replace('{n}', dayGrant.streak), fs: FS * 0.020, c: 'rgba(224,233,255,0.92)' });
+        if (dayGrant.bonus) lines.push({ t: `${T.weekComplete}   +${dayGrant.crate} ⧫`, fs: FS * 0.020, c: 'rgba(255,225,110,0.95)' });
+        if (dayGrant.grace) lines.push({ t: T.restDayUsed, fs: FS * 0.018, c: 'rgba(175,190,225,0.85)' });
+        const goal = nextStardustGoal();
+        if (goal) {
+            const d = goal.gate - stardust;
+            lines.push({ t: `${goal.name} ${d <= 1 ? T.tomorrow : T.inDays.replace('{n}', d)}`, fs: FS * 0.018, c: 'rgba(120,225,255,0.85)' });
+        }
+
+        const bigFs = FS * 0.044;
+        const padV  = H * 0.030, padH = W * 0.030, gapL = H * 0.016;
+        ctx.font = `bold ${bigFs}px ${FONT_NUM}`;
+        const bigTxt = `+${dayGrant.dust} ✦`;
+        let cardW = ctx.measureText(bigTxt).width;
+        for (const ln of lines) {
+            ctx.font = `bold ${ln.fs}px ${FONT_UI}`;
+            cardW = Math.max(cardW, ctx.measureText(ln.t).width);
+        }
+        cardW = Math.min(cardW + padH * 2, W * 0.60);
+        const cardH = padV * 2 + bigFs + lines.reduce((s, ln) => s + ln.fs + gapL, 0);
+        const cardX = W / 2 - cardW / 2;
+        const cardY = H * 0.045;
+
+        ctx.globalAlpha = ga;
+        drawMenuPanel(cardX, cardY, cardW, cardH, 12);
+        ctx.strokeStyle = `rgba(120,225,255,0.45)`;
+        ctx.lineWidth   = 1.5;
+        ctx.beginPath(); ctx.roundRect(cardX, cardY, cardW, cardH, 12); ctx.stroke();
+
+        let cy = cardY + padV + bigFs * 0.5;
+        ctx.font        = `bold ${bigFs}px ${FONT_NUM}`;
+        ctx.fillStyle   = 'rgba(160,232,255,0.98)';
+        ctx.shadowColor = 'rgba(120,225,255,0.55)';
+        ctx.shadowBlur  = 12;
+        ctx.fillText(bigTxt, W / 2, cy);
+        ctx.shadowBlur  = 0;
+        cy += bigFs * 0.5;
+        for (const ln of lines) {
+            cy += gapL + ln.fs * 0.5;
+            ctx.font      = `bold ${ln.fs}px ${FONT_UI}`;
+            ctx.fillStyle = ln.c;
+            ctx.fillText(ln.t, W / 2, cy);
+            cy += ln.fs * 0.5;
+        }
+        ctx.restore();
+    }
+
     // ── Daily-reminder opt-in card (src/notify.js) ───────────────────────
     // One-time, shown on the first title screen of any day after the day the app
     // was first opened (state.js showNotifPrompt). Modal-style over the title, but
     // only when nothing else is open and the native bridge is actually there.
     _notifPromptYesRect = null; _notifPromptNoRect = null;
-    if (showNotifPrompt
+    // Waits out the arrival card above (dayGrantT): both land on the first title
+    // screen of a new day, and two cards at once is one card too many.
+    if (showNotifPrompt && dayGrantT <= 0
         && window._tunlHasNotifBridge && window._tunlHasNotifBridge()
-        && !showSettings && !showShop && !showMissions && !showShipPicker && !showCurrencyInfo) {
+        && !showSettings && !showShop && !showMissions && !showShipPicker && !showCurrencyInfo
+        && !showStardustPath) {
 
         ctx.save();
         ctx.textAlign = 'center';
@@ -5721,6 +5590,14 @@ function drawDeathScreen() {
                        c: SKINS[skinMasteryUpIdx].shadow });
     }
     if (missionRewardWon > 0) rewards.push({ t: `${T.missionDone} +${missionRewardWon}`, c: [120, 255, 150] });
+    // The day's stardust, on the first run of that day (dailyRuns is 1 for the run that
+    // just ended). `dayGrant` is session-only, so a player who already flew earlier
+    // today and relaunches sees nothing - nothing happened this launch.
+    if (dayGrant && dailyRuns === 1) {
+        const t = dayGrant.bonus ? `+${dayGrant.dust} ✦  ${T.weekComplete}`
+                                 : `+${dayGrant.dust} ✦  ${T.streakDay.replace('{n}', dayGrant.streak)}`;
+        rewards.push({ t: t, c: [120, 225, 255] });
+    }
     if (runCoins > 0) {
         // The banked total has no upper bound, so past 10000 it is rounded to "13k".
         const disp = shards >= 10000 ? Math.round(shards / 1000) + 'k' : shards;
@@ -6289,7 +6166,7 @@ function drawWebContinuePromo() {
         ctx.strokeStyle = `rgba(${sr},${sg},${sb},${a * 0.26})`;
         ctx.lineWidth = 1.5;
         ctx.stroke();
-        drawShip(sx, sy, shipR, SKINS[activeSkin].color, sr, sg, sb, 16, true, liveryOf(activeSkin));
+        drawShip(sx, sy, shipR, SKINS[activeSkin].color, sr, sg, sb, 16, true, paintOf(activeSkin));
     }
 
     // ── headline, rule, body ──────────────────────────────────────────────────

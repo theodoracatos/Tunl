@@ -64,38 +64,88 @@ function _tunlActiveDayInt() {
 // ── Deep-link params ────────────────────────────────────────────────
 // Parsed once at load; read later by lifecycle.js (seed), share.js (link) and
 // update.js (referral submit, see the "Referral reward" section below).
-//   ?d=YYYYMMDD  replay that day's cave instead of today's. Any past day back to
+//   ?d=<base36>  days since WEB_DAY_EPOCH, replaying that day's cave instead of
+//                today's - share.js shareRunUrl() writes this form (2026-09-21,
+//                a handful of chars instead of 8 digits). A bare 8-digit
+//                YYYYMMDD is still accepted, so links shared before this date
+//                keep working; never remove that branch. Any past day back to
 //                2025-01-01 is allowed so a shared link does not die at the UTC
 //                boundary; future dates are rejected.
 //   ?g=<base64>  a friend's ghost track to race (decoded via constants.js
 //                ghostDecode at use site).
 //   ?s=<int>     the score that ghost reached, for the "GHOST -N" readout.
-//   ?r=<id>      the webPlayerId() of whoever shared this link (share.js
-//                shareRunUrl) - credits them a referral reward once this
-//                player clears their own first real run. Native app builds
-//                receive this the same way they receive a Universal/App Link
-//                at all: GameView.swift/MainActivity.kt reload the page with
-//                the link's query string appended (see DeepLinkRouter.swift /
-//                MainActivity.kt's deepLinkQuery), so this parses identically
-//                on every platform - no separate native-only path needed.
+//   ?r=<id>      whoever shared this link, credits them a referral reward once
+//                this player clears their own first real run. share.js
+//                shareRunUrl() writes webPlayerId()'s UUID base64url-packed
+//                (_uuidPack, 22 chars instead of 36); a bare UUID (dashes, from
+//                a link shared before this date) is still accepted and passed
+//                to the worker as-is - never remove that branch. Native app
+//                builds receive this the same way they receive a Universal/App
+//                Link at all: GameView.swift/MainActivity.kt reload the page
+//                with the link's query string appended (see
+//                DeepLinkRouter.swift / MainActivity.kt's deepLinkQuery), so
+//                this parses identically on every platform - no separate
+//                native-only path needed.
 let webParamDay = 0;         // int YYYYMMDD, or 0 meaning "today"
 let webParamGhost = null;    // raw base64 string, or null
 let webParamGhostScore = 0;  // int, or 0 if absent
-let webParamReferrer = null; // id string, or null
+let webParamReferrer = null; // full UUID string (unpacked if arrived packed), or null
+
+// Epoch for the compact ?d= day-offset encoding. Never move this once links using
+// it are live - it would silently repoint every already-shared short link at the
+// wrong cave. 2025-01-01 matches the ?d range floor above.
+const WEB_DAY_EPOCH_MS = Date.UTC(2025, 0, 1);
+
+function _dayIntToOffset(asInt) {
+    const y = Math.floor(asInt / 10000), m = Math.floor(asInt / 100) % 100, d = asInt % 100;
+    return Math.round((Date.UTC(y, m - 1, d) - WEB_DAY_EPOCH_MS) / 86400000);
+}
+function _dayOffsetToInt(off) {
+    const dt = new Date(WEB_DAY_EPOCH_MS + off * 86400000);
+    return dt.getUTCFullYear() * 10000 + (dt.getUTCMonth() + 1) * 100 + dt.getUTCDate();
+}
+
+// Packs a UUID's 128 bits into 22-character URL-safe base64 (no dashes, no padding)
+// and back. Round-trips through the same hex string; only used for the ?r= link
+// param, never for the id kept in localStorage or sent to the leaderboard worker,
+// which both stay the plain UUID.
+function _uuidPack(uuid) {
+    const hex = uuid.replace(/-/g, '');
+    if (!/^[0-9a-f]{32}$/i.test(hex)) return uuid;
+    let bin = '';
+    for (let i = 0; i < 32; i += 2) bin += String.fromCharCode(parseInt(hex.slice(i, i + 2), 16));
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function _uuidUnpack(packed) {
+    try {
+        const bin = atob(packed.replace(/-/g, '+').replace(/_/g, '/') + '=='.slice(0, (4 - packed.length % 4) % 4));
+        if (bin.length !== 16) return null;
+        let hex = '';
+        for (let i = 0; i < 16; i++) hex += bin.charCodeAt(i).toString(16).padStart(2, '0');
+        return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+    } catch (e) { return null; }
+}
 
 (function _tunlParseWebParams() {
     if (typeof URLSearchParams === 'undefined' || typeof location === 'undefined') return;
     let q;
     try { q = new URLSearchParams(location.search); } catch (e) { return; }
 
+    const now = new Date();
+    const todayInt = now.getUTCFullYear() * 10000 + (now.getUTCMonth() + 1) * 100 + now.getUTCDate();
+
     const d = q.get('d');
     if (d && /^\d{8}$/.test(d)) {
         const y = +d.slice(0, 4), m = +d.slice(4, 6), day = +d.slice(6, 8);
         const asInt = y * 10000 + m * 100 + day;
-        const now = new Date();
-        const todayInt = now.getUTCFullYear() * 10000 + (now.getUTCMonth() + 1) * 100 + now.getUTCDate();
         if (m >= 1 && m <= 12 && day >= 1 && day <= 31 && asInt >= 20250101 && asInt <= todayInt) {
             webParamDay = asInt;
+        }
+    } else if (d && /^[0-9a-z]{1,6}$/i.test(d)) {
+        const off = parseInt(d, 36);
+        if (off >= 0) {
+            const asInt = _dayOffsetToInt(off);
+            if (asInt >= 20250101 && asInt <= todayInt) webParamDay = asInt;
         }
     }
 
@@ -106,7 +156,9 @@ let webParamReferrer = null; // id string, or null
     if (s && /^\d{1,7}$/.test(s)) webParamGhostScore = +s;
 
     const r = q.get('r');
-    if (r && /^[a-z0-9-]{4,64}$/i.test(r)) webParamReferrer = r;
+    if (r && /^[a-z0-9-]{4,64}$/i.test(r)) {
+        webParamReferrer = /^[0-9a-f-]{36}$/i.test(r) ? r : (_uuidUnpack(r) || r);
+    }
 })();
 
 // ── Web daily leaderboard ───────────────────────────────────────────

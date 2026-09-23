@@ -27,12 +27,23 @@ window._tunlHasNotifBridge = function () { return !!_notifBridge(); };
 window._tunlReminderReschedule = function () {
     const b = _notifBridge();
     if (!b) return;
+    // From a real streak on, one of the three variants speaks to it: what a returning
+    // player is about to lose a day of is the one thing this nudge can say that the
+    // other two cannot. Deliberately phrased as an open day, never as a threat ("your
+    // streak dies tonight") -- see the streak-anxiety note in constants.js. Below
+    // NOTIF_STREAK_MIN the streak is not yet a thing the player owns, so it stays out.
+    const titles = T.notifTitles.slice();
+    const bodies = T.notifBodies.slice();
+    if (streak >= NOTIF_STREAK_MIN) {
+        titles[0] = T.notifStreakTitle.replace('{n}', streak + 1);
+        bodies[0] = T.notifStreakBody.replace('{n}', streak);
+    }
     b.postMessage({
         action: 'reschedule',
         enabled: notifEnabled,
         playedToday: dailyRuns > 0,
-        titles: T.notifTitles,
-        bodies: T.notifBodies,
+        titles: titles,
+        bodies: bodies,
     });
 };
 

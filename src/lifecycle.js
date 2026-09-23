@@ -27,11 +27,117 @@ function initAmbParts() {
     }));
 }
 
+// ── Calendar-day rollover ─────────────────────────────────────────────
+// Everything that happens once per UTC day: the streak, the stardust grant, the week
+// crate and the reset of the day's own state (best/runs/shards, ghost, missions, the
+// rewarded-ad bonus). Everything here is keyed off the REAL date, never the cave day a
+// ?d= deep link may point at (web.js _tunlActiveDate) - a shared link to Tuesday's cave
+// must not hand out Tuesday's stardust again.
+//
+// Called from BOTH titleScreen() and startPlay(): the constants.js Stardust block
+// describes the grant as earned by "opening the app", and until 2026-09-22 only
+// startPlay() ran it, so a player who opened TUNL, looked at the hangar and closed it
+// again got nothing. Running it at the title fixes that and gives the arrival card
+// (draw.js) something to report before the first run; keeping it in startPlay() covers
+// a session left open across midnight, which never passes through the title again.
+// It is a no-op on every call after the first of a day.
+function dayRollover() {
+    const _td = new Date();
+    const _todayInt = _td.getUTCFullYear() * 10000 + (_td.getUTCMonth() + 1) * 100 + _td.getUTCDate();
+    const _lastDay = parseInt(localStorage.getItem('tunnel_lastday') || '0');
+    if (_lastDay === _todayInt) return;
+
+    const _dayIntAgo = n => {
+        const d = new Date(Date.now() - n * 86400000);
+        return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
+    };
+    const _yesterdayInt  = _dayIntAgo(1);
+    const _twoDaysAgoInt = _dayIntAgo(2);
+
+    // A rest day (constants.js STREAK_GRACE_MAX) absorbs exactly one missed day: last
+    // played the day before yesterday AND one banked. Two missed days still reset.
+    // The missed day itself never granted stardust - the bank buys the streak's
+    // continuity, not the day.
+    let graceUsed = false;
+    if (_lastDay === _yesterdayInt) {
+        streak += 1;
+    } else if (_lastDay === _twoDaysAgoInt && streakGrace > 0) {
+        streak += 1;
+        streakGrace -= 1;
+        graceUsed = true;
+    } else {
+        streak = 1;
+    }
+    localStorage.setItem('tunnel_streak', streak);
+    if (streak > bestStreak) {
+        bestStreak = streak;
+        localStorage.setItem('tunnel_best_streak', bestStreak);
+    }
+    if (streak === 7)  window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: 'tunl_ach_streak_7' });
+    if (streak === 30) window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: 'tunl_ach_streak_30' });
+
+    // Stardust: flat per-day grant, decoupled from skill or run count (constants.js
+    // STARDUST_PER_DAY doc comment) -- the SOLARIS-only currency that makes coming
+    // back tomorrow the only lever, not how well or how much is played today.
+    stardust += STARDUST_PER_DAY;
+    const weekDone = streak % STARDUST_STREAK_BONUS_DAY === 0;
+    let crate = 0;
+    if (weekDone) {
+        stardust += 1;
+        // The week crate (constants.js STREAK_WEEK_SHARDS): granted straight into the
+        // wallet, deliberately NOT through dailyShardsEarned, so it sits outside
+        // DAILY_SHARD_CAP like the mission and rewarded-ad payouts.
+        crate = STREAK_WEEK_SHARDS;
+        shards += crate;
+        localStorage.setItem('tunnel_shards', shards);
+        // A completed week also banks the next rest day, capped so weeks cannot be
+        // stockpiled into a licence to play twice a month.
+        if (streakGrace < STREAK_GRACE_MAX) {
+            streakGrace += 1;
+        }
+    }
+    localStorage.setItem('tunnel_stardust', stardust);
+    localStorage.setItem('tunnel_streak_grace', streakGrace);
+    localStorage.setItem('tunnel_lastday', _todayInt);
+
+    // What the arrival card (title) and the stardust chip (death screen) report. Session
+    // -only: a fresh launch later the same day shows nothing, because nothing happened.
+    dayGrant = { dust: STARDUST_PER_DAY + (weekDone ? 1 : 0), bonus: weekDone, crate: crate, grace: graceUsed, streak: streak };
+    dayGrantT = DAY_GRANT_SEC;
+    // Reuses the mission-complete chime rather than adding a sound: this sits at the
+    // same level of the loudness hierarchy (a rare reward, above a routine pickup) and
+    // audio.js already proved that mix. On the very first launch of a day the
+    // AudioContext is usually still suspended, exactly like sfxBoot() next to it, so
+    // this is the card's accent when it can be, never something it waits for.
+    if (typeof sfxMissionDone === 'function') sfxMissionDone();
+
+    dailyBest = 0; dailyRuns = 0; dailyShardsEarned = 0;
+    localStorage.setItem('tunnel_daily_best', '0');
+    localStorage.setItem('tunnel_daily_runs', '0');
+    localStorage.setItem('tunnel_daily_shards', '0');
+    // Today's rewarded-ad shard bonus is available again (constants.js SHARDS_AD_REWARD).
+    shardsAdClaimedToday = false;
+    localStorage.setItem('tunnel_shards_ad_claimed', '0');
+    top5 = []; localStorage.setItem('tunnel_top5', '[]');
+    // The new day's corridor is a different shape, so yesterday's ghost is racing
+    // through a cave that no longer exists -- drop it along with the other daily
+    // state rather than let it replay against the wrong tunnel.
+    ghostPlay = null; ghostScore = 0;
+    localStorage.removeItem('tunnel_ghost');
+    dailyMissionStats = { gold: 0, blue: 0, red: 0, green: 0, orange: 0, bomb: 0, dist: 0, nearMisses: 0, bestCombo: 0, bestScore: 0, runs: 0 };
+    dailyMissionsClaimed = [false, false, false];
+    dailyMissionIdx = pickDailyMissionIndices(_todayInt);
+    localStorage.setItem('tunnel_daily_mission_stats', JSON.stringify(dailyMissionStats));
+    localStorage.setItem('tunnel_daily_missions_claimed', JSON.stringify(dailyMissionsClaimed));
+    // The reminder's "played today" flag and its streak line both just changed.
+    if (typeof window._tunlReminderReschedule === 'function') window._tunlReminderReschedule();
+}
+
 function titleScreen() {
     phase = 'title'; py = H / 2; vy = 0; holding = false; scrollX = 0; approachLeft = 0;
     score = 0; newBest = false; newDailyBest = false;
     parts = []; thrustParts = []; deadT = 0; titleT = 0; flashA = 0; shake = 0; trailY = [];
-    skinFx = []; skinFxT = 0; shipPitch = 0; shipRoll = SHIP3D_ROLL_BASE; shipRollV = 0; shipSweep = 0; shipBarrelT = -1;
+    skinFx = []; skinFxT = 0; shipPitch = 0; shipRoll = SHIP3D_ROLL_BASE; shipRollV = 0; shipSweep = SHIP3D_SWEEP_CRUISE; shipBarrelT = -1;
     _seedSpawnStreams(_tunlActiveDayInt());
     stalactites = []; nextStalWx = 420; nextFallWx = 99999;
     coins = [];     nextCoinWx = 99999;
@@ -67,6 +173,9 @@ function titleScreen() {
     // Cave day, not necessarily today - see world.js _tunlActiveDayInt (?d= deep link).
     seedDailyVariety(_tunlActiveDayInt());
     refreshWave();
+    // A new calendar day is granted here, at the title, not only at the first run
+    // (see dayRollover) -- and its arrival card is drawn over this screen.
+    dayRollover();
     _startTitleMusic();
     sfxBoot();
     // Web build: refresh today's world rank (no-op without a leaderboard API set,
@@ -93,7 +202,7 @@ function startPlay() {
     phase = 'play'; py = H + PR * 4; vy = 0; holding = false; hasHeldThisRun = false; idleHoldTimer = 0; scrollX = 0; startRamp = 0;
     score = 0; newBest = false; newDailyBest = false;
     parts = []; thrustParts = []; deadT = 0; flashA = 0; shake = 0; trailY = [];
-    skinFx = []; skinFxT = 0; shipPitch = -Math.PI / 2; shipRoll = SHIP3D_ROLL_BASE; shipRollV = 0; shipSweep = 0; shipBarrelT = -1;
+    skinFx = []; skinFxT = 0; shipPitch = -Math.PI / 2; shipRoll = SHIP3D_ROLL_BASE; shipRollV = 0; shipSweep = SHIP3D_SWEEP_CRUISE; shipBarrelT = -1;
     // No stalactites/stalagmites before STAL_START_WX (~score 107) on any run -- see
     // constants.js SAFE_START_WX. Coins start at their normal distance; they can't kill.
     stalactites = []; nextStalWx = STAL_START_WX;
@@ -151,43 +260,7 @@ function startPlay() {
     skinMasteryUpIdx = -1; missionRewardWon = 0;
     runStartMasteryLevel = masteryLevel(activeSkin);
     runCoinsByType = { gold: 0, blue: 0, red: 0, green: 0, orange: 0 };
-    // Day streak update
-    const _td = new Date();
-    const _todayInt = _td.getUTCFullYear() * 10000 + (_td.getUTCMonth() + 1) * 100 + _td.getUTCDate();
-    const _yd = new Date(Date.now() - 86400000);
-    const _yesterdayInt = _yd.getUTCFullYear() * 10000 + (_yd.getUTCMonth() + 1) * 100 + _yd.getUTCDate();
-    const _lastDay = parseInt(localStorage.getItem('tunnel_lastday') || '0');
-    if (_lastDay !== _todayInt) {
-        streak = _lastDay === _yesterdayInt ? streak + 1 : 1;
-        localStorage.setItem('tunnel_streak', streak);
-        if (streak === 7)  window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: 'tunl_ach_streak_7' });
-        if (streak === 30) window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: 'tunl_ach_streak_30' });
-        // Stardust: flat per-day grant, decoupled from skill or run count (constants.js
-        // STARDUST_PER_DAY doc comment) -- the SOLARIS-only currency that makes coming
-        // back tomorrow the only lever, not how well or how much is played today.
-        stardust += STARDUST_PER_DAY;
-        if (streak % STARDUST_STREAK_BONUS_DAY === 0) stardust += 1;
-        localStorage.setItem('tunnel_stardust', stardust);
-        localStorage.setItem('tunnel_lastday', _todayInt);
-        dailyBest = 0; dailyRuns = 0; dailyShardsEarned = 0;
-        localStorage.setItem('tunnel_daily_best', '0');
-        localStorage.setItem('tunnel_daily_runs', '0');
-        localStorage.setItem('tunnel_daily_shards', '0');
-        // Today's rewarded-ad shard bonus is available again (constants.js SHARDS_AD_REWARD).
-        shardsAdClaimedToday = false;
-        localStorage.setItem('tunnel_shards_ad_claimed', '0');
-        top5 = []; localStorage.setItem('tunnel_top5', '[]');
-        // The new day's corridor is a different shape, so yesterday's ghost is racing
-        // through a cave that no longer exists -- drop it along with the other daily
-        // state rather than let it replay against the wrong tunnel.
-        ghostPlay = null; ghostScore = 0;
-        localStorage.removeItem('tunnel_ghost');
-        dailyMissionStats = { gold: 0, blue: 0, red: 0, green: 0, orange: 0, bomb: 0, dist: 0, nearMisses: 0, bestCombo: 0, bestScore: 0, runs: 0 };
-        dailyMissionsClaimed = [false, false, false];
-        dailyMissionIdx = pickDailyMissionIndices(_todayInt);
-        localStorage.setItem('tunnel_daily_mission_stats', JSON.stringify(dailyMissionStats));
-        localStorage.setItem('tunnel_daily_missions_claimed', JSON.stringify(dailyMissionsClaimed));
-    }
+    dayRollover();
     dailyRuns++;
     localStorage.setItem('tunnel_daily_runs', dailyRuns);
     // Lifetime-runs-played achievements (constants.js RUNS_ACHIEVEMENTS): this counter

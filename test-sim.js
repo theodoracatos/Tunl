@@ -57,12 +57,12 @@ class PinnedDate extends Date {
     static now() { return SIM_NOW; }
 }
 
-function boot(innerWidth = 956, innerHeight = 440) {
+function boot(innerWidth = 956, innerHeight = 440, seed = {}) {
     const ctx = fakeContext();
     const canvas = () => ({ getContext: () => ctx, width: 0, height: 0, style: {}, addEventListener() {},
         getBoundingClientRect: () => ({ left: 0, top: 0, width: innerWidth, height: innerHeight }),
         toDataURL: () => 'data:image/png;base64,', toBlob() {} });
-    const store = {};
+    const store = { ...seed };
     const location = { search: '', href: 'app://tunl/', hostname: '', pathname: '/', hash: '' };
     const navigator = { language: 'en', languages: ['en'], userAgent: 'node', vibrate() {} };
     const sb = {
@@ -459,6 +459,49 @@ function touchCoin(type, setup) {
             return { hull: hullScratches, full: HULL_SCRATCHES, gain: bonusScore - before, pts: REPAIR_KIT_PTS, left: repairKits.length };
         })()`);
     };
+// ── Swing wing: cruise in between, warp folds, blue coin spreads ───────────
+// docs/agents/ship-render.md "F-14 hull". Measured on the real update loop, because the
+// rule the user asked for is about WHEN the wings move, not about the easing constant.
+{
+    const g = quietCave(true);
+    const r = g(`(() => {
+        const out = {};
+        for (let i = 0; i < 240; i++) { shieldCount = 9; _pilot(); update(1 / 60); }
+        out.cruise = shipSweep;
+        slowTime = slowTimeMax = 4;
+        // A fifth of a second: the wings swing out fast, the pill has barely moved
+        for (let i = 0; i < 12; i++) { shieldCount = 9; _pilot(); update(1 / 60); }
+        out.coin = shipSweep;
+        for (let i = 0; i < 180 && slowTime > 1; i++) { shieldCount = 9; _pilot(); update(1 / 60); }
+        out.quarter = shipSweep;
+        slowTime = slowTimeMax = 0;
+        for (let i = 0; i < 240; i++) { shieldCount = 9; _pilot(); update(1 / 60); }
+        out.back = shipSweep;
+        warpTime = warpMax = 3;
+        for (let i = 0; i < 30; i++) { shieldCount = 9; _pilot(); update(1 / 60); }
+        out.warp = shipSweep;
+        // A warp beats a live blue coin: the ship really is going fast
+        slowTime = slowTimeMax = 4;
+        for (let i = 0; i < 30; i++) { shieldCount = 9; _pilot(); update(1 / 60); }
+        out.warpWins = shipSweep;
+        warpTime = warpMax = 0;
+        for (let i = 0; i < 300; i++) { shieldCount = 9; _pilot(); update(1 / 60); }
+        out.after = shipSweep;
+        out.cruiseK = SHIP3D_SWEEP_CRUISE;
+        return out;
+    })()`);
+    const near = (v, t) => Math.abs(v - t) < 0.06;
+    check(`normal flight cruises between the two stops (sweep ${r.cruise.toFixed(2)} vs SHIP3D_SWEEP_CRUISE ${r.cruiseK})`,
+        near(r.cruise, r.cruiseK) && r.cruiseK > 0.15 && r.cruiseK < 0.85);
+    check(`a blue coin swings them fully forward within 0.2 s (sweep ${r.coin.toFixed(2)})`, r.coin < 0.10);
+    check(`they come back WITH the pill, not after it (sweep ${r.quarter.toFixed(2)} at a quarter left)`,
+        r.quarter > r.coin + 0.2 && r.quarter < r.cruiseK - 0.02);
+    check(`and they are back at cruise once it is over (sweep ${r.back.toFixed(2)})`, near(r.back, r.cruiseK));
+    check(`a warp folds them fully back (sweep ${r.warp.toFixed(2)})`, r.warp > 0.90);
+    check(`a warp beats a blue coin held at the same time (sweep ${r.warpWins.toFixed(2)})`, r.warpWins > 0.85);
+    check(`after the warp they ease back to cruise (sweep ${r.after.toFixed(2)})`, near(r.after, r.cruiseK));
+}
+
     const empty = pick(0), half = pick(1), full = pick(2);
     check('a kit gives an empty hull back exactly one scratch and pays its points',
         empty.hull === 1 && empty.gain === empty.pts && empty.left === 0);
@@ -472,6 +515,238 @@ function touchCoin(type, setup) {
         return { n: repairKits.length, y: repairKits[0] && repairKits[0].y };
     })()`);
     check('a kit ahead stays put under a magnet, a kit behind the ship is dropped', r.n === 1);
+}
+
+// ── 11. Hangar paint, the Lackiererei (paint.js, state.js) ───────────────────
+// Kit ownership, the migration of the 2026-09-17 finishes, earned parts, buying through
+// the real Paint sheet hit-test, and every part drawn on both hulls. Draw-only feature: nothing here may touch a gameplay rng stream.
+{
+    // Migration: an old save owning STEALTH, SPLIT and AURORA, worn on ships 0-2.
+    const m = boot(956, 440, { tunnel_liveries: String(1 | 2 | 8 | 32), tunnel_ship_liveries: JSON.stringify([1, 3, 5, 0, 0, 0, 0, 0]) });
+    const r = m(`({
+        stealth: paintPartOwned('m', 1), split: paintPartOwned('p', 1), aurora: paintPartOwned('fx', 3),
+        chrome: paintPartOwned('m', 5), stripe: paintPartOwned('p', 2),
+        s0: shipPaint[0].m, s1: shipPaint[1].p, s2: shipPaint[2].fx, plain: paintOf(3),
+        saved: !!localStorage.getItem('tunnel_paint_owned') })`);
+    check('old finishes migrate to their parts (STEALTH, SPLIT, AURORA owned; CHROME, STRIPE not)',
+        r.stealth && r.split && r.aurora && !r.chrome && !r.stripe && r.saved);
+    check('a ship keeps the old finish it wore, an unpainted ship stays FACTORY',
+        r.s0 === 1 && r.s1 === 1 && r.s2 === 3 && r.plain === 0);
+
+    const g = boot();
+    const fresh = g(`({
+        free: paintPartOwned('c', 0) && paintPartOwned('c', 1) && paintPartOwned('m', 0) && paintPartOwned('p', 0) && paintPartOwned('fx', 0),
+        paid: paintPartOwned('c', 2) || paintPartOwned('p', 1) || paintPartOwned('m', 1) || paintPartOwned('fx', 1),
+        gold: [ (best = 499, paintPartOwned('c', 10)), (best = 500, paintPartOwned('c', 10)) ],
+        orbit: [ (planetsFlown = 63, paintPartOwned('p', 9)), (planetsFlown = 127, paintPartOwned('p', 9)) ],
+        diamond: [ (stardust = 29, paintPartOwned('m', 6)), (stardust = 30, paintPartOwned('m', 6)) ] })`);
+    check('a fresh hangar owns only the free parts', fresh.free && !fresh.paid);
+    check('earned parts unlock exactly at their condition (GOLD best 500, ORBIT 7 worlds, DIAMOND 30 days)',
+        !fresh.gold[0] && fresh.gold[1] && !fresh.orbit[0] && fresh.orbit[1] && !fresh.diamond[0] && fresh.diamond[1]);
+
+    // The hull colour really changes the paint, the glow (identity) does not enter it.
+    const t = g(`(() => {
+        const k = _paintKit({ c: 4 }), sk = SKINS[0];
+        const f = _shipTones(sk.color, ...sk.shadow, 0), p = _shipTones(sk.color, ...sk.shadow, k);
+        const q = _shipTones(sk.color, 0, 0, 0, k);
+        return { f: f.base, p: p.base, want: rgb(PAINT_COLORS[4].rgb), glowFree: q.base === p.base };
+    })()`);
+    check('a hull colour repaints the hull (PEARL in RACING is RACING, not PEARL)', t.p === t.want && t.f !== t.p && t.glowFree);
+
+    // Every part of every slot draws on the flat and the 3D hull, in flight and in the hangar.
+    const drawn = g(`(() => {
+        let n = 0;
+        for (const ph of ['title', 'play']) {
+            phase = ph;
+            for (const s of PAINT_SLOTS) for (let i = 0; i < s.list.length; i++) {
+                const k = _paintKit({ c: 3, p: 2, pc: 2, m: 2, fx: 1 }); k[s.key] = i;
+                for (const sk of SKINS) {
+                    drawShip(100, 100, 40, sk.color, ...sk.shadow, 10, true, k);
+                    drawShip3D(100, 100, 17, sk.color, ...sk.shadow, 10, true, k);
+                    n++;
+                }
+            }
+        }
+        phase = 'title';
+        return n;
+    })()`);
+    check(`every paint part draws on both hulls for every ship (${drawn} kits)`, drawn > 0);
+
+    // Buying through the real sheet: first tap previews, second buys and equips.
+    const buy = g(`(() => {
+        shards = 100; activeSkin = 0; showShipPicker = true; showPaint = true; paintTab = 0; paintPreview = -1;
+        const tapCell = i => { drawPaintSheet(); const b = _paintCellRects[i]; paintSheetTap(b.x + b.w / 2, b.y + b.h / 2); };
+        tapCell(2);
+        const afterOne = { owned: paintPartOwned('c', 2), shards, preview: paintPreview };
+        tapCell(2);
+        const afterTwo = { owned: paintPartOwned('c', 2), shards, worn: shipPaint[0].c, saved: JSON.parse(localStorage.getItem('tunnel_ship_paint'))[0].c };
+        tapCell(3); tapCell(3);
+        const poor = { owned: paintPartOwned('c', 3), shards };
+        best = 0; shards = 9999; tapCell(10); tapCell(10);
+        const earned = { owned: paintPartOwned('c', 10), shards };
+        return { afterOne, afterTwo, poor, earned };
+    })()`);
+    check('first tap on an unowned part previews it and spends nothing',
+        !buy.afterOne.owned && buy.afterOne.shards === 100 && buy.afterOne.preview === 2);
+    check('second tap buys it, pays its price and the ship wears it (saved)',
+        buy.afterTwo.owned && buy.afterTwo.shards === 40 && buy.afterTwo.worn === 2 && buy.afterTwo.saved === 2);
+    check('a part the player cannot afford is not bought', !buy.poor.owned && buy.poor.shards === 40);
+    check('an earned part can never be bought with shards', !buy.earned.owned && buy.earned.shards === 9999);
+
+    // Every tab's grid has to stay inside the panel, whatever a catalogue grows to.
+    const fits = g(`(() => {
+        showShipPicker = true; showPaint = true; paintPreview = -1;
+        let worst = 0, n = 0, counts = [];
+        for (let t = 0; t < PAINT_SLOTS.length; t++) {
+            paintTab = t; drawPaintSheet();
+            counts.push(_paintCellRects.length);
+            if (_paintCellRects.length !== PAINT_SLOTS[t].list.length) worst = 9e9;
+            const ys = new Set(_paintCellRects.map(b => Math.round(b.y)));
+            if (ys.size > 2) worst = 9e9;   // never a third row: it does not fit the screen
+            for (const b of _paintCellRects) {
+                worst = Math.max(worst, _paintPanelRect.y - b.y, (b.y + b.h) - (_paintPanelRect.y + _paintPanelRect.h),
+                                 _paintPanelRect.x - b.x, (b.x + b.w) - (_paintPanelRect.x + _paintPanelRect.w));
+                n++;
+            }
+        }
+        paintTab = 0;
+        return { worst, n, counts: counts.join('/') };
+    })()`);
+    check(`every part of every tab is drawn inside the sheet, in two rows (${fits.n} cells, ${fits.counts})`, fits.worst <= 0);
+
+    // Equipping never writes ownership (so a DEV_WALLET hangar cannot leak into the save),
+    // and a save that wears parts it does not own loads without them.
+    const tog = g(`(() => {
+        paintOwned.c |= 1 << 5; shipPaint[2] = _paintKit({ c: 5, p: 0 }); activeSkin = 2;
+        showShipPicker = true; showPaint = true; paintTab = 1; paintPreview = -1;
+        paintOwned.p = 0x3ff;
+        const savedOwned = localStorage.getItem('tunnel_paint_owned');
+        drawPaintSheet(); const b = _paintCellRects[3]; paintSheetTap(b.x + b.w / 2, b.y + b.h / 2);
+        return { worn: shipPaint[2].p, kept: shipPaint[2].c, leaked: localStorage.getItem('tunnel_paint_owned') !== savedOwned };
+    })()`);
+    check('equipping a part keeps the rest of the kit and never writes ownership (DEV_WALLET cannot leak into the save)',
+        tog.worn === 3 && tog.kept === 5 && !tog.leaked);
+    const bad = boot(956, 440, { tunnel_paint_owned: JSON.stringify({ c: 0, p: 0, m: 0, fx: 0 }),
+        tunnel_ship_paint: JSON.stringify([{ c: 4, p: 3, pc: 2, m: 5, fx: 4 }, { c: 10, m: 6 }]) });
+    const cleaned = bad(`({ a: shipPaint[0], b: shipPaint[1] })`);
+    check('a save wearing unowned bought parts loads without them, earned parts are kept for the live check',
+        cleaned.a.c === 0 && cleaned.a.p === 0 && cleaned.a.pc === 0 && cleaned.a.m === 0 && cleaned.a.fx === 0
+        && cleaned.b.c === 10 && cleaned.b.m === 6);
+
+    // Reactive signals come from the flight: EMBER heat builds while holding, cools after.
+    const heat = g(`(() => {
+        phase = 'play'; holding = true;
+        let t0 = gtime;
+        for (let i = 1; i <= 30; i++) { gtime = t0 + i / 60; paintSignals(); }
+        const hot = paintSignals().th;
+        holding = false;
+        for (let i = 31; i <= 150; i++) { gtime = t0 + i / 60; paintSignals(); }
+        const cool = paintSignals().th;
+        phase = 'title';
+        return { hot, cool };
+    })()`);
+    check(`EMBER follows the thrust: hot after 0.5s held (${heat.hot.toFixed(2)}), cold 2s after release (${heat.cool.toFixed(2)})`,
+        heat.hot > 0.8 && heat.cool < 0.1);
+}
+
+// ── The calendar day: streak, stardust, week crate, rest day ──────────────────
+// Everything here calls the real dayRollover() (lifecycle.js) on a seeded save and
+// reads the state it left behind - no reimplementation of its rules in the test.
+// Day-independent: every seed is derived from SIM_DAY through the same UTC arithmetic
+// the game uses, so this block holds on any TUNL_SIM_DAY.
+{
+    const dayIntAgo = n => {
+        const d = new Date(SIM_NOW - n * 86400000);
+        return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
+    };
+    const YESTERDAY = String(dayIntAgo(1)), TWO_AGO = String(dayIntAgo(2)), THREE_AGO = String(dayIntAgo(3));
+    const roll = (seed, extra = '') => {
+        const g = boot(956, 440, seed);
+        if (extra) g(extra);
+        g('dayRollover()');
+        return g(`({ streak, stardust, shards, bestStreak, streakGrace, grant: dayGrant,
+                     crateSize: STREAK_WEEK_SHARDS, graceMax: STREAK_GRACE_MAX,
+                     lastday: localStorage.getItem('tunnel_lastday'),
+                     savedStreak: +localStorage.getItem('tunnel_streak'),
+                     savedDust: +localStorage.getItem('tunnel_stardust') })`);
+    };
+
+    const back = roll({ tunnel_lastday: YESTERDAY, tunnel_streak: '3', tunnel_stardust: '3' });
+    check('a day after yesterday continues the streak and pays one stardust',
+        back.streak === 4 && back.stardust === 4 && back.savedStreak === 4 && back.savedDust === 4
+        && back.grant.dust === 1 && !back.grant.bonus && !back.grant.grace);
+
+    const week = roll({ tunnel_lastday: YESTERDAY, tunnel_streak: '6', tunnel_stardust: '6', tunnel_shards: '100' });
+    check('the 7th day in a row pays the bonus stardust, the week crate and banks a rest day',
+        week.streak === 7 && week.stardust === 8 && week.shards === 100 + week.crateSize
+        && week.crateSize > 0 && week.streakGrace === week.graceMax
+        && week.grant.bonus && week.grant.crate === week.crateSize);
+
+    const saved = roll({ tunnel_lastday: TWO_AGO, tunnel_streak: '9', tunnel_stardust: '9', tunnel_streak_grace: '1' });
+    check('one missed day spends the banked rest day instead of resetting the streak',
+        saved.streak === 10 && saved.streakGrace === 0 && saved.grant.grace && saved.stardust === 10);
+
+    const broke = roll({ tunnel_lastday: TWO_AGO, tunnel_streak: '9', tunnel_stardust: '9', tunnel_streak_grace: '0' });
+    check('a missed day with nothing banked resets the streak but never the stardust',
+        broke.streak === 1 && broke.stardust === 10 && !broke.grant.grace);
+
+    const twoMissed = roll({ tunnel_lastday: THREE_AGO, tunnel_streak: '9', tunnel_stardust: '9', tunnel_streak_grace: '1' });
+    check('two missed days reset the streak and leave the rest day in the bank',
+        twoMissed.streak === 1 && twoMissed.streakGrace === 1);
+
+    const keptBest = roll({ tunnel_lastday: THREE_AGO, tunnel_streak: '9', tunnel_best_streak: '30', tunnel_stardust: '9' });
+    check('bestStreak only ever grows, so an earned streak paint is never taken back',
+        keptBest.bestStreak === 30 && keptBest.streak === 1);
+
+    const g2 = boot(956, 440, { tunnel_lastday: YESTERDAY, tunnel_streak: '3', tunnel_stardust: '3' });
+    const twice = g2(`(() => { dayRollover(); const after = { s: streak, d: stardust };
+        dayRollover(); dayRollover();
+        return { after, s: streak, d: stardust }; })()`);
+    check('a second rollover on the same day grants nothing',
+        twice.s === twice.after.s && twice.d === twice.after.d && twice.s === 4 && twice.d === 4);
+
+    // The two streak paints read bestStreak, not the live streak (constants.js PAINT_COLORS).
+    // The three surfaces the day feeds: the arrival card over the title, the stardust
+    // wallet on the ALL SHIPS sheet and the path panel it opens. Drawn through the real
+    // drawTitleScreen(), so a missing i18n key or a bad rect fails here.
+    const ui = boot(956, 440, { tunnel_lastday: YESTERDAY, tunnel_streak: '6', tunnel_stardust: '6' });
+    const surfaces = ui(`(() => {
+        titleScreen();                       // rolls the day over and arms the card
+        const carded = { grant: !!dayGrant, t: dayGrantT, week: dayGrant.bonus };
+        drawTitleScreen();                   // arrival card
+        showShipPicker = true; drawTitleScreen();
+        const wallet = _stardustBtnRect && _stardustBtnRect.w > 0 && _stardustBtnRect.h > 0;
+        showStardustPath = true; drawTitleScreen();
+        const panel = _stardustPathPanelRect && _stardustPathPanelRect.w > 0;
+        showStardustPath = false; showShipPicker = false;
+        const goal = nextStardustGoal();
+        // A player past every gate has nothing left for the card to point at.
+        stardust = 99999;
+        const done = nextStardustGoal();
+        return { carded, wallet: !!wallet, panel: !!panel, goal, done };
+    })()`);
+    check('a new day arms the arrival card, and the 7th day reports its week',
+        surfaces.carded.grant && surfaces.carded.t > 0 && surfaces.carded.week === true);
+    check('the ALL SHIPS wallet carries a stardust tap target and opens the path panel',
+        surfaces.wallet && surfaces.panel);
+    check('the next goal is the first locked tier whose gate is still ahead, and nothing once every gate is met',
+        surfaces.goal && surfaces.goal.gate > 6 && surfaces.done === null);
+
+    const gp = boot(956, 440, {});
+    const paints = gp(`(() => {
+        const comet = [ (bestStreak = 13, paintPartOwned('c', 11)), (bestStreak = 14, paintPartOwned('c', 11)) ];
+        const eclipse = [ (bestStreak = 29, paintPartOwned('c', 12)), (bestStreak = 30, paintPartOwned('c', 12)) ];
+        // Two taps on an unowned cell is the buy gesture (see the paint-sheet checks above).
+        bestStreak = 0; shards = 99999; activeSkin = 0;
+        showShipPicker = true; showPaint = true; paintTab = 0; paintPreview = -1;
+        const tapCell = i => { drawPaintSheet(); const b = _paintCellRects[i]; paintSheetTap(b.x + b.w / 2, b.y + b.h / 2); };
+        tapCell(11); tapCell(11);
+        return { comet, eclipse, bought: paintPartOwned('c', 11), shards };
+    })()`);
+    check('the streak paints unlock exactly at their streak and can never be bought',
+        paints.comet[0] === false && paints.comet[1] === true
+        && paints.eclipse[0] === false && paints.eclipse[1] === true
+        && paints.bought === false && paints.shards === 99999);
 }
 
 if (failed) { console.log(`\n${failed} check(s) failed.`); process.exit(1); }

@@ -158,13 +158,14 @@ function check(name, cond) {
     const num = name => Number(consts.match(new RegExp(`${name}\\s*=\\s*(-?[0-9.]+)`))[1]);
     const s3 = { Math, console };
     vm.createContext(s3);
-    vm.runInContext(`const SHIP_NOZZLE_Y = ${num('SHIP_NOZZLE_Y')};`, s3);
-    vm.runInContext(`const SHIP3D_SWEEP_MAX = ${num('SHIP3D_SWEEP_MAX')}, SHIP3D_BRAKE_DEG = ${num('SHIP3D_BRAKE_DEG')};`, s3);
+    vm.runInContext(`const SHIP_NOZZLE_X = ${num('SHIP_NOZZLE_X')}, SHIP_NOZZLE_Y = ${num('SHIP_NOZZLE_Y')};`, s3);
+    vm.runInContext(`const SHIP3D_SWEEP_MAX = ${num('SHIP3D_SWEEP_MAX')};`, s3);
     vm.runInContext(drawSrc.match(/const SHIP3D_PIVOT = \[[^\]]*\];/)[0], s3);
     for (const fn of ['_ship3dFaces', '_buildShip3D', '_swingPt', 'ship3dInk']) vm.runInContext(ex(fn), s3, { filename: fn });
     const roll = num('SHIP3D_ROLL_BASE'), amp = num('SHIP3D_ROLL_AMP');
     const M = s3._buildShip3D(num('SHIP3D_FIN_SCALE'), roll);
-    const sweeps = [-s3.SHIP3D_BRAKE_DEG / s3.SHIP3D_SWEEP_MAX, 0, 0.5, 1];
+    // Every sweep the ship can be drawn at: spread (blue coin), the glide back, folded.
+    const sweeps = [0, 0.25, 0.5, 0.75, 1];
     let worst = 0, cover = 9, nose = 0;
     for (let a = 0; a < 360; a += 5) {
         for (const sw of sweeps) {
@@ -179,6 +180,23 @@ function check(name, cond) {
     check(`3D hull stays inside the PR circle at every roll and sweep (worst ${worst.toFixed(2)} r)`, worst <= 1.0);
     check(`3D nose never reaches past the flat hull's 1.40 r (${nose.toFixed(2)} r)`, nose <= 1.4001);
     check(`3D hull still fills most of the circle while flying (worst ${cover.toFixed(2)} r)`, cover >= 0.60);
+}
+
+// ── Flat top-down hull (hangar, hero, shop, share card; the SHIP_VIEW_3D=false flight) ──
+// Same envelope as the 3D hull: span inside the circle, nose no longer than 1.40 r. The
+// share card draws its own copy of the outline (share.js _shipGlyph cannot reach draw.js's
+// ctx) - it must stay the same polygon, or the card shows a different ship.
+{
+    const drawSrc  = fs.readFileSync(path.join(__dirname, 'src', 'draw.js'), 'utf8');
+    const shareSrc = fs.readFileSync(path.join(__dirname, 'src', 'share.js'), 'utf8');
+    const outline = vm.runInNewContext(drawSrc.match(/const SHIP_OUTLINE = (\(\(\) => \{[\s\S]*?\}\)\(\));/)[1]);
+    const span = Math.max(...outline.map(p => Math.abs(p[1]))), nose = Math.max(...outline.map(p => p[0]));
+    check(`flat hull span stays inside the PR circle (${span.toFixed(2)} r)`, span <= 0.98);
+    check(`flat hull nose never reaches past 1.40 r (${nose.toFixed(2)} r)`, nose <= 1.4001);
+    const g = shareSrc.match(/function _shipGlyph[\s\S]*?(const top = [\s\S]*?const pts = [^;]*;)/);
+    const glyph = g ? vm.runInNewContext(g[1] + ' pts') : [];
+    check('share card glyph is the same outline as SHIP_OUTLINE',
+        glyph.length === outline.length && glyph.every((p, i) => p[0] === outline[i][0] && p[1] === outline[i][1]));
 }
 
 if (failed) {

@@ -164,41 +164,101 @@ if (localStorage.getItem('tunnel_stardustgate_v1') === null) {
 // regardless of load order.
 let allShipsOwned = localStorage.getItem('tunnel_all_ships') === '1';
 if (allShipsOwned) unlockedSkins = (1 << SKINS.length) - 1;
-// Hangar liveries (constants.js LIVERIES): bitmask of owned finishes (FACTORY, bit 0, is
-// always owned) and the equipped one. Separate keys from ships on purpose - Unlock All
-// Ships never touches these.
-// A finish is bought ONCE (ownedLiveries) but equipped PER SHIP (shipLiveries, index-aligned
-// with SKINS): the paint belongs to the hangar, the look belongs to the ship, so a player can
-// give each ship its own character without re-buying anything.
-let ownedLiveries = (parseInt(localStorage.getItem('tunnel_liveries') || '1') | 1) & ((1 << LIVERIES.length) - 1);
-let shipLiveries;
-try {
-    const raw = JSON.parse(localStorage.getItem('tunnel_ship_liveries') || 'null');
-    shipLiveries = Array.isArray(raw) ? raw : null;
-} catch (e) { shipLiveries = null; }
-if (!shipLiveries) {
-    // First load under the per-ship system: whatever was equipped globally becomes every
-    // ship's finish, so nothing visibly changes for a player who already picked one.
-    const prev = parseInt(localStorage.getItem('tunnel_livery') || '0') || 0;
-    shipLiveries = SKINS.map(() => prev);
+// Hangar paint (constants.js PAINT_*): what the hangar owns, one bitmask per catalogue
+// (colours are shared by the hull slot `c` and the pattern-colour slot `pc`), and one kit
+// per ship (shipPaint, index-aligned with SKINS). A part is bought ONCE for the hangar and
+// combined freely on every ship. Separate keys from ships on purpose - Unlock All Ships
+// never touches these.
+const _PAINT_KEYS = ['c', 'p', 'pc', 'm', 'fx'];
+function _paintOwnKey(slot) { return slot === 'pc' ? 'c' : slot; }
+function _paintList(slot) { return slot === 'p' ? PAINT_PATTERNS : slot === 'm' ? PAINT_MATERIALS : slot === 'fx' ? PAINT_EFFECTS : PAINT_COLORS; }
+function _paintKit(o) {
+    const k = { c: 0, p: 0, pc: 0, m: 0, fx: 0 };
+    for (const s of _PAINT_KEYS) {
+        const v = o ? o[s] | 0 : 0;
+        k[s] = v >= 0 && v < _paintList(s).length ? v : 0;
+    }
+    return k;
 }
-while (shipLiveries.length < SKINS.length) shipLiveries.push(0);
-for (let i = 0; i < shipLiveries.length; i++) {
-    const lv = shipLiveries[i] | 0;
-    shipLiveries[i] = (lv >= 0 && lv < LIVERIES.length && (ownedLiveries & (1 << lv))) ? lv : 0;
+let paintOwned, shipPaint;
+try { paintOwned = JSON.parse(localStorage.getItem('tunnel_paint_owned') || 'null'); } catch (e) { paintOwned = null; }
+try { shipPaint = JSON.parse(localStorage.getItem('tunnel_ship_paint') || 'null'); } catch (e) { shipPaint = null; }
+if (!paintOwned || typeof paintOwned !== 'object') {
+    // First load under the kit system: every 2026-09-17 finish the player bought becomes
+    // its parts (PAINT_LEGACY), and a ship that wore one keeps that look.
+    paintOwned = { c: 0, p: 0, m: 0, fx: 0 };
+    const oldMask = parseInt(localStorage.getItem('tunnel_liveries') || '1') | 1;
+    let oldShip = null;
+    try { oldShip = JSON.parse(localStorage.getItem('tunnel_ship_liveries') || 'null'); } catch (e) { oldShip = null; }
+    if (!Array.isArray(oldShip)) oldShip = SKINS.map(() => parseInt(localStorage.getItem('tunnel_livery') || '0') || 0);
+    for (let i = 1; i < PAINT_LEGACY.length; i++) {
+        if (!(oldMask & (1 << i))) continue;
+        for (const s in PAINT_LEGACY[i]) paintOwned[_paintOwnKey(s)] |= 1 << PAINT_LEGACY[i][s];
+    }
+    if (!Array.isArray(shipPaint)) {
+        shipPaint = SKINS.map((_, i) => {
+            const lv = oldShip[i] | 0;
+            return _paintKit(lv > 0 && lv < PAINT_LEGACY.length && (oldMask & (1 << lv)) ? PAINT_LEGACY[lv] : null);
+        });
+    }
+    localStorage.setItem('tunnel_paint_owned', JSON.stringify(paintOwned));
+    localStorage.setItem('tunnel_ship_paint', JSON.stringify(shipPaint));
 }
-function liveryOf(skin) { return shipLiveries[skin] || 0; }
+for (const k of ['c', 'p', 'm', 'fx']) paintOwned[k] = paintOwned[k] | 0;
+if (!Array.isArray(shipPaint)) shipPaint = [];
+while (shipPaint.length < SKINS.length) shipPaint.push(null);
+shipPaint = shipPaint.map(_paintKit);
+// A kit may only wear bought parts the hangar owns (a save edited by hand, or one written
+// while DEV_WALLET was on). Earned parts are left alone: their stats load further down and
+// are monotonic.
+for (const k of shipPaint) {
+    for (const s of _PAINT_KEYS) {
+        const part = _paintList(s)[k[s]];
+        if (part.cost && !part.earn && !(paintOwned[_paintOwnKey(s)] & (1 << k[s]))) k[s] = 0;
+    }
+}
+// Earned parts (constants.js PAINT_* `earn`): read live from monotonic stats, never stored.
+function paintEarnMet(part) {
+    if (part.earn === 'best')   return best >= part.need;
+    if (part.earn === 'worlds') { let n = 0; for (let m = planetsFlown; m; m &= m - 1) n++; return n >= part.need; }
+    if (part.earn === 'days')   return stardust >= part.need;
+    if (part.earn === 'streak') return bestStreak >= part.need;
+    return true;
+}
+function paintPartOwned(slot, i) {
+    const part = _paintList(slot)[i];
+    if (!part) return false;
+    if (part.earn) return paintEarnMet(part);
+    if (!part.cost) return true;
+    return !!(paintOwned[_paintOwnKey(slot)] & (1 << i));
+}
+// The kit a ship flies, or 0 for plain FACTORY (callers treat any falsy value as factory).
+function paintOf(skin) {
+    const k = shipPaint[skin];
+    if (!k) return 0;
+    return k.c || k.p || k.m || k.fx ? k : 0;
+}
+// `bought`: only a purchase writes ownership, so DEV_WALLET's all-owned hangar (never
+// saved) cannot leak into the real save by equipping something.
+function savePaint(bought) {
+    if (bought) localStorage.setItem('tunnel_paint_owned', JSON.stringify(paintOwned));
+    localStorage.setItem('tunnel_ship_paint', JSON.stringify(shipPaint));
+}
 if (DEV_WALLET) {   // constants.js, ships false
     shards = Math.max(shards, 9999);
-    ownedLiveries = (1 << LIVERIES.length) - 1;
+    for (const k of ['c', 'p', 'm', 'fx']) paintOwned[k] = (1 << _paintList(k).length) - 1;
 }
-// Paint sheet, layered on top of the ALL SHIPS sheet. paintPreview is the unowned finish
-// the player tapped once (shown on the big preview ship; a second tap buys it), -1 = none.
+// Paint sheet, layered on top of the ALL SHIPS sheet. paintTab is the slot being browsed
+// (index into PAINT_SLOTS); paintPreview is the unowned part tapped once in that tab (shown
+// on the preview ships; a second tap buys it), -1 = none.
 let showPaint = false;
+let paintTab = 0;
 let paintPreview = -1;
+let _paintTabRects = [];
+// Last coin picked up (systems.js), for the PULSE paint (paint.js). Presentation only.
+let paintCoinFx = { col: null, t: -9 };
 let _paintBtnRect = null;
 let _paintPanelRect = null;
-let _paintSwatchRects = [];
 // How many shards have already been banked today (DAILY_SHARD_CAP in constants.js), reset
 // on the same UTC day boundary as dailyBest/dailyRuns above (see lifecycle.js startPlay()).
 let dailyShardsEarned = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tunnel_daily_shards') || '0') : 0;
@@ -254,6 +314,21 @@ let missionRewardWon = 0;
 let runCoinsByType = { gold: 0, blue: 0, red: 0, green: 0, orange: 0 }; // this run's per-type coin counts
 let _skinBtnRects = [];
 let streak = parseInt(localStorage.getItem('tunnel_streak') || '0');
+// The longest streak ever reached. Backs the two `earn: 'streak'` paints (constants.js
+// PAINT_COLORS) and is monotonic on purpose, so a missed day never takes a paint away.
+// Seeded from the current streak on first load, which is the only value an existing
+// save can prove.
+let bestStreak = Math.max(parseInt(localStorage.getItem('tunnel_best_streak') || '0'), streak);
+// Banked rest days (constants.js STREAK_GRACE_MAX): one is earned on every completed
+// week and spent by a single missed day instead of resetting the streak.
+let streakGrace = parseInt(localStorage.getItem('tunnel_streak_grace') || '0');
+// What the day rollover just granted (lifecycle.js dayRollover), or null when no new
+// day started in this session: { dust, bonus, crate, grace, streak }. Read by the title
+// screen's arrival card and by the death screen's stardust chip on the day's first run.
+// Deliberately session-only - it is a "what just happened" report, not saved state.
+let dayGrant = null;
+// Seconds the arrival card stays on the title screen, counted down in update.js.
+let dayGrantT = 0;
 // Persistent 7-bit mask of which weekday worlds (constants.js WEEKDAY_PALETTES,
 // bit i = index i) the player has finished a real run on -- backs the
 // PLANET_ACHIEVEMENTS set, set in commitDeath() (update.js).
@@ -290,6 +365,12 @@ let _shopPanelRect = null;
 let showCurrencyInfo = false;
 let _settingsGuideBtnRect = null;
 let _currencyInfoPanelRect = null;
+// The stardust path: the day-0-to-last-ship timeline opened by tapping the ✦ wallet on
+// the ALL SHIPS sheet. Answers "what is this number for?" where the question comes up,
+// instead of the Settings explainer's one line two panels away.
+let showStardustPath = false;
+let _stardustBtnRect = null;
+let _stardustPathPanelRect = null;
 // CONCEPT A (Dock & Drawer) title-screen prototype -- Missions drawer and ALL
 // SHIPS sheet, opened from the icon rail / hero ship link in drawTitleScreen().
 // Same tap-outside-to-close pattern as showShop/showSettings above.
@@ -525,7 +606,7 @@ let slowFxVis = 0, vtime = 0, slowFxPulseT = -1, slowFxRipPh = 0;
 let skinFx = [], skinFxT = 0;
 let shipPitch = 0;
 let shipRoll = SHIP3D_ROLL_BASE, shipRollV = 0;   // degrees, deg/s (constants.js SHIP_VIEW_3D)
-let shipSweep = 0;   // 0 = wings spread .. 1 = fully swept, < 0 = braking past spread (constants.js SHIP3D_SWEEP_*)
+let shipSweep = SHIP3D_SWEEP_CRUISE;   // 1 = folded back (warp) .. 0 = spread (blue coin); normal flight cruises in between
 let shipBarrelT = -1;   // seconds into the portal barrel roll, -1 = none (SHIP3D_BARREL_SEC)
 let ambParts = [];
 // persists across runs: { wx, side } where side is 'top' | 'bot' | 'mid'. The y is NOT

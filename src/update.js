@@ -144,6 +144,9 @@ function update(dt) {
 
     if (phase === 'title') {
         titleT  += dt;
+        // The day's arrival card fades itself out (constants.js DAY_GRANT_SEC). `dayGrant`
+        // itself stays for the death screen's chip on the first run of the day.
+        if (dayGrantT > 0) dayGrantT = Math.max(0, dayGrantT - dt);
         scrollX += 110 * dt;
         refreshWave();
         const { top: _tTop, bot: _tBot } = boundsAt(scrollX + PX);
@@ -1343,32 +1346,38 @@ function stepShipRoll(dt, vyNow) {
     const h = Math.min(dt, 1 / 30);
     shipRollV += (K * (target - shipRoll) - damp * shipRollV) * h;
     shipRoll  += shipRollV * h;
-    // Swing wing: fold with the speed the player actually feels. Only in play - the
-    // title demo and the approach fly spread.
-    let sweepT = 0;
+    // Swing wing (user's call, 2026-09-22): the wings say how fast the ship is going, in
+    // three states. Normal flight sits at SHIP3D_SWEEP_CRUISE, between the two extremes.
+    // A WARP folds them all the way back, a BLUE COIN swings them all the way forward, and
+    // each of those eases back to cruise with its own timer - linear in warpTime/warpMax
+    // and slowTime/slowTimeMax, the same clocks the speed itself rides. A warp beats a blue
+    // coin: the ship is actually flying fast then, whatever the pill says.
+    let sweepT = SHIP3D_SWEEP_CRUISE;
     if (phase === 'play') {
-        const eff = scrollSpdBase() * slowScrollFactor() * warpScrollFactor();
-        sweepT = Math.max(0, Math.min(1, (eff - SHIP3D_SWEEP_SPD_LO) / (SHIP3D_SWEEP_SPD_HI - SHIP3D_SWEEP_SPD_LO)));
-        // Blue coin: the wings snap out PAST their normal spread (swung forward, an air
-        // brake) on pickup, then fold back to the speed's own sweep exactly as fast as
-        // slowScrollFactor() returns the speed - it is linear in slowTime/slowTimeMax too.
-        if (slowTime > 0 && slowTimeMax > 0) {
-            const w = slowTime / slowTimeMax;
-            sweepT = sweepT + (-SHIP3D_BRAKE_DEG / SHIP3D_SWEEP_MAX - sweepT) * w;
+        if (warpTime > 0 && warpMax > 0) {
+            // Held fully back for the first part of the warp, then gliding home over its
+            // last SWEEP_WARP_EASE - a warp is short, so a purely linear ramp would start
+            // giving the wings back while the ship is still being pulled along.
+            const k = Math.min(1, (warpTime / warpMax) / SHIP3D_SWEEP_WARP_EASE);
+            sweepT = SHIP3D_SWEEP_CRUISE + (1 - SHIP3D_SWEEP_CRUISE) * k;
+        } else if (slowTime > 0 && slowTimeMax > 0) {
+            sweepT = SHIP3D_SWEEP_CRUISE * (1 - slowTime / slowTimeMax);
         }
     }
-    // Opening is fast (a brake), folding is slow (a gradual speed-up).
-    shipSweep += (sweepT - shipSweep) * Math.min(dt * (sweepT < shipSweep ? 12 : 4), 1);
+    // Swinging forward is fast (a coin is a moment) and so is a warp's fold (the portal is a
+    // surge); easing back to cruise is slow, so an effect wearing off reads as a glide.
+    const snap = sweepT < shipSweep || (phase === 'play' && warpTime > 0);
+    shipSweep += (sweepT - shipSweep) * Math.min(dt * (snap ? 12 : 4), 1);
     if (shipBarrelT >= 0) {
         shipBarrelT += dt;
         if (shipBarrelT >= SHIP3D_BARREL_SEC) shipBarrelT = -1;
     }
 }
 
-// Roll the 3D ship is drawn at, in degrees: the sprung roll plus the portal barrel roll
-// (smoothstep over SHIP3D_BARREL_SEC, so it starts and lands without a jolt).
+// Roll the 3D ship is drawn at, in degrees: the sprung roll plus the portal barrel roll,
+// two full turns (smoothstep over SHIP3D_BARREL_SEC, so it starts and lands without a jolt).
 function shipRollDeg() {
     if (shipBarrelT < 0) return shipRoll;
     const u = Math.min(shipBarrelT / SHIP3D_BARREL_SEC, 1);
-    return shipRoll + 360 * u * u * (3 - 2 * u);
+    return shipRoll + 720 * u * u * (3 - 2 * u);
 }

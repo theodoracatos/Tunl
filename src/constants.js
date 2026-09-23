@@ -6,7 +6,7 @@
 // it exists so a build can identify itself: window.TUNL_VERSION for a DevTools check,
 // and build-play.mjs stamps it into /play as <meta name="tunl:version"> so the live
 // web build's version is greppable without diffing the bundle.
-const TUNL_VERSION = '16.1';
+const TUNL_VERSION = '17.0';
 if (typeof window !== 'undefined') window.TUNL_VERSION = TUNL_VERSION;
 
 const cv  = document.getElementById('c');
@@ -100,49 +100,58 @@ let SAFE_L = 0, SAFE_R = 0;
 
 const PX      = W  * 0.22;
 const PR      = W  * 0.018;
-// Ship exhaust nozzles in PR units (draw.js drawShip's nacelles). Shared by the thrust
-// plume and on-fire cone (draw.js) and the thruster particles (update.js), so exhaust
-// always leaves the nacelles whatever the hull geometry does.
-const SHIP_NOZZLE_X = -0.92, SHIP_NOZZLE_Y = 0.50;
+// Ship exhaust nozzles in PR units (draw.js drawShip's nacelles and the 3D model's). Shared
+// by the thrust plume and on-fire cone (draw.js) and the thruster particles (update.js), so
+// exhaust always leaves the nacelles whatever the hull geometry does. The F-14 hull
+// (2026-09-22) puts them close together beside the beaver tail (the SR-71 had them at 0.50).
+const SHIP_NOZZLE_X = -0.98, SHIP_NOZZLE_Y = 0.20;
 
 // 3/4 SIDE VIEW (2026-09-19, variant D of the view study:
 // https://claude.ai/artifact/Q9gDK8SdVrCYm9rU9biZdJ). The flying ship (player, ghost,
-// wreck) is drawn from a small 3D model of the K5 hull (draw.js drawShip3D), rolled
-// SHIP3D_ROLL_BASE degrees out of the top view toward a side view, plus a light roll
-// that follows the climb rate (+-SHIP3D_ROLL_AMP, update.js stepShipRoll). Hangar, hero,
-// shop and share card stay top-down - the hangar is a portrait, the flight is a flight.
+// wreck) is drawn from a small 3D model of the hull (draw.js drawShip3D; an F-14 since
+// 2026-09-22), rolled SHIP3D_ROLL_BASE degrees out of the top view toward a side view,
+// plus a light roll that follows the climb rate (+-SHIP3D_ROLL_AMP, update.js
+// stepShipRoll). Hangar, hero, shop and share card stay top-down - the hangar is a
+// portrait, the flight is a flight.
 // PR is untouched and this is draw-only: no rng(), no placement, no collision input.
 //
 // WHY: the cave is a side section (gravity down, stalactites from the ceiling, a dusk
 // skyline in the approach) and the ship was the one thing in it seen from above.
 //
-// The roll angle is a trade, and 60 is the measured middle: at 45 only the near wing read
-// and the picture reached just ~0.55-0.8 PR vertically against the hitbox circle (0.98
-// top-down), at 90 it is simply today's top view. At 60 both swing wings read and the span
-// is back to ~0.85 PR (0.71 with the wings swept, 0.63 at the bottom of the roll swing).
+// The roll angle is a trade: at 45 only the near wing reads and the picture reaches just
+// ~0.55-0.8 PR vertically against the hitbox circle (0.98 top-down), at 90 it is simply the
+// old top view. It sat at 60 from 2026-09-19; the user asked for "a bit more from above" on
+// 2026-09-23 and it is 67 now, which also buys hitbox coverage: the F-14 hull reaches
+// ~0.83 PR in normal flight (0.66 in the worst case over the roll swing and every sweep,
+// against 0.78 / 0.61 at 60).
 // test-collision.js holds that envelope (never past 1.0 PR, never a longer nose than the
 // flat hull) at every roll and sweep state. At 60 the SPAN carries the coverage, so
 // SHIP3D_FIN_SCALE barely moves it (measured +0.01 between 1.0 and 1.8) - the lever for
 // "the picture should fill more of the circle" is SHIP3D_ROLL_BASE.
 // Kill switch: false restores the flat top-down drawShip everywhere, with no other change.
 const SHIP_VIEW_3D      = true;
-const SHIP3D_ROLL_BASE = 60;    // degrees: 90 = today's top view, 0 = pure profile
+const SHIP3D_ROLL_BASE = 67;    // degrees: 90 = today's top view, 0 = pure profile
 const SHIP3D_ROLL_AMP  = 10;    // degrees of roll at full climb / full fall
-const SHIP3D_FIN_SCALE = 1.0;   // fin height, x real SR-71 proportion
-// Swing wing (F-14 style, 2026-09-19): the outer wing panels sweep back with forward
-// speed - spread at the slow start and under a blue coin, folded deep in and in a warp.
-// Keyed to the effective scroll speed in W=600 units (scrollSpdBase x slow x warp), so it
-// tracks what the player feels, and eased so a warp visibly folds them. Costs span: at
-// full sweep the wingtips come in from 0.975 to ~0.77 r.
-const SHIP3D_SWEEP_MAX    = 50;    // degrees of outer-panel sweep at full speed
-const SHIP3D_SWEEP_SPD_LO = 300;   // effective speed at which the wings start folding
-const SHIP3D_SWEEP_SPD_HI = 560;   // ... and are fully folded (the difficulty plateau)
-const SHIP3D_BRAKE_DEG    = 24;    // blue coin: wings swing this far FORWARD of spread (air brake)
+const SHIP3D_FIN_SCALE = 1.0;   // fin height, x the model's F-14 proportion
+// Swing wing (F-14 style, 2026-09-19; F-14 hull and the rule below, 2026-09-22): the panels
+// tell the player how fast the ship is, in three states (update.js stepShipRoll). Normal
+// flight sits at SHIP3D_SWEEP_CRUISE, between the extremes; a WARP folds them all the way
+// back; a BLUE COIN swings them all the way forward. Each extreme eases back to cruise on
+// its own effect clock, so the wings double as a readout of how much warp or slow time is
+// left. They used to track the scroll speed, which spread them through the whole slow
+// opening - the ship read as a trainer, not a fighter (user, 2026-09-22).
+// SHIP3D_SWEEP_MAX is a hitbox trade, not taste: the panels spread at a 20 deg leading
+// edge, so 34 takes them to 54 deg. The real F-14's 68 deg (48 here) pulls the tips in so
+// far that the swept ship fills only ~0.51 r of the circle in flight against
+// test-collision.js's 0.60 - you would die before the wing touched. 34 holds ~0.60.
+const SHIP3D_SWEEP_MAX    = 34;    // degrees of outer-panel sweep (20 -> 54 deg leading edge)
+const SHIP3D_SWEEP_CRUISE = 0.46;  // normal flight, as a fraction of SHIP3D_SWEEP_MAX (0 = spread, 1 = folded)
+const SHIP3D_SWEEP_WARP_EASE = 0.55;  // last fraction of a warp over which the wings glide back to cruise
 // Barrel roll on flying through the warp portal (2026-09-19): one full 360 deg turn about
 // the long axis, eased in and out, on top of the normal roll. The warp makes the player
 // hazard-immune and wall-clamped (CLAUDE.md "Warp portal"), so the picture briefly
 // leaving the hitbox mid-roll can never decide a death.
-const SHIP3D_BARREL_SEC = 0.75;
+const SHIP3D_BARREL_SEC = 1.1;
 // SCREEN-INDEPENDENT FEEL (CLAUDE.md rule). GRAVITY/THRUST/MAX_VY are quoted at
 // _H_REF - the landscape height the feel was tuned and player-tested at, an iPhone 17
 // Pro Max (~956x440pt) - and EVERY device (apps and web alike) scales them by
@@ -184,7 +193,7 @@ const DEV_INVINCIBLE = false; // set true to disable all deaths (testing only)
 const DEV_PAUSE_KEY = false;
 
 // Testing-only wallet (ships false, same pattern as DEV_INVINCIBLE above). True tops the
-// shard balance up and hands over every Hangar livery on load, so the Paint sheet can be
+// shard balance up and hands over every Hangar paint part on load, so the Paint sheet can be
 // exercised in a fresh simulator/emulator install that has never earned a shard. Nothing
 // is written to localStorage by it, so flipping it back off returns the real save. Ships
 // still unlock through the normal rules, which with a full wallet means the shard half is
@@ -1567,6 +1576,45 @@ const REFERRAL_REWARD = 20;
 const STARDUST_PER_DAY          = 1;
 const STARDUST_STREAK_BONUS_DAY = 7; // every Nth unbroken streak day grants +1 extra
 
+// ── The streak week crate and the rest day (2026-09-22) ──────────────
+// The +1 bonus above was the streak's only payout, and a 2026-09-22 audit found it
+// invisible twice over: nothing on screen ever showed `streak` at all, and the bonus
+// itself only moves a player who is ALREADY stardust-bound. At the ~80 shards/day a
+// real player banks, shards bind up to CRIMSON and the gates bind from ELECTRIC on,
+// so for most of the roster an extra ✦ buys nothing. A streak reward that the average
+// player can feel has to be paid in the currency that actually binds them (shards) or
+// in something that is not on the ladder at all (paint).
+//
+// STREAK_WEEK_SHARDS is granted with the bonus ✦ on every STARDUST_STREAK_BONUS_DAY-th
+// unbroken day. Exempt from DAILY_SHARD_CAP for the same reason SHARDS_AD_REWARD and
+// REFERRAL_REWARD are: bounded and un-grindable (one payout per seven calendar days,
+// no amount of skill or playtime brings the next one closer). Half a mission's worth
+// of a day's cap, ~+7% on top of ~80/day, which moves the pure-shard path to the last
+// ship by a couple of weeks while every `stardustGate` above stays exactly where it
+// was - the gates still bind at every tier, which is the invariant the ladder is set
+// against (see SKINS below and docs/agents/economy.md).
+const STREAK_WEEK_SHARDS = 40;
+
+// A missed day used to reset `streak` to 1 outright. One banked rest day per completed
+// week (never more than STREAK_GRACE_MAX) absorbs a single missed day instead: the
+// streak carries on, the missed day still grants no stardust, and the bank is spent.
+// Two missed days in a row still reset it. This is the same "tax, never zero out"
+// philosophy the stardust bank itself follows (a missed day never takes ✦ away) and
+// what keeps the streak from becoming the anxiety mechanic the block above rejects -
+// it protects the one-off missed evening, not a habit of skipping.
+const STREAK_GRACE_MAX = 1;
+
+// From this streak on, the 19:00 reminder (src/notify.js) swaps one of its three text
+// variants for the streak line. Below it there is no streak worth naming - a player on
+// day 1 or 2 has nothing to continue, and a nudge that invents one reads as pressure.
+const NOTIF_STREAK_MIN = 3;
+
+// How long the arrival card (draw.js, title screen) reports the day's grant. Long
+// enough to read three short lines, short enough that it is gone before a player who
+// opened the app to fly is annoyed by it - it never blocks a tap, the run starts
+// through it.
+const DAY_GRANT_SEC = 4.5;
+
 // ── Daily missions ────────────────────────────────────────────────────
 // Three short daily challenges, picked deterministically from the calendar day (see
 // pickDailyMissionIndices) so every player sees the same 3 on a given day. Progress is
@@ -1700,22 +1748,91 @@ const SKINS = [
 const SHIP_ACHIEVEMENTS = ['', 'tunl_ach_ship_amber', 'tunl_ach_ship_crimson', 'tunl_ach_ship_electric',
                             'tunl_ach_ship_toxic', 'tunl_ach_ship_void', 'tunl_ach_ship_nova', 'tunl_ach_ship_solaris'];
 
-// Hangar liveries (2026-09-17): cosmetic finishes bought with shards in the Paint sheet
-// (ALL SHIPS -> PAINT). Purely visual - no perk, no hitbox, no placement, no leaderboard
-// effect. A finish is bought once and applies to whichever owned ship is flown, and it
-// stays inside that ship's own colour family (it re-shades the facets, never repaints the
-// hue), so a PEARL can never be made to read as a SOLARIS. Not part of Unlock All Ships:
-// that entitlement is ships only. The sheet opens once LIVERY_GATE_SKIN (AMBER) is owned,
-// so the first paid ship stays the first shard goal. Prices sit against the ~80 shards/day
-// a real player banks (see the ship ladder): the whole set (1240) is ~15 days of income. Names
-// are proper nouns like ship names and are not translated. drawShip() in draw.js renders
-// them; the ghost and the wrecked death frame always fly FACTORY.
-const LIVERIES = [
-    { name: 'FACTORY'             },
-    { name: 'STEALTH', cost: 80   },
-    { name: 'STRIPE',  cost: 120  },
-    { name: 'SPLIT',   cost: 200  },
-    { name: 'CHROME',  cost: 320  },
-    { name: 'AURORA',  cost: 520  },
+// Hangar paint shop, the Lackiererei (2026-09-22; replaced the six fixed LIVERIES of
+// 2026-09-17, which the user called "langweilig, nicht abwechslungsreich": they could only
+// lighten or darken the ship's own hue, so every finish read as the same ship). A paint job
+// is a KIT of five slots, each bought once for the hangar and combined freely per ship:
+//   c  - PAINT_COLORS, the hull colour (index 0 FACTORY = the ship's own colour)
+//   p  - PAINT_PATTERNS, one big-mass pattern (index 0 = plain)
+//   pc - PAINT_COLORS again, the pattern's colour (index 0 = an automatic contrast shade)
+//   m  - PAINT_MATERIALS, how the paint takes light (index 0 GLOSS = the factory shading)
+//   fx - PAINT_EFFECTS, a paint that reacts to the flight (index 0 = none)
+// The hull colour may now change the hue. The ship's identity lives in its LIGHT instead:
+// glow, nozzles, intake rings, running lights and wingtip strobes always stay in SKINS[]
+// .shadow, whatever the paint, so a red PEARL still reads as PEARL. Purely visual - no perk,
+// hitbox, placement or leaderboard effect; the ghost and the wreck always fly FACTORY.
+// `cost` in shards (no cost = free); `earn` parts cannot be bought: 'best' = all-time best
+// score >= need, 'worlds' = weekday worlds flown >= need, 'days' = stardust >= need (stardust
+// only ever grows, one per day played), 'streak' = bestStreak >= need (the longest streak ever
+// reached, so an earned paint is never taken back). Names are proper nouns, untranslated,
+// like ship names.
+// Prices sit against the ~80 shards/day a real player banks: the full kit (7870) is ~98 days
+// of income, where the old set (1240) was done in ~15. Old finishes migrate in state.js
+// (PAINT_LEGACY). drawShip()/drawShip3D() in draw.js render it; see docs/agents/economy.md.
+const PAINT_COLORS = [
+    { name: 'FACTORY'                                               },
+    { name: 'GRAPHITE',  rgb: [ 46,  50,  60]                       },
+    { name: 'ARCTIC',    rgb: [226, 232, 240], cost: 60             },
+    { name: 'MIDNIGHT',  rgb: [ 26,  40,  96], cost: 60             },
+    { name: 'RACING',    rgb: [200,  24,  38], cost: 60             },
+    { name: 'OLIVE',     rgb: [ 96, 110,  56], cost: 60             },
+    { name: 'SAND',      rgb: [210, 184, 134], cost: 60             },
+    { name: 'PETROL',    rgb: [ 18, 110, 118], cost: 60             },
+    { name: 'BORDEAUX',  rgb: [104,  20,  44], cost: 60             },
+    { name: 'TITAN',     rgb: [142, 148, 160], cost: 60             },
+    { name: 'GOLD',      rgb: [228, 178,  58], earn: 'best', need: 500 },
+    // The two streak paints (2026-09-22). Earned from `bestStreak`, the longest run of
+    // consecutive days ever reached, never the current one: a paint the player can lose
+    // again by missing a Tuesday would be a punishment, and the hangar has no other
+    // part that can be taken back. Read live like every other earned part.
+    { name: 'COMET',     rgb: [170, 226, 255], earn: 'streak', need: 14 },
+    { name: 'ECLIPSE',   rgb: [ 32,  26,  58], earn: 'streak', need: 30 },
+];
+const PAINT_PATTERNS = [
+    { name: ''                                     },
+    { name: 'SPLIT',    cost: 100                  },
+    { name: 'STRIPE',   cost: 100                  },
+    { name: 'CHEVRON',  cost: 140                  },
+    { name: 'WINGTIPS', cost: 140                  },
+    { name: 'FLAMES',   cost: 180                  },
+    { name: 'TIGER',    cost: 180                  },
+    { name: 'ROUNDEL',  cost: 240                  },
+    { name: 'SUNBURST', cost: 240                  },
+    { name: 'ORBIT',    earn: 'worlds', need: 7    },
+];
+const PAINT_MATERIALS = [
+    { name: 'GLOSS'                              },
+    { name: 'STEALTH',  cost: 120                },
+    { name: 'METALLIC', cost: 200                },
+    { name: 'CANDY',    cost: 260                },
+    { name: 'NACRE',    cost: 340                },
+    { name: 'CHROME',   cost: 400                },
+    { name: 'DIAMOND',  earn: 'days', need: 30   },
+];
+const PAINT_EFFECTS = [
+    { name: ''                       },
+    { name: 'EMBER',     cost: 700   },   // hull glows hot while thrusting
+    { name: 'PULSE',     cost: 800   },   // a wave in the last coin's colour
+    { name: 'AURORA',    cost: 950   },   // polar curtains, swayed by the roll
+    { name: 'NEBULA',    cost: 1100  },   // the hull as a window onto a drifting nebula
+    { name: 'FIRESTORM', cost: 1200  },   // flames grow toward the record, blaze ON FIRE
+];
+// Slot -> catalogue, in the Paint sheet's tab order.
+const PAINT_SLOTS = [
+    { key: 'c',  list: PAINT_COLORS    },
+    { key: 'p',  list: PAINT_PATTERNS  },
+    { key: 'pc', list: PAINT_COLORS    },
+    { key: 'm',  list: PAINT_MATERIALS },
+    { key: 'fx', list: PAINT_EFFECTS   },
+];
+// The 2026-09-17 finishes (old bitmask bit i = index i here) and the kit each becomes:
+// owners get those parts free and a ship that wore one keeps the look.
+const PAINT_LEGACY = [
+    null,                        // FACTORY
+    { m: 1 },                    // STEALTH
+    { p: 2 },                    // STRIPE
+    { p: 1 },                    // SPLIT
+    { m: 5 },                    // CHROME
+    { fx: 3 },                   // AURORA
 ];
 const LIVERY_GATE_SKIN = 1;

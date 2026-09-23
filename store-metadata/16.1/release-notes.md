@@ -1,22 +1,25 @@
 # TUNL 16.1 - Play Console / App Store Connect "What's New" copy (15 locales)
 
-Theme: shoot for repairs. Every mine or cannon shot destroyed by a bullet drops a repair kit
-(a wrench) where it died; flying through it refills the hull to both scratches and always pays
-a few points (`REPAIR_KIT_PTS`). No cooldown, no magnet pull. Second, smaller item: the crystal
-stalactites' small base crystals no longer float off the wall where the cave bends (`_xtalFit`,
-c297315). Hitbox, daily seed and cave placement unchanged: kits never enter the coin arrays.
+Updated 2026-09-21 after `b0d3fea` landed on top of the original 16.1 prep (still under this
+same version string, iOS build bumped 55 -> 56, Android versionCode 49 -> 50): a wall contact
+now spends a shield before the hull, so the hull only scratches once nothing shields it. A
+repair kit gives back ONE scratch (not a full refill as the original copy below said) and a
+scratched hull shows real gouges with drifting smoke, stopping while a shield is up. The death
+sound also changed ("Crash" replaces the balloon pop). The crystal-root fix (`_xtalFit`) is
+unchanged from the original prep and dropped from the copy to make room - it already shipped
+web-side and is a minor item next to the hull/shield rework.
 
-Deliberately NOT in the copy: the point value (qualitative only, feedback_marketing_no_stat_numbers)
-and any pixel numbers for the crystal fix. Every locale is under Google Play's 500-character limit
-(counts below, asserted by the generator), so the same copy doubles as App Store Connect's
-"Neues in dieser Version". No em dashes.
+Deliberately NOT in the copy: point values (qualitative only, feedback_marketing_no_stat_numbers)
+and pixel/dB numbers. No em dashes.
 
-Promotional text (Werbetexte): UNCHANGED from 15.0/16.0, copied below so it can be pasted (ASC
-leaves the field empty on every new version). The core pitch did not change.
+Promotional text (Werbetexte): UNCHANGED from 15.0/16.0/original-16.1 prep, still the section
+below - not touched by this update, only What's New changed.
 
-Versions: iOS marketing 16.1 / build 55, Android versionName 16.1 / versionCode 49.
-Store assets: none new (the repair kit is not in the screenshots; see the 16.0 decision on
-keeping the old screenshots).
+Versions: iOS marketing 16.1 / build 56, Android versionName 16.1 / versionCode 50.
+Store assets: none new.
+
+**ASC status**: What's New PATCHed for all 15 locales via `iris/v1` on the 2b77682b version
+(build 56 already attached), re-GET `===` verified 15/15. Submitted for review 2026-09-21.
 
 ---
 
@@ -69,49 +72,49 @@ Jedna jaskinia dziennie, ta sama dla wszystkich. Startuj nad miastem o zmierzchu
 
 ---
 
-## What's New / Release Notes
+## What's New / Release Notes (updated, replaces the original 16.1 copy)
 
-### en-US  (306 chars)
-Shoot for repairs. Every mine or cannon shot you destroy with ammo now drops a wrench. Fly through it and your hull is back to two scratches, however many you had lost. Miss it and it is gone: the magnet will not fetch it for you. Also: crystal stalactites now stay rooted on the wall where the cave bends.
+### en-US  (289 chars)
+Your hull shows the damage. A wall hit spends a shield first, so only a bare hull scratches, and a scratched hull now shows real gouges with drifting smoke. Destroy a mine or cannon shot with ammo and it drops a wrench: fly through to repair one scratch. Also: a new crash sound on impact.
 
-### de-DE  (327 chars)
-Wer trifft, repariert. Jede Mine und jeder Kanonenschuss, den du mit Munition zerstörst, lässt jetzt einen Schraubenschlüssel fallen. Flieg hindurch, und deine Hülle hat wieder zwei Kratzer. Verpasst du ihn, ist er weg: Der Magnet holt ihn dir nicht. Außerdem bleiben Kristall-Stalaktiten jetzt auch in Kurven fest an der Wand.
+### de-DE  (382 chars)
+Deine Hülle zeigt die Schäden. Ein Wandkontakt kostet zuerst ein Schild, nur eine ungeschützte Hülle bekommt einen Kratzer, und eine verkratzte Hülle zeigt jetzt echte Riefen mit ziehendem Rauch. Zerstörst du eine Mine oder einen Kanonenschuss mit Munition, lässt er einen Schraubenschlüssel fallen: Flieg hindurch, um einen Kratzer zu reparieren. Außerdem: ein neuer Absturz-Sound.
 
-### fr-FR  (310 chars)
-Tirer pour réparer. Chaque mine ou tir de canon que tu détruis avec des munitions lâche maintenant une clé. Traverse-la et ta coque retrouve ses deux éraflures. Rate-la et elle est perdue : l'aimant ne te la ramènera pas. Aussi : les stalactites de cristal restent ancrées dans la paroi, même dans les virages.
+### fr-FR  (331 chars)
+Ta coque montre les dégâts. Un contact avec la paroi coûte d'abord un bouclier, seule une coque nue s'éraille, et une coque éraflée affiche désormais de vraies entailles avec de la fumée. Détruis une mine ou un tir de canon avec des munitions et il lâche une clé : traverse-la pour réparer une éraflure. Et un nouveau son de crash.
 
-### it-IT  (296 chars)
-Spara per riparare. Ogni mina o colpo di cannone che distruggi con le munizioni ora lascia cadere una chiave inglese. Attraversala e lo scafo torna a due graffi. Se la manchi è persa: la calamita non te la porta. Inoltre le stalattiti di cristallo restano radicate nella parete anche nelle curve.
+### it-IT  (346 chars)
+Lo scafo mostra i danni. Un contatto con la parete consuma prima uno scudo: solo uno scafo nudo si graffia, e uno scafo graffiato ora mostra solchi veri con fumo che si disperde. Distruggi una mina o un colpo di cannone con le munizioni e lascia cadere una chiave inglese: attraversala per riparare un graffio. In più, un nuovo suono di schianto.
 
-### es-ES  (300 chars)
-Dispara para reparar. Cada mina o disparo de cañón que destruyes con munición ahora suelta una llave inglesa. Pasa por ella y tu casco vuelve a tener dos rasguños. Si la pierdes, se acabó: el imán no te la trae. Además, las estalactitas de cristal se quedan ancladas a la pared también en las curvas.
+### es-ES  (329 chars)
+Tu casco muestra los daños. Un choque con la pared gasta primero un escudo: solo un casco desnudo se raya, y un casco rayado ahora muestra surcos reales con humo a la deriva. Destruye una mina o un disparo de cañón con munición y suelta una llave inglesa: pasa por ella para reparar un rasguño. Además, un nuevo sonido de choque.
 
-### pt-BR  (285 chars)
-Atire para consertar. Cada mina ou tiro de canhão que você destrói com munição agora solta uma chave inglesa. Passe por ela e seu casco volta a ter dois arranhões. Perdeu, acabou: o ímã não traz ela para você. E mais: as estalactites de cristal ficam presas à parede também nas curvas.
+### pt-BR  (336 chars)
+Seu casco mostra os danos. Um contato com a parede gasta primeiro um escudo: só um casco sem escudo arranha, e um casco arranhado agora mostra marcas reais com fumaça se dissipando. Destrua uma mina ou tiro de canhão com munição e ele solta uma chave inglesa: passe por ela para consertar um arranhão. Além disso, um novo som de batida.
 
-### ja-JP  (120 chars)
-撃って修理。弾薬で機雷や砲台の弾を破壊すると、レンチが落ちるようになりました。通過すると装甲の傷が2回分に戻ります。取り逃すとなくなり、マグネットでも拾えません。さらに、洞窟が曲がる場所でも結晶の鍾乳石が壁にしっかり根付くようになりました。
+### ja-JP  (121 chars)
+船体がダメージを物語る。壁に触れるとまずシールドが消費され、シールドがない船体だけが傷つく。傷ついた船体には実際の傷と漂う煙が表示される。弾薬で機雷や砲弾を破壊するとレンチが落ち、通過すると傷が1つ修理される。さらに新しいクラッシュ音も追加。
 
-### ko-KR  (135 chars)
-쏘아서 수리하기. 탄약으로 지뢰나 대포알을 파괴하면 이제 렌치가 떨어집니다. 통과하면 선체 흠집이 다시 2번이 됩니다. 놓치면 사라지고, 마그넷으로도 가져올 수 없습니다. 또한 동굴이 휘는 곳에서도 크리스털 종유석이 벽에 제대로 뿌리내립니다.
+### ko-KR  (166 chars)
+선체가 손상을 보여줍니다. 벽에 부딪히면 먼저 실드가 소모되고, 실드가 없을 때만 선체에 흠집이 생깁니다. 흠집 난 선체는 이제 실제 패임과 흩날리는 연기를 보여줍니다. 탄약으로 지뢰나 대포알을 파괴하면 렌치가 떨어지고, 통과하면 흠집 하나가 수리됩니다. 또한 새로운 충돌 사운드가 추가되었습니다.
 
-### zh-TW  (84 chars)
-擊落即修復。現在用彈藥擊毀地雷或砲彈，都會掉出一把扳手。飛過它，船體就恢復兩次刮痕。錯過就沒了，磁鐵也不會幫你吸過來。另外，洞窟彎曲處的水晶鐘乳石現在也會牢牢長在牆上。
+### zh-TW  (92 chars)
+船體會顯示損傷。撞牆時先消耗護盾，只有沒有護盾的船體才會刮傷，刮傷的船體現在會顯示真實的凹痕與飄散的煙霧。用彈藥擊毀地雷或砲彈會掉出一把扳手，飛過它可修復一道刮痕。另外新增了撞擊音效。
 
-### ru-RU  (298 chars)
-Меткий выстрел чинит. Каждая мина или снаряд пушки, которые ты уничтожаешь патронами, теперь роняет гаечный ключ. Пролети через него, и у корпуса снова две царапины. Промахнёшься - ключ пропадёт: магнит его не принесёт. А ещё кристаллические сталактиты теперь держатся за стену и на изгибах пещеры.
+### ru-RU  (348 chars)
+Корпус теперь показывает повреждения. Удар о стену сначала тратит щит: царапина появляется только на незащищённом корпусе, а поцарапанный корпус теперь показывает настоящие вмятины с уносящимся дымом. Уничтожь мину или снаряд пушки боеприпасом, и он уронит гаечный ключ: пролети сквозь него, чтобы залечить одну царапину. Также новый звук крушения.
 
-### ar  (221 chars)
-أصب الهدف لتُصلح. كل لغم أو طلقة مدفع تدمّرها بالذخيرة تُسقط الآن مفتاح ربط. اعبر من خلاله فيعود لهيكلك خدشان. إن فاتك ضاع، فالمغناطيس لن يجلبه لك. وأيضاً: الهوابط البلورية تبقى الآن مغروسة في الجدار حتى في منعطفات الكهف.
+### ar  (250 chars)
+بدنك يظهر الضرر. الاصطدام بالجدار يستهلك الدرع أولاً، فلا يُخدش سوى البدن غير المحمي، والبدن المخدوش يُظهر الآن خدوشاً حقيقية مع دخان متصاعد. دمّر لغماً أو قذيفة مدفع بالذخيرة فيُسقط مفتاح ربط: اطر خلاله لإصلاح خدش واحد. إضافة إلى ذلك، صوت تحطم جديد.
 
-### tr-TR  (277 chars)
-Vur ve onar. Mermiyle yok ettiğin her mayın ya da top atışı artık bir İngiliz anahtarı düşürüyor. İçinden geç, gövdende yeniden iki çizik olsun. Kaçırırsan gider: mıknatıs onu sana getirmez. Ayrıca kristal sarkıtlar artık mağaranın kıvrımlarında da duvara sıkıca bağlı kalıyor.
+### tr-TR  (313 chars)
+Gövden hasarı gösteriyor artık. Duvara temas önce kalkanı harcar, sadece kalkansız gövde çizilir, çizilmiş gövde artık gerçek oyuklar ve savrulan dumanla görünüyor. Cephaneyle bir mayını ya da top atışını yok et, bir İngiliz anahtarı düşsün: içinden geçerek bir çiziği onar. Ayrıca yeni bir çarpışma sesi eklendi.
 
-### id  (328 chars)
-Tembak untuk memperbaiki. Setiap ranjau atau tembakan meriam yang kamu hancurkan dengan amunisi kini menjatuhkan kunci pas. Terbang melewatinya dan lambungmu kembali punya dua goresan. Terlewat berarti hilang: magnet tidak akan mengambilkannya. Selain itu, stalaktit kristal kini tetap tertanam di dinding, juga di tikungan gua.
+### id  (390 chars)
+Lambungmu kini menunjukkan kerusakan. Menabrak dinding menghabiskan perisai lebih dulu, hanya lambung tanpa perisai yang tergores, dan lambung yang tergores kini menampilkan goresan nyata dengan asap yang melayang. Hancurkan ranjau atau tembakan meriam dengan amunisi dan ia menjatuhkan kunci inggris: terbang melewatinya untuk memperbaiki satu goresan. Selain itu, ada suara tabrakan baru.
 
-### pl-PL  (291 chars)
-Strzelaj, by naprawiać. Każda mina lub strzał z działa, które zniszczysz amunicją, zostawia teraz klucz. Przeleć przez niego, a kadłub znów ma dwie rysy. Przegapisz go i przepada: magnes go nie przyniesie. Poza tym kryształowe stalaktyty trzymają się teraz ściany także na zakrętach jaskini.
+### pl-PL  (332 chars)
+Twój kadłub pokazuje uszkodzenia. Kontakt ze ścianą zużywa najpierw tarczę, tylko nieosłonięty kadłub się rysuje, a porysowany kadłub pokazuje teraz prawdziwe wgniecenia z unoszącym się dymem. Zniszcz minę lub pocisk armatni amunicją, a upuści klucz: przeleć przez niego, by naprawić jedno zarysowanie. Do tego nowy dźwięk rozbicia.
 
-### hi-IN  (274 chars)
-निशाना लगाओ, मरम्मत पाओ। गोलियों से नष्ट की गई हर माइन या तोप का गोला अब एक रिंच गिराता है। उसमें से उड़ें, और आपके कवच में फिर से दो खरोंचें हो जाती हैं। चूक गए तो वह गया: मैग्नेट उसे नहीं लाएगा। साथ ही, क्रिस्टल स्टैलेक्टाइट अब गुफा के मोड़ों पर भी दीवार में जमे रहते हैं।
+### hi-IN  (308 chars)
+अब तुम्हारा हल नुकसान दिखाता है। दीवार से टकराने पर पहले शील्ड खर्च होती है, बिना शील्ड वाला हल ही खरोंचता है, और खरोंचा हुआ हल अब असली निशान और उड़ते धुएं के साथ दिखता है। गोला-बारूद से किसी माइन या तोप के गोले को नष्ट करो तो वह एक रिंच गिराता है: उसमें से उड़कर एक खरोंच ठीक करो। साथ ही, एक नई क्रैश ध्वनि।

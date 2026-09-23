@@ -171,37 +171,19 @@ function onDown(e) {
         // CONCEPT A: ALL SHIPS sheet. Hit-test the grid first (selecting a ship
         // keeps the sheet open, same as picking a language keeps Settings
         // open); anything else -- background, header, wallet line -- closes it.
-        // Paint sheet (on top of ALL SHIPS): owned finish -> equip; unowned -> first tap
-        // previews, second tap on the same finish buys it if shards allow.
-        if (showShipPicker && showPaint) {
-            for (let i = 0; i < _paintSwatchRects.length; i++) {
-                if (!inRect(cx, cy, _paintSwatchRects[i])) continue;
-                if (ownedLiveries & (1 << i)) {
-                    shipLiveries[activeSkin] = i;
-                    paintPreview = -1;
-                    localStorage.setItem('tunnel_ship_liveries', JSON.stringify(shipLiveries));
-                    sfxUiSelect(activeSkin);
-                } else if (paintPreview === i && shards >= LIVERIES[i].cost) {
-                    shards -= LIVERIES[i].cost;
-                    ownedLiveries |= (1 << i);
-                    shipLiveries[activeSkin] = i;   // bought for the hangar, worn by this ship
-                    paintPreview = -1;
-                    localStorage.setItem('tunnel_shards', shards);
-                    localStorage.setItem('tunnel_liveries', ownedLiveries);
-                    localStorage.setItem('tunnel_ship_liveries', JSON.stringify(shipLiveries));
-                    sfxUiPurchaseSuccess();
-                } else {
-                    paintPreview = i;
-                    if (shards >= LIVERIES[i].cost) sfxUiTap(); else sfxUiDenied();
-                }
-                return;
-            }
-            if (!_paintPanelRect || !inRect(cx, cy, _paintPanelRect)) {
-                showPaint = false; paintPreview = -1; sfxUiClose();
-            }
+        // Paint sheet (on top of ALL SHIPS), paint.js paintSheetTap.
+        // Stardust path, layered on the ALL SHIPS sheet like the currency explainer is
+        // on Settings -- intercept before the sheet below, or a tap outside it would be
+        // read as "close the sheet" and leave this panel orphaned.
+        if (showStardustPath) {
+            if (!_stardustPathPanelRect || !inRect(cx, cy, _stardustPathPanelRect)) { showStardustPath = false; sfxUiClose(); }
             return;
         }
+        if (showShipPicker && showPaint) { paintSheetTap(cx, cy); return; }
         if (showShipPicker) {
+            if (_stardustBtnRect && inRect(cx, cy, _stardustBtnRect)) {
+                showStardustPath = true; sfxUiTap(); return;
+            }
             if (_paintBtnRect && inRect(cx, cy, _paintBtnRect)) {
                 showPaint = true; paintPreview = -1; sfxUiTap(); return;
             }
@@ -278,6 +260,7 @@ function onDown(e) {
     _initAC();
     if (phase === 'title') {
         if (showCurrencyInfo) { showCurrencyInfo = false; return; }  // layered on top of Settings -- dismiss it first
+        if (showStardustPath) { showStardustPath = false; return; }  // same, over the ALL SHIPS sheet
         if (showSettings) { showSettings = false; return; }
         if (showShop) { showShop = false; return; }
         if (showMissions) { showMissions = false; return; }
