@@ -272,12 +272,40 @@ body {
   color: var(--sc-faint);
   font-size: 12.5px;
   line-height: 1.7;
+  text-align: center;
 }
 .sf-legal a { color: var(--sc-faint); }
 .sf-legal a:hover { color: var(--sc-dim); }
 
 /* the homepage's language switcher lives in this block too */
-.sf-legal .langsw { margin-left: 4px; }
+.sf-legal .langsw { margin-left: 4px; display: inline-flex; align-items: center; gap: 6px; }
+.langsw label { color: var(--sc-faint); }
+.langsw select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--sc-panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%239a9aab' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center;
+  background-size: 9px;
+  color: var(--sc-dim);
+  border: 1px solid var(--sc-line);
+  border-radius: 999px;
+  margin: 0;
+  padding: 5px 26px 5px 12px;
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.langsw select:hover { border-color: var(--sc-accent); }
+.langsw select:focus-visible {
+  outline: none;
+  border-color: var(--sc-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sc-accent) 25%, transparent);
+}
+[dir="rtl"] .langsw select {
+  background-position: left 10px center;
+  padding: 5px 12px 5px 26px;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .sitenav, .sn-sheet { transition: none !important; }

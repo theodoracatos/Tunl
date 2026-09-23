@@ -1,4 +1,8 @@
 {
+ "1587122": "Başlık ekranında yaşam boyu mesafe ve iki yaşam boyu mesafe başarısı.",
+ "2297714": "3.0, 3.1 ve 3.2: Parçacıklar, ödünleşimler ve yeni tehlikeler",
+ "4139397": "14.2: Müzik, ölüm ekranı ve küçük his düzeltmeleri",
+ "9337385": "Cephaneyle yok ettiğiniz her mayın ya da top atışı artık patladığı yere bir İngiliz anahtarı düşürüyor. İçinden geçin, gövdeniz ne kadar hasar almış olursa olsun bir çizik kadar iyileşsin, gövde tamken bile birkaç puan kazandırmaya devam ediyor. Düştüğü yerde kalıyor: mıknatıs onu çekmiyor.",
  "9895ba3": "TUNL Değişiklik Günlüğü - Her Sürümün Sürüm Notları",
  "6f5e1da": "TUNL Değişiklik Günlüğü",
  "a2986e8": "Her sürümde neyin değiştiği, en yeni en üstte. <a href=\"/play/\">flytunl.ch/play</a> adresindeki tarayıcı sürümü her zaman en yeni derlemeyi çalıştırır.",
@@ -8,7 +12,6 @@
  "fad3304": "Yumuşak duvarlar gitti. Duvarlar tünel ağzından itibaren ölümcül ve iki gövde çiziği artık tüm koşu boyunca sürüyor.",
  "d2a5a77": "Bir ses ve arayüz turu: gövde çiziği ve diriltme için ayrı sesler, geminin etrafında stereo panorama, bir top ateşlemeden hemen önce ve gevşek bir sarkıt düşmeden önce duyulur bir uyarı, çarpmalarda mağara yankısı, alçak bir turbofan hızlanması, üç seviyeli müzik ve ses ayarları ve uygulama koşu ortasında odağı kaybettiğinde duraklatma.",
  "a0c6ff7": "Yerel rekorlar ilk açılışta bir kez sıfırlandı. Parçacıklar, yıldız tozu, gemiler, başarılar ve yaşam boyu sayaçlar dokunulmadı.",
- "4139397": "14.2: Müzik, ölüm ekranı ve küçük his düzeltmeleri",
  "648c2ec": "Duyulur bir atlama olmadan, kesintisiz müzik döngüleri.",
  "80fa760": "Öldüğünde şarkının gerçek sonu çalar, sonra başlık müziği dönene kadar sessizlik olur.",
  "566201a": "Daha uzun bir ölüm dondurma karesi, nişangâh seni vuran şeyin üzerinde.",
@@ -59,7 +62,6 @@
  "82930f2": "10.0: Derin koşular çeşitlilik kazanıyor",
  "7f66785": "Birkaç yüz puanı aşan koşular için: şekli karakter değiştiren bir koridor, ekstra hız darbeleri, geniş nefes odaları ve değişen bir renk paleti.",
  "d292879": "Şu anki puanının bir payını alan ikinci bir tehlike parası, emme.",
- "1587122": "Başlık ekranında yaşam boyu mesafe ve iki yaşam boyu mesafe başarısı.",
  "e35db7f": "9.1: Yedi günlük dünya",
  "a6f3481": "Yedi günlük dünya rotasyonu üzerine kurulu sekiz yeni başarı: yedi dünyanın her birinde gerçek bir koşu için bir tane, ayrıca hepsi için bir Büyük Tur.",
  "de1a089": "9.0: Başarılar",
@@ -95,7 +97,6 @@
  "a8dba8f": "5.2: yeni bir uygulama simgesi ve logo yazısı ve daha temiz bir ölüm ekranı. 5.2.1, reklamlardan gelen uygulama yüklemelerinin ölçümünü ekledi ve göreceğin hiçbir şey yok.",
  "a453fad": "4.0: Yeni bir simge",
  "9bd82e2": "Uygulama simgesi, itme gücüyle oyuncunun gemisi oldu.",
- "2297714": "3.0, 3.1 ve 3.2: Parçacıklar, ödünleşimler ve yeni tehlikeler",
  "32ede7a": "3.0: gemilerin kilidi bir puan yerine toplanan paralardan biriken parçacıklarla açılıyor, böylece tek bir harika koşu artık tüm listeyi açmıyor. Eski en üst kademenin üzerine iki prestij gemisi, VOID ve NOVA eklendi. Herkes sıfır parçacıkla başladı.",
  "4c68161": "3.0: her gemi artık bir güçlü yönünü bir zayıf yönüyle takas ediyor ve bir gemiyi uçurmak, ustalık seviyeleriyle güçlü yönünü büyütüp zayıf yönünü yumuşatıyor.",
  "d95e4f5": "3.0: belirli bir günde her oyuncu için aynı olan üç günlük görev.",
@@ -122,5 +123,13 @@
  "8a44056": "16.0: sarkıtlar artık kristal",
  "0242984": "Her sarkıt ve dikit artık sürüm 1.0'dan beri mağarada bulunan düz koni yerine dik duran kristal prizmalardan oluşan bir küme; günün yedi dünyasının her birinde kendine özgü bir mineral var - kalsit, paslı kuvars, selenit, obsidyen, ametist, olivin, rodonit. Çarpışma alanı değişmedi: aynı üçgen, aynı boyut, aynı adalet.",
  "0162342": "Birini kırdığında artık çakıl gibi değil, cam gibi ses çıkarıyor ve öyle davranıyor - ister vurup kır, ister kalkanla içinden geç, ister onun yüzünden öl, fark etmiyor.",
- "3cb017b": "Düşen bir sarkıt artık koptuğunda kayadan yuvasını tavanda bırakıyor ve gerçekten bir şeye çarpmış gibi uç kısmıyla önce yere saplanarak iniyor."
+ "3cb017b": "Düşen bir sarkıt artık koptuğunda kayadan yuvasını tavanda bırakıyor ve gerçekten bir şeye çarpmış gibi uç kısmıyla önce yere saplanarak iniyor.",
+ "93dc498": "Değişiklik günlüğü &middot; 22 Eylül 2026'da güncellendi &middot; güncel sürüm 17.0",
+ "7e36e9e": "17.0: kendi geminizi boyayın",
+ "94b29f9": "Hangarda artık gerçek bir boya kiti var: gövde rengi, desen, malzeme ve tepkisel bir efekt, her biri bir kez satın alınıp istediğiniz gibi birleştiriliyor, altı sabit boya yerine. Geminin ışığı (parıltısı, motor ağızlıkları, flaşları) hangi kiti giyerse giysin değişmiyor.",
+ "4c81390": "Seriniz ve yıldız tozunuz artık görünür: her zaman açık bir cüzdan, bir sonraki gemine giden bir yol, her sabah bir varış kartı ve kesintisiz tam bir hafta için parça bonusu. Tek bir günü kaçırırsanız, biriktirilmiş bir dinlenme günü onu bir kez telafi eder.",
+ "2232fad": "Uçuşta yeni bir siluet: bir warp'ta tamamen geriye yatan, mavi bir jetonda ise tamamen öne açılan F-14 tarzı geriye yatık kanatlar, ikisi arasında seyir açısına dönüyor.",
+ "a42ef98": "Duvara temas artık önce gövdeye ulaşmadan bir kalkanı harcıyor. Gövde geminin kendisi: yalnızca onu koruyan hiçbir şey kalmadığında çiziliyor.",
+ "a30ed03": "Çizilmiş bir gövde bunu gösteriyor: gövdedeki oyuklar ve savrulan bir duman, ikisi de bir kalkan sizi yeniden örttüğü an kayboluyor.",
+ "9bd11ab": "Çarpışma sesi artık patlayan bir balon gibi değil, gerçek bir çarpışma gibi geliyor."
 }

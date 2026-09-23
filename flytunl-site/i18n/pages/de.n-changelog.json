@@ -1,4 +1,8 @@
 {
+ "1587122": "Lebenszeit-Distanz auf dem Titelbildschirm und zwei Lebenszeit-Distanz-Erfolge.",
+ "2297714": "3.0, 3.1 und 3.2: Shards, Kompromisse und neue Gefahren",
+ "4139397": "14.2: Musik, der Todesbildschirm und kleine Gefühlskorrekturen",
+ "9337385": "Jede Mine oder jeder Kanonenschuss, den du mit Munition zerstörst, lässt jetzt an dieser Stelle einen Schraubenschlüssel fallen. Flieg hindurch, und deine Hülle bekommt einen Kratzer zurück, egal wie viele du verloren hattest, und er zahlt auch bei voller Hülle noch ein paar Punkte. Er bleibt liegen, wo er gefallen ist: Der Magnet zieht ihn nicht an.",
  "9895ba3": "TUNL Changelog - Release Notes zu jeder Version",
  "6f5e1da": "TUNL Changelog",
  "a2986e8": "Was sich in jeder Version geändert hat, neueste zuerst. Die Browser-Version auf <a href=\"/play/\">flytunl.ch/play</a> läuft immer mit dem neuesten Build.",
@@ -8,7 +12,6 @@
  "fad3304": "Die weichen Wände sind weg. Die Wände sind ab dem Tunneleingang tödlich, und die zwei Rumpfkratzer halten jetzt den ganzen Lauf.",
  "d2a5a77": "Ein Durchgang für Klang und Oberfläche: eigene Geräusche für einen Rumpfkratzer und eine Wiederbelebung, Stereo-Panning um das Schiff, eine hörbare Warnung kurz vor dem Schuss einer Kanone und vor dem Fall eines losen Stalaktiten, Höhlenhall bei Einschlägen, ein tiefes Turbofan-Hochfahren, dreistufige Musik- und Klangeinstellungen und eine Pause, wenn die App mitten im Lauf den Fokus verliert.",
  "a0c6ff7": "Lokale Rekorde wurden einmalig beim ersten Start zurückgesetzt. Shards, Stardust, Schiffe, Erfolge und Lebenszeit-Zähler bleiben unberührt.",
- "4139397": "14.2: Musik, der Todesbildschirm und kleine Gefühlskorrekturen",
  "648c2ec": "Nahtlose Musikschleifen, ohne hörbaren Sprung.",
  "80fa760": "Das echte Ende des Songs spielt, wenn du stirbst, danach Stille, bis die Titelmusik zurückkehrt.",
  "566201a": "Ein längeres Todes-Standbild, mit dem Fadenkreuz auf dem, was dich getroffen hat.",
@@ -59,7 +62,6 @@
  "82930f2": "10.0: Tiefe Läufe bekommen Abwechslung",
  "7f66785": "Für Läufe jenseits einiger hundert Punkte: ein Korridor, dessen Form den Charakter wechselt, Pulse zusätzlicher Geschwindigkeit, weite Verschnaufkammern und eine sich verschiebende Farbpalette.",
  "d292879": "Eine zweite Gefahrenmünze, der Drain, der einen Anteil deiner aktuellen Punktzahl nimmt.",
- "1587122": "Lebenszeit-Distanz auf dem Titelbildschirm und zwei Lebenszeit-Distanz-Erfolge.",
  "e35db7f": "9.1: Die sieben täglichen Welten",
  "a6f3481": "Acht neue Erfolge, die auf der Sieben-Tage-Rotation der Welten aufbauen: einer für einen echten Lauf in jeder der sieben Welten, dazu eine Grand Tour für alle.",
  "de1a089": "9.0: Erfolge",
@@ -95,7 +97,6 @@
  "a8dba8f": "5.2: ein neues App-Icon und Schriftzug und ein aufgeräumterer Todesbildschirm. 5.2.1 fügte die Messung von App-Installationen aus Werbung hinzu und nichts, was du sehen würdest.",
  "a453fad": "4.0: Ein neues Icon",
  "9bd82e2": "Das App-Icon wurde zum Schiff des Spielers mit seinem Schub.",
- "2297714": "3.0, 3.1 und 3.2: Shards, Kompromisse und neue Gefahren",
  "32ede7a": "3.0: Schiffe werden mit Shards freigeschaltet, die aus gesammelten Münzen gebankt werden, statt mit einer Punktzahl, sodass ein großartiger Lauf nicht mehr die ganze Liste freischaltet. Zwei Prestige-Schiffe, VOID und NOVA, wurden über der alten obersten Stufe hinzugefügt. Alle begannen bei null Shards.",
  "4c68161": "3.0: Jedes Schiff tauscht jetzt eine Stärke gegen eine Schwäche, und wer ein Schiff fliegt, steigert dessen Stärke und mildert dessen Schwäche mit Meisterschaftsstufen.",
  "d95e4f5": "3.0: drei tägliche Missionen, an einem gegebenen Tag für jeden Spieler gleich.",
@@ -122,5 +123,13 @@
  "8a44056": "16.0: Die Stalaktiten sind jetzt Kristall",
  "0242984": "Jeder Stalaktit und Stalagmit ist jetzt ein Büschel aufrecht stehender Kristallprismen statt des glatten Kegels, den die Höhle seit Version 1.0 hatte, mit einem eigenen Mineral für jede der sieben Tageswelten - Kalzit, Rostquarz, Selenit, Obsidian, Amethyst, Olivin, Rhodonit. Die Trefferfläche ist unangetastet: gleiches Dreieck, gleiche Größe, gleiche Fairness.",
  "0162342": "Zerbrichst du einen, klingt und wirkt es jetzt wie Glas, nicht wie Geröll - egal ob du ihn abschießt, mit einem Schild durchfliegst oder daran stirbst.",
- "3cb017b": "Ein fallender Stalaktit lässt jetzt seinen Felssockel an der Decke zurück, wenn er sich löst, und landet mit der Spitze voran im Boden, als hätte er wirklich eingeschlagen."
+ "3cb017b": "Ein fallender Stalaktit lässt jetzt seinen Felssockel an der Decke zurück, wenn er sich löst, und landet mit der Spitze voran im Boden, als hätte er wirklich eingeschlagen.",
+ "93dc498": "Changelog &middot; aktualisiert am 22. September 2026 &middot; die aktuelle Version ist 17.0",
+ "7e36e9e": "17.0: Lackiere dein eigenes Schiff",
+ "94b29f9": "Der Hangar hat jetzt ein echtes Lackierkit: Hüllenfarbe, Muster, Material und einen reaktiven Effekt, jeweils einmal gekauft und beliebig kombiniert - anstelle der sechs festen Lackierungen. Das Licht des Schiffs (sein Leuchten, die Düsen, die Blitzlichter) bleibt davon unberührt.",
+ "4c81390": "Deine Serie und dein Sternenstaub sind endlich sichtbar: ein dauerhaftes Wallet, ein Pfad zum nächsten Schiff, eine Ankunftskarte jeden Morgen und ein Shard-Bonus für eine volle Woche ohne Unterbrechung. Verpasst du einen einzigen Tag, deckt ein gesparter Ruhetag ihn einmal ab.",
+ "2232fad": "Eine neue Silhouette im Flug: gepfeilte Flügel im F-14-Stil, die sich bei einem Warp ganz zurückfalten und bei einer blauen Münze ganz nach vorn schwingen, dazwischen pendeln sie zurück in die Reiseposition.",
+ "a42ef98": "Ein Wandkontakt kostet jetzt zuerst ein Schild, bevor er die Hülle erreicht. Die Hülle ist das Schiff: Sie bekommt erst einen Kratzer, wenn nichts mehr schützt.",
+ "a30ed03": "Eine verkratzte Hülle zeigt es auch: mit Riefen am Rumpf und einer Rauchspur, beide verschwinden, sobald dich wieder ein Schild schützt.",
+ "9bd11ab": "Ein Absturz klingt jetzt wie ein Absturz, nicht wie ein platzender Luftballon."
 }

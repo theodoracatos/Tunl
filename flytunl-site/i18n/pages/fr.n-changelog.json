@@ -1,4 +1,8 @@
 {
+ "1587122": "La distance à vie sur l'écran titre, et deux succès de distance à vie.",
+ "2297714": "3.0, 3.1 et 3.2 : éclats, compromis et nouveaux dangers",
+ "4139397": "14.2 : musique, écran de mort et petits correctifs de sensation",
+ "9337385": "Chaque mine ou tir de canon que tu détruis avec des munitions lâche maintenant une clé là où il a explosé. Traverse-la et ta coque récupère une éraflure, quel que soit le nombre perdu, et elle rapporte encore quelques points sur une coque intacte. Elle reste où elle est tombée : l'aimant ne l'attire pas.",
  "9895ba3": "Changelog de TUNL - Notes de version pour chaque version",
  "6f5e1da": "Changelog de TUNL",
  "a2986e8": "Ce qui a changé dans chaque version, la plus récente en premier. La version navigateur sur <a href=\"/play/\">flytunl.ch/play</a> exécute toujours le tout dernier build.",
@@ -8,7 +12,6 @@
  "fad3304": "Les murs mous ont disparu. Les murs sont mortels dès l'entrée du tunnel, et les deux éraflures de coque durent maintenant toute la partie.",
  "d2a5a77": "Une passe sur le son et l'interface : des sons distincts pour une éraflure de coque et une réanimation, un panoramique stéréo autour du vaisseau, un avertissement audible juste avant qu'un canon ne tire et avant qu'une stalactite détachée ne tombe, une réverbération de grotte sur les impacts, une montée en régime de turbofan grave, des réglages de musique et de son à trois niveaux, et une pause quand l'app perd le focus en pleine partie.",
  "a0c6ff7": "Les records locaux ont été réinitialisés une fois, au premier lancement. Les éclats, la poussière d'étoiles, les vaisseaux, les succès et les compteurs à vie sont intacts.",
- "4139397": "14.2 : musique, écran de mort et petits correctifs de sensation",
  "648c2ec": "Des boucles musicales sans couture, sans saut audible.",
  "80fa760": "La vraie fin de la chanson joue quand tu meurs, puis le silence jusqu'au retour de la musique du titre.",
  "566201a": "Une image figée de mort plus longue, avec le réticule sur ce qui t'a touché.",
@@ -59,7 +62,6 @@
  "82930f2": "10.0 : les parties profondes gagnent en variété",
  "7f66785": "Pour les parties au-delà de quelques centaines de points : un corridor dont la forme change de caractère, des impulsions de vitesse supplémentaire, de larges chambres de répit et une palette de couleurs qui évolue.",
  "d292879": "Une seconde pièce de danger, le drain, qui prend une part de ton score actuel.",
- "1587122": "La distance à vie sur l'écran titre, et deux succès de distance à vie.",
  "e35db7f": "9.1 : les sept mondes quotidiens",
  "a6f3481": "Huit nouveaux succès construits sur la rotation de sept mondes : un pour une vraie partie dans chacun des sept mondes, plus un Grand Tour pour tous.",
  "de1a089": "9.0 : succès",
@@ -95,7 +97,6 @@
  "a8dba8f": "5.2 : une nouvelle icône d'app et un nouveau logotype, et un écran de mort plus net. 5.2.1 a ajouté la mesure des installations d'app issues de publicités et rien que tu verrais.",
  "a453fad": "4.0 : une nouvelle icône",
  "9bd82e2": "L'icône de l'app est devenue le vaisseau du joueur avec sa poussée.",
- "2297714": "3.0, 3.1 et 3.2 : éclats, compromis et nouveaux dangers",
  "32ede7a": "3.0 : les vaisseaux se débloquent avec des éclats accumulés à partir des pièces collectées au lieu d'un score, pour qu'une seule grande partie ne débloque plus toute la liste. Deux vaisseaux de prestige, VOID et NOVA, ont été ajoutés au-dessus de l'ancien palier supérieur. Tout le monde est reparti de zéro éclat.",
  "4c68161": "3.0 : chaque vaisseau échange maintenant une force contre une faiblesse, et voler avec un vaisseau fait grandir sa force et adoucit sa faiblesse grâce aux niveaux de maîtrise.",
  "d95e4f5": "3.0 : trois missions quotidiennes, les mêmes pour chaque joueur un jour donné.",
@@ -122,5 +123,13 @@
  "8a44056": "16.0 : les stalactites sont désormais en cristal",
  "0242984": "Chaque stalactite et stalagmite est désormais un amas de prismes de cristal dressés au lieu du cône lisse que la grotte affichait depuis la version 1.0, avec un minéral propre à chacun des sept mondes du jour - calcite, quartz rouillé, sélénite, obsidienne, améthyste, olivine, rhodonite. La zone de collision est inchangée : même triangle, même taille, même équité.",
  "0162342": "Quand tu en brises une, elle sonne et se comporte désormais comme du verre, pas comme du gravier - que tu la détruises d'un tir, la traverses avec un bouclier ou en meures.",
- "3cb017b": "Une stalactite qui tombe laisse désormais son socle de roche au plafond quand elle se détache, et se plante pointe la première dans le sol, comme si elle avait vraiment percuté quelque chose."
+ "3cb017b": "Une stalactite qui tombe laisse désormais son socle de roche au plafond quand elle se détache, et se plante pointe la première dans le sol, comme si elle avait vraiment percuté quelque chose.",
+ "93dc498": "Changelog &middot; mis à jour le 22 septembre 2026 &middot; la version actuelle est la 17.0",
+ "7e36e9e": "17.0 : peins ton propre vaisseau",
+ "94b29f9": "Le hangar a maintenant un vrai kit de peinture : couleur de coque, motif, matière et un effet réactif, chacun acheté une fois et combiné comme tu veux, à la place des six livrées fixes. La lumière du vaisseau (lueur, tuyères, feux) reste intacte, quel que soit le kit.",
+ "4c81390": "Ta série et ta poussière d'étoiles sont enfin visibles : un portefeuille toujours affiché, un chemin vers ton prochain vaisseau, une carte d'arrivée chaque matin et un bonus d'éclats pour une semaine complète sans interruption. Manque un seul jour et un jour de repos mis de côté le couvre, une fois.",
+ "2232fad": "Une nouvelle silhouette en vol : des ailes en flèche façon F-14 qui se replient complètement pour un warp et se déploient complètement pour une pièce bleue, revenant entre les deux à leur angle de croisière.",
+ "a42ef98": "Un contact avec la paroi coûte maintenant d'abord un bouclier, avant d'atteindre la coque. La coque, c'est le vaisseau : elle ne s'éraille que lorsque plus rien ne la protège.",
+ "a30ed03": "Une coque éraflée le montre : des entailles sur le fuselage et un filet de fumée, tous deux disparaissent dès qu'un bouclier te couvre à nouveau.",
+ "9bd11ab": "Un crash sonne maintenant comme un crash, plus comme un ballon qui éclate."
 }

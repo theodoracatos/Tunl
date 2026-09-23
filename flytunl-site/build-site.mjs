@@ -191,17 +191,14 @@ async function build() {
   }
 
   function langSwitch(lang) {
-    if (lang === 'en') {
-      const opts = LANGS.map(l =>
-        `<option value="${langPath(l)}"${l === lang ? ' selected' : ''}>${NAMES[l]}</option>`
-      ).join('');
-      return `<span class="langsw">`
-        + `<label for="langsel">${t('footer.langLabel', 'en')}:</label> `
-        + `<select id="langsel" aria-label="${t('footer.langLabel', 'en')}">${opts}</select>`
-        + `</span>`;
-    }
-    // Localized pages: only an escape hatch back to English.
-    return `<a class="backtoen" href="/">English</a>`;
+    const opts = LANGS.map(l =>
+      `<option value="${langPath(l)}"${l === lang ? ' selected' : ''}>${NAMES[l]}</option>`
+    ).join('');
+    const lbl = t('footer.langLabel', lang);
+    return `<span class="langsw">`
+      + `<label for="langsel">${lbl}:</label> `
+      + `<select id="langsel" aria-label="${lbl}">${opts}</select>`
+      + `</span>`;
   }
 }
 
@@ -236,25 +233,30 @@ const LANG_CSS = `
   .langsw { display:inline-flex; align-items:center; gap:6px; }
   .langsw label { color:var(--text-faint); font-size:12px; }
   .langsw select {
-    background:var(--panel); color:var(--text-dim);
-    border:1px solid var(--line); border-radius:8px;
-    padding:4px 8px; font-size:12px; font-family:var(--sans); cursor:pointer;
+    appearance:none; -webkit-appearance:none;
+    background:var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%239a9aab' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center;
+    background-size:9px;
+    color:var(--text-dim);
+    border:1px solid var(--line); border-radius:999px;
+    padding:5px 26px 5px 12px; font-size:12.5px; font-family:var(--sans); cursor:pointer;
+    transition:border-color .15s, box-shadow .15s;
   }
   .langsw select:hover { border-color:var(--cyan); }
-  .backtoen { color:var(--text-dim); font-size:12px; }
-  .backtoen:hover { color:var(--cyan); }`;
+  .langsw select:focus-visible {
+    outline:none; border-color:var(--cyan);
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--cyan) 25%, transparent);
+  }
+  [dir="rtl"] .langsw select { background-position:left 10px center; padding:5px 12px 5px 26px; }`;
 
 const LANG_JS = `<script>
 (function () {
   var LS = 'tunl_site_lang';
-  var store = function (v) { try { localStorage.setItem(LS, v); } catch (e) {} };
   var sel = document.getElementById('langsel');
   if (sel) {
-    sel.addEventListener('change', function () { store(sel.value); location.href = sel.value; });
-  }
-  var back = document.querySelector('.backtoen');
-  if (back) {
-    back.addEventListener('click', function () { store('/'); });
+    sel.addEventListener('change', function () {
+      try { localStorage.setItem(LS, sel.value); } catch (e) {}
+      location.href = sel.value;
+    });
   }
 })();
 </script>`;

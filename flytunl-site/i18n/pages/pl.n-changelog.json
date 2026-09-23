@@ -1,4 +1,8 @@
 {
+ "1587122": "Dystans życiowy na ekranie tytułowym i dwa osiągnięcia za dystans życiowy.",
+ "2297714": "3.0, 3.1 i 3.2: odłamki, kompromisy i nowe zagrożenia",
+ "4139397": "14.2: muzyka, ekran śmierci i drobne poprawki odczucia",
+ "9337385": "Każda mina lub pocisk armatni zniszczony amunicją upuszcza teraz klucz w miejscu wybuchu. Przeleć przez niego, a twój kadłub odzyska jedno zarysowanie, bez względu na to, ile ich straciłeś, i wciąż daje kilka punktów przy pełnym kadłubie. Zostaje tam, gdzie spadł: magnes go nie przyciąga.",
  "9895ba3": "Lista zmian TUNL - notatki do wydań każdej wersji",
  "6f5e1da": "Lista zmian TUNL",
  "a2986e8": "Co zmieniło się w każdej wersji, od najnowszej. Wersja przeglądarkowa pod adresem <a href=\"/play/\">flytunl.ch/play</a> zawsze działa na najnowszej kompilacji.",
@@ -8,7 +12,6 @@
  "fad3304": "Miękkie ściany zniknęły. Ściany są śmiertelne od wejścia do tunelu, a dwa zadrapania kadłuba trwają teraz cały przelot.",
  "d2a5a77": "Przegląd dźwięku i interfejsu: osobne dźwięki dla zadrapania kadłuba i wskrzeszenia, panoramowanie stereo wokół statku, słyszalne ostrzeżenie tuż przed strzałem działa i przed upadkiem luźnego stalaktytu, pogłos jaskini przy uderzeniach, niski rozruch turbowentylatora, trzystopniowe ustawienia muzyki i dźwięku oraz pauza, gdy aplikacja traci fokus w środku przelotu.",
  "a0c6ff7": "Lokalne rekordy zostały jednorazowo zresetowane przy pierwszym uruchomieniu. Odłamki, pył gwiezdny, statki, osiągnięcia i liczniki życiowe pozostały nietknięte.",
- "4139397": "14.2: muzyka, ekran śmierci i drobne poprawki odczucia",
  "648c2ec": "Bezszwowe pętle muzyczne, bez słyszalnego skoku.",
  "80fa760": "Prawdziwe zakończenie piosenki gra, gdy umierasz, a potem cisza, aż wróci muzyka tytułowa.",
  "566201a": "Dłuższa zatrzymana klatka śmierci, z celownikiem na tym, co cię trafiło.",
@@ -59,7 +62,6 @@
  "82930f2": "10.0: głębokie przeloty zyskują różnorodność",
  "7f66785": "Dla przelotów powyżej kilkuset punktów: korytarz, którego kształt zmienia charakter, impulsy dodatkowej prędkości, szerokie komory wytchnienia i przesuwająca się paleta barw.",
  "d292879": "Druga moneta zagrożenia, drenaż, która zabiera część twojego bieżącego wyniku.",
- "1587122": "Dystans życiowy na ekranie tytułowym i dwa osiągnięcia za dystans życiowy.",
  "e35db7f": "9.1: siedem dziennych światów",
  "a6f3481": "Osiem nowych osiągnięć zbudowanych na siedmiodniowej rotacji światów: jedno za prawdziwy przelot w każdym z siedmiu światów, plus Wielka Podróż za wszystkie.",
  "de1a089": "9.0: osiągnięcia",
@@ -95,7 +97,6 @@
  "a8dba8f": "5.2: nowa ikona aplikacji i logotyp oraz czystszy ekran śmierci. 5.2.1 dodała pomiar instalacji aplikacji z reklam i nic, co byś zobaczył.",
  "a453fad": "4.0: nowa ikona",
  "9bd82e2": "Ikona aplikacji stała się statkiem gracza z jego ciągiem.",
- "2297714": "3.0, 3.1 i 3.2: odłamki, kompromisy i nowe zagrożenia",
  "32ede7a": "3.0: statki odblokowuje się odłamkami zgromadzonymi ze zebranych monet zamiast wynikiem, więc jeden wspaniały przelot nie odblokowuje już całej listy. Dwa statki prestiżowe, VOID i NOVA, zostały dodane ponad dawnym najwyższym poziomem. Wszyscy zaczęli od zera odłamków.",
  "4c68161": "3.0: każdy statek zamienia teraz jedną mocną stronę na jedną słabą, a latanie statkiem rozwija jego mocną stronę i łagodzi słabą wraz z poziomami biegłości.",
  "d95e4f5": "3.0: trzy dzienne misje, takie same dla każdego gracza danego dnia.",
@@ -122,5 +123,13 @@
  "8a44056": "16.0: stalaktyty są teraz kryształowe",
  "0242984": "Każdy stalaktyt i stalagmit to teraz skupisko stojących pionowo kryształowych pryzmatów zamiast gładkiego stożka, jaki jaskinia miała od wersji 1.0, z osobnym minerałem dla każdego z siedmiu codziennych światów - kalcyt, zardzewiały kwarc, selenit, obsydian, ametyst, oliwin, rodonit. Obszar kolizji się nie zmienił: ten sam trójkąt, ten sam rozmiar, ta sama sprawiedliwość.",
  "0162342": "Gdy go rozbijesz, teraz brzmi i wygląda jak szkło, a nie żwir - niezależnie czy go zestrzelisz, przelecisz przez niego z tarczą, czy na nim zginiesz.",
- "3cb017b": "Spadający stalaktyt zostawia teraz swoje skalne gniazdo na suficie, gdy się odrywa, i ląduje czubkiem w dół, wbity w podłogę, jakby naprawdę w coś uderzył."
+ "3cb017b": "Spadający stalaktyt zostawia teraz swoje skalne gniazdo na suficie, gdy się odrywa, i ląduje czubkiem w dół, wbity w podłogę, jakby naprawdę w coś uderzył.",
+ "93dc498": "Lista zmian &middot; zaktualizowana 22 września 2026 &middot; obecna wersja to 17.0",
+ "7e36e9e": "17.0: pomaluj swój własny statek",
+ "94b29f9": "Hangar ma teraz prawdziwy zestaw lakierniczy: kolor kadłuba, wzór, materiał i efekt reagujący na lot, każdy kupowany raz i dowolnie łączony, zastępując sześć stałych malowań. Światło statku (blask, dysze, stroboskopy) pozostaje niezmienne niezależnie od zestawu.",
+ "4c81390": "Twoja seria i pył gwiezdny są wreszcie widoczne: zawsze widoczny portfel, ścieżka do następnego statku, karta przylotu każdego ranka i bonus odłamków za pełny tydzień bez przerwy. Opuść jeden dzień, a zaoszczędzony dzień odpoczynku pokryje go, raz.",
+ "2232fad": "Nowa sylwetka w locie: skośne skrzydła w stylu F-14, które składają się całkowicie przy warpie i rozkładają całkowicie przy niebieskiej monecie, wracając między tym do kąta przelotowego.",
+ "a42ef98": "Kontakt ze ścianą zużywa teraz najpierw tarczę, zanim dotrze do kadłuba. Kadłub to sam statek: rysuje się dopiero, gdy nic go już nie chroni.",
+ "a30ed03": "Porysowany kadłub to pokazuje: wgniecenia na kadłubie i smuga dymu, oba znikają, gdy tylko tarcza znów cię osłania.",
+ "9bd11ab": "Dźwięk rozbicia brzmi teraz jak rozbicie, a nie jak pękający balonik."
 }

@@ -1,4 +1,8 @@
 {
+ "1587122": "Distanza totale sulla schermata del titolo, e due obiettivi di distanza totale.",
+ "2297714": "3.0, 3.1 e 3.2: frammenti, compromessi e nuovi pericoli",
+ "4139397": "14.2: musica, schermata di morte e piccole correzioni della sensazione",
+ "9337385": "Ogni mina o colpo di cannone che distruggi con le munizioni ora lascia cadere una chiave inglese dove è esploso. Attraversala e il tuo scafo recupera un graffio, qualunque numero avessi perso, e paga ancora qualche punto su uno scafo intatto. Resta dove è caduta: il magnete non la attira.",
  "9895ba3": "Changelog di TUNL - Note di rilascio per ogni versione",
  "6f5e1da": "Changelog di TUNL",
  "a2986e8": "Cosa è cambiato in ogni versione, la più recente per prima. La versione browser su <a href=\"/play/\">flytunl.ch/play</a> esegue sempre l'ultima build.",
@@ -8,7 +12,6 @@
  "fad3304": "Le pareti morbide sono sparite. Le pareti sono letali dall'ingresso del tunnel in poi, e i due graffi allo scafo ora durano l'intera partita.",
  "d2a5a77": "Un passaggio su suono e interfaccia: suoni distinti per un graffio allo scafo e una rianimazione, panning stereo attorno alla navicella, un avviso udibile poco prima che un cannone spari e prima che una stalattite staccata cada, riverbero di grotta sugli impatti, un cupo avvio del turbofan, impostazioni di musica e suono a tre livelli e una pausa quando l'app perde il focus a metà partita.",
  "a0c6ff7": "I record locali sono stati azzerati una volta, al primo avvio. Frammenti, polvere di stelle, navicelle, obiettivi e contatori totali sono intatti.",
- "4139397": "14.2: musica, schermata di morte e piccole correzioni della sensazione",
  "648c2ec": "Loop musicali senza interruzioni, senza salti udibili.",
  "80fa760": "Il vero finale del brano suona quando muori, poi silenzio finché non torna la musica del titolo.",
  "566201a": "Un fermo immagine di morte più lungo, con il mirino su ciò che ti ha colpito.",
@@ -59,7 +62,6 @@
  "82930f2": "10.0: le partite profonde acquistano varietà",
  "7f66785": "Per le partite oltre poche centinaia di punti: un corridoio la cui forma cambia carattere, impulsi di velocità extra, ampie camere di respiro e una tavolozza di colori che cambia.",
  "d292879": "Una seconda moneta pericolo, il drenaggio, che prende una quota del tuo punteggio attuale.",
- "1587122": "Distanza totale sulla schermata del titolo, e due obiettivi di distanza totale.",
  "e35db7f": "9.1: i sette mondi giornalieri",
  "a6f3481": "Otto nuovi obiettivi costruiti sulla rotazione di sette mondi: uno per una vera partita in ciascuno dei sette mondi, più un Grand Tour per tutti.",
  "de1a089": "9.0: obiettivi",
@@ -95,7 +97,6 @@
  "a8dba8f": "5.2: una nuova icona dell'app e un nuovo logotipo, e una schermata di morte più pulita. La 5.2.1 ha aggiunto la misurazione delle installazioni dell'app da pubblicità e nulla che vedresti.",
  "a453fad": "4.0: una nuova icona",
  "9bd82e2": "L'icona dell'app è diventata la navicella del giocatore con la sua spinta.",
- "2297714": "3.0, 3.1 e 3.2: frammenti, compromessi e nuovi pericoli",
  "32ede7a": "3.0: le navicelle si sbloccano con frammenti accumulati dalle monete raccolte invece che con un punteggio, così una sola grande partita non sblocca più tutta la lista. Due navicelle prestigio, VOID e NOVA, sono state aggiunte sopra il vecchio livello massimo. Tutti sono ripartiti da zero frammenti.",
  "4c68161": "3.0: ogni navicella ora scambia un punto di forza con un punto debole, e volare con una navicella fa crescere la sua forza e attenua la sua debolezza con i livelli di maestria.",
  "d95e4f5": "3.0: tre missioni giornaliere, le stesse per ogni giocatore in un dato giorno.",
@@ -122,5 +123,13 @@
  "8a44056": "16.0: le stalattiti sono ora di cristallo",
  "0242984": "Ogni stalattite e stalagmite è ora un ammasso di prismi di cristallo eretti al posto del cono liscio che la grotta aveva dalla versione 1.0, con un minerale diverso per ciascuno dei sette mondi del giorno - calcite, quarzo ruggine, selenite, ossidiana, ametista, olivina, rodonite. L'area di collisione è invariata: stesso triangolo, stessa dimensione, stessa equità.",
  "0162342": "Quando ne rompi una, ora suona e si comporta come vetro, non come ghiaia - che tu la colpisca con un proiettile, la attraversi con uno scudo o ci muoia sopra.",
- "3cb017b": "Una stalattite che cade ora lascia il suo zoccolo di roccia sul soffitto quando si stacca, e atterra con la punta in avanti, conficcata nel pavimento come se avesse davvero colpito qualcosa."
+ "3cb017b": "Una stalattite che cade ora lascia il suo zoccolo di roccia sul soffitto quando si stacca, e atterra con la punta in avanti, conficcata nel pavimento come se avesse davvero colpito qualcosa.",
+ "93dc498": "Changelog &middot; aggiornato il 22 settembre 2026 &middot; la versione attuale è la 17.0",
+ "7e36e9e": "17.0: dipingi la tua nave",
+ "94b29f9": "L'hangar ha ora un vero kit di verniciatura: colore dello scafo, motivo, materiale ed effetto reattivo, ciascuno acquistato una volta e combinato come vuoi, al posto delle sei livree fisse. La luce della nave (bagliore, ugelli, luci stroboscopiche) resta intatta, qualunque sia il kit.",
+ "4c81390": "La tua serie e la tua polvere di stelle sono finalmente visibili: un portafoglio sempre attivo, un percorso verso la prossima nave, una carta d'arrivo ogni mattina e un bonus di schegge per una settimana intera senza interruzioni. Salta un solo giorno e un giorno di riposo messo da parte lo copre, una volta.",
+ "2232fad": "Una nuova silhouette in volo: ali a freccia in stile F-14 che si ripiegano del tutto per un warp e si aprono del tutto per una moneta blu, tornando nel mezzo all'angolo di crociera.",
+ "a42ef98": "Un contatto con la parete ora consuma prima uno scudo, prima di raggiungere lo scafo. Lo scafo è la nave: si graffia solo quando nulla lo protegge più.",
+ "a30ed03": "Uno scafo graffiato lo mostra: solchi sulla fusoliera e una scia di fumo, entrambi spariscono non appena uno scudo torna a coprirti.",
+ "9bd11ab": "Uno schianto ora suona come uno schianto, non come un palloncino che scoppia."
 }

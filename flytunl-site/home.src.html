@@ -23,7 +23,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://flytunl.ch/media-15.0/hero-15.0-play.jpg">
 <script src="/day.js?v=20260921a"></script>
-<link rel="stylesheet" href="/site.css?v=20260921b">
+<link rel="stylesheet" href="/site.css?v=20260923a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -106,7 +106,7 @@
   .hero-stage {
     position:relative;
     overflow:hidden;
-    padding:46px 20px 48px;
+    padding:46px 20px 30px;
     text-align:center;
     /* No colour of its own: the body's day-tinted well shows through, so the
        top of the page and the "Hold. Release. Survive." section below it are
@@ -245,9 +245,8 @@
     margin:0 auto;
     max-width:640px;
   }
-  /* The divider is a slice of corridor, drawn from the game's own wave
-     formula by the script at the end of this file. The gradient bar below is
-     what a browser without JS keeps. */
+  /* A plain line - the wavy corridor-slice glyph this used to be read as busy (user,
+     2026-09-21). */
   .section-head .rule {
     width:52px;
     height:2px;
@@ -255,10 +254,6 @@
     background:linear-gradient(90deg, transparent, var(--cyan), transparent);
     border-radius:2px;
   }
-  .section-head .rule.drawn {
-    width:150px; height:22px; background:none; border-radius:0;
-  }
-  .section-head .rule svg { display:block; width:100%; height:100%; overflow:visible; }
   .section-sub {
     color:var(--text-dim);
     font-size:14px;
@@ -467,7 +462,6 @@
   }
   .sp-art { width:140px; flex:none; }
   .sp-art svg { width:100%; height:auto; display:block; filter:drop-shadow(0 0 18px var(--ship-color)); }
-  .sp-art path { fill:var(--ship-color); }
   .sp-text h3 {
     font-family:var(--display);
     color:#fff;
@@ -714,7 +708,7 @@
       <div class="controls">
         <div class="control" id="feelHold"><span class="k">HOLD</span><span class="d">Thrust upward</span></div>
         <div class="control" id="feelFall"><span class="k">RELEASE</span><span class="d">Gravity pulls you down</span></div>
-        <div class="control"><span class="k">DODGE</span><span class="d">Stalactites, mines, cannons, walls</span></div>
+        <div class="control" id="feelDodge"><span class="k">DODGE</span><span class="d">Stalactites, mines, cannons, walls</span></div>
       </div>
     </div>
   </section>
@@ -808,7 +802,7 @@
       </div>
       <div class="ship-stage">
         <div class="ship-panel" role="tabpanel" id="panel-PEARL" aria-labelledby="chip-PEARL" style="--ship-color:#e8eeff">
-          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></div>
+          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z" fill="#e8eeff"/><path d="M1.4 0L0.95 -0.13L0.95 0Z" fill="#eff3ff"/><path d="M1.4 0L0.95 0.13L0.95 0Z" fill="#dfe5f5"/><path d="M0.95 0L0.95 -0.13L0.3 -0.2L0.3 0Z" fill="#edf2ff"/><path d="M0.95 0L0.95 0.13L0.3 0.2L0.3 0Z" fill="#bbc0cf"/><path d="M0.3 0L0.3 -0.2L-1 -0.24L-1.04 -0.1L-0.92 0Z" fill="#ebf0ff"/><path d="M0.3 0L0.3 0.2L-1 0.24L-1.04 0.1L-0.92 0Z" fill="#a0a4b3"/><path d="M0.3 -0.2L-0.15 -0.59L-0.86 -0.59L-1 -0.24Z" fill="#e9efff"/><path d="M0.3 0.2L-0.15 0.59L-0.86 0.59L-1 0.24Z" fill="#8e929f"/><path d="M0.3 -0.2L-0.6 -0.98L-0.5 -0.72L0.12 -0.26Z" fill="#ecf1ff"/><path d="M0.3 0.2L-0.6 0.98L-0.5 0.72L0.12 0.26Z" fill="#b6bbca"/><path d="M-0.15 -0.59L-0.6 -0.98L-0.72 -0.94L-0.86 -0.59Z" fill="#d6dcec"/><path d="M-0.15 0.59L-0.6 0.98L-0.72 0.94L-0.86 0.59Z" fill="#6e727e"/><path d="M-1 -0.24L-1.22 -0.38L-1.04 -0.1Z" fill="#ecf1ff"/><path d="M-1 0.24L-1.22 0.38L-1.04 0.1Z" fill="#adb2c1"/></svg></div>
           <div class="sp-text">
             <h3>PEARL</h3>
             <span class="ship-tag">Starter, free</span>
@@ -816,52 +810,58 @@
           </div>
         </div>
         <div class="ship-panel" role="tabpanel" id="panel-AMBER" aria-labelledby="chip-AMBER" style="--ship-color:#ffaa00">
-          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></div>
+          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z" fill="#ffaa00"/><path d="M1.4 0L0.95 -0.13L0.95 0Z" fill="#ffca64"/><path d="M1.4 0L0.95 0.13L0.95 0Z" fill="#f5a401"/><path d="M0.95 0L0.95 -0.13L0.3 -0.2L0.3 0Z" fill="#ffbf41"/><path d="M0.95 0L0.95 0.13L0.3 0.2L0.3 0Z" fill="#cd8a03"/><path d="M0.3 0L0.3 -0.2L-1 -0.24L-1.04 -0.1L-0.92 0Z" fill="#ffb523"/><path d="M0.3 0L0.3 0.2L-1 0.24L-1.04 0.1L-0.92 0Z" fill="#af7605"/><path d="M0.3 -0.2L-0.15 -0.59L-0.86 -0.59L-1 -0.24Z" fill="#ffae0d"/><path d="M0.3 0.2L-0.15 0.59L-0.86 0.59L-1 0.24Z" fill="#9b6906"/><path d="M0.3 -0.2L-0.6 -0.98L-0.5 -0.72L0.12 -0.26Z" fill="#ffbc38"/><path d="M0.3 0.2L-0.6 0.98L-0.5 0.72L0.12 0.26Z" fill="#c88604"/><path d="M-0.15 -0.59L-0.6 -0.98L-0.72 -0.94L-0.86 -0.59Z" fill="#eb9d01"/><path d="M-0.15 0.59L-0.6 0.98L-0.72 0.94L-0.86 0.59Z" fill="#795309"/><path d="M-1 -0.24L-1.22 -0.38L-1.04 -0.1Z" fill="#ffb930"/><path d="M-1 0.24L-1.22 0.38L-1.04 0.1Z" fill="#be8004"/></svg></div>
           <div class="sp-text">
             <h3>AMBER</h3>
+            <span class="ship-tag">240 shards, 1 stardust</span>
             <p>Reaches further for coins than any other ship, at the cost of a slightly bigger hitbox.</p>
           </div>
         </div>
         <div class="ship-panel" role="tabpanel" id="panel-CRIMSON" aria-labelledby="chip-CRIMSON" style="--ship-color:#ff1a33">
-          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></div>
+          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z" fill="#ff1a33"/><path d="M1.4 0L0.95 -0.13L0.95 0Z" fill="#ff7483"/><path d="M1.4 0L0.95 0.13L0.95 0Z" fill="#f51932"/><path d="M0.95 0L0.95 -0.13L0.3 -0.2L0.3 0Z" fill="#ff5567"/><path d="M0.95 0L0.95 0.13L0.3 0.2L0.3 0Z" fill="#cd162c"/><path d="M0.3 0L0.3 -0.2L-1 -0.24L-1.04 -0.1L-0.92 0Z" fill="#ff394f"/><path d="M0.3 0L0.3 0.2L-1 0.24L-1.04 0.1L-0.92 0Z" fill="#af1428"/><path d="M0.3 -0.2L-0.15 -0.59L-0.86 -0.59L-1 -0.24Z" fill="#ff263d"/><path d="M0.3 0.2L-0.15 0.59L-0.86 0.59L-1 0.24Z" fill="#9b1325"/><path d="M0.3 -0.2L-0.6 -0.98L-0.5 -0.72L0.12 -0.26Z" fill="#ff4d60"/><path d="M0.3 0.2L-0.6 0.98L-0.5 0.72L0.12 0.26Z" fill="#c8162b"/><path d="M-0.15 -0.59L-0.6 -0.98L-0.72 -0.94L-0.86 -0.59Z" fill="#eb1930"/><path d="M-0.15 0.59L-0.6 0.98L-0.72 0.94L-0.86 0.59Z" fill="#791020"/><path d="M-1 -0.24L-1.22 -0.38L-1.04 -0.1Z" fill="#ff4559"/><path d="M-1 0.24L-1.22 0.38L-1.04 0.1Z" fill="#be152a"/></svg></div>
           <div class="sp-text">
             <h3>CRIMSON</h3>
+            <span class="ship-tag">320 shards, 5 stardust</span>
             <p>Slips through gaps other ships can't fit through, trading away some shield capacity for it.</p>
           </div>
         </div>
         <div class="ship-panel" role="tabpanel" id="panel-ELECTRIC" aria-labelledby="chip-ELECTRIC" style="--ship-color:#00ccff">
-          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></div>
+          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z" fill="#00ccff"/><path d="M1.4 0L0.95 -0.13L0.95 0Z" fill="#64dfff"/><path d="M1.4 0L0.95 0.13L0.95 0Z" fill="#00c4f5"/><path d="M0.95 0L0.95 -0.13L0.3 -0.2L0.3 0Z" fill="#41d8ff"/><path d="M0.95 0L0.95 0.13L0.3 0.2L0.3 0Z" fill="#01a5cf"/><path d="M0.3 0L0.3 -0.2L-1 -0.24L-1.04 -0.1L-0.92 0Z" fill="#23d3ff"/><path d="M0.3 0L0.3 0.2L-1 0.24L-1.04 0.1L-0.92 0Z" fill="#028db3"/><path d="M0.3 -0.2L-0.15 -0.59L-0.86 -0.59L-1 -0.24Z" fill="#0dceff"/><path d="M0.3 0.2L-0.15 0.59L-0.86 0.59L-1 0.24Z" fill="#027e9f"/><path d="M0.3 -0.2L-0.6 -0.98L-0.5 -0.72L0.12 -0.26Z" fill="#38d7ff"/><path d="M0.3 0.2L-0.6 0.98L-0.5 0.72L0.12 0.26Z" fill="#01a1ca"/><path d="M-0.15 -0.59L-0.6 -0.98L-0.72 -0.94L-0.86 -0.59Z" fill="#00bcec"/><path d="M-0.15 0.59L-0.6 0.98L-0.72 0.94L-0.86 0.59Z" fill="#03627e"/><path d="M-1 -0.24L-1.22 -0.38L-1.04 -0.1Z" fill="#30d5ff"/><path d="M-1 0.24L-1.22 0.38L-1.04 0.1Z" fill="#0299c1"/></svg></div>
           <div class="sp-text">
             <h3>ELECTRIC</h3>
+            <span class="ship-tag">560 shards, 15 stardust</span>
             <p>Bends time harder and longer whenever a slow-time coin lands.</p>
           </div>
         </div>
         <div class="ship-panel" role="tabpanel" id="panel-TOXIC" aria-labelledby="chip-TOXIC" style="--ship-color:#99ff00">
-          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></div>
+          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z" fill="#99ff00"/><path d="M1.4 0L0.95 -0.13L0.95 0Z" fill="#c0ff64"/><path d="M1.4 0L0.95 0.13L0.95 0Z" fill="#93f501"/><path d="M0.95 0L0.95 -0.13L0.3 -0.2L0.3 0Z" fill="#b2ff41"/><path d="M0.95 0L0.95 0.13L0.3 0.2L0.3 0Z" fill="#7cce03"/><path d="M0.3 0L0.3 -0.2L-1 -0.24L-1.04 -0.1L-0.92 0Z" fill="#a7ff23"/><path d="M0.3 0L0.3 0.2L-1 0.24L-1.04 0.1L-0.92 0Z" fill="#6ab005"/><path d="M0.3 -0.2L-0.15 -0.59L-0.86 -0.59L-1 -0.24Z" fill="#9eff0d"/><path d="M0.3 0.2L-0.15 0.59L-0.86 0.59L-1 0.24Z" fill="#5e9c06"/><path d="M0.3 -0.2L-0.6 -0.98L-0.5 -0.72L0.12 -0.26Z" fill="#afff38"/><path d="M0.3 0.2L-0.6 0.98L-0.5 0.72L0.12 0.26Z" fill="#79c904"/><path d="M-0.15 -0.59L-0.6 -0.98L-0.72 -0.94L-0.86 -0.59Z" fill="#8deb01"/><path d="M-0.15 0.59L-0.6 0.98L-0.72 0.94L-0.86 0.59Z" fill="#4a7a09"/><path d="M-1 -0.24L-1.22 -0.38L-1.04 -0.1Z" fill="#acff30"/><path d="M-1 0.24L-1.22 0.38L-1.04 0.1Z" fill="#73bf04"/></svg></div>
           <div class="sp-text">
             <h3>TOXIC</h3>
+            <span class="ship-tag">1,280 shards, 35 stardust</span>
             <p>Every gold coin buys more corridor room, though the bonus burns off faster too.</p>
           </div>
         </div>
         <div class="ship-panel" role="tabpanel" id="panel-VOID" aria-labelledby="chip-VOID" style="--ship-color:#c080ff">
-          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></div>
+          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z" fill="#c080ff"/><path d="M1.4 0L0.95 -0.13L0.95 0Z" fill="#d8afff"/><path d="M1.4 0L0.95 0.13L0.95 0Z" fill="#b97bf5"/><path d="M0.95 0L0.95 -0.13L0.3 -0.2L0.3 0Z" fill="#d09fff"/><path d="M0.95 0L0.95 0.13L0.3 0.2L0.3 0Z" fill="#9b68cf"/><path d="M0.3 0L0.3 -0.2L-1 -0.24L-1.04 -0.1L-0.92 0Z" fill="#c890ff"/><path d="M0.3 0L0.3 0.2L-1 0.24L-1.04 0.1L-0.92 0Z" fill="#845ab3"/><path d="M0.3 -0.2L-0.15 -0.59L-0.86 -0.59L-1 -0.24Z" fill="#c386ff"/><path d="M0.3 0.2L-0.15 0.59L-0.86 0.59L-1 0.24Z" fill="#76509f"/><path d="M0.3 -0.2L-0.6 -0.98L-0.5 -0.72L0.12 -0.26Z" fill="#cd9bff"/><path d="M0.3 0.2L-0.6 0.98L-0.5 0.72L0.12 0.26Z" fill="#9766ca"/><path d="M-0.15 -0.59L-0.6 -0.98L-0.72 -0.94L-0.86 -0.59Z" fill="#b176ec"/><path d="M-0.15 0.59L-0.6 0.98L-0.72 0.94L-0.86 0.59Z" fill="#5c3f7e"/><path d="M-1 -0.24L-1.22 -0.38L-1.04 -0.1Z" fill="#cb96ff"/><path d="M-1 0.24L-1.22 0.38L-1.04 0.1Z" fill="#9061c1"/></svg></div>
           <div class="sp-text">
             <h3>VOID</h3>
+            <span class="ship-tag">2,400 shards, 65 stardust</span>
             <p>Every third shield coin gives two shields instead of one, at the cost of some margin on close calls.</p>
           </div>
         </div>
         <div class="ship-panel" role="tabpanel" id="panel-NOVA" aria-labelledby="chip-NOVA" style="--ship-color:#ffffff">
-          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></div>
+          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z" fill="#ffffff"/><path d="M1.4 0L0.95 -0.13L0.95 0Z" fill="#ffffff"/><path d="M1.4 0L0.95 0.13L0.95 0Z" fill="#f5f5f5"/><path d="M0.95 0L0.95 -0.13L0.3 -0.2L0.3 0Z" fill="#ffffff"/><path d="M0.95 0L0.95 0.13L0.3 0.2L0.3 0Z" fill="#cdcecf"/><path d="M0.3 0L0.3 -0.2L-1 -0.24L-1.04 -0.1L-0.92 0Z" fill="#ffffff"/><path d="M0.3 0L0.3 0.2L-1 0.24L-1.04 0.1L-0.92 0Z" fill="#afb0b3"/><path d="M0.3 -0.2L-0.15 -0.59L-0.86 -0.59L-1 -0.24Z" fill="#ffffff"/><path d="M0.3 0.2L-0.15 0.59L-0.86 0.59L-1 0.24Z" fill="#9b9c9f"/><path d="M0.3 -0.2L-0.6 -0.98L-0.5 -0.72L0.12 -0.26Z" fill="#ffffff"/><path d="M0.3 0.2L-0.6 0.98L-0.5 0.72L0.12 0.26Z" fill="#c8c9ca"/><path d="M-0.15 -0.59L-0.6 -0.98L-0.72 -0.94L-0.86 -0.59Z" fill="#ebebec"/><path d="M-0.15 0.59L-0.6 0.98L-0.72 0.94L-0.86 0.59Z" fill="#797a7e"/><path d="M-1 -0.24L-1.22 -0.38L-1.04 -0.1Z" fill="#ffffff"/><path d="M-1 0.24L-1.22 0.38L-1.04 0.1Z" fill="#bebfc1"/></svg></div>
           <div class="sp-text">
             <h3>NOVA</h3>
+            <span class="ship-tag">4,000 shards, 110 stardust</span>
             <p>Every magnet coin pulls coins in for much longer, with less ammo held in reserve.</p>
           </div>
         </div>
         <div class="ship-panel" role="tabpanel" id="panel-SOLARIS" aria-labelledby="chip-SOLARIS" style="--ship-color:#ff6600">
-          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z"/></svg></div>
+          <div class="sp-art"><svg viewBox="-1.32 -1.08 2.82 2.16" aria-hidden="true"><path d="M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 -1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 0.3 0.2 0.95 0.13Z" fill="#ff6600"/><path d="M1.4 0L0.95 -0.13L0.95 0Z" fill="#ffa264"/><path d="M1.4 0L0.95 0.13L0.95 0Z" fill="#f56201"/><path d="M0.95 0L0.95 -0.13L0.3 -0.2L0.3 0Z" fill="#ff8d41"/><path d="M0.95 0L0.95 0.13L0.3 0.2L0.3 0Z" fill="#cd5303"/><path d="M0.3 0L0.3 -0.2L-1 -0.24L-1.04 -0.1L-0.92 0Z" fill="#ff7b23"/><path d="M0.3 0L0.3 0.2L-1 0.24L-1.04 0.1L-0.92 0Z" fill="#af4805"/><path d="M0.3 -0.2L-0.15 -0.59L-0.86 -0.59L-1 -0.24Z" fill="#ff6e0d"/><path d="M0.3 0.2L-0.15 0.59L-0.86 0.59L-1 0.24Z" fill="#9b4006"/><path d="M0.3 -0.2L-0.6 -0.98L-0.5 -0.72L0.12 -0.26Z" fill="#ff8838"/><path d="M0.3 0.2L-0.6 0.98L-0.5 0.72L0.12 0.26Z" fill="#c85104"/><path d="M-0.15 -0.59L-0.6 -0.98L-0.72 -0.94L-0.86 -0.59Z" fill="#eb5e01"/><path d="M-0.15 0.59L-0.6 0.98L-0.72 0.94L-0.86 0.59Z" fill="#793309"/><path d="M-1 -0.24L-1.22 -0.38L-1.04 -0.1Z" fill="#ff8330"/><path d="M-1 0.24L-1.22 0.38L-1.04 0.1Z" fill="#be4e04"/></svg></div>
           <div class="sp-text">
             <h3>SOLARIS</h3>
-            <span class="ship-tag">Rare</span>
+            <span class="ship-tag">Rare, 5,600 shards, 180 stardust</span>
             <p>The rarest ship in the roster - forgiving on close calls, built for players chasing the deepest runs.</p>
           </div>
         </div>
@@ -926,7 +926,7 @@
       </div>
       <p class="sf-legal">
         &copy; 2026 Theodoracatos. All rights reserved.<br>
-        Music by <a href="https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1" target="_blank" rel="noopener">the_mountain</a> via Pixabay.
+        Music by <a href="https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1" target="_blank" rel="noopener">the_mountain</a> via Pixabay.<br>
         <!-- langswitch -->
       </p>
     </div>
@@ -1033,30 +1033,6 @@
      narrowing left to right the way the corridor narrows with depth. Replaces
      a 52px gradient bar with something only this game would have. The bar
      stays as the no-JS fallback. */
-  (function () {
-    var W = 150, H = 22, N = 46;
-    function wall(top) {
-      var d = '', i, x, t, c, g;
-      for (i = 0; i <= N; i++) {
-        x = (i / N) * W;
-        t = i / N;
-        c = H / 2 + Math.sin(t * 5.6) * H * 0.115 + Math.sin(t * 11.4 + 1.57) * H * 0.05;
-        g = (H * 0.40) * (1 - 0.45 * t);          /* the corridor closing in */
-        d += (i ? 'L' : 'M') + x.toFixed(1) + ' ' + (top ? c - g : c + g).toFixed(1);
-      }
-      return d;
-    }
-    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">'
-            + '<path d="' + wall(true)  + '" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>'
-            + '<path d="' + wall(false) + '" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>'
-            + '</svg>';
-    [].forEach.call(document.querySelectorAll('.section-head .rule'), function (r) {
-      r.style.color = 'var(--cyan)';
-      r.innerHTML = svg;
-      r.classList.add('drawn');
-    });
-  })();
-
   /* ---------- The one control, flown rather than described ----------
      Real numbers: the game accelerates at a net 1800 px/s^2 up while you hold
      and 1300 down while you do not (GRAVITY 1300 / THRUST 3100, constants.js),
@@ -1070,11 +1046,51 @@
     var ctx = cv.getContext('2d');
     var holdBox = document.getElementById('feelHold');
     var fallBox = document.getElementById('feelFall');
+    var dodgeBox = document.getElementById('feelDodge');
     var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    var SHIP = new Path2D('M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 '
-                        + '-1.04 -0.1 -0.92 0 -1.04 0.1 -1.22 0.38 -1 0.24 -0.72 0.94 -0.6 0.98 '
-                        + '0.3 0.2 0.95 0.13Z');
+    /* the real hull (src/draw.js SHIP_OUTLINE / SHIP_FACETS / drawShip, the K5 "Facette +
+       Licht" hull shipped in 12.0), PEARL's own colours - not a hand-drawn approximation. */
+    var SHIP_OUTLINE_TOP = new Path2D('M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 '
+                        + '-1.04 -0.1 -0.92 0Z');
+    var SHIP_OUTLINE_BOT = new Path2D('M1.4 0 0.95 0.13 0.3 0.2 -0.6 0.98 -0.72 0.94 -1 0.24 -1.22 0.38 '
+                        + '-1.04 0.1 -0.92 0Z');
+    var SHIP_FACETS = [
+      { p: [[1.40,0],[0.95,-0.13],[0.95,0]],                             top: 0.46, bot: -0.04 },
+      { p: [[0.95,0],[0.95,-0.13],[0.30,-0.20],[0.30,0]],                top: 0.30, bot: -0.20 },
+      { p: [[0.30,0],[0.30,-0.20],[-1.00,-0.24],[-1.04,-0.10],[-0.92,0]], top: 0.16, bot: -0.32 },
+      { p: [[0.30,-0.20],[-0.15,-0.59],[-0.86,-0.59],[-1.00,-0.24]],     top: 0.06, bot: -0.40 },
+      { p: [[0.30,-0.20],[-0.60,-0.98],[-0.50,-0.72],[0.12,-0.26]],      top: 0.26, bot: -0.22 },
+      { p: [[-0.15,-0.59],[-0.60,-0.98],[-0.72,-0.94],[-0.86,-0.59]],    top: -0.08, bot: -0.54 },
+      { p: [[-1.00,-0.24],[-1.22,-0.38],[-1.04,-0.10]],                  top: 0.22, bot: -0.26 }
+    ];
+    function facetPath(pts, flip) {
+      var d = 'M' + pts[0][0] + ' ' + (pts[0][1] * flip);
+      for (var i = 1; i < pts.length; i++) d += 'L' + pts[i][0] + ' ' + (pts[i][1] * flip);
+      return new Path2D(d + 'Z');
+    }
+    var SHIP_FACET_TOP = SHIP_FACETS.map(function (f) { return facetPath(f.p, 1); });
+    var SHIP_FACET_BOT = SHIP_FACETS.map(function (f) { return facetPath(f.p, -1); });
+    /* _shipTones (src/draw.js), PEARL's colour and glow, no livery */
+    var SHIP_BASE = [232, 238, 255], SHIP_DARK = [6, 8, 16];
+    var SHIP_LIGHT = [255 + (210 - 255) * 0.15, 255 + (220 - 255) * 0.15, 255 + (255 - 255) * 0.15];
+    function shipToneCss(k) {
+      k = Math.max(-0.92, Math.min(0.92, k));
+      var to = k >= 0 ? SHIP_LIGHT : SHIP_DARK, t = k >= 0 ? k : -k;
+      var r = SHIP_BASE[0] + (to[0] - SHIP_BASE[0]) * t;
+      var g = SHIP_BASE[1] + (to[1] - SHIP_BASE[1]) * t;
+      var b = SHIP_BASE[2] + (to[2] - SHIP_BASE[2]) * t;
+      return 'rgb(' + (r | 0) + ',' + (g | 0) + ',' + (b | 0) + ')';
+    }
+    var SHIP_FACET_TOP_TONE = SHIP_FACETS.map(function (f) { return shipToneCss(f.top); });
+    var SHIP_FACET_BOT_TONE = SHIP_FACETS.map(function (f) { return shipToneCss(f.bot); });
+
+    /* a stalactite/stalagmite along the corridor, evenly spaced so DODGE lights up
+       once per pass instead of never - the label used to have nothing to react to. */
+    var HAZ_SPACING = 260;
+    function hazardAt(k) {
+      return { x: k * HAZ_SPACING + HAZ_SPACING * 0.5, top: (k & 1) === 0 };
+    }
 
     var W = 0, H = 0, dpr = 1;
     function resize() {
@@ -1090,8 +1106,25 @@
     }
     var halfGap = function () { return H * 0.30; };
 
-    var scroll = 0, py = 0, vy = 0, holding = false, lastLit = null;
+    var scroll = 0, py = 0, vy = 0, holding = false, lastLit = null, lastDodge = null;
     var SCROLL_SPD = 96;                 /* px/s of cave sliding past */
+
+    /* hazards on screen right now, shared by step() (to light DODGE) and draw()
+       (to render the spikes), so the two never fall out of sync. */
+    function visibleHazards() {
+      var out = [], g = halfGap();
+      var k0 = Math.floor((scroll - HAZ_SPACING) / HAZ_SPACING);
+      var k1 = Math.ceil((scroll + W + HAZ_SPACING) / HAZ_SPACING);
+      for (var k = k0; k <= k1; k++) {
+        var hz = hazardAt(k), sx = hz.x - scroll;
+        if (sx < -60 || sx > W + 60) continue;
+        var c = centre(hz.x), len = g * 0.55;
+        var baseY = hz.top ? c - g : c + g;
+        var tipY = hz.top ? baseY + len : baseY - len;
+        out.push({ sx: sx, top: hz.top, baseY: baseY, tipY: tipY });
+      }
+      return out;
+    }
 
     function step(dt) {
       var scale = H / 440;               /* _FEEL_SCALE */
@@ -1116,6 +1149,13 @@
         lastLit = holding;
         if (holdBox) holdBox.classList.toggle('lit', holding);
         if (fallBox) fallBox.classList.toggle('lit', !holding);
+      }
+
+      var px = W * 0.22, dodgeWindow = Math.max(24, H * 0.09);
+      var dodging = visibleHazards().some(function (h) { return Math.abs(h.sx - px) < dodgeWindow; });
+      if (dodging !== lastDodge) {
+        lastDodge = dodging;
+        if (dodgeBox) dodgeBox.classList.toggle('lit', dodging);
       }
     }
 
@@ -1143,15 +1183,46 @@
         ctx.stroke();
       }
 
-      /* ship, pitched by climb rate like the real one */
+      /* stalactites/stalagmites - a wall spike per hazardAt(), lit like a crystal
+         edge so DODGE has something on screen to react to. */
+      var haz = visibleHazards();
+      for (var hi = 0; hi < haz.length; hi++) {
+        var h = haz[hi], halfW = Math.max(7, H * 0.045);
+        ctx.beginPath();
+        ctx.moveTo(h.sx - halfW, h.baseY);
+        ctx.lineTo(h.sx + halfW, h.baseY);
+        ctx.lineTo(h.sx, h.tipY);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(16,16,26,0.92)';
+        ctx.fill();
+        ctx.strokeStyle = rgb(0.55);
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(h.sx - halfW * 0.3, h.baseY);
+        ctx.lineTo(h.sx, h.tipY);
+        ctx.strokeStyle = rgb(0.85);
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      /* ship, pitched by climb rate like the real one - the actual K5 faceted hull
+         (src/draw.js SHIP_OUTLINE/SHIP_FACETS/drawShip), not a hand-drawn stand-in. */
       var px = W * 0.22, r = Math.max(9, H * 0.085);
       var pitch = Math.max(-0.5, Math.min(0.5, vy / (1080 * (H / 440)))) * 0.6;
       ctx.save();
       ctx.translate(px, py);
       ctx.rotate(pitch);
       ctx.scale(r, r);
-      ctx.fillStyle = '#e8eeff';
-      ctx.fill(SHIP);
+      ctx.fillStyle = 'rgb(' + SHIP_BASE[0] + ',' + SHIP_BASE[1] + ',' + SHIP_BASE[2] + ')';
+      ctx.fill(SHIP_OUTLINE_TOP);
+      ctx.fill(SHIP_OUTLINE_BOT);
+      for (var fi = 0; fi < SHIP_FACETS.length; fi++) {
+        ctx.fillStyle = SHIP_FACET_TOP_TONE[fi];
+        ctx.fill(SHIP_FACET_TOP[fi]);
+        ctx.fillStyle = SHIP_FACET_BOT_TONE[fi];
+        ctx.fill(SHIP_FACET_BOT[fi]);
+      }
       ctx.restore();
 
       if (holding) {                     /* the plume is the whole point */

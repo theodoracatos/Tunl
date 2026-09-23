@@ -1,4 +1,8 @@
 {
+ "1587122": "Distancia de por vida en la pantalla de título, y dos logros de distancia de por vida.",
+ "2297714": "3.0, 3.1 y 3.2: fragmentos, compromisos y nuevos peligros",
+ "4139397": "14.2: música, la pantalla de muerte y pequeños ajustes de sensación",
+ "9337385": "Cada mina o disparo de cañón que destruyes con munición ahora suelta una llave inglesa donde explotó. Pasa por ella y tu casco recupera un rasguño, sin importar cuántos hubieras perdido, y sigue dando algunos puntos con el casco intacto. Se queda donde cayó: el imán no la atrae.",
  "9895ba3": "Registro de cambios de TUNL - Notas de versión de cada versión",
  "6f5e1da": "Registro de cambios de TUNL",
  "a2986e8": "Qué cambió en cada versión, la más reciente primero. La versión de navegador en <a href=\"/play/\">flytunl.ch/play</a> siempre ejecuta la compilación más reciente.",
@@ -8,7 +12,6 @@
  "fad3304": "Las paredes blandas se han ido. Las paredes son letales desde la boca del túnel en adelante, y los dos rasguños en el casco ahora duran toda la partida.",
  "d2a5a77": "Un repaso de sonido e interfaz: sonidos distintos para un rasguño en el casco y una reanimación, panorámica estéreo alrededor de la nave, un aviso audible justo antes de que dispare un cañón y antes de que caiga una estalactita suelta, reverberación de cueva en los impactos, un arranque grave de turbofán, ajustes de música y sonido de tres niveles y una pausa cuando la app pierde el foco a mitad de partida.",
  "a0c6ff7": "Los récords locales se reiniciaron una vez, en el primer inicio. Los fragmentos, el polvo estelar, las naves, los logros y los contadores de por vida no se tocaron.",
- "4139397": "14.2: música, la pantalla de muerte y pequeños ajustes de sensación",
  "648c2ec": "Bucles de música sin costuras, sin saltos audibles.",
  "80fa760": "El final real de la canción suena cuando mueres, y luego silencio hasta que vuelve la música del título.",
  "566201a": "Un fotograma congelado de muerte más largo, con la mira sobre lo que te golpeó.",
@@ -59,7 +62,6 @@
  "82930f2": "10.0: las partidas profundas ganan variedad",
  "7f66785": "Para partidas más allá de unos cientos de puntos: un corredor cuya forma cambia de carácter, pulsos de velocidad extra, amplias cámaras de respiro y una paleta de colores cambiante.",
  "d292879": "Una segunda moneda de peligro, el drenaje, que se lleva una parte de tu puntuación actual.",
- "1587122": "Distancia de por vida en la pantalla de título, y dos logros de distancia de por vida.",
  "e35db7f": "9.1: los siete mundos diarios",
  "a6f3481": "Ocho logros nuevos construidos sobre la rotación de siete mundos: uno por una partida real en cada uno de los siete mundos, más un Gran Tour por todos.",
  "de1a089": "9.0: logros",
@@ -95,7 +97,6 @@
  "a8dba8f": "5.2: un nuevo icono de app y logotipo, y una pantalla de muerte más limpia. La 5.2.1 añadió la medición de instalaciones de la app desde anuncios y nada que vieras.",
  "a453fad": "4.0: un nuevo icono",
  "9bd82e2": "El icono de la app pasó a ser la nave del jugador con su empuje.",
- "2297714": "3.0, 3.1 y 3.2: fragmentos, compromisos y nuevos peligros",
  "32ede7a": "3.0: las naves se desbloquean con fragmentos acumulados de las monedas recogidas en lugar de una puntuación, así una gran partida ya no desbloquea toda la lista. Se añadieron dos naves de prestigio, VOID y NOVA, por encima del antiguo nivel superior. Todos empezaron desde cero fragmentos.",
  "4c68161": "3.0: cada nave ahora cambia una fortaleza por una debilidad, y volar una nave hace crecer su fortaleza y suaviza su debilidad con niveles de maestría.",
  "d95e4f5": "3.0: tres misiones diarias, iguales para todos los jugadores un día dado.",
@@ -122,5 +123,13 @@
  "8a44056": "16.0: las estalactitas ahora son de cristal",
  "0242984": "Cada estalactita y estalagmita es ahora un racimo de prismas de cristal erguidos en lugar del cono liso que la cueva tenía desde la versión 1.0, con un mineral distinto para cada uno de los siete mundos del día - calcita, cuarzo oxidado, selenita, obsidiana, amatista, olivino, rodonita. El área de colisión no cambia: mismo triángulo, mismo tamaño, misma equidad.",
  "0162342": "Al romper una, ahora suena y se comporta como vidrio, no como grava - ya sea que la destruyas de un disparo, la atravieses con un escudo o mueras con ella.",
- "3cb017b": "Una estalactita que cae ahora deja su base de roca en el techo al desprenderse, y aterriza con la punta por delante, clavada en el suelo como si de verdad hubiera impactado algo."
+ "3cb017b": "Una estalactita que cae ahora deja su base de roca en el techo al desprenderse, y aterriza con la punta por delante, clavada en el suelo como si de verdad hubiera impactado algo.",
+ "93dc498": "Registro de cambios &middot; actualizado el 22 de septiembre de 2026 &middot; la versión actual es la 17.0",
+ "7e36e9e": "17.0: pinta tu propia nave",
+ "94b29f9": "El hangar ahora tiene un kit de pintura de verdad: color del casco, patrón, material y un efecto reactivo, cada uno comprado una vez y combinado como quieras, en lugar de las seis libreas fijas. La luz de la nave (su brillo, las toberas, las luces) queda intacta pase lo que pase con el kit.",
+ "4c81390": "Tu racha y tu polvo estelar por fin son visibles: una cartera siempre activa, un camino hacia tu próxima nave, una tarjeta de llegada cada mañana y una bonificación de fragmentos por una semana completa sin interrupción. Si te saltas un solo día, un día de descanso guardado lo cubre, una vez.",
+ "2232fad": "Una nueva silueta en vuelo: alas en flecha estilo F-14 que se repliegan del todo en un warp y se abren del todo con una moneda azul, volviendo entre medias a su ángulo de crucero.",
+ "a42ef98": "Un choque con la pared ahora gasta primero un escudo, antes de llegar al casco. El casco es la nave: solo se raya cuando ya no queda nada que lo proteja.",
+ "a30ed03": "Un casco rayado lo muestra: surcos en el fuselaje y una estela de humo, ambos desaparecen en cuanto un escudo vuelve a cubrirte.",
+ "9bd11ab": "Un choque ahora suena como un choque, no como un globo al reventar."
 }

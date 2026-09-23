@@ -1,4 +1,8 @@
 {
+ "1587122": "Jarak seumur hidup di layar judul, dan dua pencapaian jarak seumur hidup.",
+ "2297714": "3.0, 3.1 dan 3.2: Shard, pertukaran, dan bahaya baru",
+ "4139397": "14.2: Musik, layar kematian, dan perbaikan kecil pada rasa",
+ "9337385": "Setiap ranjau atau tembakan meriam yang kamu hancurkan dengan amunisi kini menjatuhkan kunci inggris di tempat ledakannya. Terbang melewatinya dan lambungmu mendapat kembali satu goresan, berapa pun yang hilang, dan tetap memberi sedikit poin meski lambung utuh. Ia tetap di tempat jatuhnya: magnet tidak menariknya.",
  "9895ba3": "Changelog TUNL - Catatan Rilis untuk Setiap Versi",
  "6f5e1da": "Changelog TUNL",
  "a2986e8": "Apa yang berubah di setiap versi, yang terbaru di atas. Versi browser di <a href=\"/play/\">flytunl.ch/play</a> selalu menjalankan build terbaru.",
@@ -8,7 +12,6 @@
  "fad3304": "Dinding lunak sudah hilang. Dinding mematikan sejak mulut terowongan, dan dua goresan lambung kini bertahan sepanjang run.",
  "d2a5a77": "Satu putaran suara dan antarmuka: suara berbeda untuk goresan lambung dan untuk hidup kembali, panning stereo di sekitar kapal, peringatan yang terdengar tepat sebelum meriam menembak dan sebelum stalaktit lepas jatuh, gema gua pada benturan, pemanasan turbofan yang rendah, pengaturan musik dan suara tiga tingkat, dan jeda ketika aplikasi kehilangan fokus di tengah run.",
  "a0c6ff7": "Rekor lokal direset sekali, saat peluncuran pertama. Shard, stardust, kapal, pencapaian, dan penghitung seumur hidup tidak tersentuh.",
- "4139397": "14.2: Musik, layar kematian, dan perbaikan kecil pada rasa",
  "648c2ec": "Loop musik mulus, tanpa lompatan yang terdengar.",
  "80fa760": "Akhir lagu yang sebenarnya diputar saat kamu mati, lalu hening sampai musik judul kembali.",
  "566201a": "Bingkai beku kematian yang lebih panjang, dengan bidikan pada apa pun yang menghantammu.",
@@ -59,7 +62,6 @@
  "82930f2": "10.0: Run dalam mendapat variasi",
  "7f66785": "Untuk run melewati beberapa ratus poin: koridor yang bentuknya berganti karakter, denyut kecepatan ekstra, ruang lega untuk bernapas, dan palet warna yang bergeser.",
  "d292879": "Koin bahaya kedua, drain, yang mengambil sebagian skormu saat ini.",
- "1587122": "Jarak seumur hidup di layar judul, dan dua pencapaian jarak seumur hidup.",
  "e35db7f": "9.1: Tujuh dunia harian",
  "a6f3481": "Delapan pencapaian baru yang dibangun di atas rotasi tujuh dunia: satu untuk run sungguhan di masing-masing dari tujuh dunia, ditambah Grand Tour untuk semuanya.",
  "de1a089": "9.0: Pencapaian",
@@ -95,7 +97,6 @@
  "a8dba8f": "5.2: ikon aplikasi dan wordmark baru, dan layar kematian yang lebih bersih. 5.2.1 menambahkan pengukuran instalasi aplikasi dari iklan dan tidak ada yang akan kamu lihat.",
  "a453fad": "4.0: Ikon baru",
  "9bd82e2": "Ikon aplikasi menjadi kapal pemain dengan dorongannya.",
- "2297714": "3.0, 3.1 dan 3.2: Shard, pertukaran, dan bahaya baru",
  "32ede7a": "3.0: kapal dibuka dengan shard yang dikumpulkan dari koin yang diambil, bukan skor, sehingga satu run hebat tidak lagi membuka seluruh daftar. Dua kapal prestise, VOID dan NOVA, ditambahkan di atas tingkat teratas yang lama. Semua orang mulai dari nol shard.",
  "4c68161": "3.0: setiap kapal kini menukar satu kekuatan dengan satu kelemahan, dan menerbangkan kapal menumbuhkan kekuatannya dan melunakkan kelemahannya lewat level penguasaan.",
  "d95e4f5": "3.0: tiga misi harian, sama untuk setiap pemain pada hari tertentu.",
@@ -122,5 +123,13 @@
  "8a44056": "16.0: stalaktit sekarang berupa kristal",
  "0242984": "Setiap stalaktit dan stalagmit kini menjadi kumpulan prisma kristal yang berdiri tegak, menggantikan kerucut halus yang ada di gua sejak versi 1.0, dengan mineral berbeda untuk masing-masing dari tujuh dunia harian - kalsit, kuarsa berkarat, selenit, obsidian, ametis, olivin, rodonit. Area tumbukan tidak berubah: segitiga sama, ukuran sama, keadilan sama.",
  "0162342": "Saat kamu memecahkannya, sekarang terdengar dan terlihat seperti kaca, bukan kerikil - baik kamu menembaknya, menerobosnya dengan perisai, atau mati karenanya.",
- "3cb017b": "Stalaktit yang jatuh kini meninggalkan soket batunya di langit-langit saat lepas, dan mendarat dengan ujung lebih dulu, tertancap di lantai seolah benar-benar menghantam sesuatu."
+ "3cb017b": "Stalaktit yang jatuh kini meninggalkan soket batunya di langit-langit saat lepas, dan mendarat dengan ujung lebih dulu, tertancap di lantai seolah benar-benar menghantam sesuatu.",
+ "93dc498": "Changelog &middot; diperbarui 22 September 2026 &middot; versi saat ini adalah 17.0",
+ "7e36e9e": "17.0: cat kapalmu sendiri",
+ "94b29f9": "Hanggar sekarang punya kit cat sungguhan: warna lambung, pola, material, dan efek reaktif, masing-masing dibeli sekali dan dipadukan sesukamu, menggantikan enam livery tetap. Cahaya kapal (kilauannya, nozel, dan lampu strobo) tetap tidak berubah apa pun kitnya.",
+ "4c81390": "Streak dan stardust-mu akhirnya terlihat: dompet yang selalu tampil, jalur menuju kapal berikutnya, kartu kedatangan setiap pagi, dan bonus keping untuk satu minggu penuh tanpa putus. Lewatkan satu hari saja, dan hari istirahat yang tersimpan menutupinya, sekali.",
+ "2232fad": "Siluet baru saat terbang: sayap sapu gaya F-14 yang melipat penuh saat warp dan membentang penuh saat mengambil koin biru, kembali ke sudut jelajah di antaranya.",
+ "a42ef98": "Menabrak dinding kini menghabiskan perisai lebih dulu, sebelum mencapai lambung. Lambung adalah kapal itu sendiri: baru tergores saat tak ada lagi yang melindunginya.",
+ "a30ed03": "Lambung yang tergores menunjukkannya: goresan di badan pesawat dan jejak asap, keduanya hilang begitu perisai kembali menyelimutimu.",
+ "9bd11ab": "Suara tabrakan sekarang benar-benar terdengar seperti tabrakan, bukan balon meletus."
 }
