@@ -15,7 +15,8 @@
     "tr",
     "id",
     "pl",
-    "hi"
+    "hi",
+    "el"
   ],
   "_langNames": {
     "en": "English",
@@ -32,7 +33,8 @@
     "tr": "Türkçe",
     "id": "Bahasa Indonesia",
     "pl": "Polski",
-    "hi": "हिन्दी"
+    "hi": "हिन्दी",
+    "el": "Ελληνικά"
   },
   "meta.title": {
     "en": "TUNL - Eternal Labyrinth",
@@ -49,7 +51,8 @@
     "tr": "TUNL - Sonsuz Labirent",
     "id": "TUNL - Labirin Abadi",
     "pl": "TUNL - Wieczny labirynt",
-    "hi": "TUNL - अनंत भूलभुलैया"
+    "hi": "TUNL - अनंत भूलभुलैया",
+    "el": "TUNL - Αιώνιος Λαβύρινθος"
   },
   "meta.desc": {
     "en": "TUNL is a hold-to-thrust cave flyer for iOS and Android. Hold to fly, release to fall, and see how deep you can go.",
@@ -66,7 +69,8 @@
     "tr": "TUNL, iOS ve Android için basılı tutarak yükselen bir mağara uçuş oyunu. Uçmak için basılı tut, düşmek için bırak ve ne kadar derine inebileceğini gör.",
     "id": "TUNL adalah game terbang gua dengan kontrol tahan-untuk-mendorong untuk iOS dan Android. Tahan untuk terbang, lepas untuk jatuh, dan lihat seberapa dalam kamu bisa pergi.",
     "pl": "TUNL to jaskiniowa gra o lataniu sterowana jednym palcem na iOS i Android. Przytrzymaj, by lecieć, puść, by spadać, i zobacz, jak głęboko zajdziesz.",
-    "hi": "TUNL iOS और Android के लिए एक होल्ड-टू-थ्रस्ट केव फ्लायर गेम है। उड़ने के लिए दबाकर रखें, गिरने के लिए छोड़ें, और देखें कि आप कितना गहरे जा सकते हैं।"
+    "hi": "TUNL iOS और Android के लिए एक होल्ड-टू-थ्रस्ट केव फ्लायर गेम है। उड़ने के लिए दबाकर रखें, गिरने के लिए छोड़ें, और देखें कि आप कितना गहरे जा सकते हैं।",
+    "el": "Το TUNL είναι ένα παιχνίδι πτήσης σε σπηλιά για iOS και Android. Κράτα για να πετάξεις, άφησε για να πέσεις, και δες πόσο βαθιά μπορείς να φτάσεις."
   },
   "meta.ogDesc": {
     "en": "A hold-to-thrust cave flyer for iOS and Android. Hold to climb, release to fall, and see how far you can push into the dark.",
@@ -83,7 +87,8 @@
     "tr": "iOS ve Android için basılı tutarak yükselen bir mağara uçuş oyunu. Yükselmek için basılı tut, düşmek için bırak ve karanlığın içine ne kadar ilerleyebileceğini gör.",
     "id": "Game terbang gua dengan kontrol tahan-untuk-mendorong untuk iOS dan Android. Tahan untuk naik, lepas untuk jatuh, dan lihat sejauh apa kamu bisa menembus kegelapan.",
     "pl": "Jaskiniowa gra o lataniu sterowana jednym palcem na iOS i Android. Przytrzymaj, by się wznosić, puść, by spadać, i zobacz, jak daleko wedrzesz się w ciemność.",
-    "hi": "iOS और Android के लिए होल्ड-टू-थ्रस्ट केव फ्लायर। ऊपर चढ़ने के लिए दबाकर रखें, गिरने के लिए छोड़ें, और देखें कि अंधेरे में कितना आगे बढ़ सकते हैं।"
+    "hi": "iOS और Android के लिए होल्ड-टू-थ्रस्ट केव फ्लायर। ऊपर चढ़ने के लिए दबाकर रखें, गिरने के लिए छोड़ें, और देखें कि अंधेरे में कितना आगे बढ़ सकते हैं।",
+    "el": "Ένα παιχνίδι πτήσης σε σπηλιά για iOS και Android. Κράτα για να ανέβεις, άφησε για να πέσεις, και δες πόσο μακριά μπορείς να προχωρήσεις μέσα στο σκοτάδι."
   },
   "hero.eyebrow": {
     "en": "Eternal Labyrinth",
@@ -100,7 +105,8 @@
     "tr": "Sonsuz Labirent",
     "id": "Labirin Abadi",
     "pl": "Wieczny labirynt",
-    "hi": "अनंत भूलभुलैया"
+    "hi": "अनंत भूलभुलैया",
+    "el": "Αιώνιος Λαβύρινθος"
   },
   "hero.pitch": {
     "en": "Hold to climb, release to fall. See how far you get before the tunnel closes in.",
@@ -117,7 +123,8 @@
     "tr": "Yükselmek için basılı tut, düşmek için bırak. Tünel kapanmadan ne kadar ileri gidebileceğini gör.",
     "id": "Tahan untuk naik, lepas untuk jatuh. Lihat sejauh apa kamu bisa melaju sebelum terowongan menutup.",
     "pl": "Przytrzymaj, by się wznosić, puść, by spadać. Zobacz, jak daleko dolecisz, zanim tunel się zamknie.",
-    "hi": "चढ़ने के लिए दबाकर रखें, गिरने के लिए छोड़ें। देखें कि सुरंग बंद होने से पहले आप कितनी दूर पहुँचते हैं।"
+    "hi": "चढ़ने के लिए दबाकर रखें, गिरने के लिए छोड़ें। देखें कि सुरंग बंद होने से पहले आप कितनी दूर पहुँचते हैं।",
+    "el": "Κράτα για να ανέβεις, άφησε για να πέσεις. Δες πόσο μακριά θα φτάσεις πριν κλείσει το τούνελ."
   },
   "hero.playCta": {
     "en": "Play in your browser",
@@ -134,7 +141,8 @@
     "tr": "Tarayıcıda oyna",
     "id": "Main di browser",
     "pl": "Graj w przeglądarce",
-    "hi": "ब्राउज़र में खेलें"
+    "hi": "ब्राउज़र में खेलें",
+    "el": "Παίξε στον browser"
   },
   "hero.orGetApp": {
     "en": "or get the app",
@@ -151,7 +159,8 @@
     "tr": "veya uygulamayı indir",
     "id": "atau unduh aplikasinya",
     "pl": "lub pobierz aplikację",
-    "hi": "या ऐप पाएँ"
+    "hi": "या ऐप पाएँ",
+    "el": "ή κατέβασε το app"
   },
   "s1.head": {
     "en": "Hold. Release. Survive.",
@@ -168,7 +177,8 @@
     "tr": "Basılı tut. Bırak. Hayatta kal.",
     "id": "Tahan. Lepas. Bertahan.",
     "pl": "Przytrzymaj. Puść. Przetrwaj.",
-    "hi": "दबाएँ। छोड़ें। बचें।"
+    "hi": "दबाएँ। छोड़ें। बचें।",
+    "el": "Κράτα. Άφησε. Επίζησε."
   },
   "s1.k1": {
     "en": "HOLD",
@@ -185,7 +195,8 @@
     "tr": "BASILI TUT",
     "id": "TAHAN",
     "pl": "PRZYTRZYMAJ",
-    "hi": "दबाएँ"
+    "hi": "दबाएँ",
+    "el": "ΚΡΑΤΑ"
   },
   "s1.d1": {
     "en": "Thrust upward",
@@ -202,7 +213,8 @@
     "tr": "Yukarı itiş",
     "id": "Dorongan ke atas",
     "pl": "Ciąg w górę",
-    "hi": "ऊपर की ओर थ्रस्ट"
+    "hi": "ऊपर की ओर थ्रस्ट",
+    "el": "Ώθηση προς τα πάνω"
   },
   "s1.k2": {
     "en": "RELEASE",
@@ -219,7 +231,8 @@
     "tr": "BIRAK",
     "id": "LEPAS",
     "pl": "PUŚĆ",
-    "hi": "छोड़ें"
+    "hi": "छोड़ें",
+    "el": "ΑΦΗΣΕ"
   },
   "s1.d2": {
     "en": "Gravity pulls you down",
@@ -236,7 +249,8 @@
     "tr": "Yer çekimi seni aşağı çeker",
     "id": "Gravitasi menarikmu ke bawah",
     "pl": "Grawitacja ściąga cię w dół",
-    "hi": "गुरुत्वाकर्षण आपको नीचे खींचता है"
+    "hi": "गुरुत्वाकर्षण आपको नीचे खींचता है",
+    "el": "Η βαρύτητα σε τραβά κάτω"
   },
   "s1.k3": {
     "en": "DODGE",
@@ -253,7 +267,8 @@
     "tr": "KAÇIN",
     "id": "HINDARI",
     "pl": "UNIKAJ",
-    "hi": "बचें"
+    "hi": "बचें",
+    "el": "ΑΠΟΦΥΓΕ"
   },
   "s1.d3": {
     "en": "Stalactites, mines, cannons, walls",
@@ -270,7 +285,8 @@
     "tr": "Sarkıtlar, mayınlar, toplar, duvarlar",
     "id": "Stalaktit, ranjau, meriam, dinding",
     "pl": "Stalaktyty, miny, działa, ściany",
-    "hi": "स्टैलेक्टाइट, माइन, तोपें, दीवारें"
+    "hi": "स्टैलेक्टाइट, माइन, तोपें, दीवारें",
+    "el": "Σταλακτίτες, νάρκες, κανόνια, τοίχοι"
   },
   "s2.head": {
     "en": "Features",
@@ -287,7 +303,8 @@
     "tr": "Özellikler",
     "id": "Fitur",
     "pl": "Funkcje",
-    "hi": "विशेषताएँ"
+    "hi": "विशेषताएँ",
+    "el": "Χαρακτηριστικά"
   },
   "f1.h": {
     "en": "A tunnel that never repeats",
@@ -304,7 +321,8 @@
     "tr": "Asla tekrar etmeyen bir tünel",
     "id": "Terowongan yang tak pernah berulang",
     "pl": "Tunel, który nigdy się nie powtarza",
-    "hi": "एक सुरंग जो कभी दोहराई नहीं जाती"
+    "hi": "एक सुरंग जो कभी दोहराई नहीं जाती",
+    "el": "Ένα τούνελ που δεν επαναλαμβάνεται ποτέ"
   },
   "f2.h": {
     "en": "Share the run, not the score",
@@ -321,7 +339,8 @@
     "tr": "Skoru değil, uçuşu paylaş",
     "id": "Bagikan penerbanganmu, bukan cuma skornya",
     "pl": "Dziel się lotem, nie tylko wynikiem",
-    "hi": "स्कोर नहीं, उड़ान साझा करें"
+    "hi": "स्कोर नहीं, उड़ान साझा करें",
+    "el": "Μοιράσου την πτήση, όχι μόνο το σκορ"
   },
   "f2.p": {
     "en": "End a great run and send a card of the tunnel you actually flew - the corridor narrowing, the exact spot you died, and your personal best marked just ahead of it. Everyone gets the same cave that day, so anyone you send it to can go straight at your number.",
@@ -338,7 +357,8 @@
     "tr": "Harika bir koşunun ardından gerçekten uçtuğun tünelin kartını gönder: daralan koridor, düştüğün tam nokta ve hemen önünde işaretli kişisel rekorun. O gün herkes aynı mağarayı uçtuğu için kartı gönderdiğin kişi doğrudan senin rakamına meydan okuyabilir.",
     "id": "Setelah run yang hebat, kirim kartu terowongan yang benar-benar kamu terbangi: lorong yang menyempit, titik persis tempat kamu jatuh, dan rekor pribadimu yang ditandai tepat di depannya. Semua orang mendapat gua yang sama hari itu, jadi siapa pun yang menerimanya bisa langsung menantang angkamu.",
     "pl": "Po świetnym locie wyślij kartę z tunelem, który naprawdę przeleciał twój statek: zwężający się korytarz, dokładne miejsce katastrofy i twój rekord zaznaczony tuż przed nim. Tego dnia wszyscy dostają tę samą jaskinię, więc każdy, komu ją wyślesz, może od razu stanąć do walki z twoim wynikiem.",
-    "hi": "शानदार रन के बाद उस सुरंग का कार्ड भेजें जिसमें आपने सचमुच उड़ान भरी: तंग होता गलियारा, वह सटीक जगह जहाँ आप गिरे, और उसके ठीक पहले चिह्नित आपका निजी रिकॉर्ड। उस दिन सबके लिए गुफा एक ही होती है, इसलिए जिसे भी आप भेजें वह सीधे आपके स्कोर को चुनौती दे सकता है।"
+    "hi": "शानदार रन के बाद उस सुरंग का कार्ड भेजें जिसमें आपने सचमुच उड़ान भरी: तंग होता गलियारा, वह सटीक जगह जहाँ आप गिरे, और उसके ठीक पहले चिह्नित आपका निजी रिकॉर्ड। उस दिन सबके लिए गुफा एक ही होती है, इसलिए जिसे भी आप भेजें वह सीधे आपके स्कोर को चुनौती दे सकता है।",
+    "el": "Τελείωσε μια μεγάλη πτήση και στείλε μια κάρτα με το τούνελ που πέταξες πραγματικά - τον διάδρομο που στενεύει, το ακριβές σημείο όπου χάθηκες και το προσωπικό σου ρεκόρ σημειωμένο λίγο πιο μπροστά. Όλοι έχουν την ίδια σπηλιά εκείνη τη μέρα, οπότε όποιος τη λάβει μπορεί να κυνηγήσει κατευθείαν τον αριθμό σου."
   },
   "f3.h": {
     "en": "Race your own ghost",
@@ -355,7 +375,8 @@
     "tr": "Kendi hayaletinle yarış",
     "id": "Balapan dengan hantumu sendiri",
     "pl": "Ścigaj się z własnym duchem",
-    "hi": "अपने ही घोस्ट से रेस करें"
+    "hi": "अपने ही घोस्ट से रेस करें",
+    "el": "Κόντρα στο δικό σου φάντασμα"
   },
   "f3.p": {
     "en": "Your best run of the day flies alongside you as a ghost ship. Catch it, pass it, and the next run starts chasing the one you just set.",
@@ -372,7 +393,8 @@
     "tr": "Günün en iyi koşusu yanında hayalet bir gemi olarak uçar. Yakala, geç; bir sonraki koşu da az önce koyduğun rekorun peşine düşsün.",
     "id": "Run terbaikmu hari itu terbang di sampingmu sebagai kapal hantu. Kejar dan lewati, lalu run berikutnya mulai mengejar rekor yang baru saja kamu buat.",
     "pl": "Twój najlepszy lot dnia leci obok ciebie jako statek-duch. Dogoń go i wyprzedź, a następny lot zacznie ścigać nowy rekord dnia.",
-    "hi": "दिन का आपका सबसे अच्छा रन एक घोस्ट शिप बनकर आपके साथ उड़ता है। उसे पकड़ें, पार करें, और अगला रन उस रिकॉर्ड का पीछा करने लगेगा जो आपने अभी बनाया।"
+    "hi": "दिन का आपका सबसे अच्छा रन एक घोस्ट शिप बनकर आपके साथ उड़ता है। उसे पकड़ें, पार करें, और अगला रन उस रिकॉर्ड का पीछा करने लगेगा जो आपने अभी बनाया।",
+    "el": "Η καλύτερη πτήση σου της ημέρας πετά δίπλα σου σαν σκάφος-φάντασμα. Πρόλαβέ το, προσπέρασέ το, και η επόμενη πτήση κυνηγά αυτή που μόλις έκανες."
   },
   "f4.h": {
     "en": "Eight coins and a warp",
@@ -389,7 +411,8 @@
     "tr": "Sekiz jeton ve bir warp",
     "id": "Delapan koin dan satu warp",
     "pl": "Osiem monet i warp",
-    "hi": "आठ सिक्के और एक वार्प"
+    "hi": "आठ सिक्के और एक वार्प",
+    "el": "Οκτώ νομίσματα και ένα warp"
   },
   "f5.h": {
     "en": "Stalactites, mines, boulders, cannons",
@@ -406,7 +429,8 @@
     "tr": "Sarkıtlar, mayınlar, kayalar, toplar",
     "id": "Stalaktit, ranjau, batu besar, meriam",
     "pl": "Stalaktyty, miny, głazy, działa",
-    "hi": "स्टैलेक्टाइट, माइन, चट्टानें, तोपें"
+    "hi": "स्टैलेक्टाइट, माइन, चट्टानें, तोपें",
+    "el": "Σταλακτίτες, νάρκες, βράχοι, κανόνια"
   },
   "f5.p": {
     "en": "Sharp stalactites, paired chicanes, spikes that shake loose and fall, boulders that make you commit up or down, and rare wall-mounted cannons that open fire as you close in. Each new stretch of cave brings a new threat, and the run keeps speeding up.",
@@ -423,7 +447,8 @@
     "tr": "Keskin sarkıtlar, çift taraflı şikanlar, gevşeyip düşen sivri uçlar, yukarı mı aşağı mı diye karar vermeni isteyen kayalar ve sen yaklaştıkça ateş açan nadir duvar topları. Mağaranın her yeni kesimi yeni bir tehdit getirir ve koşu giderek hızlanır.",
     "id": "Stalaktit tajam, chicane berpasangan, duri yang lepas dan jatuh, batu besar yang memaksamu memilih naik atau turun, dan meriam dinding langka yang menembak saat kamu mendekat. Setiap bagian gua yang baru membawa ancaman baru, dan run terus bertambah cepat.",
     "pl": "Ostre stalaktyty, sparowane szykany, kolce, które odrywają się i spadają, głazy zmuszające do decyzji: góra czy dół, oraz rzadkie działa na ścianach, które otwierają ogień, gdy się zbliżasz. Każdy nowy odcinek jaskini niesie nowe zagrożenie, a lot wciąż przyspiesza.",
-    "hi": "नुकीले स्टैलेक्टाइट, जोड़ीदार चिकेन, ढीले होकर गिरने वाले काँटे, चट्टानें जो आपको ऊपर या नीचे का फ़ैसला करने पर मजबूर करती हैं, और दीवारों पर लगी दुर्लभ तोपें जो आपके पास आते ही गोलीबारी शुरू कर देती हैं। गुफा का हर नया हिस्सा नया ख़तरा लाता है, और रन लगातार तेज़ होता जाता है।"
+    "hi": "नुकीले स्टैलेक्टाइट, जोड़ीदार चिकेन, ढीले होकर गिरने वाले काँटे, चट्टानें जो आपको ऊपर या नीचे का फ़ैसला करने पर मजबूर करती हैं, और दीवारों पर लगी दुर्लभ तोपें जो आपके पास आते ही गोलीबारी शुरू कर देती हैं। गुफा का हर नया हिस्सा नया ख़तरा लाता है, और रन लगातार तेज़ होता जाता है।",
+    "el": "Κοφτεροί σταλακτίτες, διπλά σικέιν, αιχμές που ξεκολλάνε και πέφτουν, βράχοι που σε αναγκάζουν να διαλέξεις πάνω ή κάτω, και σπάνια κανόνια στους τοίχους που ανοίγουν πυρ καθώς πλησιάζεις. Κάθε νέο κομμάτι της σπηλιάς φέρνει νέα απειλή, και η πτήση συνεχώς επιταχύνει."
   },
   "f6.h": {
     "en": "One more run after you crash",
@@ -440,7 +465,8 @@
     "tr": "Çakıldıktan sonra bir koşu daha",
     "id": "Satu run lagi setelah jatuh",
     "pl": "Jeszcze jeden lot po rozbiciu",
-    "hi": "क्रैश के बाद एक और रन"
+    "hi": "क्रैश के बाद एक और रन",
+    "el": "Μία πτήση ακόμα μετά τη συντριβή"
   },
   "f7.h": {
     "en": "Milestones and combos",
@@ -457,7 +483,8 @@
     "tr": "Kilometre taşları ve kombolar",
     "id": "Pencapaian dan combo",
     "pl": "Kamienie milowe i combo",
-    "hi": "माइलस्टोन और कॉम्बो"
+    "hi": "माइलस्टोन और कॉम्बो",
+    "el": "Ορόσημα και combo"
   },
   "f8.h": {
     "en": "Shards and Stardust",
@@ -474,7 +501,8 @@
     "tr": "Parçacıklar ve yıldız tozu",
     "id": "Shard dan Stardust",
     "pl": "Odłamki i pył gwiezdny",
-    "hi": "शार्ड्स और स्टारडस्ट"
+    "hi": "शार्ड्स और स्टारडस्ट",
+    "el": "Θραύσματα και αστερόσκονη"
   },
   "f9.h": {
     "en": "Every ship, a real build choice",
@@ -491,7 +519,8 @@
     "tr": "Her gemi gerçek bir yapı seçimi",
     "id": "Setiap kapal adalah pilihan build yang nyata",
     "pl": "Każdy statek to prawdziwy wybór buildu",
-    "hi": "हर जहाज़ एक असली बिल्ड का चुनाव"
+    "hi": "हर जहाज़ एक असली बिल्ड का चुनाव",
+    "el": "Κάθε σκάφος, μια πραγματική επιλογή"
   },
   "f9.p": {
     "en": "8 ships, each pairing a buff with a drawback, from the free PEARL starter up through AMBER, CRIMSON, ELECTRIC, TOXIC, VOID, NOVA, and the rare SOLARIS (wide near-miss window, larger hitbox). Fly one enough and it gains mastery, easing its drawback and growing its buff.",
@@ -508,7 +537,8 @@
     "tr": "8 gemi, her biri bir avantajı bir dezavantajla eşleştirir; ücretsiz başlangıç gemisi PEARL'dan AMBER, CRIMSON, ELECTRIC, TOXIC, VOID, NOVA ve nadir SOLARIS'e kadar (geniş kıl payı penceresi, daha büyük isabet kutusu). Birini yeterince uçur, ustalık kazansın: dezavantajı hafifler, avantajı büyür.",
     "id": "8 kapal, masing-masing memadukan keunggulan dengan kekurangan, dari PEARL starter gratis hingga AMBER, CRIMSON, ELECTRIC, TOXIC, VOID, NOVA, dan SOLARIS yang langka (jendela nyaris-kena yang lebar, hitbox lebih besar). Terbangkan satu kapal cukup lama dan ia akan mendapat penguasaan: kekurangannya mereda dan keunggulannya bertambah.",
     "pl": "8 statków, każdy łączy zaletę z wadą: od darmowego startowego PEARL przez AMBER, CRIMSON, ELECTRIC, TOXIC, VOID, NOVA aż po rzadki SOLARIS (szerokie okno na styk, większy hitbox). Polataj jednym wystarczająco długo, a zdobędzie biegłość: wada złagodnieje, a zaleta urośnie.",
-    "hi": "8 जहाज़, हर एक में एक ख़ूबी के साथ एक कमी: मुफ़्त स्टार्टर PEARL से लेकर AMBER, CRIMSON, ELECTRIC, TOXIC, VOID, NOVA और दुर्लभ SOLARIS तक (चौड़ी बाल-बाल बचने की खिड़की, बड़ा हिटबॉक्स)। किसी एक को ख़ूब उड़ाएँ तो उसमें महारत आती है: कमी घटती है और ख़ूबी बढ़ती है।"
+    "hi": "8 जहाज़, हर एक में एक ख़ूबी के साथ एक कमी: मुफ़्त स्टार्टर PEARL से लेकर AMBER, CRIMSON, ELECTRIC, TOXIC, VOID, NOVA और दुर्लभ SOLARIS तक (चौड़ी बाल-बाल बचने की खिड़की, बड़ा हिटबॉक्स)। किसी एक को ख़ूब उड़ाएँ तो उसमें महारत आती है: कमी घटती है और ख़ूबी बढ़ती है।",
+    "el": "8 σκάφη, το καθένα με ένα πλεονέκτημα και ένα μειονέκτημα, από το δωρεάν PEARL για αρχή μέχρι τα AMBER, CRIMSON, ELECTRIC, TOXIC, VOID, NOVA και το σπάνιο SOLARIS (μεγάλο παράθυρο για το παρά τρίχα, μεγαλύτερο hitbox). Πέτα αρκετά με ένα και κερδίζει μαεστρία: το μειονέκτημα μαλακώνει και το πλεονέκτημα μεγαλώνει."
   },
   "f10.h": {
     "en": "Daily missions",
@@ -525,7 +555,8 @@
     "tr": "Günlük görevler",
     "id": "Misi harian",
     "pl": "Codzienne misje",
-    "hi": "दैनिक मिशन"
+    "hi": "दैनिक मिशन",
+    "el": "Ημερήσιες αποστολές"
   },
   "f11.h": {
     "en": "A new world every day",
@@ -542,7 +573,8 @@
     "tr": "Her gün yeni bir dünya",
     "id": "Dunia baru setiap hari",
     "pl": "Nowy świat każdego dnia",
-    "hi": "हर दिन एक नई दुनिया"
+    "hi": "हर दिन एक नई दुनिया",
+    "el": "Ένας νέος κόσμος κάθε μέρα"
   },
   "f12.h": {
     "en": "Chase your best",
@@ -559,7 +591,8 @@
     "tr": "Rekorunu kovala",
     "id": "Kejar rekormu",
     "pl": "Goń swój rekord",
-    "hi": "अपने सर्वश्रेष्ठ का पीछा करें"
+    "hi": "अपने सर्वश्रेष्ठ का पीछा करें",
+    "el": "Κυνήγα το ρεκόρ σου"
   },
   "f13.h": {
     "en": "Play in your language",
@@ -576,7 +609,8 @@
     "tr": "Kendi dilinde oyna",
     "id": "Main dalam bahasamu",
     "pl": "Graj w swoim języku",
-    "hi": "अपनी भाषा में खेलें"
+    "hi": "अपनी भाषा में खेलें",
+    "el": "Παίξε στη γλώσσα σου"
   },
   "ships.head": {
     "en": "Eight Ships, Eight Feels",
@@ -593,7 +627,8 @@
     "tr": "Sekiz gemi, sekiz his",
     "id": "Delapan kapal, delapan sensasi",
     "pl": "Osiem statków, osiem odczuć",
-    "hi": "आठ जहाज़, आठ अहसास"
+    "hi": "आठ जहाज़, आठ अहसास",
+    "el": "Οκτώ σκάφη, οκτώ αισθήσεις"
   },
   "ships.sub": {
     "en": "Same one-button feel, different tradeoffs.",
@@ -610,7 +645,8 @@
     "tr": "Aynı tek tuşlu his, farklı ödünleşimler.",
     "id": "Rasa satu tombol yang sama, kompromi yang berbeda.",
     "pl": "To samo sterowanie jednym przyciskiem, różne kompromisy.",
-    "hi": "वही एक-बटन वाला अहसास, अलग-अलग समझौते।"
+    "hi": "वही एक-बटन वाला अहसास, अलग-अलग समझौते।",
+    "el": "Το ίδιο χειριστήριο ενός κουμπιού, διαφορετικοί συμβιβασμοί."
   },
   "ships.tagPearl": {
     "en": "Starter, free",
@@ -627,7 +663,8 @@
     "tr": "Başlangıç, ücretsiz",
     "id": "Starter, gratis",
     "pl": "Startowy, darmowy",
-    "hi": "स्टार्टर, मुफ़्त"
+    "hi": "स्टार्टर, मुफ़्त",
+    "el": "Αρχικό, δωρεάν"
   },
   "ships.pearl": {
     "en": "The neutral baseline every run starts with - no perk, no penalty, just the feel of the ship.",
@@ -644,7 +681,8 @@
     "tr": "Her koşunun başladığı nötr taban: avantaj da ceza da yok, sadece geminin hissi.",
     "id": "Dasar netral tempat setiap run dimulai: tanpa keunggulan, tanpa hukuman, hanya rasa terbang kapal itu sendiri.",
     "pl": "Neutralna baza, od której zaczyna się każdy lot: bez premii, bez kary, tylko wyczucie statku.",
-    "hi": "वह तटस्थ आधार जिससे हर रन शुरू होता है: न कोई ख़ूबी, न कोई सज़ा, बस जहाज़ का अहसास।"
+    "hi": "वह तटस्थ आधार जिससे हर रन शुरू होता है: न कोई ख़ूबी, न कोई सज़ा, बस जहाज़ का अहसास।",
+    "el": "Η ουδέτερη βάση με την οποία ξεκινά κάθε πτήση - κανένα πλεονέκτημα, καμία ποινή, μόνο η αίσθηση του σκάφους."
   },
   "ships.amber": {
     "en": "Reaches further for coins than any other ship, at the cost of a slightly bigger hitbox.",
@@ -661,7 +699,8 @@
     "tr": "Jetonlara diğer tüm gemilerden daha uzaktan ulaşır, karşılığında isabet kutusu biraz daha büyüktür.",
     "id": "Menjangkau koin lebih jauh daripada kapal lain, dengan konsekuensi hitbox yang sedikit lebih besar.",
     "pl": "Sięga po monety dalej niż jakikolwiek inny statek, kosztem nieco większego hitboxa.",
-    "hi": "सिक्कों तक किसी भी दूसरे जहाज़ से ज़्यादा दूर पहुँचता है, बदले में हिटबॉक्स थोड़ा बड़ा है।"
+    "hi": "सिक्कों तक किसी भी दूसरे जहाज़ से ज़्यादा दूर पहुँचता है, बदले में हिटबॉक्स थोड़ा बड़ा है।",
+    "el": "Φτάνει τα νομίσματα από πιο μακριά από κάθε άλλο σκάφος, με κόστος ένα λίγο μεγαλύτερο hitbox."
   },
   "ships.crimson": {
     "en": "Slips through gaps other ships can't fit through, trading away some shield capacity for it.",
@@ -678,7 +717,8 @@
     "tr": "Diğer gemilerin sığamadığı aralıklardan geçer, karşılığında kalkan kapasitesinden biraz vazgeçer.",
     "id": "Menyelinap lewat celah yang tak muat dilalui kapal lain, dengan mengorbankan sebagian kapasitas perisai.",
     "pl": "Prześlizguje się przez szczeliny, w które inne statki się nie mieszczą, oddając za to część pojemności osłony.",
-    "hi": "उन दरारों से निकल जाता है जिनमें दूसरे जहाज़ नहीं समा पाते, इसके बदले कुछ शील्ड क्षमता छोड़नी पड़ती है।"
+    "hi": "उन दरारों से निकल जाता है जिनमें दूसरे जहाज़ नहीं समा पाते, इसके बदले कुछ शील्ड क्षमता छोड़नी पड़ती है।",
+    "el": "Γλιστρά από κενά όπου άλλα σκάφη δεν χωρούν, θυσιάζοντας γι' αυτό λίγη χωρητικότητα ασπίδας."
   },
   "ships.electric": {
     "en": "Bends time harder and longer whenever a slow-time coin lands.",
@@ -695,7 +735,8 @@
     "tr": "Yavaş zaman jetonu alındığında zamanı daha güçlü ve daha uzun süre büker.",
     "id": "Membengkokkan waktu lebih kuat dan lebih lama setiap kali koin perlambat waktu diambil.",
     "pl": "Mocniej i dłużej zakrzywia czas za każdym razem, gdy zbierzesz monetę spowolnienia.",
-    "hi": "जब भी धीमे-समय का सिक्का मिलता है, समय को ज़्यादा ज़ोर से और ज़्यादा देर तक मोड़ता है।"
+    "hi": "जब भी धीमे-समय का सिक्का मिलता है, समय को ज़्यादा ज़ोर से और ज़्यादा देर तक मोड़ता है।",
+    "el": "Λυγίζει τον χρόνο πιο δυνατά και για περισσότερο κάθε φορά που πιάνει νόμισμα επιβράδυνσης."
   },
   "ships.toxic": {
     "en": "Every gold coin buys more corridor room, though the bonus burns off faster too.",
@@ -712,7 +753,8 @@
     "tr": "Her altın jeton daha fazla koridor genişliği kazandırır, ancak bonus da daha hızlı erir.",
     "id": "Setiap koin emas memberi ruang lorong lebih lebar, tetapi bonusnya juga habis lebih cepat.",
     "pl": "Każda złota moneta daje więcej miejsca w korytarzu, ale premia wypala się też szybciej.",
-    "hi": "हर सोने का सिक्का गलियारे में ज़्यादा जगह देता है, पर बोनस भी जल्दी घिस जाता है।"
+    "hi": "हर सोने का सिक्का गलियारे में ज़्यादा जगह देता है, पर बोनस भी जल्दी घिस जाता है।",
+    "el": "Κάθε χρυσό νόμισμα αγοράζει περισσότερο χώρο στον διάδρομο, αν και το μπόνους σβήνει και πιο γρήγορα."
   },
   "ships.void": {
     "en": "Every third shield coin gives two shields instead of one, at the cost of some margin on close calls.",
@@ -729,7 +771,8 @@
     "tr": "Her üçüncü kalkan jetonu bir yerine iki kalkan verir, karşılığında kıl payı anlarda marjın biraz azalır.",
     "id": "Setiap koin perisai ketiga memberi dua perisai, bukan satu, dengan konsekuensi margin yang sedikit berkurang saat nyaris kena.",
     "pl": "Co trzecia moneta osłony daje dwie osłony zamiast jednej, kosztem nieco mniejszego zapasu w sytuacjach na styk.",
-    "hi": "हर तीसरा शील्ड सिक्का एक की जगह दो शील्ड देता है, बदले में बाल-बाल बचने के पलों में थोड़ा कम मार्जिन मिलता है।"
+    "hi": "हर तीसरा शील्ड सिक्का एक की जगह दो शील्ड देता है, बदले में बाल-बाल बचने के पलों में थोड़ा कम मार्जिन मिलता है।",
+    "el": "Κάθε τρίτο νόμισμα ασπίδας δίνει δύο ασπίδες αντί για μία, με κόστος λίγο περιθώριο στα παρά τρίχα."
   },
   "ships.nova": {
     "en": "Every magnet coin pulls coins in for much longer, with less ammo held in reserve.",
@@ -746,7 +789,8 @@
     "tr": "Her mıknatıs jetonu jetonları çok daha uzun süre çeker, ancak yedekte tutulan mermi azalır.",
     "id": "Setiap koin magnet menarik koin jauh lebih lama, dengan cadangan amunisi yang lebih sedikit.",
     "pl": "Każda moneta magnesu przyciąga monety znacznie dłużej, przy mniejszym zapasie amunicji.",
-    "hi": "हर मैग्नेट सिक्का सिक्कों को कहीं ज़्यादा देर तक खींचता है, पर रिज़र्व में गोलियाँ कम रहती हैं।"
+    "hi": "हर मैग्नेट सिक्का सिक्कों को कहीं ज़्यादा देर तक खींचता है, पर रिज़र्व में गोलियाँ कम रहती हैं।",
+    "el": "Κάθε νόμισμα μαγνήτη τραβά νομίσματα για πολύ περισσότερο, με λιγότερα πυρομαχικά σε απόθεμα."
   },
   "ships.tagSolaris": {
     "en": "Rare",
@@ -763,7 +807,8 @@
     "tr": "Nadir",
     "id": "Langka",
     "pl": "Rzadki",
-    "hi": "दुर्लभ"
+    "hi": "दुर्लभ",
+    "el": "Σπάνιο"
   },
   "ships.solaris": {
     "en": "The rarest ship in the roster - forgiving on close calls, built for players chasing the deepest runs.",
@@ -780,7 +825,8 @@
     "tr": "Kadrodaki en nadir gemi: kıl payı anlarda bağışlayıcı, en derin koşuların peşindeki oyuncular için tasarlandı.",
     "id": "Kapal paling langka dalam daftar - pemaaf saat nyaris kena, dibuat untuk pemain yang mengejar run terdalam.",
     "pl": "Najrzadszy statek w zestawie - wybacza sytuacje na styk, stworzony dla graczy, którzy gonią najgłębsze loty.",
-    "hi": "रोस्टर का सबसे दुर्लभ जहाज़: बाल-बाल बचने के पलों में उदार, सबसे गहरे रन का पीछा करने वाले खिलाड़ियों के लिए बना।"
+    "hi": "रोस्टर का सबसे दुर्लभ जहाज़: बाल-बाल बचने के पलों में उदार, सबसे गहरे रन का पीछा करने वाले खिलाड़ियों के लिए बना।",
+    "el": "Το πιο σπάνιο σκάφος του στόλου - συγχωρεί τα παρά τρίχα, φτιαγμένο για όσους κυνηγούν τις πιο βαθιές πτήσεις."
   },
   "s3.head": {
     "en": "Screenshots",
@@ -797,7 +843,8 @@
     "tr": "Ekran görüntüleri",
     "id": "Tangkapan layar",
     "pl": "Zrzuty ekranu",
-    "hi": "स्क्रीनशॉट"
+    "hi": "स्क्रीनशॉट",
+    "el": "Στιγμιότυπα"
   },
   "alt1": {
     "en": "TUNL title screen - one cave, every player, every day",
@@ -814,7 +861,8 @@
     "tr": "TUNL başlık ekranı - tek mağara, her oyuncu, her gün",
     "id": "Layar judul TUNL - satu gua, semua pemain, setiap hari",
     "pl": "Ekran tytułowy TUNL - jedna jaskinia, każdy gracz, każdego dnia",
-    "hi": "TUNL टाइटल स्क्रीन - एक गुफा, हर खिलाड़ी, हर दिन"
+    "hi": "TUNL टाइटल स्क्रीन - एक गुफा, हर खिलाड़ी, हर दिन",
+    "el": "Αρχική οθόνη του TUNL - μία σπηλιά, κάθε παίκτης, κάθε μέρα"
   },
   "altCity": {
     "en": "TUNL approach - every run takes off over the city at dusk and dives into the rock",
@@ -831,7 +879,8 @@
     "tr": "TUNL yaklaşma - her koşu alacakaranlıkta bir şehrin üzerinden kalkar ve kayanın içine dalar",
     "id": "Pendekatan TUNL - setiap run lepas landas di atas kota saat senja lalu menukik ke dalam batu",
     "pl": "Podejście w TUNL - każdy lot startuje nad miastem o zmierzchu i nurkuje w skałę",
-    "hi": "TUNL एप्रोच - हर रन शाम के धुँधलके में शहर के ऊपर से उड़ान भरता है और चट्टान में गोता लगाता है"
+    "hi": "TUNL एप्रोच - हर रन शाम के धुँधलके में शहर के ऊपर से उड़ान भरता है और चट्टान में गोता लगाता है",
+    "el": "Η προσέγγιση στο TUNL - κάθε πτήση απογειώνεται πάνω από την πόλη στο σούρουπο και βουτά στον βράχο"
   },
   "alt2": {
     "en": "TUNL gameplay - hold to climb, let go to fall, one touch is the whole game",
@@ -848,7 +897,8 @@
     "tr": "TUNL oynanış - yükselmek için basılı tut, düşmek için bırak, tek dokunuş oyunun tamamı",
     "id": "Gameplay TUNL - tahan untuk naik, lepas untuk jatuh, satu sentuhan adalah seluruh permainannya",
     "pl": "Rozgrywka TUNL - przytrzymaj, by się wznosić, puść, by spadać, jeden dotyk to cała gra",
-    "hi": "TUNL गेमप्ले - चढ़ने के लिए दबाकर रखें, गिरने के लिए छोड़ें, एक टच ही पूरा खेल है"
+    "hi": "TUNL गेमप्ले - चढ़ने के लिए दबाकर रखें, गिरने के लिए छोड़ें, एक टच ही पूरा खेल है",
+    "el": "Gameplay του TUNL - κράτα για να ανέβεις, άφησε για να πέσεις, ένα άγγιγμα είναι όλο το παιχνίδι"
   },
   "alt3": {
     "en": "TUNL warp ring - fly through for a pure-speed rush",
@@ -865,7 +915,8 @@
     "tr": "TUNL warp halkası - içinden geç, saf hızın keyfini çıkar",
     "id": "Cincin warp TUNL - terbanglah melewatinya untuk sensasi kecepatan murni",
     "pl": "Pierścień warp w TUNL - przeleć przez niego dla czystego pędu",
-    "hi": "TUNL वार्प रिंग - इसके आर-पार उड़ें और शुद्ध रफ़्तार का रोमांच पाएँ"
+    "hi": "TUNL वार्प रिंग - इसके आर-पार उड़ें और शुद्ध रफ़्तार का रोमांच पाएँ",
+    "el": "Ο κρίκος warp του TUNL - πέρνα μέσα για καθαρή ταχύτητα"
   },
   "alt4": {
     "en": "TUNL power-ups - shields, ammo, magnets and more, going deeper",
@@ -882,7 +933,8 @@
     "tr": "TUNL güçlendirmeler - kalkanlar, mermiler, mıknatıslar ve daha fazlası, derine indikçe",
     "id": "Power-up TUNL - perisai, amunisi, magnet, dan lainnya, makin dalam makin banyak",
     "pl": "Wzmocnienia w TUNL - osłony, amunicja, magnesy i więcej, im głębiej, tym więcej",
-    "hi": "TUNL पावर-अप - शील्ड, गोलियाँ, मैग्नेट और बहुत कुछ, जितना गहरे जाएँ उतना ज़्यादा"
+    "hi": "TUNL पावर-अप - शील्ड, गोलियाँ, मैग्नेट और बहुत कुछ, जितना गहरे जाएँ उतना ज़्यादा",
+    "el": "Power-ups του TUNL - ασπίδες, πυρομαχικά, μαγνήτες και άλλα, όλο και πιο βαθιά"
   },
   "alt5": {
     "en": "TUNL debriefing screen - check your rank, the whole world flies the same cave",
@@ -899,7 +951,8 @@
     "tr": "TUNL sonuç ekranı - sıralamana bak, dünyanın tamamı aynı mağarayı uçuyor",
     "id": "Layar hasil TUNL - cek peringkatmu, seluruh dunia terbang di gua yang sama",
     "pl": "Ekran podsumowania TUNL - sprawdź swoje miejsce, cały świat leci tą samą jaskinią",
-    "hi": "TUNL डीब्रीफ़िंग स्क्रीन - अपनी रैंक देखें, पूरी दुनिया एक ही गुफा में उड़ती है"
+    "hi": "TUNL डीब्रीफ़िंग स्क्रीन - अपनी रैंक देखें, पूरी दुनिया एक ही गुफा में उड़ती है",
+    "el": "Οθόνη απολογισμού του TUNL - δες την κατάταξή σου, όλος ο κόσμος πετά στην ίδια σπηλιά"
   },
   "footer.support": {
     "en": "Support",
@@ -916,7 +969,8 @@
     "tr": "Destek",
     "id": "Dukungan",
     "pl": "Wsparcie",
-    "hi": "सहायता"
+    "hi": "सहायता",
+    "el": "Υποστήριξη"
   },
   "footer.privacy": {
     "en": "Privacy Policy",
@@ -933,7 +987,8 @@
     "tr": "Gizlilik Politikası",
     "id": "Kebijakan Privasi",
     "pl": "Polityka prywatności",
-    "hi": "गोपनीयता नीति"
+    "hi": "गोपनीयता नीति",
+    "el": "Πολιτική απορρήτου"
   },
   "footer.press": {
     "en": "Press",
@@ -950,7 +1005,8 @@
     "tr": "Basın",
     "id": "Pers",
     "pl": "Prasa",
-    "hi": "प्रेस"
+    "hi": "प्रेस",
+    "el": "Τύπος"
   },
   "footer.devlog": {
     "en": "Devlog",
@@ -967,7 +1023,8 @@
     "tr": "Geliştirici günlüğü",
     "id": "Devlog",
     "pl": "Devlog",
-    "hi": "डेवलॉग"
+    "hi": "डेवलॉग",
+    "el": "Devlog"
   },
   "footer.howto": {
     "en": "How to play",
@@ -984,7 +1041,8 @@
     "tr": "Nasıl oynanır",
     "id": "Cara bermain",
     "pl": "Jak grać",
-    "hi": "कैसे खेलें"
+    "hi": "कैसे खेलें",
+    "el": "Πώς παίζεται"
   },
   "footer.rights": {
     "en": "&copy; 2026 Theodoracatos. All rights reserved.",
@@ -1001,7 +1059,8 @@
     "tr": "&copy; 2026 Theodoracatos. Tüm hakları saklıdır.",
     "id": "&copy; 2026 Theodoracatos. Semua hak dilindungi.",
     "pl": "&copy; 2026 Theodoracatos. Wszelkie prawa zastrzeżone.",
-    "hi": "&copy; 2026 Theodoracatos. सर्वाधिकार सुरक्षित।"
+    "hi": "&copy; 2026 Theodoracatos. सर्वाधिकार सुरक्षित।",
+    "el": "&copy; 2026 Theodoracatos. Με την επιφύλαξη παντός δικαιώματος."
   },
   "footer.music": {
     "en": "Music by <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a> via Pixabay.",
@@ -1018,7 +1077,8 @@
     "tr": "Müzik: Pixabay üzerinden <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a>.",
     "id": "Musik oleh <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a> melalui Pixabay.",
     "pl": "Muzyka: <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a> na Pixabay.",
-    "hi": "संगीत: Pixabay पर <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a> द्वारा।"
+    "hi": "संगीत: Pixabay पर <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a> द्वारा।",
+    "el": "Μουσική: <a href=\"https://pixabay.com/users/the_mountain-3616498/?tab=all&amp;order=likes&amp;pagi=1\" target=\"_blank\" rel=\"noopener\">the_mountain</a> μέσω Pixabay."
   },
   "footer.langLabel": {
     "en": "Language",
@@ -1035,7 +1095,8 @@
     "tr": "Dil",
     "id": "Bahasa",
     "pl": "Język",
-    "hi": "भाषा"
+    "hi": "भाषा",
+    "el": "Γλώσσα"
   },
   "aria.musicPlay": {
     "en": "Play title music",
@@ -1052,7 +1113,8 @@
     "tr": "Başlık müziğini çal",
     "id": "Putar musik judul",
     "pl": "Odtwórz muzykę z ekranu tytułowego",
-    "hi": "टाइटल संगीत चलाएँ"
+    "hi": "टाइटल संगीत चलाएँ",
+    "el": "Αναπαραγωγή μουσικής τίτλων"
   },
   "aria.musicPause": {
     "en": "Pause title music",
@@ -1069,7 +1131,8 @@
     "tr": "Başlık müziğini duraklat",
     "id": "Jeda musik judul",
     "pl": "Wstrzymaj muzykę z ekranu tytułowego",
-    "hi": "टाइटल संगीत रोकें"
+    "hi": "टाइटल संगीत रोकें",
+    "el": "Παύση μουσικής τίτλων"
   },
   "f9b.h": {
     "en": "Paint your ship",
@@ -1086,7 +1149,8 @@
     "tr": "Gemini boya",
     "id": "Cat kapalmu",
     "pl": "Pomaluj swój statek",
-    "hi": "अपने जहाज़ को रंगें"
+    "hi": "अपने जहाज़ को रंगें",
+    "el": "Βάψε το σκάφος σου"
   },
   "guides.head": {
     "en": "Learn the cave",
@@ -1103,7 +1167,8 @@
     "tr": "Mağarayı tanı",
     "id": "Kenali gua",
     "pl": "Poznaj jaskinię",
-    "hi": "गुफा को जानें"
+    "hi": "गुफा को जानें",
+    "el": "Γνώρισε τη σπηλιά"
   },
   "footer.ships": {
     "en": "Ships",
@@ -1120,7 +1185,8 @@
     "tr": "Gemiler",
     "id": "Kapal",
     "pl": "Statki",
-    "hi": "जहाज़"
+    "hi": "जहाज़",
+    "el": "Σκάφη"
   },
   "footer.changelog": {
     "en": "Changelog",
@@ -1137,7 +1203,8 @@
     "tr": "Değişiklik günlüğü",
     "id": "Riwayat perubahan",
     "pl": "Lista zmian",
-    "hi": "बदलाव"
+    "hi": "बदलाव",
+    "el": "Αλλαγές"
   },
   "footer.about": {
     "en": "About",
@@ -1154,7 +1221,8 @@
     "tr": "Hakkında",
     "id": "Tentang",
     "pl": "O projekcie",
-    "hi": "परिचय"
+    "hi": "परिचय",
+    "el": "Σχετικά"
   },
   "hero.pitchTikTok": {
     "en": "You just watched it. Now fly it.",
@@ -1171,7 +1239,8 @@
     "tr": "Az önce izledin. Şimdi sen uç.",
     "id": "Kamu baru saja melihatnya. Sekarang terbangkan sendiri.",
     "pl": "Obejrzane przed chwilą. Teraz poleć sam.",
-    "hi": "आपने अभी इसे देखा। अब खुद उड़ाएँ।"
+    "hi": "आपने अभी इसे देखा। अब खुद उड़ाएँ।",
+    "el": "Μόλις το είδες. Τώρα πέτα το."
   },
   "nav.play": {
     "en": "Play now",
@@ -1188,7 +1257,8 @@
     "tr": "Şimdi oyna",
     "id": "Main sekarang",
     "pl": "Graj teraz",
-    "hi": "अभी खेलें"
+    "hi": "अभी खेलें",
+    "el": "Παίξε τώρα"
   },
   "aria.menu": {
     "en": "Menu",
@@ -1205,7 +1275,8 @@
     "tr": "Menü",
     "id": "Menu",
     "pl": "Menu",
-    "hi": "मेनू"
+    "hi": "मेनू",
+    "el": "Μενού"
   },
   "today.world": {
     "en": "WORLD",
@@ -1222,7 +1293,8 @@
     "tr": "DÜNYA",
     "id": "DUNIA",
     "pl": "ŚWIAT",
-    "hi": "दुनिया"
+    "hi": "दुनिया",
+    "el": "ΚΟΣΜΟΣ"
   },
   "today.planet": {
     "en": "PLANET",
@@ -1239,7 +1311,8 @@
     "tr": "GEZEGEN",
     "id": "PLANET",
     "pl": "PLANETA",
-    "hi": "ग्रह"
+    "hi": "ग्रह",
+    "el": "ΠΛΑΝΗΤΗΣ"
   },
   "foot.colPlay": {
     "en": "Play TUNL",
@@ -1256,7 +1329,8 @@
     "tr": "TUNL oyna",
     "id": "Main TUNL",
     "pl": "Zagraj w TUNL",
-    "hi": "TUNL खेलें"
+    "hi": "TUNL खेलें",
+    "el": "Παίξε TUNL"
   },
   "foot.colMore": {
     "en": "The project",
@@ -1273,7 +1347,8 @@
     "tr": "Proje",
     "id": "Proyek",
     "pl": "Projekt",
-    "hi": "प्रोजेक्ट"
+    "hi": "प्रोजेक्ट",
+    "el": "Το project"
   },
   "aria.main": {
     "en": "Main",
@@ -1290,6 +1365,7 @@
     "tr": "Ana",
     "id": "Utama",
     "pl": "Główne",
-    "hi": "मुख्य"
+    "hi": "मुख्य",
+    "el": "Κύριο"
   }
 }

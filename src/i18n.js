@@ -1122,6 +1122,86 @@ const LANGS = {
         skinPerks: [null, 'ZASIĘG MONET {v}', 'MAŁA HITBOX {v}', 'SPOWOLNIENIE CZASU {v}', 'BONUS MONET {v}', 'POJEMNOŚĆ OSŁONY {v}', 'CZAS MAGNESU {v}', 'ZASIĘG BLISKICH MINIĘĆ {v}'],
         skinDrawbacks: [null, 'HITBOX +10%', 'POJEMNOŚĆ OSŁONY -1', 'CZAS COMBO -5%', 'ROZPAD +30%', 'BLISKI ZASIĘG -25%', 'AMUNICJA -40%', 'HITBOX +6%'],
     },
+    el: {
+        name: 'Ελληνικά',
+        tap: 'ΚΡΑΤΑ ΓΙΑ ΠΤΗΣΗ',
+        rotateHint: 'ΓΥΡΙΣΕ ΤΗ ΣΥΣΚΕΥΗ',
+        getApp: 'ΚΑΤΕΒΑΣΕ ΤΟ APP',
+        musicOn: 'ΜΟΥΣΙΚΗ ON',   musicOff: 'ΜΟΥΣΙΚΗ OFF',
+        fxOn: 'ΗΧΟΙ ON',         fxOff: 'ΗΧΟΙ OFF',
+        musicLow: 'ΜΟΥΣΙΚΗ ΧΑΜΗΛΑ', fxLow: 'ΗΧΟΙ ΧΑΜΗΛΑ',
+        today: 'ΣΗΜΕΡΑ',         allTime: 'ΡΕΚΟΡ',       flown: 'ΠΤΗΣΗ',
+        day: 'ΣΕΡΙ ΗΜΕΡΩΝ',      ship: 'ΣΚΑΦΟΣ',          ships: 'ΣΚΑΦΗ',
+        runs: 'ΠΤΗΣΕΙΣ',
+        best: 'ΡΕΚΟΡ',
+        dead: 'ΤΕΛΟΣ',
+        level: 'ΚΟΣΜΟΣ',
+        planet: 'ΠΛΑΝΗΤΗΣ',
+        newBest: 'νέο ρεκόρ!',   newDailyBest: 'ρεκόρ ημέρας!',
+        powerup: 'power-up',     powerups: 'power-ups',
+        close: 'παρά τρίχα',     combo: 'combo',
+        unlocked: 'ΞΕΚΛΕΙΔΩΘΗΚΕ!',
+        home: 'ΜΕΝΟΥ',           playAgain: 'ΞΑΝΑ',
+        settings: 'ΡΥΘΜΙΣΕΙΣ',   language: 'ΓΛΩΣΣΑ',
+        leaderboard: 'ΚΑΤΑΤΑΞΗ',
+        challenge: 'ΠΡΟΚΛΗΣΗ',
+        shop: 'ΚΑΤΑΣΤΗΜΑ',        shopUnavailable: 'ΑΓΟΡΕΣ ΜΟΝΟ ΣΤΟ APP',
+        reviveAppOnly: '+1 ΖΩΗ ΓΙΑ ΝΑ ΣΥΝΕΧΙΣΕΙΣ: ΜΟΝΟ ΣΤΟ APP',
+        allShips: 'ΟΛΑ ΤΑ ΣΚΑΦΗ',
+        paint: 'ΒΑΦΗ',          tapToBuy: 'ΠΑΤΑ ΞΑΝΑ ΓΙΑ ΑΓΟΡΑ',
+        paintHull: 'ΑΤΡΑΚΤΟΣ', paintPattern: 'ΣΧΕΔΙΟ', paintAccent: 'ΛΕΠΤΟΜΕΡΕΙΑ', paintFinish: 'ΦΙΝΙΡΙΣΜΑ', paintFx: 'ΕΦΕ', paintNone: 'ΚΑΝΕΝΑ',
+        toSkin: 'για',       dailyCap: 'ΟΡΙΟ ΗΜΕΡΑΣ', masteryUp: 'ΕΠΙΠΕΔΟ',
+        missions: 'ΗΜΕΡΗΣΙΕΣ ΑΠΟΣΤΟΛΕΣ', missionDone: 'ΑΠΟΣΤΟΛΗ ΟΛΟΚΛΗΡΩΘΗΚΕ', missionDesc: { gold:'ΧΡΥΣΑ ΝΟΜΙΣΜΑΤΑ', blue:'ΜΠΛΕ ΝΟΜΙΣΜΑΤΑ', red:'ΝΟΜΙΣΜΑΤΑ ΑΣΠΙΔΑΣ', green:'ΠΡΑΣΙΝΑ ΝΟΜΙΣΜΑΤΑ', orange:'ΠΟΡΤΟΚΑΛΙ ΝΟΜΙΣΜΑΤΑ', bomb:'ΝΟΜΙΣΜΑΤΑ ΒΟΜΒΑΣ', dist:'ΑΠΟΣΤΑΣΗ', nearMiss:'ΠΑΡΑ ΤΡΙΧΑ', combo:'ΚΑΛΥΤΕΡΟ COMBO', score:'ΚΑΛΥΤΕΡΟ ΣΚΟΡ', runs:'ΠΤΗΣΕΙΣ' },
+        notifClose: '+ΠΑΡΑ ΤΡΙΧΑ',
+        wallsLive: 'ΟΙ ΤΟΙΧΟΙ ΣΚΟΤΩΝΟΥΝ!',
+        hull: 'ΑΤΡΑΚΤΟΣ',   notifScratch: 'ΓΡΑΤΖΟΥΝΙΑ!',   sector: 'ΤΟΜΕΑΣ',   entering: 'ΕΙΣΟΔΟΣ ΣΤΟ TUNL',
+        ghostPassed: '+ΜΠΡΟΣΤΑ',  onFire: 'ΦΩΤΙΑ',   pbPassed: '+ΡΕΚΟΡ',
+        share: 'ΚΟΙΝΟΠΟΙΗΣΗ', worldRank: 'ΚΟΣΜΟΣ',   todayTop: 'ΚΟΡΥΦΗ ΣΗΜΕΡΑ',
+        shareTagline: 'Σήμερα όλοι πετάνε στο ίδιο τούνελ. Νίκησέ με:',
+        rec: 'ΕΓΓΡΑΦΗ',           download: 'ΛΗΨΗ',
+        removeAds: 'ΧΩΡΙΣ ΔΙΑΦΗΜΙΣΕΙΣ', adsRemoved: 'ΔΙΑΦΗΜΙΣΕΙΣ ΑΦΑΙΡΕΘΗΚΑΝ',
+        unlockAllShips: 'ΞΕΚΛΕΙΔΩΣΕ ΟΛΑ ΤΑ ΣΚΑΦΗ',  allShipsOwned: 'ΕΧΕΙΣ ΟΛΑ ΤΑ ΣΚΑΦΗ',
+        restorePurchases: 'ΕΠΑΝΑΦΟΡΑ ΑΓΟΡΑΣ',
+        privacyChoices: 'ΑΠΟΡΡΗΤΟ',
+        howItWorks: 'ΠΩΣ ΛΕΙΤΟΥΡΓΕΙ',
+        shardsInfo: 'Τα θραύσματα (⧫) βγαίνουν από τα νομίσματα που μαζεύεις σε κάθε πτήση. Με αυτά ξεκλειδώνεις σκάφη.',
+        stardustInfo: 'Η αστερόσκονη (✦) δίνει +1 για κάθε μέρα που πετάς, +1 επιπλέον κάθε 7η συνεχόμενη μέρα. Ξεκλειδώνει σκάφη και βαφές, δεν ξοδεύεται ποτέ.',
+        streakInfo: 'Κάθε 7η συνεχόμενη μέρα δίνει ένα μπόνους ✦ και {c} ⧫ και σου κρατά μια μέρα ξεκούρασης, που καλύπτει μία μέρα που θα χάσεις.',
+        streakDay: 'ΜΕΡΑ {n} ΣΤΗ ΣΕΙΡΑ',
+        weekComplete: 'Η ΕΒΔΟΜΑΔΑ ΟΛΟΚΛΗΡΩΘΗΚΕ',
+        restDayUsed: 'ΜΕΡΑ ΞΕΚΟΥΡΑΣΗΣ',
+        inDays: 'ΣΕ {n} ΜΕΡΕΣ',
+        tomorrow: 'ΑΥΡΙΟ',
+        flightDays: 'ΜΕΡΕΣ ΠΤΗΣΗΣ',
+        stardustPath: 'ΔΡΟΜΟΣ ΑΣΤΕΡΟΣΚΟΝΗΣ',
+        youAreHere: 'ΕΙΣΑΙ ΕΔΩ',
+        notifStreakTitle: 'Η μέρα {n} σε περιμένει',
+        notifStreakBody: 'Το σερί σου είναι {n} μέρες. Η σημερινή σπηλιά είναι ανοιχτή.',
+        coinsInfo: 'Ο χρυσός ανοίγει το τούνελ, η κλεψύδρα επιβραδύνει τον χρόνο, η μωβ ασπίδα σε προστατεύει, το στόχαστρο δίνει πυρομαχικά, ο μαγνήτης τραβά νομίσματα, η κόκκινη βόμβα ανατινάζει τους κοντινούς κινδύνους.',
+        hazardsInfo: 'Απόφυγε το φιαλίδιο με το δηλητήριο (κλέβει νομίσματα) και τη ροζ δίνη (τρώει πόντους).',
+        portalInfo: 'Πέρασε μέσα από τον μωβ κρίκο για warp: πιο γρήγορα, οι κίνδυνοι περνούν από μέσα σου, ο χρυσός έρχεται σε σένα.',
+        repairInfo: 'Χτύπα μια νάρκη ή μια οβίδα κανονιού και θα αφήσει ένα κλειδί. Πέρασε από μέσα του για να επισκευάσεις την άτρακτο.',
+        pb: 'PB',                ammo: 'ΠΥΡΑ',
+        notifSlow: '+ΑΡΓΑ',      notifShield: '+ΑΣΠΙΔΑ',
+        notifMagnet: '+ΜΑΓΝΗΤΗΣ', notifAmmo: '+ΠΥΡΑ',
+        boom: 'ΜΠΟΥΜ!',          blocked: 'ΜΠΛΟΚ',
+        ready: 'ΕΤΟΙΜΟΣ',
+        watchAdContinue: 'ΔΕΣ ΔΙΑΦΗΜΙΣΗ & ΣΥΝΕΧΙΣΕ',
+        watchAdShards: 'ΔΙΑΦΗΜΙΣΗ ΓΙΑ ΘΡΑΥΣΜΑΤΑ',
+        secondLifeApp: 'ΔΕΥΤΕΡΗ ΖΩΗ - ΣΤΟ APP',
+        secondLifeTitle: 'ΜΙΑ ΔΕΥΤΕΡΗ ΖΩΗ',
+        secondLifeBody: 'Στο app για iOS και Android ένα σύντομο βίντεο σε γυρίζει κατευθείαν στην πτήση. Η έκδοση για browser πετά χωρίς αυτό.',
+        getTheApp: 'ΚΑΤΕΒΑΣΕ ΤΟ APP',
+        linkCopied: 'Ο ΣΥΝΔΕΣΜΟΣ ΑΝΤΙΓΡΑΦΗΚΕ',
+        notifPromptTitle: 'ΗΜΕΡΗΣΙΑ ΥΠΕΝΘΥΜΙΣΗ',
+        notifPromptBody: 'Μια υπενθύμιση στις 19:00 τις μέρες που δεν έχεις πετάξει ακόμα τη νέα σπηλιά;',
+        notifYes: 'ΝΑΙ, ΘΥΜΙΣΕ ΜΟΥ',
+        notifNo: 'ΟΧΙ, ΕΥΧΑΡΙΣΤΩ',
+        notifTitles: ['Η σημερινή σπηλιά σε περιμένει', 'Η ίδια σπηλιά για όλο τον κόσμο', 'Μόλις βγήκε νέα σπηλιά'],
+        notifBodies: ['Δεν έχεις πετάξει ακόμα το σημερινό τούνελ. Πόσο μακριά θα φτάσεις;', 'Όλος ο πλανήτης πετά σήμερα την ίδια ακριβώς σπηλιά. Νίκησέ την.', 'Μία πτήση πριν αλλάξει η μέρα και η σπηλιά;'],
+        skinPerks: [null, 'ΕΜΒΕΛΕΙΑ ΝΟΜΙΣΜΑΤΩΝ {v}', 'ΛΕΠΤΟ HITBOX {v}', 'ΑΡΓΟΣ ΧΡΟΝΟΣ {v}', '{v} ΜΠΟΝΟΥΣ ΝΟΜΙΣΜΑΤΩΝ', 'ΟΡΙΟ ΑΣΠΙΔΑΣ {v}', 'ΧΡΟΝΟΣ ΜΑΓΝΗΤΗ {v}', 'ΖΩΝΗ ΠΑΡΑ ΤΡΙΧΑ {v}'],
+        skinDrawbacks: [null, 'HITBOX +10%', 'ΟΡΙΟ ΑΣΠΙΔΑΣ -1', 'ΧΡΟΝΟΣ COMBO -5%', 'ΦΘΟΡΑ +30%', 'ΖΩΝΗ ΠΑΡΑ ΤΡΙΧΑ -25%', 'ΠΥΡΑ -40%', 'HITBOX +6%'],
+    },
     hi: {
         name: 'हिन्दी',
         tap: 'उड़ने के लिए दबाए रखें',
@@ -1205,9 +1285,9 @@ const LANGS = {
 };
 
 // Settings grid order: Latin-script languages alphabetically by their own name, then
-// the non-Latin scripts (Cyrillic, Arabic, Devanagari, CJK). With 3 columns that is
-// exactly 3 Latin rows over 2 non-Latin rows.
-const LANG_ORDER = ['de', 'en', 'es', 'fr', 'id', 'it', 'pl', 'pt', 'tr', 'ru', 'ar', 'hi', 'ja', 'ko', 'zh'];
+// the non-Latin scripts (Greek, Cyrillic, Arabic, Devanagari, CJK). 16 languages fill
+// the 4x4 grid in draw.js exactly.
+const LANG_ORDER = ['de', 'en', 'es', 'fr', 'id', 'it', 'pl', 'pt', 'tr', 'el', 'ru', 'ar', 'hi', 'ja', 'ko', 'zh'];
 
 function detectLang() {
     const nav = ((navigator.language || navigator.userLanguage) || 'en').slice(0, 2).toLowerCase();
@@ -1216,6 +1296,12 @@ function detectLang() {
 
 let activeLang = localStorage.getItem('tunnel_lang') || detectLang();
 let T = LANGS[activeLang] || LANGS.en;
+
+// Uppercase for a translated string. Greek drops the tonos in all caps ("νέο" -> "ΝΕΟ",
+// not "ΝΈΟ"), which String.toUpperCase() keeps; every other script is untouched.
+function upperT(s) {
+    return s.toUpperCase().normalize('NFD').replace(/([\u0391-\u03A9])\u0301/g, '$1').normalize('NFC');
+}
 
 function setLang(code) {
     activeLang = code;

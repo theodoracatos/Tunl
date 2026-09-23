@@ -40,6 +40,7 @@ flytunl-site/site/tr/
 flytunl-site/site/id/
 flytunl-site/site/pl/
 flytunl-site/site/hi/
+flytunl-site/site/el/
 
 # Cloudflare Worker local state (flytunl-site/worker)
 .wrangler/

@@ -19,7 +19,7 @@ Edit an English sentence and its key changes: that one unit falls back to Englis
   the English unit (the build rejects a unit whose tags/links/code differ).
 - Do not translate: TUNL, ship names (PEARL AMBER CRIMSON ELECTRIC TOXIC VOID NOVA
   SOLARIS), code tokens, store names.
-- Address the reader informally (du / tu / tú / ты / sen / kamu / ty / आप);
+- Address the reader informally (du / tu / tú / ты / sen / kamu / ty / εσύ / आप);
   Japanese です・ます, Korean 해요체, Arabic MSA, Chinese is TRADITIONAL (zh = the game's zh).
 - Western digits everywhere. No em dashes (U+2014): use " - " like the source.
 - Plain-text units (alt, title, meta description, JSON-LD) contain no tags.

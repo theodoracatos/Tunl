@@ -724,7 +724,7 @@ function _shareCardCanvas(portrait) {
     // ── chips: everything this run earned, in the death screen's own language ──
     const chips = [];
     if (newBest || newDailyBest) {
-        chips.push({ t: (newBest ? T.newBest : T.newDailyBest).toUpperCase(), c: [255, 228, 110], solid: true });
+        chips.push({ t: upperT(newBest ? T.newBest : T.newDailyBest), c: [255, 228, 110], solid: true });
     }
     if (typeof skinUnlockIdx !== 'undefined' && skinUnlockIdx >= 0) {
         chips.push({ t: `${SKINS[skinUnlockIdx].name} ${T.unlocked}`, c: SKINS[skinUnlockIdx].shadow, solid: true });

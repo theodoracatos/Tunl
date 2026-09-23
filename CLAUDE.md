@@ -55,7 +55,7 @@ mirrored - see `reference_android_assets_mirror` memory) and the web build at
 gate every gameplay/layout/text change in a shared file on `isWeb()` (`src/web.js`,
 reliably `false` in both apps). Build tooling, the site and tests need no gate.
 
-**i18n:** any UI string change touches all 15 languages in `src/i18n.js`; run `node test-i18n.js`.
+**i18n:** any UI string change touches all 16 languages in `src/i18n.js`; run `node test-i18n.js`.
 
 ## How to play
 

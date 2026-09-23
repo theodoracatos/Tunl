@@ -83,13 +83,13 @@ the masters -- it writes iOS/Android icon rasters, `flytunl-site/site/`'s favico
 `wordmark.svg`, and `branding/web/`'s copies in one pass. Never hand-edit the generated
 rasters directly.
 
-## 4. Release notes AND promotional text, all 15 languages
+## 4. Release notes AND promotional text, all 16 languages
 
 Two separate fields, both needed, don't ship one without checking the other:
 
 **4.1 What's New / release notes** (both stores, version-specific) -- same language set
 as the game's own i18n (`src/i18n.js` `LANG_ORDER`): en, de, fr, it, es, pt, ja, ko, zh,
-ru, ar, tr, id, pl, hi.
+ru, ar, tr, id, pl, hi, el.
 - Write real content based on what's actually new this release (step 0) -- don't reuse
   a previous version's notes with the number swapped.
 - Keep every language under Google Play's 500-character-per-locale release notes limit

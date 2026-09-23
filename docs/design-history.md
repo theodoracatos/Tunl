@@ -1892,3 +1892,21 @@ exactly one headline stat, and neither earned its place on it. Rejected on princ
 offered: losing banked stardust on a broken streak, buying or ad-repairing a streak, a 30-day
 login calendar, and a local-midnight day boundary (the cave and the leaderboard are UTC; the
 fix for a confusing boundary is showing it, not forking it).
+
+## Greek, the 16th language (17.1, 2026-09-23)
+
+User's call: fill the settings language grid to 4x4 with Greek (`el`). `LANG_ORDER` puts it
+after the Latin-script block and before Cyrillic, so the grid reads Latin, then Greek,
+Cyrillic, Arabic, Devanagari, CJK. `draw.js` picks 4 columns above 12 languages; the panel
+got shorter by one row, so the short-screen scale-down triggers less often.
+
+Glyphs: Chakra Petch has no Greek, so Greek falls back per glyph to JetBrains Mono, like
+Russian. The JetBrains Mono subset in `src/fonts.js` was re-cut from JetBrains Mono 2.304
+Medium/Bold (Android Studio's bundled copy) with the old codepoints plus U+0370-03FF,
+unhinted like the rest: +2.5 KB per cut. The store-frame fonts in `Screenshots/fonts/` were
+re-extracted from it.
+
+All-caps Greek drops the tonos, which `String.toUpperCase()` keeps ("ΝΈΟ"), so the two
+places that uppercase a translated string at runtime go through `upperT()` (`i18n.js`).
+Every other script is unaffected. Planet names stay Latin in Greek text, as in every other
+language, because the game draws them in Latin.

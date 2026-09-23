@@ -4477,12 +4477,14 @@ function drawTitleScreen() {
     if (showSettings) {
         drawMenuBackdrop();
 
-        const panW = Math.min(W * 0.56, 340);
+        // 400 (was 340) since 17.1: the 4x4 language grid needs the width, so a name
+        // like "Indonesia" or "Portugues" is not shrunk far below its row neighbours.
+        const panW = Math.min(W * 0.62, 400);
         // Shared horizontal span for every row in the panel -- the audio row, the
         // ghost row, and the language grid all start/end at the same x, so the whole
         // stack reads as one aligned block instead of three differently-sized rows
         // floating inside the panel.
-        const rowW  = panW * 0.80;
+        const rowW  = panW * 0.84;
         const rowX0 = W / 2 - rowW / 2;
 
         // Nominal section heights, computed before knowing whether they'll actually
@@ -4526,7 +4528,7 @@ function drawTitleScreen() {
         const nGuideBtnH     = H * 0.062;
         const nGuideSectionH = nSectionGap + nGuideBtnH;
 
-        const langCols   = LANG_ORDER.length > 10 ? 3 : 2;
+        const langCols   = LANG_ORDER.length > 12 ? 4 : LANG_ORDER.length > 10 ? 3 : 2;
         const langRows   = Math.ceil(LANG_ORDER.length / langCols);
         const nLangListH = langRows * nLbh + Math.max(0, langRows - 1) * nLbGap;
         const nPanH = nPadTop + nTitleH + nAudioRowH + nSectionGap + nLangLabelH + nLangListH + nPrivacySectionH + nNotifSectionH + nGuideSectionH + nPadBottom;
@@ -4619,8 +4621,8 @@ function drawTitleScreen() {
             ctx.lineWidth   = active ? 1.5 : 1;
             ctx.stroke();
 
-            // Shrink the label font to fit narrower buttons (3-col grid, long
-            // names like "Indonesia" / "Polski") instead of overflowing.
+            // Shrink the label font to fit narrower buttons (4-col grid, long
+            // names like "Indonesia" / "Ελληνικά") instead of overflowing.
             let langFontPx = FS * 0.023;
             ctx.font = `${active ? 'bold ' : ''}${langFontPx}px ${FONT_UI}`;
             const nameW = ctx.measureText(lang.name).width;
@@ -5440,7 +5442,7 @@ function drawDeathScreen() {
     // that already knows how to wrap.
     let recordChip = null;
     if (isRecord) {
-        const t  = (newBest ? T.newBest : T.newDailyBest).toUpperCase();
+        const t  = upperT(newBest ? T.newBest : T.newDailyBest);
         const cw = chipW(t);
         const cxr = L + scoreW + W * 0.020;
         if (cxr + cw <= RX - W * 0.020) chip(t, cxr, yScore - chipH * 0.76, day, true);

@@ -20,7 +20,7 @@ PLAY_LOCALE = {
     "de-DE": "de-DE", "fr-FR": "fr-FR", "it": "it-IT", "es-ES": "es-ES",
     "pt-BR": "pt-BR", "ru": "ru-RU", "ja": "ja-JP", "ko": "ko-KR",
     "zh-Hant": "zh-TW", "tr": "tr-TR", "pl": "pl-PL", "id": "id",
-    "hi": "hi-IN", "ar-SA": "ar",
+    "hi": "hi-IN", "ar-SA": "ar", "el": "el-GR",
 }
 
 TR_RUNS = json.load(open(HERE + "/ach_translations_runs.json"))
