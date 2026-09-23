@@ -10,6 +10,7 @@ const MAP = {
   'lifecycle.js': ['fairness', 'onboarding'],
   'state.js':     ['fairness', 'onboarding'],
   'draw.js':      ['ship-render', 'visuals', 'hazards', 'screens', 'share', 'portal', 'economy (pick by the part you edit)'],
+  'paint.js':     ['economy', 'ship-render'],
   'share.js':     ['share'],
   'approach.js':  ['onboarding'],
   'audio.js':     ['audio'],

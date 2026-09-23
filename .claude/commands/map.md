@@ -18,6 +18,7 @@ The game is split across `tunl.html` (HTML/CSS shell only) and 18 JS files in `s
 | `src/input.js` | `inRect()`, `onDown()`, `onUp()`, pointer/keyboard event listeners, `triggerMilestone()` |
 | `src/update.js` | `let prev`, `update(dt)` (physics, scroll, collision, skin FX, particle tick), `die()` |
 | `src/draw.js` | `getTheme()`, `drawCoinIcon()`, `shipPath()`, `drawShip()`, `draw()` (tunnel walls, stalactites, coins, player, HUD, title screen, death screen) |
+| `src/paint.js` | Hangar paint (Lackiererei): `_paintShade()`, `paintSignals()`, `_drawPaintOverlay()` (pattern, material, effect on drawShip/drawShip3D), `drawPaintSheet()`, `paintSheetTap()`, `paintRandomKit()` |
 | `src/approach.js` | Run opening over the city ("Anflug"): `approachStart()`, `approachUpdate()`, `approachRock()` (mountain + mouth profile), `drawApproachScene()` (dusk sky, skyline, mountain), `drawApproachBanner()`; title screen = the city |
 | `src/share.js` | Daily run card: `SHARE_URL`, `shareWorthy()`, `shareAvailable()`, `_shareCardCanvas()` (offscreen run-profile PNG), `shareRunText()`, `shareRun()` (native bridge / Web Share fallback), `shareRunUrl()` (web `/play?d=&s=&g=` deep link) |
 | `src/record.js` | Web-only "record this run" button for flytunl.ch/play: `startRecording()`/`stopRecording()`/`toggleRecording()`, MediaRecorder onto a dedicated offscreen canvas at a fixed 1912x880 (`REC_OUT_SCALE`) so every clip exports at the same size regardless of DPR/window. Used for the TikTok clip workflow. No-op in both apps |

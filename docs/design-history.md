@@ -1808,3 +1808,87 @@ low-passed noise thud and added a crunch-grain cluster (`_dieCrunch`) and tearin
 matched through a 400 Hz highpass (phone level) this time: a full-band match would have made
 D ~10 dB louder on a phone, because C's full-band number was mostly sub.
 
+
+## F-14 hull replaces the SR-71 (2026-09-22)
+
+The user found the swing wings unrealistic on the SR-71 body and asked for an F-14 Tomcat
+look for wings and tail, then for the top-down views too (hangar, shop, share card).
+Concept study: https://claude.ai/artifact/83BUEJDUKVSVMjS6HVtUUE. Rules and constants now
+live in `docs/agents/ship-render.md` "F-14 hull".
+
+- **Rejected: the real 68 deg sweep.** Measured in-flight fill of the hitbox drops to
+  ~0.51 r against the 0.60 rule; a leading-edge range that holds the rule was chosen (user
+  approved "the hitbox stays").
+- **Rejected: rectangular raked intakes** ("the square box up front, not aerodynamic",
+  user). Replaced by pointed nacelle fairings.
+- **Deferred: brand marks.** Icon, launch logo, Play graphic and the homepage chips keep
+  the SR-71 for now (user's call); `gen-ship-glyph.mjs` was deliberately not rerun.
+- **Top-down wings swept, not spread** (user, 2026-09-22): the spread planform read as a
+  parked jet in the hangar; the swept one reads as speed. The flat hull is now the 3D
+  planform at `SHIP3D_SWEEP_MAX`.
+- **Sweep became three states** (user, 2026-09-22, in two passes): first "folded by default,
+  the blue coin opens them", then the final rule - normal flight cruises BETWEEN the stops,
+  a warp folds fully back, a blue coin swings fully forward, each easing back to cruise on
+  its own effect clock. The sweep no longer tracks the scroll speed at all, so
+  `SHIP3D_SWEEP_SPD_LO/HI` and the air-brake overshoot `SHIP3D_BRAKE_DEG` were dropped. The
+  wings now double as a readout of how much warp or slow time is left.
+- **Rejected: fitting the real 3-view** (2026-09-22). The user supplied the F-14 drawing and
+  asked for it; pivot, taileron span, nozzle spacing and body width went onto the drawing's
+  ratios and `SHIP3D_SWEEP_MAX` fell 34 -> 30 to keep the fill rule. Verdict: "uff das
+  gefaellt mir nicht, vorher war besser". Reverted, and the fuselage was widened a touch
+  instead (the user's own note on the same look). The deviations that remain are listed in
+  ship-render.md and are all hitbox-driven.
+- Found on the way: `test-collision.js` never checked the blue-coin brake (a vm `const`
+  read as a context property came out `undefined`). The old hull reached 1.02 r there.
+
+
+## Hangar paint kit (2026-09-22)
+
+The six fixed liveries of 2026-09-17 (FACTORY, STEALTH, STRIPE, SPLIT, CHROME, AURORA) were
+replaced by a kit - hull colour x pattern x accent x material x reactive effect, parts bought
+once and combined per ship - after the user called them "langweilig, nicht abwechslungsreich".
+Diagnosis: the "never change the hue" rule made every finish a brightness step of the same
+ship, six fixed bundles gave six looks, motion only rode gtime, the set was bought out in ~15
+days and nobody else saw it. The rule was replaced, not dropped: identity now lives in the
+ship's light (glow, nozzles, strobes), which no paint touches. Concept page with the full
+reasoning: claude.ai artifact "TUNL Lackiererei". Decided by Claude on the user's "entscheide
+du": 3 presets per ship were dropped (per-ship kits cover it, and the sheet had no room);
+STEALTH/CHROME became materials, STRIPE/SPLIT patterns, AURORA an effect swayed by the roll
+(it absorbed the proposed PRISMA). Rendering moved to src/paint.js. The RANDOM and DAILY
+PAINT buttons were built and then dropped the same day ("die Buttons Zufall und Tageslack
+nicht anbieten"), with the daily-kit and shuffle code removed rather than left dead.
+
+## Streak and stardust made visible (2026-09-22)
+
+The audit that started this (a decision page, all ten proposals scored by the user) found
+the retention system working and invisible: `streak` was counted on every rollover and drawn
+nowhere - the `T.day` "DAY STREAK" label had existed in all 15 languages for versions
+without ever being used - and stardust arrived as a silent `stardust += 1` inside
+`startPlay()`. The Settings explainer mentioned neither the 7-day bonus nor the DIAMOND
+paint, locked tiers showed `3/5 ✦` (arithmetic the game already knows the answer to), and
+the wallet hid ✦ entirely at 0 and again after the last ship - so the number was missing on
+the two days a player was most likely to ask about it.
+
+Measured before deciding what to pay: at the ~80 shards/day a real player banks, shards bind
+up to CRIMSON and the gates bind from ELECTRIC on (gate days 1/5/15/35/65/110/180 against
+shard days 3/7/14/30/60/110/180). A perfect streak's bonus ✦ alone would move SOLARIS from
+day 180 to 158 - for a player who is stardust-bound, which the lower half of the roster is
+not. **That is why the week reward is paid in shards** (`STREAK_WEEK_SHARDS`, ~+7% on top of
+a day's income, outside `DAILY_SHARD_CAP` like the mission and ad payouts) **and in paint**
+(COMET at 14, ECLIPSE at 30, read off the monotonic `bestStreak`), not in more stardust. The
+`stardustGate` schedule is untouched, so the gates still bind at every tier.
+
+Shipped: `dayRollover()` split out of `startPlay()` and also called from `titleScreen()` (the
+constants doc had described the grant as earned by opening the app since it was written, but
+only a started run ever ran it); the arrival card on the title; the stardust chip on the
+first death screen of the day; "in N days" instead of `x/y ✦`; the always-visible ✦ wallet
+with its FLIGHT DAYS label; the stardust path panel behind a tap on ✦; the rest day
+(`STREAK_GRACE_MAX`) absorbing one missed day; and one streak variant in the 19:00 reminder
+from `NOTIF_STREAK_MIN` on.
+
+Rejected in the same pass, by the user: a weekday dot strip for the streak on the title
+screen and a "new cave in H:MM" countdown - the title screen's Dock & Drawer layout keeps
+exactly one headline stat, and neither earned its place on it. Rejected on principle and not
+offered: losing banked stardust on a broken streak, buying or ad-repairing a streak, a 30-day
+login calendar, and a local-midnight day boundary (the cave and the leaderboard are UTC; the
+fix for a confusing boundary is showing it, not forking it).

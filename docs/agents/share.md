@@ -46,6 +46,13 @@ syndromes, not by looking at it). It encodes `shareRunUrl(true)` - the link **wi
 the ghost, ~80 characters, version 5 - because a ghost is up to 1500 characters and would
 push the code past what is scannable at any size a card can afford.
 
+**The shared text link (`shareRunText()`) is compact too (2026-09-21)** - same
+`shareRunUrl(true)`, no ghost. A ghost is up to `SHARE_GHOST_MAX_B64` (1500) base64 chars,
+roughly one byte per score point, and chat clients mangle or truncate a link that long.
+`?d` + `?s` still hand the recipient the same cave and a score to beat; only the ghost race
+is lost. If the ghost-in-link duel ever needs to come back, the fix is server-side (store
+the ghost, share a short id), not raising this cap back up.
+
 Gated by `shareWorthy()` and `shareAvailable()`. The card crosses the JS->native boundary as
 a base64 PNG, which is why the background is a flat wash, not a gradient (payload size). If
 the payload ever needs to shrink, the lever is the scene thumbnails, not the wash.
@@ -59,6 +66,15 @@ the funnel).
 **The link is identical on every target.** `web.js _tunlParseWebParams()` is not
 `isWeb()`-gated and the Universal/App Link wiring passes the whole query string, so the app
 shares `?g`/`?s` too - don't strip them.
+
+**`?d` and `?r` are packed (2026-09-21).** `?d` is a base36 day-offset from
+`WEB_DAY_EPOCH_MS` (never move that epoch - it would repoint already-shared short links at
+the wrong cave), `?r` is `webPlayerId()`'s UUID through `_uuidPack()` (22 chars, no
+dashes). Both parsers in `_tunlParseWebParams()` (`web.js`) still accept the old plain
+forms - 8-digit `YYYYMMDD` for `?d`, a dashed UUID for `?r` - so links shared before this
+date keep working; never remove those branches. The packing is link-display-only:
+`webPlayerId()` in localStorage and what's sent to the leaderboard worker both stay the
+plain UUID.
 
 `SHARE_URL` in `share.js` is the only place the public marketing URL is written down in the
 game code; the marketing, support and privacy pages live in `flytunl-site/` (never the

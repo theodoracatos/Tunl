@@ -34,7 +34,7 @@ same verdict mid-session.
 
 ## What is this
 
-TUNL is an HTML5 Canvas hold-to-thrust cave flyer. `tunl.html` loads 18 plain scripts from
+TUNL is an HTML5 Canvas hold-to-thrust cave flyer. `tunl.html` loads 19 plain scripts from
 `src/` in order - no libraries, no modules, no build step, one shared global scope. Run
 `/map` for the file map. Open `tunl.html` in a browser to play.
 
@@ -89,7 +89,8 @@ the row before every `src/*.js` edit - **change its `MAP` whenever this table ch
 | `world.js` (curves, `boundsAt`/`boundsBase`, sectors) | difficulty, fairness, coins |
 | `constants.js` | the topic of the constant you touch (its doc block names it) |
 | `lifecycle.js`, `state.js` | fairness (rng streams, world-x cursors), onboarding |
-| `draw.js` ship / 3D hull / liveries | ship-render, economy |
+| `draw.js` ship / 3D hull | ship-render, economy |
+| `paint.js` (hangar paint kit, Paint sheet) | economy, ship-render |
 | `draw.js` walls, HUD, title, depth light, portal ring | visuals, hazards (crystals), portal |
 | `draw.js` death screen, freeze frame | screens, share |
 | `share.js` | share |
@@ -148,7 +149,9 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 ### Ship rendering -> `docs/agents/ship-render.md`
 - Envelope: span +-0.98r, nose +1.40r - do not grow it. `PR` untouched.
 - Flight uses the 3D view (`SHIP_VIEW_3D`, roll 60 deg); hangar, shop and share card stay top-down.
-- Brand marks are generated from the hull (`branding/gen-ship-glyph.mjs`); rerun after any hull change.
+- The hull is an F-14 (2026-09-22); `SHIP3D_SWEEP_MAX` is capped by the hitbox fill, not by realism.
+- Wing sweep is three states: cruise between the stops, a warp folds fully back, a blue coin swings fully forward. Top-down views always draw full sweep.
+- Brand marks (`branding/gen-ship-glyph.mjs`, icon, logos) still show the old SR-71 by the user's choice - don't regenerate by reflex.
 
 ### Visuals, typography, HUD -> `docs/agents/visuals.md`
 - Fonts via `FONT_UI` / `FONT_NUM` only; no Courier. Test layout on **WebKit**, not only Chrome.
@@ -159,6 +162,7 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 - Death screen: 5 type steps, day accent, every vertical step `max(H-fraction, type-derived)`, rewards as a wrapping chip row.
 - Share card carries the debriefing content; the footer (URL + QR) is never conditional.
 - Ghost is indexed by `scrollX` and scoped to the calendar day.
+- The day's stardust is reported twice and never silently: the title's arrival card (`dayGrant`, `DAY_GRANT_SEC`) and a chip on the first death screen of the day. Stardust reads as **days**, not fractions - "in N days", and the ✦ wallet opens the stardust path.
 
 ### Approach and onboarding -> `docs/agents/onboarding.md`
 - The city lies before world-x 0 (camera offset), never in it. No soft walls.
@@ -169,4 +173,5 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 - Ad floor `MIN_REAL_RUN_SCORE` is mirrored in `AdsManager.swift`/`.kt` and `ads-web.js` - keep all four in sync.
 - Rewarded continue repairs the hull, no extra shield. Web's offer slot pitches the app and **never grants a revive**.
 - Shard ladder is set so stardust binds at every tier - re-run the numbers before changing either side.
-- Liveries are purely visual, bought once, equipped per ship, never change hue.
+- The day rolls over in `dayRollover()` (`lifecycle.js`), called from the title **and** from `startPlay()`. Every 7th unbroken day pays a bonus ✦, `STREAK_WEEK_SHARDS` outside the cap and one rest day; a rest day absorbs a single missed day, banked ✦ is never taken away, `bestStreak` only grows.
+- Hangar paint (`paint.js`) is a kit (hull colour, pattern, accent, finish, effect): purely visual, parts bought once, combined per ship. The hull may change hue; the ship's **light** (glow, nozzles, strobes) never does.
