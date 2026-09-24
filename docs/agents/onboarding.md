@@ -41,9 +41,9 @@ and score wait for the cave. Concept: https://claude.ai/artifact/ECrpmHcPeTsREMw
   city, cut where the ship passes the mouth - the same line as the lethal-wall rule in
   `approachUpdate()`. `approachStart()` predicts that moment for the swell; `test-sim.js`
   checks the prediction against the real crossing at three screen sizes.
-- Not done yet: a device ear-check of the wind, optional extras from the concept (aircraft
-  lights, haze bands, a stepped banner), the S0 debriefing scene showing the mouth, and a
-  device pass (WebKit, 812x375).
+- Device check 2026-09-24: look and wind approved by the user on the device, as shipped.
+- Not done yet: optional extras from the concept (aircraft lights, haze bands, a stepped
+  banner) and the S0 debriefing scene showing the mouth.
 
 ## Onboarding
 
