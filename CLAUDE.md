@@ -162,6 +162,7 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 - Death screen: 5 type steps, day accent, every vertical step `max(H-fraction, type-derived)`, rewards as a wrapping chip row.
 - Share card carries the debriefing content; the footer (URL + QR) is never conditional.
 - Ghost is indexed by `scrollX` and scoped to the calendar day.
+- Hazard grazes pay on the way **out** of the zone, never on entry; wall near-misses never feed the graze chain.
 - The day's stardust is reported twice and never silently: the title's arrival card (`dayGrant`, `DAY_GRANT_SEC`) and a chip on the first death screen of the day. Stardust reads as **days**, not fractions - "in N days", and the ✦ wallet opens the stardust path.
 
 ### Approach and onboarding -> `docs/agents/onboarding.md`

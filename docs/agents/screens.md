@@ -20,8 +20,20 @@ anywhere in the game may sit at or below 50**, and that number moves with `SAFE_
 **Don't drop the 25-point band below 100 again without new data.** The metric that matters
 is the share of REAL runs that fire a milestone at all, not milestones per run.
 
-**Near-miss bonus**: +1 `bonusScore` when wall clearance < `PR * 2.0`, 1.5s cooldown.
-"+CLOSE" notif + ascending ping.
+**Near-miss bonus**: +1 `bonusScore` when wall clearance < `PR * 2.0`
+(`nearMissWindowPR()`, per-ship), 1.5s cooldown. "+CLOSE" notif + ascending ping.
+
+**Hazard graze chain** (2026-09-24, `GRAZE_*` doc in `constants.js`, `trackGraze()` in
+`update.js`): crystals, mines, boulders and cannon shots carry a zone `GRAZE_HAZARD_PR`
+ship radii outside their hitbox (scaled like the wall window). Entering it and leaving it
+**without a hit** pays `GRAZE_PTS` x the chain; a graze within `GRAZE_CHAIN_SEC` raises the
+chain to `GRAZE_CHAIN_MAX`, notif "+CLOSE xN", the ping climbing the D-major pentatonic.
+Rules: **paid on the way out, never on entry** (a crash or a shield hit pays nothing);
+**wall near-misses never raise or extend the chain** (hugging the rock would hold it
+forever); counts into `runNearMisses` (mission, dodge achievements). Pure reward - no
+placement or rng change. Measured with the S0-S10 autopilot: centreline ~1% of the score
+from grazes, a pilot 35% off centre 10-12% (`GRAZE_PTS` 2 measured 18-21%, too much for
+the leaderboard). Almost nothing before S3, where the first mines arrive.
 
 **Coin combo multiplier**: coins within 2s of each other build a streak; score pts =
 `coinCombo * 3`. Shown as a chip beside the live score with a bar draining over the combo

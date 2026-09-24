@@ -582,6 +582,7 @@ let notifs;
 // timer bar can show how much of it is left (ELECTRIC's window is shorter than 2.0s).
 let hudSparks = [], hudBump = 0, coinComboWindow = 2.0;
 let bonusScore, milestoneNext, nearMissTimer, coinCombo, coinComboTimer;
+let grazeChain = 0, grazeChainT = 0;   // hazard graze chain (constants.js GRAZE_*)
 let runCoins, runNearMisses, runMaxCombo;
 // Backing state for the 4 skill achievements (constants.js SPRINT_ACH_*/NO_HIT_ACH_*/
 // NO_BONUS_ACH_*/BOULDER_MEISTER_*), all reset per-run in lifecycle.js:

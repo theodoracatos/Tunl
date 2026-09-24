@@ -256,7 +256,7 @@ function startPlay() {
     // up to ~0.7s of the next run's launch ramp to survive into and pay out on its first
     // coin. Keep these on their own line.
     bonusScore = 0; milestoneNext = MIN_REAL_RUN_SCORE;
-    nearMissTimer = 0; coinCombo = 0; coinComboTimer = 0;
+    nearMissTimer = 0; coinCombo = 0; coinComboTimer = 0; grazeChain = 0; grazeChainT = 0;
     runCoins = 0; runNearMisses = 0; runMaxCombo = 0; skinUnlockIdx = -1;
     runHitCount = 0; sprintAchFired = false; noHitAchFired = false; noBonusAchFired = false; runBoulderNarrowPasses = 0;
     skinMasteryUpIdx = -1; missionRewardWon = 0;
@@ -317,6 +317,7 @@ function startPlay() {
     flightClock = 0; flightAchIdx = 0;
     refreshWave();
     approachStart();   // approach.js: the run opens over the city, before world-x 0
+    bgmSetSector(0, true);   // audio.js: every run starts on the unbuilt track
     _startBgMusic();
     sfxEngineSpoolUp(START_RAMP_SEC);
 }

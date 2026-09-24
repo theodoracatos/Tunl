@@ -465,6 +465,9 @@ function update(dt) {
         if (sec > lastSectorShown) {
             lastSectorShown = sec;
             pushNotif(PX + PR * 3, py - H * 0.12, 1.6, `${T.sector} ${sec}`, [170, 150, 255]);
+            bgmSetSector(sec);   // the drop: audio.js "Music follows the flight plan"
+        } else if (sec >= 1 && sectorStartWx(sec + 1) - (scrollX + PX) < spd * MUSIC_BUILD_SEC) {
+            bgmSectorBuild(sec + 1);
         }
     }
 
@@ -495,14 +498,7 @@ function update(dt) {
     if (nearMissTimer <= 0) {
         const nmB = boundsAt(scrollX + PX);
         const nmC = Math.min(py - PR - nmB.top, nmB.bot - (py + PR));
-        // VOID trades a smaller near-miss window for its extra shield capacity
-        // (systems.js) -- it tanks hits instead of skimming past them for bonus.
-        // Mastery eases the window toward, but deliberately never all the way to,
-        // the 2.0x baseline (see the "never fully erase the drawback" doc above
-        // SKINS in constants.js).
-        if (nmC >= 0 && nmC < PR * (activeSkin === 5 ? masteryLerp(5, 1.5, 1.8)
-                                  : activeSkin === 7 ? masteryLerp(7, 4.0, 5.0)
-                                  : 2.0)) {
+        if (nmC >= 0 && nmC < PR * nearMissWindowPR()) {
             bonusScore++;
             hudBump = 1;   // no spark to wait for: the score swallows the point at once
             nearMissTimer = 1.5;
@@ -511,6 +507,8 @@ function update(dt) {
             sfxNearMiss();
         }
     }
+    grazeChainT = Math.max(0, grazeChainT - dt);
+    if (grazeChainT <= 0) grazeChain = 0;
 
     // Coin combo timer decay
     coinComboTimer = Math.max(0, coinComboTimer - dt);
@@ -686,9 +684,11 @@ function update(dt) {
     // hazards just don't hurt you). Skipped outright rather than passed through
     // die()'s shield-absorb branch, since none of them should be destroyed or
     // trigger the "blocked" feedback either - the player never touched them.
+    const gzR = cPR + PR * GRAZE_HAZARD_PR * nearMissWindowPR() / 2.0;   // constants.js GRAZE_*
     if (warpTime <= 0) for (const s of stalactites) {
         if (s.dying) continue;
         if (stalHit(s, cPR)) {
+            s.gz = 2;
             deathCause = s.isTop ? 'wallTop' : 'wallBot';
             const sb = boundsAt(s.wx), sfy = stalFallY(s);
             markDeathHit(s.wx - scrollX, s.isTop ? sb.top + s.length + sfy : sb.bot - s.length, s.width);
@@ -707,6 +707,7 @@ function update(dt) {
             }
             break;
         }
+        trackGraze(s, stalHit(s, gzR));
     }
 
     // Warp portal ring: an x-crossing test (constants.js "Warp portal" doc), not a
@@ -750,6 +751,7 @@ function update(dt) {
 
     // Mine collision (same trade-off hitbox as walls/stalactites above)
     const mineHitR2 = (cPR + MINE_R) * (cPR + MINE_R);
+    const mineGzR2  = (gzR + MINE_R) * (gzR + MINE_R);
     if (warpTime <= 0) for (let mi = 0; mi < mines.length; mi++) {
         const m  = mines[mi];
         const sx = m.wx - scrollX;
@@ -771,6 +773,7 @@ function update(dt) {
             window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
             break;
         }
+        trackGraze(m, dx*dx + dy*dy < mineGzR2);
     }
 
     // Boulder collision (circle vs the island outline, systems.js boulderHit - same
@@ -781,6 +784,7 @@ function update(dt) {
         if (sx < -bo.hl - 40 || sx > W + bo.hl + 40) continue;
         const dx = PX - sx, dy = py - bo.y;
         if (boulderHit(bo, dx, dy, cPR)) {
+            bo.gz = 2;
             deathCause = 'open';
             markDeathHit(Math.max(sx - bo.hl, Math.min(sx + bo.hl, PX)), bo.y, bo.r);
             if (die()) return;
@@ -796,6 +800,7 @@ function update(dt) {
             window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
             break;
         }
+        trackGraze(bo, boulderHit(bo, dx, dy, gzR));
         // "Boulder Meister" (constants.js BOULDER_MEISTER_TARGET/ID doc): the first
         // frame this boulder's screen-x reaches the player's fixed PX without a
         // collision above having fired, credit a clean pass if it was the narrow side -
@@ -815,6 +820,7 @@ function update(dt) {
     // movement live in updateCannonShots below, called after this so a shot that
     // fires this frame can't also hit the player on the same frame it spawns.
     const cannonHitR2 = (cPR + CANNON_SHOT_R) * (cPR + CANNON_SHOT_R);
+    const cannonGzR2  = (gzR + CANNON_SHOT_R) * (gzR + CANNON_SHOT_R);
     if (warpTime <= 0) for (let ci = 0; ci < cannonShots.length; ci++) {
         const s  = cannonShots[ci];
         const sx = s.wx - scrollX;
@@ -832,6 +838,7 @@ function update(dt) {
             window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
             break;
         }
+        trackGraze(s, dx*dx + dy*dy < cannonGzR2);
     }
 
     // Magnet: pull visible uncollected coins toward the player. The two hazard coins
@@ -911,6 +918,35 @@ function hullScratch(top, bot, r) {
 
 function markDeathHit(x, y, r) {
     deathHitX = x; deathHitY = y; deathHitR = Math.max(r, PR * 0.9);
+}
+
+// The ship's near-miss window in ship radii, shared by the wall near-miss and the hazard
+// graze zone. VOID trades a smaller window for its extra shield capacity (systems.js) -
+// it tanks hits instead of skimming past them for bonus. Mastery eases the window
+// toward, but deliberately never all the way to, the 2.0x baseline (see the "never
+// fully erase the drawback" doc above SKINS in constants.js).
+function nearMissWindowPR() {
+    return activeSkin === 5 ? masteryLerp(5, 1.5, 1.8)
+         : activeSkin === 7 ? masteryLerp(7, 4.0, 5.0)
+         : 2.0;
+}
+
+// Hazard graze tracking (constants.js GRAZE_* doc). `o.gz`: 0 never inside the zone,
+// 1 inside it, 2 settled (paid, or touched for real). `inZone` is the hazard's own hit
+// test run with the widened radius; call only when the real hit test came back false.
+function trackGraze(o, inZone) {
+    if (inZone) { if (!o.gz) o.gz = 1; return; }
+    if (o.gz !== 1) return;
+    o.gz = 2;
+    grazeChain = grazeChainT > 0 ? Math.min(grazeChain + 1, GRAZE_CHAIN_MAX) : 1;
+    grazeChainT = GRAZE_CHAIN_SEC;
+    bonusScore += GRAZE_PTS * grazeChain;
+    hudBump = 1;
+    runNearMisses++;
+    const txt = grazeChain > 1 ? `${T.notifClose} ×${grazeChain}` : T.notifClose;
+    pushNotif(PX + W*0.07, py - H*0.11, 1.0, txt, [255, 160 - grazeChain * 16, 60]);
+    sfxNearMiss(grazeChain);
+    window.webkit?.messageHandlers?.haptic?.postMessage('light');
 }
 
 function die(bypassShield = false) {

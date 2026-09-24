@@ -1910,3 +1910,28 @@ All-caps Greek drops the tonos, which `String.toUpperCase()` keeps ("ΝΈΟ"), s
 places that uppercase a translated string at runtime go through `upperT()` (`i18n.js`).
 Every other script is unaffected. Planet names stay Latin in Greek text, as in every other
 language, because the game draws them in Latin.
+
+## "Kurzweiliger": hazard graze chain + music follows the flight plan (2026-09-24)
+
+The user asked how to make a run feel shorter/livelier and picked two of five proposals:
+(1) reward flying close past hazards, (5) let the music follow the sectors (sound review
+S1). Rejected in the same brainstorm without trial: new hazard types (the deep-run
+drafts were already cut as not-TUNL), more HUD labels, parallax.
+
+Graze: the wall near-miss was the only proximity reward, and the red-team audit had
+measured coin greed as strictly dominant with no risk attached. A hazard graze pays on
+the way out of the zone so a crash or shield hit never pays, and wall near-misses are
+kept out of the chain because hugging the rock yields one every 1.5s. `GRAZE_PTS` 2 was
+tried first: a pilot flying 35% off centre through S0-S10 took 18-21% of its score from
+grazes, a leaderboard-visible inflation for flying that is not especially risky; 1 gives
+10-12% (centreline ~1%). Grazes feed `runNearMisses`, so the nearMiss daily mission and
+the dodge achievements get easier past S3 - before this change the centreline pilot
+scored zero near-misses in a full S0-S10 run.
+
+Music: one stereo master cannot grow stems, and a tempo-locked synth layer was rejected
+because `playbackRate` (slow time, warp) makes the buffer position untrackable in WebKit
+without drift. So: a per-sector lift + presence shelf (inaudible below S3, where most
+runs end) and a build-and-drop at every boundary. Measured offline, not ear-checked:
+the first riser level (0.05) sat 8 dB under the bed in the phone band and the first
+lowpass target (1400 Hz, ramped over the whole build) dipped the highs by only 4 dB, so
+both were raised (0.12, 900 Hz reached at 60% of the build).

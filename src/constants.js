@@ -389,6 +389,28 @@ const DODGE_ACHIEVEMENTS = [
     { id: 'tunl_ach_dodge_1000', at: 1000 },
 ];
 
+// Hazard graze chain (2026-09-24, "kurzweiliger" pass). The wall near-miss (update.js,
+// +1, PR*2.0 clearance, 1.5s cooldown) only ever paid for hugging the rock; flying close
+// past a crystal, mine, boulder or cannon shot paid nothing, so the only risk/reward
+// choice in a run was coin greed, which the 2026-09-12 red-team audit measured as
+// strictly dominant with no risk attached. Now each hazard carries a graze zone
+// GRAZE_HAZARD_PR ship radii outside its lethal hitbox (scaled by the ship's own
+// near-miss window, so VOID and NOVA keep their trade-off): entering it and leaving it
+// again WITHOUT a hit pays GRAZE_PTS x the chain level. A graze within GRAZE_CHAIN_SEC of
+// the previous one raises the chain, capped at GRAZE_CHAIN_MAX.
+// - Paid on the way OUT of the zone, never on entry: a graze that ends in a crash, or a
+//   shield-absorbed hit, pays nothing.
+// - Wall near-misses neither raise nor extend the chain. Otherwise hugging the rock
+//   (a free graze every 1.5s) would keep the multiplier alive forever.
+// - Purely a reward: no placement, rng stream or hitbox changes, so the daily cave and
+//   every difficulty measurement stay as they are ("never make score < 233 harder").
+// - Counts into runNearMisses like a wall near-miss (death-screen chip, the nearMiss
+//   daily mission, DODGE_ACHIEVEMENTS).
+const GRAZE_HAZARD_PR  = 1.0;
+const GRAZE_PTS        = 1;   // x1 = a wall near-miss; 2 measured 18-21% of a deep off-centre run's score
+const GRAZE_CHAIN_SEC  = 2.5;
+const GRAZE_CHAIN_MAX  = 5;
+
 // "Pacifist" achievement: reach the difficulty plateau (score >= 233, the corridor-
 // narrowing curve's _prog=1 point, see world.js) in a single run while collecting ZERO
 // coins of any type. Checked against `runCoins` (state.js), which only ever increments

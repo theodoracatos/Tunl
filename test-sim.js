@@ -774,5 +774,77 @@ function touchCoin(type, setup) {
         res.every(r => r.enters.length === 1 && r.mouthSec > 1.3 && Math.abs(r.enters[0] - r.mouthSec) <= 1.5 / 60));
 }
 
+// ── Hazard graze chain (update.js trackGraze, constants.js GRAZE_*) ─────────
+// Catches: paying on entry instead of on the way out (a graze that ends in a hit pays),
+// a zone as wide as the wall window or none at all, the chain not climbing inside
+// GRAZE_CHAIN_SEC or never expiring. Real update(); mines parked beside the ship's line,
+// which is held level so only the scroll moves.
+function grazePass(mines, frames = 90, setup = '') {
+    const g = quietCave();
+    return g(`(() => {
+        ${setup}
+        const y0 = py;
+        for (const [ahead, clearPR] of ${JSON.stringify(mines)})
+            mines.push({ wx: scrollX + PX + ahead, baseY: y0 - (PR + MINE_R + PR * clearPR), phase: 0, bobAmp: 0 });
+        const b0 = bonusScore, n0 = runNearMisses;
+        let chainMax = 0;
+        for (let i = 0; i < ${frames} && phase === 'play'; i++) {
+            py = y0; vy = 0; holding = false; update(1 / 60);
+            chainMax = Math.max(chainMax, grazeChain);
+        }
+        return { pts: bonusScore - b0, n: runNearMisses - n0, chainMax, P: GRAZE_PTS, phase, shieldCount,
+                 chainSec: GRAZE_CHAIN_SEC, spd: scrollSpd() };
+    })()`);
+}
+{
+    const one = grazePass([[80, 0.5]]);
+    check(`a mine passed half a ship radius clear pays one graze (${one.pts} pts, ${one.n} close)`,
+        one.pts === one.P && one.n === 1 && one.chainMax === 1);
+    const far = grazePass([[80, 1.5]]);
+    check('a mine passed 1.5 ship radii clear pays nothing', far.pts === 0 && far.n === 0);
+    const two = grazePass([[80, 0.5], [140, 0.4]]);
+    check(`two grazes inside the chain window climb to x2 (${two.pts} pts = 1x + 2x)`,
+        two.pts === 3 * two.P && two.chainMax === 2);
+    const gap = Math.ceil(one.spd * (one.chainSec + 0.6));
+    const apart = grazePass([[80, 0.5], [80 + gap, 0.5]], Math.ceil((one.chainSec + 1.6) * 60));
+    check(`two grazes further apart than GRAZE_CHAIN_SEC each pay 1x (${apart.pts} pts)`,
+        apart.pts === 2 * apart.P && apart.chainMax === 1);
+    const hit = grazePass([[80, -1.2]], 90, 'shieldCount = 1;');
+    check('a shield-absorbed hit pays no graze on the way out', hit.pts === 0 && hit.n === 0 && hit.shieldCount === 0);
+}
+
+// ── Music follows the flight plan (audio.js bgmSetSector / bgmSectorBuild) ───
+// Catches: the build firing late, twice or never, the drop landing off the sector
+// boundary, or a run not resetting the track to sector 0. Real startPlay()/update(); only
+// the two audio hooks are replaced by recorders.
+{
+    const g = boot();
+    g(AUTOPILOT);
+    g(`_musRec = []; _simT = 0;
+       bgmSetSector  = (k, now) => { _musRec.push({ ev: 'sector', k, now: !!now, t: _simT }); };
+       bgmSectorBuild = k => { _musRec.push({ ev: 'build', k, t: _simT }); };`);
+    g('startPlay()');
+    const r = g(`(() => {
+        const endWx = sectorStartWx(5) + 200;
+        for (let i = 0; i < 60 * 120 && (scrollX + PX < endWx || approachLeft > 0); i++) {
+            // No coins or rings: a blue coin or a warp mid-build changes the speed the lead
+            // was predicted at (the build then just holds until the boundary, by design).
+            coins = []; chicaneCoins = []; portals = [];
+            shieldCount = 9; hullScratches = HULL_SCRATCHES; _pilot(); _simT += 1 / 60; update(1 / 60);
+        }
+        return { rec: _musRec, buildSec: MUSIC_BUILD_SEC };
+    })()`);
+    const first = r.rec[0];
+    check('startPlay resets the music to sector 0 at once', first && first.ev === 'sector' && first.k === 0 && first.now);
+    const leads = [2, 3, 4, 5].map(k => {
+        const b = r.rec.filter(e => e.ev === 'build' && e.k === k), s = r.rec.filter(e => e.ev === 'sector' && e.k === k);
+        // update() re-asks every frame inside the window; bgmSectorBuild itself ignores repeats.
+        return b.length && s.length === 1 && b.every(e => e.t < s[0].t) ? s[0].t - b[0].t : NaN;
+    });
+    check(`every sector from 2 starts its build ${r.buildSec}s ahead and drops once, on the boundary (${
+        leads.map(l => l.toFixed(3) + 's').join(', ')})`,
+        leads.every(l => Math.abs(l - r.buildSec) <= 2 / 60));
+}
+
 if (failed) { console.log(`\n${failed} check(s) failed.`); process.exit(1); }
 console.log('\nThe real game runs headless and every simulated rule holds.');
