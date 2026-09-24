@@ -14,6 +14,7 @@
 //    audio/the_mountain*.web.m4a - background tracks, smaller AAC web encodes
 //                          (audio.js _bgmUrl picks these on isWeb()). The stereo
 //                          .mp3 originals are not shipped to /play.
+//  and flytunl-site/site/tt/ - the TikTok landing, see buildTT() below.
 //
 //  Minification is a speed bump, not protection - client JS is never private.
 //  We compress and mangle locals but NOT top-level names: every src file shares
@@ -117,7 +118,10 @@ const WEB_ANALYTICS_RELAY = 'https://tunl-scores.theodoracatos.workers.dev/ga';
 //  - source/medium/campaign/referrer ride along on the first event of a session,
 //    which is what stops every web session landing under "Unassigned". utm_* wins
 //    over the referrer when both are present, same precedence gtag.js uses.
-const FIREBASE_HEAD = WEB_ANALYTICS_RELAY
+// `def` (the /tt/ landing, see TT_GA_DEFAULT) is the source a session is credited to
+// when its URL carries no utm_source - the TikTok website button links the bare page.
+// TikTok appends ttclid to a paid click, which is what tells paid from organic here.
+const gaHead = (def) => WEB_ANALYTICS_RELAY
   ? `\n<!-- Web analytics (relayed server-to-server via the tunl-scores Worker - see build-play.mjs) -->
 <script>
 (function(){
@@ -145,7 +149,11 @@ const FIREBASE_HEAD = WEB_ANALYTICS_RELAY
         src.campaign = q.get('utm_campaign') || '';
         src.term = q.get('utm_term') || '';
         src.content = q.get('utm_content') || '';
-      }
+      }${def ? ` else {
+        src.source = ${JSON.stringify(def.source)};
+        src.medium = q.get('ttclid') ? 'paid' : ${JSON.stringify(def.medium)};
+        src.campaign = ${JSON.stringify(def.campaign)};
+      }` : ''}
       if (document.referrer && document.referrer.indexOf(location.origin) !== 0) src.dr = document.referrer;
     }
     window._tunlGA = function(name, extra) {
@@ -169,6 +177,7 @@ const FIREBASE_HEAD = WEB_ANALYTICS_RELAY
 })();
 </script>`
   : `\n<!-- Web analytics: WEB_ANALYTICS_RELAY not set in build-play.mjs. -->`;
+const FIREBASE_HEAD = gaHead(null);
 
 // Injected into <head> of the served /play page only (never the repo tunl.html or
 // the app builds). Link-preview cards for shared runs, canonical URL, theme colour.
@@ -226,6 +235,7 @@ async function build() {
   const before = html;
   html = html.replace(/[ \t]*<script src="src\/[^"]+"><\/script>\r?\n?/g, '');
   if (html === before) throw new Error('no <script src="src/..."> tags found in tunl.html - load order changed?');
+  const stripped = html;
   html = html.replace('</body>', `<script src="tunl.bundle.js?v=${v}"></script>\n</body>`);
   if (!html.includes('</head>')) throw new Error('no </head> in tunl.html');
   html = html.replace('</head>', HEAD_EXTRA + `\n<meta name="tunl:version" content="${TUNL_VERSION}">\n</head>`);
@@ -245,8 +255,79 @@ async function build() {
     await copyFile(path.join(root, 'audio', track), path.join(audioOut, track));
   }
 
+  await buildTT(stripped, v, TUNL_VERSION);
+
   const kb = (min.code.length / 1024).toFixed(0);
   console.log(`play/ built - tunl.bundle.js ${kb} KB (from ${SCRIPTS.length} files), version ${TUNL_VERSION}`);
+}
+
+// ============================================================
+//  /tt/ - the TikTok landing (flytunl-site/tt/, see tt-head.js for the why)
+// ============================================================
+//  The same game as /play/, served from its own path so paid TikTok clicks land in the
+//  game with no homepage or language redirect in between, and so Cloudflare Web
+//  Analytics counts them apart (/tt/ page views, then the /tt/<step>/ funnel hits that
+//  tt-tail.js loads). Differences from /play/, all in this page only:
+//   - <base href="/play/">: the bundle, audio and icons are /play/'s own files, never
+//     copies, so the two pages can't drift;
+//   - no AdSense / Ad Manager tags (no web ad unit serves - see ads-web.js - and the EU
+//     consent dialog they pull in would be the first thing an ad visitor sees);
+//   - noindex, canonical -> /play/;
+//   - tt.css + tt-head.js before the bundle, tt-tail.js after it.
+// Also writes the funnel counter pages and /tt/diag/ (store-link test bench).
+const TT_GA_DEFAULT = { source: 'tiktok', medium: 'referral', campaign: 'tt_landing' };
+const TT_STEPS = ['run', 'pitch', 'store-ios', 'store-android'];
+
+async function buildTT(stripped, v, version) {
+  const ttSrc = path.join(here, 'tt');
+  const ttOut = path.join(root, 'flytunl-site/site/tt');
+  const [css, head, tail, diag] = await Promise.all(
+    ['tt.css', 'tt-head.js', 'tt-tail.js', 'diag.html'].map(f => readFile(path.join(ttSrc, f), 'utf8')));
+  const small = async (code) => {
+    const m = await minify(code, { compress: { passes: 2 }, mangle: true, format: { comments: false } });
+    if (m.error) throw m.error;
+    return m.code;
+  };
+  const [headMin, tailMin] = await Promise.all([small(head), small(tail)]);
+
+  const ttHead = `<base href="/play/">
+<meta name="robots" content="noindex">
+<meta name="description" content="Fly today's cave. Every player on Earth gets the same one.">
+<meta name="theme-color" content="#000000">
+<link rel="canonical" href="https://flytunl.ch/play/">
+<style>
+${css.trim()}
+</style>
+<script>${headMin}</script>` + CF_BEACON + gaHead(TT_GA_DEFAULT) + `
+<meta name="tunl:version" content="${version}">`;
+
+  let html = stripped;
+  // After the viewport meta: tt-head.js reads innerWidth/innerHeight, which a mobile
+  // browser reports as its 980px default layout until that tag has been parsed. And
+  // before the favicon links: <base> must precede every relative URL in the head.
+  html = html.replace(/<meta name="viewport"[^>]*>\r?\n/, m => m + ttHead + '\n');
+  if (!html.includes('<base href="/play/">')) throw new Error('tt: <meta name="viewport"> not found in tunl.html');
+  html = html.replace('</body>', `<script src="tunl.bundle.js?v=${v}"></script>\n<script>${tailMin}</script>\n</body>`);
+
+  await rm(ttOut, { recursive: true, force: true });
+  await mkdir(ttOut, { recursive: true });
+  await writeFile(path.join(ttOut, 'index.html'), html, 'utf8');
+
+  // Funnel counters: loaded in a hidden iframe by tt-tail.js count(). Opened on their
+  // own (top === self) they redirect to /tt/ before the beacon loads, so only the
+  // iframe hit is ever counted.
+  for (const step of TT_STEPS) {
+    await mkdir(path.join(ttOut, step), { recursive: true });
+    await writeFile(path.join(ttOut, step, 'index.html'), `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="robots" content="noindex"><title>TUNL /tt/${step}</title>
+<script>if (window.top === window.self) location.replace('/tt/');</script>${CF_BEACON}
+</head><body></body></html>
+`, 'utf8');
+  }
+
+  await mkdir(path.join(ttOut, 'diag'), { recursive: true });
+  await writeFile(path.join(ttOut, 'diag', 'index.html'), diag, 'utf8');
+  console.log(`tt/ built - landing ${(html.length / 1024).toFixed(0)} KB + ${TT_STEPS.length} counters + diag`);
 }
 
 build().catch(err => { console.error('[build-play] failed:', err); process.exit(1); });

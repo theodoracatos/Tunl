@@ -265,7 +265,9 @@ async function handleReferralClaim(request, db) {
 // public unauthenticated endpoint, so anything not named here would let a
 // stranger inject arbitrary event names into the property and make the reports
 // useless. Adding an event means adding it here AND in build-play.mjs's sender.
-const GA_EVENTS = new Set(['page_view', 'run_start', 'run_end']);
+// pitch_open / store_click are the /tt/ landing's funnel steps (flytunl-site/tt/tt-tail.js):
+// the web app pitch opened, a store button tapped.
+const GA_EVENTS = new Set(['page_view', 'run_start', 'run_end', 'pitch_open', 'store_click']);
 
 // Coerce an untrusted value to an integer inside [lo, hi], falling back to
 // `dflt` for anything non-numeric. Every number this endpoint forwards to GA4
@@ -320,6 +322,11 @@ async function handleGA(request, measurementId, apiSecret) {
   if (en === 'run_end') {
     params.score = clampInt(body.score, 0, 9999999, 0);
     params.run_index = clampInt(body.run, 1, 9999, 1);
+  }
+
+  if (en === 'store_click') {
+    const store = String(body.store || '');
+    if (store === 'ios' || store === 'android') params.store = store;
   }
 
   const payload = { client_id: cid, events: [{ name: en, params }] };

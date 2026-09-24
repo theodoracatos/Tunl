@@ -54,6 +54,14 @@ check('ohne Secret -> 501', r2.status===501);
 r = await post({ cid: 'abcdef-0123', sid: '1' }, 'Mozilla/5.0 Test');
 check('User-Agent weitergereicht', r.sent.ua==='Mozilla/5.0 Test');
 
+// 7. /tt/ funnel events: store only ios|android, never free text
+r = await post({ cid: 'abcdef-0123', sid: '1', en: 'store_click', store: 'ios' });
+check('store_click mit store', r.sent.body.events[0].name==='store_click' && r.sent.body.events[0].params.store==='ios', JSON.stringify(r.sent));
+r = await post({ cid: 'abcdef-0123', sid: '1', en: 'store_click', store: '<script>' });
+check('store_click fremder store verworfen', r.status===200 && r.sent.body.events[0].params.store===undefined);
+r = await post({ cid: 'abcdef-0123', sid: '1', en: 'pitch_open' });
+check('pitch_open durchgereicht', r.sent.body.events[0].name==='pitch_open');
+
 globalThis.fetch = realFetch;
 console.log(ok.join('\n'));
 console.log(ok.some(l=>l.startsWith('FAIL')) ? '\nFEHLGESCHLAGEN' : '\nalle gruen');

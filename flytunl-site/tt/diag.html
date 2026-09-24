@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<!-- TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch -->
+<!-- /tt/diag/ - test bench for the TikTok in-app browser (flytunl-site/tt/, copied by
+     build-play.mjs). Open it INSIDE TikTok (send the link to yourself in a DM, tap it) and
+     it shows whether the webview rotates and which store-link variant actually leaves the
+     app. Every tap is logged in localStorage with how long until the page was hidden, so
+     the log survives a store app opening and a trip back. Not linked anywhere, noindex. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>TUNL /tt/ diag</title>
+<style>
+:root { color-scheme:dark; }
+body { margin:0; padding:16px; background:#06070d; color:#dfe8ff; font:14px/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
+h1 { font-size:18px; letter-spacing:.18em; margin:0 0 12px; }
+h2 { font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:#8ea3cc; margin:22px 0 8px; }
+.kv { display:grid; grid-template-columns:max-content 1fr; gap:3px 12px; font-size:13px; }
+.kv b { color:#8ea3cc; font-weight:600; }
+.kv span { word-break:break-all; }
+button { display:block; width:100%; margin:6px 0; padding:12px 14px; border-radius:10px; text-align:left;
+  background:#141a2c; color:#eaf1ff; border:1px solid #2b3a63; font:inherit; font-weight:600; }
+button small { display:block; font-weight:400; color:#8ea3cc; font-size:12px; margin-top:2px; word-break:break-all; }
+button:active { background:#1f2945; }
+#log { font:12px/1.5 ui-monospace,Menlo,monospace; white-space:pre-wrap; background:#0c0f1a; border:1px solid #1f2945; border-radius:10px; padding:10px; min-height:40px; }
+.ok { color:#7ef0a8; } .no { color:#ff9b9b; }
+.row { display:flex; gap:8px; } .row button { flex:1; text-align:center; }
+</style>
+</head>
+<body>
+<h1>TUNL /tt/ diag</h1>
+
+<h2>Environment</h2>
+<div class="kv" id="env"></div>
+
+<h2>Rotation (turn the phone now)</h2>
+<div class="kv" id="rot"></div>
+
+<h2>Result log</h2>
+<div id="log"></div>
+<div class="row"><button id="clear" type="button">Clear log</button><button id="copy" type="button">Copy log</button></div>
+
+<h2>iPhone: App Store</h2>
+<button data-t="ios-https-self">A1 https, same window<small>https://apps.apple.com/app/id6789721765</small></button>
+<button data-t="ios-scheme-self">A2 itms-apps scheme, same window<small>itms-apps://apps.apple.com/app/id6789721765</small></button>
+<button data-t="ios-https-blank">A3 https, window.open _blank<small>what /play/ does today</small></button>
+<button data-t="ios-cascade">A4 /tt/ cascade<small>itms-apps first, https after 1.2 s if still here</small></button>
+
+<h2>Android: Google Play</h2>
+<button data-t="and-https-self">B1 https, same window<small>https://play.google.com/store/apps/details?id=com.theodoracatos.tunl</small></button>
+<button data-t="and-market-frame">B2 market scheme, hidden iframe<small>market://details?id=com.theodoracatos.tunl</small></button>
+<button data-t="and-market-self">B3 market scheme, same window<small>may show an error page: use Back</small></button>
+<button data-t="and-intent-self">B4 intent URL, same window<small>intent://details?id=...;scheme=market;package=com.android.vending</small></button>
+<button data-t="and-https-blank">B5 https, window.open _blank<small>what /play/ does today</small></button>
+<button data-t="and-cascade">B6 /tt/ cascade<small>market iframe first, https after 1.2 s if still here</small></button>
+
+<script>
+(function () {
+  var APP = 'https://apps.apple.com/app/id6789721765';
+  var APP_N = 'itms-apps://apps.apple.com/app/id6789721765';
+  var PLAY = 'https://play.google.com/store/apps/details?id=com.theodoracatos.tunl';
+  var PLAY_N = 'market://details?id=com.theodoracatos.tunl';
+  var INTENT = 'intent://details?id=com.theodoracatos.tunl#Intent;scheme=market;package=com.android.vending;S.browser_fallback_url=' + encodeURIComponent(PLAY) + ';end';
+  var ua = navigator.userAgent;
+  var inApp = /musical_ly|BytedanceWebview|ByteLocale|TikTok|trill_/i.test(ua) || /FBAN|FBAV|Instagram|Line\/|Snapchat/.test(ua) || (/Android/.test(ua) && /; wv\)/.test(ua));
+  var KEY = 'tt_diag_log';
+  var logEl = document.getElementById('log');
+
+  function read() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
+  function write(a) { try { localStorage.setItem(KEY, JSON.stringify(a.slice(-40))); } catch (e) {} }
+  function add(line) { var a = read(); a.push(new Date().toLocaleTimeString() + '  ' + line); write(a); render(); }
+  function render() { var a = read(); logEl.textContent = a.length ? a.join('\n') : '(empty - tap a test below)'; }
+
+  function kv(el, rows) {
+    el.innerHTML = rows.map(function (r) { return '<b>' + r[0] + '</b><span>' + String(r[1]).replace(/</g, '&lt;') + '</span>'; }).join('');
+  }
+  kv(document.getElementById('env'), [
+    ['User agent', ua],
+    ['In-app browser', inApp ? 'yes' : 'no'],
+    ['TikTok', /musical_ly|BytedanceWebview|ByteLocale|TikTok|trill_/i.test(ua) ? 'yes' : 'no'],
+    ['Language', navigator.language],
+    ['Pixel ratio', window.devicePixelRatio],
+    ['Touch points', navigator.maxTouchPoints],
+    ['audioSession', navigator.audioSession ? 'yes' : 'no'],
+    ['DeviceMotion needs permission', (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function') ? 'yes (iOS)' : 'no'],
+  ]);
+
+  var rotEl = document.getElementById('rot'), bootW = innerWidth, bootH = innerHeight, maxW = innerWidth, g = null, sawLandscape = false;
+  function rot() {
+    maxW = Math.max(maxW, innerWidth);
+    if (innerWidth > innerHeight) sawLandscape = true;
+    kv(rotEl, [
+      ['Viewport now', innerWidth + ' x ' + innerHeight],
+      ['At load', bootW + ' x ' + bootH],
+      ['screen.orientation', (screen.orientation && screen.orientation.type) || 'n/a'],
+      ['Webview rotated?', sawLandscape ? 'YES, it went landscape' : 'not yet (turn the phone)'],
+      ['Motion sensor x / y', g ? g.x.toFixed(1) + ' / ' + g.y.toFixed(1) : 'no events'],
+    ]);
+  }
+  window.addEventListener('resize', function () { rot(); if (innerWidth > innerHeight) add('ROTATE: viewport went landscape ' + innerWidth + 'x' + innerHeight); });
+  window.addEventListener('devicemotion', function (e) { var a = e.accelerationIncludingGravity; if (a && a.x != null) { g = a; } });
+  setInterval(rot, 300); rot();
+
+  // A store app opening puts the page in the background: log how long that took.
+  var pending = null;
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden && pending) { add('  -> page HIDDEN after ' + (Date.now() - pending.t) + ' ms (' + pending.name + ') = something opened'); pending = null; }
+    else if (!document.hidden) render();
+  });
+  window.addEventListener('pagehide', function () { if (pending) { add('  -> pagehide after ' + (Date.now() - pending.t) + ' ms (' + pending.name + ')'); pending = null; } });
+  window.addEventListener('pageshow', render);
+
+  function watch(name) {
+    pending = { name: name, t: Date.now() };
+    setTimeout(function () { if (pending && pending.name === name) { add('  -> still here after 3 s (' + name + ') = nothing opened'); pending = null; } }, 3000);
+  }
+  function frame(url) { var f = document.createElement('iframe'); f.style.display = 'none'; f.src = url; document.body.appendChild(f); setTimeout(function () { f.remove(); }, 3000); }
+  function cascade(nat, https, viaFrame) {
+    if (viaFrame) frame(nat); else location.href = nat;
+    setTimeout(function () { if (!document.hidden) { add('  cascade: fallback to https'); location.href = https; } }, 1200);
+  }
+
+  var T = {
+    'ios-https-self':   function () { location.href = APP; },
+    'ios-scheme-self':  function () { location.href = APP_N; },
+    'ios-https-blank':  function () { var w = window.open(APP, '_blank', 'noopener'); add('  window.open returned ' + (w ? 'a window' : 'null')); },
+    'ios-cascade':      function () { cascade(APP_N, APP, false); },
+    'and-https-self':   function () { location.href = PLAY; },
+    'and-market-frame': function () { frame(PLAY_N); },
+    'and-market-self':  function () { location.href = PLAY_N; },
+    'and-intent-self':  function () { location.href = INTENT; },
+    'and-https-blank':  function () { var w = window.open(PLAY, '_blank', 'noopener'); add('  window.open returned ' + (w ? 'a window' : 'null')); },
+    'and-cascade':      function () { cascade(PLAY_N, PLAY, true); },
+  };
+  Array.prototype.forEach.call(document.querySelectorAll('button[data-t]'), function (b) {
+    b.addEventListener('click', function () {
+      var name = b.getAttribute('data-t');
+      add('TAP ' + name);
+      watch(name);
+      try { T[name](); } catch (e) { add('  error: ' + e.message); }
+    });
+  });
+  document.getElementById('clear').addEventListener('click', function () { write([]); render(); });
+  document.getElementById('copy').addEventListener('click', function () {
+    var text = 'UA: ' + ua + '\n' + read().join('\n');
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { add('(log copied)'); }, function () { add('(copy blocked)'); });
+  });
+  render();
+})();
+</script>
+</body>
+</html>

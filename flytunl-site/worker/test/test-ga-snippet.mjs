@@ -11,8 +11,12 @@ const html = await readFile('/Users/theodoracatos/Development/Tunl/flytunl-site/
 const m = html.match(/<!-- Web analytics \(relayed[\s\S]*?<script>([\s\S]*?)<\/script>/);
 if (!m) throw new Error('Snippet nicht gefunden');
 const code = m[1];
+// The /tt/ landing's copy of the snippet (build-play.mjs gaHead(TT_GA_DEFAULT)).
+const ttHtml = await readFile('/Users/theodoracatos/Development/Tunl/flytunl-site/site/tt/index.html','utf8');
+const mt = ttHtml.match(/<!-- Web analytics \(relayed[\s\S]*?<script>([\s\S]*?)<\/script>/);
+if (!mt) throw new Error('tt-Snippet nicht gefunden');
 
-function makeEnv(store, search, referrer, now) {
+function makeEnv(store, search, referrer, now, src = code) {
   const sent = [];
   const win = {};
   const ctx = {
@@ -27,7 +31,7 @@ function makeEnv(store, search, referrer, now) {
   };
   ctx.window = ctx; ctx.globalThis = ctx;
   vm.createContext(ctx);
-  vm.runInContext(code, ctx);
+  vm.runInContext(src, ctx);
   return { ctx, sent, store };
 }
 const out=[]; const check=(n,c,e='')=>out.push((c?'PASS':'FAIL')+'  '+n+(c?'':'  <- '+e));
@@ -65,5 +69,16 @@ check('aber gleicher Nutzer', c.sent[0].cid===a.sent[0].cid);
 
 // engagement time waechst
 check('ms ist eine Zahl', typeof a.sent[0].ms === 'number');
+// /tt/: a bare link (TikTok website button) is credited to tiktok; ttclid = a paid click;
+// an explicit utm_source still wins. /play/ stays uncredited without utm.
+let t = makeEnv({}, '', 'https://www.tiktok.com/', 1_700_000_000_000, mt[1]);
+check('/tt/ ohne utm -> tiktok/referral', t.sent[0].source==='tiktok' && t.sent[0].medium==='referral' && t.sent[0].campaign==='tt_landing', JSON.stringify(t.sent[0]));
+t = makeEnv({}, '?ttclid=abc', '', 1_700_000_000_000, mt[1]);
+check('/tt/ mit ttclid -> paid', t.sent[0].source==='tiktok' && t.sent[0].medium==='paid', JSON.stringify(t.sent[0]));
+t = makeEnv({}, '?utm_source=ig&utm_medium=story', '', 1_700_000_000_000, mt[1]);
+check('/tt/ utm gewinnt', t.sent[0].source==='ig' && t.sent[0].medium==='story', JSON.stringify(t.sent[0]));
+t = makeEnv({}, '', '', 1_700_000_000_000);
+check('/play/ ohne utm bleibt ohne source', !t.sent[0].source, JSON.stringify(t.sent[0]));
+
 console.log(out.join('\n'));
 console.log(out.some(l=>l.startsWith('FAIL'))?'\nFEHLGESCHLAGEN':'\nalle gruen');

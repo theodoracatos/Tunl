@@ -970,8 +970,12 @@ function die(bypassShield = false) {
     // branch, at CONTINUE_OFFER_SEC) or grantRevive() undoes this hit entirely.
     // On web there is no rewarded video to be ready (constants.js WEB_CONTINUE_PROMO_SEC):
     // the same slot opens anyway and carries the app pitch instead, so the one moment a
-    // player most wants what the app has is not silent there.
-    if (continuesUsedThisRun < MAX_CONTINUES_PER_RUN && score >= CONTINUE_MIN_SCORE
+    // player most wants what the app has is not silent there. A web landing page may
+    // lower that floor for the pitch (window._tunlWebPitchFloor, set only by
+    // flytunl-site/tt/tt-tail.js, for a first run); the apps never read it.
+    const offerFloor = (isWeb() && typeof window._tunlWebPitchFloor === 'number')
+        ? window._tunlWebPitchFloor : CONTINUE_MIN_SCORE;
+    if (continuesUsedThisRun < MAX_CONTINUES_PER_RUN && score >= offerFloor
         && (rewardedAdReady || isWeb())) {
         continueOfferPending = true;
         return true;

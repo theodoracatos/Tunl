@@ -1,0 +1,77 @@
+/* TUNL /tt/ landing - inlined by build-play.mjs into site/tt/index.html only.
+   See tt-head.js for the rotated-portrait mode these rules implement. */
+html { background:#000; }
+
+/* Rotated portrait: the body becomes a landscape box (width = the phone's height) turned
+   onto the portrait screen. Fixed-position overlays inside it (#cta, #tt-go, #rec-panel)
+   turn with it, because a transformed element is their containing block. */
+html.tt-rot, html.tt-rot body { overflow:hidden; }
+html.tt-rot body {
+    position:fixed; left:0; top:0;
+    width:var(--tt-h); height:var(--tt-w);
+    transform-origin:0 0;
+    transform:translate(var(--tt-w), 0) rotate(90deg);
+}
+html.tt-rot.tt-ccw body { transform:translate(0, var(--tt-h)) rotate(-90deg); }
+
+/* Recording a run is a /play/ feature for players who share; a first-time visitor from
+   an ad has no use for it, and it is the first thing on the top-left edge. */
+#rec-btn { display:none !important; }
+
+/* The store pill: never before the first run (the app pitch comes after it), and only
+   the visitor's own store. */
+html.tt-fresh #cta { display:none !important; }
+/* Top-left, in the slot the hidden REC button leaves: from the first run on, the title
+   screen's ALL SHIPS button takes the bottom edge the pill uses on /play/. */
+/* html body: tunl.html's own #cta rule comes later in the page. With one store button
+   left the label says nothing the button doesn't, and without it the pill is about the
+   size of the REC button whose corner it takes, clear of the wordmark. */
+html body #cta { top:12px; left:12px; bottom:auto; transform:none; padding:5px; }
+html body #cta .lbl { display:none; }
+html.tt-ios #cta a[href*="play.google"],
+html.tt-android #cta a[href*="apps.apple"] { display:none; }
+
+/* Turn hint - upright on the portrait screen, outside the rotated body. Wordless apart
+   from the game's own rotateHint string; the animated phone shows which way. It never
+   takes a tap (pointer-events none), so the first tap still starts the run. */
+#tt-turn {
+    position:fixed; left:50%; top:50%; z-index:200;
+    transform:translate(-50%, -50%);
+    display:flex; flex-direction:column; align-items:center; gap:16px;
+    padding:22px 26px 20px; border-radius:18px; max-width:78vw;
+    background:rgba(4,4,12,0.80); border:1px solid rgba(120,160,255,0.30);
+    -webkit-backdrop-filter:blur(5px); backdrop-filter:blur(5px);
+    color:#d4f0f3; text-align:center; pointer-events:none;
+    font:600 13px/1.35 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    letter-spacing:.14em; text-transform:uppercase;
+    opacity:0; visibility:hidden; transition:opacity .25s ease, visibility 0s linear .25s;
+}
+#tt-turn.show { opacity:1; visibility:visible; transition:opacity .25s ease; }
+#tt-turn .phone {
+    position:relative; width:34px; height:56px; border:3px solid #4fd6e0; border-radius:9px;
+    animation:ttTurn 2.2s ease-in-out infinite;
+}
+/* the speaker slot, so the phone reads as a phone and its top is unambiguous */
+#tt-turn .phone::before {
+    content:""; position:absolute; top:4px; left:50%; width:10px; height:3px;
+    margin-left:-5px; border-radius:2px; background:#4fd6e0;
+}
+@keyframes ttTurn { 0%,30% { transform:rotate(0); } 55%,100% { transform:rotate(-90deg); } }
+@media (prefers-reduced-motion:reduce) { #tt-turn .phone { animation:none; transform:rotate(-90deg); } }
+
+/* HOLD TO FLY, bottom centre of the title screen, first run only - the slot the store
+   pill takes after it. The game's own hint (draw.js, over the parked ship) takes over
+   once the run starts. */
+#tt-go {
+    position:fixed; left:50%; bottom:16px; z-index:45;
+    transform:translateX(-50%);
+    padding:9px 22px; border-radius:999px; white-space:nowrap; pointer-events:none;
+    background:rgba(10,12,22,0.62); border:1px solid rgba(120,190,255,0.40);
+    -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+    color:#eaf3ff; font:700 13px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    letter-spacing:.16em; text-shadow:0 0 12px rgba(140,190,255,0.8);
+    opacity:0; visibility:hidden; transition:opacity .35s ease, visibility 0s linear .35s;
+}
+#tt-go.show { opacity:1; visibility:visible; transition:opacity .35s ease; animation:ttPulse 1.6s ease-in-out infinite; }
+@keyframes ttPulse { 0%,100% { box-shadow:0 0 0 0 rgba(120,190,255,0.0); } 50% { box-shadow:0 0 18px 2px rgba(120,190,255,0.28); } }
+@media (max-width:520px) { #tt-go { font-size:12px; padding:8px 18px; } }

@@ -6122,7 +6122,9 @@ function drawWebContinuePromo() {
         // squeeze the body text into a column too narrow to read.
         wide  = cardW > FS * 0.80 && H > FS * 0.42;
         shipR = Math.min(cardW * 0.13, H * 0.17);
-        textL = (W - cardW) / 2 + padX + (wide ? shipR * 2.5 : 0);
+        // The ship's ring (radius 1.55 shipR around 1.05 shipR in) ends at 2.60 shipR;
+        // the text starts a quarter shipR clear of it (was 2.5: the ring cut the text).
+        textL = (W - cardW) / 2 + padX + (wide ? shipR * 2.85 : 0);
         textW = (W + cardW) / 2 - padX - textL;
         font(txt, '');
         lines = _wrapLines(T.secondLifeBody, textW);
@@ -6227,8 +6229,10 @@ function drawWebContinuePromo() {
         ctx.fillText(label, r.x + r.w / 2, r.y + r.h / 2 + sz * 0.35);
         ctx.textAlign = 'left';
     };
-    storeBtn(_promoAppleBtnRect, 'APP STORE', true);
-    storeBtn(_promoPlayBtnRect,  'GOOGLE PLAY', false);
+    // The visitor's own store is the filled one (an Android phone gets GOOGLE PLAY).
+    const android = /Android/.test(navigator.userAgent);
+    storeBtn(_promoAppleBtnRect, 'APP STORE', !android);
+    storeBtn(_promoPlayBtnRect,  'GOOGLE PLAY', android);
 
     // ── the clock ─────────────────────────────────────────────────────────────
     // A rewarded video shows how long it still holds you; so does this. The bar drains
