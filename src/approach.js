@@ -46,12 +46,38 @@ const MOON_TONE = [232, 234, 242];                      // pale silver, tinted a
 const MOON_MARIA = [[-0.30, -0.18, 0.28], [0.22, 0.10, 0.22], [-0.05, 0.38, 0.16], [0.34, -0.34, 0.12]];
 const MOONLIGHT_RIM = 0.42;   // alpha of the cool rim the moon puts on roofs and left facades
 const CITY_TILE = Math.ceil(W * 1.6);   // each layer's building list wraps at this width
+// Lit windows (2026-09-24): the two far layers only, so the city switches its lights on while
+// the ship flies over it. A window is lit while its hash is below the level; the level starts
+// at the title's value (so the tap never pops) and rises to the mouth. Tone is warm, not the
+// day colour: the day colour is for beacons.
+const APPROACH_WIN_LAYERS = 2;
+const APPROACH_WIN_LIT    = [0.22, 0.70];    // lit share: on the title / at the mouth
+const APPROACH_WIN_ALPHA  = [0.32, 0.50];    // per layer, far to near
+const APPROACH_WIN_TONE   = [255, 214, 150];
+// Wind streaks (2026-09-24): air streaks in the SKY left of the mouth only (the sky clip
+// ends at the mouth), fading in over the last APPROACH_STREAK_IN_SEC before it. Never inside the cave.
+const APPROACH_STREAK_N      = 40;
+const APPROACH_STREAK_IN_SEC = 1.8;
+const APPROACH_STREAK_MAX    = 0.30;         // alpha at full strength
+// Lip light (2026-09-24): the rock lip catches the dusk light in three steps (steps, not a
+// fade - see "Depth light"). [from, to] in px from the mouth (towards world-x 0), alpha.
+// The void inside stays dark, the light lies on the rock only.
+const APPROACH_LIP_TINT  = 0.35;             // warm daylight toward the day's rock
+const APPROACH_LIP_STEPS = [[-W * 0.06, APPROACH_LIP * 0.33, 0.30], [APPROACH_LIP * 0.33, APPROACH_LIP * 0.66, 0.17], [APPROACH_LIP * 0.66, APPROACH_LIP, 0.07]];
+const APPROACH_LIP_EDGE  = [0.55, 0.32];     // extra edge line on the first two steps
+// [x seed px, y as fraction of H, speed factor]: fixed, private LCG (draw-only, never rng()).
+const _APPROACH_STREAKS = (() => {
+    let s = 7;
+    const r = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+    return Array.from({ length: APPROACH_STREAK_N }, () => { const a = r(), b = r(); return [a * W * 1.6, 0.12 + b * 0.62, 0.6 + (a * 13.1 % 1) * 0.8]; });
+})();
 
 let approachLeft = 0;          // screen px until world-x 0 reaches the left edge; > 0 = approach live
 let approachT = 0;             // seconds since the approach started (camera ease-in, banner)
 let approachFull = 0;          // approachLeft at the start, for the banner's fade
 let cityScroll = 0;            // camera distance flown over the city (title drift included, never reset)
 let _approachBumpT = 0;        // throttles the city bump's haptic
+let _approachWindIn = false;   // the wind has been cut at the mouth this run (audio.js approachWindEnter)
 let _cityKey = '', _cityLayers = null;
 
 // Seeded per cave day, so every day's metropolis differs a little. A private LCG, not rng():
@@ -72,7 +98,19 @@ function _buildCity() {
             const k = r();
             // kinds: 0 flat, 1 stepped crown, 2 spire, 3 slanted roof, 4 antenna mast
             const kind = k < 0.16 ? 1 : k < 0.27 ? 2 : k < 0.37 ? 3 : (k < 0.50 && li > 0) ? 4 : 0;
-            bld.push({ x, w, h, kind, ph: r() * 6.283 });
+            const b = { x, w, h, kind, ph: r() * 6.283, win: null };
+            if (li < APPROACH_WIN_LAYERS) {
+                // Windows: flat [dx, dy, hash, ...] from the building's top-left. The hash is a
+                // pure function of position and day (not r()), so the skyline itself is unchanged.
+                const win = [];
+                for (let wx = 4, ci = 0; wx < w - 5; wx += 7, ci++)
+                    for (let wy = 8, ri = 0; wy < h - 6; wy += 9, ri++) {
+                        const q = Math.sin((x + ci * 7.7) * 12.9898 + ri * 78.233 + li * 37.7 + day * 0.13) * 43758.5453;
+                        win.push(wx, wy, q - Math.floor(q));
+                    }
+                b.win = win;
+            }
+            bld.push(b);
             x += w + (r() < 0.3 ? r() * W * 0.012 : 0);
         }
         return { f: L.f, tone: L.tone, bld };
@@ -156,6 +194,11 @@ function approachStart() {
     approachLeft = approachFull = scrollSpd() * APPROACH_SEC;
     _approachBumpT = 0;
     levelIntroT = 0;   // the world banner waits for the cave (approachStep)
+    // Wind (audio.js): seconds until the mouth reaches the ship. The camera's ease-in covers
+    // the average of both speeds over APPROACH_EASE_SEC (smoothstep), then runs at scrollSpd().
+    _approachWindIn = false;
+    const spd = scrollSpd(), easeDist = APPROACH_EASE_SEC * (APPROACH_TITLE_SPD + spd) / 2;
+    approachWindOn(START_RAMP_SEC, APPROACH_EASE_SEC + (approachFull - PX - APPROACH_LIP - easeDist) / spd);
 }
 
 // Advance the camera. Runs under the launch ramp too, so the ship takes off over a moving city.
@@ -166,6 +209,8 @@ function approachStep(dt) {
     cityScroll += d;
     approachLeft = Math.max(0, approachLeft - d);
     _approachBumpT = Math.max(0, _approachBumpT - dt);
+    // The ship is in the mouth (same line approachUpdate's lethal-wall rule uses): cut the wind.
+    if (!_approachWindIn && approachLeft <= PX + APPROACH_LIP) { _approachWindIn = true; approachWindEnter(); }
     if (approachLeft <= 0) levelIntroT = LEVEL_INTRO_DUR;
 }
 
@@ -286,6 +331,8 @@ function drawApproachScene(theme, dayRock) {
 
     // Skyline: three silhouette layers, one path + one fill each, no shadowBlur.
     const blink = gtime;
+    const winProg = phase === 'play' && approachFull > 0 ? Math.min(1, Math.max(0, 1 - approachLeft / approachFull)) : 0;
+    const winLit = lerp(APPROACH_WIN_LIT[0], APPROACH_WIN_LIT[1], winProg * winProg * (3 - 2 * winProg));
     for (let li = 0; li < _cityLayers.length; li++) {
         const L = _cityLayers[li];
         const off = (cityScroll * L.f) % CITY_TILE;
@@ -304,6 +351,26 @@ function drawApproachScene(theme, dayRock) {
             if (x + CITY_TILE < xEnd) _traceBuilding(x + CITY_TILE, b);
         }
         ctx.fill();
+        // Lit windows: one path per layer, only the share below the current level.
+        if (L.bld[0].win) {
+            ctx.beginPath();
+            for (const b of L.bld) {
+                let x = b.x - off;
+                if (x + b.w < 0) x += CITY_TILE;
+                if (x > xEnd) continue;
+                const top = H - b.h, w = b.win;
+                for (let i = 0; i < w.length; i += 3) {
+                    if (w[i + 2] < winLit) ctx.rect(x + w[i], top + w[i + 1], 2, 3);
+                }
+                if (x + CITY_TILE < xEnd) {
+                    for (let i = 0; i < w.length; i += 3) {
+                        if (w[i + 2] < winLit) ctx.rect(x + CITY_TILE + w[i], top + w[i + 1], 2, 3);
+                    }
+                }
+            }
+            ctx.fillStyle = rgb(APPROACH_WIN_TONE, APPROACH_WIN_ALPHA[li]);
+            ctx.fill();
+        }
         // Moonlit rim: roofs and the left facades' upper part, one stroke per layer. The far
         // layer gets less (haze), the near one most.
         ctx.beginPath();
@@ -333,6 +400,22 @@ function drawApproachScene(theme, dayRock) {
         }
     }
 
+    // Wind streaks: only while approaching in a run, only in the sky (the clip ends at the mouth).
+    if (phase === 'play' && approachLeft > 0) {
+        const tRem = (approachLeft - (PX + APPROACH_LIP)) / scrollSpd();   // seconds until the ship crosses the mouth
+        const inA = Math.min(1, Math.max(0, (APPROACH_STREAK_IN_SEC - tRem) / (APPROACH_STREAK_IN_SEC * 0.66)));
+        const amp = inA * inA * (3 - 2 * inA) * Math.min(1, Math.max(0, 1 + tRem / 0.4));
+        if (amp > 0.01) {
+            ctx.beginPath();
+            const span = W + 240;
+            for (const [sx0, sy, f] of _APPROACH_STREAKS) {
+                const sx = W + 120 - ((sx0 + cityScroll * 1.5 * f) % span);
+                ctx.moveTo(sx, H * sy); ctx.lineTo(sx + 12 + 54 * amp * f, H * sy);
+            }
+            ctx.strokeStyle = rgb(moonLit, APPROACH_STREAK_MAX * amp); ctx.lineWidth = 1; ctx.stroke();
+        }
+    }
+
     // Through the mouth the city dissolves into the cave's own void.
     if (mouthX - APPROACH_BLEND < skyEnd) {
         const c = caveAt(mouthX + APPROACH_BLEND);
@@ -359,6 +442,16 @@ function drawApproachScene(theme, dayRock) {
         const traceTop = () => { ctx.beginPath(); ctx.moveTo(xs[0], -H); for (let i = 0; i < n; i++) ctx.lineTo(xs[i], tops[i]); ctx.lineTo(xs[n - 1], -H); ctx.closePath(); };
         const traceBot = () => { ctx.beginPath(); ctx.moveTo(xs[0], 2 * H); for (let i = 0; i < n; i++) ctx.lineTo(xs[i], bots[i]); ctx.lineTo(xs[n - 1], 2 * H); ctx.closePath(); };
         const edgeInner = lerpClr(theme.wall, theme.wallBase, 0.28);
+        // One rock-profile stroke over [from, to] in screen x, skipping points off screen.
+        const strokeSpan = (arr, from, to, style, lw) => {
+            ctx.beginPath(); let on = false;
+            for (let i = 0; i < n; i++) {
+                if (xs[i] < from || xs[i] > to || arr[i] < -10 || arr[i] > H + 10) { on = false; continue; }
+                on ? ctx.lineTo(xs[i], arr[i]) : ctx.moveTo(xs[i], arr[i]); on = true;
+            }
+            ctx.strokeStyle = style; ctx.lineWidth = lw; ctx.stroke();
+        };
+        const lipTone = lerpClr(DEPTH_MOUTH_WARM, dayRock, APPROACH_LIP_TINT);
         // Solid rock all the way in: the cave walls it meets at world-x 0 are lethal full rock.
         const paintRock = (trace, isTop) => {
             ctx.save();
@@ -370,6 +463,9 @@ function drawApproachScene(theme, dayRock) {
             ctx.fillStyle = g;
             ctx.fillRect(xs[0], -H, xEnd - xs[0] + RSTEP * 2, 3 * H);
             _paintStonePattern(cityScroll, 0.5);
+            // Lip light: a wide stroke along the profile, clipped to the rock so only its inner
+            // half shows, in three alpha steps.
+            for (const [a, b, al] of APPROACH_LIP_STEPS) strokeSpan(isTop ? tops : bots, mouthX + a, mouthX + b, rgb(lipTone, al), 16);
             ctx.restore();
         };
         paintRock(traceTop, true);
@@ -379,17 +475,14 @@ function drawApproachScene(theme, dayRock) {
         // mouth and into the cave, where drawWorld's own wall edge carries it on.
         for (const isTop of [true, false]) {
             const arr = isTop ? tops : bots;
-            const stroke = (from, to, style, lw) => {
-                ctx.beginPath(); let on = false;
-                for (let i = 0; i < n; i++) {
-                    if (xs[i] < from || xs[i] > to || arr[i] < -10 || arr[i] > H + 10) { on = false; continue; }
-                    on ? ctx.lineTo(xs[i], arr[i]) : ctx.moveTo(xs[i], arr[i]); on = true;
-                }
-                ctx.strokeStyle = style; ctx.lineWidth = lw; ctx.stroke();
-            };
+            const stroke = (from, to, style, lw) => strokeSpan(arr, from, to, style, lw);
             stroke(-Infinity, mouthX, rgb(horizon, 0.30), 3);
             // The foothill's upper face looks up at the moon; the overhang above faces down.
             if (!isTop) stroke(-Infinity, mouthX, moonRim, 1.5);
+            // Lip edge: the first two lip steps get a brighter line on the rock's edge.
+            for (let k = 0; k < APPROACH_LIP_EDGE.length; k++) {
+                stroke(mouthX + APPROACH_LIP_STEPS[k][0], mouthX + APPROACH_LIP_STEPS[k][1], rgb(lipTone, APPROACH_LIP_EDGE[k]), 2);
+            }
             stroke(-Infinity, xEnd, rgb(theme.wallBase, 0.55), 2);   // drawWorld's lethal edge, same stroke
         }
     }

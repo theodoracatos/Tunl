@@ -583,6 +583,7 @@ function _reviveAudioContext() {
     _bgmLoading = false; _titleBgmLoading = false;
     _mNode = null; _mGain = null; _mOsc = null;  // magnet shimmer belonged to the closed context
     _wNode = null; _wGain = null; _wOsc = null;  // warp whoosh belonged to the closed context
+    _awSrc = null; _awGain = null; _awLp = null; _awSend = null; _awLfo = null;  // approach wind too
     _initAC();
 }
 // visibilitychange is the fallback path - WKWebView doesn't always fire it
@@ -2896,4 +2897,102 @@ function warpLoopOff() {
         try { n.stop(); } catch(e){}
         oscs.forEach(o => { try { o.stop(); } catch(e){} });
     }, 220);
+}
+
+// ── Approach wind (2026-09-24) ────────────────────────────────────────
+// A run opens outside, over the city (approach.js), and the cave is a room. So the approach
+// carries a wind bed that is open and airy over the city and is cut off where the ship passes
+// the rock mouth: the lowpass closes (the air goes dull, like a door falling shut), the level
+// drops, and the last of it goes into the shared cave reverb (_caveSend), so the first thing
+// the cave does is ring. No tonal hit on the entry: a sine drop read as a timpani on the death
+// sound (see sfxDie), and below ~400 Hz a phone speaker plays nothing anyway.
+// Two noise bands under one slow gust LFO: a body (bandpass, the part a phone speaker plays)
+// and a faint high hiss. It fades in over the launch ramp so the spool-up stays in front,
+// swells toward the mouth, and sits UNDER the thrust bed (the ship's own engine outranks
+// ambience; loudness hierarchy in docs/agents/audio.md). Levels measured offline against
+// PEARL's thrust and the play track, see the numbers on the constants.
+// Concept: https://claude.ai/artifact/3hPEAaUYSY1YKDHWBbnxQa (idea 1)
+const APPROACH_WIND_BASE    = 0.045;   // gain at the end of the launch ramp
+const APPROACH_WIND_PEAK    = 0.10;   // gain as the mouth reaches the ship
+const APPROACH_WIND_SEND    = 2.0;    // cave-reverb send of the cut-off, relative to the wind's level at the mouth
+const APPROACH_WIND_OPEN_HZ = [1700, 2600];   // lowpass over the city: at the ramp's end / at the mouth
+const APPROACH_WIND_DULL_HZ = 260;    // lowpass once inside
+const APPROACH_WIND_ROOM_HZ = 1100;   // the reverb send's own lowpass: stone swallows the highs
+let _awSrc = null, _awGain = null, _awLp = null, _awSend = null, _awLfo = null;
+// rampSec: START_RAMP_SEC; mouthSec: seconds until the mouth reaches the ship (approach.js).
+function approachWindOn(rampSec, mouthSec) {
+    if (!_ac || _awSrc || !fxOn) return;
+    const t = _ac.currentTime;
+    const src = _ac.createBufferSource();
+    src.buffer = _noiseBuf(2.0); src.loop = true;
+    const body = _ac.createBiquadFilter();
+    body.type = 'bandpass'; body.frequency.value = 520; body.Q.value = 0.6;
+    const hiss = _ac.createBiquadFilter();
+    hiss.type = 'bandpass'; hiss.frequency.value = 2600; hiss.Q.value = 1.2;
+    const hissG = _ac.createGain();
+    hissG.gain.value = 0.12;
+    // Gusts: one slow LFO swells the level and lifts the body's centre a little with it.
+    const gust = _ac.createGain();
+    gust.gain.value = 0.8;
+    const lfo = _ac.createOscillator(), lfoLvl = _ac.createGain(), lfoHz = _ac.createGain();
+    lfo.type = 'sine'; lfo.frequency.value = 0.23;
+    lfoLvl.gain.value = 0.12; lfoHz.gain.value = 90;
+    lfo.connect(lfoLvl); lfoLvl.connect(gust.gain);
+    lfo.connect(lfoHz); lfoHz.connect(body.frequency);
+    _awLp = _ac.createBiquadFilter();
+    _awLp.type = 'lowpass'; _awLp.Q.value = 0.5;
+    _awLp.frequency.setValueAtTime(APPROACH_WIND_OPEN_HZ[0], t);
+    _awLp.frequency.setValueAtTime(APPROACH_WIND_OPEN_HZ[0], t + rampSec);
+    if (mouthSec > rampSec) _awLp.frequency.linearRampToValueAtTime(APPROACH_WIND_OPEN_HZ[1], t + mouthSec);
+    _awGain = _ac.createGain();
+    _awGain.gain.setValueAtTime(0.0001, t);
+    _awGain.gain.linearRampToValueAtTime(APPROACH_WIND_BASE, t + rampSec);
+    if (mouthSec > rampSec) _awGain.gain.linearRampToValueAtTime(APPROACH_WIND_PEAK, t + mouthSec);
+    _awSend = _ac.createGain();
+    _awSend.gain.value = 0;
+    src.connect(body); body.connect(gust);
+    src.connect(hiss); hiss.connect(hissG); hissG.connect(gust);
+    gust.connect(_awLp); _awLp.connect(_awGain); _awGain.connect(_master);
+    // The send taps the wind BEFORE the closing lowpass, through a fixed one of its own: the
+    // dull cut must not also dull the ring below what a phone speaker plays, and a send with no
+    // lowpass rang brighter than the wind outside (offline render: centroid 3.7 kHz).
+    const room = _ac.createBiquadFilter();
+    room.type = 'lowpass'; room.frequency.value = APPROACH_WIND_ROOM_HZ; room.Q.value = 0.5;
+    gust.connect(room); room.connect(_awSend); _caveSend(_awSend, 1);
+    src.start(t); lfo.start(t);
+    _awSrc = src; _awLfo = lfo;
+}
+
+// The mouth passes the ship: dull, drop, and ring out in the cave.
+function approachWindEnter() {
+    if (!_awSrc) return;
+    const t = _ac.currentTime;
+    _awLp.frequency.cancelScheduledValues(t);
+    _awLp.frequency.setValueAtTime(_awLp.frequency.value, t);
+    _awLp.frequency.setTargetAtTime(APPROACH_WIND_DULL_HZ, t, 0.07);
+    const lvl = _awGain.gain.value;
+    _awGain.gain.cancelScheduledValues(t);
+    _awGain.gain.setValueAtTime(lvl, t);
+    _awGain.gain.setTargetAtTime(0.0001, t + 0.04, 0.2);
+    _awSend.gain.setValueAtTime(APPROACH_WIND_SEND * lvl, t);
+    _awSend.gain.setTargetAtTime(0, t + 0.05, 0.15);
+    _approachWindRelease(1.4);
+}
+
+// Fade out and stop (death, title, interruption, a new run).
+function approachWindOff() {
+    if (!_awSrc) return;
+    const t = _ac.currentTime;
+    _awGain.gain.cancelScheduledValues(t);
+    _awGain.gain.setValueAtTime(_awGain.gain.value, t);
+    _awGain.gain.linearRampToValueAtTime(0.0001, t + 0.12);
+    _awSend.gain.cancelScheduledValues(t);
+    _awSend.gain.setValueAtTime(0, t);
+    _approachWindRelease(0.2);
+}
+
+function _approachWindRelease(sec) {
+    const src = _awSrc, lfo = _awLfo;
+    _awSrc = null; _awGain = null; _awLp = null; _awSend = null; _awLfo = null;
+    setTimeout(() => { try { src.stop(); } catch(e){} try { lfo.stop(); } catch(e){} }, sec * 1000);
 }

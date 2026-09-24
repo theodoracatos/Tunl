@@ -83,6 +83,16 @@ a "Knallfrosch" twice. Method, metrics and traps: `reference_audio_method` memor
   so `CAVE_VERB_WET` is the level (not ear-checked on a device yet - that is the knob).
   Sends only from impacts, blasts, cracks, cannon, creak, shield break, hull scratch and the
   death crash; coins, UI, pickups and the thruster stay dry; the bomb keeps `_bombVerb`.
+- **Approach wind** (`approachWindOn`/`approachWindEnter`/`approachWindOff`, 2026-09-24): a
+  wind bed over the city, cut where the ship passes the rock mouth (the lowpass closes to
+  `APPROACH_WIND_DULL_HZ`, the level drops, and the wind's last moment rings out through
+  `_caveSend`). **No tonal hit on the entry.** The send taps the wind before the closing
+  lowpass through its own `APPROACH_WIND_ROOM_HZ` lowpass: after the lowpass the ring sat under
+  what a phone plays; with no lowpass it rang brighter than the wind outside. Measured offline
+  in the real bus (phone band, >400 Hz): ~5 dB under the play track and ~8 dB under PEARL's
+  thrust at its peak, the spool-up ~17 dB above it during the ramp, the mix +1.2 dB. It is
+  stopped on death, title, interruption and every new run, and is not restarted after a pause.
+  `test-sim.js` checks that the swell's predicted mouth time matches the real crossing.
 - **Settings: music and sound are three-level** (`musicLevel`/`fxLevel`, `state.js`; FULL ->
   LOW -> OFF, stored '1'/'low'/'0' so old saves read the same). Levels ride
   `_musicLvl`/`_fxLvl`, **never `_musicBus.gain`, which `musicDuck()` owns**

@@ -134,6 +134,7 @@ function dayRollover() {
 }
 
 function titleScreen() {
+    approachWindOff();
     phase = 'title'; py = H / 2; vy = 0; holding = false; scrollX = 0; approachLeft = 0;
     score = 0; newBest = false; newDailyBest = false;
     parts = []; thrustParts = []; deadT = 0; titleT = 0; flashA = 0; shake = 0; trailY = [];
@@ -188,6 +189,7 @@ function startPlay() {
     onFireLoopOff();
     magnetLoopOff();
     warpLoopOff();
+    approachWindOff();
     bgmSetSlow(false);
     bgmSetWarp(false);
     _fadeTitleMusic();

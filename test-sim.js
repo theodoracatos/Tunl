@@ -749,5 +749,30 @@ function touchCoin(type, setup) {
         && paints.bought === false && paints.shards === 99999);
 }
 
+// ── Approach wind: the swell is timed to the mouth ─────────────────────────
+// Catches: approachStart() predicting the mouth at the wrong time (a changed camera ease,
+// APPROACH_LIP or PX without the formula following, so the wind peaks early or is still
+// rising when it is cut), and approachWindEnter() firing twice or not at all. Real
+// startPlay()/update(); only the two audio hooks are replaced by recorders.
+{
+    const res = [[956, 440], [812, 375], [956, 600]].map(([w, h]) => {
+        const g = boot(w, h);
+        g(AUTOPILOT);
+        g(`_windRec = { mouthSec: -1, enters: [] }; _simT = 0;
+           approachWindOn = (ramp, mouthSec) => { _windRec.mouthSec = mouthSec; };
+           approachWindEnter = () => { _windRec.enters.push(_simT); };`);
+        g('startPlay()');
+        return g(`(() => {
+            for (let i = 0; i < 60 * 20 && approachLeft > 0; i++) {
+                shieldCount = 9; hullScratches = HULL_SCRATCHES; _pilot(); _simT += 1 / 60; update(1 / 60);
+            }
+            return _windRec;
+        })()`);
+    });
+    check(`the approach wind is cut once per run, when the mouth reaches the ship (predicted within a frame: ${
+        res.map(r => (r.enters[0] - r.mouthSec).toFixed(3) + 's').join(', ')})`,
+        res.every(r => r.enters.length === 1 && r.mouthSec > 1.3 && Math.abs(r.enters[0] - r.mouthSec) <= 1.5 / 60));
+}
+
 if (failed) { console.log(`\n${failed} check(s) failed.`); process.exit(1); }
 console.log('\nThe real game runs headless and every simulated rule holds.');

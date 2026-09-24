@@ -26,8 +26,24 @@ and score wait for the cave. Concept: https://claude.ai/artifact/ECrpmHcPeTsREMw
   hint start at the tunnel entry.
 - **The tunnel start stays dark** (`DEPTH_LIFT`, `DEPTH_MOUTH_ALPHA` lowered with the
   approach): after a city at dusk, the old values made the cave lighter than the sky outside.
-- Not done yet: city/tunnel audio (dry outside, cave reverb on entry), the S0 debriefing scene
-  showing the mouth, and a device pass (WebKit, 812x375).
+- **Polish pass (2026-09-24, concept https://claude.ai/artifact/3hPEAaUYSY1YKDHWBbnxQa)**,
+  all in `approach.js`, all draw-only, none of it touches duration, score or `rng()`:
+  lit windows on the two far layers (`APPROACH_WIN_*`; the level starts at the title's value
+  and rises to the mouth, so the tap never pops; the hash is position+day, not `r()`, so the
+  skyline is unchanged), wind streaks in the sky only (`APPROACH_STREAK_*`; the sky clip ends
+  at the mouth, so nothing moves behind a wall) and the lip light (`APPROACH_LIP_*`: three
+  alpha steps on the rock lip, the void stays dark). **Rejected in the audit, don't redo:**
+  light lying in the void ahead of the ship, a zoom into the mouth, a black pulse at entry
+  (the first deadly metre must stay readable), gate brackets on the lethal edge, a letter-by-
+  letter banner (breaks Arabic/Hindi shaping), a sinusoidal thump for the audio hit (reads as
+  a timpani, see `audio.md`).
+- **Approach wind** (same day, audio side; rules in `audio.md` "Approach wind"): open over the
+  city, cut where the ship passes the mouth - the same line as the lethal-wall rule in
+  `approachUpdate()`. `approachStart()` predicts that moment for the swell; `test-sim.js`
+  checks the prediction against the real crossing at three screen sizes.
+- Not done yet: a device ear-check of the wind, optional extras from the concept (aircraft
+  lights, haze bands, a stepped banner), the S0 debriefing scene showing the mouth, and a
+  device pass (WebKit, 812x375).
 
 ## Onboarding
 

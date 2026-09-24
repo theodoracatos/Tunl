@@ -34,6 +34,7 @@ window.addEventListener('pageshow', _pageBack);
 // update.js holds the countdown full while _pageAway, then runs it down once the page is back.
 function pauseForInterrupt() {
     if (phase !== 'play') return;
+    approachWindOff();   // the wind is an approach-only bed; it is not restarted after the pause
     phase = 'revive';
     interruptPaused = true;
     reviveCountdownT = REVIVE_COUNTDOWN_SEC;

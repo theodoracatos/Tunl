@@ -946,6 +946,7 @@ function die(bypassShield = false) {
     onFireLoopOff();
     magnetLoopOff();
     warpLoopOff();
+    approachWindOff();
     sfxBulletFireStop();
     bgmSetSlow(false);
     bgmSetWarp(false);
