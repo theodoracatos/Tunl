@@ -139,6 +139,18 @@ function loop(ts) {
 const _ctaEl  = document.getElementById('cta');
 const _ctaLbl = document.getElementById('cta-lbl');
 let _ctaShown = false, _ctaLangShown = null;
+// The legal links (#legal) ride along: same visibility, and they open the site's page
+// in the game's language (the site has one per game language, English at the root).
+const _legalEl = document.getElementById('legal');
+let _legalLangShown = null;
+function _syncWebLegalLabels() {
+    if (!_legalEl || typeof T === 'undefined' || !T.legalLink || _legalLangShown === activeLang) return;
+    _legalLangShown = activeLang;
+    const base = activeLang === 'en' || !LANGS[activeLang] ? '/' : '/' + activeLang + '/';
+    const imp = document.getElementById('legal-imp'), priv = document.getElementById('legal-priv');
+    if (imp)  { imp.textContent  = T.legalLink;   imp.href  = base + 'impressum/'; }
+    if (priv) { priv.textContent = T.privacyLink; priv.href = base + 'privacy/'; }
+}
 function _syncWebCta() {
     if (!_ctaEl) return;
     // Hidden while any title-screen panel is open (ALL SHIPS / shop, ship
@@ -150,10 +162,14 @@ function _syncWebCta() {
         _ctaLbl.textContent = T.getApp;
         _ctaLangShown = T.getApp;
     }
+    if (show) _syncWebLegalLabels();
     if (show === _ctaShown) return;
     _ctaShown = show;
-    _ctaEl.classList.toggle('show', show);
-    _ctaEl.setAttribute('aria-hidden', show ? 'false' : 'true');
+    for (const el of [_ctaEl, _legalEl]) {
+        if (!el) continue;
+        el.classList.toggle('show', show);
+        el.setAttribute('aria-hidden', show ? 'false' : 'true');
+    }
 }
 
 // ── Portrait gate (web only) ─────────────────────────────────────────
