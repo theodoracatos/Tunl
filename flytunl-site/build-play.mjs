@@ -311,7 +311,9 @@ ${css.trim()}
   // The start screen (tt-head.js), first thing in <body> so it paints before the bundle
   // has even started to download. Its label is filled in by tt-tail.js with the game's
   // own T.tap once the bundle (and with it i18n.js) is there; until then it is wordless.
-  const splash = `<div id="tt-splash" role="button" aria-label="Play"><img class="mark" src="branding/web/wordmark.svg" alt="TUNL">`
+  // The mark is the homepage's crystal wordmark (site root, outside <base>), not the
+  // ringed branding/web one: that read as a tap-and-hold badge next to the play button.
+  const splash = `<div id="tt-splash" role="button" aria-label="Play"><img class="mark" src="/wordmark.svg" alt="TUNL">`
     + `<div class="btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5v17a1 1 0 0 0 1.5.86l14-8.5a1 1 0 0 0 0-1.72l-14-8.5A1 1 0 0 0 6 3.5z" fill="#eaf3ff"/></svg></div>`
     + `<div class="lbl"></div></div>`;
   if (!/<body>\r?\n/.test(html)) throw new Error('tt: <body> not found in tunl.html');
