@@ -515,7 +515,7 @@ let continuesUsedThisRun, continueOfferPending, continueAdPending;
 // what draw.js/input.js route on. Never set in either app - isWeb() gates every write.
 let webPromoOn = false, webPromoT = 0;
 // Web only: the "in the app" sheet opened from a greyed-out title control that exists
-// only in the apps ('leaderboard' | 'challenge' | 'paint', null = closed). Never set in
+// only in the apps ('leaderboard' | 'challenge' | 'paint' | 'shards', null = closed). Never set in
 // either app - input.js opens it only behind isWeb(). draw.js drawAppOnlySheet.
 let appOnlyKey = null;
 let _appOnlyPanelRect = null, _appOnlyAppleBtnRect = null, _appOnlyPlayBtnRect = null;

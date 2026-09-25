@@ -35,6 +35,10 @@ the forced interstitial, not a video the player actively taps):
   buttons - the challenge offers the App Store only (iOS-only) and is not shown to an
   Android browser. **The Lackiererei is app-only**: web never opens the Paint sheet; a kit
   a web player already owned still renders. `test-sim.js` guards the app side.
+  The Missions drawer's shard-ad row works the same way while web has no rewarded ad of
+  its own (`shardsAdAppOnly()` in `ads-web.js`, keyed to the `ADS_WEB_NETWORK_CODE`
+  placeholder): label `T.watchAdShardsApp`, tap opens the sheet, and the rail badge counts
+  N/3 since the row cannot be done there. Filling in a real network code reverts all of it.
 - **Rewarded shard bonus** (8.2) - a row at the bottom of the Missions drawer: watch an
   ad once per UTC day for a flat `SHARDS_AD_REWARD` (20) shards, exempt from
   `DAILY_SHARD_CAP` like a mission reward. Native plumbing

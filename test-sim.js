@@ -605,11 +605,19 @@ function touchCoin(type, setup) {
         showPaint = false; showShipPicker = false;
         drawTitleScreen();
         r.rail = _leaderboardBtnRect === null && _challengeBtnRect === null;
+        // The apps have a native ads bridge; the row only exists with one.
+        window.webkit.messageHandlers.ads = { postMessage() {} };
+        shardsAdReady = false; showMissions = true; drawTitleScreen();
+        const a = _shardsAdBtnRect;
+        onDown({ clientX: a.x + a.w / 2, clientY: a.y + a.h / 2, pointerId: 1 });
+        r.shardsSheet = appOnlyKey; showMissions = false;
+        delete window.webkit.messageHandlers.ads;
         return r;
     })()`);
     check('in the app the PAINT pill opens the paint sheet, never the web "in the app" sheet',
         appOnly.paint === true && appOnly.sheet === null);
     check('in the app the rail shows no greyed web-only leaderboard/challenge icons', appOnly.rail);
+    check('in the app a tap on the shard-ad row never opens the web "in the app" sheet', appOnly.shardsSheet === null);
 
     // Every tab's grid has to stay inside the panel, whatever a catalogue grows to.
     const fits = g(`(() => {

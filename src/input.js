@@ -171,6 +171,8 @@ function onDown(e) {
         // once-per-day shard grant, constants.js SHARDS_AD_REWARD).
         if (showMissions) {
             if (_shardsAdBtnRect && inRect(cx, cy, _shardsAdBtnRect)) {
+                // Web without its own rewarded ad: the row reads "in the app", so explain.
+                if (shardsAdAppOnly()) { appOnlyKey = 'shards'; sfxUiTap(); return; }
                 if (shardsAdReady && !shardsAdClaimedToday) {
                     sfxUiTap();
                     shardsAdPending = true;

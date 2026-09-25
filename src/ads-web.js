@@ -43,6 +43,14 @@
 // silently no-ops exactly like a native ad that failed to load would -
 // death/continue/shards flows all keep working with no ads shown.
 
+// Web only: true while this build has no rewarded ad of its own (ad units still the
+// placeholder below). The Missions drawer's shard-ad row then reads "in the app" and opens
+// the app-only sheet instead of sitting dimmed with no explanation (draw.js / input.js).
+// Flips to false by itself once a real network code is filled in. Always false in the apps.
+function shardsAdAppOnly() {
+    return isWeb() && !window._tunlWebAdsLive;
+}
+
 if (isWeb()) {
 
 // ── Ad unit paths - REPLACE after creating them in Google Ad Manager ──
@@ -50,6 +58,7 @@ const ADS_WEB_NETWORK_CODE = 'REPLACE_WITH_NETWORK_CODE';
 const AD_UNIT_INTERSTITIAL      = `/${ADS_WEB_NETWORK_CODE}/tunl_web_interstitial`;
 const AD_UNIT_REWARDED_CONTINUE = `/${ADS_WEB_NETWORK_CODE}/tunl_web_rewarded_continue`;
 const AD_UNIT_REWARDED_SHARDS   = `/${ADS_WEB_NETWORK_CODE}/tunl_web_rewarded_shards`;
+window._tunlWebAdsLive = !ADS_WEB_NETWORK_CODE.startsWith('REPLACE');
 
 // ── Forced interstitial cadence (mirrors AdsManager.swift 1:1) ────────
 // Native persists this in UserDefaults/SharedPreferences; web has no

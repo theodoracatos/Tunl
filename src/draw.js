@@ -3972,7 +3972,9 @@ function drawTitleScreen() {
         // (constants.js SHARDS_AD_REWARD) -- "watch an ad" is itself one of the day's
         // things to do, so the badge reads N/4, not N/3. No ads bridge (the open
         // web build) -> no ad row -> the badge and the panel drop back to N/3.
-        const _hasAdRow     = !!window.webkit?.messageHandlers?.ads;
+        // Web without its own rewarded ad (shardsAdAppOnly, ads-web.js): the row still shows,
+        // as "in the app", but can never be done there, so it drops out of the count.
+        const _hasAdRow     = !!window.webkit?.messageHandlers?.ads && !shardsAdAppOnly();
         const missionSlots  = dailyMissionIdx.length + (_hasAdRow ? 1 : 0);
         const doneCount     = dailyMissionsClaimed.filter(Boolean).length + (_hasAdRow && shardsAdClaimedToday ? 1 : 0);
 
@@ -4070,7 +4072,8 @@ function drawTitleScreen() {
         // Bottom row: the once-per-day rewarded-ad shard bonus (constants.js
         // SHARDS_AD_REWARD). Unlike the 3 mission rows above it, this one is a button.
         const adRewStr  = `+${SHARDS_AD_REWARD} ⧫`;
-        const adLabel   = T.watchAdShards;
+        const _adAppOnly = shardsAdAppOnly();
+        const adLabel   = _adAppOnly ? T.watchAdShardsApp : T.watchAdShards;
         const adClaimed = shardsAdClaimedToday;
         const adReady   = shardsAdReady && !adClaimed;
         let mFsz = FS * 0.024;
@@ -4154,7 +4157,8 @@ function drawTitleScreen() {
         // ── Rewarded-ad shard bonus row ──────────────────────────────────
         // A button, not a passive tracker: tapped in input.js -> shardsAdRequest.
         // Dimmed when already claimed today or when native has no ad loaded.
-        // Skipped entirely on the open web build (no ads bridge -- _hasAdRow).
+        // Skipped where there is no ads bridge at all (_hasAdRow). Web without its own
+        // rewarded ad labels it "in the app" (_adAppOnly); input.js opens the app-only sheet.
         _shardsAdBtnRect = null;
         if (_hasAdRow) {
             rowY += dividerGap;
@@ -6095,15 +6099,15 @@ function _wrapLines(text, maxW) {
 
 // ── Web only: "in the app" sheet ─────────────────────────────────────
 // Opened from a greyed-out title control that only the apps can back (state.js
-// appOnlyKey): the Game Center / Play Games leaderboard, the Game Center challenge and
-// the Lackiererei. Says what the control is, that it lives in the app, and offers the
+// appOnlyKey): the Game Center / Play Games leaderboard, the Game Center challenge, the
+// Lackiererei and the Missions drawer's shard-ad row (while shardsAdAppOnly()). Says what the control is, that it lives in the app, and offers the
 // store. Same card language as the title's other panels (drawMenuPanel), content-sized
 // and scaled down until it clears a short desktop window, the method
 // drawWebContinuePromo documents. The challenge is iOS-only, so it offers the App Store
 // alone. Never drawn in either app: appOnlyKey is only ever set behind isWeb().
 function drawAppOnlySheet() {
     const key  = appOnlyKey;
-    const body = key === 'paint' ? T.appOnlyPaint : key === 'challenge' ? T.appOnlyChallenge : T.appOnlyBoard;
+    const body = { paint: T.appOnlyPaint, challenge: T.appOnlyChallenge, shards: T.appOnlyShards }[key] || T.appOnlyBoard;
     const iosOnly = key === 'challenge';
     const android = /Android/.test(navigator.userAgent);
     const day  = getTheme().wallBase;
@@ -6149,7 +6153,15 @@ function drawAppOnlySheet() {
     ctx.strokeStyle = DAY(0.45);
     ctx.lineWidth = 1.2;
     ctx.stroke();
-    if (key === 'paint') {
+    if (key === 'shards') {
+        // The shard glyph in the wallet's gold: the row pays shards, so the sheet shows one.
+        font(iconR * 0.95);
+        ctx.fillStyle   = 'rgba(255,225,110,0.95)';
+        ctx.shadowColor = 'rgba(255,205,60,0.55)';
+        ctx.shadowBlur  = 8;
+        ctx.fillText('⧫', icx, icy + iconR * 0.33);
+        ctx.shadowBlur  = 0;
+    } else if (key === 'paint') {
         // The player's own ship: the Lackiererei is about exactly this hull. Top-down, as
         // the hangar draws it.
         const [sr, sg, sb] = SKINS[activeSkin].shadow;
