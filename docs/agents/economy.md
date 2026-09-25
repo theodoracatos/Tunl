@@ -33,8 +33,8 @@ the forced interstitial, not a video the player actively taps):
   ALL SHIPS are drawn dimmed on web, and a tap opens the "in the app" sheet
   (`state.js appOnlyKey`, `draw.js drawAppOnlySheet`, strings `T.appOnly*`) with the store
   buttons - the challenge offers the App Store only (iOS-only) and is not shown to an
-  Android browser. **The Lackiererei is app-only**: web never opens the Paint sheet; a kit
-  a web player already owned still renders. `test-sim.js` guards the app side.
+  Android browser. **The Lackiererei is app-only**: web never opens the Paint sheet and
+  every ship flies FACTORY there (`paintOf()` returns 0 on web; saved kits stay untouched). `test-sim.js` guards the app side.
   The Missions drawer's shard-ad row works the same way while web has no rewarded ad of
   its own (`shardsAdAppOnly()` in `ads-web.js`, keyed to the `ADS_WEB_NETWORK_CODE`
   placeholder): label `T.watchAdShardsApp`, tap opens the sheet, and the rail badge counts

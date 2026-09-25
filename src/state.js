@@ -233,7 +233,11 @@ function paintPartOwned(slot, i) {
     return !!(paintOwned[_paintOwnKey(slot)] & (1 << i));
 }
 // The kit a ship flies, or 0 for plain FACTORY (callers treat any falsy value as factory).
+// Web: always FACTORY - the Lackiererei is app-only (docs/agents/economy.md), so no ship
+// flies a kit there, not even one bought on web before that. The saved kits and owned
+// parts are left untouched; every renderer (flight, hangar, share card) reads this.
 function paintOf(skin) {
+    if (isWeb()) return 0;
     const k = shipPaint[skin];
     if (!k) return 0;
     return k.c || k.p || k.m || k.fx ? k : 0;

@@ -601,7 +601,7 @@ function touchCoin(type, setup) {
         drawTitleScreen();
         const b = _paintBtnRect;
         onDown({ clientX: b.x + b.w / 2, clientY: b.y + b.h / 2, pointerId: 1 });
-        const r = { paint: showPaint, sheet: appOnlyKey };
+        const r = { paint: showPaint, sheet: appOnlyKey, worn: !!paintOf(0) };
         showPaint = false; showShipPicker = false;
         drawTitleScreen();
         r.rail = _leaderboardBtnRect === null && _challengeBtnRect === null;
@@ -616,6 +616,7 @@ function touchCoin(type, setup) {
     })()`);
     check('in the app the PAINT pill opens the paint sheet, never the web "in the app" sheet',
         appOnly.paint === true && appOnly.sheet === null);
+    check('in the app a ship flies the kit it wears (web alone forces FACTORY)', appOnly.worn);
     check('in the app the rail shows no greyed web-only leaderboard/challenge icons', appOnly.rail);
     check('in the app a tap on the shard-ad row never opens the web "in the app" sheet', appOnly.shardsSheet === null);
 
