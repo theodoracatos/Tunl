@@ -124,7 +124,6 @@
  "0242984": "Chaque stalactite et stalagmite est désormais un amas de prismes de cristal dressés au lieu du cône lisse que la grotte affichait depuis la version 1.0, avec un minéral propre à chacun des sept mondes du jour - calcite, quartz rouillé, sélénite, obsidienne, améthyste, olivine, rhodonite. La zone de collision est inchangée : même triangle, même taille, même équité.",
  "0162342": "Quand tu en brises une, elle sonne et se comporte désormais comme du verre, pas comme du gravier - que tu la détruises d'un tir, la traverses avec un bouclier ou en meures.",
  "3cb017b": "Une stalactite qui tombe laisse désormais son socle de roche au plafond quand elle se détache, et se plante pointe la première dans le sol, comme si elle avait vraiment percuté quelque chose.",
- "33b3a21": "Changelog &middot; mis à jour le 24 septembre 2026 &middot; la version actuelle est la 17.2",
  "d91f291": "17.2 : Une vraie entrée",
  "794a775": "Le vol d'approche au-dessus de la ville prend vie : les fenêtres s'allument partout sur la skyline au décollage, et des traînées d'air filent à mesure que la montagne se rapproche.",
  "83f4d09": "La lèvre de roche à l'entrée du tunnel capte les dernières lueurs du crépuscule et plonge dans le noir par paliers quand tu entres. La grotte elle-même reste aussi sombre qu'avant.",
@@ -138,5 +137,9 @@
  "2232fad": "Une nouvelle silhouette en vol : des ailes en flèche façon F-14 qui se replient complètement pour un warp et se déploient complètement pour une pièce bleue, revenant entre les deux à leur angle de croisière.",
  "a42ef98": "Un contact avec la paroi coûte maintenant d'abord un bouclier, avant d'atteindre la coque. La coque, c'est le vaisseau : elle ne s'éraille que lorsque plus rien ne la protège.",
  "a30ed03": "Une coque éraflée le montre : des entailles sur le fuselage et un filet de fumée, tous deux disparaissent dès qu'un bouclier te couvre à nouveau.",
- "9bd11ab": "Un crash sonne maintenant comme un crash, plus comme un ballon qui éclate."
+ "9bd11ab": "Un crash sonne maintenant comme un crash, plus comme un ballon qui éclate.",
+ "bd387b3": "Changelog &middot; mis à jour le 25 septembre 2026 &middot; la version actuelle est la 17.3",
+ "1bd9303": "17.3: Vis dangereusement",
+ "980ce04": "Les frôlements rapportent maintenant. Frôle un cristal, une mine, un rocher ou un obus de canon, ressors indemne, et tu marques des points bonus. Des frôlements rapprochés forment une chaîne qui les multiplie. Racler une paroi ne compte jamais, et un coup encaissé par ton bouclier ne rapporte rien.",
+ "00d355c": "La musique monte avec une partie profonde : après les premiers secteurs, elle gagne un cran à chaque nouveau, en douceur, sans que tu entendes de saut."
 }

@@ -124,7 +124,6 @@
  "0242984": "Jeder Stalaktit und Stalagmit ist jetzt ein Büschel aufrecht stehender Kristallprismen statt des glatten Kegels, den die Höhle seit Version 1.0 hatte, mit einem eigenen Mineral für jede der sieben Tageswelten - Kalzit, Rostquarz, Selenit, Obsidian, Amethyst, Olivin, Rhodonit. Die Trefferfläche ist unangetastet: gleiches Dreieck, gleiche Größe, gleiche Fairness.",
  "0162342": "Zerbrichst du einen, klingt und wirkt es jetzt wie Glas, nicht wie Geröll - egal ob du ihn abschießt, mit einem Schild durchfliegst oder daran stirbst.",
  "3cb017b": "Ein fallender Stalaktit lässt jetzt seinen Felssockel an der Decke zurück, wenn er sich löst, und landet mit der Spitze voran im Boden, als hätte er wirklich eingeschlagen.",
- "33b3a21": "Changelog &middot; aktualisiert am 24. September 2026 &middot; die aktuelle Version ist 17.2",
  "d91f291": "17.2: Ein richtiger Einflug",
  "794a775": "Der Anflug über die Stadt lebt jetzt: Beim Start gehen überall in der Skyline die Fenster an, und Luftstreifen rauschen vorbei, während der Berg näher kommt.",
  "83f4d09": "Die Felslippe am Tunneleingang fängt das letzte Dämmerlicht ein und wird beim Einflug Stufe für Stufe dunkel. Die Höhle selbst bleibt so dunkel wie bisher.",
@@ -138,5 +137,9 @@
  "2232fad": "Eine neue Silhouette im Flug: gepfeilte Flügel im F-14-Stil, die sich bei einem Warp ganz zurückfalten und bei einer blauen Münze ganz nach vorn schwingen, dazwischen pendeln sie zurück in die Reiseposition.",
  "a42ef98": "Ein Wandkontakt kostet jetzt zuerst ein Schild, bevor er die Hülle erreicht. Die Hülle ist das Schiff: Sie bekommt erst einen Kratzer, wenn nichts mehr schützt.",
  "a30ed03": "Eine verkratzte Hülle zeigt es auch: mit Riefen am Rumpf und einer Rauchspur, beide verschwinden, sobald dich wieder ein Schild schützt.",
- "9bd11ab": "Ein Absturz klingt jetzt wie ein Absturz, nicht wie ein platzender Luftballon."
+ "9bd11ab": "Ein Absturz klingt jetzt wie ein Absturz, nicht wie ein platzender Luftballon.",
+ "bd387b3": "Changelog &middot; aktualisiert am 25. September 2026 &middot; die aktuelle Version ist 17.3",
+ "1bd9303": "17.3: Leb gefährlich",
+ "980ce04": "Knappe Manöver zahlen sich jetzt aus. Flieg dicht an einem Kristall, einer Mine, einem Felsbrocken oder einem Kanonenschuss vorbei, komm heil raus, und du bekommst Bonuspunkte. Knappe Manöver kurz hintereinander bauen eine Kette auf, die sie multipliziert. Ein Streifen an der Wand zählt nie, und ein Treffer, den dein Schild abfängt, bringt nichts.",
+ "00d355c": "Die Musik wächst mit einem tiefen Lauf: Nach den ersten Sektoren legt sie mit jedem neuen eine Stufe zu, gleitend, sodass du nie einen Sprung hörst."
 }

@@ -124,7 +124,6 @@
  "0242984": "Cada estalactita y estalagmita es ahora un racimo de prismas de cristal erguidos en lugar del cono liso que la cueva tenía desde la versión 1.0, con un mineral distinto para cada uno de los siete mundos del día - calcita, cuarzo oxidado, selenita, obsidiana, amatista, olivino, rodonita. El área de colisión no cambia: mismo triángulo, mismo tamaño, misma equidad.",
  "0162342": "Al romper una, ahora suena y se comporta como vidrio, no como grava - ya sea que la destruyas de un disparo, la atravieses con un escudo o mueras con ella.",
  "3cb017b": "Una estalactita que cae ahora deja su base de roca en el techo al desprenderse, y aterriza con la punta por delante, clavada en el suelo como si de verdad hubiera impactado algo.",
- "33b3a21": "Registro de cambios &middot; actualizado el 24 de septiembre de 2026 &middot; la versión actual es la 17.2",
  "d91f291": "17.2: Una entrada como es debido",
  "794a775": "El vuelo de aproximación sobre la ciudad cobra vida: al despegar se encienden las ventanas por todo el skyline, y estelas de aire pasan zumbando mientras la montaña se acerca.",
  "83f4d09": "El borde de roca en la boca del túnel atrapa la última luz del anochecer y se apaga por escalones cuando entras. La cueva sigue igual de oscura que antes.",
@@ -138,5 +137,9 @@
  "2232fad": "Una nueva silueta en vuelo: alas en flecha estilo F-14 que se repliegan del todo en un warp y se abren del todo con una moneda azul, volviendo entre medias a su ángulo de crucero.",
  "a42ef98": "Un choque con la pared ahora gasta primero un escudo, antes de llegar al casco. El casco es la nave: solo se raya cuando ya no queda nada que lo proteja.",
  "a30ed03": "Un casco rayado lo muestra: surcos en el fuselaje y una estela de humo, ambos desaparecen en cuanto un escudo vuelve a cubrirte.",
- "9bd11ab": "Un choque ahora suena como un choque, no como un globo al reventar."
+ "9bd11ab": "Un choque ahora suena como un choque, no como un globo al reventar.",
+ "bd387b3": "Registro de cambios &middot; actualizado el 25 de septiembre de 2026 &middot; la versión actual es la 17.3",
+ "1bd9303": "17.3: Vive al límite",
+ "980ce04": "Los roces ahora tienen premio. Pasa rozando un cristal, una mina, una roca o un disparo de cañón, sal ileso y ganas puntos extra. Varios roces seguidos forman una cadena que los multiplica. Rozar la pared nunca cuenta, y un golpe que absorbe tu escudo no da nada.",
+ "00d355c": "La música crece con una partida larga: pasados los primeros sectores sube un escalón con cada uno nuevo, de forma gradual, para que nunca notes un salto."
 }

@@ -124,7 +124,6 @@
  "0242984": "Każdy stalaktyt i stalagmit to teraz skupisko stojących pionowo kryształowych pryzmatów zamiast gładkiego stożka, jaki jaskinia miała od wersji 1.0, z osobnym minerałem dla każdego z siedmiu codziennych światów - kalcyt, zardzewiały kwarc, selenit, obsydian, ametyst, oliwin, rodonit. Obszar kolizji się nie zmienił: ten sam trójkąt, ten sam rozmiar, ta sama sprawiedliwość.",
  "0162342": "Gdy go rozbijesz, teraz brzmi i wygląda jak szkło, a nie żwir - niezależnie czy go zestrzelisz, przelecisz przez niego z tarczą, czy na nim zginiesz.",
  "3cb017b": "Spadający stalaktyt zostawia teraz swoje skalne gniazdo na suficie, gdy się odrywa, i ląduje czubkiem w dół, wbity w podłogę, jakby naprawdę w coś uderzył.",
- "33b3a21": "Lista zmian &middot; zaktualizowana 24 września 2026 &middot; obecna wersja to 17.2",
  "d91f291": "17.2: Porządny wlot",
  "794a775": "Przelot nad miastem ożył: przy starcie w całej panoramie zapalają się okna, a gdy góra się zbliża, obok przemykają smugi powietrza.",
  "83f4d09": "Skalna krawędź u wlotu tunelu łapie ostatnie światło zmierzchu i stopniowo gaśnie, gdy wlatujesz. Sama jaskinia pozostaje tak ciemna jak dotąd.",
@@ -138,5 +137,9 @@
  "2232fad": "Nowa sylwetka w locie: skośne skrzydła w stylu F-14, które składają się całkowicie przy warpie i rozkładają całkowicie przy niebieskiej monecie, wracając między tym do kąta przelotowego.",
  "a42ef98": "Kontakt ze ścianą zużywa teraz najpierw tarczę, zanim dotrze do kadłuba. Kadłub to sam statek: rysuje się dopiero, gdy nic go już nie chroni.",
  "a30ed03": "Porysowany kadłub to pokazuje: wgniecenia na kadłubie i smuga dymu, oba znikają, gdy tylko tarcza znów cię osłania.",
- "9bd11ab": "Dźwięk rozbicia brzmi teraz jak rozbicie, a nie jak pękający balonik."
+ "9bd11ab": "Dźwięk rozbicia brzmi teraz jak rozbicie, a nie jak pękający balonik.",
+ "bd387b3": "Lista zmian &middot; zaktualizowana 25 września 2026 &middot; obecna wersja to 17.3",
+ "1bd9303": "17.3: Żyj niebezpiecznie",
+ "980ce04": "Otarcia teraz się opłacają. Przemknij tuż obok kryształu, miny, głazu albo pocisku z działa, wyjdź bez szwanku, a dostaniesz punkty bonusowe. Otarcia jedno po drugim budują łańcuch, który je mnoży. Otarcie o ścianę nigdy się nie liczy, a trafienie, które przyjęła osłona, nic nie daje.",
+ "00d355c": "Muzyka rośnie razem z długim lotem: po pierwszych sektorach z każdym nowym podnosi się o stopień, płynnie, więc nigdy nie słychać skoku."
 }

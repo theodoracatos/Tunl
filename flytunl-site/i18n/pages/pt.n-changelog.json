@@ -124,7 +124,6 @@
  "0242984": "Cada estalactite e estalagmite agora é um aglomerado de prismas de cristal eretos no lugar do cone liso que a caverna tinha desde a versão 1.0, com um mineral próprio para cada um dos sete mundos do dia - calcita, quartzo enferrujado, selenita, obsidiana, ametista, olivina, rodonita. A área de colisão não muda: mesmo triângulo, mesmo tamanho, mesma equidade.",
  "0162342": "Ao quebrar uma, agora ela soa e se comporta como vidro, não como cascalho - seja ao atirar nela, atravessá-la com um escudo ou morrer nela.",
  "3cb017b": "Uma estalactite que cai agora deixa sua base de rocha no teto ao se soltar, e pousa com a ponta primeiro, cravada no chão como se realmente tivesse atingido algo.",
- "33b3a21": "Changelog &middot; atualizado em 24 de setembro de 2026 &middot; a versão atual é a 17.2",
  "d91f291": "17.2: Uma entrada de verdade",
  "794a775": "O voo de aproximação sobre a cidade ganhou vida: na decolagem as janelas se acendem por todo o horizonte, e rastros de ar passam zunindo enquanto a montanha se aproxima.",
  "83f4d09": "A borda de rocha na boca do túnel pega a última luz do entardecer e escurece em degraus quando você entra. A caverna continua tão escura quanto antes.",
@@ -138,5 +137,9 @@
  "2232fad": "Uma nova silhueta em voo: asas em flecha estilo F-14 que se recolhem totalmente em um warp e se abrem totalmente com uma moeda azul, voltando no meio ao ângulo de cruzeiro.",
  "a42ef98": "Um contato com a parede agora gasta primeiro um escudo, antes de atingir o casco. O casco é a nave: só arranha quando nada mais o protege.",
  "a30ed03": "Um casco arranhado mostra isso: marcas na fuselagem e um rastro de fumaça, ambos somem assim que um escudo volta a te cobrir.",
- "9bd11ab": "Uma batida agora soa como uma batida, não como um balão estourando."
+ "9bd11ab": "Uma batida agora soa como uma batida, não como um balão estourando.",
+ "bd387b3": "Changelog &middot; atualizado em 25 de setembro de 2026 &middot; a versão atual é a 17.3",
+ "1bd9303": "17.3: Viva perigosamente",
+ "980ce04": "Os raspões agora valem pontos. Passe raspando por um cristal, uma mina, uma rocha ou um tiro de canhão, saia inteiro e ganhe pontos bônus. Raspões em sequência rápida formam uma corrente que os multiplica. Raspar na parede nunca conta, e um golpe que o seu escudo absorve não vale nada.",
+ "00d355c": "A música cresce com uma partida longa: depois dos primeiros setores ela sobe um degrau a cada novo, de forma suave, para você nunca ouvir um salto."
 }

@@ -124,7 +124,6 @@
  "0242984": "Ogni stalattite e stalagmite è ora un ammasso di prismi di cristallo eretti al posto del cono liscio che la grotta aveva dalla versione 1.0, con un minerale diverso per ciascuno dei sette mondi del giorno - calcite, quarzo ruggine, selenite, ossidiana, ametista, olivina, rodonite. L'area di collisione è invariata: stesso triangolo, stessa dimensione, stessa equità.",
  "0162342": "Quando ne rompi una, ora suona e si comporta come vetro, non come ghiaia - che tu la colpisca con un proiettile, la attraversi con uno scudo o ci muoia sopra.",
  "3cb017b": "Una stalattite che cade ora lascia il suo zoccolo di roccia sul soffitto quando si stacca, e atterra con la punta in avanti, conficcata nel pavimento come se avesse davvero colpito qualcosa.",
- "33b3a21": "Changelog &middot; aggiornato il 24 settembre 2026 &middot; la versione attuale è la 17.2",
  "d91f291": "17.2: Un vero ingresso",
  "794a775": "Il volo di avvicinamento sopra la città ora è vivo: al decollo le finestre si accendono in tutto lo skyline, e scie d'aria sfrecciano via mentre la montagna si avvicina.",
  "83f4d09": "Il bordo di roccia all'imbocco del tunnel cattura l'ultima luce del tramonto e si spegne a gradini mentre entri. La grotta resta buia come prima.",
@@ -138,5 +137,9 @@
  "2232fad": "Una nuova silhouette in volo: ali a freccia in stile F-14 che si ripiegano del tutto per un warp e si aprono del tutto per una moneta blu, tornando nel mezzo all'angolo di crociera.",
  "a42ef98": "Un contatto con la parete ora consuma prima uno scudo, prima di raggiungere lo scafo. Lo scafo è la nave: si graffia solo quando nulla lo protegge più.",
  "a30ed03": "Uno scafo graffiato lo mostra: solchi sulla fusoliera e una scia di fumo, entrambi spariscono non appena uno scudo torna a coprirti.",
- "9bd11ab": "Uno schianto ora suona come uno schianto, non come un palloncino che scoppia."
+ "9bd11ab": "Uno schianto ora suona come uno schianto, non come un palloncino che scoppia.",
+ "bd387b3": "Changelog &middot; aggiornato il 25 settembre 2026 &middot; la versione attuale è la 17.3",
+ "1bd9303": "17.3: Vivi pericolosamente",
+ "980ce04": "I passaggi al limite ora pagano. Sfiora un cristallo, una mina, un masso o un colpo di cannone, esci indenne e guadagni punti bonus. Passaggi al limite ravvicinati formano una catena che li moltiplica. Strisciare contro la parete non conta mai, e un colpo assorbito dallo scudo non paga nulla.",
+ "00d355c": "La musica cresce con una partita profonda: dopo i primi settori sale di un gradino a ogni nuovo settore, in modo graduale, così non senti mai uno stacco."
 }
