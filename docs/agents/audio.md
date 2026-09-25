@@ -106,14 +106,12 @@ a "Knallfrosch" twice. Method, metrics and traps: `reference_audio_method` memor
   `MUSIC_SECTOR_FROM` in `audio.js`): the play chain is gain -> `_bgmLift` -> `_bgmShelf`
   -> lowpass. From `MUSIC_SECTOR_FROM` each sector adds a small lift + presence shelf up to
   `MUSIC_SECTOR_FULL` (measured +1.1 LUFS, +1.4 dB phone band at full; pickups stay ~7 dB
-  above the bed). Every sector boundary from S2 gets a **build** (`bgmSectorBuild`,
-  started by `update.js` `MUSIC_BUILD_SEC` ahead at the current speed): the lowpass closes to
-  `MUSIC_BUILD_HZ` by 60% of the build (-12.5 dB above 1.5 kHz; 1400 Hz measured only -4)
-  under a quiet noise riser (loudest-50ms -28.7 dB, 7 dB under a coin), and the boundary
-  (`bgmSetSector`) snaps it open. **No tonal hit on the drop**; `playbackRate`, `musicDuck`
-  and the level settings are untouched; death cuts a build in flight; `startPlay` resets to
-  sector 0. `test-sim.js` checks the build lead and the drop per boundary. Not ear-checked
-  on a device.
+  above the bed), gliding over `MUSIC_SECTOR_GLIDE`, so no boundary is heard as an event.
+  **No per-boundary gesture.** The build-and-drop (lowpass dip + noise riser before every
+  boundary) was removed 2026-09-25 on the user's call ("stoert"): a boundary comes every
+  `SECTOR_SEC`, so it pumped the music every few seconds, off the beat, and the closing
+  filter read like the death sweep. `test-sim.js` checks one step per boundary and that
+  `bgmSectorBuild` stays gone.
 
 Still open, deliberately: wall-proximity audio and the title sonar pulse. Review proposals and the user's picks:
 https://claude.ai/artifact/6KC3aJhYAAfthzVXtX5oAa

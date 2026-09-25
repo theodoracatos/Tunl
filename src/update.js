@@ -465,9 +465,7 @@ function update(dt) {
         if (sec > lastSectorShown) {
             lastSectorShown = sec;
             pushNotif(PX + PR * 3, py - H * 0.12, 1.6, `${T.sector} ${sec}`, [170, 150, 255]);
-            bgmSetSector(sec);   // the drop: audio.js "Music follows the flight plan"
-        } else if (sec >= 1 && sectorStartWx(sec + 1) - (scrollX + PX) < spd * MUSIC_BUILD_SEC) {
-            bgmSectorBuild(sec + 1);
+            bgmSetSector(sec);   // intensity step: audio.js "Music follows the flight plan"
         }
     }
 

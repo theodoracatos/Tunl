@@ -1935,3 +1935,14 @@ runs end) and a build-and-drop at every boundary. Measured offline, not ear-chec
 the first riser level (0.05) sat 8 dB under the bed in the phone band and the first
 lowpass target (1400 Hz, ramped over the whole build) dipped the highs by only 4 dB, so
 both were raised (0.12, 900 Hz reached at 60% of the build).
+
+## Sector build-and-drop removed (2026-09-25)
+
+The 2026-09-24 S1 pass gave every sector boundary from S2 a build: `MUSIC_BUILD_SEC` ahead
+the play lowpass closed to 900 Hz under a bandpassed noise riser, and the boundary snapped
+it open. The user found it disturbing ("stoert"). The cause was the cadence rather than
+the level: `SECTOR_SEC` puts a boundary every few seconds, so the music was muffled and
+hissed at over and over, not on the track's beat, and a closing lowpass is also the death
+sweep's gesture. Removed entirely; the per-sector intensity lift (gliding, no event)
+stays. Rejected for now: a beat-quantized stinger (any per-boundary sound at this cadence
+turns into a metronome).

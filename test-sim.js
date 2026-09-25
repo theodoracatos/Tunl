@@ -840,37 +840,33 @@ function grazePass(mines, frames = 90, setup = '') {
     check('a shield-absorbed hit pays no graze on the way out', hit.pts === 0 && hit.n === 0 && hit.shieldCount === 0);
 }
 
-// ── Music follows the flight plan (audio.js bgmSetSector / bgmSectorBuild) ───
-// Catches: the build firing late, twice or never, the drop landing off the sector
-// boundary, or a run not resetting the track to sector 0. Real startPlay()/update(); only
-// the two audio hooks are replaced by recorders.
+// ── Music follows the flight plan (audio.js bgmSetSector) ───────────────────
+// Catches: a sector step firing twice, never or off the boundary, a run not resetting the
+// track to sector 0, or a per-boundary build-and-drop coming back (removed 2026-09-25).
+// Real startPlay()/update(); only the audio hook is replaced by a recorder.
 {
     const g = boot();
     g(AUTOPILOT);
-    g(`_musRec = []; _simT = 0;
-       bgmSetSector  = (k, now) => { _musRec.push({ ev: 'sector', k, now: !!now, t: _simT }); };
-       bgmSectorBuild = k => { _musRec.push({ ev: 'build', k, t: _simT }); };`);
+    g(`_musRec = [];
+       bgmSetSector = (k, now) => { _musRec.push({ k, now: !!now, wx: scrollX + PX }); };`);
     g('startPlay()');
     const r = g(`(() => {
         const endWx = sectorStartWx(5) + 200;
         for (let i = 0; i < 60 * 120 && (scrollX + PX < endWx || approachLeft > 0); i++) {
-            // No coins or rings: a blue coin or a warp mid-build changes the speed the lead
-            // was predicted at (the build then just holds until the boundary, by design).
-            coins = []; chicaneCoins = []; portals = [];
-            shieldCount = 9; hullScratches = HULL_SCRATCHES; _pilot(); _simT += 1 / 60; update(1 / 60);
+            shieldCount = 9; hullScratches = HULL_SCRATCHES; _pilot(); update(1 / 60);
         }
-        return { rec: _musRec, buildSec: MUSIC_BUILD_SEC };
+        return { rec: _musRec, starts: [2, 3, 4, 5].map(sectorStartWx), step: scrollSpd(scrollX) / 60 * 3,
+                 build: typeof bgmSectorBuild, buildSec: typeof MUSIC_BUILD_SEC };
     })()`);
     const first = r.rec[0];
-    check('startPlay resets the music to sector 0 at once', first && first.ev === 'sector' && first.k === 0 && first.now);
-    const leads = [2, 3, 4, 5].map(k => {
-        const b = r.rec.filter(e => e.ev === 'build' && e.k === k), s = r.rec.filter(e => e.ev === 'sector' && e.k === k);
-        // update() re-asks every frame inside the window; bgmSectorBuild itself ignores repeats.
-        return b.length && s.length === 1 && b.every(e => e.t < s[0].t) ? s[0].t - b[0].t : NaN;
+    check('startPlay resets the music to sector 0 at once', first && first.k === 0 && first.now);
+    const hits = [2, 3, 4, 5].map((k, i) => {
+        const e = r.rec.filter(x => x.k === k);
+        return e.length === 1 && !e[0].now && e[0].wx >= r.starts[i] && e[0].wx - r.starts[i] < r.step;
     });
-    check(`every sector from 2 starts its build ${r.buildSec}s ahead and drops once, on the boundary (${
-        leads.map(l => l.toFixed(3) + 's').join(', ')})`,
-        leads.every(l => Math.abs(l - r.buildSec) <= 2 / 60));
+    check('every sector from 2 steps the music once, on its boundary', hits.every(Boolean));
+    check('no per-boundary build-and-drop (lowpass dip + riser) is back',
+        r.build === 'undefined' && r.buildSec === 'undefined');
 }
 
 if (failed) { console.log(`\n${failed} check(s) failed.`); process.exit(1); }

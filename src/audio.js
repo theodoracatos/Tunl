@@ -26,7 +26,7 @@ let _wNode = null, _wGain = null, _wOsc = null;
 // letting the tail ring on into sfxDie (see sfxBulletFireStop below).
 let _bfVoices = [];
 let _bgmBuf = null, _bgmNode = null, _bgmGain = null, _bgmFlt = null;
-let _bgmLift = null, _bgmShelf = null, _riserNode = null, _riserGain = null;  // sector intensity (bgmSetSector)
+let _bgmLift = null, _bgmShelf = null;  // sector intensity (bgmSetSector)
 let _bgmOutroBuf = null, _outroNode = null, _outroGain = null;  // the track's own ending, played on death
 let _bgmLoading = false, _titleBgmLoading = false; // in-flight guards for the lazy loaders
 let _bgmActive = false, _bgmPending = false;
@@ -204,28 +204,26 @@ function _bgmOpenFilter() {
 }
 
 // ── Music follows the flight plan (2026-09-24, sound review S1) ─────────────
-// The Nebula loop is one stereo file, so the track cannot grow stems per sector. Two
-// things it can do, both on the play-music chain only (gain -> lift -> shelf -> lowpass):
-// 1. Intensity: from MUSIC_SECTOR_FROM the track steps up a notch per sector, a small
-//    level lift plus a presence shelf, reaching MUSIC_SECTOR_LIFT_DB / _SHELF_DB at
-//    MUSIC_SECTOR_FULL. Below MUSIC_SECTOR_FROM it is the track exactly as before, so a
-//    typical run (sectors 1-3) sounds as it always did and only deeper runs build.
-// 2. Build and drop at every sector boundary from sector 2 (the same boundaries that show
-//    "SECTOR n"): over the last MUSIC_BUILD_SEC before the boundary the lowpass closes
-//    toward MUSIC_BUILD_HZ under a quiet rising noise sweep, and the boundary itself
-//    snaps the filter open. No tonal hit on the drop - the notif is the event.
+// The Nebula loop is one stereo file, so the track cannot grow stems per sector. From
+// MUSIC_SECTOR_FROM the track steps up a notch per sector, a small level lift plus a
+// presence shelf on the play-music chain (gain -> lift -> shelf -> lowpass), reaching
+// MUSIC_SECTOR_LIFT_DB / _SHELF_DB at MUSIC_SECTOR_FULL. Below MUSIC_SECTOR_FROM it is
+// the track exactly as before, so a typical run (sectors 1-3) sounds as it always did
+// and only deeper runs build. Each step glides (MUSIC_SECTOR_GLIDE), so no boundary is
+// heard as an event: the "SECTOR n" notif is the event.
+// No build-and-drop at the boundary (removed 2026-09-25 on the user's call, "stoert"):
+// a boundary comes every SECTOR_SEC, so a lowpass dip + noise riser there pumped the
+// music every few seconds, off the beat, and its closing filter read like the death
+// sweep. Don't re-add a per-boundary gesture.
 // playbackRate stays untouched (bgmSetSlow / bgmSetWarp own it), and nothing here rides
-// _musicBus.gain (musicDuck) or _musicLvl (settings). Death cancels a build in flight.
+// _musicBus.gain (musicDuck) or _musicLvl (settings).
 const MUSIC_SECTOR_FROM     = 3;     // first sector above the unchanged track
 const MUSIC_SECTOR_FULL     = 10;    // sector at which the build reaches its maximum
 const MUSIC_SECTOR_LIFT_DB  = 1.0;
 const MUSIC_SECTOR_SHELF_DB = 3.0;
 const MUSIC_SECTOR_SHELF_HZ = 2800;
 const MUSIC_SECTOR_GLIDE    = 1.2;   // time constant of the per-sector step (s)
-const MUSIC_BUILD_SEC       = 0.857; // half a bar at 140 BPM
-const MUSIC_BUILD_HZ        = 900;   // 1400 measured only -4 dB above 1.5 kHz
-const MUSIC_RISER_LEVEL     = 0.12;  // 0.05 measured -36 dB, 8 dB under the bed on a phone: inaudible
-let _bgmSectorK = 0, _bgmBuildK = -1;
+let _bgmSectorK = 0;
 
 function _sectorIntensity(k) {
     return Math.min(1, Math.max(0, (k - MUSIC_SECTOR_FROM + 1) / (MUSIC_SECTOR_FULL - MUSIC_SECTOR_FROM + 1)));
@@ -244,60 +242,9 @@ function _applySectorIntensity(now) {
 }
 
 // A new sector began (update.js, the "SECTOR n" notif) or a run starts (k = 0, `now`).
-// Drops a build in flight: the lowpass snaps open and the riser is cut.
 function bgmSetSector(k, now) {
     _bgmSectorK = k;
     _applySectorIntensity(now);
-    if (_bgmBuildK >= 0) {
-        _bgmBuildK = -1;
-        _stopRiser(0.04);
-        if (_ac && _bgmFlt && _bgmActive) {
-            const t = _ac.currentTime;
-            _bgmFlt.frequency.cancelScheduledValues(t);
-            _bgmFlt.frequency.setValueAtTime(_bgmFlt.frequency.value, t);
-            _bgmFlt.frequency.exponentialRampToValueAtTime(20000, t + 0.06);
-        }
-    }
-}
-
-// The run is MUSIC_BUILD_SEC (at the current speed) short of sector k's boundary.
-function bgmSectorBuild(k) {
-    if (_bgmBuildK === k || !_ac || !_bgmFlt || !_bgmActive || !_bgmNode || !musicOn) return;
-    _bgmBuildK = k;
-    const t = _ac.currentTime;
-    _bgmFlt.frequency.cancelScheduledValues(t);
-    _bgmFlt.frequency.setValueAtTime(_bgmFlt.frequency.value, t);
-    // Closed by 60% of the build and held: ramping over the whole build reached
-    // MUSIC_BUILD_HZ only on the drop's own frame, so the dip was never heard.
-    _bgmFlt.frequency.exponentialRampToValueAtTime(MUSIC_BUILD_HZ, t + MUSIC_BUILD_SEC * 0.6);
-    // Riser: noise through a bandpass sweeping up, swelling in. It holds its last value if
-    // the boundary comes late (slow time) and is cut by bgmSetSector on arrival.
-    _stopRiser(0.02);
-    const dur = MUSIC_BUILD_SEC * 3;
-    const src = _ac.createBufferSource(); src.buffer = _noiseBuf(dur);
-    const bp  = _ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.4;
-    bp.frequency.setValueAtTime(500, t);
-    bp.frequency.exponentialRampToValueAtTime(4200, t + MUSIC_BUILD_SEC);
-    const g = _ac.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(MUSIC_RISER_LEVEL, t + MUSIC_BUILD_SEC);
-    src.connect(bp); bp.connect(g); g.connect(_musicBus);
-    src.start(t); src.stop(t + dur);
-    _riserNode = src; _riserGain = g;
-    src.onended = () => { try { g.disconnect(); } catch (e) {} if (_riserNode === src) { _riserNode = null; _riserGain = null; } };
-}
-
-function _stopRiser(fade) {
-    if (!_riserNode || !_ac) return;
-    const n = _riserNode, g = _riserGain;
-    _riserNode = null; _riserGain = null;
-    try {
-        const t = _ac.currentTime;
-        g.gain.cancelScheduledValues(t);
-        g.gain.setValueAtTime(Math.max(g.gain.value, 0.0001), t);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + fade);
-        n.stop(t + fade + 0.02);
-    } catch (e) {}
 }
 
 // Death (update.js die()). Used to be a 50ms ramp to silence - the music simply stopped,
@@ -312,8 +259,6 @@ const DEATH_MUSIC_HZ  = 300;
 function _fadeBgMusic() {
     _bgmActive = false;
     _bgmPending = false;
-    _stopRiser(0.05);
-    _bgmBuildK = -1;
     let faded = false;
     if (_bgmGain && _bgmNode) {
         faded = true;
@@ -681,7 +626,7 @@ function _reviveAudioContext() {
     _bgmPending = _bgmActive;
     _titleBgmPending = _titleBgmActive;
     _ac = null; _master = null; _musicBus = null; _outGain = null; _limiter = null; _musicLvl = null; _fxLvl = null;
-    _bgmLift = null; _bgmShelf = null; _riserNode = null; _riserGain = null;
+    _bgmLift = null; _bgmShelf = null;
     _bgmFlt = null; _titleBgmFlt = null; _bgmBuf = null; _bgmOutroBuf = null; _outroNode = null; _outroGain = null; _bgmNode = null; _bgmGain = null;
     _titleBgmBuf = null; _titleBgmNode = null; _titleBgmGain = null;
     // Any decode still in flight belongs to the context just closed and will drop itself
