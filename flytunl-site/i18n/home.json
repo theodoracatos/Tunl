@@ -990,6 +990,24 @@
     "hi": "गोपनीयता नीति",
     "el": "Πολιτική απορρήτου"
   },
+  "footer.imprint": {
+    "en": "Legal notice",
+    "de": "Impressum",
+    "fr": "Mentions légales",
+    "it": "Note legali",
+    "es": "Aviso legal",
+    "pt": "Aviso legal",
+    "ja": "運営者情報",
+    "ko": "법적 고지",
+    "zh": "法律聲明",
+    "ru": "Правовая информация",
+    "ar": "إشعار قانوني",
+    "tr": "Yasal bilgiler",
+    "id": "Informasi hukum",
+    "pl": "Nota prawna",
+    "hi": "कानूनी सूचना",
+    "el": "Νομική σημείωση"
+  },
   "footer.press": {
     "en": "Press",
     "de": "Presse",

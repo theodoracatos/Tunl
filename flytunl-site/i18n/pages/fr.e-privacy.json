@@ -1,6 +1,5 @@
 {
  "65260c0": "TUNL - Politique de confidentialité",
- "76826f2": "Dernière mise à jour : 20 septembre 2026",
  "08c8703": "TUNL est un jeu d'arcade simple fait par un développeur indépendant solo, Theodoracatos. Cette politique couvre les applis TUNL pour iOS et Android et le site flytunl.ch, y compris la version jouable dans le navigateur sur flytunl.ch/play. Elle explique quelles données TUNL et ses services tiers collectent, et pourquoi.",
  "1373286": "Données collectées directement par TUNL",
  "dff6b66": "TUNL n'a pas de comptes. Il stocke ta progression, tes meilleurs scores, les vaisseaux débloqués et tes réglages localement sur ton appareil. Dans la version navigateur, c'est le stockage local de ton navigateur, et effacer les données du site les supprime. Au-delà des services d'analyse et de publicité décrits ci-dessous, deux fonctionnalités optionnelles - le classement mondial quotidien sur le web ouvert et la récompense « inviter un ami », toutes deux expliquées ci-dessous - envoient un identifiant aléatoire et non identifiant au backend propre de TUNL. Rien d'autre sur ta façon de jouer ne quitte ton appareil.",
@@ -49,6 +48,7 @@
  "615043a": "Modifications de cette politique",
  "72c896a": "Si les pratiques de données de TUNL changent, cette page sera mise à jour avec une nouvelle date de « Dernière mise à jour ».",
  "b37456c": "Contact",
- "460d778": "TUNL est exploité par Theodoracatos, un développeur indépendant solo. Les questions sur cette politique, et les demandes concernant tes données, peuvent être envoyées à <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a>. Les autres questions trouvent réponse sur la <a href=\"/support/\">page support</a>.",
- "1129e07": "Quelles données les applis et le site TUNL collectent et pourquoi : publicité, analyse, achats, classements, et comment refuser ou demander la suppression."
+ "1129e07": "Quelles données les applis et le site TUNL collectent et pourquoi : publicité, analyse, achats, classements, et comment refuser ou demander la suppression.",
+ "af4c5e2": "Dernière mise à jour : 25 septembre 2026",
+ "f8865d9": "TUNL est exploité par Alexandros Theodoracatos, un développeur indépendant solo, Zwischenbächen 143, 8048 Zürich, Suisse, responsable des traitements décrits ici (voir les <a href=\"/impressum/\">mentions légales</a>). Les questions sur cette politique, et les demandes concernant tes données, peuvent être envoyées à <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a>. Les autres questions trouvent réponse sur la <a href=\"/support/\">page support</a>."
 }

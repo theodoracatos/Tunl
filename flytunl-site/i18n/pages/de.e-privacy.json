@@ -1,6 +1,5 @@
 {
  "65260c0": "TUNL - Datenschutzerklärung",
- "76826f2": "Zuletzt aktualisiert: 20. September 2026",
  "08c8703": "TUNL ist ein einfaches Arcade-Spiel von einem Solo-Entwickler, Theodoracatos. Diese Richtlinie gilt für die TUNL-Apps für iOS und Android sowie die Website flytunl.ch, einschließlich der spielbaren Browser-Version unter flytunl.ch/play. Sie erklärt, welche Daten TUNL und seine Drittanbieter-Dienste sammeln, und warum.",
  "1373286": "Direkt von TUNL erfasste Daten",
  "dff6b66": "TUNL hat keine Konten. Es speichert deinen Spielfortschritt, Highscores, Schiff-Freischaltungen und Einstellungen lokal auf deinem Gerät. In der Browser-Version ist das der lokale Speicher deines Browsers, und das Löschen deiner Website-Daten entfernt sie. Über die unten beschriebenen Analyse- und Werbedienste hinaus senden zwei optionale Funktionen - die offene Web-Tagesrangliste und die „Freund einladen\"-Belohnung, beide unten erklärt - eine zufällige, nicht identifizierende ID an TUNLs eigenes Backend. Sonst verlässt nichts darüber, wie du spielst, dein Gerät.",
@@ -49,6 +48,7 @@
  "615043a": "Änderungen dieser Richtlinie",
  "72c896a": "Wenn sich TUNLs Datenpraktiken ändern, wird diese Seite mit einem neuen „Zuletzt aktualisiert\"-Datum aktualisiert.",
  "b37456c": "Kontakt",
- "460d778": "TUNL wird von Theodoracatos betrieben, einem Solo-Entwickler. Fragen zu dieser Richtlinie und Anfragen zu deinen Daten können an <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a> gesendet werden. Andere Fragen werden auf der <a href=\"/support/\">Support-Seite</a> beantwortet.",
- "1129e07": "Welche Daten die TUNL-Apps und die Website sammeln und warum: Werbung, Analyse, Käufe, Ranglisten, und wie man widerspricht oder Löschung beantragt."
+ "1129e07": "Welche Daten die TUNL-Apps und die Website sammeln und warum: Werbung, Analyse, Käufe, Ranglisten, und wie man widerspricht oder Löschung beantragt.",
+ "af4c5e2": "Zuletzt aktualisiert: 25. September 2026",
+ "f8865d9": "TUNL wird von Alexandros Theodoracatos betrieben, einem Solo-Entwickler, Zwischenbächen 143, 8048 Zürich, Schweiz, der für die hier beschriebene Datenbearbeitung verantwortlich ist (siehe <a href=\"/impressum/\">Impressum</a>). Fragen zu dieser Richtlinie und Anfragen zu deinen Daten können an <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a> gesendet werden. Andere Fragen werden auf der <a href=\"/support/\">Support-Seite</a> beantwortet."
 }

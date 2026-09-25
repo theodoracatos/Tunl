@@ -1,6 +1,5 @@
 {
  "65260c0": "TUNL - Gizlilik Politikası",
- "76826f2": "Son güncelleme: 20 Eylül 2026",
  "08c8703": "TUNL, tek başına çalışan bağımsız geliştirici Theodoracatos tarafından yapılmış basit bir arcade oyunudur. Bu politika, iOS ve Android için TUNL uygulamalarını ve flytunl.ch/play adresindeki oynanabilir tarayıcı sürümü dahil flytunl.ch web sitesini kapsar. TUNL ve üçüncü taraf hizmetlerinin hangi verileri topladığını ve nedenini açıklar.",
  "1373286": "TUNL tarafından doğrudan toplanan veriler",
  "dff6b66": "TUNL'da hesap yoktur. Oyun ilerlemeni, en yüksek skorlarını, gemi açılışlarını ve ayarlarını cihazında yerel olarak saklar. Tarayıcı sürümünde bu, tarayıcının yerel depolamasıdır ve site verilerini temizlemek bunları siler. Aşağıda açıklanan analiz ve reklam hizmetlerinin ötesinde, iki isteğe bağlı özellik - açık web günlük sıralaması ve \"bir arkadaşını davet et\" ödülü, ikisi de aşağıda açıklanmıştır - TUNL'ın kendi arka ucuna rastgele, kimliği belirlemeyen bir kimlik gönderir. Nasıl oynadığınla ilgili başka hiçbir şey cihazından çıkmaz.",
@@ -49,6 +48,7 @@
  "615043a": "Bu politikadaki değişiklikler",
  "72c896a": "TUNL'ın veri uygulamaları değişirse, bu sayfa yeni bir \"Son güncelleme\" tarihiyle güncellenecektir.",
  "b37456c": "İletişim",
- "460d778": "TUNL, tek başına çalışan bir geliştirici olan Theodoracatos tarafından işletilir. Bu politika hakkındaki sorular ve verilerinle ilgili talepler <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a> adresine gönderilebilir. Diğer sorular <a href=\"/support/\">destek sayfasında</a> yanıtlanır.",
- "1129e07": "TUNL uygulamalarının ve web sitesinin hangi verileri ve neden topladığı: reklamcılık, analiz, satın alımlar, sıralamalar ve nasıl vazgeçileceği veya silme talep edileceği."
+ "1129e07": "TUNL uygulamalarının ve web sitesinin hangi verileri ve neden topladığı: reklamcılık, analiz, satın alımlar, sıralamalar ve nasıl vazgeçileceği veya silme talep edileceği.",
+ "af4c5e2": "Son güncelleme: 25 Eylül 2026",
+ "f8865d9": "TUNL, bağımsız geliştirici Alexandros Theodoracatos (Zwischenbächen 143, 8048 Zürich, İsviçre) tarafından işletilir; burada açıklanan veri işlemeden de o sorumludur (bkz. <a href=\"/impressum/\">yasal bilgiler</a>). Bu politikayla ilgili sorularını ve verilerinle ilgili taleplerini <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a> adresine gönderebilirsin. Diğer soruların yanıtları <a href=\"/support/\">destek sayfasında</a>."
 }

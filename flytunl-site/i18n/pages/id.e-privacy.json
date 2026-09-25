@@ -1,6 +1,5 @@
 {
  "65260c0": "TUNL - Kebijakan Privasi",
- "76826f2": "Terakhir diperbarui: 20 September 2026",
  "08c8703": "TUNL adalah game arcade sederhana yang dibuat oleh developer indie solo, Theodoracatos. Kebijakan ini mencakup aplikasi TUNL untuk iOS dan Android serta situs flytunl.ch, termasuk versi browser yang bisa dimainkan di flytunl.ch/play. Kebijakan ini menjelaskan data apa yang dikumpulkan TUNL dan layanan pihak ketiganya, dan mengapa.",
  "1373286": "Data yang dikumpulkan langsung oleh TUNL",
  "dff6b66": "TUNL tidak punya akun. Ia menyimpan progres game, skor tertinggi, pembukaan kapal, dan pengaturanmu secara lokal di perangkatmu. Di versi browser ini adalah penyimpanan lokal browsermu, dan menghapus data situs akan menghapusnya. Selain layanan analitik dan iklan yang dijelaskan di bawah, dua fitur opsional - papan peringkat harian web terbuka dan hadiah \"undang teman\", keduanya dijelaskan di bawah - mengirim ID acak yang tidak mengidentifikasi ke backend milik TUNL sendiri. Tidak ada hal lain tentang cara kamu bermain yang meninggalkan perangkatmu.",
@@ -49,6 +48,7 @@
  "615043a": "Perubahan pada kebijakan ini",
  "72c896a": "Jika praktik data TUNL berubah, halaman ini akan diperbarui dengan tanggal \"Terakhir diperbarui\" yang baru.",
  "b37456c": "Kontak",
- "460d778": "TUNL dioperasikan oleh Theodoracatos, developer indie solo. Pertanyaan tentang kebijakan ini, dan permintaan tentang datamu, bisa dikirim ke <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a>. Pertanyaan lain dijawab di <a href=\"/support/\">halaman dukungan</a>.",
- "1129e07": "Data apa yang dikumpulkan aplikasi dan situs TUNL dan mengapa: periklanan, analitik, pembelian, papan peringkat, dan cara memilih keluar atau meminta penghapusan."
+ "1129e07": "Data apa yang dikumpulkan aplikasi dan situs TUNL dan mengapa: periklanan, analitik, pembelian, papan peringkat, dan cara memilih keluar atau meminta penghapusan.",
+ "af4c5e2": "Terakhir diperbarui: 25 September 2026",
+ "f8865d9": "TUNL dikelola oleh Alexandros Theodoracatos, developer solo, Zwischenbächen 143, 8048 Zürich, Swiss, yang bertanggung jawab atas pemrosesan data yang dijelaskan di sini (lihat <a href=\"/impressum/\">informasi hukum</a>). Pertanyaan tentang kebijakan ini dan permintaan terkait datamu bisa dikirim ke <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a>. Pertanyaan lain dijawab di <a href=\"/support/\">halaman dukungan</a>."
 }

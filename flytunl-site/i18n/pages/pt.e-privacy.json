@@ -1,6 +1,5 @@
 {
  "65260c0": "TUNL - Política de Privacidade",
- "76826f2": "Última atualização: 20 de setembro de 2026",
  "08c8703": "O TUNL é um jogo de arcade simples feito por um desenvolvedor indie solo, Theodoracatos. Esta política cobre os apps do TUNL para iOS e Android e o site flytunl.ch, incluindo a versão jogável no navegador em flytunl.ch/play. Ela explica quais dados o TUNL e seus serviços de terceiros coletam, e por quê.",
  "1373286": "Dados coletados diretamente pelo TUNL",
  "dff6b66": "O TUNL não tem contas. Ele guarda seu progresso de jogo, melhores pontuações, naves desbloqueadas e configurações localmente no seu aparelho. Na versão de navegador isso é o armazenamento local do seu navegador, e limpar os dados do site os apaga. Além dos serviços de análise e publicidade descritos abaixo, dois recursos opcionais - o ranking mundial diário na web aberta e a recompensa \"convide um amigo\", ambos explicados abaixo - enviam um identificador aleatório e não identificável para o backend próprio do TUNL. Mais nada sobre como você joga sai do seu aparelho.",
@@ -49,6 +48,7 @@
  "615043a": "Mudanças nesta política",
  "72c896a": "Se as práticas de dados do TUNL mudarem, esta página será atualizada com uma nova data de \"Última atualização\".",
  "b37456c": "Contato",
- "460d778": "O TUNL é operado por Theodoracatos, um desenvolvedor indie solo. Perguntas sobre esta política, e solicitações sobre seus dados, podem ser enviadas para <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a>. Outras perguntas são respondidas na <a href=\"/support/\">página de suporte</a>.",
- "1129e07": "Quais dados os apps e o site do TUNL coletam e por quê: publicidade, análise, compras, rankings, e como recusar ou solicitar exclusão."
+ "1129e07": "Quais dados os apps e o site do TUNL coletam e por quê: publicidade, análise, compras, rankings, e como recusar ou solicitar exclusão.",
+ "af4c5e2": "Última atualização: 25 de setembro de 2026",
+ "f8865d9": "O TUNL é operado por Alexandros Theodoracatos, desenvolvedor independente, Zwischenbächen 143, 8048 Zürich, Suíça, responsável pelo tratamento descrito aqui (veja o <a href=\"/impressum/\">aviso legal</a>). Perguntas sobre esta política e pedidos sobre seus dados podem ser enviados para <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a>. Outras perguntas são respondidas na <a href=\"/support/\">página de suporte</a>."
 }

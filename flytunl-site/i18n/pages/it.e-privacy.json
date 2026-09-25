@@ -1,6 +1,5 @@
 {
  "65260c0": "TUNL - Informativa sulla privacy",
- "76826f2": "Ultimo aggiornamento: 20 settembre 2026",
  "08c8703": "TUNL è un semplice gioco arcade realizzato da uno sviluppatore indie solitario, Theodoracatos. Questa informativa copre le app TUNL per iOS e Android e il sito flytunl.ch, inclusa la versione giocabile nel browser su flytunl.ch/play. Spiega quali dati TUNL e i suoi servizi di terze parti raccolgono, e perché.",
  "1373286": "Dati raccolti direttamente da TUNL",
  "dff6b66": "TUNL non ha account. Memorizza i tuoi progressi di gioco, i punteggi più alti, gli sblocchi delle navi e le impostazioni localmente sul tuo dispositivo. Nella versione browser questo è l'archiviazione locale del tuo browser, e cancellare i dati del sito li elimina. Oltre ai servizi di analisi e pubblicità descritti sotto, due funzioni opzionali - la classifica mondiale giornaliera sul web aperto e la ricompensa \"invita un amico\", entrambe spiegate sotto - inviano un identificatore casuale e non identificativo al backend proprio di TUNL. Nient'altro su come giochi lascia il tuo dispositivo.",
@@ -49,6 +48,7 @@
  "615043a": "Modifiche a questa informativa",
  "72c896a": "Se le pratiche sui dati di TUNL cambiano, questa pagina verrà aggiornata con una nuova data di \"Ultimo aggiornamento\".",
  "b37456c": "Contatti",
- "460d778": "TUNL è gestito da Theodoracatos, uno sviluppatore indie solitario. Domande su questa informativa, e richieste riguardo i tuoi dati, possono essere inviate a <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a>. Altre domande trovano risposta nella <a href=\"/support/\">pagina di supporto</a>.",
- "1129e07": "Quali dati raccolgono le app e il sito TUNL e perché: pubblicità, analisi, acquisti, classifiche, e come rinunciare o richiedere la cancellazione."
+ "1129e07": "Quali dati raccolgono le app e il sito TUNL e perché: pubblicità, analisi, acquisti, classifiche, e come rinunciare o richiedere la cancellazione.",
+ "af4c5e2": "Ultimo aggiornamento: 25 settembre 2026",
+ "f8865d9": "TUNL è gestito da Alexandros Theodoracatos, sviluppatore indipendente, Zwischenbächen 143, 8048 Zürich, Svizzera, responsabile del trattamento qui descritto (vedi le <a href=\"/impressum/\">note legali</a>). Puoi inviare domande su questa informativa e richieste sui tuoi dati a <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a>. Alle altre domande rispondiamo nella <a href=\"/support/\">pagina di supporto</a>."
 }

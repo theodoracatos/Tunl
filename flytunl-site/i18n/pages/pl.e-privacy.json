@@ -1,6 +1,5 @@
 {
  "65260c0": "TUNL - Polityka prywatności",
- "76826f2": "Ostatnia aktualizacja: 20 września 2026",
  "08c8703": "TUNL to prosta gra arcade stworzona przez solowego niezależnego dewelopera, Theodoracatosa. Ta polityka obejmuje aplikacje TUNL na iOS i Androida oraz stronę flytunl.ch, w tym grywalną wersję przeglądarkową na flytunl.ch/play. Wyjaśnia, jakie dane zbierają TUNL i jego usługi zewnętrzne, i dlaczego.",
  "1373286": "Dane zbierane bezpośrednio przez TUNL",
  "dff6b66": "TUNL nie ma kont. Przechowuje twoje postępy w grze, najlepsze wyniki, odblokowane statki i ustawienia lokalnie na twoim urządzeniu. W wersji przeglądarkowej jest to lokalna pamięć twojej przeglądarki, a wyczyszczenie danych witryny je usuwa. Poza usługami analitycznymi i reklamowymi opisanymi poniżej, dwie opcjonalne funkcje - otwarty webowy dzienny ranking i nagroda \"zaproś znajomego\", obie wyjaśnione poniżej - wysyłają losowy, niezidentyfikowany identyfikator do własnego backendu TUNL. Nic więcej o tym, jak grasz, nie opuszcza twojego urządzenia.",
@@ -49,6 +48,7 @@
  "615043a": "Zmiany w tej polityce",
  "72c896a": "Jeśli praktyki TUNL dotyczące danych się zmienią, ta strona zostanie zaktualizowana o nową datę \"Ostatnia aktualizacja\".",
  "b37456c": "Kontakt",
- "460d778": "TUNL jest prowadzony przez Theodoracatosa, solowego niezależnego dewelopera. Pytania dotyczące tej polityki i prośby dotyczące twoich danych można wysyłać na <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a>. Inne pytania są omówione na <a href=\"/support/\">stronie wsparcia</a>.",
- "1129e07": "Jakie dane zbierają aplikacje i strona TUNL i dlaczego: reklamy, analityka, zakupy, rankingi oraz jak zrezygnować lub zażądać usunięcia."
+ "1129e07": "Jakie dane zbierają aplikacje i strona TUNL i dlaczego: reklamy, analityka, zakupy, rankingi oraz jak zrezygnować lub zażądać usunięcia.",
+ "af4c5e2": "Ostatnia aktualizacja: 25 września 2026",
+ "f8865d9": "TUNL prowadzi Alexandros Theodoracatos, niezależny twórca, Zwischenbächen 143, 8048 Zürich, Szwajcaria, odpowiedzialny za opisane tu przetwarzanie danych (zob. <a href=\"/impressum/\">notę prawną</a>). Pytania o tę politykę i prośby dotyczące twoich danych możesz wysłać na <a href=\"mailto:info@flytunl.ch\">info@flytunl.ch</a>. Na inne pytania odpowiadamy na <a href=\"/support/\">stronie pomocy</a>."
 }

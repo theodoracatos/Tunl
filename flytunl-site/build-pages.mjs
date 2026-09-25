@@ -42,7 +42,7 @@ const MIN_COVERAGE = 0.85;
 const APPSTORE  = 'https://apps.apple.com/us/app/tunl-cave-flyer/id6789721765';
 const PLAYSTORE = 'https://play.google.com/store/apps/details?id=com.theodoracatos.tunl';
 
-const PAGES = ['how-to-play', 'ships', 'devlog', 'changelog', 'about', 'support', 'press', 'privacy',
+const PAGES = ['how-to-play', 'ships', 'devlog', 'changelog', 'about', 'support', 'press', 'privacy', 'impressum',
   'devlog/daily-cave', 'devlog/first-two-months', 'devlog/run-pacing',
   'devlog/same-ship-every-screen', 'devlog/three-quarter-ship', 'devlog/thrust-retune'];
 const PAGE_SET = new Set(PAGES.map(p => `/${p}/`));
@@ -145,7 +145,7 @@ function collectUnits(html) {
 // ---------- generated chrome -------------------------------------------------
 const pageUrl = (lang, page) => ORIGIN + (lang === 'en' ? '' : '/' + lang) + '/' + page + '/';
 const NAV_ITEMS = [['/how-to-play/', 'footer.howto'], ['/ships/', 'footer.ships'], ['/devlog/', 'footer.devlog'], ['/changelog/', 'footer.changelog']];
-const SHEET_ITEMS = [...NAV_ITEMS, ['/about/', 'footer.about'], ['/support/', 'footer.support'], ['/press/', 'footer.press'], ['/privacy/', 'footer.privacy']];
+const SHEET_ITEMS = [...NAV_ITEMS, ['/about/', 'footer.about'], ['/support/', 'footer.support'], ['/press/', 'footer.press'], ['/privacy/', 'footer.privacy'], ['/impressum/', 'footer.imprint']];
 const currentOf = (page) => (page.startsWith('devlog') ? '/devlog/' : `/${page}/`);
 const GENERATED = new Set();   // "lang:page" pairs that will exist
 
@@ -208,6 +208,7 @@ function footHtml(lang, page) {
           <a href="/support/">${c('footer.support')}</a>
           <a href="/press/">${c('footer.press')}</a>
           <a href="/privacy/">${c('footer.privacy')}</a>
+          <a href="/impressum/">${c('footer.imprint')}</a>
         </div>
       </div>
       <p class="sf-legal">${c('footer.rights')}${sw ? '<br>' + sw : ''}</p>
@@ -404,7 +405,8 @@ const PRI = { '': ['weekly', 1.0], 'play': ['daily', 0.9], 'how-to-play': ['mont
   'devlog': ['weekly', 0.7], 'devlog/run-pacing': ['yearly', 0.7], 'devlog/same-ship-every-screen': ['yearly', 0.7],
   'devlog/thrust-retune': ['yearly', 0.7], 'devlog/three-quarter-ship': ['yearly', 0.7],
   'devlog/first-two-months': ['yearly', 0.7], 'devlog/daily-cave': ['yearly', 0.8], 'changelog': ['monthly', 0.6],
-  'about': ['yearly', 0.5], 'support': ['monthly', 0.5], 'press': ['monthly', 0.4], 'privacy': ['yearly', 0.3] };
+  'about': ['yearly', 0.5], 'support': ['monthly', 0.5], 'press': ['monthly', 0.4], 'privacy': ['yearly', 0.3],
+  'impressum': ['yearly', 0.2] };
 const urlFor = (l, page) => ORIGIN + (l === 'en' ? '' : '/' + l) + '/' + (page ? page + '/' : '');
 const entries = [];
 const add = (page, langs) => {
