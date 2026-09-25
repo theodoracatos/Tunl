@@ -4,16 +4,20 @@
 // ============================================================
 //  Reads the game's globals (phase, T, webPromoOn, ...) - all src files share one
 //  global scope, so a classic script loaded after the bundle can see them - and never
-//  writes gameplay state. What it adds, /tt/ only:
-//   - a HOLD TO FLY pill on the title
-//     screen until the first run starts;
-//   - the app pitch after the FIRST run at any score (update.js _tunlWebPitchFloor):
-//     the store links wait until the visitor has played once, and a first run of an
-//     ad visitor rarely reaches CONTINUE_MIN_SCORE;
+//  writes gameplay state, with two narrow exceptions that only replay what a player's own
+//  tap does in input.js: the start screen's tap calls startPlay() (the title's blank-area
+//  tap), and the first death opens the app card (webPromoOn, the continue ring's tap).
+//  What it adds, /tt/ only:
+//   - the start screen (#tt-splash, see tt-head.js) instead of the title for the first run;
+//   - the app card opening by itself after the FIRST death, at any score (update.js
+//     _tunlWebPitchFloor keeps the continue slot open; this skips the ring and opens the
+//     card the ring would open). On /play/ the card only opens on a ring tap, and on
+//     2026-09-25 zero of ~60 first runs on /tt/ tapped the ring. From the second run on,
+//     /tt/ behaves like /play/ again;
 //   - store links that survive an in-app browser (openStore below);
 //   - the funnel, countable in Cloudflare Web Analytics with no new tracker: invisible
-//     hits on /tt/run/, /tt/pitch/, /tt/store-ios/, /tt/store-android/ next to the /tt/
-//     page views themselves, plus the same steps as GA events through the existing relay;
+//     hits on /tt/<step>/ next to the /tt/ page views themselves (see STEPS below), plus
+//     the same steps as GA events through the existing relay;
 //   - a one-time raster downgrade when the title screen runs slow (weak Android).
 // ============================================================
 (function () {
@@ -94,14 +98,28 @@
         openStore(/apps\.apple/.test(a.href) ? 'ios' : 'android');
     }, true);
 
-    // ── Hints ─────────────────────────────────────────────────────────────────
-    // No turn hint: the game is already drawn landscape, the player turns the phone on their own.
-    var go = document.createElement('div');
-    go.id = 'tt-go';
-    go.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(go);
-
-    function toggle(el, on) { if (el && el.classList.contains('show') !== on) el.classList.toggle('show', on); }
+    // ── Start screen ──────────────────────────────────────────────────────────
+    // tt-tail.js runs right after the bundle, so from here on the game is there: the
+    // label gets the game's own "hold to fly" string, and a tap that arrived while the
+    // bundle was still loading starts the run now.
+    var splash = document.getElementById('tt-splash');
+    var splashLbl = splash && splash.querySelector('.lbl');
+    function startFirstRun() {
+        if (phase !== 'title') return;
+        try { _initAC(); } catch (e) {}
+        startPlay();
+    }
+    if (splash) {
+        if (splashLbl) splashLbl.textContent = T.tap;
+        splash.classList.add('ready');
+        TT.start = startFirstRun;
+        if (TT.armed) startFirstRun();
+    }
+    function hideSplash() {
+        if (!splash || splash.classList.contains('off')) return;
+        splash.classList.add('off');
+        setTimeout(function () { try { splash.remove(); } catch (e) {} splash = null; }, 400);
+    }
 
     // ── Slow-device fallback ──────────────────────────────────────────────────
     // Median frame time on the untouched title screen, from 1 s after boot for 60 frames.
@@ -132,27 +150,47 @@
     }
 
     // ── Per-frame state ───────────────────────────────────────────────────────
-    var dead = false, promo = false, bootTs = 0;
+    // Funnel steps (Cloudflare path /tt/<step>/, GA event in brackets):
+    //   ready  the game has loaded and the start screen is live (tt_ready)
+    //   run    the first run started (run_start, from lifecycle.js)
+    //   dead   the first run ended (tt_dead {score})
+    //   pitch  the app card opened (pitch_open {auto})
+    //   store-ios / store-android  a store button (store_click {store})
+    //   run2   a second run started (tt_run2)
+    // ready and dead split the old /tt/ -> /tt/run/ -> /tt/pitch/ gaps: left while the
+    // page loaded vs. left at the start screen, and left mid-run vs. died and left.
+    var dead = false, runs = 0, promo = false, autoPitch = false, lastPhase = '';
+    ga('tt_ready'); count('ready');
     function tick(ts) {
-        if (!bootTs) bootTs = ts;
         probeFrame(ts);
         lastTs = ts;
-        var panel = showShop || showShipPicker || showSettings || showMissions || showCurrencyInfo;
 
-        if (TT.firstRun && phase === 'play') {
-            TT.firstRun = false;
-            root.classList.remove('tt-fresh');
-            count('run');
+        if (phase === 'play' && lastPhase !== 'play' && lastPhase !== 'revive') {
+            runs++;
+            if (runs === 1) { TT.firstRun = false; root.classList.remove('tt-fresh'); count('run'); }
+            if (runs === 2) { ga('tt_run2'); count('run2'); }
         }
+        if (phase !== 'title') hideSplash();
+
         if (!dead && phase === 'dead') {
             dead = true;
             window._tunlWebPitchFloor = undefined;
+            ga('tt_dead', { score: score }); count('dead');
+            autoPitch = continueOfferPending;
         }
-        if (webPromoOn && !promo) { ga('pitch_open'); count('pitch'); }
+        // The first death opens the app card by itself, once the crash's own freeze frame
+        // (DEATH_REPLAY_SEC) has played: the same two assignments the continue ring's tap
+        // makes in input.js, so the card's timer, skip gate, store buttons and the way it
+        // resolves into the death screen are all the game's own. Closing it never starts
+        // a run.
+        if (autoPitch && phase === 'dead' && continueOfferPending && !webPromoOn && deadT >= DEATH_REPLAY_SEC) {
+            autoPitch = false;
+            webPromoOn = true; webPromoT = 0;
+        }
+        if (autoPitch && phase !== 'dead') autoPitch = false;
+        if (webPromoOn && !promo) { ga('pitch_open', { auto: runs === 1 && dead ? 1 : 0 }); count('pitch'); }
         promo = webPromoOn;
-
-        if (go.textContent !== T.tap) go.textContent = T.tap;
-        toggle(go, TT.firstRun && phase === 'title' && !panel && ts - bootTs > 900);
+        lastPhase = phase;
         requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);

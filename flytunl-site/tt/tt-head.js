@@ -107,6 +107,36 @@
         } catch (e) { TT.rot = 0; }
     }
 
+    // ── Start screen (#tt-splash, markup injected by build-play.mjs) ───────────
+    // Replaces the title screen for a visitor's first run. It is on screen from the
+    // first paint, long before the ~250 KB bundle has arrived (seconds on a weak phone
+    // on mobile data, and until now that wait was a black page), and a tap ANYWHERE on
+    // it starts the run: the title's menu buttons are covered, so a first tap can never
+    // open Settings or the shop instead of the game. The tap is taken on release like
+    // input.js's own title tap (a pointerdown alone may be the start of an edge swipe).
+    // A tap before the game has loaded arms it; tt-tail.js starts the run on arrival.
+    // Events stop at the splash, so input.js never sees them.
+    TT.armed = false;
+    TT.start = null;   // set by tt-tail.js once the game is there
+    var splashPid = null;
+    function splashEv(e) {
+        var s = e.target && e.target.closest && e.target.closest('#tt-splash');
+        if (!s || s.classList.contains('off')) return;
+        e.stopPropagation();
+        if (e.cancelable) e.preventDefault();
+        if (e.type === 'pointerdown') { splashPid = e.pointerId; s.classList.add('down'); return; }
+        s.classList.remove('down');
+        if (e.type !== 'pointerup' || e.pointerId !== splashPid) { splashPid = null; return; }
+        splashPid = null;
+        if (TT.start) TT.start();
+        else { TT.armed = true; s.classList.add('armed'); }
+    }
+    // Registered on document in the capture phase: after tt-head's own window-capture
+    // remap below, before input.js's window-bubble listeners.
+    ['pointerdown', 'pointerup', 'pointercancel'].forEach(function (t) {
+        document.addEventListener(t, splashEv, true);
+    });
+
     if (TT.rot) {
         window.addEventListener('resize', function () {
             setVars();

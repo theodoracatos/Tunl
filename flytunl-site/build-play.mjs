@@ -276,7 +276,8 @@ async function build() {
 //   - tt.css + tt-head.js before the bundle, tt-tail.js after it.
 // Also writes the funnel counter pages and /tt/diag/ (store-link test bench).
 const TT_GA_DEFAULT = { source: 'tiktok', medium: 'referral', campaign: 'tt_landing' };
-const TT_STEPS = ['run', 'pitch', 'store-ios', 'store-android'];
+// In funnel order (tt-tail.js has what each one means). run2 sits off the main line.
+const TT_STEPS = ['ready', 'run', 'dead', 'pitch', 'store-ios', 'store-android', 'run2'];
 
 async function buildTT(stripped, v, version) {
   const ttSrc = path.join(here, 'tt');
@@ -307,6 +308,14 @@ ${css.trim()}
   // before the favicon links: <base> must precede every relative URL in the head.
   html = html.replace(/<meta name="viewport"[^>]*>\r?\n/, m => m + ttHead + '\n');
   if (!html.includes('<base href="/play/">')) throw new Error('tt: <meta name="viewport"> not found in tunl.html');
+  // The start screen (tt-head.js), first thing in <body> so it paints before the bundle
+  // has even started to download. Its label is filled in by tt-tail.js with the game's
+  // own T.tap once the bundle (and with it i18n.js) is there; until then it is wordless.
+  const splash = `<div id="tt-splash" role="button" aria-label="Play"><img class="mark" src="branding/web/wordmark.svg" alt="TUNL">`
+    + `<div class="btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5v17a1 1 0 0 0 1.5.86l14-8.5a1 1 0 0 0 0-1.72l-14-8.5A1 1 0 0 0 6 3.5z" fill="#eaf3ff"/></svg></div>`
+    + `<div class="lbl"></div></div>`;
+  if (!/<body>\r?\n/.test(html)) throw new Error('tt: <body> not found in tunl.html');
+  html = html.replace(/<body>\r?\n/, m => m + splash + '\n');
   html = html.replace('</body>', `<script src="tunl.bundle.js?v=${v}"></script>\n<script>${tailMin}</script>\n</body>`);
 
   await rm(ttOut, { recursive: true, force: true });
