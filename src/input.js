@@ -57,6 +57,20 @@ function onDown(e) {
         const cx = (e.clientX - rect.left) * (W / rect.width);
         const cy = (e.clientY - rect.top)  * (H / rect.height);
 
+        // Web only: the "in the app" sheet (draw.js drawAppOnlySheet) sits on top of
+        // every title panel, so it takes the tap first. Store buttons open the store; a
+        // tap outside the card closes it, a tap on the card's text does nothing.
+        if (appOnlyKey) {
+            if (_appOnlyAppleBtnRect && inRect(cx, cy, _appOnlyAppleBtnRect)) {
+                sfxUiTap(); window.open(APP_STORE_URL, '_blank', 'noopener'); return;
+            }
+            if (_appOnlyPlayBtnRect && inRect(cx, cy, _appOnlyPlayBtnRect)) {
+                sfxUiTap(); window.open(PLAY_STORE_URL, '_blank', 'noopener'); return;
+            }
+            if (!_appOnlyPanelRect || !inRect(cx, cy, _appOnlyPanelRect)) { appOnlyKey = null; sfxUiClose(); }
+            return;
+        }
+
         // One-time daily-reminder opt-in card (src/notify.js). Only up on the bare
         // title screen (no panel open). A tap on either button resolves it; a tap
         // anywhere else dismisses it as "no" and falls through so the tap still
@@ -186,6 +200,8 @@ function onDown(e) {
                 showStardustPath = true; sfxUiTap(); return;
             }
             if (_paintBtnRect && inRect(cx, cy, _paintBtnRect)) {
+                // Web: the Lackiererei is app-only, the greyed pill explains that instead.
+                if (isWeb()) { appOnlyKey = 'paint'; sfxUiTap(); return; }
                 showPaint = true; paintPreview = -1; sfxUiTap(); return;
             }
             for (let i = 0; i < _skinBtnRects.length; i++) {
@@ -221,13 +237,17 @@ function onDown(e) {
             sfxUiTap();
             return;
         }
+        // On web these two are the greyed app-only icons (draw.js rail): no native
+        // bridge behind them, so they open the "in the app" sheet instead.
         if (_leaderboardBtnRect && inCircle(cx, cy, _leaderboardBtnRect)) {
             sfxUiTap();
+            if (isWeb()) { appOnlyKey = 'leaderboard'; return; }
             window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'show' });
             return;
         }
         if (_challengeBtnRect && inCircle(cx, cy, _challengeBtnRect)) {
             sfxUiTap();
+            if (isWeb()) { appOnlyKey = 'challenge'; return; }
             window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'challenge' });
             return;
         }
@@ -260,6 +280,7 @@ function onDown(e) {
     }
     _initAC();
     if (phase === 'title') {
+        if (appOnlyKey) { appOnlyKey = null; return; }                // web only, on top of everything
         if (showCurrencyInfo) { showCurrencyInfo = false; return; }  // layered on top of Settings -- dismiss it first
         if (showStardustPath) { showStardustPath = false; return; }  // same, over the ALL SHIPS sheet
         if (showSettings) { showSettings = false; return; }

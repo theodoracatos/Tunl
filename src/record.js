@@ -278,7 +278,7 @@ function _recSyncBtn() {
 // same way state.js's _shareCopiedT does for the death-screen SHARE button.
 function _recTick(dt) {
     if (!_recBtn) return;
-    const panelOpen = showShop || showShipPicker || showSettings || showMissions || showCurrencyInfo;
+    const panelOpen = showShop || showShipPicker || showSettings || showMissions || showCurrencyInfo || appOnlyKey;
     const show = !panelOpen;
     if (show !== _recBtnShown) {
         _recBtnShown = show;

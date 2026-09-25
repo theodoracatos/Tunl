@@ -593,6 +593,24 @@ function touchCoin(type, setup) {
     check('a part the player cannot afford is not bought', !buy.poor.owned && buy.poor.shards === 40);
     check('an earned part can never be bought with shards', !buy.earned.owned && buy.earned.shards === 9999);
 
+    // Web greys the PAINT pill and the Game Center icons out behind an "in the app" sheet;
+    // the app must keep the real ones (isWeb() gate). A real tap on the drawn pill.
+    const appOnly = g(`(() => {
+        phase = 'title'; titleT = 10; appOnlyKey = null; showPaint = false; showShipPicker = true;
+        unlockedSkins |= (1 << LIVERY_GATE_SKIN);
+        drawTitleScreen();
+        const b = _paintBtnRect;
+        onDown({ clientX: b.x + b.w / 2, clientY: b.y + b.h / 2, pointerId: 1 });
+        const r = { paint: showPaint, sheet: appOnlyKey };
+        showPaint = false; showShipPicker = false;
+        drawTitleScreen();
+        r.rail = _leaderboardBtnRect === null && _challengeBtnRect === null;
+        return r;
+    })()`);
+    check('in the app the PAINT pill opens the paint sheet, never the web "in the app" sheet',
+        appOnly.paint === true && appOnly.sheet === null);
+    check('in the app the rail shows no greyed web-only leaderboard/challenge icons', appOnly.rail);
+
     // Every tab's grid has to stay inside the panel, whatever a catalogue grows to.
     const fits = g(`(() => {
         showShipPicker = true; showPaint = true; paintPreview = -1;

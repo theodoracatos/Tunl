@@ -28,6 +28,13 @@ the forced interstitial, not a video the player actively taps):
   **It never grants a revive** (a free one on web would outrank app players who watched an
   ad, on the shared leaderboard), and **the caption is honest before the tap**. `isWeb()`-
   gated end to end; the apps decide on `rewardedAdReady` alone.
+- **Web shows the app's controls greyed out, never hides them** (2026-09-25, user's call):
+  the Game Center leaderboard and challenge icons on the title rail and the PAINT pill on
+  ALL SHIPS are drawn dimmed on web, and a tap opens the "in the app" sheet
+  (`state.js appOnlyKey`, `draw.js drawAppOnlySheet`, strings `T.appOnly*`) with the store
+  buttons - the challenge offers the App Store only (iOS-only) and is not shown to an
+  Android browser. **The Lackiererei is app-only**: web never opens the Paint sheet; a kit
+  a web player already owned still renders. `test-sim.js` guards the app side.
 - **Rewarded shard bonus** (8.2) - a row at the bottom of the Missions drawer: watch an
   ad once per UTC day for a flat `SHARDS_AD_REWARD` (20) shards, exempt from
   `DAILY_SHARD_CAP` like a mission reward. Native plumbing

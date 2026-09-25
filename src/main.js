@@ -144,7 +144,7 @@ function _syncWebCta() {
     // Hidden while any title-screen panel is open (ALL SHIPS / shop, ship
     // picker, settings, missions, currency info) - the pill sits at the bottom
     // edge and otherwise floats over the panel content.
-    const _panelOpen = showShop || showShipPicker || showSettings || showMissions || showCurrencyInfo;
+    const _panelOpen = showShop || showShipPicker || showSettings || showMissions || showCurrencyInfo || appOnlyKey;
     const show = isWeb() && phase === 'title' && !_portraitCovered && !_panelOpen;
     if (show && _ctaLbl && typeof T !== 'undefined' && T.getApp && _ctaLangShown !== T.getApp) {
         _ctaLbl.textContent = T.getApp;

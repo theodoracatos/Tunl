@@ -3991,6 +3991,13 @@ function drawTitleScreen() {
         items.push({ key: 'missions', badge: `${doneCount}/${missionSlots}`, showBadge: true, badgeDone: allMissionsDone });
         if (hasGameCenter) items.push({ key: 'leaderboard', badge: hasRank ? (worldRankTotal > 0 ? `${worldRank}/${worldRankTotal}` : `${worldRank}`) : null, showBadge: hasRank });
         if (hasChallenge)  items.push({ key: 'challenge', badge: activeChallenges > 0 ? `${activeChallenges}` : null, showBadge: activeChallenges > 0 });
+        // Web: the app's own controls stay on the rail, greyed out, and a tap opens the
+        // "in the app" sheet (drawAppOnlySheet) instead of doing nothing visible. The
+        // challenge is iOS-only (GameView.swift), so an Android browser is not shown one.
+        if (isWeb()) {
+            items.push({ key: 'leaderboard', locked: true });
+            if (!/Android/.test(navigator.userAgent)) items.push({ key: 'challenge', locked: true });
+        }
         items.push({ key: 'shop' });
         items.push({ key: 'settings' });
 
@@ -4004,8 +4011,9 @@ function drawTitleScreen() {
         // bottom at H=375 (12 mini / SE), with the last icon under the home indicator
         // (SAFE_L/SAFE_R are horizontal only). Cap the gap so a real margin survives.
         // Never binds at H>=440 (17 Pro Max, Android tablet): those render as before.
-        // Web is left alone (web/app isolation; its rail is 3 icons anyway).
-        const _railFit = LAND && !isWeb();
+        // Web fits too since the greyed app-only icons made its rail 4-5 icons: a short
+        // desktop window (H 277 measured) would otherwise push them off the canvas.
+        const _railFit = LAND;
         const railPad  = Math.max(H * 0.06, 20);
         const iconR   = LAND ? Math.min(UI_H * 0.040, 27, _railFit ? H * 0.062 : Infinity) : Math.min(H * 0.036, 22);
         const iconGap = _railFit && items.length > 1
@@ -4022,12 +4030,14 @@ function drawTitleScreen() {
             const cx = LAND ? railCX : (W / 2 - ((items.length - 1) * iconGap) / 2 + i * iconGap);
             ctx.beginPath();
             ctx.arc(cx, cy, iconR, 0, Math.PI * 2);
-            ctx.fillStyle   = rgb(dayAcc, 0.06);
+            ctx.fillStyle   = it.locked ? 'rgba(255,255,255,0.025)' : rgb(dayAcc, 0.06);
             ctx.fill();
-            ctx.strokeStyle = rgb(accLite, 0.24);
+            ctx.strokeStyle = it.locked ? 'rgba(170,178,200,0.14)' : rgb(accLite, 0.24);
             ctx.lineWidth   = 1;
             ctx.stroke();
-            drawRailIcon(it.key, cx, cy, iconR * 0.62, `rgba(225,232,250,${a * 0.92})`, Math.max(1.3, iconR * 0.11));
+            drawRailIcon(it.key, cx, cy, iconR * 0.62,
+                it.locked ? `rgba(150,158,180,${a * 0.38})` : `rgba(225,232,250,${a * 0.92})`,
+                Math.max(1.3, iconR * 0.11));
             if (it.badge && it.showBadge) {
                 ctx.font        = `bold ${iconR * 0.55}px ${FONT_NUM}`;
                 ctx.fillStyle   = it.badgeDone ? 'rgba(120,255,150,0.95)' : 'rgba(255,225,110,0.95)';
@@ -4244,27 +4254,30 @@ function drawTitleScreen() {
 
         // PAINT pill (Hangar paint, constants.js PAINT_*): top-right of the card, in the
         // flown ship's glow. Hidden until the first paid ship is owned.
+        // Web: the Lackiererei is app-only, so the pill is drawn greyed out and its tap
+        // opens the "in the app" sheet (input.js); same gate and place as in the apps.
         _paintBtnRect = null;
         if (unlockedSkins & (1 << LIVERY_GATE_SKIN)) {
-            const [pr, pg, pb] = SKINS[activeSkin].shadow;
+            const [pr, pg, pb] = isWeb() ? [150, 158, 180] : SKINS[activeSkin].shadow;
+            const _pk = isWeb() ? 0.45 : 1;
             ctx.font = `bold ${FS * 0.020}px ${FONT_UI}`;
             const pillH = Math.max(H * 0.058, FS * 0.040);
             const pillW = ctx.measureText(T.paint).width + pillH * 1.5;
             const pillX = shipPanX + shipPanW - pillW - H * 0.035;
             const pillY = shipPanY + H * 0.035;
             ctx.beginPath(); ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
-            ctx.fillStyle   = `rgba(${pr},${pg},${pb},0.14)`;
+            ctx.fillStyle   = `rgba(${pr},${pg},${pb},${0.14 * _pk})`;
             ctx.fill();
-            ctx.strokeStyle = `rgba(${pr},${pg},${pb},0.70)`;
+            ctx.strokeStyle = `rgba(${pr},${pg},${pb},${0.70 * _pk})`;
             ctx.lineWidth   = 1.5;
             ctx.stroke();
             ctx.beginPath();
             ctx.arc(pillX + pillH * 0.55, pillY + pillH / 2, pillH * 0.16, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(${pr},${pg},${pb},0.95)`;
+            ctx.fillStyle = `rgba(${pr},${pg},${pb},${0.95 * _pk})`;
             ctx.fill();
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = 'rgba(235,240,255,0.95)';
+            ctx.fillStyle = isWeb() ? 'rgba(170,178,200,0.50)' : 'rgba(235,240,255,0.95)';
             ctx.fillText(T.paint, pillX + pillW / 2 + pillH * 0.22, pillY + pillH / 2 + 1);
             ctx.textBaseline = 'alphabetic';
             // Tap target padded to a thumb, the drawn pill stays slim.
@@ -5250,6 +5263,9 @@ function drawTitleScreen() {
 
         ctx.restore();
     }
+
+    // Web only, on top of every title panel (it can open over the ALL SHIPS sheet).
+    if (appOnlyKey) drawAppOnlySheet();
 }
 
 // ── Death screen ("Debriefing", 13.0) ─────────────────────────────────────────
@@ -6075,6 +6091,129 @@ function _wrapLines(text, maxW) {
     }
     if (line.trim()) lines.push(line.trimEnd());
     return lines;
+}
+
+// ── Web only: "in the app" sheet ─────────────────────────────────────
+// Opened from a greyed-out title control that only the apps can back (state.js
+// appOnlyKey): the Game Center / Play Games leaderboard, the Game Center challenge and
+// the Lackiererei. Says what the control is, that it lives in the app, and offers the
+// store. Same card language as the title's other panels (drawMenuPanel), content-sized
+// and scaled down until it clears a short desktop window, the method
+// drawWebContinuePromo documents. The challenge is iOS-only, so it offers the App Store
+// alone. Never drawn in either app: appOnlyKey is only ever set behind isWeb().
+function drawAppOnlySheet() {
+    const key  = appOnlyKey;
+    const body = key === 'paint' ? T.appOnlyPaint : key === 'challenge' ? T.appOnlyChallenge : T.appOnlyBoard;
+    const iosOnly = key === 'challenge';
+    const android = /Android/.test(navigator.userAgent);
+    const day  = getTheme().wallBase;
+    const DAY  = al => rgb(day, al);
+    const font = (sz, w) => { ctx.font = `${w || 'bold'} ${sz}px ${FONT_UI}`; };
+
+    drawMenuBackdrop();
+    ctx.save();
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign    = 'center';
+
+    const panW = Math.min(W * 0.62, FS * 0.78);
+    const padX = panW * 0.08;
+    const textW = panW - padX * 2;
+    let sc = 1, ttl, txt, lbl, btn, btnH, iconR, lines, contentH, panH;
+    for (let i = 0; i < 14; i++) {
+        ttl = FS * 0.034 * sc; txt = FS * 0.023 * sc; lbl = FS * 0.017 * sc; btn = FS * 0.022 * sc;
+        btnH = btn * 2.1;
+        iconR = FS * 0.040 * sc;
+        font(txt, '');
+        lines = _wrapLines(body, textW);
+        contentH = iconR * 2.5            // icon disc and its gap
+                 + ttl * 1.05             // headline ink
+                 + txt * 1.90             // gap to body
+                 + lines.length * txt * 1.45
+                 + lbl * 1.80             // GET THE APP label + its gap
+                 + btnH;
+        panH = contentH + Math.max(18, ttl * 1.1) * 2;
+        if (panH <= H * 0.92 || sc <= 0.6) break;
+        sc *= 0.93;
+    }
+    const panX = (W - panW) / 2, panY = (H - panH) / 2;
+    _appOnlyPanelRect = { x: panX, y: panY, w: panW, h: panH };
+    drawMenuPanel(panX, panY, panW, panH, 14);
+
+    // ── the control itself, as the app shows it ───────────────────────────────
+    let y = panY + (panH - contentH) / 2;
+    const icx = W / 2, icy = y + iconR;
+    ctx.beginPath();
+    ctx.arc(icx, icy, iconR, 0, Math.PI * 2);
+    ctx.fillStyle = DAY(0.10);
+    ctx.fill();
+    ctx.strokeStyle = DAY(0.45);
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    if (key === 'paint') {
+        // The player's own ship: the Lackiererei is about exactly this hull. Top-down, as
+        // the hangar draws it.
+        const [sr, sg, sb] = SKINS[activeSkin].shadow;
+        drawShip(icx, icy, iconR * 0.58, SKINS[activeSkin].color, sr, sg, sb, 10, true, paintOf(activeSkin));
+    } else {
+        drawRailIcon(key, icx, icy, iconR * 0.62, 'rgba(225,232,250,0.95)', Math.max(1.3, iconR * 0.11));
+    }
+    y += iconR * 2.5;
+
+    // ── headline + body ───────────────────────────────────────────────────────
+    y += ttl * 0.86;
+    let tsz = ttl;
+    font(tsz);
+    const tw = ctx.measureText(T.appOnlyTitle).width;
+    if (tw > textW) { tsz = Math.max(tsz * textW / tw, lbl); font(tsz); }
+    ctx.fillStyle   = 'rgba(165,190,255,0.96)';
+    ctx.shadowColor = 'rgba(0,0,0,0.90)';
+    ctx.shadowBlur  = 5;
+    ctx.fillText(T.appOnlyTitle, W / 2, y);
+    ctx.shadowBlur  = 0;
+    y += ttl * 0.19 + txt * 1.90;
+
+    font(txt, '');
+    ctx.fillStyle = 'rgba(210,218,240,0.90)';
+    for (const ln of lines) { ctx.fillText(ln, W / 2, y); y += txt * 1.45; }
+
+    // ── store buttons ─────────────────────────────────────────────────────────
+    y += lbl * 0.35;
+    font(lbl);
+    try { ctx.letterSpacing = `${Math.max(1, lbl * 0.11)}px`; } catch (e) {}
+    ctx.fillStyle = 'rgba(132,146,184,0.70)';
+    ctx.fillText(T.getTheApp, W / 2, y);
+    try { ctx.letterSpacing = '0px'; } catch (e) {}
+    y += lbl * 1.00;
+
+    const gapB = Math.max(8, panW * 0.03);
+    const btnW = Math.min((textW - gapB) / 2, FS * 0.26);
+    if (iosOnly) {
+        _appOnlyAppleBtnRect = { x: W / 2 - btnW / 2, y, w: btnW, h: btnH };
+        _appOnlyPlayBtnRect  = null;
+    } else {
+        _appOnlyAppleBtnRect = { x: W / 2 - gapB / 2 - btnW, y, w: btnW, h: btnH };
+        _appOnlyPlayBtnRect  = { x: W / 2 + gapB / 2,        y, w: btnW, h: btnH };
+    }
+    const storeBtn = (r, label, filled) => {
+        ctx.beginPath(); ctx.roundRect(r.x, r.y, r.w, r.h, r.h * 0.30);
+        ctx.fillStyle = filled ? DAY(0.92) : 'rgba(255,255,255,0.05)';
+        ctx.fill();
+        ctx.strokeStyle = filled ? DAY(1) : DAY(0.45);
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        let sz = btn;
+        font(sz);
+        const maxW = r.w * 0.86;
+        const lw = ctx.measureText(label).width;
+        if (lw > maxW) { sz = Math.max(sz * maxW / lw, lbl * 0.85); font(sz); }
+        ctx.fillStyle = filled ? 'rgba(8,8,16,1)' : 'rgba(232,238,255,0.92)';
+        ctx.fillText(label, r.x + r.w / 2, r.y + r.h / 2 + sz * 0.35);
+    };
+    // The visitor's own store is the filled one, as on the continue pitch.
+    storeBtn(_appOnlyAppleBtnRect, 'APP STORE', iosOnly || !android);
+    if (_appOnlyPlayBtnRect) storeBtn(_appOnlyPlayBtnRect, 'GOOGLE PLAY', android);
+
+    ctx.restore();
 }
 
 // ── Web only: the second life lives in the app ───────────────────────

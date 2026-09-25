@@ -514,6 +514,11 @@ let continuesUsedThisRun, continueOfferPending, continueAdPending;
 // the rewarded video. webPromoT counts up while the promo screen is on; webPromoOn is
 // what draw.js/input.js route on. Never set in either app - isWeb() gates every write.
 let webPromoOn = false, webPromoT = 0;
+// Web only: the "in the app" sheet opened from a greyed-out title control that exists
+// only in the apps ('leaderboard' | 'challenge' | 'paint', null = closed). Never set in
+// either app - input.js opens it only behind isWeb(). draw.js drawAppOnlySheet.
+let appOnlyKey = null;
+let _appOnlyPanelRect = null, _appOnlyAppleBtnRect = null, _appOnlyPlayBtnRect = null;
 // Revive countdown after a granted continue (constants.js REVIVE_COUNTDOWN_SEC doc),
 // counted down while phase === 'revive'. Reaching 0 flips phase back to 'play'.
 let reviveCountdownT;
