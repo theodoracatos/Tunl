@@ -147,6 +147,12 @@ what's actually new this release, whether any of these need a copy update:
 
 State this explicitly in the final report so the user knows what's still manual:
 - No Xcode archive/build, no `gradlew` build, no `.aab`/`.ipa` generation
+- The iOS upload is one command once the user says go: `Tunl/upload-ios.sh` (archive,
+  cloud-sign, upload to App Store Connect; `--dry-run` exports an `.ipa` without
+  uploading). Auth is the Apple ID in Xcode > Settings > Accounts, or an API key via
+  `~/.appstoreconnect/tunl.env` (see the script header). It uploads the build number
+  bumped in step 1, so never run it before the bump. Linking the build to the ASC version
+  and submitting stay separate steps.
 - No App Store Connect or Play Console submission (version fields, screenshots upload,
   release notes paste, review submission) -- those need the user's own login
 - No git commit/push (run `/autocommit` in each repo separately once satisfied)

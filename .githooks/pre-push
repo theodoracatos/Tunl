@@ -18,7 +18,7 @@ zero="0000000000000000000000000000000000000000"
 found=0
 
 # File paths that are sensitive by name alone, regardless of content.
-sensitive_path_re='(^|/)\.env($|\.[^.]+$)|appsettings\.(Production|Staging)\.json$|(^|/)id_rsa(\.|$)|\.(pem|p12|pfx|keystore|jks)$|(^|/)[^/]*secret[^/]*$|(^|/)[^/]*credential[^/]*$|(^|/)[^/]*password[^/]*$'
+sensitive_path_re='(^|/)\.env($|\.[^.]+$)|appsettings\.(Production|Staging)\.json$|(^|/)id_rsa(\.|$)|\.(pem|p8|p12|pfx|keystore|jks)$|(^|/)[^/]*secret[^/]*$|(^|/)[^/]*credential[^/]*$|(^|/)[^/]*password[^/]*$'
 
 # Known-safe filenames to skip entirely (path check and content check both).
 # Firebase's per-platform client config files carry an API_KEY that is a

@@ -17,6 +17,8 @@ DerivedData/
 /build/
 Tunl/build/
 *.xcarchive
+# App Store Connect API keys live in ~/.appstoreconnect/private_keys, never here
+*.p8
 
 flytunl-site/.env
 
