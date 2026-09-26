@@ -933,6 +933,18 @@ const SAFE_START_WX       = 3000;   // ~score 50: the open corridor has closed h
 const SAFE_CLOSE_WX       = 1800;
 const SAFE_HAZARD_GAP_WX  = 400;
 const HAZARD_START_WX     = SAFE_START_WX + SAFE_HAZARD_GAP_WX;   // first stalactite
+// Gold in the opening flight (2026-09-27, on request: the first coins should show in the
+// HUD's gold lane). Gold banks gapBonus there like anywhere else, but the bonus CEILING
+// closes with the corridor: full until the last SAFE_GOLD_DRAIN_WX before SAFE_START_WX,
+// then linear to 0 at it (update.js). So the lane fills, really widens the closing
+// stretch, and has drained where gold used to START banking - from SAFE_START_WX on,
+// everything is exactly as before (a ceiling reaching 0 only at HAZARD_START_WX would
+// have capped the golds between the two, i.e. made score ~50 harder). Measured with a
+// perfect-collector bot over 26 days without any ceiling: 4-9 opening golds arrived at
+// the first stalactite with 89-100% of the cap left, good for up to 12.7s - the reason
+// gold used to bank nothing here. A pure function of scrollX (world-x), never of seconds
+// or scrollSpd(), so it is the same on every screen.
+const SAFE_GOLD_DRAIN_WX  = SAFE_CLOSE_WX;
 
 // ── Flight plan: sectors (2026-09-13) ────────────────────────────────
 // A run is a sequence of SECTORS of SECTOR_SEC reference seconds each. Sector 0 is the
@@ -1284,6 +1296,16 @@ const HUD_SPARK_COLOR = {
     green: [80, 255, 130], orange: [255, 122, 0], bomb: [255, 90, 90],
     repair: [255, 190, 120],   // the HUD hull row's colour (draw.js), where the refill lands
 };
+
+// ── Energy console (2026-09-26, concept https://claude.ai/artifact/Cm7MGTKfpRqtNmfvSZ77mN) ──
+// The bottom HUD as one instrument (draw.js drawEnergyConsole): the magazine on the left,
+// the power-up lanes in the centre, the hull plates on the right. Presentation only.
+// HUD_LANE_FLASH_SEC: how long a top-up's new segment (or new rounds) flashes.
+// HUD_LANE_WARN_SEC: a timed lane (slow, magnet) pulses at the combo chip's rate once
+// this little is left. HUD_LANE_SPARK_MAX caps hudLaneSparks (state.js).
+const HUD_LANE_FLASH_SEC  = 0.45;
+const HUD_LANE_WARN_SEC   = 1.0;
+const HUD_LANE_SPARK_MAX  = 4;
 // Points for a bullet hit (systems.js updateBullets). Flat, no combo: ammo is capped and
 // bullets auto-fire, so this is a small bonus for a shot that landed, not a score engine.
 const BULLET_HIT_PTS = { stal: 1, mine: 3, shot: 2 };

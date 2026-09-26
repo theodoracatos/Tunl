@@ -2787,6 +2787,278 @@ function drawWorld() {
 const _hudScoreAnchor = { x: 0, y: 0 };
 let _hudLastCombo = 0, _hudComboPopT = -1;
 
+// ── Energy console (bottom HUD, constants.js HUD_LANE_* doc) ──────────────────
+// The bottom HUD as one instrument (2026-09-26): magazine left, power-up lanes centre,
+// hull plates right, straight on the rock (a dark plate behind it was tried and removed
+// the same day). Replaced three flat 4px bars on fixed rows, a row of dots and a
+// row of diamonds, each drawn on its own.
+// - Lanes are capsules whose height follows FS, with the coin's own object as the icon
+//   (COIN_OBJECTS, the same drawing as the coin): before, colour alone told three
+//   identical bars apart. Active lanes stack from the bottom with no empty rows.
+// - A timed lane divides by the window it was last topped up to (slowTimeMax,
+//   magnetTimeMax). The magnet bar divided by 3.0 while a second coin stacks to 5.0
+//   (NOVA 11.0), so it sat pinned full for up to 2s (NOVA 8s).
+// - Gold grows from the centre outward, as the corridor does, between the gold coin's
+//   two chevrons.
+// - Capacity shows: spent rounds (up to bulletAmmoCap()) and a lost plate stay as outlines.
+// - Glow is additive gradients, never shadowBlur (the expensive call on WKWebView).
+// - Varying alpha goes through globalAlpha so coinTone()'s string cache stays bounded.
+const _HUD_LANES = ['gold', 'blue', 'green'];
+let _hudLaneY = { gold: 0, blue: 1, green: 2 }, _hudLaneA = { gold: 0, blue: 0, green: 0 }, _hudLaneT = -1;
+
+function _hudGeo() {
+    const x0 = W * 0.29, pitch = Math.max(13, FS * 0.024);
+    return {
+        x0, x1: W * 0.71, pitch, baseY: H * 0.955,
+        lh: Math.max(5, FS * 0.0095), iconS: Math.max(5.5, FS * 0.0105),
+        iconX: x0 - Math.max(12, FS * 0.021),
+        leftX: SAFE_L + W * 0.045, rightX: W - SAFE_R - W * 0.045,
+    };
+}
+
+// { on, ratio 0..1, remain s, max s (0: no notches), held }
+function _hudLaneState(k) {
+    if (k === 'gold') {
+        return { on: gapBonusVisual > 0, ratio: Math.min(1, gapBonusVisual / gapBonusMax()), remain: Infinity, max: 0, held: false };
+    }
+    if (k === 'blue') {
+        // A slow banked during a warp (state.js slowPending) is HELD FULL and dimmed: it is
+        // not running down yet, so a draining lane would lie, and no lane would read as the
+        // pickup having been swallowed.
+        const held = slowTime <= 0 && slowPending > 0;
+        return { on: slowTime > 0 || held, held, remain: held ? Infinity : slowTime, max: held ? 0 : slowTimeMax,
+                 ratio: held ? 1 : Math.min(1, slowTime / (slowTimeMax > 0 ? slowTimeMax : 4.0)) };
+    }
+    return { on: magnetTime > 0, held: false, remain: magnetTime, max: magnetTimeMax,
+             ratio: Math.min(1, magnetTime / (magnetTimeMax > 0 ? magnetTimeMax : 3.0)) };
+}
+
+function _hudCapsule(x, y, w, h) {
+    ctx.beginPath();
+    ctx.roundRect(x, y - h / 2, Math.max(0, w), h, h / 2);
+}
+
+function _hudLanes(G) {
+    const tw = G.x1 - G.x0;
+    for (const k of _HUD_LANES) {
+        const a = _hudLaneA[k];
+        if (a < 0.02) continue;
+        const s = _hudLaneState(k);
+        const y = G.baseY - _hudLaneY[k] * G.pitch;
+        const warn = s.remain < HUD_LANE_WARN_SEC ? 0.55 + 0.45 * Math.sin(gtime * 18) : 1;   // combo chip's rate
+        const dim  = s.held ? 0.45 + 0.2 * Math.sin(gtime * 6) : 1;
+        const corridor = k === 'gold';
+        const fw  = tw * (s.on ? s.ratio : 0);
+        const fx0 = corridor ? (G.x0 + G.x1 - fw) / 2 : G.x0;
+        ctx.save();
+        ctx.globalAlpha = a;
+        _hudCapsule(G.x0, y, tw, G.lh);
+        ctx.fillStyle = coinTone(k, 0, 0.10); ctx.fill();
+        ctx.strokeStyle = coinTone(k, 0, 0.30); ctx.lineWidth = 1; ctx.stroke();
+        if (fw > 0.5) {
+            ctx.globalAlpha = a * warn * dim;
+            const gr = ctx.createLinearGradient(0, y - G.lh / 2, 0, y + G.lh / 2);
+            gr.addColorStop(0, coinTone(k, 0.55)); gr.addColorStop(0.45, coinTone(k, 0)); gr.addColorStop(1, coinTone(k, -0.3));
+            _hudCapsule(fx0, y, fw, G.lh);
+            ctx.fillStyle = gr; ctx.fill();
+            // One notch per second of the window.
+            if (s.max > 0) {
+                ctx.fillStyle = 'rgba(0,0,0,0.38)';
+                for (let sec = 1; sec < s.max; sec++) {
+                    const nx = G.x0 + tw * (sec / s.max);
+                    if (nx < fx0 + fw - 2) ctx.fillRect(Math.round(nx), y - G.lh / 2 + 1, 1, G.lh - 2);
+                }
+            }
+            ctx.globalCompositeOperation = 'lighter';
+            const R = G.lh * 2.4;
+            for (const ex of corridor ? [fx0, fx0 + fw] : [fx0 + fw]) {
+                const rg = ctx.createRadialGradient(ex, y, 0, ex, y, R);
+                rg.addColorStop(0, coinTone(k, 0.6, 0.55)); rg.addColorStop(1, coinTone(k, 0, 0));
+                ctx.fillStyle = rg;
+                ctx.beginPath(); ctx.arc(ex, y, R, 0, Math.PI * 2); ctx.fill();
+            }
+            // A top-up's new segment flashes (the whole corridor for gold, which eases open).
+            const fx = hudLaneFx[k];
+            if (fx && gtime - fx.t < HUD_LANE_FLASH_SEC) {
+                const r0 = corridor ? 0 : Math.min(fx.from, s.ratio);
+                ctx.globalAlpha = a * 0.85 * (1 - (gtime - fx.t) / HUD_LANE_FLASH_SEC);
+                _hudCapsule(corridor ? fx0 : G.x0 + tw * r0, y, corridor ? fw : tw * (s.ratio - r0), G.lh);
+                ctx.fillStyle = '#ffffff'; ctx.fill();
+            }
+            ctx.globalCompositeOperation = 'source-over';
+        }
+        // The gold coin's chevrons, pushing the corridor open.
+        if (corridor && fw > 1) {
+            const cx = (G.x0 + G.x1) / 2, cs = G.lh * 1.05;
+            ctx.globalAlpha = a;
+            ctx.strokeStyle = coinTone('gold', 0.3, 0.9); ctx.lineWidth = Math.max(1.3, G.lh * 0.32);
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            for (const d of [-1, 1]) {
+                const ex = cx + d * (fw / 2 + cs * 1.3);
+                ctx.beginPath(); ctx.moveTo(ex - d * cs * 0.7, y - cs); ctx.lineTo(ex, y); ctx.lineTo(ex - d * cs * 0.7, y + cs); ctx.stroke();
+            }
+            ctx.lineCap = 'butt'; ctx.lineJoin = 'miter';
+        }
+        ctx.globalAlpha = a * (warn < 1 ? 0.6 + 0.4 * warn : 1) * dim;
+        ctx.translate(G.iconX, y);
+        if (corridor) ctx.scale(0.85, 0.85);
+        COIN_OBJECTS[k](G.iconS, gtime, 0);
+        ctx.restore();
+    }
+}
+
+function _hudMagazine(G) {
+    const lastShot = hudAmmoEjects.length ? hudAmmoEjects[hudAmmoEjects.length - 1].t : -9;
+    // An emptied magazine stays a moment, so the last round is seen leaving.
+    const a = bulletAmmo > 0 ? 1 : Math.max(0, 1 - (gtime - lastShot) / 0.8);
+    if (a <= 0) return;
+    const y = G.baseY, cap = bulletAmmoCap();
+    // Same scale as the hull row it mirrors (_hudHull): icon, element height and icon gap.
+    const rw = Math.max(3.75, FS * 0.0069), rh = Math.max(11.5, FS * 0.020), p = Math.max(6.9, FS * 0.013);
+    const x0 = G.leftX + Math.max(19, FS * 0.033) + rw / 2, tip = rh * 0.32;
+    const fx = hudLaneFx.orange, flashK = fx ? 1 - (gtime - fx.t) / HUD_LANE_FLASH_SEC : 0;
+    const round = (x, yy) => {
+        ctx.beginPath();
+        ctx.moveTo(x - rw / 2, yy + rh / 2); ctx.lineTo(x - rw / 2, yy - rh / 2 + tip);
+        ctx.quadraticCurveTo(x - rw / 2, yy - rh / 2, x, yy - rh / 2);
+        ctx.quadraticCurveTo(x + rw / 2, yy - rh / 2, x + rw / 2, yy - rh / 2 + tip);
+        ctx.lineTo(x + rw / 2, yy + rh / 2); ctx.closePath();
+    };
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.save(); ctx.translate(G.leftX, y); COIN_OBJECTS.orange(G.iconS * 1.25, gtime, 0); ctx.restore();
+    ctx.lineWidth = 1;
+    for (let i = 0; i < cap; i++) {
+        const x = x0 + i * p;
+        round(x, y);
+        if (i < bulletAmmo) {
+            ctx.fillStyle = coinTone('orange', 0.1); ctx.fill();
+            ctx.fillStyle = coinTone('orange', 0.55); ctx.fillRect(x - rw / 2, y - rh / 2 + tip, rw * 0.35, rh / 2 + rh * 0.3 - tip);
+            ctx.fillStyle = coinTone('orange', -0.5); ctx.fillRect(x - rw / 2, y + rh * 0.3, rw, rh * 0.2);
+            if (flashK > 0 && i >= fx.from) {
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.globalAlpha = a * 0.8 * flashK;
+                round(x, y); ctx.fillStyle = '#ffffff'; ctx.fill();
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.globalAlpha = a;
+            }
+        } else {
+            ctx.strokeStyle = coinTone('orange', 0, 0.35); ctx.stroke();
+        }
+    }
+    // Spent rounds flip up and out of the magazine.
+    for (const e of hudAmmoEjects) {
+        const k = (gtime - e.t) / 0.5;
+        if (k < 0 || k >= 1) continue;
+        ctx.save();
+        ctx.globalAlpha = a * (1 - k);
+        ctx.translate(x0 + e.i * p - k * FS * 0.03, y - k * FS * 0.05 + k * k * FS * 0.04);
+        ctx.rotate(-k * 2.4);
+        ctx.fillStyle = coinTone('orange', 0.3);
+        ctx.fillRect(-rw / 2, -rh / 2, rw, rh * 0.7);
+        ctx.restore();
+    }
+    ctx.restore();
+}
+
+function _hudHull(G) {
+    const hitAge = gtime - hudHullHitT;
+    const shake = hitAge < 0.3 ? Math.sin(gtime * 90) * FS * 0.004 * (1 - hitAge / 0.3) : 0;
+    const y = G.baseY, ix = G.rightX + shake;
+    // A notch larger than the lane icons (on request), and the magazine matches it: the two
+    // side rows are the console's frame.
+    const pw = Math.max(14, FS * 0.025), ph = Math.max(11.5, FS * 0.020), p = pw * 1.35;
+    ctx.save();
+    ctx.save(); ctx.translate(ix, y); COIN_OBJECTS.repair(G.iconS * 1.25, gtime, 0); ctx.restore();
+    ctx.lineWidth = 1;
+    for (let i = 0; i < HULL_SCRATCHES; i++) {
+        const cx = ix - Math.max(19, FS * 0.033) - (HULL_SCRATCHES - 1 - i) * p - pw / 2;
+        // A repair kit that refilled the row (systems.js updateRepairKits) swells its plate.
+        const swell = i === hullScratches - 1 ? 1 + 0.35 * Math.min(1, hullRepairFlash / 0.8) : 1;
+        const w = pw * swell / 2, h = ph * swell / 2, ch = w * 0.35;
+        ctx.beginPath();
+        ctx.moveTo(cx - w + ch, y - h); ctx.lineTo(cx + w - ch, y - h); ctx.lineTo(cx + w, y);
+        ctx.lineTo(cx + w - ch, y + h); ctx.lineTo(cx - w + ch, y + h); ctx.lineTo(cx - w, y);
+        ctx.closePath();
+        if (i < hullScratches) {
+            const gr = ctx.createLinearGradient(0, y - h, 0, y + h);
+            gr.addColorStop(0, coinTone('repair', 0.5)); gr.addColorStop(0.5, coinTone('repair', 0.05)); gr.addColorStop(1, coinTone('repair', -0.35));
+            ctx.fillStyle = gr; ctx.fill();
+            ctx.strokeStyle = coinTone('repair', 0.6, 0.9); ctx.stroke();
+            ctx.fillStyle = coinTone('repair', -0.6, 0.8);
+            ctx.fillRect(cx - w * 0.45, y - h * 0.12, w * 0.9, Math.max(1, h * 0.24));
+        } else {
+            ctx.setLineDash([2, 2]);
+            ctx.strokeStyle = coinTone('repair', 0, 0.45); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.strokeStyle = coinTone('repair', -0.2, 0.5);
+            ctx.beginPath();
+            ctx.moveTo(cx - w * 0.3, y - h * 0.8); ctx.lineTo(cx + w * 0.05, y - h * 0.05);
+            ctx.lineTo(cx - w * 0.1, y + h * 0.2); ctx.lineTo(cx + w * 0.3, y + h * 0.8);
+            ctx.stroke();
+            // The plate just lost breaks into three shards.
+            if (i === hullScratches && hitAge < 0.7) {
+                const k = hitAge / 0.7;
+                ctx.fillStyle = coinTone('repair', 0.2);
+                for (let j = -1; j <= 1; j++) {
+                    ctx.save();
+                    ctx.globalAlpha = 1 - k;
+                    ctx.translate(cx + j * w * 0.7 + j * k * FS * 0.02, y + k * k * FS * 0.06);
+                    ctx.rotate(k * j * 3);
+                    ctx.beginPath(); ctx.moveTo(0, -h * 0.6); ctx.lineTo(w * 0.45, h * 0.4); ctx.lineTo(-w * 0.4, h * 0.3); ctx.closePath();
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+        }
+    }
+    ctx.restore();
+}
+
+// A power-up's second spark, from the pickup to its lane (the score spark's arc and trail).
+function _hudLaneSparks(G) {
+    if (!hudLaneSparks.length) return;
+    const dotR = Math.max(2.5, FS * 0.009);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const s of hudLaneSparks) {
+        const ax = s.k === 'orange' ? G.leftX : s.k === 'repair' ? G.rightX : G.iconX;
+        const ay = s.k === 'orange' || s.k === 'repair' ? G.baseY : G.baseY - (_hudLaneY[s.k] || 0) * G.pitch;
+        const cx1 = (s.x + ax) / 2, cy1 = Math.min(s.y, ay) - H * 0.12;
+        const k = Math.min(1, s.t / HUD_SPARK_SEC), col = HUD_SPARK_COLOR[s.k];
+        for (let i = 0; i < 5; i++) {
+            const e = Math.max(0, k - i * 0.07), ee = e * e, u = 1 - ee;
+            ctx.fillStyle = rgb(col, 0.9 - i * 0.17);
+            ctx.beginPath();
+            ctx.arc(u * u * s.x + 2 * u * ee * cx1 + ee * ee * ax, u * u * s.y + 2 * u * ee * cy1 + ee * ee * ay, dotR * (1 - i * 0.14), 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    ctx.restore();
+}
+
+function drawEnergyConsole() {
+    const G = _hudGeo();
+    // Lane stacking eases on gtime: active lanes slide down to the lowest free row.
+    const dt = _hudLaneT < 0 ? 1 : Math.max(0, Math.min(0.1, gtime - _hudLaneT));
+    _hudLaneT = gtime;
+    let row = 0;
+    for (const k of _HUD_LANES) {
+        const on = _hudLaneState(k).on;
+        if (on) {
+            if (_hudLaneA[k] < 0.02) _hudLaneY[k] = row;   // appears in place, never slides in
+            _hudLaneY[k] += (row - _hudLaneY[k]) * Math.min(1, dt * 10);
+            row++;
+        }
+        _hudLaneA[k] += ((on ? 1 : 0) - _hudLaneA[k]) * Math.min(1, dt * 12);
+    }
+    _hudLanes(G);
+    _hudMagazine(G);
+    if (HULL_SCRATCHES > 0) _hudHull(G);
+    _hudLaneSparks(G);
+}
+
+
 function drawHUD() {
     const theme = getTheme();
     // Approach (approach.js): no score yet - the run starts counting in the cave.
@@ -2974,98 +3246,8 @@ function drawHUD() {
         }
     }
 
-    // Gap bonus bar (bottom, gold)
-    if (phase === 'play' && gapBonusVisual > 0) {
-        const ratio = gapBonusVisual / gapBonusMax();
-        const barW  = W * 0.55 * ratio;
-        const barY  = H * 0.955;
-        const barH  = 4;
-        ctx.fillStyle = 'rgba(255,200,40,0.15)';
-        ctx.fillRect(W*0.225, barY, W*0.55, barH);
-        ctx.fillStyle = `rgba(255,210,50,${0.55 + ratio*0.35})`;
-        ctx.fillRect(W*0.225, barY, barW, barH);
-    }
-
-    // Slow-time bar (bottom, cyan, just above gap bar). A slow banked during a warp
-    // (state.js slowPending) shows the same bar HELD FULL and dimmed, pulsing gently:
-    // it is not running down yet, so a draining bar would lie, but showing nothing
-    // would read as the pickup having been swallowed - which is the complaint the
-    // banking fixes in the first place. No new string, no new HUD element.
-    if (phase === 'play' && (slowTime > 0 || slowPending > 0)) {
-        const held  = slowTime <= 0 && slowPending > 0;
-        const ratio = held ? 1.0
-                    : (slowTimeMax > 0 ? Math.min(slowTime / slowTimeMax, 1.0) : Math.min(slowTime / 4.0, 1.0));
-        const barW  = W * 0.55 * ratio;
-        const barY  = H * 0.940;
-        const barH  = 4;
-        const a     = held ? 0.28 + 0.12 * Math.sin(gtime * 6) : 0.55 + ratio * 0.35;
-        ctx.fillStyle = 'rgba(60,200,255,0.15)';
-        ctx.fillRect(W*0.225, barY, W*0.55, barH);
-        ctx.fillStyle = `rgba(60,200,255,${a})`;
-        ctx.fillRect(W*0.225, barY, barW, barH);
-    }
-
-    // Magnet bar (bottom, green, just above slow bar)
-    if (phase === 'play' && magnetTime > 0) {
-        const ratio = Math.min(magnetTime / 3.0, 1.0);
-        const barW  = W * 0.55 * ratio;
-        const barY  = H * 0.925;
-        const barH  = 4;
-        ctx.fillStyle = 'rgba(60,255,120,0.15)';
-        ctx.fillRect(W*0.225, barY, W*0.55, barH);
-        ctx.fillStyle = `rgba(80,255,130,${0.55 + ratio*0.35})`;
-        ctx.fillRect(W*0.225, barY, barW, barH);
-    }
-
-    // Bullet ammo dots (bottom, orange, above magnet bar)
-    if (phase === 'play' && bulletAmmo > 0) {
-        const dotR   = 4;
-        const dotY   = H * 0.910;
-        const startX = W * 0.225;
-        ctx.shadowColor = 'rgba(255,130,0,0.80)';
-        ctx.shadowBlur  = 6;
-        for (let i = 0; i < bulletAmmo; i++) {
-            ctx.beginPath();
-            ctx.arc(startX + i * (dotR * 2.8), dotY, dotR, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(255,150,0,0.85)';
-            ctx.fill();
-        }
-        ctx.shadowBlur = 0;
-        ctx.save();
-        ctx.font         = `bold ${FS*0.016}px ${FONT_UI}`;
-        ctx.textAlign    = 'left';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle    = 'rgba(255,175,60,0.85)';
-        ctx.fillText(T.ammo, startX + bulletAmmo * dotR * 2.8 + W * 0.010, dotY);
-        ctx.restore();
-    }
-
-    // Hull scratches (bottom right, mirrors the ammo row): until spent - they last the whole run.
-    if (phase === 'play' && hullScratches > 0) {
-        const s      = 5;
-        const dotY   = H * 0.910;
-        const endX   = W * 0.775;
-        ctx.save();
-        // A repair kit that refilled the row (systems.js updateRepairKits) swells it briefly.
-        const sz = s * (1 + 0.5 * Math.min(1, hullRepairFlash / 0.8));
-        ctx.shadowColor = 'rgba(255,170,90,0.7)';
-        ctx.shadowBlur  = 6;
-        ctx.fillStyle   = 'rgba(255,190,120,0.85)';
-        for (let i = 0; i < hullScratches; i++) {
-            const cx = endX - i * (s * 3);
-            ctx.beginPath();
-            ctx.moveTo(cx, dotY - sz); ctx.lineTo(cx + sz, dotY); ctx.lineTo(cx, dotY + sz); ctx.lineTo(cx - sz, dotY);
-            ctx.closePath();
-            ctx.fill();
-        }
-        ctx.shadowBlur   = 0;
-        ctx.font         = `bold ${FS*0.016}px ${FONT_UI}`;
-        ctx.textAlign    = 'right';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle    = 'rgba(255,200,140,0.85)';
-        ctx.fillText(T.hull, endX - hullScratches * s * 3 - W * 0.004, dotY);
-        ctx.restore();
-    }
+    // Energy console: power-up lanes, magazine and hull plates along the bottom edge.
+    if (phase === 'play') drawEnergyConsole();
 
     // World intro banner -- "WORLD n: Name", shown briefly at the start of each run
     if (levelIntroT > 0 && phase === 'play') {

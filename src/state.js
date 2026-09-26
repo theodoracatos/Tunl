@@ -482,6 +482,9 @@ let chicaneCoins;
 let lastChicaneCoinWx;
 let gapBonus, gapBonusVisual;
 let slowTime, slowTimeMax, shieldCount, shieldFlash, magnetTime;
+// The magnet window the last green pickup topped up to, like slowTimeMax: the HUD lane
+// divides by it (draw.js drawEnergyConsole). A second coin stacks past one coin's worth.
+let magnetTimeMax = 0;
 // Blue-coin slow banked while a warp is live (systems.js blue branch, drained at
 // update.js's warpTime falling edge). A warp already makes the player immune to
 // every hazard, so a slow window spent inside one has no gameplay value at all and
@@ -590,6 +593,12 @@ let notifs;
 // pulse (1 -> 0), and the full length of the current combo window so the combo chip's
 // timer bar can show how much of it is left (ELECTRIC's window is shorter than 2.0s).
 let hudSparks = [], hudBump = 0, coinComboWindow = 2.0;
+// Energy console (draw.js drawEnergyConsole, constants.js HUD_LANE_* doc), presentation
+// only. hudLaneFx: per lane ('gold' | 'blue' | 'green' | 'orange' | 'repair') the gtime
+// of the last top-up and the fill before it, so the new segment can flash.
+// hudLaneSparks: a power-up pickup's second spark, flying to its lane. hudAmmoEjects:
+// spent rounds leaving the magazine. hudHullHitT: gtime of the last hull scratch.
+let hudLaneFx = {}, hudLaneSparks = [], hudAmmoEjects = [], hudHullHitT = -9;
 let bonusScore, milestoneNext, nearMissTimer, coinCombo, coinComboTimer;
 let grazeChain = 0, grazeChainT = 0;   // hazard graze chain (constants.js GRAZE_*)
 let runCoins, runNearMisses, runMaxCombo;

@@ -40,6 +40,15 @@ Study: https://claude.ai/artifact/QPvLrDmGiU6przXNwXLV9y
   colour to the score, which "swallows" it (`hudBump`, scale + gold tint). A near-miss
   bumps immediately. All presentation: `bonusScore` is still credited at pickup. The world
   intro banner and the milestone flash are both placed below `hudY`, never over the stack.
+- **Energy console** (2026-09-26, `drawEnergyConsole`, constants.js `HUD_LANE_*`; concept https://claude.ai/artifact/Cm7MGTKfpRqtNmfvSZ77mN): the
+  bottom HUD is one instrument - magazine left, power-up lanes centre, hull plates right,
+  straight on the rock. **No dark plate behind it** (tried and removed the same day on the
+  user's call). Rules: a lane's icon is the coin's own object (`COIN_OBJECTS`), never a
+  word; a timed lane divides by the window it was topped up to (`slowTimeMax`,
+  `magnetTimeMax`), never a fixed number (the magnet bar sat pinned full while stacked);
+  active lanes stack without empty rows; spent rounds and lost plates stay as outlines;
+  glow is additive gradients, never `shadowBlur`; varying alpha goes through `globalAlpha`
+  so `coinTone()`'s cache stays bounded.
 - **No parallax background - tried and removed the same day (do not re-add).** Far rock
   silhouettes read as "extremely confusing" even at near-void contrast: any second set of
   wall-shaped edges moving at another speed competes with the real walls.

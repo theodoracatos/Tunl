@@ -35,11 +35,14 @@ the corridor narrows under it.
 `DEEP_DECAY_PEAK`** - coin supply refills the bar far faster than any decay rate drains it,
 so the cap binds, not decay (swept and measured).
 
-**Gold coins bank no `gapBonus` during the safe opening zone** (`scrollX <
-SAFE_START_WX`, `checkCoinCollection`'s gold branch): walls there are already at the
-screen edges (`safeOpenAt`), so the widening is invisible in the moment and only pays off
-as a bonus already near its cap the instant hazards start. Points, combo and shard
-banking are unaffected.
+**Gold in the safe opening zone banks, but drains to 0 by the first hazard**
+(`SAFE_GOLD_DRAIN_WX`, clamp in `update.js`): the first coins fill the HUD's gold lane
+(user's call, 2026-09-27), while the bonus ceiling closes linearly over the last
+`SAFE_GOLD_DRAIN_WX` to 0 at `SAFE_START_WX` - where gold used to start banking, so from
+there on nothing changed (ending it at `HAZARD_START_WX` instead would cap the golds in
+between and make score ~50 harder). Without that ceiling a perfect collector entered
+sector 1 at 89-100% of the cap for up to 12.7s (26-day bot sweep) - the reason gold used
+to bank nothing there. Keep the ceiling a function of world-x, never seconds.
 
 **Chicane gold is gated in SECONDS, not world-px** (`CHICANE_GOLD_GAP_SEC`,
 `worldPxForSec()` in `world.js`, applied in `maintainStalactites`). Deep, nearly every

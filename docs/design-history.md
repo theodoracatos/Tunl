@@ -1946,3 +1946,31 @@ hissed at over and over, not on the track's beat, and a closing lowpass is also 
 sweep's gesture. Removed entirely; the per-sector intensity lift (gliding, no event)
 stays. Rejected for now: a beat-quantized stinger (any per-boundary sound at this cadence
 turns into a metronome).
+
+## Energy console: the bottom HUD as one instrument (2026-09-26)
+
+The bottom HUD was three flat 4px bars (gold, slow, magnet) on fixed rows, a row of ammo
+dots with the word AMMO and a row of hull diamonds with the word HULL, each drawn on its
+own. The user found it "nicht schlecht, aber schlicht". Concept page with live mockups
+(https://claude.ai/artifact/Cm7MGTKfpRqtNmfvSZ77mN), all six proposals picked:
+P1 honest magnet scale (`magnetTimeMax`; the bar divided by 3.0 while a second coin
+stacks to 5.0, NOVA 11.0, so it stood full for up to 2s, NOVA 8s), P2 capsule lanes with
+the coin object as icon, stacked without gaps, P3 magazine and armour plates showing
+capacity, no `shadowBlur`, P4 gold grows from the centre between the gold coin's
+chevrons, P5 pickup/expiry moments (lane spark, segment flash, last-second pulse at the
+combo chip's rate, round ejected, plate shatters), P6 a dark plate behind the console.
+P6 was removed the same day on the user's call (the plate lay over the floor edge);
+the console sits straight on the rock. Score sparks are unchanged - a power-up coin sends a second spark
+to its lane rather than redirecting the score's. `T.ammo` is no longer drawn; the string
+stays in `i18n.js`.
+
+## Opening gold fills the HUD lane (2026-09-27)
+
+The user wanted the first gold coins to flow into the new gold lane "even if they don't do
+much yet". They had banked nothing before `SAFE_START_WX` because a perfect collector would
+otherwise enter sector 1 at 89-100% of the cap for up to 12.7s (26-day bot sweep, 4-9
+opening golds). Offered: full banking, a one-coin cap, or a ceiling that drains to 0; the
+user picked the drain. `SAFE_GOLD_DRAIN_WX` closes the ceiling to 0 at `SAFE_START_WX`, not
+`HAZARD_START_WX` - the latter would have capped the golds in between, i.e. made score ~50
+harder. Re-measured: opening peak 44-98% (median 78%), effective bonus at `SAFE_START_WX`
+at most 0.7%; from there on unchanged. Same day: the HUD hull row was enlarged ~30% on request.

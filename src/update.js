@@ -282,6 +282,10 @@ function update(dt) {
     // ground as the corridor narrows under it. Continuous (the base curve moves
     // slowly) and gapBonusVisual's easing smooths whatever is left.
     gapBonus   = Math.min(gapBonus, gapBonusMax());
+    // Opening flight: the ceiling closes to 0 at SAFE_START_WX (constants.js SAFE_GOLD_DRAIN_WX).
+    if (scrollX < SAFE_START_WX) {
+        gapBonus = Math.min(gapBonus, gapBonusMax() * Math.min(1, (SAFE_START_WX - scrollX) / SAFE_GOLD_DRAIN_WX));
+    }
     // gapBonusVisual chases the instant-jump gapBonus target at a constant rate
     // instead of snapping to it (constants.js GAP_EASE_RATE doc) - this is the
     // value collision/rendering actually use, so the wall visibly widens rather
@@ -518,6 +522,12 @@ function update(dt) {
         if (hudSparks[i].t >= HUD_SPARK_SEC) { hudSparks.splice(i, 1); hudBump = 1; }
     }
     hudBump = Math.max(0, hudBump - dt / HUD_BUMP_SEC);
+    // Energy console (draw.js drawEnergyConsole): lane sparks fly as long as score sparks.
+    for (let i = hudLaneSparks.length - 1; i >= 0; i--) {
+        hudLaneSparks[i].t += dt;
+        if (hudLaneSparks[i].t >= HUD_SPARK_SEC) hudLaneSparks.splice(i, 1);
+    }
+    while (hudAmmoEjects.length && gtime - hudAmmoEjects[0].t > 0.5) hudAmmoEjects.shift();
 
     // Milestone flash decay
     milestoneFlash = Math.max(0, milestoneFlash - dt * 1.6);
@@ -902,6 +912,7 @@ function update(dt) {
 // no blink). It counts as a hit for the No-Hit achievement like every other absorbed collision.
 function hullScratch(top, bot, r) {
     hullScratches--;
+    hudHullHitT = gtime;   // the HUD plate breaks (draw.js drawEnergyConsole)
     runHitCount++;
     wallGraceT = WALL_GRACE_SEC;
     const hitTop = py - r < top;

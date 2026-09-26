@@ -569,12 +569,15 @@ function checkCoinCollection() {
                 if (warpTime > 0) {
                     slowPending = Math.min(slowPending + _slowAdd, _slowCap);
                 } else {
+                    const _slowWas = slowTime;
                     slowTime = Math.min(slowTime + _slowAdd, _slowCap);
                     slowTimeMax = slowTime;  // capture the window the scroll + music glide ramps over (world.js slowScrollFactor)
+                    hudLaneFx.blue = { t: gtime, from: _slowWas / slowTime };
                     slowFxPulseT = 0;        // pickup ring (constants.js SLOW_FX doc)
                 }
                 burstCoin(sx, coin.y, 195, 26);
                 shake += 3;
+                hudLaneSpark('blue', sx, coin.y);
                 pushNotif(sx, coin.y - 34, 1.1, T.notifSlow, [60,210,255]);
                 sfxSlow();
                 // Music only sags when the effect actually starts; a banked one would
@@ -611,8 +614,12 @@ function checkCoinCollection() {
                 // The per-coin amount now scales too (5.0-6.0 vs 3.0), so the buff pays
                 // off on the very next green pickup instead of requiring an unlikely
                 // stack.
+                const _magWas = magnetTime;
                 magnetTime = Math.min(magnetTime + (activeSkin === 6 ? masteryLerp(6, 5.0, 6.0) : 3.0),
                                        activeSkin === 6 ? masteryLerp(6, 8.0, 11.0) : 5.0);
+                magnetTimeMax = magnetTime;   // the HUD lane's full length (state.js)
+                hudLaneFx.green = { t: gtime, from: _magWas / magnetTime };
+                hudLaneSpark('green', sx, coin.y);
                 burstCoin(sx, coin.y, 120, 26);
                 shake += 3;
                 pushNotif(sx, coin.y - 34, 1.1, T.notifMagnet, [80,255,130]);
@@ -624,8 +631,10 @@ function checkCoinCollection() {
                 // heals the pickup amount fully to the 5 baseline, but the cap only as far
                 // as 9 -- never the full 10 -- so the drawback never fully erases (see the
                 // "never fully erase the drawback" doc above SKINS in constants.js).
+                hudLaneFx.orange = { t: gtime, from: bulletAmmo };
                 bulletAmmo = Math.min(bulletAmmo + (activeSkin === 6 ? Math.round(masteryLerp(6, 3, 5)) : 5),
-                                       activeSkin === 6 ? Math.round(masteryLerp(6, 6, 9)) : 10);
+                                       bulletAmmoCap());
+                hudLaneSpark('orange', sx, coin.y);
                 bulletFireTimer = 0;
                 burstCoin(sx, coin.y, 28, 26);
                 shake += 3;
@@ -643,16 +652,12 @@ function checkCoinCollection() {
                 sfxBomb();
                 window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
             } else {
-                // No gap bonus during the safe opening zone (score < 100, constants.js
-                // SAFE_START_WX doc) - on request: those walls are already pushed to
-                // the screen edges (safeOpenAt), so a gold coin banking a gapBonus
-                // there does nothing visible yet, only to hand a maxed-out bonus for
-                // free the instant the zone ends and hazards actually start
-                // (HAZARD_START_WX). Everything else about the pickup (points, combo,
-                // shard banking) is unaffected - only the widening is suppressed.
-                if (scrollX >= SAFE_START_WX) {
-                    gapBonus = Math.min(gapBonusMax(), gapBonus + gapPerCoin() * (activeSkin === 4 ? masteryLerp(4, 2.0, 2.5) : 1));
-                }
+                // Banks in the opening flight too, so the first coins fill the HUD's
+                // gold lane; update.js closes the ceiling to 0 by SAFE_START_WX, so
+                // none of it carries into the first hazards (constants.js
+                // SAFE_GOLD_DRAIN_WX).
+                hudLaneFx.gold = { t: gtime, from: gapBonusVisual / gapBonusMax() };
+                gapBonus = Math.min(gapBonusMax(), gapBonus + gapPerCoin() * (activeSkin === 4 ? masteryLerp(4, 2.0, 2.5) : 1));
                 burstCoin(sx, coin.y, 44);
                 // Stack offset computed once and shared by both notifs below: they
                 // belong to the same pickup, so they keep their tight fixed 32px gap
@@ -673,6 +678,15 @@ function checkCoinCollection() {
 
 // ── Bullet system ─────────────────────────────────────────────────────
 
+// Magazine size, also drawn as the HUD's empty rounds (draw.js drawEnergyConsole).
+function bulletAmmoCap() { return activeSkin === 6 ? Math.round(masteryLerp(6, 6, 9)) : 10; }
+
+// Energy console: a power-up's second spark, flying to its lane (the first goes to the
+// score as for every coin). Presentation only.
+function hudLaneSpark(k, x, y) {
+    if (hudLaneSparks.length < HUD_LANE_SPARK_MAX) hudLaneSparks.push({ k, x, y, t: 0 });
+}
+
 // Points + a spark flying to the score for a bullet hit (same spark as a coin pickup).
 function bulletHitScore(sx, y, pts) {
     bonusScore += pts;
@@ -690,6 +704,7 @@ function updateBullets(dt) {
         bulletFireTimer = Math.max(0, bulletFireTimer - dt * slowScrollFactor() * warpScrollFactor());
         if (bulletFireTimer <= 0) {
             bulletAmmo--;
+            hudAmmoEjects.push({ i: bulletAmmo, t: gtime });   // HUD round leaves the magazine
             bulletFireTimer = 0.32;
             bullets.push({ wx: scrollX + PX + PR * 1.6, y: py });
             sfxBulletFire();
@@ -822,6 +837,7 @@ function updateRepairKits(dt) {
         if (repaired) {
             hullScratches = Math.min(HULL_SCRATCHES, hullScratches + 1);
             hullRepairFlash = 0.8;
+            hudLaneSpark('repair', sx, k.y);
             notifs.push({ x: sx, y: stackY - 32, life: 1.3, text: '+' + T.hull, color: HUD_SPARK_COLOR.repair });
         }
         sfxHullRepair(repaired);
