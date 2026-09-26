@@ -21,6 +21,8 @@ let _musicLvl = null, _fxLvl = null;
 const AUDIO_LOW_GAIN = 0.4;
 let _fNode = null, _fGain = null;
 let _mNode = null, _mGain = null, _mOsc = null;
+// Laser beam hum (laserLoopOn/Off/Heat), same one-instance pattern as the magnet shimmer.
+let _lzGain = null, _lzSrc = [], _lzHeat = null, _lzHeatOn = false;
 let _wNode = null, _wGain = null, _wOsc = null;
 // Last-fired bullet-fire voices, so a death mid-burst can cut them off instead of
 // letting the tail ring on into sfxDie (see sfxBulletFireStop below).
@@ -633,6 +635,7 @@ function _reviveAudioContext() {
     // on the _ac !== ctx check; clear the guards so the fresh context can load again.
     _bgmLoading = false; _titleBgmLoading = false;
     _mNode = null; _mGain = null; _mOsc = null;  // magnet shimmer belonged to the closed context
+    _lzGain = null; _lzSrc = []; _lzHeat = null; _lzHeatOn = false;   // laser hum too
     _wNode = null; _wGain = null; _wOsc = null;  // warp whoosh belonged to the closed context
     _awSrc = null; _awGain = null; _awLp = null; _awSend = null; _awLfo = null;  // approach wind too
     _initAC();
@@ -2906,6 +2909,133 @@ function magnetLoopOff() {
         try { n.stop(); } catch(e){}
         oscs.forEach(o => { try { o.stop(); } catch(e){} });
     }, 260);
+}
+
+// ── Laser (constants.js LASER_* doc) ─────────────────────────────────
+// Pickup: a charge-up - a sawtooth swept up through a closing-then-opening bandpass into two
+// bright partials - so it reads as "a weapon arming", not as another coin chime. A rare
+// reward: matched to sfxMagnet's loudest-50ms (offline render), not above it.
+const LASER_PICKUP_LEVEL = 0.27;
+function sfxLaserPickup() {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    const out = _ac.createGain();
+    out.gain.value = LASER_PICKUP_LEVEL;
+    out.connect(_master);
+    const o = _ac.createOscillator(), bp = _ac.createBiquadFilter(), g = _ac.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(180, t);
+    o.frequency.exponentialRampToValueAtTime(720, t + 0.26);
+    bp.type = 'bandpass'; bp.Q.value = 4;
+    bp.frequency.setValueAtTime(500, t);
+    bp.frequency.exponentialRampToValueAtTime(2600, t + 0.26);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.9, t + 0.2);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.34);
+    o.connect(bp); bp.connect(g); g.connect(out);
+    o.start(t); o.stop(t + 0.36);
+    [1480, 2220].forEach((f, i) => {
+        const p = _ac.createOscillator(), pg = _ac.createGain(), t0 = t + 0.24 + i * 0.03;
+        p.type = 'sine'; p.frequency.value = f;
+        pg.gain.setValueAtTime(0.0001, t0);
+        pg.gain.linearRampToValueAtTime(0.55 - i * 0.2, t0 + 0.006);
+        pg.gain.exponentialRampToValueAtTime(0.001, t0 + 0.32);
+        p.connect(pg); pg.connect(out);
+        p.start(t0); p.stop(t0 + 0.34);
+    });
+}
+
+// Beam: runs for the whole laserTime > 0 window, like the magnet shimmer - a power state is
+// audible for its duration. Two detuned sawtooths (the beating is the "hum") lowpassed well
+// under the warnings, a 23 Hz tremolo for the electric buzz, and a sizzle layer (bandpassed
+// noise) that laserLoopHeat() opens while the beam is burning a boulder.
+const LASER_LOOP_LEVEL = 0.04, LASER_HEAT_LEVEL = 0.09;
+function laserLoopOn() {
+    if (!_ac || _lzGain || !fxOn) return;
+    const t = _ac.currentTime;
+    _lzGain = _ac.createGain();
+    _lzGain.gain.setValueAtTime(0.0001, t);
+    _lzGain.gain.linearRampToValueAtTime(LASER_LOOP_LEVEL, t + 0.08);
+    _lzGain.connect(_master);
+    const lp = _ac.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 1900; lp.Q.value = 2;
+    const trem = _ac.createGain(); trem.gain.value = 0.75;
+    lp.connect(trem); trem.connect(_lzGain);
+    const lfo = _ac.createOscillator(), lfoD = _ac.createGain();
+    lfo.type = 'sine'; lfo.frequency.value = 23; lfoD.gain.value = 0.25;
+    lfo.connect(lfoD); lfoD.connect(trem.gain);
+    _lzSrc = [lfo];
+    [[147, 1], [148.6, 0.8], [294, 0.35]].forEach(([f, a]) => {
+        const o = _ac.createOscillator(), og = _ac.createGain();
+        o.type = 'sawtooth'; o.frequency.value = f; og.gain.value = a;
+        o.connect(og); og.connect(lp);
+        _lzSrc.push(o);
+    });
+    const ns = _ac.createBufferSource();
+    ns.buffer = _noiseBuf(0.5); ns.loop = true;
+    const nf = _ac.createBiquadFilter();
+    nf.type = 'bandpass'; nf.frequency.value = 3200; nf.Q.value = 1.2;
+    _lzHeat = _ac.createGain(); _lzHeat.gain.value = 0;
+    ns.connect(nf); nf.connect(_lzHeat); _lzHeat.connect(_lzGain);
+    _lzSrc.push(ns); _lzHeatOn = false;
+    _lzSrc.forEach(n => n.start(t));
+}
+
+// Sizzle on/off while the beam burns a boulder (systems.js updateLaser); edge-triggered.
+function laserLoopHeat(on) {
+    if (!_lzHeat || on === _lzHeatOn) return;
+    _lzHeatOn = on;
+    const t = _ac.currentTime;
+    _lzHeat.gain.cancelScheduledValues(t);
+    _lzHeat.gain.setTargetAtTime(on ? LASER_HEAT_LEVEL / LASER_LOOP_LEVEL : 0, t, on ? 0.03 : 0.08);
+}
+
+function laserLoopOff() {
+    if (!_lzGain) return;
+    const t = _ac.currentTime;
+    _lzGain.gain.cancelScheduledValues(t);
+    _lzGain.gain.setValueAtTime(_lzGain.gain.value, t);
+    _lzGain.gain.linearRampToValueAtTime(0.0001, t + 0.12);
+    const srcs = _lzSrc;
+    _lzGain = null; _lzSrc = []; _lzHeat = null; _lzHeatOn = false;
+    setTimeout(() => srcs.forEach(n => { try { n.stop(); } catch(e){} }), 180);
+}
+
+// A boulder the laser burst. One sound, one meaning: not the mine's blast. The shared
+// _blast() body with less punch and more debris carries the weight, plus a rubble cascade
+// (low band-passed grains tumbling over half a second) and a short hot hiss - rock that was
+// just molten. Panned and sent to the cave like every impact.
+const BOULDER_BURST_LEVEL = 0.16;
+function sfxBoulderBurst(x) {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime, pv = 0.9 + Math.random() * 0.12;
+    _blast(t, { size: 1.4, pv, blast: 1.0, boom: 0.9, debris: 1.3, level: BOULDER_BURST_LEVEL, x });
+    const out = _ac.createGain();
+    out.gain.value = BOULDER_BURST_LEVEL;
+    out.connect(_sfxOut(x));
+    _caveSend(out, 0.8);
+    for (let i = 0; i < 9; i++) {
+        const td = t + 0.03 + i * 0.055 + Math.random() * 0.03;
+        const n = _ac.createBufferSource(); n.buffer = _noiseBuf(0.08);
+        const f = _ac.createBiquadFilter();
+        f.type = 'bandpass'; f.frequency.value = (380 + Math.random() * 520) * pv; f.Q.value = 2.2;
+        const g = _ac.createGain(), a = 1.1 * (1 - i / 11);
+        g.gain.setValueAtTime(0.0001, td);
+        g.gain.linearRampToValueAtTime(a, td + 0.012);
+        g.gain.exponentialRampToValueAtTime(0.001, td + 0.08);
+        n.connect(f); f.connect(g); g.connect(out);
+        n.start(td); n.stop(td + 0.09);
+    }
+    const hs = _ac.createBufferSource(); hs.buffer = _noiseBuf(0.5);
+    const hf = _ac.createBiquadFilter(); hf.type = 'highpass'; hf.frequency.value = 3500;
+    const hg = _ac.createGain();
+    // Swells in after the hit rather than on it: highs on the onset are what made earlier
+    // blasts read as a firecracker (docs/agents/audio.md).
+    hg.gain.setValueAtTime(0.0001, t);
+    hg.gain.linearRampToValueAtTime(0.16, t + 0.12);
+    hg.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+    hs.connect(hf); hf.connect(hg); hg.connect(out);
+    hs.start(t); hs.stop(t + 0.5);
 }
 
 // Ambient warp whoosh - runs for the whole warpTime > 0 window (constants.js "Warp

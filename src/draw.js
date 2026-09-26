@@ -630,6 +630,7 @@ const COIN_BASE_CLR = {
     gold: [255,225,50], blue: [60,200,255], red: [190,50,255], orange: [255,122,0],
     green: [50,255,120], bomb: [255,60,60], poison: [110,200,20], drain: [215,80,140],
     repair: [255,190,120],   // repair kit (systems.js drawRepairKits), the HUD hull row's colour
+    laser: [255,70,110],     // ruby: the first laser was a ruby rod (constants.js LASER_* doc)
 };
 const _COIN_WHITE = [255,255,255], _COIN_BLACK = [0,0,0];
 const _coinToneCache = new Map();
@@ -827,10 +828,37 @@ function _coinRepair(s, t, wx) {
     ctx.beginPath(); ctx.arc(-L, 0, hw*0.7, 0, Math.PI*2); ctx.fill();
     ctx.restore();
 }
+function _coinLaser(s, t, wx) {
+    // A cut ruby firing a beam: the first laser was a ruby, and the cave is full of crystals.
+    // A faceted hexagonal gem, a short bold beam leaving it to the right (the way it fires)
+    // and a star glint where the beam leaves. A rod-with-collar version read as a syringe.
+    // Facets lit from above like every coin; no shadowBlur.
+    const cx = -s*0.3, R = s*0.62;
+    const fl = 0.8 + 0.2 * Math.sin(t * 29 + wx);
+    const bx = cx + R*0.8;
+    _coinPoly([[bx, -s*0.24], [s*1.15, -s*0.13*fl], [s*1.15, s*0.13*fl], [bx, s*0.24]]);
+    ctx.fillStyle = coinTone('laser', 0.25, 0.8); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.95)'; ctx.fillRect(bx, -s*0.06, s*1.15 - bx, s*0.12);
+    const P = [];
+    for (let k = 0; k < 6; k++) { const a = -Math.PI/2 + k * Math.PI/3; P.push([cx + Math.cos(a)*R, Math.sin(a)*R]); }
+    const tones = [0.55, 0.3, -0.35, -0.55, -0.1, 0.35];
+    for (let k = 0; k < 6; k++) {
+        _coinPoly([[cx, 0], P[k], P[(k + 1) % 6]]);
+        ctx.fillStyle = coinTone('laser', tones[k]); ctx.fill();
+    }
+    ctx.save(); ctx.translate(cx, 0); ctx.scale(0.45, 0.45); ctx.translate(-cx, 0);
+    _coinPoly(P); ctx.fillStyle = coinTone('laser', 0.4); ctx.fill();
+    ctx.restore();
+    _coinPoly(P); ctx.strokeStyle = coinTone('laser', 0.6); ctx.lineWidth = 1; ctx.stroke();
+    // Star glint on the exit face.
+    const g = s * 0.38 * fl, w = s * 0.07;
+    _coinPoly([[bx - g, 0], [bx - w, -w], [bx, -g], [bx + w, -w], [bx + g, 0], [bx + w, w], [bx, g], [bx - w, w]]);
+    ctx.fillStyle = '#fff'; ctx.fill();
+}
 const COIN_OBJECTS = {
     gold: _coinGold, blue: _coinSlow, red: _coinShield, orange: _coinAmmo,
     green: _coinMagnet, bomb: _coinBomb, poison: _coinPoison, drain: _coinDrain,
-    repair: _coinRepair,
+    repair: _coinRepair, laser: _coinLaser,
 };
 
 // One coin at screen position (x, y). Visual only: the hitbox is systems.js's
@@ -2081,6 +2109,26 @@ function drawWorld() {
         ctx.strokeStyle = 'rgba(255,255,255,0.14)';
         ctx.lineWidth   = 1.5;
         ctx.stroke();
+        // Laser heat (systems.js updateLaser): the rock glows ruby as the beam burns it,
+        // brightest where the beam strikes, and cools when the beam leaves.
+        if (bo.melt > 0) {
+            const heat = Math.min(1, bo.melt / LASER_MELT_SEC);
+            ctx.globalCompositeOperation = 'lighter';
+            islandPath(bo, sx);
+            ctx.fillStyle = coinTone('laser', 0, Math.round(heat * heat * 5) / 10);
+            ctx.fill();
+            if (bo === laserMeltBo) {
+                ctx.save(); islandPath(bo, sx); ctx.clip();
+                const R = bo.r * (1.2 + heat * 1.6);
+                const rg = ctx.createRadialGradient(laserEndX, py, 0, laserEndX, py, R);
+                rg.addColorStop(0, 'rgba(255,240,220,' + (0.5 + 0.4 * heat).toFixed(2) + ')');
+                rg.addColorStop(0.35, coinTone('laser', 0.2, 0.6));
+                rg.addColorStop(1, coinTone('laser', 0, 0));
+                ctx.fillStyle = rg; ctx.fillRect(laserEndX - R, py - R, R * 2, R * 2);
+                ctx.restore();
+            }
+            ctx.globalCompositeOperation = 'source-over';
+        }
         ctx.restore();
     }
 
@@ -2277,6 +2325,9 @@ function drawWorld() {
             ctx.fillRect(-20,-20,W+40,H+40);
         }
     }
+    // Laser beam (systems.js updateLaser), under the ship, over rock and coins.
+    if (phase === 'play' && laserTime > 0) drawLaserBeam();
+
     // Thruster particle trail (drawn before player so it appears behind). On-fire embers
     // (update.js, tagged `fire`) get a shadowBlur glow the plain thrust burst doesn't --
     // they're meant to read as flame, not just colored exhaust, so they need actual light
@@ -2729,6 +2780,24 @@ function drawWorld() {
             ctx.restore();
             continue;
         }
+        if (p.rock) {
+            // Boulder chunk (systems.js burstBoulder): an irregular stone in the island's own
+            // colour, glowing laser-hot at first and cooling to rock as it flies.
+            const r = Math.max(p.r * (0.55 + 0.45 * a / p.life0), 0.6), heat = Math.min(1, a / p.life0);
+            ctx.save();
+            ctx.globalAlpha = Math.min(1, a * 2.2);
+            ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+            ctx.beginPath();
+            for (let k = 0; k < 5; k++) {
+                const ang = k * Math.PI * 0.4, rr = r * (0.7 + 0.3 * ((k * 7 + p.v * 3) % 5) / 4);
+                k ? ctx.lineTo(Math.cos(ang) * rr, Math.sin(ang) * rr) : ctx.moveTo(rr, 0);
+            }
+            ctx.closePath();
+            ctx.fillStyle = rgb(lerpClr(theme.stal, COIN_BASE_CLR.laser, heat * heat * 0.8));
+            ctx.fill();
+            ctx.restore();
+            continue;
+        }
         if (p.long) {
             // Crystal shard: a tumbling sliver, not a dot (systems.js
             // burstCrystalShards). Three points, no stroke - at this size a rim
@@ -2782,6 +2851,32 @@ function drawWorld() {
     ctx.restore();
 }
 
+// Laser beam (constants.js LASER_* doc): from the nose to laserEndX (systems.js laserTrace)
+// at the ship's height. Additive layers, never shadowBlur (the expensive call on WKWebView):
+// a soft ruby halo, the ruby beam, a white core, and a flare where it strikes. It flickers
+// in its last 0.4s so the end is seen coming.
+function drawLaserBeam() {
+    const x0 = PX + PR * 1.4, x1 = Math.max(x0, laserEndX), y = py, hw = LASER_HALF_W;
+    const fade = laserTime < 0.4 ? 0.55 + 0.45 * Math.sin(gtime * 40) : 1;
+    const wob = 1 + 0.12 * Math.sin(gtime * 57) + 0.06 * Math.sin(gtime * 23);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = fade;
+    const halo = hw * 5 * wob;
+    const hg = ctx.createLinearGradient(0, y - halo, 0, y + halo);
+    hg.addColorStop(0, coinTone('laser', 0, 0)); hg.addColorStop(0.5, coinTone('laser', 0, 0.45)); hg.addColorStop(1, coinTone('laser', 0, 0));
+    ctx.fillStyle = hg; ctx.fillRect(x0, y - halo, x1 - x0, halo * 2);
+    ctx.fillStyle = coinTone('laser', 0.15, 0.9); ctx.fillRect(x0, y - hw * wob, x1 - x0, hw * 2 * wob);
+    ctx.fillStyle = 'rgba(255,248,240,0.95)'; ctx.fillRect(x0, y - hw * 0.4, x1 - x0, hw * 0.8);
+    // Muzzle and strike flares.
+    for (const [fx, fr] of [[x0, hw * 3], [x1, hw * (laserMeltBo ? 7 : 5) * wob]]) {
+        const rg = ctx.createRadialGradient(fx, y, 0, fx, y, fr);
+        rg.addColorStop(0, 'rgba(255,250,245,0.95)'); rg.addColorStop(0.4, coinTone('laser', 0.2, 0.6)); rg.addColorStop(1, coinTone('laser', 0, 0));
+        ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(fx, y, fr, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+}
+
 // HUD instrument scratch state (draw-only): where the score sits this frame, for the coin
 // sparks to aim at, and the last combo value seen, for the chip's pop-in.
 const _hudScoreAnchor = { x: 0, y: 0 };
@@ -2803,8 +2898,8 @@ let _hudLastCombo = 0, _hudComboPopT = -1;
 // - Capacity shows: spent rounds (up to bulletAmmoCap()) and a lost plate stay as outlines.
 // - Glow is additive gradients, never shadowBlur (the expensive call on WKWebView).
 // - Varying alpha goes through globalAlpha so coinTone()'s string cache stays bounded.
-const _HUD_LANES = ['gold', 'blue', 'green'];
-let _hudLaneY = { gold: 0, blue: 1, green: 2 }, _hudLaneA = { gold: 0, blue: 0, green: 0 }, _hudLaneT = -1;
+const _HUD_LANES = ['gold', 'blue', 'green', 'laser'];
+let _hudLaneY = { gold: 0, blue: 1, green: 2, laser: 3 }, _hudLaneA = { gold: 0, blue: 0, green: 0, laser: 0 }, _hudLaneT = -1;
 
 function _hudGeo() {
     const x0 = W * 0.29, pitch = Math.max(13, FS * 0.024);
@@ -2828,6 +2923,10 @@ function _hudLaneState(k) {
         const held = slowTime <= 0 && slowPending > 0;
         return { on: slowTime > 0 || held, held, remain: held ? Infinity : slowTime, max: held ? 0 : slowTimeMax,
                  ratio: held ? 1 : Math.min(1, slowTime / (slowTimeMax > 0 ? slowTimeMax : 4.0)) };
+    }
+    if (k === 'laser') {
+        return { on: laserTime > 0, held: false, remain: laserTime, max: laserTimeMax,
+                 ratio: Math.min(1, laserTime / (laserTimeMax > 0 ? laserTimeMax : LASER_SEC)) };
     }
     return { on: magnetTime > 0, held: false, remain: magnetTime, max: magnetTimeMax,
              ratio: Math.min(1, magnetTime / (magnetTimeMax > 0 ? magnetTimeMax : 3.0)) };

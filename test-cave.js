@@ -49,6 +49,7 @@ const START_RUN = `
         nextPoisonWx = POISON_START_WX + worldPxForSec(POISON_INTERVAL_SEC * (0.15 + rngCoin() * 0.5), POISON_START_WX);
         nextBombWx   = BOMB_START_WX   + worldPxForSec(BOMB_INTERVAL_SEC   * (0.15 + rngCoin() * 0.5), BOMB_START_WX);
         nextDrainWx  = DRAIN_START_WX  + worldPxForSec(DRAIN_INTERVAL_SEC  * (0.15 + rngCoin() * 0.5), DRAIN_START_WX);
+        nextLaserWx  = laserFirstWx();
         lastBlueWx = 0; lastRedWx = 0; lastGreenWx = 0;
         refreshWave();
     };
@@ -109,9 +110,10 @@ function normalise(snap, H) {
     });
 }
 
-function replay(innerWidth, innerHeight, dayInt, untilWx) {
+function replay(innerWidth, innerHeight, dayInt, untilWx, noLaser = false) {
     const w = makeWorld(innerWidth, innerHeight);
     w.startRun(dayInt);
+    if (noLaser) vm.runInContext('nextLaserWx = Infinity;', w);
     const seen = { stal: [], coin: [], chic: [], mine: [], cannon: [], boulder: [], portal: [] };
     const ids = new Set();
     let x = 0, guard = 0;
@@ -180,6 +182,40 @@ for (const day of DAYS) {
         ref.snap.stal.length > 50 && ref.snap.coin.length > 20 &&
         ref.snap.mine.length > 5 && ref.snap.boulder.length > 0 &&   // mines only from score ~200, sparse (2026-09-13)
         ref.snap.portal.length > 0);
+}
+
+// ── The laser is a relabel, not a spawn ────────────────────────────────
+// constants.js LASER_* doc: the laser coin is the next ORANGE coin past a _deepHash-jittered
+// world-x cursor, so it must move nothing - no rngCoin() draw, no veto, no position. Replay
+// each day with and without it: every object byte-identical, and the only coin rows that
+// differ are orange -> laser at the same wx. The cadence stays a floor of
+// LASER_INTERVAL_SEC between laser coins, and none before LASER_START_WX.
+{
+    let lasers = 0, bad = '', gapMinSec = Infinity;
+    const w = makeWorld(956, 440);
+    const g = name => vm.runInContext(name, w);
+    const LASER_UNTIL = 60000;   // score ~1000: the laser starts at S4, so 30000 holds only one or two
+    for (const day of DAYS) {
+        const on  = replay(956, 440, day, LASER_UNTIL);
+        const off = replay(956, 440, day, LASER_UNTIL, true);
+        const asOrange = snap => ({ ...snap, coin: snap.coin.map(([wx, y, t]) => [wx, y, t === 'laser' ? 'orange' : t]) });
+        if (normalise(asOrange(on.snap), on.H) !== normalise(off.snap, off.H)) bad = bad || `day ${day}: geometry or types moved`;
+        on.snap.coin.forEach(([wx, , t], i) => {
+            if (t !== 'laser') return;
+            lasers++;
+            if (off.snap.coin[i][2] !== 'orange') bad = bad || `day ${day}: laser at ${wx} replaced a ${off.snap.coin[i][2]}`;
+            if (wx < g('LASER_START_WX')) bad = bad || `day ${day}: laser before LASER_START_WX at ${wx}`;
+        });
+        w.startRun(day);
+        const lw = on.snap.coin.filter(r => r[2] === 'laser').map(r => r[0]);
+        for (let i = 1; i < lw.length; i++) {
+            gapMinSec = Math.min(gapMinSec, (lw[i] - lw[i - 1]) / g(`worldPxForSec(1, ${lw[i - 1]})`));
+        }
+    }
+    check(`laser coins are relabelled orange coins, cave otherwise byte-identical (${lasers} lasers over ${DAYS.length} days${bad ? ' - ' + bad : ''})`,
+        lasers >= 2 * DAYS.length && !bad);
+    check(`laser coins at least 0.7 x LASER_INTERVAL_SEC apart (closest ${gapMinSec.toFixed(1)}s)`,
+        gapMinSec >= 0.7 * g('LASER_INTERVAL_SEC') - 1e-6);
 }
 
 // ── Spawn-horizon budget ──────────────────────────────────────────────

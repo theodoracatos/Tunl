@@ -485,6 +485,10 @@ let slowTime, slowTimeMax, shieldCount, shieldFlash, magnetTime;
 // The magnet window the last green pickup topped up to, like slowTimeMax: the HUD lane
 // divides by it (draw.js drawEnergyConsole). A second coin stacks past one coin's worth.
 let magnetTimeMax = 0;
+// Laser (constants.js LASER_* doc, systems.js updateLaser): seconds of beam left, the window
+// the last pickup topped up to (the HUD lane divides by it), and where the beam ends this
+// frame in screen x (draw.js). laserMeltBo is the boulder the beam is burning, if any.
+let laserTime = 0, laserTimeMax = 0, laserEndX = 0, laserMeltBo = null;
 // Blue-coin slow banked while a warp is live (systems.js blue branch, drained at
 // update.js's warpTime falling edge). A warp already makes the player immune to
 // every hazard, so a slow window spent inside one has no gameplay value at all and
@@ -572,6 +576,9 @@ let warpTime, warpMax, warpWidenVisual, warpMult;
 // reference width) makes the cadence identical for every player AND independent of
 // frame rate, while still landing on the tuned ~20s/16s/30s at the reference device.
 let nextPoisonWx, nextBombWx, nextDrainWx;
+// Laser supply cursor (constants.js LASER_* doc): world-x from which the next ORANGE coin
+// makeCoin() hands out becomes a laser coin. Jittered by _deepHash, never an rng stream.
+let nextLaserWx = Infinity;
 
 // World-x where a coin of that type last cleared placement (constants.js
 // POWERUP_MIN_GAP_SEC doc) - same world-x model as the three above, and for the same
@@ -594,7 +601,7 @@ let notifs;
 // timer bar can show how much of it is left (ELECTRIC's window is shorter than 2.0s).
 let hudSparks = [], hudBump = 0, coinComboWindow = 2.0;
 // Energy console (draw.js drawEnergyConsole, constants.js HUD_LANE_* doc), presentation
-// only. hudLaneFx: per lane ('gold' | 'blue' | 'green' | 'orange' | 'repair') the gtime
+// only. hudLaneFx: per lane ('gold' | 'blue' | 'green' | 'laser' | 'orange' | 'repair') the gtime
 // of the last top-up and the fill before it, so the new segment can flash.
 // hudLaneSparks: a power-up pickup's second spark, flying to its lane. hudAmmoEjects:
 // spent rounds leaving the magazine. hudHullHitT: gtime of the last hull scratch.

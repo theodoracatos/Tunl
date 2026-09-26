@@ -1974,3 +1974,40 @@ user picked the drain. `SAFE_GOLD_DRAIN_WX` closes the ceiling to 0 at `SAFE_STA
 `HAZARD_START_WX` - the latter would have capped the golds in between, i.e. made score ~50
 harder. Re-measured: opening peak 44-98% (median 78%), effective bonus at `SAFE_START_WX`
 at most 0.7%; from there on unchanged. Same day: the HUD hull row was enlarged ~30% on request.
+
+## Laser: a power-up that breaks boulders (18.0, 2026-09-27)
+
+The user asked for a "laser, like the cannon, but it can destroy the rocks in the middle -
+stronger than the shot". Concept page with the decision fields:
+https://claude.ai/artifact/4jEGBUKiPVGV9QXGh3qoXM - every recommended option was picked,
+all phases built in one go.
+
+- **Supply: a relabel, not a roll.** Past a world-x cursor (`nextLaserWx`) the next coin that
+  comes out of `makeCoin()` as orange becomes `'laser'`; jitter from `_deepHash`, never
+  `rngCoin()`, so the cave's geometry is byte-identical to a build without it (`test-cave.js`
+  replays every day with and without). Rejected: its own weight in the roll (moves every
+  other share and re-rolls the cave from S4), an ammo upgrade (unreadable, ammo drains in
+  1.6s), a hangar ship ability (economy-sized). Cost: a laser takes an orange coin's place,
+  so deep ammo supply drops by roughly a third of the laser cadence.
+- **Form: a beam for `LASER_SEC`**, not piercing bolts or one charged shot - it has to read
+  as a different, stronger weapon. Crystals, mines and cannon shots in its line go at once;
+  a boulder glows for `LASER_MELT_SEC` and bursts. The beam stops at the rock until then,
+  so nothing behind it is hit early. Rejected: burning a tunnel through the island (needs a
+  mutable outline in `boulderHit`) and shrinking it per hit (unreadable at deep speed).
+- **From S4** with the boulders: every run below score 233 is untouched.
+- **Cadence** (20-day spawner replay, 956x440): with `LASER_INTERVAL_SEC` 35 the laser waited
+  for orange coins (every 10-22s deep) and landed only every 40-95s, first at score ~400.
+  At 20 and a first landing 5-35% of an interval into S4: one every ~17s in S4, ~28-40s
+  deeper, first at score ~270-460 (median ~340). Boulders come every ~4-5s from S4 on.
+- **Effect** (real game, autopilot, 8 days, S3-S12, shields topped up): 0-3 lasers picked up
+  per run (the autopilot does not steer for them), beam on for 0-7% of the frames, 5
+  boulders burst over the 8 days, shield hits down ~3% overall. Not a difficulty lever.
+- **Look:** ruby (`COIN_BASE_CLR.laser`), the first laser was a ruby rod. The coin is a cut
+  ruby firing a short beam with a star glint; a rod-in-a-collar version read as a syringe
+  in the first screenshot and was redrawn. Beam, glow and debris are additive gradients,
+  no `shadowBlur`. A fourth energy-console lane.
+- **Sound** (offline render in the real bus): pickup matched to `sfxMagnet` (loudest-50ms
+  -17.9 vs -17.8 dB), hum under the thrust bed (-29.9 vs -24.2 dB, phone band -35.5 vs
+  -29.9), the sizzle while burning lifts it to the thrust's level in the phone band,
+  boulder burst matched to the mine blast in the phone band (-18.9 vs -18.6 dB), its hiss
+  swelling in after the hit so the onset stays at ~15% above 1.5 kHz. Not heard on a device.

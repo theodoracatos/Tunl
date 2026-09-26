@@ -126,7 +126,7 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 ### Hazards -> `docs/agents/hazards.md`
 - Stalactites are **crystals** (`CRYSTAL_STALS`); main crystal on the axis at full length, one blitted sprite per spike. Triangle-circle collision, never AABB.
 - Falling stalactites: fall distance recomputed live each frame, scrollX-indexed.
-- Boulders are rock islands with two guaranteed passes; don't push them further out without leaderboard data.
+- Boulders are rock islands with two guaranteed passes; don't push them further out without leaderboard data. Only the bomb and the laser break one; bullets spark off.
 - Cannons: barrel, shell and exit line share the **tunnel** frame. `rngCannon()` ordering invariant - re-check if spawn/fire distances move.
 - **Mines are what guarantees every run ends** - never wall-anchored or bonus-aware; `MINE_RETRY_OFFSETS` keeps density up deep.
 
@@ -140,6 +140,7 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 - Poison/bomb/drain are real-time **clocks**, never per-candidate percentages.
 - Coins draw the object they do, no frame, no `shadowBlur`. Shield type id stays `'red'` (drawn violet).
 - Repair kits (bullet kill of a mine/cannon shot) live in `repairKits`, never in `coins` - they would fork the daily cave.
+- The laser coin is a **relabelled orange coin** past `nextLaserWx` (jitter from `_deepHash`, never `rngCoin()`) - the cave's geometry must stay byte-identical; `test-cave.js` checks it.
 
 ### Audio -> `docs/agents/audio.md`
 - **Judge by offline render, never by ear** (`reference_audio_method` memory).

@@ -143,7 +143,7 @@ function titleScreen() {
     stalactites = []; nextStalWx = 420; nextFallWx = 99999;
     coins = [];     nextCoinWx = 99999;
     chicaneCoins = []; lastChicaneCoinWx = -Infinity;
-    gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; slowPending = 0; slowFxVis = 0; slowFxPulseT = -1; shieldCount = 0; shieldFlash = 0; magnetTime = 0; magnetTimeMax = 0; notifs = []; hudSparks = []; hudBump = 0;
+    gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; slowPending = 0; slowFxVis = 0; slowFxPulseT = -1; shieldCount = 0; shieldFlash = 0; magnetTime = 0; magnetTimeMax = 0; laserTime = 0; laserTimeMax = 0; laserEndX = 0; laserMeltBo = null; notifs = []; hudSparks = []; hudBump = 0;
     hudLaneFx = {}; hudLaneSparks = []; hudAmmoEjects = []; hudHullHitT = -9;
     invulnT = 0; wallGraceT = 0; deathCause = null;
     safeEndWx = 0; safeCloseWx = 1; wallsLiveShown = false;
@@ -162,7 +162,7 @@ function titleScreen() {
     warpTime = 0; warpMax = 0; warpWidenVisual = 0; warpMult = WARP_MULT_MIN;
     // Coins never spawn on the title screen (nextCoinWx = 99999 above), so these are
     // never actually consulted here -- just kept defined to avoid stray undefineds.
-    nextPoisonWx = 0; nextBombWx = 0; nextDrainWx = 0;
+    nextPoisonWx = 0; nextBombWx = 0; nextDrainWx = 0; nextLaserWx = Infinity;
     lastBlueWx = 0; lastRedWx = 0; lastGreenWx = 0;
     flightClock = 0; flightAchIdx = 0;
     prevRunScore = 0; lastRunScore = 0; milestoneFlash = 0; milestoneText = '';
@@ -189,6 +189,7 @@ function startPlay() {
     thrustOff();
     onFireLoopOff();
     magnetLoopOff();
+    laserLoopOff();
     warpLoopOff();
     approachWindOff();
     bgmSetSlow(false);
@@ -220,7 +221,7 @@ function startPlay() {
     nextFallWx = FALL_START_WX;   // 7800 until 2026-09-13, see constants.js
     coins = [];     nextCoinWx = 500;
     chicaneCoins = []; lastChicaneCoinWx = -Infinity;
-    gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; slowPending = 0; slowFxVis = 0; slowFxPulseT = -1; shieldCount = 0; shieldFlash = 0; magnetTime = 0; magnetTimeMax = 0; notifs = []; hudSparks = []; hudBump = 0;
+    gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; slowPending = 0; slowFxVis = 0; slowFxPulseT = -1; shieldCount = 0; shieldFlash = 0; magnetTime = 0; magnetTimeMax = 0; laserTime = 0; laserTimeMax = 0; laserEndX = 0; laserMeltBo = null; notifs = []; hudSparks = []; hudBump = 0;
     hudLaneFx = {}; hudLaneSparks = []; hudAmmoEjects = []; hudHullHitT = -9;
     invulnT = 0; wallGraceT = 0; deathCause = null;
     continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;
@@ -313,6 +314,9 @@ function startPlay() {
     nextPoisonWx = POISON_START_WX + worldPxForSec(POISON_INTERVAL_SEC * (0.15 + rngCoin() * 0.5), POISON_START_WX);
     nextBombWx   = BOMB_START_WX   + worldPxForSec(BOMB_INTERVAL_SEC   * (0.15 + rngCoin() * 0.5), BOMB_START_WX);
     nextDrainWx  = DRAIN_START_WX  + worldPxForSec(DRAIN_INTERVAL_SEC  * (0.15 + rngCoin() * 0.5), DRAIN_START_WX);
+    // Laser: jittered by _deepHash (after seedDailyVariety above), never rngCoin() - see
+    // constants.js LASER_* doc and systems.js laserFirstWx.
+    nextLaserWx  = laserFirstWx();
     // Power-up supply floors: 0 = "as if one just landed at the start line". They only
     // apply past the score-34 gate in makeCoin() anyway, well beyond any floor width.
     lastBlueWx = 0; lastRedWx = 0; lastGreenWx = 0;

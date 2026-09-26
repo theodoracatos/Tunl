@@ -875,6 +875,8 @@ function update(dt) {
 
     // Bullets
     updateBullets(dt);
+    // Laser beam (constants.js LASER_* doc), after the bullets so both see the same hazards
+    updateLaser(dt);
     // Repair kits the bullets just dropped (constants.js REPAIR_KIT_PTS doc)
     updateRepairKits(dt);
     emitHullSmoke(dt);
@@ -990,6 +992,7 @@ function die(bypassShield = false) {
     thrustOff();
     onFireLoopOff();
     magnetLoopOff();
+    laserLoopOff(); laserTime = 0; laserMeltBo = null;   // no beam over the death screen or after a revive
     warpLoopOff();
     approachWindOff();
     sfxBulletFireStop();

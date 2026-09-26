@@ -138,6 +138,7 @@ function quietCave(deep = false) {
     g(`stalactites = []; mines = []; boulders = []; cannons = []; cannonShots = []; coins = []; chicaneCoins = [];
        portals = []; bullets = []; repairKits = []; bulletAmmo = 0;
        invulnT = 0; wallGraceT = 0; warpTime = 0; slowTime = 0; slowPending = 0; magnetTime = 0; shieldCount = 0;
+       laserTime = 0; laserTimeMax = 0; laserMeltBo = null;
        gapBonus = 0; gapBonusVisual = 0; hullScratches = HULL_SCRATCHES; holding = false; vy = 0;
        rewardedAdReady = false;
        { const _b = boundsAt(scrollX + PX); py = (_b.top + _b.bot) / 2; }`);
@@ -158,7 +159,7 @@ function quietCave(deep = false) {
     const END_WX = g('sectorStartWx(11)');   // all of S10: the first sector with nothing new
     const seen = g(`(() => {
         const seen = { stal: 0, falls: 0, mine: 0, boulder: 0, cannonShot: 0, portal: 0, sectors: new Set(), warp: 0 };
-        const TYPES = ['gold', 'blue', 'red', 'orange', 'green', 'bomb', 'poison', 'drain'];
+        const TYPES = ['gold', 'blue', 'red', 'orange', 'green', 'bomb', 'poison', 'drain', 'laser'];
         const planted = [];
         let frames = 0, warped = false, plantAt = -1;
         while ((scrollX < ${END_WX} || approachLeft > 0) && frames < 60 * 600) {
@@ -201,7 +202,7 @@ function quietCave(deep = false) {
         g('scrollX') >= END_WX && seen.sectors >= 11);
     check(`smoke run actually met every hazard type (stal ${seen.stal}, falling ${seen.falls}, mine ${seen.mine}, boulder ${seen.boulder}, cannon shot ${seen.cannonShot}, warp ${seen.warp})`,
         seen.stal > 0 && seen.falls > 0 && seen.mine > 0 && seen.boulder > 0 && seen.cannonShot > 0 && seen.warp > 0);
-    check(`every coin type is drawn and picked up mid-run (${seen.picked.join(',')})`, seen.picked.length === 8);
+    check(`every coin type is drawn and picked up mid-run (${seen.picked.join(',')})`, seen.picked.length === 9);
 
     // Death, the debriefing, then back to the title - the three screens a player sees
     // after every run.
@@ -459,6 +460,85 @@ function touchCoin(type, setup) {
             return { hull: hullScratches, full: HULL_SCRATCHES, gain: bonusScore - before, pts: REPAIR_KIT_PTS, left: repairKits.length };
         })()`);
     };
+// ── Laser (systems.js updateLaser, constants.js LASER_* doc) ────────────────
+// Catches: a beam that no longer breaks a boulder (or breaks it instantly / pays nothing),
+// a bullet that suddenly breaks one, a beam that passes THROUGH a boulder to what is behind
+// it, a pickup that grants no window, a window that never ends, a beam that survives death.
+{
+    // A flat test island straight ahead of the ship, at its height.
+    const island = `const _isle = (wx, y) => { const r = PR * 1.4, n = BOULDER_PROF_N + 1;
+        return { wx, y, r, hl: 40, up: Array(n).fill(r), dn: Array(n).fill(r), upMax: r, dnMax: r,
+                 fTop: Array(n).fill(1), fBot: Array(n).fill(1) }; };`;
+    // invulnT: a shield-absorbed hit clears everything around the ship (triggerBombExplosion),
+    // which would take the rock away without the laser.
+    const hold = 'py = _Y; vy = 0; holding = false; shieldCount = 9; hullScratches = HULL_SCRATCHES; invulnT = 1;';
+
+    let g = quietCave(true);
+    const burn = g(`(() => { ${island}
+        // Far out: deep, the scroll covers ~0.3 W in LASER_MELT_SEC. The mine behind it
+        // still lies inside the beam's reach (laserTrace stops at W + 40).
+        const _Y = py, bo = _isle(scrollX + W * 0.8, py);
+        const near = { wx: scrollX + PX + W * 0.2, baseY: py, bobAmp: 0, phase: 0 };
+        const behind = { wx: bo.wx + bo.hl + 30, baseY: py, bobAmp: 0, phase: 0 };
+        boulders.push(bo); mines.push(near, behind);
+        laserTime = LASER_SEC; laserTimeMax = LASER_SEC;
+        const before = bonusScore;
+        let frames = 0, behindSurvivedMelt = false, nearGoneFrame = -1, glow = 0, burstGain = 0;
+        while (boulders.includes(bo) && frames < 120) {
+            const b0 = bonusScore;
+            ${hold} update(1 / 60); frames++;
+            if (!boulders.includes(bo)) burstGain = bonusScore - b0;
+            if (nearGoneFrame < 0 && !mines.includes(near)) nearGoneFrame = frames;
+            if (boulders.includes(bo)) { behindSurvivedMelt = mines.includes(behind); glow = Math.max(glow, bo.melt || 0); }
+        }
+        return { frames, gone: !boulders.includes(bo), nearGoneFrame, behindSurvivedMelt, glow, burstGain,
+                 gain: bonusScore - before, pts: BULLET_HIT_PTS.boulder,
+                 melt: LASER_MELT_SEC, left: laserTime };
+    })()`);
+    check(`the beam burns a boulder after ~LASER_MELT_SEC and pays for it (${burn.frames} frames, +${burn.burstGain} on the burst)`,
+        burn.gone && burn.frames >= Math.floor(burn.melt * 60) - 1 && burn.frames <= Math.ceil(burn.melt * 60) + 3 &&
+        burn.burstGain >= burn.pts && burn.glow > 0);
+    check(`the beam kills a mine in front at once and stops at the boulder until it bursts (front gone at frame ${burn.nearGoneFrame})`,
+        burn.nearGoneFrame === 1 && burn.behindSurvivedMelt);
+
+    g = quietCave(true);
+    const shot = g(`(() => { ${island}
+        const _Y = py, bo = _isle(scrollX + W * 0.8, py);
+        boulders.push(bo);
+        let fired = 0, frames = 0;
+        // Stop well before the ship itself reaches the rock (a shield-absorbed hit clears it).
+        while (bo.wx - bo.hl - scrollX > PX + W * 0.12 && frames < 240) {
+            if (frames % 8 === 0) { bullets.push({ wx: scrollX + PX + PR * 1.6, y: py }); fired++; }
+            ${hold} update(1 / 60); frames++;
+        }
+        return { intact: boulders.includes(bo), stopped: fired - bullets.length, fired, frames };
+    })()`);
+    check(`a bullet still only sparks off a boulder (${shot.stopped} of ${shot.fired} bullets stopped by it, rock intact)`,
+        shot.intact && shot.stopped > 0);
+
+    g = quietCave(true);
+    const win = g(`(() => {
+        coins.push({ wx: scrollX + PX, y: py, collected: false, type: 'laser', fade: 1.0 });
+        update(1 / 60);
+        const got = laserTime, max = laserTimeMax;
+        let n = 0;
+        // Nothing that bends the bullets' clock (a warp ring, a blue coin) may be flown into.
+        while (laserTime > 0 && n < 600) {
+            coins = []; chicaneCoins = []; portals = [];
+            shieldCount = 9; hullScratches = HULL_SCRATCHES; _pilot(); update(1 / 60); n++;
+        }
+        const ran = n / 60;
+        coins.push({ wx: scrollX + PX, y: py, collected: false, type: 'laser', fade: 1.0 });
+        update(1 / 60);
+        const again = laserTime;
+        shieldCount = 0; invulnT = 0; rewardedAdReady = false; die(true);
+        return { got, max, ran, again, afterDeath: laserTime, sec: LASER_SEC };
+    })()`);
+    check(`a laser coin grants one LASER_SEC window that runs out (got ${win.got.toFixed(2)}s, ran ${win.ran.toFixed(2)}s)`,
+        Math.abs(win.got - win.sec) < 0.05 && win.max === win.sec && Math.abs(win.ran - win.sec) < 0.1);
+    check('death switches the beam off', win.again > 0 && win.afterDeath === 0);
+}
+
 // ── Swing wing: cruise in between, warp folds, blue coin spreads ───────────
 // docs/agents/ship-render.md "F-14 hull". Measured on the real update loop, because the
 // rule the user asked for is about WHEN the wings move, not about the easing constant.

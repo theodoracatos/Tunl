@@ -92,6 +92,7 @@ Coins are staged by `_prog` so power-ups introduce gradually:
 - score 50+ (S1, `RED_START_WX`): + red (shield, absorbs 1 hit; type id `red`, drawn violet)
 - score 111+ (S2, `ORANGE_START_WX` / `GREEN_START_WX`): + orange (ammo) + green (magnet)
 - score 178+ (S3): bomb clock; S8 (583+) poison; S9 (677+) drain - see "Flight plan (sectors)"
+- score 252+ (S4, `LASER_START_WX`): the laser cursor - the next orange coin past it is a laser ("Laser" below)
 
 Mines first spawn at `MINE_START_WX` = start of sector 3 (~score 178). **Shield coins
 unlock in S1, so a player always has shields available before the first mine** - keep
@@ -160,7 +161,7 @@ reads generous). First targets count from `HAZARD_START_WX`.
 (`draw.js` `drawCoin` / `COIN_OBJECTS`). Each coin draws the thing it does: gold = gem with
 two outward chevrons, blue = Sanduhr, red = violet Wappenschild, orange = Fadenkreuz,
 green = horseshoe magnet with poles toward the ship, bomb = bomb with burning fuse,
-poison = Giftflasche, drain = inward Strudel. **No frame** (built and removed on the user's
+poison = Giftflasche, drain = inward Strudel, laser = a cut ruby firing a beam. **No frame** (built and removed on the user's
 call - at ~17pt it shrank the object past recognition). Size `COIN_OBJECT_SCALE` of the
 hitbox radius, gold `COIN_OBJECT_BOOST` more. Flat facets lit from above, **zero
 `shadowBlur`**. Gold moves no more than the blue coin - no spin, no flip. Hitbox is still
@@ -236,3 +237,29 @@ kits hard to reach, and scratches only forgive walls), **no magnet pull or warp 
 - Placed with `boundsBase()` like a coin, padded so it is never inside rock.
 - Drawn through `drawCoin(..., 'repair')` (a frameless wrench in the HUD hull colour), not a plus
   sign: the ammo crosshair already reads as one. Guarded in `test-sim.js` section 10.
+
+## Laser (18.0, 2026-09-27)
+
+A power-up that fires like the ammo but stronger (`constants.js` `LASER_*` doc,
+`systems.js` `laserTrace`/`updateLaser`/`burstBoulder`, `draw.js` `drawLaserBeam`/
+`_coinLaser`, `audio.js` `laserLoopOn`/`sfxBoulderBurst`). For `LASER_SEC` a beam runs from
+the nose to the first wall (`boundsAt`) and burns through crystals, mines and cannon shots
+(they pay `BULLET_HIT_PTS` like a bullet kill, mines and shots drop a repair kit); a boulder
+in its path stops it, glows for `LASER_MELT_SEC` and bursts (`BULLET_HIT_PTS.boulder`, no kit).
+Concept and picks: https://claude.ai/artifact/4jEGBUKiPVGV9QXGh3qoXM
+
+- **A relabel, never its own roll** (do not revert). Past the world-x cursor `nextLaserWx`
+  the next coin `makeCoin()` hands out as ORANGE becomes `'laser'`, after every veto and the
+  supply floors. The cursor's jitter is `_deepHash`, **never `rngCoin()`**: one extra draw
+  would shift the stream and re-roll every coin after it. `test-cave.js` replays each day with
+  and without the laser and requires byte-identical geometry, only orange -> laser labels.
+  `test-cave.js`'s `startRun` mirrors `lifecycle.js`'s `nextLaserWx = laserFirstWx()` by hand.
+- **The laser waits for an orange coin**, so the real cadence is the cursor step plus that
+  wait - measure it (a spawner replay counting `'laser'` rows per reference second, as in
+  `docs/design-history.md` "Laser"), never read it off `LASER_INTERVAL_SEC`. Re-measure after
+  changing the interval or orange's share. A laser takes that orange coin's place.
+- **From `LASER_START_WX` = S4**, the boulders' sector: every run below score 233 is untouched.
+- **Durations run on the bullets' clock** (`slowScrollFactor() * warpScrollFactor()`), and
+  death clears the window (`die()`), so no beam shows over the death screen or after a revive.
+- **Kept out on purpose:** no mission, no achievement (the roster is also a store config),
+  no magnet exemption (it is a reward, like orange).

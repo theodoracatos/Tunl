@@ -441,7 +441,24 @@ function makeCoin(wx) {
     if      (type === 'blue')  lastBlueWx  = wx;
     else if (type === 'red')   lastRedWx   = wx;
     else if (type === 'green') lastGreenWx = wx;
+    // Laser (constants.js LASER_* doc): a relabel of the final ORANGE coin once the cursor is
+    // passed - after every veto above and with no rngCoin() draw, so the coin sits exactly
+    // where the orange one would have and the stream downstream is untouched.
+    if (type === 'orange' && wx >= nextLaserWx) {
+        type = 'laser';
+        nextLaserWx = laserNextWx(wx);
+    }
     return { wx, y: coinY, collected: false, type, fade: 1.0 };
+}
+
+// Laser supply cursor (constants.js LASER_* doc). _deepHash is keyed on the world-x bucket,
+// so the cadence is a pure function of the day and the placement wx. The first one is due
+// early in S4 (5-35% of an interval in), so it arrives while the first boulders do.
+function laserFirstWx() {
+    return LASER_START_WX + worldPxForSec(LASER_INTERVAL_SEC * (0.05 + _deepHash(Math.floor(LASER_START_WX / 300) + 0x5000) * 0.3), LASER_START_WX);
+}
+function laserNextWx(wx) {
+    return wx + worldPxForSec(LASER_INTERVAL_SEC * (0.7 + _deepHash(Math.floor(wx / 300) + 0x5000) * 0.6), wx);
 }
 
 function maintainCoins() {
@@ -641,6 +658,19 @@ function checkCoinCollection() {
                 pushNotif(sx, coin.y - 34, 1.1, T.notifAmmo, [255,122,0]);
                 sfxBulletPickup();
                 window.webkit?.messageHandlers?.haptic?.postMessage('light');
+            } else if (coin.type === 'laser') {
+                // Beam window (constants.js LASER_* doc); a second coin stacks to two windows.
+                const _lasWas = laserTime;
+                laserTime = Math.min(laserTime + LASER_SEC, LASER_SEC * 2);
+                laserTimeMax = laserTime;
+                hudLaneFx.laser = { t: gtime, from: _lasWas / laserTime };
+                hudLaneSpark('laser', sx, coin.y);
+                burstCoin(sx, coin.y, 350, 26);
+                shake += 4;
+                pushNotif(sx, coin.y - 34, 1.1, T.notifLaser, HUD_SPARK_COLOR.laser);
+                sfxLaserPickup();
+                laserLoopOn();   // the beam's hum, off when updateLaser runs the window out
+                window.webkit?.messageHandlers?.haptic?.postMessage('medium');
             } else if (coin.type === 'bomb') {
                 // Explosive power-up: small blast around the pickup point that clears
                 // nearby hazards (see triggerBombExplosion). Sfx lives here, not inside
@@ -688,12 +718,12 @@ function hudLaneSpark(k, x, y) {
 }
 
 // Points + a spark flying to the score for a bullet hit (same spark as a coin pickup).
-function bulletHitScore(sx, y, pts) {
+function bulletHitScore(sx, y, pts, col = HUD_SPARK_COLOR.orange) {
     bonusScore += pts;
     if (hudSparks.length < HUD_SPARK_MAX) {
-        hudSparks.push({ x: sx, y: y, t: 0, col: HUD_SPARK_COLOR.orange });
+        hudSparks.push({ x: sx, y: y, t: 0, col });
     }
-    pushNotif(sx, y + H*0.05, 0.8, `+${pts}`, [255,122,0]);
+    pushNotif(sx, y + H*0.05, 0.8, `+${pts}`, col);
 }
 
 function updateBullets(dt) {
@@ -803,6 +833,108 @@ function updateBullets(dt) {
         if (stalactites[i].dying) {
             stalactites[i].fade = Math.max(0, stalactites[i].fade - dt * 4.5);
             if (stalactites[i].fade <= 0) stalactites.splice(i, 1);
+        }
+    }
+}
+
+// ── Laser (constants.js LASER_* doc) ─────────────────────────────────
+// Screen x where a horizontal beam at height y, starting at x0, first meets the corridor
+// wall (boundsAt, what the wall is drawn and collided at), and the boulder that stops it
+// sooner, if any. Marched in LASER_STEP px; the beam is never longer than the screen.
+const LASER_STEP = 6;
+function laserTrace(x0, y) {
+    const hw = LASER_HALF_W, xMax = W + 40;
+    let end = xMax, block = null;
+    for (let x = x0; x < xMax; x += LASER_STEP) {
+        const b = boundsAt(scrollX + x);
+        if (y - hw < b.top || y + hw > b.bot) { end = x; break; }
+    }
+    for (const bo of boulders) {
+        const bsx = bo.wx - scrollX;
+        const a = Math.max(x0, bsx - bo.hl - hw), z = Math.min(end, bsx + bo.hl + hw);
+        for (let x = a; x < z; x += LASER_STEP / 2) {
+            if (boulderHit(bo, x - bsx, y - bo.y, hw)) { end = x; block = bo; break; }
+        }
+    }
+    return { end, block };
+}
+
+function updateLaser(dt) {
+    const clock = dt * slowScrollFactor() * warpScrollFactor();   // the bullets' clock
+    // A boulder the beam has left cools back down (draw.js reads bo.melt as its glow).
+    for (const bo of boulders) {
+        if (bo.melt > 0 && bo !== laserMeltBo) bo.melt = Math.max(0, bo.melt - clock * 0.6);
+    }
+    if (laserTime <= 0) { laserMeltBo = null; return; }
+    laserTime = Math.max(0, laserTime - clock);
+    if (laserTime <= 0) { laserLoopOff(); laserMeltBo = null; return; }
+    const x0 = PX + PR * 1.4, y = py, hw = LASER_HALF_W;
+    const { end, block } = laserTrace(x0, y);
+    laserEndX = end;
+    // Sparks thrown back off whatever the beam strikes (cosmetic, Math.random).
+    if (end < W) {
+        for (let i = block ? 2 : 1; i > 0; i--) {
+            parts.push({ x: end, y: y + (Math.random() - 0.5) * hw * 2,
+                         vx: -(60 + Math.random() * 220), vy: (Math.random() - 0.5) * 280,
+                         life: 0.45, r: 1 + Math.random() * 2, h: 345 + Math.random() * 20 });
+        }
+    }
+    const col = HUD_SPARK_COLOR.laser;
+    for (const s of stalactites) {
+        if (s.dying) continue;
+        const sx = s.wx - scrollX;
+        if (sx < x0 - s.width / 2 || sx > end + s.width / 2) continue;
+        if (!stalHitBullet(s, Math.max(x0, Math.min(end, sx)), y)) continue;
+        s.dying = true;
+        s.fade  = 1.0;
+        const bnd  = boundsAt(s.wx);
+        const tipY = s.isTop ? bnd.top + s.length + stalFallY(s) : bnd.bot - s.length;
+        burstStalCrack(sx, tipY, crystalShardHue());
+        if (CRYSTAL_STALS) burstCrystalShards(sx, tipY, crystalShardHue());
+        (CRYSTAL_STALS ? sfxCrystalCrack : sfxStalCrack)(sx);
+        bulletHitScore(sx, tipY, BULLET_HIT_PTS.stal, col);
+    }
+    for (let mi = mines.length - 1; mi >= 0; mi--) {
+        const m  = mines[mi];
+        const sx = m.wx - scrollX;
+        const my = m.baseY + m.bobAmp * Math.sin(gtime * 1.8 + m.phase);
+        if (sx < x0 - MINE_R || sx > end + MINE_R || Math.abs(my - y) > MINE_R + hw) continue;
+        mines.splice(mi, 1);
+        shake += 8;
+        burst(sx, my);
+        pushNotif(sx, my - H*0.06, 1.1, T.boom, [255, 120, 20]);
+        sfxMineExplode(sx);
+        bulletHitScore(sx, my, BULLET_HIT_PTS.mine, col);
+        spawnRepairKit(m.wx, my);
+        window.webkit?.messageHandlers?.haptic?.postMessage('medium');
+    }
+    for (let ci = cannonShots.length - 1; ci >= 0; ci--) {
+        const s  = cannonShots[ci];
+        const sx = s.wx - scrollX;
+        if (sx < x0 - CANNON_SHOT_R || sx > end + CANNON_SHOT_R || Math.abs(s.y - y) > CANNON_SHOT_R + hw) continue;
+        cannonShots.splice(ci, 1);
+        burstStalCrack(sx, s.y);
+        sfxStalCrack(sx);
+        bulletHitScore(sx, s.y, BULLET_HIT_PTS.shot, col);
+        spawnRepairKit(s.wx, s.y);
+    }
+    // The boulder in the way glows for LASER_MELT_SEC of beam, then bursts like a bomb hit.
+    // No repair kit: kits stay the reward for shooting a mine or a cannon shot.
+    laserMeltBo = block;
+    laserLoopHeat(!!block);
+    if (block) {
+        block.melt = (block.melt || 0) + clock;
+        if (block.melt >= LASER_MELT_SEC) {
+            const bi = boulders.indexOf(block);
+            if (bi >= 0) boulders.splice(bi, 1);
+            laserMeltBo = null;
+            laserLoopHeat(false);
+            const bsx = block.wx - scrollX;
+            burstBoulder(block);
+            shake += 12;
+            bulletHitScore(bsx, block.y, BULLET_HIT_PTS.boulder, col);
+            sfxBoulderBurst(bsx);
+            window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
         }
     }
 }
@@ -1659,6 +1791,35 @@ function burstCrystalShards(x, y, hue, count = 14) {
                      rot: Math.random() * Math.PI, spin: (Math.random() - 0.5) * 14,
                      h: h0 - 6 + Math.random() * 12 });
     }
+}
+
+// A boulder the laser burst (systems.js updateLaser): tumbling chunks of the island's own
+// rock, still glowing from the beam (`rock`, draw.js), thrown out from inside its outline,
+// plus rock dust, ruby sparks and a little smoke. Math.random only, like every burst.
+function burstBoulder(bo) {
+    const sx = bo.wx - scrollX;
+    for (let i = 0; i < 26; i++) {
+        const u = Math.random() * 2 - 1, taper = 1 - u * u * 0.6;
+        const x = sx + u * bo.hl;
+        const y = bo.y + (Math.random() * (bo.upMax + bo.dnMax) - bo.upMax) * 0.8 * taper;
+        const a = Math.atan2(y - bo.y, (x - sx) * 0.5 + 1e-3) + (Math.random() - 0.5) * 0.8;
+        const v = 70 + Math.random() * 230;
+        const life = 0.8 + Math.random() * 0.4;
+        parts.push({ x, y, vx: Math.cos(a) * v + 40, vy: Math.sin(a) * v, life, life0: life,
+                     r: 2.5 + Math.random() * Math.max(3, bo.r * 0.2), rock: 1,
+                     rot: Math.random() * Math.PI * 2, spin: (Math.random() - 0.5) * 9,
+                     v: Math.floor(Math.random() * 3), h: 0 });
+    }
+    for (let i = 0; i < 5; i++) {
+        const life = 0.9 + Math.random() * 0.5;
+        parts.push({ x: sx + (Math.random() - 0.5) * bo.hl, y: bo.y + (Math.random() - 0.5) * bo.r,
+                     vx: -(30 + Math.random() * 50), vy: -(10 + Math.random() * 30),
+                     life, life0: life, r: bo.r * (0.35 + Math.random() * 0.25),
+                     v: Math.floor(Math.random() * 3), rot: Math.random() * Math.PI * 2,
+                     spin: (Math.random() - 0.5) * 1.2, smoke: 0.5, h: 0 });
+    }
+    burstStalCrack(sx, bo.y);
+    burst(sx, bo.y, 26, 340, 365);
 }
 
 // Stalactite destruction debris

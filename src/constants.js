@@ -216,7 +216,7 @@ const COIN_HIT_R      = W  * 0.032;   // collection radius (generous)
 // COIN_SIZE_MAX_MULT is the placement code's (systems.js makeCoin) worst-case
 // clearance buffer -- type isn't known yet when a coin's corridor position is
 // picked, so it has to reserve room for the largest possible coin, not the average.
-const COIN_SIZE_MULT     = { gold: 1.0, blue: 1.0, red: 1.15, orange: 1.15, green: 1.35, bomb: 1.35 };
+const COIN_SIZE_MULT     = { gold: 1.0, blue: 1.0, red: 1.15, orange: 1.15, green: 1.35, bomb: 1.35, laser: 1.35 };
 const COIN_SIZE_MAX_MULT = 1.35;
 // ── Gap bonus: fractions of the CORRIDOR, not of the screen ───────────
 // Through 12.0 these were absolute (H*0.075 / H*0.19 / H*0.015) - a fixed number of
@@ -1293,7 +1293,7 @@ const HUD_SPARK_MAX = 14;
 // Spark colour per coin type, matched to each type's pickup notif colour (systems.js).
 const HUD_SPARK_COLOR = {
     gold: [255, 214, 70], blue: [60, 210, 255], red: [190, 60, 255],
-    green: [80, 255, 130], orange: [255, 122, 0], bomb: [255, 90, 90],
+    green: [80, 255, 130], orange: [255, 122, 0], bomb: [255, 90, 90], laser: [255, 70, 110],
     repair: [255, 190, 120],   // the HUD hull row's colour (draw.js), where the refill lands
 };
 
@@ -1308,7 +1308,31 @@ const HUD_LANE_WARN_SEC   = 1.0;
 const HUD_LANE_SPARK_MAX  = 4;
 // Points for a bullet hit (systems.js updateBullets). Flat, no combo: ammo is capped and
 // bullets auto-fire, so this is a small bonus for a shot that landed, not a score engine.
-const BULLET_HIT_PTS = { stal: 1, mine: 3, shot: 2 };
+// `boulder` is laser-only (systems.js updateLaser): a bullet only sparks off the rock.
+const BULLET_HIT_PTS = { stal: 1, mine: 3, shot: 2, boulder: 5 };
+
+// ── Laser (18.0, concept https://claude.ai/artifact/4jEGBUKiPVGV9QXGh3qoXM) ──
+// A power-up that fires like the ammo but stronger: for LASER_SEC a beam runs from the nose
+// to the first wall and burns through crystals, mines and cannon shots, and a boulder in its
+// path glows for LASER_MELT_SEC and bursts - the only weapon besides the bomb that breaks one
+// (systems.js updateLaser).
+// - Supply is a relabel, not a new roll: once the world-x cursor nextLaserWx (state.js) is
+//   passed, the next coin that comes out of makeCoin() as ORANGE becomes 'laser'. Its jitter
+//   comes from _deepHash, never rngCoin(), so no stream moves and the cave's geometry is
+//   byte-identical to a build without the laser - only that coin's type label differs
+//   (test-cave.js checks both). Same world-x-cursor rule as the bomb clock (fairness.md 4).
+// - LASER_START_WX = the boulders' sector (S4, score ~252): the tool arrives with the threat
+//   it answers, and every run below score 233 is untouched.
+// - LASER_INTERVAL_SEC is the cursor's step, a floor on the cadence: the laser then waits
+//   for the next orange coin. Measured cadence and duty cycle: docs/agents/coins.md "Laser".
+// - Durations run on the bullets' clock (slowScrollFactor * warpScrollFactor), so a slowed
+//   tunnel does not burn the window down faster than it scrolls.
+// LASER_HALF_W is the beam's hit half-thickness in device px, the drawn core's half-width.
+const LASER_START_WX     = BOULDER_START_WX;
+const LASER_INTERVAL_SEC = 20;
+const LASER_SEC          = 2.5;
+const LASER_MELT_SEC     = 0.35;
+const LASER_HALF_W       = PR * 0.3;
 // The continue offer's own timeout -- deliberately NOT reusing DEATH_INTERACTIVE_SEC
 // above. First real-device pass found 0.9s (matched to that *existing* pre-interactive
 // beat, so declining would cost zero extra wait) too short to actually use: a player
