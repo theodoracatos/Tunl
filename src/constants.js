@@ -1383,12 +1383,6 @@ const FRENZY_WASH_ALPHA       = 0.28;   // at the edge; the Zeitblase's is 0.11 
 const FRENZY_HITSTOP_SEC      = 0.04;
 const FRENZY_HITSTOP_GAP      = 0.15;
 const FRENZY_IMPACT_SEC       = 0.18;   // the white flash at a smash
-// Achievements (2026-09-27): the first star ever, and two stars in one run - the second costs
-// FRENZY_FIRST_COST * FRENZY_COST_MUL, which only the sim's pro tier reached. Reported the
-// moment the star lights (systems.js frenzyBegin); state.js frenzyBestRun backs the backfill.
-// Store text: branding/game-center/ach_translations_frenzy.json.
-const FRENZY_FIRST_ACH_ID     = 'tunl_ach_frenzy_first';
-const FRENZY_DOUBLE_ACH_ID    = 'tunl_ach_frenzy_double';
 // The star's shimmer runs in 16ths of the play track (Nebula, 140 BPM): the aura, the icon's
 // core and the audio pad's tremolo share it, so picture and sound pulse together.
 const FRENZY_TREM_HZ          = 140 / 60 * 4;

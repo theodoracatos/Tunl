@@ -79,6 +79,8 @@ banner, afterimages. Advised against: growing the hull (envelope rule), tinting 
   mission would be the unwinnable-slot problem the `MISSION_DEFS` doc describes, and a new
   entry reshuffles every day's picks (`pickDailyMissionIndices` buckets by index), which would
   also split web and app on the day they ship at different versions.
-- Achievements: need their ids created and localised in App Store Connect and Play Console
-  first (`project_achievements_localization` memory).
+- Achievements: dropped by the user's call (2026-09-27). Game Center is at its 1000-point cap
+  (40 achievements, exactly 1000), and the points of a live achievement cannot be changed
+  (ASC 409 "can not be modified in the current state"), so no new achievement with points can
+  be added on iOS. Check this before planning any new achievement.
 - Device ear-check and play feel on a phone.

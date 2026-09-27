@@ -1676,12 +1676,6 @@ function frenzyBegin() {
     frenzyHits = 0;
     runFrenzies++;
     frenzyStartT = gtime;
-    if (runFrenzies > frenzyBestRun) {
-        frenzyBestRun = runFrenzies;
-        localStorage.setItem('tunnel_frenzy_best_run', frenzyBestRun);
-    }
-    if (runFrenzies === 1) window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: FRENZY_FIRST_ACH_ID });
-    if (runFrenzies === 2) window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: FRENZY_DOUBLE_ACH_ID });
     sfxFrenzyStart();
     frenzyLoopOn();
     bgmSetFrenzy(true);

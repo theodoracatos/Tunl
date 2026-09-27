@@ -499,8 +499,6 @@ let frenzyGrindT = 0;    // > 0 while a star grinds along the wall (sparks, grin
 let frenzyChargeT = 0;   // > 0 between a full meter and the star (FRENZY_CHARGE_SEC)
 let frenzyHitStopT = 0, frenzyLastStopT = -9;   // the smash hit-stop and when the last one began (gtime)
 let frenzyImpacts = [];  // { x, y, t } white flashes where the star smashed something (draw.js)
-// Most stars ever earned in one run, persisted: backs the Frenzy achievements' backfill.
-let frenzyBestRun = parseInt(localStorage.getItem('tunnel_frenzy_best_run') || '0') || 0;
 // Blue-coin slow banked while a warp is live (systems.js blue branch, drained at
 // update.js's warpTime falling edge). A warp already makes the player immune to
 // every hazard, so a slow window spent inside one has no gameplay value at all and
@@ -733,7 +731,5 @@ window._tunlBackfillAchievements = function backfillAchievements() {
     }
     if (_anyMaxed) report('tunl_ach_ace_pilot');
     if (_allFleetMaxed) report('tunl_ach_master_fleet');
-    if (frenzyBestRun >= 1) report(FRENZY_FIRST_ACH_ID);
-    if (frenzyBestRun >= 2) report(FRENZY_DOUBLE_ACH_ID);
 };
 window._tunlBackfillAchievements();

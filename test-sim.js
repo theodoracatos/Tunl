@@ -1106,19 +1106,6 @@ function fzCoin(g, type, ahead = 0, arr = 'coins') {
     check(`a star's smash holds the frame for FRENZY_HITSTOP_SEC, a chain holds it once (${hr.stops} stop)`,
         hr.held && hr.frozen && hr.stops === 1 && hr.mines === 0 && hr.phase === 'play');
 
-    // the first and the second star of a run report their achievements, and the best is kept
-    const ach = fzCave(`_achRec = []; window.webkit.messageHandlers.gameCenter = { postMessage: m => _achRec.push(m.id) };
-                        frenzyBestRun = 0; localStorage.setItem('tunnel_frenzy_best_run', '0');`);
-    ach(`for (let k = 0; k < 2; k++) { frenzyTime = 0; frenzyChargeT = 0; frenzyMeter = frenzyCost; ${FZ_HOLD}
-         for (let i = 0; i < 60 && frenzyTime === 0; i++) { ${FZ_HOLD} } }`);
-    const achIds = ach('_achRec.join(",")');
-    check(`the first and second star of a run unlock their achievements (${achIds}, best ${ach('frenzyBestRun')})`,
-        achIds === ach('FRENZY_FIRST_ACH_ID + "," + FRENZY_DOUBLE_ACH_ID') && ach('frenzyBestRun') === 2
-        && ach(`localStorage.getItem('tunnel_frenzy_best_run')`) === '2');
-    ach('_achRec = []; window._tunlBackfillAchievements();');
-    check('the backfill re-reports both from the stored best run',
-        ach('_achRec.includes(FRENZY_FIRST_ACH_ID) && _achRec.includes(FRENZY_DOUBLE_ACH_ID)'));
-
     // the end grants HIT_INVULN_SEC
     const e = fzCave('frenzyTime = 0.05; invulnT = 0;');
     e(`for (let i = 0; i < 6; i++) { ${FZ_HOLD} }`);
