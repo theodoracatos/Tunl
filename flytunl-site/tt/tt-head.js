@@ -3,7 +3,8 @@
 //  /tt/ landing - head half (inlined by build-play.mjs BEFORE the game bundle)
 // ============================================================
 //  flytunl.ch/tt/ is where paid TikTok clips send their website button. Same game
-//  bundle as /play/, but the visitor is almost always on a phone, inside TikTok's
+//  as /play/ (its own bundle from the same sources, see build-play.mjs
+//  TT_BUNDLE_PATCHES), but the visitor is almost always on a phone, inside TikTok's
 //  in-app browser, which is portrait-locked: turning the phone does not rotate the
 //  page, so /play/'s "rotate your device" gate would never let them in.
 //
@@ -36,17 +37,33 @@
 (function () {
     'use strict';
     var ua = navigator.userAgent || '';
-    var ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
-    var android = /Android/.test(ua);
+    var touch = (navigator.maxTouchPoints || 0) > 0 || 'ontouchstart' in window;
+    // Which store this device can install from: 'android', 'ios', or '' = unknown (a
+    // desktop, a Huawei on HarmonyOS NEXT, ...), which keeps both store buttons.
+    //  - Android: every Android UA says "Android", TikTok's webview included (it adds
+    //    "; wv)", "trill_<ver>" / "AppName/trill" or "musical_ly", "BytedanceWebview").
+    //    Client hints are the backup for a UA a host has rewritten.
+    //  - iOS: iPhone / iPod / iPad, plus iPadOS in its default desktop mode, which sends a
+    //    Mac UA: a Mac has no touch points, an iPad reports 5.
+    //  - TikTok's own "Channel/googleplay" / "Channel/App Store" when neither matched.
+    var uaData = navigator.userAgentData;
+    var android = /Android/i.test(ua) || !!(uaData && /android/i.test(uaData.platform || ''));
+    var ios = !android && (/iPhone|iPad|iPod/.test(ua)
+        || (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1));
+    if (!android && !ios) {
+        if (/Channel\/googleplay/i.test(ua)) android = true;
+        else if (/Channel\/App ?Store/i.test(ua)) ios = true;
+    }
     // TikTok's webview UA carries one of these (musical_ly = the global app, trill = the
-    // Asian build, BytedanceWebview = its Android webview). The rest catch the other
-    // in-app browsers a clip link can land in when it is re-shared.
-    var inApp = /musical_ly|BytedanceWebview|ByteLocale|TikTok|trill_/i.test(ua)
+    // Asian build, BytedanceWebview = its webview). The rest catch the other in-app
+    // browsers a clip link can land in when it is re-shared.
+    var tiktok = /musical_ly|trill|BytedanceWebview|ByteLocale|TikTok/i.test(ua);
+    var inApp = tiktok
         || /FBAN|FBAV|Instagram|Line\/|Snapchat/.test(ua)
         || (android && /; wv\)/.test(ua));
-    var touch = (navigator.maxTouchPoints || 0) > 0 || 'ontouchstart' in window;
     var TT = window.TUNL_TT = {
-        ios: ios, android: android, inApp: inApp,
+        ios: ios, android: android, inApp: inApp, tiktok: tiktok,
+        os: android ? 'android' : ios ? 'ios' : '',
         rot: 0,            // 0 = plain page, +1 / -1 = rotated (see header)
         sideways: false,   // Android: the sensor says the phone is held landscape
         firstRun: true,    // cleared by tt-tail.js when the first run starts
@@ -54,6 +71,9 @@
     };
     var root = document.documentElement;
     root.classList.add('tt-fresh', ios ? 'tt-ios' : android ? 'tt-android' : 'tt-desk');
+    // The /tt/ bundle's store buttons (build-play.mjs TT_BUNDLE_PATCHES) read this: set,
+    // the app card and the app-only sheet show that one store only; unset, both.
+    if (TT.os) window._tunlStoreOnly = TT.os;
 
     // ── Raster cap (weak Android phones) ──────────────────────────────────────
     // constants.js rasterises the canvas at devicePixelRatio. A mid-range Android phone
@@ -143,7 +163,11 @@
             // The webview rotated for real: start over in the plain landscape layout.
             if (Math.abs(rw() - bootW) >= 4 && rw() > rh()) {
                 clearTimeout(TT._rt);
-                TT._rt = setTimeout(function () { if (rw() > rh()) location.reload(); }, 400);
+                TT._rt = setTimeout(function () {
+                    if (rw() <= rh()) return;
+                    try { sessionStorage.setItem('tt_reload', '1'); } catch (e) {}   // tt-tail.js
+                    location.reload();
+                }, 400);
             }
         });
 

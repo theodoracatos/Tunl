@@ -84,3 +84,18 @@ html.tt-android #cta a[href*="apps.apple"] { display:none; }
 @keyframes ttSpin { to { transform:rotate(360deg); } }
 @keyframes ttRing { 0% { transform:scale(1); opacity:.9; } 100% { transform:scale(1.45); opacity:0; } }
 @media (prefers-reduced-motion:reduce) { #tt-splash.ready .btn::before { animation:none; } }
+
+/* Store hand-off (tt-tail.js openStore): the tap waits up to HANDOFF_WAIT_MS for its
+   funnel hit, then tries the store app. A wordless spinner says the tap landed and keeps
+   a second tap from starting a second hand-off. Inside the rotated body, like the game. */
+#tt-hand {
+    position:fixed; left:0; top:0; width:100%; height:100%; z-index:80;
+    display:none; align-items:center; justify-content:center;
+    background:rgba(4,4,14,0.55); touch-action:none;
+}
+#tt-hand.on { display:flex; }
+#tt-hand i {
+    width:min(12vmin, 56px); height:min(12vmin, 56px); border-radius:50%;
+    border:3px solid rgba(160,210,255,0.22); border-top-color:rgba(160,210,255,0.95);
+    animation:ttSpin 0.8s linear infinite;
+}

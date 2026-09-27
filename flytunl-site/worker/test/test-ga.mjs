@@ -62,6 +62,20 @@ check('store_click fremder store verworfen', r.status===200 && r.sent.body.event
 r = await post({ cid: 'abcdef-0123', sid: '1', en: 'pitch_open' });
 check('pitch_open durchgereicht', r.sent.body.events[0].name==='pitch_open');
 
+// /tt/ funnel events (allowed 2026-09-27; they were 400 before)
+for (const en of ['tt_ready', 'tt_dead', 'tt_run2']) {
+  r = await post({ cid: 'abcdef-0123', sid: '1', en });
+  check(en + ' durchgereicht', r.status===200 && r.sent.body.events[0].name===en, JSON.stringify(r));
+}
+r = await post({ cid: 'abcdef-0123', sid: '1', en: 'tt_dead', score: '42' });
+check('tt_dead score', r.sent.body.events[0].params.score===42, JSON.stringify(r.sent));
+r = await post({ cid: 'abcdef-0123', sid: '1', en: 'pitch_open', auto: 1 });
+check('pitch_open auto=1', r.sent.body.events[0].params.auto===1, JSON.stringify(r.sent));
+r = await post({ cid: 'abcdef-0123', sid: '1', en: 'pitch_open', auto: 7 });
+check('pitch_open auto geklemmt', r.sent.body.events[0].params.auto===1);
+r = await post({ cid: 'abcdef-0123', sid: '1', en: 'tt_evil' });
+check('fremdes Event -> 400', r.status===400);
+
 globalThis.fetch = realFetch;
 console.log(ok.join('\n'));
 console.log(ok.some(l=>l.startsWith('FAIL')) ? '\nFEHLGESCHLAGEN' : '\nalle gruen');

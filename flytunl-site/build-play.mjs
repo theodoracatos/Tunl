@@ -255,7 +255,7 @@ async function build() {
     await copyFile(path.join(root, 'audio', track), path.join(audioOut, track));
   }
 
-  await buildTT(stripped, v, TUNL_VERSION);
+  await buildTT(stripped, sources, TUNL_VERSION);
 
   const kb = (min.code.length / 1024).toFixed(0);
   console.log(`play/ built - tunl.bundle.js ${kb} KB (from ${SCRIPTS.length} files), version ${TUNL_VERSION}`);
@@ -268,8 +268,9 @@ async function build() {
 //  game with no homepage or language redirect in between, and so Cloudflare Web
 //  Analytics counts them apart (/tt/ page views, then the /tt/<step>/ funnel hits that
 //  tt-tail.js loads). Differences from /play/, all in this page only:
-//   - <base href="/play/">: the bundle, audio and icons are /play/'s own files, never
-//     copies, so the two pages can't drift;
+//   - <base href="/play/">: audio and icons are /play/'s own files, never copies;
+//   - its own bundle, site/tt/tunl.tt.bundle.js: the same src files in the same build,
+//     with TT_BUNDLE_PATCHES applied (below). Built together, so the two can't drift;
 //   - no AdSense / Ad Manager tags (no web ad unit serves - see ads-web.js - and the EU
 //     consent dialog they pull in would be the first thing an ad visitor sees);
 //   - noindex, canonical -> /play/;
@@ -279,7 +280,75 @@ const TT_GA_DEFAULT = { source: 'tiktok', medium: 'referral', campaign: 'tt_land
 // In funnel order (tt-tail.js has what each one means). run2 sits off the main line.
 const TT_STEPS = ['ready', 'run', 'dead', 'pitch', 'store-ios', 'store-android', 'run2'];
 
-async function buildTT(stripped, v, version) {
+// Source edits that exist in /tt/'s bundle only - never in /play/, never in the apps, and
+// never in src/, so a /tt/ change needs no /play/ release. Each anchor must match exactly
+// once or the build fails: a src edit that moves one stops the build instead of shipping
+// an unpatched /tt/. `add` goes right after the anchor, `replace` stands in for it.
+// Store buttons: tt-head.js sets window._tunlStoreOnly to 'ios' or 'android' when it
+// can tell the device, and then the app card (continue pitch) and the app-only sheet
+// offer that one store as a single filled button. tt_2709 (2026-09-26): 8 App Store
+// taps, 0 Google Play taps, 0 iOS installs from ~90%-Android Indonesia - the second
+// button was at best noise, at worst the one Android visitors tapped.
+const TT_BUNDLE_PATCHES = [
+  { file: 'draw.js', find:
+`    _promoAppleBtnRect = { x: textL,              y, w: btnW, h: btnH };
+    _promoPlayBtnRect  = { x: textL + btnW + gapB, y, w: btnW, h: btnH };
+`, add:
+`    const ttOnly = window._tunlStoreOnly;
+    if (ttOnly) {
+        const one = { x: textL, y, w: btnW * 2 + gapB, h: btnH };
+        _promoAppleBtnRect = ttOnly === 'ios' ? one : null;
+        _promoPlayBtnRect  = ttOnly === 'android' ? one : null;
+    }
+` },
+  { file: 'draw.js', find:
+`    storeBtn(_promoAppleBtnRect, 'APP STORE', !android);
+    storeBtn(_promoPlayBtnRect,  'GOOGLE PLAY', android);
+`, replace:
+`    if (_promoAppleBtnRect) storeBtn(_promoAppleBtnRect, 'APP STORE', !android || !!ttOnly);
+    if (_promoPlayBtnRect)  storeBtn(_promoPlayBtnRect,  'GOOGLE PLAY', android || !!ttOnly);
+` },
+  { file: 'draw.js', find:
+`        _appOnlyAppleBtnRect = { x: W / 2 - gapB / 2 - btnW, y, w: btnW, h: btnH };
+        _appOnlyPlayBtnRect  = { x: W / 2 + gapB / 2,        y, w: btnW, h: btnH };
+    }
+`, add:
+`    const ttOnly = window._tunlStoreOnly;
+    if (ttOnly && !iosOnly) {
+        const one = { x: W / 2 - btnW / 2, y, w: btnW, h: btnH };
+        _appOnlyAppleBtnRect = ttOnly === 'ios' ? one : null;
+        _appOnlyPlayBtnRect  = ttOnly === 'android' ? one : null;
+    }
+` },
+  { file: 'draw.js', find:
+`    storeBtn(_appOnlyAppleBtnRect, 'APP STORE', iosOnly || !android);
+    if (_appOnlyPlayBtnRect) storeBtn(_appOnlyPlayBtnRect, 'GOOGLE PLAY', android);
+`, replace:
+`    if (_appOnlyAppleBtnRect) storeBtn(_appOnlyAppleBtnRect, 'APP STORE', iosOnly || !android || !!ttOnly);
+    if (_appOnlyPlayBtnRect)  storeBtn(_appOnlyPlayBtnRect, 'GOOGLE PLAY', android || !!ttOnly);
+` },
+];
+
+// A funnel counter page (tt-tail.js count()). Opened on its own (top === self) it
+// redirects to /tt/ before the beacon loads, so only the iframe hit is ever counted.
+// In the iframe it tells /tt/ when the beacon's page-view request has come back from
+// Cloudflare (XHR loadend; a sendBeacon counts once queued), which is what lets a store
+// tap wait for its hit before the page is left - the request used to die with the
+// iframe. The hooks only watch the beacon's own /cdn-cgi/rum calls.
+const TT_STEP_PAGE = (step) => `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="robots" content="noindex"><title>TUNL /tt/${step}</title>
+<script>if (window.top === window.self) location.replace('/tt/'); else (function () {
+  var sent = false, rum = /\\/cdn-cgi\\/rum/;
+  function tell() { if (sent) return; sent = true; try { parent.postMessage({ tt: 'counted', step: ${JSON.stringify(step)} }, location.origin); } catch (e) {} }
+  var X = XMLHttpRequest.prototype, xo = X.open, xs = X.send;
+  X.open = function (m, u) { this._ttRum = rum.test(String(u)); return xo.apply(this, arguments); };
+  X.send = function () { if (this._ttRum) this.addEventListener('loadend', tell); return xs.apply(this, arguments); };
+  if (navigator.sendBeacon) { var sb = navigator.sendBeacon.bind(navigator); navigator.sendBeacon = function (u) { var r = sb.apply(null, arguments); if (r && rum.test(String(u))) tell(); return r; }; }
+})();</script>${CF_BEACON}
+</head><body></body></html>
+`;
+
+async function buildTT(stripped, sources, version) {
   const ttSrc = path.join(here, 'tt');
   const ttOut = path.join(root, 'flytunl-site/site/tt');
   const [css, head, tail, diag] = await Promise.all(
@@ -290,6 +359,21 @@ async function buildTT(stripped, v, version) {
     return m.code;
   };
   const [headMin, tailMin] = await Promise.all([small(head), small(tail)]);
+
+  const ttSources = { ...sources };
+  for (const p of TT_BUNDLE_PATCHES) {
+    const src = ttSources[p.file];
+    const n = src.split(p.find).length - 1;
+    if (n !== 1) throw new Error(`tt: bundle patch anchor in ${p.file} matched ${n} times (want 1):\n${p.find}`);
+    ttSources[p.file] = src.replace(p.find, () => p.replace !== undefined ? p.replace : p.find + p.add);
+  }
+  const ttMin = await minify(ttSources, {
+    compress: { passes: 2 },
+    mangle: true,            // locals only - see header note
+    format: { comments: false, preamble: BANNER },
+  });
+  if (ttMin.error) throw ttMin.error;
+  const vt = createHash('sha256').update(ttMin.code).digest('hex').slice(0, 10);
 
   const ttHead = `<base href="/play/">
 <meta name="robots" content="noindex">
@@ -318,27 +402,25 @@ ${css.trim()}
     + `<div class="lbl"></div></div>`;
   if (!/<body>\r?\n/.test(html)) throw new Error('tt: <body> not found in tunl.html');
   html = html.replace(/<body>\r?\n/, m => m + splash + '\n');
-  html = html.replace('</body>', `<script src="tunl.bundle.js?v=${v}"></script>\n<script>${tailMin}</script>\n</body>`);
+  html = html.replace('</body>', `<script src="/tt/tunl.tt.bundle.js?v=${vt}"></script>\n<script>${tailMin}</script>\n</body>`);
 
   await rm(ttOut, { recursive: true, force: true });
   await mkdir(ttOut, { recursive: true });
   await writeFile(path.join(ttOut, 'index.html'), html, 'utf8');
+  await writeFile(path.join(ttOut, 'tunl.tt.bundle.js'), ttMin.code, 'utf8');
 
-  // Funnel counters: loaded in a hidden iframe by tt-tail.js count(). Opened on their
-  // own (top === self) they redirect to /tt/ before the beacon loads, so only the
-  // iframe hit is ever counted.
+  // Funnel counters (TT_STEP_PAGE).
   for (const step of TT_STEPS) {
     await mkdir(path.join(ttOut, step), { recursive: true });
-    await writeFile(path.join(ttOut, step, 'index.html'), `<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="robots" content="noindex"><title>TUNL /tt/${step}</title>
-<script>if (window.top === window.self) location.replace('/tt/');</script>${CF_BEACON}
-</head><body></body></html>
-`, 'utf8');
+    await writeFile(path.join(ttOut, step, 'index.html'), TT_STEP_PAGE(step), 'utf8');
   }
 
   await mkdir(path.join(ttOut, 'diag'), { recursive: true });
   await writeFile(path.join(ttOut, 'diag', 'index.html'), diag, 'utf8');
-  console.log(`tt/ built - landing ${(html.length / 1024).toFixed(0)} KB + ${TT_STEPS.length} counters + diag`);
+  // diag's C1 counter: a step page outside the funnel paths.
+  await mkdir(path.join(ttOut, 'diag', 'ping'), { recursive: true });
+  await writeFile(path.join(ttOut, 'diag', 'ping', 'index.html'), TT_STEP_PAGE('diag-ping'), 'utf8');
+  console.log(`tt/ built - landing ${(html.length / 1024).toFixed(0)} KB, bundle ${(ttMin.code.length / 1024).toFixed(0)} KB (${TT_BUNDLE_PATCHES.length} patches) + ${TT_STEPS.length} counters + diag`);
 }
 
 build().catch(err => { console.error('[build-play] failed:', err); process.exit(1); });
