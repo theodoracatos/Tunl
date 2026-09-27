@@ -138,8 +138,12 @@
  "a42ef98": "Un contact avec la paroi coûte maintenant d'abord un bouclier, avant d'atteindre la coque. La coque, c'est le vaisseau : elle ne s'éraille que lorsque plus rien ne la protège.",
  "a30ed03": "Une coque éraflée le montre : des entailles sur le fuselage et un filet de fumée, tous deux disparaissent dès qu'un bouclier te couvre à nouveau.",
  "9bd11ab": "Un crash sonne maintenant comme un crash, plus comme un ballon qui éclate.",
- "bd387b3": "Changelog &middot; mis à jour le 25 septembre 2026 &middot; la version actuelle est la 17.3",
  "1bd9303": "17.3: Vis dangereusement",
  "980ce04": "Les frôlements rapportent maintenant. Frôle un cristal, une mine, un rocher ou un obus de canon, ressors indemne, et tu marques des points bonus. Des frôlements rapprochés forment une chaîne qui les multiplie. Racler une paroi ne compte jamais, et un coup encaissé par ton bouclier ne rapporte rien.",
- "00d355c": "La musique monte avec une partie profonde : après les premiers secteurs, elle gagne un cran à chaque nouveau, en douceur, sans que tu entendes de saut."
+ "00d355c": "La musique monte avec une partie profonde : après les premiers secteurs, elle gagne un cran à chaque nouveau, en douceur, sans que tu entendes de saut.",
+ "42231b5": "Changelog &middot; mis à jour le 27 septembre 2026 &middot; la version actuelle est la 18.0",
+ "c78d24e": "18.0: Puissance de feu",
+ "60ee453": "Nouveau : le laser rubis. Au fond de la grotte, une pièce de munitions se change parfois en rubis. Attrape-le et un rayon jaillit du nez de ton vaisseau pendant quelques secondes, perçant cristaux, mines et obus de canon. C'est la seule arme, avec la bombe, qui brise un rocher : un simple contact du rayon fait rougeoyer la roche, et un instant plus tard elle éclate.",
+ "ddab929": "Nouveau : Frénésie. Quand tu t'enfonces loin dans la grotte, les pièces remplissent une jauge étoile en bas à gauche. Quand elle est pleine, ton vaisseau devient une étoile un instant : tout ce que tu percutes vole en éclats, les parois ne peuvent pas te blesser, et chaque impact frappe fort. Les pièces que tu laisses filer vident la jauge, et chaque étoile suivante dans la même partie coûte plus cher.",
+ "d48d4f8": "Un nouveau cockpit sous tes ailes. Chaque bonus porte désormais son propre symbole et s'écoule sous tes yeux, pour que tu saches toujours combien de temps il te reste. Ton chargeur et le blindage de ta coque montrent exactement ce qui reste, et la barre dorée s'ouvre comme le tunnel lui-même. Même les premières pièces d'or du vol la remplissent."
 }
