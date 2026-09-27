@@ -1313,9 +1313,13 @@ const BULLET_HIT_PTS = { stal: 1, mine: 3, shot: 2, boulder: 5 };
 
 // ── Laser (18.0, concept https://claude.ai/artifact/4jEGBUKiPVGV9QXGh3qoXM) ──
 // A power-up that fires like the ammo but stronger: for LASER_SEC a beam runs from the nose
-// to the first wall and burns through crystals, mines and cannon shots, and a boulder in its
-// path glows for LASER_MELT_SEC and bursts - the only weapon besides the bomb that breaks one
-// (systems.js updateLaser).
+// to the first wall and burns through crystals, mines and cannon shots, and a boulder it
+// touches ignites: it glows and sizzles for LASER_BURN_SEC, then bursts - the only weapon
+// besides the bomb that breaks one (systems.js updateLaser). The beam is straight, at the
+// ship's height, so a rock flown past through its pass is only grazed. The first touch
+// therefore COMMITS the burst, beam or no beam: a 0.35s burn that needed the beam to stay
+// on the rock missed nearly every grazed boulder (user's calls 2026-09-27: first touch breaks
+// it, "the laser is strong", but with a short glow and burn sound; auto-aim was declined).
 // - Supply is a relabel, not a new roll: once the world-x cursor nextLaserWx (state.js) is
 //   passed, the next coin that comes out of makeCoin() as ORANGE becomes 'laser'. Its jitter
 //   comes from _deepHash, never rngCoin(), so no stream moves and the cave's geometry is
@@ -1331,7 +1335,7 @@ const BULLET_HIT_PTS = { stal: 1, mine: 3, shot: 2, boulder: 5 };
 const LASER_START_WX     = BOULDER_START_WX;
 const LASER_INTERVAL_SEC = 20;
 const LASER_SEC          = 2.5;
-const LASER_MELT_SEC     = 0.35;
+const LASER_BURN_SEC     = 0.12;
 const LASER_HALF_W       = PR * 0.3;
 // The continue offer's own timeout -- deliberately NOT reusing DEATH_INTERACTIVE_SEC
 // above. First real-device pass found 0.9s (matched to that *existing* pre-interactive

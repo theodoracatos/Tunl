@@ -2018,3 +2018,13 @@ all phases built in one go.
   Tief und brummig) no pick was saved, so the built versions stay. Re-matched in the game's
   bus: burst -19.0 dB vs mine -18.4 dB loudest-50ms in the phone band, onset 12% above
   1.5 kHz, rubble audible to ~0.9 s.
+- **"Der Laser macht die Boulder nicht kaputt" (same day, from play).** The straight beam
+  sits at the ship's height and players fly a boulder's pass, so it only grazed the edge
+  for 0.1-0.25s; the 0.35s burn (cooling while off the rock) broke 1 of 12 real boulders
+  flown past, 12 of 12 when aimed at (simulator, real controls). The tests had missed it
+  because the test island always sat on the ship's line. Offered: auto-aim, a wider/faster
+  straight beam, or first touch breaks it; the user picked first touch, then asked for "a
+  bit of glow and burn sound" but quick. Built: the first touch ignites the rock
+  (`bo.burn`), it glows from a white-hot spot and sizzles (`sfxLaserBurn`, -25.4 dB
+  loudest-50ms phone band, under coin -21 and shot -23.5) for `LASER_BURN_SEC`, then bursts
+  whatever the beam does. Flown past: 8 of 12 now break; the other 4 were never touched.

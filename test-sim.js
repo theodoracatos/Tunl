@@ -138,7 +138,7 @@ function quietCave(deep = false) {
     g(`stalactites = []; mines = []; boulders = []; cannons = []; cannonShots = []; coins = []; chicaneCoins = [];
        portals = []; bullets = []; repairKits = []; bulletAmmo = 0;
        invulnT = 0; wallGraceT = 0; warpTime = 0; slowTime = 0; slowPending = 0; magnetTime = 0; shieldCount = 0;
-       laserTime = 0; laserTimeMax = 0; laserMeltBo = null;
+       laserTime = 0; laserTimeMax = 0;
        gapBonus = 0; gapBonusVisual = 0; hullScratches = HULL_SCRATCHES; holding = false; vy = 0;
        rewardedAdReady = false;
        { const _b = boundsAt(scrollX + PX); py = (_b.top + _b.bot) / 2; }`);
@@ -475,31 +475,53 @@ function touchCoin(type, setup) {
 
     let g = quietCave(true);
     const burn = g(`(() => { ${island}
-        // Far out: deep, the scroll covers ~0.3 W in LASER_MELT_SEC. The mine behind it
-        // still lies inside the beam's reach (laserTrace stops at W + 40).
+        // The beam stops at the rock while it stands; the mine behind stays inside the
+        // beam's reach (laserTrace stops at W + 40).
         const _Y = py, bo = _isle(scrollX + W * 0.8, py);
         const near = { wx: scrollX + PX + W * 0.2, baseY: py, bobAmp: 0, phase: 0 };
         const behind = { wx: bo.wx + bo.hl + 30, baseY: py, bobAmp: 0, phase: 0 };
         boulders.push(bo); mines.push(near, behind);
         laserTime = LASER_SEC; laserTimeMax = LASER_SEC;
-        const before = bonusScore;
-        let frames = 0, behindSurvivedMelt = false, nearGoneFrame = -1, glow = 0, burstGain = 0;
-        while (boulders.includes(bo) && frames < 120) {
-            const b0 = bonusScore;
+        const b0 = bonusScore;
+        let frames = 0, behindKept = true, burstGain = 0;
+        ${hold} update(1 / 60); frames++;
+        const lit = bo.burn !== undefined, nearGone = !mines.includes(near);
+        while (boulders.includes(bo) && frames < 60) {
+            behindKept = behindKept && mines.includes(behind);
+            const s0 = bonusScore;
             ${hold} update(1 / 60); frames++;
-            if (!boulders.includes(bo)) burstGain = bonusScore - b0;
-            if (nearGoneFrame < 0 && !mines.includes(near)) nearGoneFrame = frames;
-            if (boulders.includes(bo)) { behindSurvivedMelt = mines.includes(behind); glow = Math.max(glow, bo.melt || 0); }
+            if (!boulders.includes(bo)) burstGain = bonusScore - s0;
         }
-        return { frames, gone: !boulders.includes(bo), nearGoneFrame, behindSurvivedMelt, glow, burstGain,
-                 gain: bonusScore - before, pts: BULLET_HIT_PTS.boulder,
-                 melt: LASER_MELT_SEC, left: laserTime };
+        return { lit, nearGone, behindKept, frames, burstGain, pts: BULLET_HIT_PTS.boulder, sec: LASER_BURN_SEC };
     })()`);
-    check(`the beam burns a boulder after ~LASER_MELT_SEC and pays for it (${burn.frames} frames, +${burn.burstGain} on the burst)`,
-        burn.gone && burn.frames >= Math.floor(burn.melt * 60) - 1 && burn.frames <= Math.ceil(burn.melt * 60) + 3 &&
-        burn.burstGain >= burn.pts && burn.glow > 0);
-    check(`the beam kills a mine in front at once and stops at the boulder until it bursts (front gone at frame ${burn.nearGoneFrame})`,
-        burn.nearGoneFrame === 1 && burn.behindSurvivedMelt);
+    check(`the beam ignites a boulder on first touch and it bursts after LASER_BURN_SEC, paid (${burn.frames} frames, +${burn.burstGain})`,
+        burn.lit && burn.frames >= Math.floor(burn.sec * 60) && burn.frames <= Math.ceil(burn.sec * 60) + 2 && burn.burstGain >= burn.pts);
+    check('it kills the mine in front at once and stops at the burning rock (the mine behind survives until it bursts)',
+        burn.nearGone && burn.behindKept);
+
+    // The reported bug (2026-09-27): a player flies a boulder's pass, so the beam only grazes
+    // the rock's edge for a moment - a burn that needed the beam to stay on it almost never
+    // broke one. One grazing frame must be enough, even if the beam then moves away or ends.
+    g = quietCave(true);
+    const graze = g(`(() => { ${island}
+        const bo = _isle(scrollX + W * 0.8, py);
+        const mid = py;
+        let _Y = bo.y - bo.r - LASER_HALF_W * 0.5;   // beam overlaps the top edge by half its width
+        boulders.push(bo);
+        laserTime = LASER_SEC; laserTimeMax = LASER_SEC;
+        ${hold} update(1 / 60);
+        const lit = bo.burn !== undefined;
+        laserTime = 0; _Y = mid - bo.r * 2;           // beam gone, ship away (still inside the corridor)
+        let n = 0; while (boulders.includes(bo) && n < 60) { ${hold} update(1 / 60); n++; }
+        // and a beam that clearly misses leaves a rock alone
+        _Y = mid;
+        const bo2 = _isle(scrollX + W * 0.8, _Y + LASER_HALF_W * 4 + bo.r * 1.5);
+        boulders.push(bo2); laserTime = LASER_SEC;
+        for (let i = 0; i < 20; i++) { ${hold} update(1 / 60); }
+        return { lit, burst: !boulders.includes(bo), n, missKept: boulders.includes(bo2) && bo2.burn === undefined };
+    })()`);
+    check(`one grazing frame is enough: the rock burns out and bursts after the beam has gone (${graze.n} frames); a miss leaves it`,
+        graze.lit && graze.burst && graze.missKept);
 
     g = quietCave(true);
     const shot = g(`(() => { ${island}

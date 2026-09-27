@@ -2109,24 +2109,23 @@ function drawWorld() {
         ctx.strokeStyle = 'rgba(255,255,255,0.14)';
         ctx.lineWidth   = 1.5;
         ctx.stroke();
-        // Laser heat (systems.js updateLaser): the rock glows ruby as the beam burns it,
-        // brightest where the beam strikes, and cools when the beam leaves.
-        if (bo.melt > 0) {
-            const heat = Math.min(1, bo.melt / LASER_MELT_SEC);
+        // Laser burn (systems.js updateLaser, constants.js LASER_BURN_SEC): from the first
+        // touch the rock glows ruby, spreading from a white-hot spot where the beam caught
+        // it, until it bursts.
+        if (bo.burn !== undefined) {
+            const heat = Math.min(1, bo.burn / LASER_BURN_SEC);
             ctx.globalCompositeOperation = 'lighter';
             islandPath(bo, sx);
-            ctx.fillStyle = coinTone('laser', 0, Math.round(heat * heat * 5) / 10);
+            ctx.fillStyle = coinTone('laser', 0, Math.round((0.25 + 0.45 * heat) * 10) / 10);
             ctx.fill();
-            if (bo === laserMeltBo) {
-                ctx.save(); islandPath(bo, sx); ctx.clip();
-                const R = bo.r * (1.2 + heat * 1.6);
-                const rg = ctx.createRadialGradient(laserEndX, py, 0, laserEndX, py, R);
-                rg.addColorStop(0, 'rgba(255,240,220,' + (0.5 + 0.4 * heat).toFixed(2) + ')');
-                rg.addColorStop(0.35, coinTone('laser', 0.2, 0.6));
-                rg.addColorStop(1, coinTone('laser', 0, 0));
-                ctx.fillStyle = rg; ctx.fillRect(laserEndX - R, py - R, R * 2, R * 2);
-                ctx.restore();
-            }
+            ctx.save(); islandPath(bo, sx); ctx.clip();
+            const hx = bo.burnWx - scrollX, R = bo.r * (0.8 + 2.2 * heat);
+            const rg = ctx.createRadialGradient(hx, bo.burnY, 0, hx, bo.burnY, R);
+            rg.addColorStop(0, 'rgba(255,245,230,0.9)');
+            rg.addColorStop(0.35, coinTone('laser', 0.25, 0.7));
+            rg.addColorStop(1, coinTone('laser', 0, 0));
+            ctx.fillStyle = rg; ctx.fillRect(hx - R, bo.burnY - R, R * 2, R * 2);
+            ctx.restore();
             ctx.globalCompositeOperation = 'source-over';
         }
         ctx.restore();
@@ -2869,7 +2868,7 @@ function drawLaserBeam() {
     ctx.fillStyle = coinTone('laser', 0.15, 0.9); ctx.fillRect(x0, y - hw * wob, x1 - x0, hw * 2 * wob);
     ctx.fillStyle = 'rgba(255,248,240,0.95)'; ctx.fillRect(x0, y - hw * 0.4, x1 - x0, hw * 0.8);
     // Muzzle and strike flares.
-    for (const [fx, fr] of [[x0, hw * 3], [x1, hw * (laserMeltBo ? 7 : 5) * wob]]) {
+    for (const [fx, fr] of [[x0, hw * 3], [x1, hw * 5 * wob]]) {
         const rg = ctx.createRadialGradient(fx, y, 0, fx, y, fr);
         rg.addColorStop(0, 'rgba(255,250,245,0.95)'); rg.addColorStop(0.4, coinTone('laser', 0.2, 0.6)); rg.addColorStop(1, coinTone('laser', 0, 0));
         ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(fx, y, fr, 0, Math.PI * 2); ctx.fill();

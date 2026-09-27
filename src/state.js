@@ -487,8 +487,8 @@ let slowTime, slowTimeMax, shieldCount, shieldFlash, magnetTime;
 let magnetTimeMax = 0;
 // Laser (constants.js LASER_* doc, systems.js updateLaser): seconds of beam left, the window
 // the last pickup topped up to (the HUD lane divides by it), and where the beam ends this
-// frame in screen x (draw.js). laserMeltBo is the boulder the beam is burning, if any.
-let laserTime = 0, laserTimeMax = 0, laserEndX = 0, laserMeltBo = null;
+// frame in screen x (draw.js).
+let laserTime = 0, laserTimeMax = 0, laserEndX = 0;
 // Blue-coin slow banked while a warp is live (systems.js blue branch, drained at
 // update.js's warpTime falling edge). A warp already makes the player immune to
 // every hazard, so a slow window spent inside one has no gameplay value at all and

@@ -861,13 +861,26 @@ function laserTrace(x0, y) {
 
 function updateLaser(dt) {
     const clock = dt * slowScrollFactor() * warpScrollFactor();   // the bullets' clock
-    // A boulder the beam has left cools back down (draw.js reads bo.melt as its glow).
-    for (const bo of boulders) {
-        if (bo.melt > 0 && bo !== laserMeltBo) bo.melt = Math.max(0, bo.melt - clock * 0.6);
+    const col = HUD_SPARK_COLOR.laser;
+    // A boulder the beam has touched burns out and bursts, beam or no beam (constants.js
+    // LASER_BURN_SEC): the first touch commits it. No repair kit: kits stay the reward for
+    // shooting a mine or a cannon shot.
+    for (let bi = boulders.length - 1; bi >= 0; bi--) {
+        const bo = boulders[bi];
+        if (bo.burn === undefined) continue;
+        bo.burn += clock;
+        if (bo.burn < LASER_BURN_SEC) continue;
+        boulders.splice(bi, 1);
+        const bsx = bo.wx - scrollX;
+        burstBoulder(bo);
+        shake += 12;
+        bulletHitScore(bsx, bo.y, BULLET_HIT_PTS.boulder, col);
+        sfxBoulderBurst(bsx);
+        window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
     }
-    if (laserTime <= 0) { laserMeltBo = null; return; }
+    if (laserTime <= 0) return;
     laserTime = Math.max(0, laserTime - clock);
-    if (laserTime <= 0) { laserLoopOff(); laserMeltBo = null; return; }
+    if (laserTime <= 0) { laserLoopOff(); return; }
     const x0 = PX + PR * 1.4, y = py, hw = LASER_HALF_W;
     const { end, block } = laserTrace(x0, y);
     laserEndX = end;
@@ -879,7 +892,6 @@ function updateLaser(dt) {
                          life: 0.45, r: 1 + Math.random() * 2, h: 345 + Math.random() * 20 });
         }
     }
-    const col = HUD_SPARK_COLOR.laser;
     for (const s of stalactites) {
         if (s.dying) continue;
         const sx = s.wx - scrollX;
@@ -918,24 +930,12 @@ function updateLaser(dt) {
         bulletHitScore(sx, s.y, BULLET_HIT_PTS.shot, col);
         spawnRepairKit(s.wx, s.y);
     }
-    // The boulder in the way glows for LASER_MELT_SEC of beam, then bursts like a bomb hit.
-    // No repair kit: kits stay the reward for shooting a mine or a cannon shot.
-    laserMeltBo = block;
-    laserLoopHeat(!!block);
-    if (block) {
-        block.melt = (block.melt || 0) + clock;
-        if (block.melt >= LASER_MELT_SEC) {
-            const bi = boulders.indexOf(block);
-            if (bi >= 0) boulders.splice(bi, 1);
-            laserMeltBo = null;
-            laserLoopHeat(false);
-            const bsx = block.wx - scrollX;
-            burstBoulder(block);
-            shake += 12;
-            bulletHitScore(bsx, block.y, BULLET_HIT_PTS.boulder, col);
-            sfxBoulderBurst(bsx);
-            window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
-        }
+    // First touch ignites the rock (the burst itself is at the top of this function). The
+    // beam ends at it while it still stands, so nothing behind it is hit early.
+    if (block && block.burn === undefined) {
+        block.burn = 0;
+        block.burnWx = scrollX + end; block.burnY = y;   // where it caught: draw.js's hot spot
+        sfxLaserBurn(end);
     }
 }
 
@@ -1794,7 +1794,7 @@ function burstCrystalShards(x, y, hue, count = 14) {
 }
 
 // A boulder the laser burst (systems.js updateLaser): tumbling chunks of the island's own
-// rock, still glowing from the beam (`rock`, draw.js), thrown out from inside its outline,
+// rock, glowing from the beam (`rock`, draw.js), thrown out from inside its outline,
 // plus rock dust, ruby sparks and a little smoke. Math.random only, like every burst.
 function burstBoulder(bo) {
     const sx = bo.wx - scrollX;

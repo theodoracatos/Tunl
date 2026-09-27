@@ -245,7 +245,8 @@ A power-up that fires like the ammo but stronger (`constants.js` `LASER_*` doc,
 `_coinLaser`, `audio.js` `laserLoopOn`/`sfxBoulderBurst`). For `LASER_SEC` a beam runs from
 the nose to the first wall (`boundsAt`) and burns through crystals, mines and cannon shots
 (they pay `BULLET_HIT_PTS` like a bullet kill, mines and shots drop a repair kit); a boulder
-in its path stops it, glows for `LASER_MELT_SEC` and bursts (`BULLET_HIT_PTS.boulder`, no kit).
+in its path stops it and is ignited, glows and sizzles for `LASER_BURN_SEC` and bursts
+(`BULLET_HIT_PTS.boulder`, no kit).
 Concept and picks: https://claude.ai/artifact/4jEGBUKiPVGV9QXGh3qoXM
 
 - **A relabel, never its own roll** (do not revert). Past the world-x cursor `nextLaserWx`
@@ -259,6 +260,12 @@ Concept and picks: https://claude.ai/artifact/4jEGBUKiPVGV9QXGh3qoXM
   `docs/design-history.md` "Laser"), never read it off `LASER_INTERVAL_SEC`. Re-measure after
   changing the interval or orange's share. A laser takes that orange coin's place.
 - **From `LASER_START_WX` = S4**, the boulders' sector: every run below score 233 is untouched.
+- **The first touch commits the burst** (do not go back to a burn that needs the beam to
+  stay on the rock). The beam is straight at the ship's height, and players fly a boulder's
+  pass, so the beam mostly grazes its edge: with a 0.35s burn 1 of 12 real boulders broke
+  when flown past, with ignite-on-touch 8 of 12 (the other 4 were never touched). Auto-aim
+  at the rock was offered and declined (user, 2026-09-27: "the laser is strong").
+  `test-sim.js` checks that one grazing frame is enough.
 - **Durations run on the bullets' clock** (`slowScrollFactor() * warpScrollFactor()`), and
   death clears the window (`die()`), so no beam shows over the death screen or after a revive.
 - **Kept out on purpose:** no mission, no achievement (the roster is also a store config),

@@ -90,9 +90,10 @@ and the centre is nudged a seeded amount toward one wall, so there is always a p
 AND below - one easy, one a squeeze. It asks "commit up or down" rather than "react".
 Circle-circle collision (`update.js`), same shield-absorb + shove-clear as a mine. Bombs
 clear boulders; player bullets just spark off (solid rock, not a destructible hazard). The
-**laser** is the one weapon that breaks one: the beam stops at the rock, heats it (`bo.melt`)
-for `LASER_MELT_SEC`, then bursts it (`systems.js updateLaser`, coins.md "Laser"). Keep
-bullets sparking off - the laser is only worth something because the shot cannot do this.
+**laser** is the one weapon that breaks one: the first touch of the beam ignites the rock
+(`bo.burn`), which glows for `LASER_BURN_SEC` and then bursts even if the beam has moved on
+(`systems.js updateLaser`, coins.md "Laser"). Keep bullets sparking off - the laser is only
+worth something because the shot cannot do this.
 Seeded via `_deepHash`, no `rng()`-stream impact.
 
 **Don't push boulders further out without leaderboard data showing players get there.**

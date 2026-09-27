@@ -143,7 +143,7 @@ function titleScreen() {
     stalactites = []; nextStalWx = 420; nextFallWx = 99999;
     coins = [];     nextCoinWx = 99999;
     chicaneCoins = []; lastChicaneCoinWx = -Infinity;
-    gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; slowPending = 0; slowFxVis = 0; slowFxPulseT = -1; shieldCount = 0; shieldFlash = 0; magnetTime = 0; magnetTimeMax = 0; laserTime = 0; laserTimeMax = 0; laserEndX = 0; laserMeltBo = null; notifs = []; hudSparks = []; hudBump = 0;
+    gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; slowPending = 0; slowFxVis = 0; slowFxPulseT = -1; shieldCount = 0; shieldFlash = 0; magnetTime = 0; magnetTimeMax = 0; laserTime = 0; laserTimeMax = 0; laserEndX = 0; notifs = []; hudSparks = []; hudBump = 0;
     hudLaneFx = {}; hudLaneSparks = []; hudAmmoEjects = []; hudHullHitT = -9;
     invulnT = 0; wallGraceT = 0; deathCause = null;
     safeEndWx = 0; safeCloseWx = 1; wallsLiveShown = false;
@@ -221,7 +221,7 @@ function startPlay() {
     nextFallWx = FALL_START_WX;   // 7800 until 2026-09-13, see constants.js
     coins = [];     nextCoinWx = 500;
     chicaneCoins = []; lastChicaneCoinWx = -Infinity;
-    gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; slowPending = 0; slowFxVis = 0; slowFxPulseT = -1; shieldCount = 0; shieldFlash = 0; magnetTime = 0; magnetTimeMax = 0; laserTime = 0; laserTimeMax = 0; laserEndX = 0; laserMeltBo = null; notifs = []; hudSparks = []; hudBump = 0;
+    gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; slowPending = 0; slowFxVis = 0; slowFxPulseT = -1; shieldCount = 0; shieldFlash = 0; magnetTime = 0; magnetTimeMax = 0; laserTime = 0; laserTimeMax = 0; laserEndX = 0; notifs = []; hudSparks = []; hudBump = 0;
     hudLaneFx = {}; hudLaneSparks = []; hudAmmoEjects = []; hudHullHitT = -9;
     invulnT = 0; wallGraceT = 0; deathCause = null;
     continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;

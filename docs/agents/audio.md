@@ -113,10 +113,11 @@ a "Knallfrosch" twice. Method, metrics and traps: `reference_audio_method` memor
   filter read like the death sweep. `test-sim.js` checks one step per boundary and that
   `bgmSectorBuild` stays gone.
 
-- **Laser** (`sfxLaserPickup`, `laserLoopOn`/`laserLoopHeat`/`laserLoopOff`,
+- **Laser** (`sfxLaserPickup`, `laserLoopOn`/`laserLoopOff`, `sfxLaserBurn`,
   `sfxBoulderBurst`, 2026-09-27): pickup is a charge-up (swept sawtooth into two bright
-  partials) matched to `sfxMagnet`; the beam hum sits under the thrust bed and only its
-  sizzle layer (on while a boulder burns) reaches the thrust's phone-band level; the burst
+  partials) matched to `sfxMagnet`; the beam hum sits under the thrust bed; the burn is a
+  one-shot sizzle for `LASER_BURN_SEC` when the beam catches a rock, under coin and shot
+  level (it outlives the beam, so it cannot be a layer of the hum); the burst
   is variant "Mehr Geröll" (the user's pick on the study page
   https://claude.ai/artifact/Mvavi3aXRtZG6AX9CbrLRj): a softer `_blast()`, a rubble cascade
   of low grains for most of a second and a faint hiss that swells in after the hit, matched

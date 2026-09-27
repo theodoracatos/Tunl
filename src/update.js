@@ -992,7 +992,7 @@ function die(bypassShield = false) {
     thrustOff();
     onFireLoopOff();
     magnetLoopOff();
-    laserLoopOff(); laserTime = 0; laserMeltBo = null;   // no beam over the death screen or after a revive
+    laserLoopOff(); laserTime = 0;   // no beam over the death screen or after a revive
     warpLoopOff();
     approachWindOff();
     sfxBulletFireStop();
