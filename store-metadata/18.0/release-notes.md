@@ -1,7 +1,9 @@
 # TUNL 18.0 - Play Console / App Store Connect copy (16 locales)
 
 18.0 adds the ruby laser (a power-up from sector 4: a beam that burns through boulders,
-crystals, mines and cannon shots; the store copy leads with it) and rebuilds the bottom HUD as
+crystals, mines and cannon shots; the store copy leads with it), Frenzy (a star meter that
+collecting fills on a deep run; full, the ship is a star for a moment: what it rams shatters,
+the walls can't hurt it - its store sentence is the site changelog's, 2643fa1, trimmed) and rebuilds the bottom HUD as
 one instrument (a895b26): each power-up lane carries its coin's
 own symbol and drains honestly (a stacked magnet no longer sits pinned full), the ammo magazine
 and hull armour plates show what is left, the gold bar opens from the centre like the corridor,
@@ -27,85 +29,117 @@ check that the field is populated in every locale when opening the 18.0 version.
 
 ## What's New / Release Notes (18.0)
 
-Laser first, cockpit second. Play Console caps release notes at 500 chars per language:
+Laser first, Frenzy second, the cockpit in one sentence. Play Console caps release notes at 500 chars per language:
 every locale below is counted and stays under it.
 
-### en-US  (418 chars)
+### en-US  (449 chars)
 New: the ruby laser. Grab it deep in the cave and its beam burns straight through rock islands, crystals and mines.
 
-A new cockpit under your wings. Every power-up now carries its own symbol and drains right before your eyes, so you always know how long it lasts. Your magazine and hull armour show exactly what is left, and the gold bar opens up just like the tunnel. Even the first gold coins of your flight fill it.
+New: Frenzy. On a deep run, coins fill a star meter in the bottom left. When it is full, your ship becomes a star for a moment: whatever you ram shatters, and the walls can't hurt you.
 
-### de-DE  (457 chars)
+A new cockpit under your wings. Every power-up now carries its own symbol and drains right before your eyes, so you always know how long it lasts.
+
+### de-DE  (465 chars)
 Neu: der Rubin-Laser. Schnapp ihn dir tief in der Höhle, und sein Strahl brennt sich durch Felsinseln, Kristalle und Minen.
 
-Ein neues Cockpit unter deinen Flügeln. Jedes Power-up trägt jetzt sein eigenes Symbol und läuft direkt vor deinen Augen ab, damit du immer weisst, wie lange es noch hält. Magazin und Hüllenpanzer zeigen genau, was übrig ist, und die Goldleiste öffnet sich wie der Tunnel selbst. Schon die ersten Goldmünzen deines Flugs füllen sie.
+Neu: Raserei. Auf einem tiefen Lauf füllen Münzen eine Sternanzeige unten links. Ist sie voll, wird dein Schiff für einen Moment zum Stern: Was du rammst, zerspringt, und die Wände können dir nichts anhaben.
 
-### fr-FR  (474 chars)
+Jedes Power-up trägt jetzt sein eigenes Symbol und läuft direkt vor deinen Augen ab, damit du immer weisst, wie lange es noch hält.
+
+### fr-FR  (469 chars)
 Nouveau : le laser rubis. Attrape-le au fond de la grotte et son rayon traverse les îlots rocheux, les cristaux et les mines.
 
-Un nouveau cockpit sous tes ailes. Chaque bonus porte désormais son propre symbole et s'écoule sous tes yeux, pour que tu saches toujours combien de temps il te reste. Ton chargeur et le blindage de ta coque montrent exactement ce qui reste, et la barre dorée s'ouvre comme le tunnel lui-même. Même les premières pièces d'or du vol la remplissent.
+Nouveau : Frénésie. Quand tu t'enfonces loin dans la grotte, les pièces remplissent une jauge étoile en bas à gauche. Quand elle est pleine, ton vaisseau devient une étoile un instant : tout ce que tu percutes vole en éclats, et les parois ne peuvent pas te blesser.
 
-### it-IT  (450 chars)
+Chaque bonus porte désormais son propre symbole et s'écoule sous tes yeux.
+
+### it-IT  (487 chars)
 Novità: il laser rubino. Prendilo nel profondo della grotta e il suo raggio trapassa isole di roccia, cristalli e mine.
 
-Una nuova cabina di pilotaggio sotto le tue ali. Ogni potenziamento ora ha il suo simbolo e si esaurisce davanti ai tuoi occhi, così sai sempre quanto dura ancora. Caricatore e corazza dello scafo mostrano esattamente cosa resta, e la barra d'oro si apre proprio come il tunnel. Anche le prime monete d'oro del volo la riempiono.
+Novità: Frenesia. Quando ti spingi in profondità, le monete riempiono un indicatore a stella in basso a sinistra. Quando è pieno, la tua nave diventa per un momento una stella: tutto ciò contro cui voli va in frantumi e le pareti non possono ferirti.
 
-### es-ES  (432 chars)
+Ogni potenziamento ora ha il suo simbolo e si esaurisce davanti ai tuoi occhi, così sai sempre quanto dura ancora.
+
+### es-ES  (480 chars)
 Novedad: el láser rubí. Atrápalo en lo más hondo de la cueva y su rayo atraviesa islas de roca, cristales y minas.
 
-Una nueva cabina bajo tus alas. Cada potenciador lleva ahora su propio símbolo y se agota ante tus ojos, para que siempre sepas cuánto le queda. Tu cargador y el blindaje del casco muestran exactamente lo que queda, y la barra dorada se abre igual que el túnel. Hasta las primeras monedas de oro del vuelo la llenan.
+Novedad: Frenesí. Cuando te adentras en la cueva, las monedas llenan un medidor de estrella abajo a la izquierda. Cuando está lleno, tu nave se convierte en estrella por un momento: todo lo que embistes se hace añicos y las paredes no pueden dañarte.
 
-### pt-BR  (447 chars)
+Cada potenciador lleva ahora su propio símbolo y se agota ante tus ojos, para que siempre sepas cuánto le queda.
+
+### pt-BR  (453 chars)
 Novidade: o laser de rubi. Pegue-o nas profundezas da caverna e o feixe dele atravessa ilhas de rocha, cristais e minas.
 
-Um novo cockpit sob suas asas. Cada power-up agora tem seu próprio símbolo e se esgota bem diante dos seus olhos, para você sempre saber quanto tempo ainda resta. Seu pente e a blindagem do casco mostram exatamente o que sobrou, e a barra dourada se abre como o próprio túnel. Até as primeiras moedas de ouro do voo a enchem.
+Novidade: Frenesi. Quando você vai fundo na caverna, as moedas enchem um medidor de estrela no canto inferior esquerdo. Quando ele enche, sua nave vira uma estrela por um momento: tudo em que você bate se despedaça e as paredes não podem te ferir.
 
-### ja-JP  (188 chars)
+Cada power-up agora tem seu próprio símbolo e se esgota bem diante dos seus olhos.
+
+### ja-JP  (215 chars)
 新登場：ルビーレーザー。洞窟の奥で手に入れれば、そのビームが岩の島もクリスタルも機雷も焼き貫きます。
 
-翼の下に新しいコックピット。すべてのパワーアップに専用のシンボルが付き、目の前で減っていくので、残り時間がいつでもひと目で分かります。弾倉と船体装甲は残りを正確に表示し、ゴールドバーはトンネルのように左右へ広がります。飛行の最初のゴールドコインからもう満たされていきます。
+新登場：フィーバー。洞窟の奥まで進むと、コインが左下のスターメーターを満たしていきます。満タンになると、機体が一瞬スターになります。ぶつかったものはすべて砕け、壁でもダメージを受けません。
 
-### ko-KR  (195 chars)
+翼の下に新しいコックピット。すべてのパワーアップに専用のシンボルが付き、目の前で減っていくので、残り時間がいつでもひと目で分かります。
+
+### ko-KR  (227 chars)
 새로운 무기: 루비 레이저. 동굴 깊은 곳에서 손에 넣으면 광선이 바위 섬과 크리스털, 기뢰를 꿰뚫어요.
 
-날개 아래 새로운 조종석. 모든 파워업에 고유한 상징이 붙고 눈앞에서 줄어들어, 남은 시간을 언제나 알 수 있어요. 탄창과 선체 장갑은 남은 양을 정확히 보여 주고, 골드 바는 터널처럼 양쪽으로 열려요. 비행 첫 골드 코인부터 벌써 채워져요.
+새로운 기능: 피버. 동굴 깊이 들어가면 코인이 왼쪽 아래의 별 게이지를 채워요. 게이지가 가득 차면 기체가 잠시 별이 돼요. 부딪히는 건 모두 부서지고, 벽도 피해를 주지 못해요.
 
-### zh-TW  (137 chars)
+날개 아래 새로운 조종석. 모든 파워업에 고유한 상징이 붙고 눈앞에서 줄어들어, 남은 시간을 언제나 알 수 있어요.
+
+### zh-TW  (150 chars)
 全新登場：紅寶石雷射。在洞穴深處拿到它，光束就能燒穿岩石島、水晶與水雷。
 
-機翼下的全新駕駛艙。每個強化道具現在都有專屬符號，並在你眼前逐漸耗盡，讓你隨時知道還能撐多久。彈匣與船體裝甲清楚顯示剩餘多少，金色計量條則像隧道一樣向兩側展開。就連飛行中最早的幾枚金幣也會把它填滿。
+全新登場：狂熱。深入洞穴時，金幣會填滿左下角的星星計量條。填滿後，你的飛船會短暫化身為星星：撞上的東西全都粉碎，牆壁傷不了你。
 
-### ru-RU  (410 chars)
+機翼下的全新駕駛艙。每個強化道具現在都有專屬符號，並在你眼前逐漸耗盡，讓你隨時知道還能撐多久。
+
+### ru-RU  (489 chars)
 Новинка: рубиновый лазер. Подбери его в глубине пещеры, и его луч прожжёт каменные острова, кристаллы и мины.
 
-Новая кабина под твоими крыльями. У каждого усиления теперь свой символ, и оно тает прямо на глазах, так что ты всегда знаешь, сколько ему осталось. Магазин и броня корпуса точно показывают, что осталось, а золотая шкала раскрывается, как сам туннель. Её наполняют даже первые золотые монеты полёта.
+Новинка: Ярость. Когда забираешься глубоко, монеты заполняют звёздную шкалу слева внизу. Когда она полна, твой корабль на миг становится звездой: всё, во что ты врезаешься, разлетается вдребезги, а стены не могут тебе навредить.
 
-### ar  (329 chars)
+Новая кабина под твоими крыльями. У каждого усиления теперь свой символ, и оно тает прямо на глазах, так что ты всегда знаешь, сколько ему осталось.
+
+### ar  (372 chars)
 جديد: الليزر الياقوتي. التقطه في أعماق الكهف وسيخترق شعاعه الجزر الصخرية والبلورات والألغام.
 
-قمرة قيادة جديدة تحت جناحيك. كل معزِّز يحمل الآن رمزه الخاص وينفد أمام عينيك، لتعرف دائمًا كم تبقّى منه. يُظهر مخزن الذخيرة ودرع الهيكل بالضبط ما تبقّى، ويتّسع شريط الذهب تمامًا كما يتّسع النفق. حتى أولى العملات الذهبية في رحلتك تملؤه.
+جديد: الهيجان. عندما تتوغل في الكهف، تملأ العملات عدّاد النجمة في أسفل اليسار. وعندما يمتلئ تتحول سفينتك إلى نجمة للحظات: كل ما تصطدم به يتحطم، ولا تستطيع الجدران أن تؤذيك.
 
-### tr-TR  (427 chars)
+قمرة قيادة جديدة تحت جناحيك. كل معزِّز يحمل الآن رمزه الخاص وينفد أمام عينيك، لتعرف دائمًا كم تبقّى منه.
+
+### tr-TR  (493 chars)
 Yeni: yakut lazer. Mağaranın derinliklerinde onu yakala, ışını kaya adalarını, kristalleri ve mayınları delip geçsin.
 
-Kanatlarının altında yeni bir kokpit. Her güçlendirme artık kendi sembolünü taşıyor ve gözünün önünde azalıyor, böylece ne kadar kaldığını hep biliyorsun. Şarjörün ve gövde zırhın tam olarak ne kaldığını gösteriyor, altın çubuk ise tünel gibi iki yana açılıyor. Uçuşun ilk altın paraları bile onu dolduruyor.
+Yeni: Çılgınlık. Mağaranın derinlerine indiğinde jetonlar sol alttaki yıldız göstergesini doldurur. Gösterge dolunca gemin bir anlığına yıldıza dönüşür: çarptığın her şey paramparça olur ve duvarlar sana zarar veremez.
 
-### id  (444 chars)
+Kanatlarının altında yeni bir kokpit. Her güçlendirme artık kendi sembolünü taşıyor ve gözünün önünde azalıyor, böylece ne kadar kaldığını hep biliyorsun.
+
+### id  (487 chars)
 Baru: laser rubi. Ambil di kedalaman gua dan sinarnya menembus pulau batu, kristal, dan ranjau.
 
-Kokpit baru di bawah sayapmu. Setiap power-up kini punya simbolnya sendiri dan berkurang tepat di depan matamu, jadi kamu selalu tahu berapa lama lagi tersisa. Magasin dan lapisan baja lambung menunjukkan persis apa yang tersisa, dan bilah emas terbuka seperti terowongan itu sendiri. Bahkan koin emas pertama dalam penerbanganmu sudah mengisinya.
+Baru: Mengamuk. Saat kamu masuk jauh ke dalam gua, koin mengisi meteran bintang di kiri bawah. Saat penuh, pesawatmu berubah jadi bintang sesaat: apa pun yang kamu tabrak hancur berkeping-keping, dan dinding tidak bisa melukaimu.
 
-### pl-PL  (397 chars)
+Kokpit baru di bawah sayapmu. Setiap power-up kini punya simbolnya sendiri dan berkurang tepat di depan matamu, jadi kamu selalu tahu berapa lama lagi tersisa.
+
+### pl-PL  (488 chars)
 Nowość: rubinowy laser. Złap go w głębi jaskini, a jego wiązka przepali skalne wyspy, kryształy i miny.
 
-Nowy kokpit pod twoimi skrzydłami. Każde wzmocnienie ma teraz własny symbol i topnieje na twoich oczach, więc zawsze wiesz, ile jeszcze potrwa. Magazynek i pancerz kadłuba pokazują dokładnie, co zostało, a złoty pasek otwiera się jak sam tunel. Wypełniają go nawet pierwsze złote monety lotu.
+Nowość: Szał. Gdy zapuszczasz się głęboko, monety napełniają gwiezdny wskaźnik w lewym dolnym rogu. Kiedy jest pełny, twój statek na chwilę staje się gwiazdą: wszystko, w co wlecisz, rozpada się w drobny mak, a ściany nie mogą cię zranić.
 
-### hi-IN  (426 chars)
+Nowy kokpit pod twoimi skrzydłami. Każde wzmocnienie ma teraz własny symbol i topnieje na twoich oczach, więc zawsze wiesz, ile jeszcze potrwa.
+
+### hi-IN  (468 chars)
 नया: माणिक लेज़र। इसे गुफा की गहराई में पकड़ो और इसकी किरण चट्टानी द्वीपों, क्रिस्टलों और माइनों को भेद देगी।
 
-तुम्हारे पंखों के नीचे नया कॉकपिट। हर पावर-अप का अब अपना प्रतीक है और वह तुम्हारी आँखों के सामने घटता है, ताकि तुम्हें हमेशा पता रहे कि वह कितनी देर और चलेगा। मैगज़ीन और हल का कवच ठीक-ठीक दिखाते हैं कि कितना बचा है, और सोने की पट्टी सुरंग की तरह दोनों ओर खुलती है। उड़ान के पहले सोने के सिक्के भी उसे भरने लगते हैं।
+नया: उन्माद। गुफा में गहराई तक जाने पर सिक्के नीचे बाईं ओर का सितारा मीटर भरते हैं। मीटर भरते ही तुम्हारा जहाज़ कुछ पल के लिए सितारा बन जाता है: जिससे भी तुम टकराओ, वह चूर-चूर हो जाता है, और दीवारें तुम्हें नुकसान नहीं पहुँचा सकतीं।
 
-### el  (460 chars)
+हर पावर-अप का अब अपना प्रतीक है और वह तुम्हारी आँखों के सामने घटता है, ताकि तुम्हें हमेशा पता रहे कि वह कितनी देर और चलेगा।
+
+### el  (471 chars)
 Νέο: το ρουμπινί λέιζερ. Πιάσ' το στα βάθη της σπηλιάς και η δέσμη του διαπερνά βραχονησίδες, κρυστάλλους και νάρκες.
 
-Ένα νέο πιλοτήριο κάτω από τα φτερά σου. Κάθε ενίσχυση έχει πλέον το δικό της σύμβολο και αδειάζει μπροστά στα μάτια σου, ώστε να ξέρεις πάντα πόσο κρατάει ακόμα. Ο γεμιστήρας και η θωράκιση του σκάφους δείχνουν ακριβώς τι απομένει, και η χρυσή μπάρα ανοίγει όπως το ίδιο το τούνελ. Ακόμα και τα πρώτα χρυσά νομίσματα της πτήσης τη γεμίζουν.
+Νέο: Μανία. Όταν προχωράς βαθιά στη σπηλιά, τα νομίσματα γεμίζουν έναν δείκτη αστεριού κάτω αριστερά. Όταν γεμίσει, το σκάφος σου γίνεται για λίγο αστέρι: ό,τι χτυπήσεις γίνεται θρύψαλα, και οι τοίχοι δεν μπορούν να σε πληγώσουν.
+
+Κάθε ενίσχυση έχει πλέον το δικό της σύμβολο και αδειάζει μπροστά στα μάτια σου, ώστε να ξέρεις πάντα πόσο κρατάει ακόμα.
