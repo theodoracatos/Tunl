@@ -3001,25 +3001,28 @@ function laserLoopOff() {
     setTimeout(() => srcs.forEach(n => { try { n.stop(); } catch(e){} }), 180);
 }
 
-// A boulder the laser burst. One sound, one meaning: not the mine's blast. The shared
-// _blast() body with less punch and more debris carries the weight, plus a rubble cascade
-// (low band-passed grains tumbling over half a second) and a short hot hiss - rock that was
-// just molten. Panned and sent to the cave like every impact.
-const BOULDER_BURST_LEVEL = 0.16;
+// A boulder the laser burst. One sound, one meaning: not the mine's blast. Variant "Mehr
+// Geröll", the user's pick on the study page (https://claude.ai/artifact/Mvavi3aXRtZG6AX9CbrLRj,
+// 2026-09-27): the rock crumbles more than it explodes. The shared _blast() body with less
+// punch and more debris, a long rubble cascade (low band-passed grains tumbling for most of a
+// second) and a faint hot hiss - rock that was just molten. Panned and sent to the cave like
+// every impact. BOULDER_BURST_LEVEL matched by offline render to the mine blast (phone band).
+const BOULDER_BURST_LEVEL = 0.22;
 function sfxBoulderBurst(x) {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime, pv = 0.9 + Math.random() * 0.12;
-    _blast(t, { size: 1.4, pv, blast: 1.0, boom: 0.9, debris: 1.3, level: BOULDER_BURST_LEVEL, x });
+    _blast(t, { size: 1.4, pv, blast: 0.7, boom: 0.8, debris: 1.8, level: BOULDER_BURST_LEVEL, x });
     const out = _ac.createGain();
     out.gain.value = BOULDER_BURST_LEVEL;
     out.connect(_sfxOut(x));
-    _caveSend(out, 0.8);
-    for (let i = 0; i < 9; i++) {
-        const td = t + 0.03 + i * 0.055 + Math.random() * 0.03;
+    _caveSend(out, 0.9);
+    const GRAINS = 16, GAP = 0.05;
+    for (let i = 0; i < GRAINS; i++) {
+        const td = t + 0.03 + i * GAP + Math.random() * GAP * 0.55;
         const n = _ac.createBufferSource(); n.buffer = _noiseBuf(0.08);
         const f = _ac.createBiquadFilter();
-        f.type = 'bandpass'; f.frequency.value = (380 + Math.random() * 520) * pv; f.Q.value = 2.2;
-        const g = _ac.createGain(), a = 1.1 * (1 - i / 11);
+        f.type = 'bandpass'; f.frequency.value = (250 + Math.random() * 450) * pv; f.Q.value = 2.2;
+        const g = _ac.createGain(), a = 1.4 * (1 - i / (GRAINS + 2));
         g.gain.setValueAtTime(0.0001, td);
         g.gain.linearRampToValueAtTime(a, td + 0.012);
         g.gain.exponentialRampToValueAtTime(0.001, td + 0.08);
@@ -3032,7 +3035,7 @@ function sfxBoulderBurst(x) {
     // Swells in after the hit rather than on it: highs on the onset are what made earlier
     // blasts read as a firecracker (docs/agents/audio.md).
     hg.gain.setValueAtTime(0.0001, t);
-    hg.gain.linearRampToValueAtTime(0.16, t + 0.12);
+    hg.gain.linearRampToValueAtTime(0.1, t + 0.12);
     hg.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
     hs.connect(hf); hf.connect(hg); hg.connect(out);
     hs.start(t); hs.stop(t + 0.5);

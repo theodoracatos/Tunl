@@ -117,9 +117,11 @@ a "Knallfrosch" twice. Method, metrics and traps: `reference_audio_method` memor
   `sfxBoulderBurst`, 2026-09-27): pickup is a charge-up (swept sawtooth into two bright
   partials) matched to `sfxMagnet`; the beam hum sits under the thrust bed and only its
   sizzle layer (on while a boulder burns) reaches the thrust's phone-band level; the burst
-  is `_blast()` plus a rubble cascade and a hiss that swells in after the hit, matched to
-  the mine blast in the phone band. Numbers: `docs/design-history.md` "Laser". Not heard on
-  a device.
+  is variant "Mehr Geröll" (the user's pick on the study page
+  https://claude.ai/artifact/Mvavi3aXRtZG6AX9CbrLRj): a softer `_blast()`, a rubble cascade
+  of low grains for most of a second and a faint hiss that swells in after the hit, matched
+  to the mine blast in the phone band. Pickup and hum kept as built (no other pick saved).
+  Numbers: `docs/design-history.md` "Laser". Not heard on a device.
 
 Still open, deliberately: wall-proximity audio and the title sonar pulse. Review proposals and the user's picks:
 https://claude.ai/artifact/6KC3aJhYAAfthzVXtX5oAa

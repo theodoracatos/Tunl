@@ -2011,3 +2011,10 @@ all phases built in one go.
   -29.9), the sizzle while burning lifts it to the thrust's level in the phone band,
   boulder burst matched to the mine blast in the phone band (-18.9 vs -18.6 dB), its hiss
   swelling in after the hit so the onset stays at ~15% above 1.5 kHz. Not heard on a device.
+- **Sound study (same day):** a page with level-matched variants over the real play track
+  (https://claude.ai/artifact/Mvavi3aXRtZG6AX9CbrLRj). The user picked "Mehr Geröll" for the
+  boulder burst (crumbles more than it explodes) over the balanced build and "Mehr Knall";
+  for the pickup (Lade-Sweep / Zapp / Rubinklang) and the hum (Summen / Sirren / Pulsierend /
+  Tief und brummig) no pick was saved, so the built versions stay. Re-matched in the game's
+  bus: burst -19.0 dB vs mine -18.4 dB loudest-50ms in the phone band, onset 12% above
+  1.5 kHz, rubble audible to ~0.9 s.
