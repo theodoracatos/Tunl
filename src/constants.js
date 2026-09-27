@@ -1372,6 +1372,23 @@ const FRENZY_PORTAL_MAX       = 3;
 const FRENZY_READY_FRAC       = 0.8;   // the meter crossing this cues "almost" (draw + audio)
 const FRENZY_WARN_SEC         = 1.0;   // the last stretch of a star flickers and plays the end motif
 const FRENZY_CHARGE_SEC       = 0.4;   // full meter -> star: the charge riser plays over it, the lane blinks
+// Making the star unmistakable (user's picks 2026-09-27, https://claude.ai/artifact/U6FuPqw4JN7dM3w6h1WiLc):
+// a wash of the ship's light from the LEFT edge only (light behind the ship, never ahead, like
+// the Zeitblase's), the score glowing in that light, and weight on every smash - an impact
+// flash, more shards, harder shake and a hit-stop: the whole update() holds for
+// FRENZY_HITSTOP_SEC, at most once per FRENZY_HITSTOP_GAP so a chain of hits never stutters.
+// The hit-stop is per player and rng()-free; scrollX simply resumes, so nothing forks.
+const FRENZY_WASH_FRAC        = 0.50;   // of the width, from the left edge (the ship sits at 0.22)
+const FRENZY_WASH_ALPHA       = 0.28;   // at the edge; the Zeitblase's is 0.11 - the star has to read louder
+const FRENZY_HITSTOP_SEC      = 0.04;
+const FRENZY_HITSTOP_GAP      = 0.15;
+const FRENZY_IMPACT_SEC       = 0.18;   // the white flash at a smash
+// Achievements (2026-09-27): the first star ever, and two stars in one run - the second costs
+// FRENZY_FIRST_COST * FRENZY_COST_MUL, which only the sim's pro tier reached. Reported the
+// moment the star lights (systems.js frenzyBegin); state.js frenzyBestRun backs the backfill.
+// Store text: branding/game-center/ach_translations_frenzy.json.
+const FRENZY_FIRST_ACH_ID     = 'tunl_ach_frenzy_first';
+const FRENZY_DOUBLE_ACH_ID    = 'tunl_ach_frenzy_double';
 // The star's shimmer runs in 16ths of the play track (Nebula, 140 BPM): the aura, the icon's
 // core and the audio pad's tremolo share it, so picture and sound pulse together.
 const FRENZY_TREM_HZ          = 140 / 60 * 4;

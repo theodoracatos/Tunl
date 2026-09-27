@@ -2404,6 +2404,22 @@ function drawWorld() {
         }
     }
 
+    // Frenzy star (constants.js FRENZY_WASH_* doc): the ship's light washes in from the LEFT
+    // edge only, pulsing in 16ths of the track - light behind the ship, never ahead, where
+    // the hazards come from. Under the trail and the ship, like the Zeitblase's wash.
+    if (phase === 'play' && frenzyTime > 0) {
+        const [fr, fg, fb] = (SKINS[activeSkin] || SKINS[0]).shadow;
+        const a = FRENZY_WASH_ALPHA * (0.75 + 0.25 * Math.sin(gtime * FRENZY_TREM_HZ * Math.PI * 2)) * _frenzyFlicker()
+                * Math.min(1, (gtime - frenzyStartT) / 0.15);
+        const washW = W * FRENZY_WASH_FRAC;
+        const wg = ctx.createLinearGradient(0, 0, washW, 0);
+        wg.addColorStop(0, `rgba(${fr},${fg},${fb},${a})`);
+        wg.addColorStop(0.35, `rgba(${fr},${fg},${fb},${a * 0.4})`);
+        wg.addColorStop(1, `rgba(${fr},${fg},${fb},0)`);
+        ctx.fillStyle = wg;
+        ctx.fillRect(0, 0, washW, H);
+    }
+
     // Blue-coin "Zeitblase" (constants.js SLOW_FX doc): a cool wash behind the ship, thin
     // time ripples around it, and a one-shot double ring on pickup. Drawn under the trail
     // and the ship. All of it rides slowFxVis, so it fades with the glide back to full speed.
@@ -2697,6 +2713,26 @@ function drawWorld() {
         _portalBand(p, sx, p.used ? p.usedFade : 1, true);
     }
 
+    // Star smashes (constants.js FRENZY_IMPACT_SEC): a white flash where it broke, in the
+    // ship's light at the rim, over the ship. Additive, no shadowBlur.
+    if (frenzyImpacts.length) {
+        const [fr, fg, fb] = (SKINS[activeSkin] || SKINS[0]).shadow;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = frenzyImpacts.length - 1; i >= 0; i--) {
+            const f = frenzyImpacts[i], u = (gtime - f.t) / FRENZY_IMPACT_SEC;
+            if (u >= 1 || u < 0) { frenzyImpacts.splice(i, 1); continue; }
+            const R = PR * (1.2 + u * 3.5), a = 1 - u;
+            const g = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, R);
+            g.addColorStop(0, `rgba(255,255,255,${0.9 * a})`);
+            g.addColorStop(0.45, `rgba(${fr},${fg},${fb},${0.5 * a})`);
+            g.addColorStop(1, `rgba(${fr},${fg},${fb},0)`);
+            ctx.fillStyle = g;
+            ctx.beginPath(); ctx.arc(f.x, f.y, R, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.restore();
+    }
+
     // Idle-hold hint: the player pressed nothing at all after launch (see
     // hasHeldThisRun/idleHoldTimer, state.js + update.js). Gravity is withheld until
     // their first press, so they aren't in danger yet, but they still don't know what
@@ -2968,8 +3004,9 @@ let _hudLastCombo = 0, _hudComboPopT = -1;
 // - Capacity shows: spent rounds (up to bulletAmmoCap()) and a lost plate stay as outlines.
 // - Glow is additive gradients, never shadowBlur (the expensive call on WKWebView).
 // - Varying alpha goes through globalAlpha so coinTone()'s string cache stays bounded.
-const _HUD_LANES = ['frenzy', 'gold', 'blue', 'green', 'laser'];
-let _hudLaneY = { frenzy: 0, gold: 1, blue: 2, green: 3, laser: 4 }, _hudLaneA = { frenzy: 0, gold: 0, blue: 0, green: 0, laser: 0 }, _hudLaneT = -1;
+const _HUD_LANES = ['gold', 'blue', 'green', 'laser'];
+let _hudLaneY = { gold: 0, blue: 1, green: 2, laser: 3 }, _hudLaneA = { gold: 0, blue: 0, green: 0, laser: 0 }, _hudLaneT = -1;
+let _hudFzA = 0;   // the star meter's fade (_hudFrenzy)
 
 function _hudGeo() {
     const x0 = W * 0.29, pitch = Math.max(13, FS * 0.024);
@@ -3026,7 +3063,7 @@ function _hudLanes(G) {
         const warn = s.remain < HUD_LANE_WARN_SEC ? 0.55 + 0.45 * Math.sin(gtime * 18) : 1;   // combo chip's rate
         const dim  = s.held ? 0.45 + 0.2 * Math.sin(gtime * 6) : s.ready ? 0.75 + 0.25 * Math.sin(gtime * 8) : 1;
         const corridor = k === 'gold';
-        const tk = k === 'frenzy' ? _fzToneKey() : k;   // the star lane wears the ship's light
+        const tk = k;
         const fw  = tw * (s.on ? s.ratio : 0);
         const fx0 = corridor ? (G.x0 + G.x1 - fw) / 2 : G.x0;
         ctx.save();
@@ -3084,6 +3121,57 @@ function _hudLanes(G) {
         COIN_OBJECTS[k](G.iconS, gtime, 0);
         ctx.restore();
     }
+}
+
+// The star meter (constants.js FRENZY_* doc) stands apart from the power-up lanes: a
+// vertical bar at the bottom-left edge, left of the magazine, filling upward, the star
+// icon on top (user's call 2026-09-27, "klar abgetrennt"). Same material as a lane: the
+// ship's own light, one notch per second while a star drains it, the lane pulse once past
+// FRENZY_READY_FRAC, held full and dimmed while a star waits for a warp's end.
+function _hudFrenzy(G, dt) {
+    const s = _hudLaneState('frenzy');
+    _hudFzA += ((s.on ? 1 : 0) - _hudFzA) * Math.min(1, dt * 12);
+    if (_hudFzA < 0.02) return;
+    const tk = _fzToneKey();
+    const w = G.lh * 1.3, h = Math.max(56, H * 0.2);
+    const x = SAFE_L + Math.max(10, W * 0.017), yBot = G.baseY + G.lh / 2, yTop = yBot - h;
+    const warn = s.remain < HUD_LANE_WARN_SEC ? 0.55 + 0.45 * Math.sin(gtime * 18) : 1;
+    const dim = s.held ? 0.45 + 0.2 * Math.sin(gtime * 6) : s.ready ? 0.75 + 0.25 * Math.sin(gtime * 8) : 1;
+    const bar = (y0, hh) => { ctx.beginPath(); ctx.roundRect(x - w / 2, y0, w, Math.max(0, hh), w / 2); };
+    ctx.save();
+    ctx.globalAlpha = _hudFzA;
+    bar(yTop, h);
+    ctx.fillStyle = coinTone(tk, 0, 0.10); ctx.fill();
+    ctx.strokeStyle = coinTone(tk, 0, 0.30); ctx.lineWidth = 1; ctx.stroke();
+    const fh = h * (s.on ? s.ratio : 0), fy = yBot - fh;
+    if (fh > 0.5) {
+        ctx.globalAlpha = _hudFzA * warn * dim;
+        const gr = ctx.createLinearGradient(x - w / 2, 0, x + w / 2, 0);
+        gr.addColorStop(0, coinTone(tk, 0.55)); gr.addColorStop(0.45, coinTone(tk, 0)); gr.addColorStop(1, coinTone(tk, -0.3));
+        bar(fy, fh); ctx.fillStyle = gr; ctx.fill();
+        if (s.max > 0) {   // one notch per second of the star
+            ctx.fillStyle = 'rgba(0,0,0,0.38)';
+            for (let sec = 1; sec < s.max; sec++) {
+                const ny = yBot - h * (sec / s.max);
+                if (ny > fy + 2) ctx.fillRect(x - w / 2 + 1, Math.round(ny), w - 2, 1);
+            }
+        }
+        ctx.globalCompositeOperation = 'lighter';
+        const R = w * 1.9, rg = ctx.createRadialGradient(x, fy, 0, x, fy, R);
+        rg.addColorStop(0, coinTone(tk, 0.6, 0.55)); rg.addColorStop(1, coinTone(tk, 0, 0));
+        ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(x, fy, R, 0, Math.PI * 2); ctx.fill();
+        const fx = hudLaneFx.frenzy;   // a top-up's new segment flashes
+        if (fx && gtime - fx.t < HUD_LANE_FLASH_SEC) {
+            const r0 = Math.min(fx.from, s.ratio);
+            ctx.globalAlpha = _hudFzA * 0.85 * (1 - (gtime - fx.t) / HUD_LANE_FLASH_SEC);
+            bar(yBot - h * s.ratio, h * (s.ratio - r0)); ctx.fillStyle = '#ffffff'; ctx.fill();
+        }
+        ctx.globalCompositeOperation = 'source-over';
+    }
+    ctx.globalAlpha = _hudFzA * (warn < 1 ? 0.6 + 0.4 * warn : 1) * dim;
+    ctx.translate(x, yTop - G.iconS * 1.6);
+    COIN_OBJECTS.frenzy(G.iconS * 1.1, gtime, 0);
+    ctx.restore();
 }
 
 function _hudMagazine(G) {
@@ -3232,6 +3320,7 @@ function drawEnergyConsole() {
         _hudLaneA[k] += ((on ? 1 : 0) - _hudLaneA[k]) * Math.min(1, dt * 12);
     }
     _hudLanes(G);
+    _hudFrenzy(G, dt);
     _hudMagazine(G);
     if (HULL_SCRATCHES > 0) _hudHull(G);
     _hudLaneSparks(G);
@@ -3288,10 +3377,16 @@ function drawHUD() {
         // 0 -> 1 -> 0 over HUD_BUMP_SEC, scaling the digits about their own centre and
         // warming them toward gold, so a bonus reads differently from plain distance.
         const bumpK  = hudBump > 0 ? Math.sin((1 - hudBump) * Math.PI) : 0;
-        const inkClr = nearPB ? [255, 230, 80] : lerpClr([215, 235, 255], [255, 226, 120], bumpK);
+        // Through a star the digits glow in the ship's light and every smash pumps them
+        // toward white (constants.js FRENZY_WASH_* doc); a star outranks the near-PB gold.
+        const fzLit  = frenzyTime > 0;
+        const fzClr  = fzLit ? (SKINS[activeSkin] || SKINS[0]).shadow : null;
+        const inkClr = fzLit ? lerpClr(lerpClr(fzClr, [255, 255, 255], 0.35), [255, 255, 255], bumpK)
+                     : nearPB ? [255, 230, 80] : lerpClr([215, 235, 255], [255, 226, 120], bumpK);
         ctx.fillStyle   = rgb(inkClr, 0.96);
-        ctx.shadowColor = nearPB || bumpK > 0.05 ? `rgba(255,200,40,${nearPB ? 0.80 : 0.6 * bumpK})` : 'rgba(0,0,0,0.85)';
-        ctx.shadowBlur  = nearPB ? 18 : 5 + 10 * bumpK;
+        ctx.shadowColor = fzLit ? rgb(fzClr, 0.85)
+                        : nearPB || bumpK > 0.05 ? `rgba(255,200,40,${nearPB ? 0.80 : 0.6 * bumpK})` : 'rgba(0,0,0,0.85)';
+        ctx.shadowBlur  = fzLit ? 14 + 10 * bumpK : nearPB ? 18 : 5 + 10 * bumpK;
         ctx.save();
         ctx.translate(W / 2, scoreMidY);
         ctx.scale(1 + 0.12 * bumpK, 1 + 0.12 * bumpK);
@@ -3299,6 +3394,13 @@ function drawHUD() {
         ctx.restore();
         ctx.shadowBlur  = 0;
         scoreW = ctx.measureText(String(score)).width;
+        if (fzLit) {   // the star, left of the digits (the combo chip owns the right side)
+            ctx.save();
+            ctx.translate(W / 2 - scoreW / 2 - scoreFsz * 0.45, scoreMidY);
+            ctx.globalAlpha = _frenzyFlicker();
+            COIN_OBJECTS.frenzy(scoreFsz * 0.30, gtime, 0);
+            ctx.restore();
+        }
     }
     hudY = scoreBase + scoreDesc + scoreFsz * 0.16;
 

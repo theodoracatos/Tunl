@@ -4,6 +4,9 @@
 let prev = 0;
 
 function update(dt) {
+    // A star's smash holds the whole frame for FRENZY_HITSTOP_SEC (constants.js doc): no
+    // clock moves, so the picture freezes on the impact and everything resumes as it was.
+    if (frenzyHitStopT > 0 && phase === 'play') { frenzyHitStopT = Math.max(0, frenzyHitStopT - dt); return; }
     gtime += dt;
 
     // Blue-coin "Zeitblase" (constants.js SLOW_FX doc): eased intensity, the slowed visual

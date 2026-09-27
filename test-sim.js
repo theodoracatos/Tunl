@@ -1043,7 +1043,7 @@ function fzCoin(g, type, ahead = 0, arr = 'coins') {
                      dying: stalactites.filter(x => x.dying).length }; })()`);
         return r;
     };
-    let r = smash(`mines.push({ wx: scrollX + PX + 6, baseY: y0, phase: 0, bobAmp: 0 });`);
+    let r = smash(`mines.push({ wx: scrollX + PX + 2 + scrollSpd() * 0.06, baseY: y0, phase: 0, bobAmp: 0 });`);
     check(`a starred ship flies through a mine: survives, mine gone, +BULLET_HIT_PTS.mine (${r.pts})`,
         r.phase === 'play' && r.mines === 0 && r.pts >= g('BULLET_HIT_PTS.mine') && r.shield === 1);
     r = smash(`cannonShots.push({ wx: scrollX + PX + 6, y: y0, vx: 0, vy: 0 });`);
@@ -1065,7 +1065,7 @@ function fzCoin(g, type, ahead = 0, arr = 'coins') {
         check(`... through a boulder island (+${rb.pts})`, rb.phase === 'play' && rb.n === 0 && rb.pts >= g('BULLET_HIT_PTS.boulder'));
     } else check('a boulder showed up to test the star against', false);
     // control: the same mine without a star is fatal, so the branch above is what saved it
-    const ctl = fzCave(`shieldCount = 0; mines.push({ wx: scrollX + PX + 6, baseY: y0, phase: 0, bobAmp: 0 });`);
+    const ctl = fzCave(`shieldCount = 0; mines.push({ wx: scrollX + PX + 2 + scrollSpd() * 0.06, baseY: y0, phase: 0, bobAmp: 0 });`);
     ctl(`for (let i = 0; i < 12 && phase === 'play'; i++) { ${FZ_HOLD} }`);
     check('control: the same mine without a star ends the run', ctl('phase') === 'dead');
 
@@ -1092,6 +1092,32 @@ function fzCoin(g, type, ahead = 0, arr = 'coins') {
     const heldIn = wp('frenzyTime === 0 && frenzyPending');
     wp(`for (let i = 0; i < 120 && frenzyTime === 0; i++) { ${FZ_HOLD} }`);
     check('a star that fills inside a warp waits for the warp to end, then starts', heldIn && wp('frenzyTime > 0 && warpTime === 0'));
+
+    // a smash holds the frame (hit-stop), a chain of smashes inside FRENZY_HITSTOP_GAP holds it once
+    const hs = fzCave(`frenzyTime = 2; mines.push({ wx: scrollX + PX + 2, baseY: y0, phase: 0, bobAmp: 0 },
+                                                    { wx: scrollX + PX + 2 + scrollSpd() * 0.06, baseY: y0, phase: 0, bobAmp: 0 });`);
+    const hr = hs(`(() => { ${FZ_HOLD}
+        const held = frenzyHitStopT > 0, sx0 = scrollX, g0 = gtime, ft0 = frenzyTime;
+        update(1 / 60);
+        const frozen = scrollX === sx0 && gtime === g0 && frenzyTime === ft0;
+        let stops = 1, was = frenzyHitStopT > 0;
+        for (let i = 0; i < 14; i++) { ${FZ_HOLD} if (frenzyHitStopT > 0 && !was) stops++; was = frenzyHitStopT > 0; }
+        return { held, frozen, stops, mines: mines.length, phase }; })()`);
+    check(`a star's smash holds the frame for FRENZY_HITSTOP_SEC, a chain holds it once (${hr.stops} stop)`,
+        hr.held && hr.frozen && hr.stops === 1 && hr.mines === 0 && hr.phase === 'play');
+
+    // the first and the second star of a run report their achievements, and the best is kept
+    const ach = fzCave(`_achRec = []; window.webkit.messageHandlers.gameCenter = { postMessage: m => _achRec.push(m.id) };
+                        frenzyBestRun = 0; localStorage.setItem('tunnel_frenzy_best_run', '0');`);
+    ach(`for (let k = 0; k < 2; k++) { frenzyTime = 0; frenzyChargeT = 0; frenzyMeter = frenzyCost; ${FZ_HOLD}
+         for (let i = 0; i < 60 && frenzyTime === 0; i++) { ${FZ_HOLD} } }`);
+    const achIds = ach('_achRec.join(",")');
+    check(`the first and second star of a run unlock their achievements (${achIds}, best ${ach('frenzyBestRun')})`,
+        achIds === ach('FRENZY_FIRST_ACH_ID + "," + FRENZY_DOUBLE_ACH_ID') && ach('frenzyBestRun') === 2
+        && ach(`localStorage.getItem('tunnel_frenzy_best_run')`) === '2');
+    ach('_achRec = []; window._tunlBackfillAchievements();');
+    check('the backfill re-reports both from the stored best run',
+        ach('_achRec.includes(FRENZY_FIRST_ACH_ID) && _achRec.includes(FRENZY_DOUBLE_ACH_ID)'));
 
     // the end grants HIT_INVULN_SEC
     const e = fzCave('frenzyTime = 0.05; invulnT = 0;');

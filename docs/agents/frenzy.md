@@ -9,7 +9,7 @@ https://claude.ai/artifact/NrN7Tstb7J8MEizkFRZW69 (db collection `sound`).
 
 ## What it is
 
-A meter in the energy console fills by collecting (`constants.js` `FRENZY_*` doc). When it is
+A vertical meter at the bottom-left edge of the energy console fills by collecting (`constants.js` `FRENZY_*` doc). When it is
 full it charges for `FRENZY_CHARGE_SEC`, then the ship is a star for `FRENZY_SEC`, like Mario's:
 crystals, mines, cannon shots and boulder islands it flies into shatter and pay
 `BULLET_HIT_PTS`, poison and drain coins shatter harmlessly, the wall clamps (no kill, no
@@ -51,9 +51,27 @@ scratch), the shield is not spent. Speed is unchanged - that is what separates i
   reason the sector build-and-drop was removed. Music is lifted on `_bgmLift`/`_bgmShelf`
   (`bgmSetFrenzy`), never `playbackRate`. Levels in `audio.js` `FRENZY_LV`, measured offline in
   the real bus (fanfare just under the milestone, ping = coin); judge changes by render.
-- **The HUD lane is seeded in `_hudLaneY`/`_hudLaneA`** (`draw.js`): a lane key missing there
-  draws at NaN and throws in the browser's `createLinearGradient` - `test-sim.js`'s fake
-  context cannot see that, only a real browser does.
+- **The meter is NOT a power-up lane** (user's call 2026-09-27, "klar abgetrennt"): a vertical
+  bar at the bottom-left edge, left of the magazine, filling upward with the star icon on top
+  (`_hudFrenzy` in `draw.js`, state from `_hudLaneState('frenzy')`). A key added to
+  `_HUD_LANES` also needs its seed in `_hudLaneY`/`_hudLaneA`, or it draws at NaN and throws in
+  the browser's `createLinearGradient` - `test-sim.js`'s fake context cannot see that.
+
+## Making it unmistakable (2026-09-27)
+
+User: "bei Frenzy soll man viel mehr sehen, dass Frenzy ist". Idea page
+https://claude.ai/artifact/U6FuPqw4JN7dM3w6h1WiLc (db collection `sichtbar`); picked and built:
+- **Wash from the left** in the ship's light (`FRENZY_WASH_*`), pulsing in 16ths. Left only:
+  light behind the ship, never ahead. It layers with the Zeitblase's wash, it does not replace it.
+- **Score in the ship's light** with the star icon left of the digits (the combo chip owns the
+  right); every smash pumps it toward white through the existing `hudBump`.
+- **Weight on every smash:** a white impact flash (`frenzyImpacts`, `FRENZY_IMPACT_SEC`), more
+  shards, harder shake, and a hit-stop - `update()` returns before any clock moves for
+  `FRENZY_HITSTOP_SEC`, at most once per `FRENZY_HITSTOP_GAP` (a chain never stutters).
+  Guarded in `test-sim.js` (a chain inside the gap holds once).
+Not picked (left unmarked): countdown ring, star-sparkle trail, prey highlight on hazards, big
+banner, afterimages. Advised against: growing the hull (envelope rule), tinting the background
+(depth light never bright).
 
 ## Not done
 

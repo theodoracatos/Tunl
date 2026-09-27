@@ -1676,6 +1676,12 @@ function frenzyBegin() {
     frenzyHits = 0;
     runFrenzies++;
     frenzyStartT = gtime;
+    if (runFrenzies > frenzyBestRun) {
+        frenzyBestRun = runFrenzies;
+        localStorage.setItem('tunnel_frenzy_best_run', frenzyBestRun);
+    }
+    if (runFrenzies === 1) window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: FRENZY_FIRST_ACH_ID });
+    if (runFrenzies === 2) window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: FRENZY_DOUBLE_ACH_ID });
     sfxFrenzyStart();
     frenzyLoopOn();
     bgmSetFrenzy(true);
@@ -1688,7 +1694,11 @@ function frenzySmash(kind, sx, y) {
     runFrenzySmashes++;
     bulletHitScore(sx, y, BULLET_HIT_PTS[kind], [255, 255, 255]);
     sfxFrenzyPing(frenzyHits - 1);
-    shake += kind === 'boulder' ? 10 : kind === 'mine' ? 6 : 2;
+    shake += kind === 'boulder' ? 14 : kind === 'mine' ? 9 : kind === 'shot' ? 6 : 5;
+    // Weight (constants.js FRENZY_HITSTOP_* doc): a flash where it broke, more shards, a hit-stop.
+    frenzyImpacts.push({ x: sx, y, t: gtime });
+    if (CRYSTAL_STALS) burstCrystalShards(sx, y, crystalShardHue(), 12);
+    if (gtime - frenzyLastStopT >= FRENZY_HITSTOP_GAP) { frenzyHitStopT = FRENZY_HITSTOP_SEC; frenzyLastStopT = gtime; }
     window.webkit?.messageHandlers?.haptic?.postMessage(kind === 'stal' ? 'light' : 'heavy');
 }
 

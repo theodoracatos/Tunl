@@ -226,6 +226,7 @@ function startPlay() {
     invulnT = 0; wallGraceT = 0; deathCause = null;
     frenzyMeter = 0; frenzyCost = FRENZY_FIRST_COST; frenzyTime = 0; frenzyPending = false; frenzyHits = 0;
     runFrenzies = 0; runFrenzySmashes = 0; frenzyStartT = -9; frenzyChargeT = 0; frenzyGrindT = 0;
+    frenzyHitStopT = 0; frenzyLastStopT = -9; frenzyImpacts = [];
     frenzyLoopOff(true); frenzyGrind(false); bgmSetFrenzy(false);
     continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;
     webPromoOn = false; webPromoT = 0;
