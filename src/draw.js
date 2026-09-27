@@ -855,8 +855,35 @@ function _coinLaser(s, t, wx) {
     _coinPoly([[bx - g, 0], [bx - w, -w], [bx, -g], [bx + w, -w], [bx + g, 0], [bx + w, w], [bx, g], [bx - w, w]]);
     ctx.fillStyle = '#fff'; ctx.fill();
 }
+// Frenzy's star (constants.js FRENZY_* doc) wears the ship's own light colour, the one hue
+// that is not already a signal (cyan = corridor, red = danger, orange = ON FIRE, gold =
+// shards). coinTone() caches by key, so each ship gets its own key.
+function _fzToneKey() {
+    const k = 'fz' + activeSkin;
+    if (!COIN_BASE_CLR[k]) COIN_BASE_CLR[k] = (SKINS[activeSkin] || SKINS[0]).shadow;
+    return k;
+}
+// 1 through a star, blinking faster and faster over its last FRENZY_WARN_SEC.
+function _frenzyFlicker() {
+    if (frenzyTime >= FRENZY_WARN_SEC) return 1;
+    const hz = lerp(6, 14, 1 - frenzyTime / FRENZY_WARN_SEC);
+    return Math.sin(gtime * hz * Math.PI * 2) > -0.2 ? 1 : 0.35;
+}
+function _coinFrenzy(s, t, wx) {
+    // A five-point star, faceted and lit from above like every coin, white-hot at the core.
+    const k = _fzToneKey(), R = s * 0.95, r = R * 0.42;
+    const P = [];
+    for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? r : R; P.push([Math.cos(a) * q, Math.sin(a) * q]); }
+    for (let i = 0; i < 10; i++) {
+        _coinPoly([[0, 0], P[i], P[(i + 1) % 10]]);
+        const up = (P[i][1] + P[(i + 1) % 10][1]) / 2 < 0;
+        ctx.fillStyle = coinTone(k, up ? (i % 2 ? 0.55 : 0.3) : (i % 2 ? -0.1 : -0.35)); ctx.fill();
+    }
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.55, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${0.75 + 0.2 * Math.sin(t * 9.33 * Math.PI * 2)})`; ctx.fill();
+}
 const COIN_OBJECTS = {
-    gold: _coinGold, blue: _coinSlow, red: _coinShield, orange: _coinAmmo,
+    gold: _coinGold, frenzy: _coinFrenzy, blue: _coinSlow, red: _coinShield, orange: _coinAmmo,
     green: _coinMagnet, bomb: _coinBomb, poison: _coinPoison, drain: _coinDrain,
     repair: _coinRepair, laser: _coinLaser,
 };
@@ -2423,8 +2450,12 @@ function drawWorld() {
     // player to compare it against the skin-tinted version from memory.
     {
         const sk = SKINS[activeSkin] || SKINS[0];
-        const [sr, sg, sb] = onFire ? [255, 110, 20] : sk.shadow;
-        const sizeMul = onFire ? 0.85 : 0.65, alphaMul = onFire ? 0.40 : 0.26;
+        // A star (constants.js FRENZY_* doc) turns the trail into a white-hot comet in the
+        // ship's own light; it outranks ON FIRE while it lasts.
+        const fzTrail = frenzyTime > 0 && phase === 'play';
+        const [sr, sg, sb] = fzTrail ? sk.shadow.map(c => Math.round((c + 255 * 2) / 3))
+                           : onFire ? [255, 110, 20] : sk.shadow;
+        const sizeMul = fzTrail ? 1.0 : onFire ? 0.85 : 0.65, alphaMul = fzTrail ? 0.5 : onFire ? 0.40 : 0.26;
         if (onFire) {
             ctx.shadowColor = 'rgba(255,130,30,0.9)';
             ctx.shadowBlur  = 14;
@@ -2540,6 +2571,37 @@ function drawWorld() {
         ctx.restore();
     }
 
+    // Frenzy star (constants.js FRENZY_* doc): an aura in the ship's own light behind the
+    // hull, kept inside the hull envelope so it never promises more reach than the hitbox
+    // has, plus one ring pop at the start. Its last FRENZY_WARN_SEC flickers faster and
+    // faster. Additive gradients and stacked strokes, no shadowBlur.
+    if (frenzyTime > 0 && phase === 'play') {
+        const [fr, fg, fb] = (SKINS[activeSkin] || SKINS[0]).shadow;
+        const R = PR * 1.4 * (0.9 + 0.1 * Math.sin(gtime * FRENZY_TREM_HZ * Math.PI * 2));
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = _frenzyFlicker();
+        const g = ctx.createRadialGradient(PX, py, 0, PX, py, R);
+        g.addColorStop(0, 'rgba(255,255,255,0.5)');
+        g.addColorStop(0.4, `rgba(${fr},${fg},${fb},0.42)`);
+        g.addColorStop(1, `rgba(${fr},${fg},${fb},0)`);
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(PX, py, R, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+    }
+    {
+        const u = (gtime - frenzyStartT) / 0.45;
+        if (u >= 0 && u < 1 && phase === 'play') {
+            const [fr, fg, fb] = (SKINS[activeSkin] || SKINS[0]).shadow;
+            const ringR = PR * (1.6 + u * 10), a = (1 - u);
+            ctx.save();
+            ctx.beginPath(); ctx.arc(PX, py, ringR, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(${fr},${fg},${fb},${a * 0.45})`; ctx.lineWidth = Math.max(1, PR * 0.7 * a); ctx.stroke();
+            ctx.strokeStyle = `rgba(255,255,255,${a * 0.9})`; ctx.lineWidth = Math.max(1, PR * 0.22 * a); ctx.stroke();
+            ctx.restore();
+        }
+    }
+
     // Player. On death the ship keeps rendering (in red, below) for the whole
     // DEATH_REPLAY_SEC freeze frame rather than the old flat 0.18s, so the crash is
     // actually on screen long enough to read before the panel fades in over it.
@@ -2614,6 +2676,15 @@ function drawWorld() {
         ctx.globalAlpha = invulnAlpha;
         drawFlightShip(PX, py, PR, phase === 'dead' ? '#ff4040' : sk.color, sr, sg, sb, 20, phase !== 'dead', phase === 'dead' ? 0 : paintOf(activeSkin));
         if (phase === 'play' && hullScratches < HULL_SCRATCHES) drawHullDamage(PX, py, PR, HULL_SCRATCHES - hullScratches);
+        if (frenzyTime > 0 && phase === 'play') {   // the hull glows white-hot through the star
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.globalAlpha = 0.55 * _frenzyFlicker();
+            const hg = ctx.createRadialGradient(PX + PR * 0.2, py, 0, PX + PR * 0.2, py, PR * 1.1);
+            hg.addColorStop(0, 'rgba(255,255,255,0.8)'); hg.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = hg;
+            ctx.beginPath(); ctx.arc(PX + PR * 0.2, py, PR * 1.1, 0, Math.PI * 2); ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+        }
         ctx.globalAlpha = 1;
         ctx.restore();
     }
@@ -2897,8 +2968,8 @@ let _hudLastCombo = 0, _hudComboPopT = -1;
 // - Capacity shows: spent rounds (up to bulletAmmoCap()) and a lost plate stay as outlines.
 // - Glow is additive gradients, never shadowBlur (the expensive call on WKWebView).
 // - Varying alpha goes through globalAlpha so coinTone()'s string cache stays bounded.
-const _HUD_LANES = ['gold', 'blue', 'green', 'laser'];
-let _hudLaneY = { gold: 0, blue: 1, green: 2, laser: 3 }, _hudLaneA = { gold: 0, blue: 0, green: 0, laser: 0 }, _hudLaneT = -1;
+const _HUD_LANES = ['frenzy', 'gold', 'blue', 'green', 'laser'];
+let _hudLaneY = { frenzy: 0, gold: 1, blue: 2, green: 3, laser: 4 }, _hudLaneA = { frenzy: 0, gold: 0, blue: 0, green: 0, laser: 0 }, _hudLaneT = -1;
 
 function _hudGeo() {
     const x0 = W * 0.29, pitch = Math.max(13, FS * 0.024);
@@ -2912,6 +2983,15 @@ function _hudGeo() {
 
 // { on, ratio 0..1, remain s, max s (0: no notches), held }
 function _hudLaneState(k) {
+    if (k === 'frenzy') {
+        // The star meter (constants.js FRENZY_* doc): fills toward the next star's cost and
+        // pulses once past FRENZY_READY_FRAC; a star in progress drains it with one notch per
+        // second; a star waiting for a warp's end is held full and dimmed like a banked slow.
+        if (frenzyTime > 0) return { on: true, held: false, ready: false, remain: frenzyTime, max: FRENZY_SEC, ratio: frenzyTime / FRENZY_SEC };
+        const ratio = frenzyPending ? 1 : Math.min(1, frenzyMeter / Math.max(1, frenzyCost));
+        return { on: frenzyMeter > 0 || frenzyPending, held: frenzyPending, ready: !frenzyPending && ratio >= FRENZY_READY_FRAC,
+                 remain: Infinity, max: 0, ratio };
+    }
     if (k === 'gold') {
         return { on: gapBonusVisual > 0, ratio: Math.min(1, gapBonusVisual / gapBonusMax()), remain: Infinity, max: 0, held: false };
     }
@@ -2944,19 +3024,20 @@ function _hudLanes(G) {
         const s = _hudLaneState(k);
         const y = G.baseY - _hudLaneY[k] * G.pitch;
         const warn = s.remain < HUD_LANE_WARN_SEC ? 0.55 + 0.45 * Math.sin(gtime * 18) : 1;   // combo chip's rate
-        const dim  = s.held ? 0.45 + 0.2 * Math.sin(gtime * 6) : 1;
+        const dim  = s.held ? 0.45 + 0.2 * Math.sin(gtime * 6) : s.ready ? 0.75 + 0.25 * Math.sin(gtime * 8) : 1;
         const corridor = k === 'gold';
+        const tk = k === 'frenzy' ? _fzToneKey() : k;   // the star lane wears the ship's light
         const fw  = tw * (s.on ? s.ratio : 0);
         const fx0 = corridor ? (G.x0 + G.x1 - fw) / 2 : G.x0;
         ctx.save();
         ctx.globalAlpha = a;
         _hudCapsule(G.x0, y, tw, G.lh);
-        ctx.fillStyle = coinTone(k, 0, 0.10); ctx.fill();
-        ctx.strokeStyle = coinTone(k, 0, 0.30); ctx.lineWidth = 1; ctx.stroke();
+        ctx.fillStyle = coinTone(tk, 0, 0.10); ctx.fill();
+        ctx.strokeStyle = coinTone(tk, 0, 0.30); ctx.lineWidth = 1; ctx.stroke();
         if (fw > 0.5) {
             ctx.globalAlpha = a * warn * dim;
             const gr = ctx.createLinearGradient(0, y - G.lh / 2, 0, y + G.lh / 2);
-            gr.addColorStop(0, coinTone(k, 0.55)); gr.addColorStop(0.45, coinTone(k, 0)); gr.addColorStop(1, coinTone(k, -0.3));
+            gr.addColorStop(0, coinTone(tk, 0.55)); gr.addColorStop(0.45, coinTone(tk, 0)); gr.addColorStop(1, coinTone(tk, -0.3));
             _hudCapsule(fx0, y, fw, G.lh);
             ctx.fillStyle = gr; ctx.fill();
             // One notch per second of the window.
@@ -2971,7 +3052,7 @@ function _hudLanes(G) {
             const R = G.lh * 2.4;
             for (const ex of corridor ? [fx0, fx0 + fw] : [fx0 + fw]) {
                 const rg = ctx.createRadialGradient(ex, y, 0, ex, y, R);
-                rg.addColorStop(0, coinTone(k, 0.6, 0.55)); rg.addColorStop(1, coinTone(k, 0, 0));
+                rg.addColorStop(0, coinTone(tk, 0.6, 0.55)); rg.addColorStop(1, coinTone(tk, 0, 0));
                 ctx.fillStyle = rg;
                 ctx.beginPath(); ctx.arc(ex, y, R, 0, Math.PI * 2); ctx.fill();
             }
@@ -5892,6 +5973,10 @@ function drawDeathScreen() {
                        c: SKINS[skinMasteryUpIdx].shadow });
     }
     if (missionRewardWon > 0) rewards.push({ t: `${T.missionDone} +${missionRewardWon}`, c: [120, 255, 150] });
+    // The stars this run earned (constants.js FRENZY_* doc), in the ship's own light.
+    if (runFrenzies > 0) {
+        rewards.push({ t: `★ ${T.frenzy}${runFrenzies > 1 ? ' ×' + runFrenzies : ''}`, c: (SKINS[activeSkin] || SKINS[0]).shadow });
+    }
     // The day's stardust, on the first run of that day (dailyRuns is 1 for the run that
     // just ended). `dayGrant` is session-only, so a player who already flew earlier
     // today and relaunches sees nothing - nothing happened this launch.

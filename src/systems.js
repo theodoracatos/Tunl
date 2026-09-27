@@ -490,8 +490,23 @@ function checkCoinCollection() {
         // on the normal hit-radius test - a reward you fly to remains something
         // you have to fly to.
         const warpVacuum = warpTime > 0 && coin.type === 'gold';
+        const hazardCoin = coin.type === 'poison' || coin.type === 'drain';
+        // Frenzy (constants.js FRENZY_* doc): a good coin that scrolls past the ship
+        // uncollected costs the meter once; a warp's pace forgives it, and a live magnet
+        // still pulls it back in, so it is not judged until the magnet is off.
+        if (!coin.fzPast && sx < PX - (PR + hitR) && !warpVacuum && magnetTime <= 0) {
+            coin.fzPast = true;
+            if (!hazardCoin && warpTime <= 0) { const m0 = frenzyMeter; frenzyFill(-FRENZY_MISS_COST); if (frenzyMeter < m0) sfxFrenzyMiss(); }
+        }
         if (warpVacuum || dx*dx + dy*dy < r2) {
             coin.collected = true;
+            // A star shatters a hazard coin harmlessly: no loss, no combo break.
+            if (hazardCoin && frenzyTime > 0) {
+                burstCoin(sx, coin.y, coin.type === 'poison' ? 100 : 328, 18);
+                if (CRYSTAL_STALS) burstCrystalShards(sx, coin.y, crystalShardHue(), 10);
+                continue;
+            }
+            frenzyFill(hazardCoin ? -FRENZY_HAZARD_COIN_COST : arr === chicaneCoins ? FRENZY_CHICANE_FILL : 1);
             if (coin.type === 'poison') {
                 // Hazard coin: breaks any active combo and claws back a percentage of
                 // this run's *pending* shard bank instead of adding to it -- the
@@ -1629,6 +1644,52 @@ function triggerWarp(accuracy) {
     sfxWarpEnter();
     warpLoopOn();
     bgmSetWarp(true, dur);   // music surges then glides back down with the effect (audio.js)
+    frenzyFill(lerp(FRENZY_PORTAL_MIN, FRENZY_PORTAL_MAX, accuracy));   // a well-flown ring feeds the star
+}
+
+// ── Frenzy, the star (constants.js FRENZY_* doc) ──────────────────────
+// The meter moves only after the safe opening and never while a star runs; update.js starts
+// the star the frame the meter reaches frenzyCost (or at a warp's end, frenzyPending).
+function frenzyFill(n) {
+    if (phase !== 'play' || scrollX < SAFE_START_WX || frenzyTime > 0 || frenzyChargeT > 0) return;
+    const was = frenzyMeter, ready = FRENZY_READY_FRAC * frenzyCost;
+    frenzyMeter = Math.max(0, frenzyMeter + n);
+    if (n > 0) hudLaneFx.frenzy = { t: gtime, from: Math.min(1, was / Math.max(1, frenzyCost)) };   // the new segment flashes
+    if (was < ready && frenzyMeter >= ready && frenzyMeter < frenzyCost) sfxFrenzyReady();
+}
+
+// A full meter charges for FRENZY_CHARGE_SEC (the riser), then frenzyBegin() lights the star.
+// Inside a warp it waits for the warp's end instead (frenzyPending).
+function frenzyTryStart() {
+    if (frenzyTime > 0 || frenzyChargeT > 0 || frenzyMeter < frenzyCost) return;
+    if (warpTime > 0) { frenzyPending = true; return; }
+    frenzyPending = false;
+    frenzyChargeT = FRENZY_CHARGE_SEC;
+    sfxFrenzyCharge(FRENZY_CHARGE_SEC);
+}
+
+function frenzyBegin() {
+    frenzyTime = FRENZY_SEC;
+    frenzyMeter = 0;
+    frenzyCost = Math.round(frenzyCost * FRENZY_COST_MUL);
+    frenzyPending = false;
+    frenzyHits = 0;
+    runFrenzies++;
+    frenzyStartT = gtime;
+    sfxFrenzyStart();
+    frenzyLoopOn();
+    bgmSetFrenzy(true);
+    pushNotif(PX, py - H * 0.08, 1.3, T.frenzy, (SKINS[activeSkin] || SKINS[0]).shadow.map(c => Math.round((c + 255) / 2)));
+}
+
+// A hazard the star flew into: paid like a bullet kill, counted for the ping ladder.
+function frenzySmash(kind, sx, y) {
+    frenzyHits++;
+    runFrenzySmashes++;
+    bulletHitScore(sx, y, BULLET_HIT_PTS[kind], [255, 255, 255]);
+    sfxFrenzyPing(frenzyHits - 1);
+    shake += kind === 'boulder' ? 10 : kind === 'mine' ? 6 : 2;
+    window.webkit?.messageHandlers?.haptic?.postMessage(kind === 'stal' ? 'light' : 'heavy');
 }
 
 // ── Bomb explosion ────────────────────────────────────────────────────

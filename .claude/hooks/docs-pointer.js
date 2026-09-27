@@ -3,8 +3,8 @@
 // docs/agents/*.md files hold the rules for that file. Mirrors the "Which docs to read
 // before editing a file" table in CLAUDE.md - keep the two in sync. Never blocks.
 const MAP = {
-  'update.js':    ['physics', 'fairness', 'hazards', 'coins', 'portal'],
-  'systems.js':   ['fairness', 'hazards', 'coins', 'portal'],
+  'update.js':    ['physics', 'fairness', 'hazards', 'coins', 'portal', 'frenzy'],
+  'systems.js':   ['fairness', 'hazards', 'coins', 'portal', 'frenzy'],
   'world.js':     ['difficulty', 'fairness', 'coins'],
   'constants.js': ['the topic of the constant you touch (its doc block names it)'],
   'lifecycle.js': ['fairness', 'onboarding'],

@@ -84,8 +84,8 @@ the row before every `src/*.js` edit - **change its `MAP` whenever this table ch
 
 | file | read first |
 |------|-----------|
-| `update.js` | physics, fairness, hazards, coins, portal |
-| `systems.js` (spawners, `make*`/`maintain*`, warp) | fairness, hazards, coins, portal; then run `test-cave.js` |
+| `update.js` | physics, fairness, hazards, coins, portal, frenzy |
+| `systems.js` (spawners, `make*`/`maintain*`, warp, frenzy) | fairness, hazards, coins, portal, frenzy; then run `test-cave.js` |
 | `world.js` (curves, `boundsAt`/`boundsBase`, sectors) | difficulty, fairness, coins |
 | `constants.js` | the topic of the constant you touch (its doc block names it) |
 | `lifecycle.js`, `state.js` | fairness (rng streams, world-x cursors), onboarding |
@@ -132,6 +132,11 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 
 ### Warp portal -> `docs/agents/portal.md`
 - Cadence is a **duty cycle**; no warp coin; the hit window is the drawn radius; the wall never kills during a warp; `boundsAt()` only, never `boundsBase()`.
+
+### Frenzy, the star -> `docs/agents/frenzy.md`
+- Meter fills by collecting (tank rule, portals too); full -> charge -> `FRENZY_SEC` of Mario-star: hazards shatter, the wall clamps, the shield is kept. Cost escalates per star.
+- **Tune by duty cycle** with `tools/frenzy-sim.js`, never by coin count. It is a deep-run reward by the user's call - don't make it cheaper without re-measuring the leaderboard.
+- No rng(), no placement; colour = the ship's own light; audio pad without a beat, music via `_bgmLift`/`_bgmShelf`.
 
 ### Coins -> `docs/agents/coins.md`
 - Gap bonus magnitudes are **fractions of the half-gap**, not of H. Coins are a real difficulty lever - don't shrink them.

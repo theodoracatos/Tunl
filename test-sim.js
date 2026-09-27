@@ -971,5 +971,133 @@ function grazePass(mines, frames = 90, setup = '') {
         r.build === 'undefined' && r.buildSec === 'undefined');
 }
 
+// ── Frenzy, the star (constants.js FRENZY_* doc, systems.js frenzy*, update.js) ──
+// Catches: the meter filling in the safe opening, a miss or a hazard coin not costing (or a
+// warp's miss costing), a chicane coin or a portal paying the wrong amount, the star not
+// starting at its cost or not escalating it, a starred ship dying to a mine / crystal /
+// boulder / shell or the wall, a star spending the shield or a scratch, a hazard coin
+// hurting inside a star, the clock running inside a warp, a star starting inside one, and
+// the end not granting HIT_INVULN_SEC. Real update() and checkCoinCollection(); coins and
+// hazards are parked on the ship's line, which is held level.
+const FZ_HOLD = 'py = y0; vy = 0; holding = false; update(1 / 60);';
+function fzCave(setup = '') {
+    const g = quietCave(true);
+    g(`y0 = py; frenzyMeter = 0; frenzyCost = FRENZY_FIRST_COST; frenzyTime = 0; frenzyPending = false;
+       runFrenzies = 0; ${setup}`);
+    return g;
+}
+function fzCoin(g, type, ahead = 0, arr = 'coins') {
+    g(`${arr}.push({ wx: scrollX + PX + ${ahead}, y: y0, collected: false, type: '${type}', fade: 1.0 })`);
+}
+{
+    // before SAFE_START_WX nothing moves the meter
+    const early = boot();
+    early(AUTOPILOT);
+    early('startPlay()');
+    early(`for (let i = 0; i < 60 * 30 && (approachLeft > 0 || startRamp < 1 || scrollX < 1200); i++) { shieldCount = 9; _pilot(); update(1 / 60); }`);
+    early(`y0 = py; coins.push({ wx: scrollX + PX, y: py, collected: false, type: 'gold', fade: 1.0 }); ${FZ_HOLD}`);
+    check('a coin in the safe opening does not fill the star meter', early('scrollX < SAFE_START_WX && frenzyMeter === 0'));
+
+    let g = fzCave();
+    fzCoin(g, 'gold'); g(FZ_HOLD);
+    fzCoin(g, 'blue'); g(FZ_HOLD);
+    fzCoin(g, 'gold', 0, 'chicaneCoins'); g(FZ_HOLD);
+    check(`gold +1, a power-up +1, chicane gold +FRENZY_CHICANE_FILL (meter ${g('frenzyMeter')})`,
+        g('frenzyMeter') === 2 + g('FRENZY_CHICANE_FILL'));
+    fzCoin(g, 'poison'); g(FZ_HOLD);
+    check(`touching poison costs FRENZY_HAZARD_COIN_COST (meter ${g('frenzyMeter')})`,
+        g('frenzyMeter') === 2 + g('FRENZY_CHICANE_FILL') - g('FRENZY_HAZARD_COIN_COST'));
+    // a coin that scrolls past uncollected: parked above the ship's line, out of reach
+    g('frenzyMeter = 3');
+    g(`coins.push({ wx: scrollX + PX + 30, y: y0 - H * 0.3, collected: false, type: 'gold', fade: 1.0 });
+       for (let i = 0; i < 40; i++) { ${FZ_HOLD} }`);
+    check(`a good coin scrolling past uncollected costs FRENZY_MISS_COST (meter ${g('frenzyMeter')})`,
+        g('frenzyMeter') === 3 - g('FRENZY_MISS_COST'));
+    g(`frenzyMeter = 3; warpTime = 5; warpMax = 5;
+       coins.push({ wx: scrollX + PX + 30, y: y0 - H * 0.3, collected: false, type: 'blue', fade: 1.0 });
+       for (let i = 0; i < 20; i++) { ${FZ_HOLD} } warpTime = 0;`);
+    check('a coin missed during a warp costs nothing', g('frenzyMeter') === 3);
+    g('frenzyMeter = 0; triggerWarp(1); warpTime = 0;');
+    const centre = g('frenzyMeter');
+    g('frenzyMeter = 0; triggerWarp(0); warpTime = 0;');
+    check(`a portal pays FRENZY_PORTAL_MAX dead centre, FRENZY_PORTAL_MIN on the rim (${centre} / ${g('frenzyMeter')})`,
+        centre === g('FRENZY_PORTAL_MAX') && g('frenzyMeter') === g('FRENZY_PORTAL_MIN'));
+
+    // reaching the cost starts the star and escalates the next one
+    g = fzCave();
+    g('frenzyMeter = frenzyCost - 1');
+    fzCoin(g, 'gold'); g(FZ_HOLD); g(FZ_HOLD);
+    const charging = g('frenzyChargeT > 0 && frenzyTime === 0');
+    g(`for (let i = 0; i < 60 && frenzyTime === 0; i++) { ${FZ_HOLD} }`);
+    check(`a full meter charges for FRENZY_CHARGE_SEC, then starts a star (${g('frenzyTime').toFixed(2)}s, next costs ${g('frenzyCost')})`,
+        charging && g('frenzyTime') > g('FRENZY_SEC') - 0.1 && g('runFrenzies') === 1 && g('frenzyMeter') === 0
+        && g('frenzyCost') === Math.round(g('FRENZY_FIRST_COST * FRENZY_COST_MUL')));
+
+    // inside a star every hazard shatters and pays; the shield and the hull are untouched
+    const smash = (setup, label) => {
+        const s = fzCave(`frenzyTime = 2; shieldCount = 1; ${setup}`);
+        const r = s(`(() => { const b0 = bonusScore, h0 = hullScratches;
+            for (let i = 0; i < 12 && phase === 'play'; i++) { ${FZ_HOLD} }
+            return { phase, pts: bonusScore - b0, shield: shieldCount, hull: hullScratches - h0, invuln: invulnT,
+                     mines: mines.length, boulders: boulders.length, shots: cannonShots.length,
+                     dying: stalactites.filter(x => x.dying).length }; })()`);
+        return r;
+    };
+    let r = smash(`mines.push({ wx: scrollX + PX + 6, baseY: y0, phase: 0, bobAmp: 0 });`);
+    check(`a starred ship flies through a mine: survives, mine gone, +BULLET_HIT_PTS.mine (${r.pts})`,
+        r.phase === 'play' && r.mines === 0 && r.pts >= g('BULLET_HIT_PTS.mine') && r.shield === 1);
+    r = smash(`cannonShots.push({ wx: scrollX + PX + 6, y: y0, vx: 0, vy: 0 });`);
+    check(`... through a cannon shot (+${r.pts})`, r.phase === 'play' && r.shots === 0 && r.pts >= g('BULLET_HIT_PTS.shot'));
+    r = smash(`{ const b = boundsAt(scrollX + PX);
+        stalactites.push({ wx: scrollX + PX + 4, isTop: true, length: (y0 - b.top) + PR * 2, width: PR * 3, fade: 1.0, dying: false }); }`);
+    check(`... through a crystal (+${r.pts})`, r.phase === 'play' && r.dying === 1 && r.pts >= g('BULLET_HIT_PTS.stal'));
+    // a real island from deeper in the cave, moved onto the ship's line
+    const bg = fzCave();
+    bg(`for (let i = 0; i < 60 * 90 && !boulders.length; i++) { shieldCount = 9; hullScratches = HULL_SCRATCHES; _pilot(); update(1 / 60); }`);
+    if (bg('boulders.length > 0')) {
+        const rb = bg(`(() => { const bo = boulders[0];
+            stalactites = []; mines = []; cannonShots = []; coins = []; chicaneCoins = []; portals = []; boulders = [bo];
+            { const _b = boundsAt(scrollX + PX); y0 = (_b.top + _b.bot) / 2; }
+            bo.wx = scrollX + PX + 4; bo.y = y0; frenzyTime = 2; shieldCount = 0; invulnT = 0; wallGraceT = 0;
+            const b0 = bonusScore;
+            for (let i = 0; i < 12 && phase === 'play'; i++) { ${FZ_HOLD} }
+            return { phase, n: boulders.length, pts: bonusScore - b0 }; })()`);
+        check(`... through a boulder island (+${rb.pts})`, rb.phase === 'play' && rb.n === 0 && rb.pts >= g('BULLET_HIT_PTS.boulder'));
+    } else check('a boulder showed up to test the star against', false);
+    // control: the same mine without a star is fatal, so the branch above is what saved it
+    const ctl = fzCave(`shieldCount = 0; mines.push({ wx: scrollX + PX + 6, baseY: y0, phase: 0, bobAmp: 0 });`);
+    ctl(`for (let i = 0; i < 12 && phase === 'play'; i++) { ${FZ_HOLD} }`);
+    check('control: the same mine without a star ends the run', ctl('phase') === 'dead');
+
+    // the wall clamps instead of scratching
+    const wg = fzCave('frenzyTime = 2; shieldCount = 0;');
+    const wr = wg(`(() => { const h0 = hullScratches; const b = boundsAt(scrollX + PX);
+        for (let i = 0; i < 20 && phase === 'play'; i++) { py = b.top - PR; vy = -MAX_VY; holding = true; update(1 / 60); }
+        return { phase, lost: h0 - hullScratches, inside: py >= boundsAt(scrollX + PX).top }; })()`);
+    check('a starred ship grinds along the wall: no scratch, clamped inside', wr.phase === 'play' && wr.lost === 0 && wr.inside);
+
+    // a hazard coin inside a star shatters harmlessly
+    const pg = fzCave('frenzyTime = 2; runCoins = 20;');
+    fzCoin(pg, 'poison'); pg(FZ_HOLD);
+    fzCoin(pg, 'drain'); pg(FZ_HOLD);
+    check(`poison and drain inside a star cost nothing (runCoins ${pg('runCoins')}, meter ${pg('frenzyMeter')})`,
+        pg('runCoins') === 20 && pg('frenzyMeter') === 0 && pg('coins.every(c => c.collected)'));
+
+    // a warp pauses a running star and holds back one that fills inside it
+    const w = fzCave('frenzyTime = 1.5; warpTime = 1.0; warpMax = 1.0;');
+    w(`for (let i = 0; i < 30; i++) { ${FZ_HOLD} }`);
+    check(`a star's clock stands still inside a warp (${w('frenzyTime').toFixed(2)}s left)`, Math.abs(w('frenzyTime') - 1.5) < 1e-9);
+    const wp = fzCave('warpTime = 1.0; warpMax = 1.0; frenzyMeter = frenzyCost - 1;');
+    fzCoin(wp, 'blue'); wp(FZ_HOLD); wp(FZ_HOLD);   // collected after this frame's star check, judged on the next
+    const heldIn = wp('frenzyTime === 0 && frenzyPending');
+    wp(`for (let i = 0; i < 120 && frenzyTime === 0; i++) { ${FZ_HOLD} }`);
+    check('a star that fills inside a warp waits for the warp to end, then starts', heldIn && wp('frenzyTime > 0 && warpTime === 0'));
+
+    // the end grants HIT_INVULN_SEC
+    const e = fzCave('frenzyTime = 0.05; invulnT = 0;');
+    e(`for (let i = 0; i < 6; i++) { ${FZ_HOLD} }`);
+    check(`a star's end grants HIT_INVULN_SEC (${e('invulnT').toFixed(2)}s)`, e('frenzyTime') === 0 && e('invulnT') > e('HIT_INVULN_SEC') - 0.1);
+}
+
 if (failed) { console.log(`\n${failed} check(s) failed.`); process.exit(1); }
 console.log('\nThe real game runs headless and every simulated rule holds.');

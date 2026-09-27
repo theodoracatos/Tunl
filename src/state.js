@@ -489,6 +489,14 @@ let magnetTimeMax = 0;
 // the last pickup topped up to (the HUD lane divides by it), and where the beam ends this
 // frame in screen x (draw.js).
 let laserTime = 0, laserTimeMax = 0, laserEndX = 0;
+// Frenzy, the star (constants.js FRENZY_* doc, systems.js frenzy*): the meter and what the
+// next star costs, seconds of star left, a star that filled inside a warp and waits for its
+// end, this star's smash count (the ping ladder), and the run's totals for missions.
+let frenzyMeter = 0, frenzyCost = 0, frenzyTime = 0, frenzyPending = false, frenzyHits = 0;
+let runFrenzies = 0, runFrenzySmashes = 0;
+let frenzyStartT = -9;   // gtime the current star began (draw.js start ring)
+let frenzyGrindT = 0;    // > 0 while a star grinds along the wall (sparks, grind sound)
+let frenzyChargeT = 0;   // > 0 between a full meter and the star (FRENZY_CHARGE_SEC)
 // Blue-coin slow banked while a warp is live (systems.js blue branch, drained at
 // update.js's warpTime falling edge). A warp already makes the player immune to
 // every hazard, so a slow window spent inside one has no gameplay value at all and

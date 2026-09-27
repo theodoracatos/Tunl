@@ -226,21 +226,26 @@ const MUSIC_SECTOR_SHELF_DB = 3.0;
 const MUSIC_SECTOR_SHELF_HZ = 2800;
 const MUSIC_SECTOR_GLIDE    = 1.2;   // time constant of the per-sector step (s)
 let _bgmSectorK = 0;
+let _bgmFrenzy = false;
+const FRENZY_MUSIC_LIFT_DB = 1.5, FRENZY_MUSIC_SHELF_DB = 2.5, FRENZY_MUSIC_GLIDE = 0.08;
 
 function _sectorIntensity(k) {
     return Math.min(1, Math.max(0, (k - MUSIC_SECTOR_FROM + 1) / (MUSIC_SECTOR_FULL - MUSIC_SECTOR_FROM + 1)));
 }
 
-function _applySectorIntensity(now) {
+function _applySectorIntensity(now, glide) {
     if (!_ac || !_bgmLift) return;
     const i = _sectorIntensity(_bgmSectorK);
-    const lift = Math.pow(10, MUSIC_SECTOR_LIFT_DB * i / 20), shelf = MUSIC_SECTOR_SHELF_DB * i;
+    // A star (bgmSetFrenzy below) rides the same two nodes on top of the sector build.
+    const fz = _bgmFrenzy ? 1 : 0;
+    const lift = Math.pow(10, (MUSIC_SECTOR_LIFT_DB * i + FRENZY_MUSIC_LIFT_DB * fz) / 20);
+    const shelf = MUSIC_SECTOR_SHELF_DB * i + FRENZY_MUSIC_SHELF_DB * fz;
     const t = _ac.currentTime;
     _bgmLift.gain.cancelScheduledValues(t);
     _bgmShelf.gain.cancelScheduledValues(t);
     if (now) { _bgmLift.gain.setValueAtTime(lift, t); _bgmShelf.gain.setValueAtTime(shelf, t); return; }
-    _bgmLift.gain.setTargetAtTime(lift, t, MUSIC_SECTOR_GLIDE);
-    _bgmShelf.gain.setTargetAtTime(shelf, t, MUSIC_SECTOR_GLIDE);
+    _bgmLift.gain.setTargetAtTime(lift, t, glide || MUSIC_SECTOR_GLIDE);
+    _bgmShelf.gain.setTargetAtTime(shelf, t, glide || MUSIC_SECTOR_GLIDE);
 }
 
 // A new sector began (update.js, the "SECTOR n" notif) or a run starts (k = 0, `now`).
@@ -636,6 +641,7 @@ function _reviveAudioContext() {
     _bgmLoading = false; _titleBgmLoading = false;
     _mNode = null; _mGain = null; _mOsc = null;  // magnet shimmer belonged to the closed context
     _lzGain = null; _lzSrc = [];   // laser hum too
+    _fzPad = null; _fzGrind = null;   // the star's pad and grind as well
     _wNode = null; _wGain = null; _wOsc = null;  // warp whoosh belonged to the closed context
     _awSrc = null; _awGain = null; _awLp = null; _awSend = null; _awLfo = null;  // approach wind too
     _initAC();
@@ -1899,9 +1905,10 @@ function sfxPbPassed() {
     musicDuck(MUSIC_DUCK_DB, 0.60);   // the deepest record of all - give it the room
 }
 
-function sfxMineExplode(x) {
+// gain < 1 for a mine a star sets off: harmless, so a step under the one that ends a run.
+function sfxMineExplode(x, gain = 1) {
     if (!_ac || !fxOn) return;
-    _blast(_ac.currentTime, { size: 1.3, pv: 0.94 + Math.random() * 0.12, blast: 1.0, boom: 1.0, debris: 1.0, level: 0.17, x });
+    _blast(_ac.currentTime, { size: 1.3, pv: 0.94 + Math.random() * 0.12, blast: 1.0, boom: 1.0, debris: 1.0, level: 0.17 * gain, x });
 }
 
 function sfxBulletPickup() {
@@ -2983,6 +2990,214 @@ function laserLoopOff() {
     const srcs = _lzSrc;
     _lzGain = null; _lzSrc = [];
     setTimeout(() => srcs.forEach(n => { try { n.stop(); } catch(e){} }), 180);
+}
+
+// ── Frenzy, the star (constants.js FRENZY_* doc) ─────────────────────────
+// Picked by ear on the listening page https://claude.ai/artifact/NrN7Tstb7J8MEizkFRZW69
+// (2026-09-27): fanfare "Breit" (a rising D-major pentatonic in 16ths into a D-F#-A-D
+// chord under a rising swoosh), pad "Saegezahn", ping "Glocke", grind "Scrape", end
+// "Motiv"; charge one step quieter, ready / miss / whoosh one step louder than offered.
+// Everything sits in the play track's key and tempo (Nebula, D major, 140 BPM). The pad's
+// tremolo runs in 16ths (FRENZY_TREM_HZ) but carries no beat: a star starts at any moment
+// and slow / warp move the track, so a pulse would land off the beat - the reason the
+// sector build-and-drop was removed. Music is lifted through _bgmLift / _bgmShelf
+// (bgmSetFrenzy), never playbackRate (slow and warp own it).
+// Levels measured offline in the real bus, phone band (>400 Hz), loudest 50 ms: fanfare
+// -18.5 dB (milestone -18.1), pad -26.5, ping -21.5 (coin -21.3), grind ~-25.5, end motif
+// -22; charge, ready, miss and whoosh then moved 3 dB as picked. Re-measure before moving.
+const _FZN = { A3: 220, D4: 293.66, D5: 587.33, E5: 659.26, Fs5: 739.99, A5: 880, B5: 987.77,
+               D6: 1174.66, E6: 1318.51, Fs6: 1479.98, A6: 1760, B6: 1975.53, D7: 2349.32 };
+const _FZ_S16 = 60 / 140 / 4, _FZ_S8 = 60 / 140 / 2;
+const FRENZY_LV = { fan: 0.333, pad: 0.092, ping: 0.128, grind: 0.217, end: 0.123,
+                    charge: 0.184, ready: 0.031, miss: 0.133, whoosh: 0.153 };
+const FRENZY_MINE_GAIN = 0.63;   // -4 dB: a mine the star sets off is harmless
+let _fzPad = null, _fzGrind = null, _fzPingT = -1;
+
+function _fzEnv(g, t, a, peak, d) {
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(peak, t + a);
+    g.gain.exponentialRampToValueAtTime(Math.max(peak * 0.0005, 0.00001), t + a + d);
+}
+function _fzOsc(type, f, t, stop, dest, gain) {
+    const o = _ac.createOscillator(), g = _ac.createGain();
+    o.type = type; o.frequency.value = f; g.gain.value = gain == null ? 1 : gain;
+    o.connect(g); g.connect(dest); o.start(t); o.stop(stop);
+    return o;
+}
+
+// The meter crossed FRENZY_READY_FRAC: almost there.
+function sfxFrenzyReady() {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime, g = _ac.createGain(); g.connect(_master);
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(FRENZY_LV.ready, t + 0.12);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+    _fzOsc('sine', _FZN.A6, t, t + 0.75, g); _fzOsc('sine', _FZN.A6 * 1.0035, t, t + 0.75, g);
+    _fzOsc('sine', _FZN.D7, t + 0.06, t + 0.75, g, 0.4);
+}
+
+// A good coin scrolled past uncollected and cost the meter.
+function sfxFrenzyMiss() {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime, g = _ac.createGain(), lp = _ac.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 1400; lp.connect(_master); g.connect(lp);
+    _fzEnv(g, t, 0.003, FRENZY_LV.miss, 0.09);
+    const o = _fzOsc('triangle', _FZN.D5, t, t + 0.12, g);
+    o.frequency.setValueAtTime(_FZN.D5, t); o.frequency.exponentialRampToValueAtTime(_FZN.A3 * 2, t + 0.07);
+}
+
+// The charge (FRENZY_CHARGE_SEC) that leads into the star: noise pulling up, a saw gliding onto D.
+function sfxFrenzyCharge(len) {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime, out = _ac.createGain(); out.connect(_master);
+    _fzEnv(out, t, len, FRENZY_LV.charge, 0.12);
+    const n = _ac.createBufferSource(); n.buffer = _noiseBuf(len + 0.2);
+    const bp = _ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 2.5;
+    bp.frequency.setValueAtTime(600, t); bp.frequency.exponentialRampToValueAtTime(4000, t + len);
+    n.connect(bp); bp.connect(out); n.start(t); n.stop(t + len + 0.15);
+    const lp = _ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2500; lp.connect(out);
+    const o = _fzOsc('sawtooth', _FZN.A3, t, t + len + 0.15, lp, 0.18);
+    o.frequency.setValueAtTime(_FZN.A3, t); o.frequency.exponentialRampToValueAtTime(_FZN.D5, t + len);
+}
+
+// The star begins: softer arpeggio D5..B5, a swoosh rising under it, a D-F#-A-D chord on D6's beat.
+function sfxFrenzyStart() {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    const out = _ac.createGain(); out.gain.value = FRENZY_LV.fan; out.connect(_master);
+    const lp = _ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 5200; lp.connect(out);
+    [_FZN.D5, _FZN.E5, _FZN.Fs5, _FZN.A5, _FZN.B5].forEach((f, i) => {
+        const tt = t + i * _FZ_S16, g = _ac.createGain(); g.connect(lp);
+        _fzEnv(g, tt, 0.004, 0.7, 0.14);
+        _fzOsc('triangle', f, tt, tt + 0.2, g, 0.9); _fzOsc('square', f, tt, tt + 0.2, g, 0.15);
+    });
+    const ns = _ac.createBufferSource(); ns.buffer = _noiseBuf(0.7);
+    const bp = _ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 2.2;
+    bp.frequency.setValueAtTime(700, t); bp.frequency.exponentialRampToValueAtTime(5200, t + 5 * _FZ_S16);
+    const ng = _ac.createGain(); _fzEnv(ng, t, 5 * _FZ_S16, 0.55, 0.25);
+    ns.connect(bp); bp.connect(ng); ng.connect(lp); ns.start(t); ns.stop(t + 0.75);
+    const tc = t + 5 * _FZ_S16, cg = _ac.createGain();
+    const clp = _ac.createBiquadFilter(); clp.type = 'lowpass'; clp.Q.value = 1;
+    clp.frequency.setValueAtTime(1500, tc); clp.frequency.exponentialRampToValueAtTime(4200, tc + 0.08);
+    clp.frequency.exponentialRampToValueAtTime(1800, tc + 0.8);
+    cg.connect(clp); clp.connect(lp);
+    _fzEnv(cg, tc, 0.012, 1, 0.85);
+    [_FZN.D5, _FZN.Fs5, _FZN.A5, _FZN.D6].forEach((f, i) =>
+        _fzOsc('sawtooth', f * (1 + (i % 2 ? 0.003 : -0.003)), tc, tc + 1.0, cg, 0.22));
+    musicDuck(MUSIC_DUCK_DB, 0.6);
+}
+
+// The star's pad: detuned saws D5 A5 D6 F#6 through a lowpass, a 16th-rate tremolo.
+function frenzyLoopOn() {
+    if (!_ac || _fzPad || !fxOn) return;
+    const t = _ac.currentTime;
+    const out = _ac.createGain(); out.connect(_master);
+    out.gain.setValueAtTime(0.0001, t); out.gain.linearRampToValueAtTime(FRENZY_LV.pad, t + 0.25);
+    const duck = _ac.createGain(); duck.gain.value = 1; duck.connect(out);
+    const trem = _ac.createGain(); trem.gain.value = 0.62; trem.connect(duck);
+    const lfo = _ac.createOscillator(), lfoD = _ac.createGain();
+    lfo.frequency.value = FRENZY_TREM_HZ; lfoD.gain.value = 0.36;
+    lfo.connect(lfoD); lfoD.connect(trem.gain);
+    const lp = _ac.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 0.8; lp.frequency.value = 2600;
+    lp.connect(trem);
+    const srcs = [lfo];
+    [[_FZN.D5, 1, -6], [_FZN.D5, 1, 6], [_FZN.A5, 0.8, -5], [_FZN.A5, 0.8, 5], [_FZN.D6, 0.45, 0], [_FZN.Fs6, 0.25, 3]]
+        .forEach(([f, a, c]) => { const o = _ac.createOscillator(), g = _ac.createGain();
+            o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = c; g.gain.value = a * 0.35;
+            o.connect(g); g.connect(lp); srcs.push(o); });
+    srcs.forEach(n => n.start(t));
+    _fzPad = { out, duck, lfo, lp, srcs };
+}
+
+// The star's last FRENZY_WARN_SEC: the tremolo speeds up, the filter closes, a falling
+// A5 F#5 D5 on the 8th grid answers the fanfare.
+function frenzyLoopWarn() {
+    if (!_ac || !_fzPad) return;
+    const t = _ac.currentTime, T = FRENZY_WARN_SEC;
+    _fzPad.lfo.frequency.setValueAtTime(FRENZY_TREM_HZ, t); _fzPad.lfo.frequency.linearRampToValueAtTime(14, t + T);
+    _fzPad.lp.frequency.setValueAtTime(2600, t); _fzPad.lp.frequency.exponentialRampToValueAtTime(900, t + T + 0.2);
+    const t0 = t + Math.max(0, T - 3 * _FZ_S8 - 0.05);
+    [_FZN.A5, _FZN.Fs5, _FZN.D5].forEach((f, i) => {
+        const tt = t0 + i * _FZ_S8, g = _ac.createGain(); g.connect(_master);
+        _fzEnv(g, tt, 0.006, FRENZY_LV.end, i === 2 ? 0.55 : 0.2);
+        _fzOsc('triangle', f, tt, tt + 0.7, g); _fzOsc('sine', f * 2, tt, tt + 0.4, g, 0.2);
+    });
+}
+
+// A warp inside a star: the warp's own loop takes over, the pad steps aside.
+function frenzyLoopDuck(on) {
+    if (!_ac || !_fzPad) return;
+    const t = _ac.currentTime;
+    _fzPad.duck.gain.cancelScheduledValues(t);
+    _fzPad.duck.gain.setTargetAtTime(on ? 0.05 : 1, t, 0.06);
+}
+
+// `quiet` for a death or a new run: no whoosh, just gone.
+function frenzyLoopOff(quiet) {
+    if (!_fzPad) return;
+    const t = _ac.currentTime, p = _fzPad; _fzPad = null;
+    p.out.gain.cancelScheduledValues(t); p.out.gain.setValueAtTime(p.out.gain.value, t);
+    p.out.gain.linearRampToValueAtTime(0.0001, t + (quiet ? 0.08 : 0.3));
+    setTimeout(() => p.srcs.forEach(n => { try { n.stop(); } catch (e) {} }), quiet ? 150 : 400);
+    if (quiet || !fxOn) return;
+    const g = _ac.createGain(); g.connect(_master);
+    _fzEnv(g, t, 0.05, FRENZY_LV.whoosh, 0.3);
+    const n = _ac.createBufferSource(); n.buffer = _noiseBuf(0.4);
+    const bp = _ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.5;
+    bp.frequency.setValueAtTime(3000, t); bp.frequency.exponentialRampToValueAtTime(500, t + 0.35);
+    n.connect(bp); bp.connect(g); n.start(t); n.stop(t + 0.4);
+}
+
+// A hazard the star flew into: a bell over its own break sound, one D-major pentatonic step
+// up per hit in this star, at most one per 60 ms.
+function sfxFrenzyPing(step) {
+    if (!_ac || !fxOn) return;
+    const t = _ac.currentTime;
+    if (t - _fzPingT < 0.06) return;
+    _fzPingT = t;
+    const steps = [_FZN.D6, _FZN.E6, _FZN.Fs6, _FZN.A6, _FZN.B6, _FZN.D7];
+    const f = steps[Math.min(Math.max(step, 0), steps.length - 1)];
+    const g = _ac.createGain(); g.connect(_master);
+    _fzEnv(g, t + 0.01, 0.002, FRENZY_LV.ping, 0.26);
+    _fzOsc('sine', f, t + 0.01, t + 0.32, g); _fzOsc('sine', f * 2.76, t + 0.01, t + 0.14, g, 0.22);
+}
+
+// Hull on rock while a star grinds the wall: a scrape under irregular AM, a low rumble with
+// its mid-band partner, into the cave reverb. Edge-triggered like laserLoopHeat.
+function frenzyGrind(on) {
+    if (!_ac) return;
+    if (on && !_fzGrind && fxOn) {
+        const t = _ac.currentTime, out = _ac.createGain(); out.connect(_master);
+        out.gain.setValueAtTime(0.0001, t); out.gain.linearRampToValueAtTime(FRENZY_LV.grind, t + 0.03);
+        _caveSend(out, 0.5);
+        const rn = _ac.createBufferSource(); rn.buffer = _noiseBuf(1); rn.loop = true;
+        const rl = _ac.createBiquadFilter(); rl.type = 'lowpass'; rl.frequency.value = 140;
+        const rg = _ac.createGain(); rg.gain.value = 0.7;
+        const rb = _ac.createBiquadFilter(); rb.type = 'bandpass'; rb.frequency.value = 520; rb.Q.value = 1.4;
+        const rbg = _ac.createGain(); rbg.gain.value = 0.35;
+        rn.connect(rl); rl.connect(rg); rg.connect(out); rn.connect(rb); rb.connect(rbg); rbg.connect(out);
+        const n = _ac.createBufferSource(); n.buffer = _noiseBuf(1); n.loop = true;
+        const bp = _ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2300; bp.Q.value = 1.3;
+        const am = _ac.createGain(); am.gain.value = 0.5;
+        const mn = _ac.createBufferSource(); mn.buffer = _noiseBuf(1); mn.loop = true;
+        const ml = _ac.createBiquadFilter(); ml.type = 'lowpass'; ml.frequency.value = 28;
+        const md = _ac.createGain(); md.gain.value = 9;
+        mn.connect(ml); ml.connect(md); md.connect(am.gain);
+        n.connect(bp); bp.connect(am); am.connect(out);
+        [rn, n, mn].forEach(x => x.start(t));
+        _fzGrind = { out, srcs: [rn, n, mn] };
+    } else if (!on && _fzGrind) {
+        const t = _ac.currentTime, gr = _fzGrind; _fzGrind = null;
+        gr.out.gain.cancelScheduledValues(t); gr.out.gain.setValueAtTime(gr.out.gain.value, t);
+        gr.out.gain.linearRampToValueAtTime(0.0001, t + 0.09);
+        setTimeout(() => gr.srcs.forEach(x => { try { x.stop(); } catch (e) {} }), 150);
+    }
+}
+
+// Music during a star: the lift and presence shelf on top of the sector build.
+function bgmSetFrenzy(on) {
+    if (_bgmFrenzy === on) return;
+    _bgmFrenzy = on;
+    _applySectorIntensity(false, FRENZY_MUSIC_GLIDE);
 }
 
 // The beam catching a boulder (systems.js updateLaser): a short burn sizzle for the

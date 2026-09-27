@@ -2028,3 +2028,33 @@ all phases built in one go.
   (`bo.burn`), it glows from a white-hot spot and sizzles (`sfxLaserBurn`, -25.4 dB
   loudest-50ms phone band, under coin -21 and shot -23.5) for `LASER_BURN_SEC`, then bursts
   whatever the beam does. Flown past: 8 of 12 now break; the other 4 were never touched.
+
+## Frenzy: the star (2026-09-27)
+
+User idea: an energy meter that fills and does "something cool", then specified: a Mario star,
+invulnerable for a while, fly into everything and it breaks, earned by collecting everything;
+later "warp soll auch belohnen". Concept v1 ("Jagdfieber", earned by grazes, walls and boulders
+stay lethal) was replaced by v2 on that call. Rejected in concept: score x2 (invisible, more
+coins), afterburner (= the warp), bullet fan (= the ammo coin), a rainbow star (hue-wheel rule).
+
+Measured with `tools/frenzy-sim.js`: a planning pilot flying the real game (real physics, real
+hit tests, reaction delay and a minimum press), five tiers - beginner/average median run 29/34
+(like real players: median daily best 70, most deaths at the ceiling), good 65, expert 131,
+pro 247 - 12 days x 8 runs, each run flown twice on the same seed, plain and with the star
+emulated. Real collection rates were 47-82%, not the 100% the concept's estimate assumed.
+
+| variant | runs with a star | first star at | pro duty | pro day best |
+|---|---|---|---|---|
+| A concept: 8, x1.5, 4s, from S1 | expert 5%, pro 34% | score ~270-340 | 12.2% | +40% |
+| B: 8, x2, 3s, from S1 (chosen) | expert 5%, pro 35% | ~270-350 | 8.7% | +26% |
+| C: 5, x2, 3s, from S0 | good 10%, expert 71%, pro 100% | ~90 | 14.7% | +70%, median +86% |
+| D: 6, x2.5, 3s, from S0 | good 5%, expert 58%, pro 96% | ~100-140 | 12.6% | +19%, median +86% |
+
+No variant reaches the real-player tiers: their runs end before the meter can fill. The user
+chose B, "Stern fuer Koenner". The shipped implementation, flown by the same pilot, measured
+pro 35% of runs, 0.54 stars per run, duty 8.9%, day best 738 vs 601 plain (+23%).
+
+Sounds were built as a listening page on the real `audio.js` bus with a 40s cut of the play
+track, 2-3 level-matched variants per slot; the user picked fanfare "Breit", pad "Saegezahn",
+ping "Glocke", grind "Scrape", end "Motiv", charge quieter, ready/miss/whoosh louder.
+

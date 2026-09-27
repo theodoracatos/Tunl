@@ -1337,6 +1337,44 @@ const LASER_INTERVAL_SEC = 20;
 const LASER_SEC          = 2.5;
 const LASER_BURN_SEC     = 0.12;
 const LASER_HALF_W       = PR * 0.3;
+
+// ── Frenzy, the star (2026-09-27, concept https://claude.ai/artifact/Nft1eG8rKrq2LZrnKdTRiC) ──
+// A meter that collecting fills; when it is full the ship becomes a star for FRENZY_SEC:
+// crystals, mines, cannon shots and boulders it flies into shatter and pay BULLET_HIT_PTS,
+// poison and drain coins shatter harmlessly, the wall clamps like in a warp (no kill, no
+// scratch) and the shield is not spent (update.js collision block, systems.js frenzy*).
+// - The meter is a "tank" (user's pick): +1 per good coin (warp-vacuumed gold included),
+//   +FRENZY_CHICANE_FILL for chicane gold, -FRENZY_MISS_COST per good coin that scrolls past
+//   the ship uncollected (not during a warp), -FRENZY_HAZARD_COIN_COST for touching poison or
+//   drain, and lerp(FRENZY_PORTAL_MIN, FRENZY_PORTAL_MAX, accuracy) for flying a portal. It
+//   never drops below 0 and only counts from SAFE_START_WX: in the open opening collecting
+//   is free.
+// - Cost escalates per star in the same run (FRENZY_FIRST_COST, x FRENZY_COST_MUL): the
+//   measured rule (tools/frenzy-sim.js, 480 paired runs, 5 pilot tiers, 12 days). With the
+//   concept's 8 / x1.5 / 4s a pro-tier run spent 12.2% of its flight as a star and the day's
+//   best rose 40%, almost all of it survival (smash points were 0.1% of the score); 8 / x2 /
+//   3s (user's call, "Stern fuer Koenner") measured 8.7% and +26%. No tier that plays like
+//   today's real players (median run ~30) ever fills it - the star is a deep-run reward.
+//   Re-measure the duty cycle, never a coin count, before moving any of these.
+// - Pure per-player state, no rng(), no placement: hazards leave through the same paths the
+//   bullet, bomb and laser already use, so the daily cave is untouched (test-cave.js).
+// - A star never starts inside a warp (a warp is already hazard-immune); one that fills there
+//   waits for the warp's end (frenzyPending), and a running star's clock pauses in a warp.
+//   The end grants HIT_INVULN_SEC like a warp's.
+const FRENZY_FIRST_COST       = 8;
+const FRENZY_COST_MUL         = 2;
+const FRENZY_SEC              = 3.0;
+const FRENZY_CHICANE_FILL     = 2;
+const FRENZY_MISS_COST        = 1;
+const FRENZY_HAZARD_COIN_COST = 2;
+const FRENZY_PORTAL_MIN       = 1;
+const FRENZY_PORTAL_MAX       = 3;
+const FRENZY_READY_FRAC       = 0.8;   // the meter crossing this cues "almost" (draw + audio)
+const FRENZY_WARN_SEC         = 1.0;   // the last stretch of a star flickers and plays the end motif
+const FRENZY_CHARGE_SEC       = 0.4;   // full meter -> star: the charge riser plays over it, the lane blinks
+// The star's shimmer runs in 16ths of the play track (Nebula, 140 BPM): the aura, the icon's
+// core and the audio pad's tremolo share it, so picture and sound pulse together.
+const FRENZY_TREM_HZ          = 140 / 60 * 4;
 // The continue offer's own timeout -- deliberately NOT reusing DEATH_INTERACTIVE_SEC
 // above. First real-device pass found 0.9s (matched to that *existing* pre-interactive
 // beat, so declining would cost zero extra wait) too short to actually use: a player

@@ -344,6 +344,27 @@ function update(dt) {
         warpWidenVisual += Math.max(-WARP_GAP_EASE_RATE * dt, Math.min(WARP_GAP_EASE_RATE * dt, warpTarget - warpWidenVisual));
     }
 
+    // Frenzy, the star (constants.js FRENZY_* doc): its clock pauses in a warp, and a star
+    // that filled inside one starts here, the first frame after the warp's end. Its end
+    // grants HIT_INVULN_SEC like a warp's, for the same reason: collision solidifies
+    // with a hazard possibly right on the ship.
+    frenzyGrindT = Math.max(0, frenzyGrindT - dt);
+    if (frenzyChargeT > 0) {
+        frenzyChargeT = Math.max(0, frenzyChargeT - dt);
+        if (frenzyChargeT <= 0) { if (warpTime > 0) frenzyPending = true; else frenzyBegin(); }
+    } else if (frenzyTime > 0) {
+        frenzyLoopDuck(warpTime > 0);
+        if (warpTime <= 0) {
+            const was = frenzyTime;
+            frenzyTime = Math.max(0, frenzyTime - dt);
+            if (was > FRENZY_WARN_SEC && frenzyTime <= FRENZY_WARN_SEC) frenzyLoopWarn();
+            if (frenzyTime <= 0) {
+                invulnT = Math.max(invulnT, HIT_INVULN_SEC);
+                frenzyLoopOff(); frenzyGrind(false); bgmSetFrenzy(false);
+            }
+        }
+    } else if (frenzyPending || frenzyMeter >= frenzyCost) frenzyTryStart();
+
     // Scroll + score
     const prevPlayerWx = scrollX + PX;   // pre-advance world-x, for the portal x-crossing test below
     const spd = scrollSpd() * slowScrollFactor() * warpScrollFactor();
@@ -667,7 +688,12 @@ function update(dt) {
             // theory outrun MAX_VY for a moment at the wave's peak slope (constants.js
             // WARP_GAP_MULT doc) - the clamp is what actually guarantees "the reward
             // never kills you," the widened corridor is just breathing room on top.
-            if (invulnT > 0 || warpTime > 0 || wallGraceT > 0) { py = Math.max(b.top + cPR, Math.min(b.bot - cPR, py)); break; }
+            if (invulnT > 0 || warpTime > 0 || wallGraceT > 0 || frenzyTime > 0) {
+                // A star grinds along the rock: sparks where hull meets wall (constants.js FRENZY_* doc).
+                if (frenzyTime > 0 && Math.random() < 0.7) burst(PX + dx, py - cPR < b.top ? b.top : b.bot, 2, 30, 55);
+                frenzyGrindT = frenzyTime > 0 ? 0.08 : 0;
+                py = Math.max(b.top + cPR, Math.min(b.bot - cPR, py)); break;
+            }
             // Flight plan: wall mistakes cost a scratch, not the run (constants.js HULL_SCRATCHES).
             // A shield goes first (die() spends it), the hull only scratches once it is gone.
             if (hullScratches > 0 && shieldCount === 0) { hullScratch(b.top, b.bot, cPR); break; }
@@ -678,7 +704,7 @@ function update(dt) {
         }
     }
     if (py - cPR < 0 || py + cPR > H) {
-        if (invulnT > 0 || warpTime > 0 || wallGraceT > 0) { py = Math.max(cPR, Math.min(H - cPR, py)); }
+        if (invulnT > 0 || warpTime > 0 || wallGraceT > 0 || frenzyTime > 0) { py = Math.max(cPR, Math.min(H - cPR, py)); }
         else if (hullScratches > 0 && shieldCount === 0) hullScratch(0, H, cPR);
         else {
             deathCause = (py - cPR < 0) ? 'wallTop' : 'wallBot';
@@ -696,6 +722,16 @@ function update(dt) {
     if (warpTime <= 0) for (const s of stalactites) {
         if (s.dying) continue;
         if (stalHit(s, cPR)) {
+            if (frenzyTime > 0) {   // the star shatters it (constants.js FRENZY_* doc)
+                s.dying = true; s.fade = 1.0;
+                const sb = boundsAt(s.wx), sx = s.wx - scrollX;
+                const tipY = s.isTop ? sb.top + s.length + stalFallY(s) : sb.bot - s.length;
+                burstStalCrack(sx, tipY, crystalShardHue());
+                if (CRYSTAL_STALS) burstCrystalShards(PX, py, crystalShardHue(), 16);
+                (CRYSTAL_STALS ? sfxCrystalCrack : sfxStalCrack)(sx);
+                frenzySmash('stal', PX, py);
+                continue;
+            }
             s.gz = 2;
             deathCause = s.isTop ? 'wallTop' : 'wallBot';
             const sb = boundsAt(s.wx), sfy = stalFallY(s);
@@ -715,7 +751,7 @@ function update(dt) {
             }
             break;
         }
-        trackGraze(s, stalHit(s, gzR));
+        if (frenzyTime <= 0) trackGraze(s, stalHit(s, gzR));
     }
 
     // Warp portal ring: an x-crossing test (constants.js "Warp portal" doc), not a
@@ -767,6 +803,13 @@ function update(dt) {
         const my = m.baseY + m.bobAmp * Math.sin(gtime * 1.8 + m.phase);
         const dx = PX - sx, dy = py - my;
         if (dx*dx + dy*dy < mineHitR2) {
+            if (frenzyTime > 0) {   // the star sets it off harmlessly
+                mines.splice(mi, 1); mi--;
+                burst(sx, my);
+                sfxMineExplode(sx, FRENZY_MINE_GAIN);
+                frenzySmash('mine', sx, my);
+                continue;
+            }
             deathCause = 'open';
             markDeathHit(sx, my, MINE_R);
             // The mine detonates whatever happens next (death, shield, grace window), so
@@ -781,7 +824,7 @@ function update(dt) {
             window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
             break;
         }
-        trackGraze(m, dx*dx + dy*dy < mineGzR2);
+        if (frenzyTime <= 0) trackGraze(m, dx*dx + dy*dy < mineGzR2);
     }
 
     // Boulder collision (circle vs the island outline, systems.js boulderHit - same
@@ -792,6 +835,13 @@ function update(dt) {
         if (sx < -bo.hl - 40 || sx > W + bo.hl + 40) continue;
         const dx = PX - sx, dy = py - bo.y;
         if (boulderHit(bo, dx, dy, cPR)) {
+            if (frenzyTime > 0) {   // the star breaks the island, the laser's burst
+                boulders.splice(bi, 1); bi--;
+                burstBoulder(bo);
+                sfxBoulderBurst(sx);
+                frenzySmash('boulder', sx, bo.y);
+                continue;
+            }
             bo.gz = 2;
             deathCause = 'open';
             markDeathHit(Math.max(sx - bo.hl, Math.min(sx + bo.hl, PX)), bo.y, bo.r);
@@ -808,7 +858,7 @@ function update(dt) {
             window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
             break;
         }
-        trackGraze(bo, boulderHit(bo, dx, dy, gzR));
+        if (frenzyTime <= 0) trackGraze(bo, boulderHit(bo, dx, dy, gzR));
         // "Boulder Meister" (constants.js BOULDER_MEISTER_TARGET/ID doc): the first
         // frame this boulder's screen-x reaches the player's fixed PX without a
         // collision above having fired, credit a clean pass if it was the narrow side -
@@ -835,6 +885,13 @@ function update(dt) {
         if (sx < -100 || sx > W + 100) continue;
         const dx = PX - sx, dy = py - s.y;
         if (dx*dx + dy*dy < cannonHitR2) {
+            if (frenzyTime > 0) {   // the star swats the shell
+                cannonShots.splice(ci, 1); ci--;
+                burst(sx, s.y);
+                sfxRockHit(sx);
+                frenzySmash('shot', sx, s.y);
+                continue;
+            }
             deathCause = 'open';
             markDeathHit(sx, s.y, CANNON_SHOT_R);
             if (die()) return;
@@ -846,7 +903,7 @@ function update(dt) {
             window.webkit?.messageHandlers?.haptic?.postMessage('heavy');
             break;
         }
-        trackGraze(s, dx*dx + dy*dy < cannonGzR2);
+        if (frenzyTime <= 0) trackGraze(s, dx*dx + dy*dy < cannonGzR2);
     }
 
     // Magnet: pull visible uncollected coins toward the player. The two hazard coins
@@ -869,6 +926,8 @@ function update(dt) {
             }
         }
     }
+
+    frenzyGrind(frenzyGrindT > 0 && frenzyTime > 0);   // the star's grind sound follows the sparks
 
     // Coin collection
     checkCoinCollection();
@@ -993,6 +1052,8 @@ function die(bypassShield = false) {
     onFireLoopOff();
     magnetLoopOff();
     laserLoopOff(); laserTime = 0;   // no beam over the death screen or after a revive
+    frenzyTime = 0; frenzyPending = false; frenzyChargeT = 0;   // no star over the death screen or after a revive
+    frenzyLoopOff(true); frenzyGrind(false); bgmSetFrenzy(false);
     warpLoopOff();
     approachWindOff();
     sfxBulletFireStop();
@@ -1340,6 +1401,8 @@ function grantRevive() {
     // Deliberately NOT given by the web app pitch, which grants nothing at all.
     hullScratches = HULL_SCRATCHES;
     wallGraceT = 0;
+    // The star meter starts empty again; the price of the next star stays (constants.js FRENZY_* doc).
+    frenzyMeter = 0;
     // Said out loud, in the same colour the SCRAPE! notif uses, so the repair is a
     // visible part of the reward and not just two diamonds quietly refilling in the
     // corner. Zero new strings: '+' + T.hull, the notif vocabulary the game already
