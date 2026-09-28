@@ -3073,8 +3073,8 @@ const _hudScoreAnchor = { x: 0, y: 0 };
 let _hudLastCombo = 0, _hudComboPopT = -1;
 
 // ── Energy console (bottom HUD, constants.js HUD_LANE_* doc) ──────────────────
-// The bottom HUD as one instrument (2026-09-26): magazine left, power-up lanes centre,
-// hull plates right, straight on the rock (a dark plate behind it was tried and removed
+// The bottom HUD as one instrument (2026-09-26): hull plates left, power-up lanes centre,
+// magazine right (swapped 2026-09-28), straight on the rock (a dark plate behind it was tried and removed
 // the same day). Replaced three flat 4px bars on fixed rows, a row of dots and a
 // row of diamonds, each drawn on its own.
 // - Lanes are capsules whose height follows FS, with the coin's own object as the icon
@@ -3094,12 +3094,28 @@ let _hudFzA = 0;   // the star meter's fade (_hudFrenzy)
 
 function _hudGeo() {
     const x0 = W * 0.29, pitch = Math.max(13, FS * 0.024);
+    const lh = Math.max(5, FS * 0.0095), iconS = Math.max(5.5, FS * 0.0105);
+    const iconX = x0 - Math.max(12, FS * 0.021);
+    // The star meter (_hudFrenzy) hugs the left edge; the hull row (_hudHull) sits centred
+    // between its right edge and the lane icons' left edge, so the two gaps read equal.
+    const fzX = SAFE_L + Math.max(10, W * 0.017), fzW = lh * 1.3;
+    const hullR = _hudHullRowW(), hullIconR = iconS * 1.25;
+    const hullX = (fzX + fzW / 2 + iconX - iconS + hullIconR - hullR) / 2;
     return {
-        x0, x1: W * 0.71, pitch, baseY: H * 0.955,
-        lh: Math.max(5, FS * 0.0095), iconS: Math.max(5.5, FS * 0.0105),
-        iconX: x0 - Math.max(12, FS * 0.021),
-        leftX: SAFE_L + W * 0.045, rightX: W - SAFE_R - W * 0.045,
+        x0, x1: W * 0.71, pitch, baseY: H * 0.955, lh, iconS, iconX, fzX, fzW, hullX,
+        rightX: W - SAFE_R - W * 0.045,
     };
+}
+
+// Hull row geometry (_hudHull): plate size and pitch, the gap after the icon, and the row's
+// reach from the icon's centre to the last plate's far edge.
+function _hudHullDims() {
+    const pw = Math.max(14, FS * 0.025), ph = Math.max(11.5, FS * 0.020);
+    return { pw, ph, p: pw * 1.35, gap: Math.max(19, FS * 0.033) };
+}
+function _hudHullRowW() {
+    const d = _hudHullDims();
+    return d.gap + Math.max(0, HULL_SCRATCHES - 1) * d.p + d.pw;
 }
 
 // { on, ratio 0..1, remain s, max s (0: no notches), held }
@@ -3208,7 +3224,7 @@ function _hudLanes(G) {
 }
 
 // The star meter (constants.js FRENZY_* doc) stands apart from the power-up lanes: a
-// vertical bar at the bottom-left edge, left of the magazine, filling upward, the star
+// vertical bar at the bottom-left edge, left of the hull plates, filling upward, the star
 // icon on top (user's call 2026-09-27, "klar abgetrennt"). Same material as a lane: the
 // ship's own light, one notch per second while a star drains it, the lane pulse once past
 // FRENZY_READY_FRAC, held full and dimmed while a star waits for a warp's end.
@@ -3217,8 +3233,8 @@ function _hudFrenzy(G, dt) {
     _hudFzA += ((s.on ? 1 : 0) - _hudFzA) * Math.min(1, dt * 12);
     if (_hudFzA < 0.02) return;
     const tk = _fzToneKey();
-    const w = G.lh * 1.3, h = Math.max(56, H * 0.2);
-    const x = SAFE_L + Math.max(10, W * 0.017), yBot = G.baseY + G.lh / 2, yTop = yBot - h;
+    const w = G.fzW, h = Math.max(56, H * 0.2);
+    const x = G.fzX, yBot = G.baseY + G.lh / 2, yTop = yBot - h;
     const warn = s.remain < HUD_LANE_WARN_SEC ? 0.55 + 0.45 * Math.sin(gtime * 18) : 1;
     const dim = s.held ? 0.45 + 0.2 * Math.sin(gtime * 6) : s.ready ? 0.75 + 0.25 * Math.sin(gtime * 8) : 1;
     const bar = (y0, hh) => { ctx.beginPath(); ctx.roundRect(x - w / 2, y0, w, Math.max(0, hh), w / 2); };
@@ -3265,8 +3281,10 @@ function _hudMagazine(G) {
     if (a <= 0) return;
     const y = G.baseY, cap = bulletAmmoCap();
     // Same scale as the hull row it mirrors (_hudHull): icon, element height and icon gap.
+    // Right edge since 2026-09-28 (swapped with the hull row to give the star meter room
+    // on the left): the icon stays outermost, the rounds run inward from it.
     const rw = Math.max(3.75, FS * 0.0069), rh = Math.max(11.5, FS * 0.020), p = Math.max(6.9, FS * 0.013);
-    const x0 = G.leftX + Math.max(19, FS * 0.033) + rw / 2, tip = rh * 0.32;
+    const x0 = G.rightX - Math.max(19, FS * 0.033) - rw / 2, tip = rh * 0.32;
     const fx = hudLaneFx.orange, flashK = fx ? 1 - (gtime - fx.t) / HUD_LANE_FLASH_SEC : 0;
     const round = (x, yy) => {
         ctx.beginPath();
@@ -3277,10 +3295,10 @@ function _hudMagazine(G) {
     };
     ctx.save();
     ctx.globalAlpha = a;
-    ctx.save(); ctx.translate(G.leftX, y); COIN_OBJECTS.orange(G.iconS * 1.25, gtime, 0); ctx.restore();
+    ctx.save(); ctx.translate(G.rightX, y); COIN_OBJECTS.orange(G.iconS * 1.25, gtime, 0); ctx.restore();
     ctx.lineWidth = 1;
     for (let i = 0; i < cap; i++) {
-        const x = x0 + i * p;
+        const x = x0 - i * p;
         round(x, y);
         if (i < bulletAmmo) {
             ctx.fillStyle = coinTone('orange', 0.1); ctx.fill();
@@ -3303,8 +3321,8 @@ function _hudMagazine(G) {
         if (k < 0 || k >= 1) continue;
         ctx.save();
         ctx.globalAlpha = a * (1 - k);
-        ctx.translate(x0 + e.i * p - k * FS * 0.03, y - k * FS * 0.05 + k * k * FS * 0.04);
-        ctx.rotate(-k * 2.4);
+        ctx.translate(x0 - e.i * p + k * FS * 0.03, y - k * FS * 0.05 + k * k * FS * 0.04);
+        ctx.rotate(k * 2.4);
         ctx.fillStyle = coinTone('orange', 0.3);
         ctx.fillRect(-rw / 2, -rh / 2, rw, rh * 0.7);
         ctx.restore();
@@ -3315,15 +3333,16 @@ function _hudMagazine(G) {
 function _hudHull(G) {
     const hitAge = gtime - hudHullHitT;
     const shake = hitAge < 0.3 ? Math.sin(gtime * 90) * FS * 0.004 * (1 - hitAge / 0.3) : 0;
-    const y = G.baseY, ix = G.rightX + shake;
+    const y = G.baseY, ix = G.hullX + shake;
     // A notch larger than the lane icons (on request), and the magazine matches it: the two
-    // side rows are the console's frame.
-    const pw = Math.max(14, FS * 0.025), ph = Math.max(11.5, FS * 0.020), p = pw * 1.35;
+    // side rows are the console's frame. Left edge since 2026-09-28, mirrored from the right:
+    // icon outermost, lost plates next to it.
+    const { pw, ph, p, gap } = _hudHullDims();
     ctx.save();
     ctx.save(); ctx.translate(ix, y); COIN_OBJECTS.repair(G.iconS * 1.25, gtime, 0); ctx.restore();
     ctx.lineWidth = 1;
     for (let i = 0; i < HULL_SCRATCHES; i++) {
-        const cx = ix - Math.max(19, FS * 0.033) - (HULL_SCRATCHES - 1 - i) * p - pw / 2;
+        const cx = ix + gap + (HULL_SCRATCHES - 1 - i) * p + pw / 2;
         // A repair kit that refilled the row (systems.js updateRepairKits) swells its plate.
         const swell = i === hullScratches - 1 ? 1 + 0.35 * Math.min(1, hullRepairFlash / 0.8) : 1;
         const w = pw * swell / 2, h = ph * swell / 2, ch = w * 0.35;
@@ -3373,7 +3392,7 @@ function _hudLaneSparks(G) {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     for (const s of hudLaneSparks) {
-        const ax = s.k === 'orange' ? G.leftX : s.k === 'repair' ? G.rightX : G.iconX;
+        const ax = s.k === 'orange' ? G.rightX : s.k === 'repair' ? G.hullX : G.iconX;
         const ay = s.k === 'orange' || s.k === 'repair' ? G.baseY : G.baseY - (_hudLaneY[s.k] || 0) * G.pitch;
         const cx1 = (s.x + ax) / 2, cy1 = Math.min(s.y, ay) - H * 0.12;
         const k = Math.min(1, s.t / HUD_SPARK_SEC), col = HUD_SPARK_COLOR[s.k];
@@ -6817,14 +6836,16 @@ function drawWebContinuePromo() {
         perkLines = perks.map(p => _wrapLines(p[1], textW - icoW));
         const nLines = perkLines.reduce((n, l) => n + l.length, 0);
         // Exactly the steps the drawing below takes, top of the headline slot to the
-        // button's bottom edge.
+        // button's bottom edge, plus the headline's empty ascent (its ink starts about
+        // 0.16 hero into the slot) mirrored under the button so both margins read equal.
         contentH = hero * 0.86        // headline baseline
                  + hero * 0.34 + 2    // accent rule
                  + txt * 1.55         // first perk baseline
                  + (nLines - 1) * txt * 1.40
                  + (perks.length - 1) * txt * 0.45
-                 + txt * 1.30         // last baseline to the button's top
-                 + btnH;
+                 + txt * 2.05         // last baseline to the button's top
+                 + btnH
+                 + hero * 0.16;       // optical bottom margin
         pad   = Math.max(18, hero * 0.9);
         cardH = Math.min(H * 0.94, contentH + pad * 2);
         if (contentH + pad * 2 <= H * 0.94 || sc <= 0.62) break;
@@ -6927,8 +6948,9 @@ function drawWebContinuePromo() {
 
     // ── store button(s) ───────────────────────────────────────────────────────
     // The loop left y one line pitch (1.40 txt) under the last baseline; the button's top
-    // sits 1.30 txt under that baseline, as contentH counts it.
-    y -= txt * 0.10;
+    // sits 2.05 txt under that baseline, as contentH counts it - clearly more than the
+    // perks' own pitch, so the button reads as its own block (1.30 crowded the list).
+    y += txt * 0.65;
     const storeBtn = (r, label, filled, sub) => {
         ctx.beginPath(); ctx.roundRect(r.x, r.y, r.w, r.h, r.h * 0.30);
         ctx.fillStyle = filled ? DAY(0.92) : `rgba(255,255,255,${a * 0.05})`;

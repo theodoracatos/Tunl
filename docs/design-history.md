@@ -1964,6 +1964,13 @@ the console sits straight on the rock. Score sparks are unchanged - a power-up c
 to its lane rather than redirecting the score's. `T.ammo` is no longer drawn; the string
 stays in `i18n.js`.
 
+2026-09-28, on the user's call: the two side rows swapped - hull plates left, magazine
+right - so the star meter at the bottom-left edge sits next to the short hull row
+instead of the up-to-ten-round magazine. Each row is mirrored, icon outermost: the
+magazine's full rounds stay next to its icon, the hull's lost plates stay next to its.
+Then, same day: the hull row moved right to sit centred between the star meter's bar and
+the lane icons (`_hudGeo()` `hullX`), so both gaps read equal when the star shows.
+
 ## Opening gold fills the HUD lane (2026-09-27)
 
 The user wanted the first gold coins to flow into the new gold lane "even if they don't do

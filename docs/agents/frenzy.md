@@ -63,7 +63,7 @@ scratch), the shield is not spent. Speed is unchanged - that is what separates i
   (`bgmSetFrenzy`), never `playbackRate`. Levels in `audio.js` `FRENZY_LV`, measured offline in
   the real bus (fanfare just under the milestone, ping = coin); judge changes by render.
 - **The meter is NOT a power-up lane** (user's call 2026-09-27, "klar abgetrennt"): a vertical
-  bar at the bottom-left edge, left of the magazine, filling upward with the star icon on top
+  bar at the bottom-left edge, left of the hull plates, filling upward with the star icon on top
   (`_hudFrenzy` in `draw.js`, state from `_hudLaneState('frenzy')`). A key added to
   `_HUD_LANES` also needs its seed in `_hudLaneY`/`_hudLaneA`, or it draws at NaN and throws in
   the browser's `createLinearGradient` - `test-sim.js`'s fake context cannot see that.

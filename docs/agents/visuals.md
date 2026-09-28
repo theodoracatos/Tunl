@@ -41,7 +41,9 @@ Study: https://claude.ai/artifact/QPvLrDmGiU6przXNwXLV9y
   bumps immediately. All presentation: `bonusScore` is still credited at pickup. The world
   intro banner and the milestone flash are both placed below `hudY`, never over the stack.
 - **Energy console** (2026-09-26, `drawEnergyConsole`, constants.js `HUD_LANE_*`; concept https://claude.ai/artifact/Cm7MGTKfpRqtNmfvSZ77mN): the
-  bottom HUD is one instrument - magazine left, power-up lanes centre, hull plates right,
+  bottom HUD is one instrument - hull plates left, power-up lanes centre, magazine right
+  (swapped 2026-09-28 on the user's call, to give the star meter room on the left; the hull
+  row sits centred between the star meter and the lane icons, `_hudGeo()` `hullX`),
   straight on the rock. **No dark plate behind it** (tried and removed the same day on the
   user's call). Rules: a lane's icon is the coin's own object (`COIN_OBJECTS`), never a
   word; a timed lane divides by the window it was topped up to (`slowTimeMax`,
