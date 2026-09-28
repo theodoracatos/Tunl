@@ -692,7 +692,7 @@ function update(dt) {
                 // A star grinds along the rock: sparks where hull meets wall (constants.js FRENZY_* doc).
                 if (frenzyTime > 0 && Math.random() < 0.7) burst(PX + dx, py - cPR < b.top ? b.top : b.bot, 2, 30, 55);
                 frenzyGrindT = frenzyTime > 0 ? 0.08 : 0;
-                py = Math.max(b.top + cPR, Math.min(b.bot - cPR, py)); break;
+                clampShipToWall(b.top, b.bot, cPR); break;
             }
             // Flight plan: wall mistakes cost a scratch, not the run (constants.js HULL_SCRATCHES).
             // A shield goes first (die() spends it), the hull only scratches once it is gone.
@@ -704,7 +704,7 @@ function update(dt) {
         }
     }
     if (py - cPR < 0 || py + cPR > H) {
-        if (invulnT > 0 || warpTime > 0 || wallGraceT > 0 || frenzyTime > 0) { py = Math.max(cPR, Math.min(H - cPR, py)); }
+        if (invulnT > 0 || warpTime > 0 || wallGraceT > 0 || frenzyTime > 0) clampShipToWall(0, H, cPR);
         else if (hullScratches > 0 && shieldCount === 0) hullScratch(0, H, cPR);
         else {
             deathCause = (py - cPR < 0) ? 'wallTop' : 'wallBot';
@@ -984,6 +984,18 @@ function hullScratch(top, bot, r) {
     pushNotif(PX + PR * 3, py - H * 0.08, 1.3, T.notifScratch, [255, 170, 90]);
     sfxHullScratch();
     window.webkit?.messageHandlers?.haptic?.postMessage('medium');
+}
+
+// Holds the ship inside [top + r, bot - r] where the wall is solid rather than lethal
+// (grace windows, warp, frenzy, the approach's mouth) and drops the part of vy that
+// points into the wall it rests on. Clamping py alone let vy keep integrating to MAX_VY
+// while pinned, so leaving the floor first had to burn off MAX_VY / (THRUST - GRAVITY)
+// of stored fall speed (and the ceiling MAX_VY / GRAVITY) with the ship stuck in place.
+function clampShipToWall(top, bot, r) {
+    const y = Math.max(top + r, Math.min(bot - r, py));
+    if (y > py && vy < 0) vy = 0;
+    if (y < py && vy > 0) vy = 0;
+    py = y;
 }
 
 function markDeathHit(x, y, r) {

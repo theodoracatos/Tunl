@@ -276,6 +276,27 @@ function quietCave(deep = false) {
     check('mid-warp the wall clamps the ship back inside instead of killing', g('phase') === 'play' && inside);
 }
 {
+    // Catches: a wall clamp that fixes py but leaves vy integrating to MAX_VY (player
+    // report 2026-09-28: "pinned to the floor, it takes forever to come back up" - the
+    // stored speed cost MAX_VY / (THRUST - GRAVITY) of counter-thrust at the floor and
+    // MAX_VY / GRAVITY at the ceiling before the ship even moved). Real update(): ride a
+    // solid wall for 1 s pushing into it, then read how much speed still points into the
+    // rock. Not timed: the corridor keeps waving, and a wall falling away from the ship
+    // hides the stored speed on some days. The ship lags a wall that drops away, so a
+    // free-fall residue is allowed (up to ~40% over a 20-day sweep); the bug left 100%.
+    for (const floor of [true, false]) {
+        const r = quietCave(true)(`(() => {
+            hasHeldThisRun = true; hullScratches = 0; wallGraceT = 99; vy = 0; holding = ${!floor};
+            const b = boundsAt(scrollX + PX);
+            py = ${floor} ? b.bot - PR - 2 : b.top + PR + 2;
+            for (let i = 0; i < 60; i++) { holding = ${!floor}; update(1 / 60); }
+            return { into: (${floor} ? vy : -vy) / MAX_VY, phase };
+        })()`);
+        check(`a ship ridden along the ${floor ? 'floor' : 'ceiling'} for 1 s stores no speed into it (${(r.into * 100).toFixed(0)}% of MAX_VY)`,
+            r.phase === 'play' && r.into < 0.6);
+    }
+}
+{
     // Catches: boundsAt() ignoring gapBonusVisual - collision against a corridor the
     // player is not being shown. The ship's EDGE is put in the middle of the bonus band:
     // half a bonus past the bare wall, half a bonus short of the widened one. (Default

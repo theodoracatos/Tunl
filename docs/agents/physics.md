@@ -45,3 +45,11 @@ plays as a pixel-and-physics copy of the 17 Pro Max**. No separate web feel tuni
 
 ## Player
 `PX` (fixed horizontal position) and `PR` (radius) are fractions of W in `constants.js`.
+
+## Solid walls
+Where the wall holds the ship instead of killing it (`wallGraceT`, `invulnT`, warp, frenzy,
+the approach's mouth), go through `clampShipToWall()` in `update.js`, never a bare `py`
+clamp: it also drops the part of `vy` pointing into the wall. A bare clamp let `vy`
+integrate to `MAX_VY` while pinned, so leaving the floor took ~0.6 s of thrust (the ceiling
+~0.8 s of gravity) before the ship moved at all - a player reported it as being "pulled
+further down" (2026-09-28). `test-sim.js` section 3 guards it.
