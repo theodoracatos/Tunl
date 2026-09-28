@@ -2,6 +2,8 @@ package com.theodoracatos.tunl
 
 import android.app.Activity
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
@@ -44,6 +46,12 @@ class AdsManager(private val activity: Activity) {
         // Mirrors src/constants.js MIN_REAL_RUN_SCORE. Was 25, which the 12.0 safe
         // opening flight turned into a no-op: no completed run scores under 50.
         private const val MIN_SCORE_FOR_AD = 75
+        // A failed rewarded load (usually no fill) is retried after RETRY_BASE_MS,
+        // doubling up to RETRY_MAX_MS, reset on the next fill. See AdsManager.swift:
+        // without it one empty answer greyed the continue ring and the shard row for
+        // the rest of the session.
+        private const val RETRY_BASE_MS = 30_000L
+        private const val RETRY_MAX_MS = 300_000L
         private const val TAG = "TunlAds"
     }
 
@@ -87,6 +95,9 @@ class AdsManager(private val activity: Activity) {
     // that always fires, reward or not.
     private var rewardEarned = false
     private var shardsRewardEarned = false
+    private var rewardedRetryStep = 0
+    private var shardsRetryStep = 0
+    private val retryHandler = Handler(Looper.getMainLooper())
     private var started = false
     private lateinit var consentInformation: ConsentInformation
 
@@ -353,6 +364,7 @@ class AdsManager(private val activity: Activity) {
             object : RewardedAdLoadCallback() {
                 override fun onAdLoaded(ad: RewardedAd) {
                     rewardedAd = ad
+                    rewardedRetryStep = 0
                     onRewardedAdReadyChange?.invoke(true)
                 }
 
@@ -360,6 +372,7 @@ class AdsManager(private val activity: Activity) {
                     Log.w(TAG, "Failed to load rewarded ad: ${adError.message}")
                     rewardedAd = null
                     onRewardedAdReadyChange?.invoke(false)
+                    retryHandler.postDelayed({ loadRewarded() }, retryDelayMs(rewardedRetryStep++))
                 }
             }
         )
@@ -391,6 +404,7 @@ class AdsManager(private val activity: Activity) {
             object : RewardedAdLoadCallback() {
                 override fun onAdLoaded(ad: RewardedAd) {
                     shardsRewardedAd = ad
+                    shardsRetryStep = 0
                     onShardsAdReadyChange?.invoke(true)
                 }
 
@@ -398,8 +412,12 @@ class AdsManager(private val activity: Activity) {
                     Log.w(TAG, "Failed to load shards rewarded ad: ${adError.message}")
                     shardsRewardedAd = null
                     onShardsAdReadyChange?.invoke(false)
+                    retryHandler.postDelayed({ loadShardsRewarded() }, retryDelayMs(shardsRetryStep++))
                 }
             }
         )
     }
+
+    private fun retryDelayMs(step: Int): Long =
+        minOf(RETRY_BASE_MS shl minOf(step, 8), RETRY_MAX_MS)
 }

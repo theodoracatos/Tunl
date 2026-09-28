@@ -42,6 +42,15 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
     // Mirrors src/constants.js MIN_REAL_RUN_SCORE. Was 25, which the 12.0 safe
     // opening flight turned into a no-op: no completed run scores under 50.
     private static let minScoreForAd = 75
+    // A failed rewarded load (usually "No ad to show", i.e. no fill) is retried after
+    // retryBaseDelay, doubling up to retryMaxDelay, and the step resets on the next
+    // fill. Without it one empty answer greyed the continue ring and the Missions
+    // shard row for the rest of the session: the only other reload points are
+    // launch and a dismissed ad, and a no-fill device never gets to dismiss one
+    // (seen on an iPhone 12 mini, 2026-09-28). The interstitial needs no timer - a
+    // death that finds it missing already reloads it.
+    private static let retryBaseDelay: Double = 30
+    private static let retryMaxDelay: Double = 300
 
     private var interstitial: InterstitialAd?
     private var rewarded: RewardedAd?
@@ -51,6 +60,8 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
     // them apart).
     private var shardsRewarded: RewardedAd?
     private var shardsRewardEarned = false
+    private var rewardedRetryStep = 0
+    private var shardsRetryStep = 0
     // Set by the userDidEarnRewardHandler passed to rewarded.present(from:), which
     // (per the SDK's own design) only ever fires on an actually-completed watch --
     // never on a skip/close. Read back in adDidDismissFullScreenContent below to
@@ -155,9 +166,12 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
             // Must be set before start().
             MobileAds.shared.requestConfiguration.maxAdContentRating = GADMaxAdContentRating.parentalGuidance
             _ = await MobileAds.shared.start()
-            await self.loadInterstitial()
-            await self.loadRewarded()
-            await self.loadShardsRewarded()
+            // In parallel: a no-fill answer can take a minute to arrive, and awaiting
+            // them in turn held the shard row back behind the continue ad.
+            async let interstitialLoad: Void = self.loadInterstitial()
+            async let rewardedLoad: Void = self.loadRewarded()
+            async let shardsLoad: Void = self.loadShardsRewarded()
+            _ = await (interstitialLoad, rewardedLoad, shardsLoad)
         }
     }
 
@@ -238,10 +252,17 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
         do {
             rewarded = try await RewardedAd.load(with: Self.rewardedAdUnitID, request: Request())
             rewarded?.fullScreenContentDelegate = self
+            rewardedRetryStep = 0
             onRewardedAdReadyChange?(true)
         } catch {
             print("AdsManager: failed to load rewarded ad: \(error.localizedDescription)")
             onRewardedAdReadyChange?(false)
+            let delay = Self.retryDelay(step: rewardedRetryStep)
+            rewardedRetryStep += 1
+            Task { [weak self] in
+                try? await Task.sleep(for: .seconds(delay))
+                await self?.loadRewarded()
+            }
         }
     }
 
@@ -264,11 +285,22 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
         do {
             shardsRewarded = try await RewardedAd.load(with: Self.shardsRewardedAdUnitID, request: Request())
             shardsRewarded?.fullScreenContentDelegate = self
+            shardsRetryStep = 0
             onShardsAdReadyChange?(true)
         } catch {
             print("AdsManager: failed to load shards rewarded ad: \(error.localizedDescription)")
             onShardsAdReadyChange?(false)
+            let delay = Self.retryDelay(step: shardsRetryStep)
+            shardsRetryStep += 1
+            Task { [weak self] in
+                try? await Task.sleep(for: .seconds(delay))
+                await self?.loadShardsRewarded()
+            }
         }
+    }
+
+    private static func retryDelay(step: Int) -> Double {
+        min(retryBaseDelay * pow(2, Double(min(step, 8))), retryMaxDelay)
     }
 
     private func rootViewController() -> UIViewController? {

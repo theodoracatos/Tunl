@@ -51,6 +51,11 @@ the forced interstitial, not a video the player actively taps):
   (`shardsAdRequest` / `_tunlShardsRewardGranted` / `_tunlShardsRewardDeclined` /
   `shardsAdReady`) mirrors the continue's 1:1. With no native bridge (browser) the row
   stays inert.
+- **A failed rewarded load retries on a timer** (2026-09-28, both `AdsManager`s,
+  `retryBaseDelay`/`RETRY_BASE_MS` doubling to the max, reset on the next fill), and iOS
+  loads the three units in parallel. Before, one "No ad to show" greyed the continue ring
+  and the shard row for the whole session, and a no-fill answer takes up to a minute, so
+  the serial iOS start held the shard unit back behind the continue unit.
 
 ## Ship unlock economy
 
