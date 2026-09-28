@@ -16,7 +16,14 @@ Frenzy's name per locale = the one the 18.0 notes introduced.
 
 Versions: iOS marketing 18.1 / build 63, Android versionName 18.1 / versionCode 56.
 
-**ASC / Play status**: not yet submitted.
+**ASC / Play status (2026-09-28)**: both builds from worktree `../Tunl-18.1` at 7d0c978, bundled
+`src/` diffed identical to that commit.
+- iOS 18.1 (63) uploaded, VALID. The ASC version prepared as 18.0.1 (`f631028e-...`) was renamed to
+  18.1, build 63 linked (replacing 62), whatsNew set from `whatsnew-asc.json` (ASC locale codes,
+  re-GET === 16/16), promotionalText unchanged (16/16 populated), 32 previews COMPLETE. NOT submitted.
+- Android 18.1 (56) AAB `~/Downloads/TUNL-18.1-vc56.aab`, signed CN=TUNL. Not uploaded (13 MB, over
+  the automation cap - the user drags it into Play Console).
+- 18.0.1 never ships; branch `release-18.0.1` / build 62 are superseded.
 
 ---
 
