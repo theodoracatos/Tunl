@@ -22,12 +22,17 @@ the forced interstitial, not a video the player actively taps):
   forgive wall mistakes, direct hits are the shield's job". If revisited, measure death
   cause by sector per tier first. See the Rewarded continue notes in `constants.js`.
 - **Web has no rewarded video, so the offer slot carries the app pitch**
-  (`WEB_CONTINUE_PROMO_SEC`, `draw.js drawWebContinuePromo`). The ring appears captioned
-  `T.secondLifeApp` with "+1"; a tap opens a card (day accent, the player's ship, both store
-  buttons) for the length of a rewarded video, dismissible from `WEB_PROMO_DISMISS_SEC`.
-  **It never grants a revive** (a free one on web would outrank app players who watched an
-  ad, on the shared leaderboard), and **the caption is honest before the tap**. `isWeb()`-
-  gated end to end; the apps decide on `rewardedAdReady` alone.
+  (`WEB_PROMO_DISMISS_SEC` doc, `draw.js drawWebContinuePromo`). The ring appears captioned
+  `T.secondLifeApp` with "+1"; a tap opens the app card (/tt/ opens it by itself on the first
+  death). **It never grants a revive** (a free one on web would outrank app players who
+  watched an ad, on the shared leaderboard), and **the caption is honest before the tap**.
+  Since 2026-09-28 (user's picks) the card pitches what the browser can't have - a reminder
+  for tomorrow's cave, the Lackiererei, the second life (`T.webAppTitle`, `T.webPerk*`) -
+  and **is not an ad**: no clock, no skip gate, no timeout, close mark from the first frame;
+  `WEB_PROMO_DISMISS_SEC` only swallows a tap already on its way. **One filled button for the
+  visitor's own store** (`web.js webStoreOnly()`, also used by the "in the app" sheet); both
+  buttons, outlined, only when the device is unknown. `isWeb()`-gated end to end; the apps
+  decide on `rewardedAdReady` alone.
 - **Web shows the app's controls greyed out, never hides them** (2026-09-25, user's call):
   the Game Center leaderboard, challenge and shop icons on the title rail and the PAINT pill on
   ALL SHIPS are drawn dimmed on web (the shop since 2026-09-28: web has no IAP bridge, so it

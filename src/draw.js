@@ -6545,12 +6545,13 @@ function _wrapLines(text, maxW) {
 // store. Same card language as the title's other panels (drawMenuPanel), content-sized
 // and scaled down until it clears a short desktop window, the method
 // drawWebContinuePromo documents. The challenge is iOS-only, so it offers the App Store
-// alone. Never drawn in either app: appOnlyKey is only ever set behind isWeb().
+// alone; otherwise the visitor's own store (web.js webStoreOnly), both when unknown. Never drawn in either app: appOnlyKey is only ever set behind isWeb().
 function drawAppOnlySheet() {
     const key  = appOnlyKey;
     const body = { paint: T.appOnlyPaint, challenge: T.appOnlyChallenge, shards: T.appOnlyShards, shop: T.appOnlyShop }[key] || T.appOnlyBoard;
     const iosOnly = key === 'challenge';
-    const android = /Android/.test(navigator.userAgent);
+    // The store this device installs from (web.js webStoreOnly), '' = both buttons.
+    const only = iosOnly ? 'ios' : webStoreOnly();
     const day  = getTheme().wallBase;
     const DAY  = al => rgb(day, al);
     const font = (sz, w) => { ctx.font = `${w || 'bold'} ${sz}px ${FONT_UI}`; };
@@ -6640,9 +6641,10 @@ function drawAppOnlySheet() {
 
     const gapB = Math.max(8, panW * 0.03);
     const btnW = Math.min((textW - gapB) / 2, FS * 0.26);
-    if (iosOnly) {
-        _appOnlyAppleBtnRect = { x: W / 2 - btnW / 2, y, w: btnW, h: btnH };
-        _appOnlyPlayBtnRect  = null;
+    if (only) {
+        const one = { x: W / 2 - btnW / 2, y, w: btnW, h: btnH };
+        _appOnlyAppleBtnRect = only === 'ios' ? one : null;
+        _appOnlyPlayBtnRect  = only === 'android' ? one : null;
     } else {
         _appOnlyAppleBtnRect = { x: W / 2 - gapB / 2 - btnW, y, w: btnW, h: btnH };
         _appOnlyPlayBtnRect  = { x: W / 2 + gapB / 2,        y, w: btnW, h: btnH };
@@ -6662,21 +6664,25 @@ function drawAppOnlySheet() {
         ctx.fillStyle = filled ? 'rgba(8,8,16,1)' : 'rgba(232,238,255,0.92)';
         ctx.fillText(label, r.x + r.w / 2, r.y + r.h / 2 + sz * 0.35);
     };
-    // The visitor's own store is the filled one, as on the continue pitch.
-    storeBtn(_appOnlyAppleBtnRect, 'APP STORE', iosOnly || !android);
-    if (_appOnlyPlayBtnRect) storeBtn(_appOnlyPlayBtnRect, 'GOOGLE PLAY', android);
+    // One known store is a single filled button, as on the app card; an unknown device
+    // gets both, outlined.
+    if (_appOnlyAppleBtnRect) storeBtn(_appOnlyAppleBtnRect, 'APP STORE', !!only);
+    if (_appOnlyPlayBtnRect)  storeBtn(_appOnlyPlayBtnRect,  'GOOGLE PLAY', !!only);
 
     ctx.restore();
 }
 
-// ── Web only: the second life lives in the app ───────────────────────
-// Stands exactly where the rewarded video stands in the apps (constants.js
-// WEB_CONTINUE_PROMO_SEC), for the same length of time, and grants nothing: the whole
-// message is that a second life is an app feature. Built to the death screen's own
-// rules rather than as a banner -- one accent (the day's rock, getTheme().wallBase),
-// type from the same five-step scale, and every vertical step max(H-fraction,
-// type-derived), because FS is keyed to UI_H's floor of 600 while H can be 371 on a
-// 12 mini (see drawDeathScreen's step() doc).
+// ── Web only: the app card ───────────────────────────────────────────
+// Stands where the rewarded video stands in the apps (constants.js WEB_PROMO_DISMISS_SEC
+// doc) and grants nothing. Since 2026-09-28 it pitches what a browser player can't have
+// there - a reminder for tomorrow's cave, the Lackiererei, the second life - instead of
+// "install the app to watch a video", and it no longer behaves like an ad: no draining
+// clock, no skip gate, the close mark from the first frame, and one filled button for the
+// visitor's own store (web.js webStoreOnly; both, outlined, when the device is unknown).
+// Built to the death screen's own rules rather than as a banner -- one accent (the day's
+// rock, getTheme().wallBase), type from the same five-step scale, and every vertical step
+// max(H-fraction, type-derived), because FS is keyed to UI_H's floor of 600 while H can
+// be 371 on a 12 mini (see drawDeathScreen's step() doc).
 // The ship is the real one, in the player's own skin and livery: this screen is a
 // portrait of what they would be flying, so it uses the top-down drawShip() the hangar
 // uses, not the 3/4 flight view (CLAUDE.md "the hangar is a portrait, the flight is a
@@ -6689,12 +6695,16 @@ function drawWebContinuePromo() {
     const day = getTheme().wallBase;
     const DAY = al => `rgba(${day[0]},${day[1]},${day[2]},${a * al})`;
     const INK = al => `rgba(232,238,255,${a * (al === undefined ? 1 : al)})`;
-    const DIM = al => `rgba(168,180,212,${a * (al === undefined ? 0.82 : al)})`;
+    const DIM = al => `rgba(168,180,212,${a * (al === undefined ? 0.86 : al)})`;
     const FNT = al => `rgba(132,146,184,${a * (al === undefined ? 0.62 : al)})`;
     const font = (sz, w) => { ctx.font = `${w || 'bold'} ${sz}px ${FONT_UI}`; };
 
     ctx.fillStyle = `rgba(4,4,14,${a * 0.93})`;
     ctx.fillRect(0, 0, W, H);
+
+    // Everything the app has that this browser tab does not, one glyph each.
+    const perks = [['bell', T.webPerkReminder], ['drop', T.webPerkPaint], ['heart', T.webPerkRevive]];
+    const only = webStoreOnly();
 
     // ── fit ───────────────────────────────────────────────────────────────────
     // The card is sized by its CONTENT, then the type is scaled down until that
@@ -6705,30 +6715,35 @@ function drawWebContinuePromo() {
     // iterate-the-scale-down method the currency info panel uses, and the same reason.
     const padX  = Math.min(W * 0.07, FS * 0.06);
     const gapB  = Math.max(8, W * 0.02);
-    let sc = 1, hero, txt, lbl, btn, btnH, lines, textW, textL, cardW, cardH, contentH, shipR, wide;
+    let sc = 1, hero, txt, lbl, btn, btnH, icoW, perkLines, textW, textL, cardW, cardH, contentH, shipR, wide, pad;
     for (let i = 0; i < 14; i++) {
-        hero = FS * 0.052 * sc; txt = FS * 0.026 * sc; lbl = FS * 0.019 * sc; btn = FS * 0.026 * sc;
-        btnH = btn * 2.0;
+        hero = FS * 0.050 * sc; txt = FS * 0.025 * sc; lbl = FS * 0.019 * sc; btn = FS * 0.027 * sc;
+        btnH = btn * 2.1;
+        icoW = txt * 1.9;
         cardW = Math.min(W * 0.92, FS * 1.18);
         // The ship column is the first thing to go: below this width the picture would
-        // squeeze the body text into a column too narrow to read.
+        // squeeze the perk lines into a column too narrow to read.
         wide  = cardW > FS * 0.80 && H > FS * 0.42;
         shipR = Math.min(cardW * 0.13, H * 0.17);
         // The ship's ring (radius 1.55 shipR around 1.05 shipR in) ends at 2.60 shipR;
-        // the text starts a quarter shipR clear of it (was 2.5: the ring cut the text).
+        // the text starts a quarter shipR clear of it.
         textL = (W - cardW) / 2 + padX + (wide ? shipR * 2.85 : 0);
         textW = (W + cardW) / 2 - padX - textL;
         font(txt, '');
-        lines = _wrapLines(T.secondLifeBody, textW);
-        contentH = hero * 1.02        // headline ink
+        perkLines = perks.map(p => _wrapLines(p[1], textW - icoW));
+        const nLines = perkLines.reduce((n, l) => n + l.length, 0);
+        // Exactly the steps the drawing below takes, top of the headline slot to the
+        // button's bottom edge.
+        contentH = hero * 0.86        // headline baseline
                  + hero * 0.34 + 2    // accent rule
-                 + txt * 1.60         // gap to body
-                 + lines.length * txt * 1.45
-                 + lbl * 2.40         // GET THE APP label + its gap
-                 + btnH
-                 + lbl * 2.20;        // the drain bar and its breathing room
-        cardH = Math.min(H * 0.94, contentH + Math.max(18, hero * 0.9) * 2);
-        if (contentH + Math.max(18, hero * 0.9) * 2 <= H * 0.94 || sc <= 0.62) break;
+                 + txt * 1.55         // first perk baseline
+                 + (nLines - 1) * txt * 1.40
+                 + (perks.length - 1) * txt * 0.45
+                 + txt * 1.30         // last baseline to the button's top
+                 + btnH;
+        pad   = Math.max(18, hero * 0.9);
+        cardH = Math.min(H * 0.94, contentH + pad * 2);
+        if (contentH + pad * 2 <= H * 0.94 || sc <= 0.62) break;
         sc *= 0.93;
     }
 
@@ -6750,10 +6765,7 @@ function drawWebContinuePromo() {
     ctx.fillStyle = gl; ctx.fill();
 
     // ── the ship ──────────────────────────────────────────────────────────────
-    // The real one, in the player's own skin and livery: this screen is a portrait of
-    // what they would be flying, so it uses the top-down drawShip() the hangar uses,
-    // never the 3/4 flight view (CLAUDE.md "the hangar is a portrait, the flight is a
-    // flight"). No rng(), no gameplay state touched.
+    // No rng(), no gameplay state touched.
     if (wide) {
         const [sr, sg, sb] = SKINS[activeSkin].shadow;
         const sx = cardX + padX + shipR * 1.05, sy = cardY + cardH * 0.46;
@@ -6765,92 +6777,130 @@ function drawWebContinuePromo() {
         drawShip(sx, sy, shipR, SKINS[activeSkin].color, sr, sg, sb, 16, true, paintOf(activeSkin));
     }
 
-    // ── headline, rule, body ──────────────────────────────────────────────────
+    // ── headline, rule ────────────────────────────────────────────────────────
     ctx.textAlign = 'left';
     let y = cardY + (cardH - contentH) / 2 + hero * 0.86;
 
-    font(hero);
+    // Shrink-to-fit: "ЕЖЕДНЕВНОЕ"-length locales would otherwise run past the card.
+    let hsz = hero;
+    font(hsz);
+    const hw = ctx.measureText(T.webAppTitle).width;
+    if (hw > textW) { hsz = Math.max(hsz * textW / hw, lbl * 1.2); font(hsz); }
     ctx.fillStyle = INK();
     ctx.shadowColor = DAY(0.55); ctx.shadowBlur = 16;
-    ctx.fillText(T.secondLifeTitle, textL, y);
+    ctx.fillText(T.webAppTitle, textL, y);
     ctx.shadowBlur = 0;
 
     // Accent rule, measured off the real ink so it never overruns a long locale.
-    const hlW = Math.min(ctx.measureText(T.secondLifeTitle).width, textW);
+    const hlW = Math.min(ctx.measureText(T.webAppTitle).width, textW);
     y += hero * 0.34;
     ctx.fillStyle = DAY(0.85);
     ctx.fillRect(textL, y, hlW, 2);
 
-    y += 2 + txt * 1.60;
+    // ── perks ─────────────────────────────────────────────────────────────────
+    // Stroked glyphs, not emoji: an emoji font differs per platform and ignores the
+    // day accent.
+    const glyph = (kind, cx, cy, s) => {
+        ctx.strokeStyle = DAY(0.95);
+        ctx.lineWidth = Math.max(1.2, s * 0.17);
+        ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+        ctx.beginPath();
+        if (kind === 'bell') {
+            ctx.moveTo(cx - s * 0.62, cy + s * 0.45);
+            ctx.lineTo(cx - s * 0.62, cy - s * 0.05);
+            ctx.arc(cx, cy - s * 0.05, s * 0.62, Math.PI, 0);
+            ctx.lineTo(cx + s * 0.62, cy + s * 0.45);
+            ctx.moveTo(cx - s * 0.85, cy + s * 0.45);
+            ctx.lineTo(cx + s * 0.85, cy + s * 0.45);
+            ctx.moveTo(cx - s * 0.2, cy + s * 0.72);
+            ctx.lineTo(cx + s * 0.2, cy + s * 0.72);
+        } else if (kind === 'drop') {
+            // A paint drop: apex, then the two tangents onto the bowl (r 0.6s, centre
+            // 1.15s below the apex -> tangent points at -pi/2 +- 1.023 rad).
+            const oy = cy + s * 0.25, r = s * 0.6;
+            ctx.moveTo(cx, cy - s * 0.9);
+            ctx.arc(cx, oy, r, -Math.PI / 2 + 1.023, -Math.PI / 2 - 1.023 + Math.PI * 2);
+            ctx.closePath();
+        } else {
+            ctx.moveTo(cx, cy + s * 0.75);
+            ctx.bezierCurveTo(cx - s * 1.1, cy, cx - s * 0.6, cy - s * 0.9, cx, cy - s * 0.35);
+            ctx.bezierCurveTo(cx + s * 0.6, cy - s * 0.9, cx + s * 1.1, cy, cx, cy + s * 0.75);
+        }
+        ctx.stroke();
+        ctx.lineCap = 'butt';
+    };
+    y += 2 + txt * 1.55;
     font(txt, '');
-    ctx.fillStyle = DIM();
-    for (const ln of lines) {
-        ctx.fillText(ln, textL, y);
-        y += txt * 1.45;
-    }
+    perks.forEach((p, k) => {
+        glyph(p[0], textL + icoW * 0.36, y - txt * 0.36, txt * 0.62);
+        ctx.fillStyle = DIM();
+        for (const ln of perkLines[k]) {
+            ctx.fillText(ln, textL + icoW, y);
+            y += txt * 1.40;
+        }
+        if (k < perks.length - 1) y += txt * 0.45;
+    });
 
-    // ── store buttons ─────────────────────────────────────────────────────────
-    y += lbl * 1.40;
-    font(lbl);
-    try { ctx.letterSpacing = `${Math.max(1, lbl * 0.11)}px`; } catch (e) {}
-    ctx.fillStyle = FNT();
-    ctx.fillText(T.getTheApp, textL, y);
-    try { ctx.letterSpacing = '0px'; } catch (e) {}
-
-    y += lbl * 1.00;
-    const btnW = Math.min((textW - gapB) / 2, FS * 0.30);
-    _promoAppleBtnRect = { x: textL,              y, w: btnW, h: btnH };
-    _promoPlayBtnRect  = { x: textL + btnW + gapB, y, w: btnW, h: btnH };
-
-    const storeBtn = (r, label, filled) => {
+    // ── store button(s) ───────────────────────────────────────────────────────
+    // The loop left y one line pitch (1.40 txt) under the last baseline; the button's top
+    // sits 1.30 txt under that baseline, as contentH counts it.
+    y -= txt * 0.10;
+    const storeBtn = (r, label, filled, sub) => {
         ctx.beginPath(); ctx.roundRect(r.x, r.y, r.w, r.h, r.h * 0.30);
         ctx.fillStyle = filled ? DAY(0.92) : `rgba(255,255,255,${a * 0.05})`;
         ctx.fill();
         ctx.strokeStyle = filled ? DAY(1) : DAY(0.45);
         ctx.lineWidth = 1.2;
         ctx.stroke();
-        // Shrink-to-fit: "GOOGLE PLAY" next to a Russian or Hindi label is exactly the
-        // kind of string the death screen keeps its own two shrink checks for.
+        // Label plus an optional quieter "FREE", centred as one line and shrunk to fit
+        // together: "GOOGLE PLAY" next to a Russian or Hindi label is exactly the kind
+        // of string the death screen keeps its own shrink checks for.
         let sz = btn;
-        font(sz);
+        const gap = sub ? btn * 0.6 : 0;
+        const measure = s => {
+            font(s); const lw = ctx.measureText(label).width;
+            font(s * 0.72); const sw = sub ? ctx.measureText(sub).width : 0;
+            return { lw, sw, total: lw + (sub ? gap * s / btn + sw : 0) };
+        };
+        let m = measure(sz);
         const maxW = r.w * 0.86;
-        const lw = ctx.measureText(label).width;
-        if (lw > maxW) { sz = Math.max(sz * maxW / lw, lbl * 0.85); font(sz); }
-        ctx.textAlign = 'center';
+        if (m.total > maxW) { sz = Math.max(sz * maxW / m.total, lbl * 0.85); m = measure(sz); }
+        const x0 = r.x + (r.w - m.total) / 2, by = r.y + r.h / 2 + sz * 0.35;
+        font(sz);
         ctx.fillStyle = filled ? `rgba(8,8,16,${a})` : INK(0.92);
-        ctx.fillText(label, r.x + r.w / 2, r.y + r.h / 2 + sz * 0.35);
-        ctx.textAlign = 'left';
+        ctx.fillText(label, x0, by);
+        if (sub) {
+            font(sz * 0.72);
+            ctx.fillStyle = filled ? `rgba(8,8,16,${a * 0.62})` : FNT(0.9);
+            ctx.fillText(sub, x0 + m.lw + gap * sz / btn, by);
+        }
     };
-    // The visitor's own store is the filled one (an Android phone gets GOOGLE PLAY).
-    const android = /Android/.test(navigator.userAgent);
-    storeBtn(_promoAppleBtnRect, 'APP STORE', !android);
-    storeBtn(_promoPlayBtnRect,  'GOOGLE PLAY', android);
-
-    // ── the clock ─────────────────────────────────────────────────────────────
-    // A rewarded video shows how long it still holds you; so does this. The bar drains
-    // along the card's bottom edge over WEB_CONTINUE_PROMO_SEC.
-    const remain = Math.max(0, 1 - webPromoT / WEB_CONTINUE_PROMO_SEC);
-    const barW = cardW - padX * 2, barY = y + btnH + lbl * 1.30;
-    ctx.fillStyle = `rgba(255,255,255,${a * 0.08})`;
-    ctx.fillRect(cardX + padX, barY, barW, 2);
-    ctx.fillStyle = DAY(0.8);
-    ctx.fillRect(cardX + padX, barY, barW * remain, 2);
-
-    // Close mark, top right, from the skip gate on -- wordless on purpose (it adds no
-    // string to 15 locales) and the universal shape for "this can go away now". A tap
-    // anywhere outside the store buttons does it, not just on the mark itself.
-    if (webPromoT >= WEB_PROMO_DISMISS_SEC) {
-        const xr = Math.max(6, lbl * 0.42);
-        const xx = cardX + cardW - padX * 0.7, xy = cardY + Math.max(xr * 2.2, cardH * 0.11);
-        ctx.strokeStyle = FNT(0.75);
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(xx - xr, xy - xr); ctx.lineTo(xx + xr, xy + xr);
-        ctx.moveTo(xx + xr, xy - xr); ctx.lineTo(xx - xr, xy + xr);
-        ctx.stroke();
-        ctx.lineCap = 'butt';
+    if (only) {
+        const one = { x: textL, y, w: textW, h: btnH };
+        _promoAppleBtnRect = only === 'ios' ? one : null;
+        _promoPlayBtnRect  = only === 'android' ? one : null;
+        storeBtn(one, only === 'ios' ? 'APP STORE' : 'GOOGLE PLAY', true, T.webFree);
+    } else {
+        const btnW = Math.min((textW - gapB) / 2, FS * 0.30);
+        _promoAppleBtnRect = { x: textL,              y, w: btnW, h: btnH };
+        _promoPlayBtnRect  = { x: textL + btnW + gapB, y, w: btnW, h: btnH };
+        storeBtn(_promoAppleBtnRect, 'APP STORE', false);
+        storeBtn(_promoPlayBtnRect,  'GOOGLE PLAY', false);
     }
+
+    // Close mark, top right, from the first frame -- wordless on purpose (it adds no
+    // string to 16 locales) and the universal shape for "this can go away now". A tap
+    // anywhere outside the store buttons does it, not just on the mark itself.
+    const xr = Math.max(6, lbl * 0.42);
+    const xx = cardX + cardW - padX * 0.7, xy = cardY + Math.max(xr * 2.2, cardH * 0.11);
+    ctx.strokeStyle = FNT(0.75);
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(xx - xr, xy - xr); ctx.lineTo(xx + xr, xy + xr);
+    ctx.moveTo(xx + xr, xy - xr); ctx.lineTo(xx - xr, xy + xr);
+    ctx.stroke();
+    ctx.lineCap = 'butt';
 
     ctx.restore();
 }
@@ -6916,7 +6966,7 @@ function drawContinueOffer() {
     ctx.stroke();
 
     // Play triangle -- wordless on purpose, see the doc comment above drawContinueOffer.
-    // On web there is no video behind this ring (constants.js WEB_CONTINUE_PROMO_SEC),
+    // On web there is no video behind this ring (constants.js WEB_PROMO_DISMISS_SEC),
     // so a play glyph would be the one thing on the screen that lies: it carries "+1"
     // instead, which is what the app actually gives back.
     const triR = r * 0.34;
@@ -6942,7 +6992,7 @@ function drawContinueOffer() {
     // tapping it actually does. Shrink-to-fit since translations range from
     // Chinese's 6 characters to Russian's/German's much wider strings.
     // The web caption says app-only BEFORE the tap, so tapping this ring is never a
-    // bait-and-switch (constants.js WEB_CONTINUE_PROMO_SEC, second rule).
+    // bait-and-switch (constants.js WEB_PROMO_DISMISS_SEC, second rule).
     const capTxt = isWeb() ? T.secondLifeApp : T.watchAdContinue;
     let capFsz = FS * 0.020;
     ctx.font = `bold ${capFsz}px ${FONT_UI}`;

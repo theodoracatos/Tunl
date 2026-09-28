@@ -531,7 +531,7 @@ let repairKits = [], hullRepairFlash = 0;
 // freezes deadT so a slow-loading/long-watched ad can't let the auto-commit fire out
 // from under a decision the player already made.
 let continuesUsedThisRun, continueOfferPending, continueAdPending;
-// Web only (constants.js WEB_CONTINUE_PROMO_SEC doc): the app pitch that stands in for
+// Web only (constants.js WEB_PROMO_DISMISS_SEC doc): the app pitch that stands in for
 // the rewarded video. webPromoT counts up while the promo screen is on; webPromoOn is
 // what draw.js/input.js route on. Never set in either app - isWeb() gates every write.
 let webPromoOn = false, webPromoT = 0;

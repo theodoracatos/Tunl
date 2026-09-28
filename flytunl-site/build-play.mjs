@@ -284,50 +284,10 @@ const TT_STEPS = ['ready', 'run', 'dead', 'pitch', 'store-ios', 'store-android',
 // never in src/, so a /tt/ change needs no /play/ release. Each anchor must match exactly
 // once or the build fails: a src edit that moves one stops the build instead of shipping
 // an unpatched /tt/. `add` goes right after the anchor, `replace` stands in for it.
-// Store buttons: tt-head.js sets window._tunlStoreOnly to 'ios' or 'android' when it
-// can tell the device, and then the app card (continue pitch) and the app-only sheet
-// offer that one store as a single filled button. tt_2709 (2026-09-26): 8 App Store
-// taps, 0 Google Play taps, 0 iOS installs from ~90%-Android Indonesia - the second
-// button was at best noise, at worst the one Android visitors tapped.
-const TT_BUNDLE_PATCHES = [
-  { file: 'draw.js', find:
-`    _promoAppleBtnRect = { x: textL,              y, w: btnW, h: btnH };
-    _promoPlayBtnRect  = { x: textL + btnW + gapB, y, w: btnW, h: btnH };
-`, add:
-`    const ttOnly = window._tunlStoreOnly;
-    if (ttOnly) {
-        const one = { x: textL, y, w: btnW * 2 + gapB, h: btnH };
-        _promoAppleBtnRect = ttOnly === 'ios' ? one : null;
-        _promoPlayBtnRect  = ttOnly === 'android' ? one : null;
-    }
-` },
-  { file: 'draw.js', find:
-`    storeBtn(_promoAppleBtnRect, 'APP STORE', !android);
-    storeBtn(_promoPlayBtnRect,  'GOOGLE PLAY', android);
-`, replace:
-`    if (_promoAppleBtnRect) storeBtn(_promoAppleBtnRect, 'APP STORE', !android || !!ttOnly);
-    if (_promoPlayBtnRect)  storeBtn(_promoPlayBtnRect,  'GOOGLE PLAY', android || !!ttOnly);
-` },
-  { file: 'draw.js', find:
-`        _appOnlyAppleBtnRect = { x: W / 2 - gapB / 2 - btnW, y, w: btnW, h: btnH };
-        _appOnlyPlayBtnRect  = { x: W / 2 + gapB / 2,        y, w: btnW, h: btnH };
-    }
-`, add:
-`    const ttOnly = window._tunlStoreOnly;
-    if (ttOnly && !iosOnly) {
-        const one = { x: W / 2 - btnW / 2, y, w: btnW, h: btnH };
-        _appOnlyAppleBtnRect = ttOnly === 'ios' ? one : null;
-        _appOnlyPlayBtnRect  = ttOnly === 'android' ? one : null;
-    }
-` },
-  { file: 'draw.js', find:
-`    storeBtn(_appOnlyAppleBtnRect, 'APP STORE', iosOnly || !android);
-    if (_appOnlyPlayBtnRect) storeBtn(_appOnlyPlayBtnRect, 'GOOGLE PLAY', android);
-`, replace:
-`    if (_appOnlyAppleBtnRect) storeBtn(_appOnlyAppleBtnRect, 'APP STORE', iosOnly || !android || !!ttOnly);
-    if (_appOnlyPlayBtnRect)  storeBtn(_appOnlyPlayBtnRect, 'GOOGLE PLAY', android || !!ttOnly);
-` },
-];
+// None at the moment: the one-store-per-device buttons the first four did (2026-09-26)
+// moved into src on 2026-09-28 (web.js webStoreOnly, which still reads tt-head.js's
+// window._tunlStoreOnly first), so /play/ has them too.
+const TT_BUNDLE_PATCHES = [];
 
 // A funnel counter page (tt-tail.js count()). Opened on its own (top === self) it
 // redirects to /tt/ before the beacon loads, so only the iframe hit is ever counted.

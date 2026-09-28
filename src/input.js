@@ -300,7 +300,7 @@ function onDown(e) {
     // CONTINUE_OFFER_SEC doc. Swallows every tap while it's up rather than falling
     // through, since _homeBtnRect etc. are still null at this point anyway
     // (drawDeathScreen hasn't run yet).
-    // Web app pitch (constants.js WEB_CONTINUE_PROMO_SEC): while it is up it owns every
+    // Web app pitch (constants.js WEB_PROMO_DISMISS_SEC): while it is up it owns every
     // input, keyboard included -- without this a Space press would fall through to the
     // restart branch below and start a run behind the screen, since deadT is frozen and
     // may already be past DEATH_INTERACTIVE_SEC by the time the promo opens. The two
@@ -328,7 +328,7 @@ function onDown(e) {
         if (_continueBtnRect && inCircle(cx, cy, _continueBtnRect)) {
             sfxUiTap();
             // Web has no rewarded video behind this ring -- the tap opens the app pitch
-            // instead, and never revives (constants.js WEB_CONTINUE_PROMO_SEC).
+            // instead, and never revives (constants.js WEB_PROMO_DISMISS_SEC).
             if (isWeb()) { webPromoOn = true; webPromoT = 0; return; }
             continueAdPending = true;
             window.webkit?.messageHandlers?.ads?.postMessage({ action: 'reviveRequest', score });

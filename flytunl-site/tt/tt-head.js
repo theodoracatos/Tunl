@@ -71,8 +71,8 @@
     };
     var root = document.documentElement;
     root.classList.add('tt-fresh', ios ? 'tt-ios' : android ? 'tt-android' : 'tt-desk');
-    // The /tt/ bundle's store buttons (build-play.mjs TT_BUNDLE_PATCHES) read this: set,
-    // the app card and the app-only sheet show that one store only; unset, both.
+    // The game's store buttons (src/web.js webStoreOnly) read this before their own UA
+    // check: set, the app card and the app-only sheet show that one store only.
     if (TT.os) window._tunlStoreOnly = TT.os;
 
     // ── Raster cap (weak Android phones) ──────────────────────────────────────

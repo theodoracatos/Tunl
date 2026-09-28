@@ -98,13 +98,10 @@ function update(dt) {
         // Frozen while native has a rewarded ad on screen (continueAdPending) so a
         // slow load or a long watch can't let the timeout below fire out from under
         // a decision the player already made by tapping the offer.
-        // The web app pitch (constants.js WEB_CONTINUE_PROMO_SEC) stands exactly where
+        // The web app pitch (constants.js WEB_PROMO_DISMISS_SEC) stands exactly where
         // the rewarded video stands in the apps, so it freezes deadT for the same reason.
         if (!continueAdPending && !webPromoOn) deadT += dt;
-        if (webPromoOn) {
-            webPromoT += dt;
-            if (webPromoT >= WEB_CONTINUE_PROMO_SEC) closeWebPromo();
-        }
+        if (webPromoOn) webPromoT += dt;
         flashA      = Math.max(0, flashA  - dt * 2.5);
         shake       = Math.max(0, shake   - dt * 30);
         if (_shareCopiedT > 0) _shareCopiedT -= dt;
@@ -1080,7 +1077,7 @@ function die(bypassShield = false) {
     // floor the interstitial uses. When offered, the real bookkeeping below is held
     // until either the offer resolves to a decline (update.js's phase==='dead'
     // branch, at CONTINUE_OFFER_SEC) or grantRevive() undoes this hit entirely.
-    // On web there is no rewarded video to be ready (constants.js WEB_CONTINUE_PROMO_SEC):
+    // On web there is no rewarded video to be ready (constants.js WEB_PROMO_DISMISS_SEC):
     // the same slot opens anyway and carries the app pitch instead, so the one moment a
     // player most wants what the app has is not silent there. A web landing page may
     // lower that floor for the pitch (window._tunlWebPitchFloor, set only by
@@ -1442,9 +1439,9 @@ function declineRevive() {
     commitDeath();
 }
 
-// Web only: the app pitch is over (its own timeout, or the player dismissed it past
-// WEB_PROMO_DISMISS_SEC). It never grants anything, so it resolves down exactly the
-// path an ad that could not be shown does - see constants.js WEB_CONTINUE_PROMO_SEC.
+// Web only: the app pitch is over (the player dismissed it past WEB_PROMO_DISMISS_SEC).
+// It never grants anything, so it resolves down exactly the path an ad that could not
+// be shown does - see constants.js WEB_PROMO_DISMISS_SEC.
 function closeWebPromo() {
     if (!webPromoOn) return;
     webPromoOn = false;

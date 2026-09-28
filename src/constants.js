@@ -1406,23 +1406,27 @@ const CONTINUE_OFFER_SEC = 2.8;   // 3.0 until 2026-09-19, -0.2s on request
 // something the app has - the instant their run ended - said nothing.
 //
 // So on web the offer slot is kept and its CONTENT is swapped: the ring says "second life
-// - in the app", and tapping it opens drawWebContinuePromo() instead of a video. That
-// screen occupies exactly the slot the rewarded ad occupies in the apps, and lasts
-// WEB_CONTINUE_PROMO_SEC, the length of a rewarded video.
+// - in the app", and tapping it opens drawWebContinuePromo() instead of a video, in exactly
+// the slot the rewarded ad occupies in the apps. flytunl.ch/tt/ opens that card by itself on
+// the first death (flytunl-site/tt/tt-tail.js).
 //
-// Three rules, each load-bearing:
-//  - It never grants a revive. The pitch IS that the second life is app-only, and a web
-//    player who got one for free would both hear the opposite and carry an advantage
-//    into the shared daily leaderboard that app players have to watch an ad for.
+// Rules, each load-bearing:
+//  - It never grants a revive. The second life is app-only, and a web player who got one
+//    for free would both hear the opposite and carry an advantage into the shared daily
+//    leaderboard that app players have to watch an ad for.
 //  - The offer's own caption is honest BEFORE the tap (i18n secondLifeApp, not
-//    watchAdContinue), so nothing here is a bait-and-switch: a player taps because they
-//    want the app, not because they were promised a life and handed a billboard.
-//  - It is dismissible from WEB_PROMO_DISMISS_SEC on, exactly like a rewarded video's
-//    skip button. The full duration is the ceiling, not a toll.
+//    watchAdContinue), so nothing here is a bait-and-switch.
+//  - It pitches what the browser can't give (a reminder for tomorrow's cave, the
+//    Lackiererei, the second life), not "install to watch a video" (2026-09-28, user's
+//    pick on the app-card decision page; the old card sold the ad and ended with "the
+//    browser version flies without it").
+//  - It is not an ad (same date): no clock, no skip gate, no timeout. It stays until the
+//    player taps a store button or anywhere else. WEB_PROMO_DISMISS_SEC only swallows the
+//    tap that was already on its way when the card opened (on /tt/ it opens by itself,
+//    often under a finger hammering "again"), so the card can't vanish unread.
 // isWeb()-gated end to end (CLAUDE.md's standing web/app isolation rule): in both apps
 // `rewardedAdReady` decides as it always did and none of this code runs.
-const WEB_CONTINUE_PROMO_SEC = 15;   // a rewarded video's own length
-const WEB_PROMO_DISMISS_SEC  = 2.5;  // before this, a tap can't close it (an ad's skip gate)
+const WEB_PROMO_DISMISS_SEC  = 0.5;  // a tap before this can't close it (2.5 s ad skip gate until 2026-09-28)
 // The two store links the promo offers. Written here rather than in draw.js because
 // share.js's SHARE_URL sets the precedent: one place per outbound URL in this repo.
 const APP_STORE_URL  = 'https://apps.apple.com/app/id6789721765';

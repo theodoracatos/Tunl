@@ -2058,3 +2058,31 @@ Sounds were built as a listening page on the real `audio.js` bus with a 40s cut 
 track, 2-3 level-matched variants per slot; the user picked fanfare "Breit", pad "Saegezahn",
 ping "Glocke", grind "Scrape", end "Motiv", charge quieter, ready/miss/whoosh louder.
 
+
+## The web app card stops selling an ad (2026-09-28)
+
+The web continue pitch (`drawWebContinuePromo`, 2026-09-19 entry above) sold the wrong
+thing: "in the app a short video puts you back into the run - the browser version flies
+without it", i.e. install the app to watch an ad, closing on a line that said the browser
+was enough. It also behaved like an ad (15 s draining bar, 2.5 s skip gate, timeout), so a
+player trained to close ads closed it. /tt/ funnel data had people reaching the card and
+almost nobody reaching a store.
+
+Rebuilt on the user's picks from a decision page (all five matched the recommendation):
+- **Headline** "NEW CAVE TOMORROW" (`T.webAppTitle`), three app-only perks with stroked
+  glyphs (`T.webPerkReminder` / `webPerkPaint` / `webPerkRevive`): the daily reminder that
+  keeps a streak, the Lackiererei, the second life. Rejected headlines: "A NEW CAVE EVERY
+  DAY", "FLY AGAIN TOMORROW"; left out: friends' leaderboards (four lines no longer read
+  at a glance). `secondLifeTitle` / `secondLifeBody` deleted.
+- **Not an ad**: no clock, no skip gate, no timeout (`WEB_CONTINUE_PROMO_SEC` deleted);
+  the close mark shows from the first frame. `WEB_PROMO_DISMISS_SEC` is now 0.5 s and only
+  swallows the tap already on its way when /tt/ opens the card by itself.
+- **One filled button for the visitor's own store** (`web.js webStoreOnly()`), in the card
+  and the "in the app" sheet, on /play too. /tt/ had this since 2026-09-26 through four
+  `TT_BUNDLE_PATCHES`; those are gone, the list is empty.
+- **Deferred**: a QR code instead of store buttons on desktop (user: later). Next phase:
+  when the card appears (after a record / the 2nd run, /play without the score-75 ring).
+
+Same day, separately: canvas store buttons fall back to same-tab navigation when
+`window.open` returns null (`web.js openStoreLink`; they fire on pointerdown, which a
+touch does not count as a user gesture), and /tt/ App Store links carry `pt`/`ct`.

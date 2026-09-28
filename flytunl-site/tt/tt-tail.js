@@ -95,7 +95,7 @@
     // so here every store link navigates the page itself, which any host sees.
     //
     // The card only offers the store this device can use (tt-head.js TT.os and
-    // _tunlStoreOnly, build-play.mjs TT_BUNDLE_PATCHES): tt_2709 had 8 App Store taps,
+    // _tunlStoreOnly, src/web.js webStoreOnly): tt_2709 had 8 App Store taps,
     // 0 Google Play taps and 0 iOS installs from ~90%-Android Indonesia.
     //
     // Order of a tap: the funnel hit and the GA event first (count() waits for the hit to

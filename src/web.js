@@ -55,6 +55,25 @@ function openStoreLink(url) {
     location.href = url;
 }
 
+// Which store this browser's device installs from: 'android', 'ios', or '' when it
+// can't tell (a desktop, a Huawei on HarmonyOS NEXT, ...), which keeps both store
+// buttons. The app card and the "in the app" sheet then offer that one store as a single
+// filled button: tt_2709 had 8 App Store taps, 0 Google Play taps and 0 iOS installs
+// from ~90%-Android Indonesia, so a second button was at best noise. Same rules as
+// flytunl-site/tt/tt-head.js TT.os, which sets window._tunlStoreOnly first on /tt/:
+//  - Android: every Android UA says "Android" (in-app webviews included); client hints
+//    back up a UA a host has rewritten.
+//  - iOS: iPhone / iPod / iPad, plus iPadOS in its default desktop mode, which sends a
+//    Mac UA: a Mac has no touch points, an iPad reports 5.
+function webStoreOnly() {
+    if (window._tunlStoreOnly) return window._tunlStoreOnly;
+    const ua = navigator.userAgent || '';
+    const uaData = navigator.userAgentData;
+    if (/Android/i.test(ua) || (uaData && /android/i.test(uaData.platform || ''))) return 'android';
+    if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1)) return 'ios';
+    return '';
+}
+
 // The calendar day whose cave, world name and rock palette we render. Normally
 // today (UTC). The ?d= deep link (webParamDay, YYYYMMDD - parsed below) can point
 // it at a past day so a shared link still flies the same cave after the UTC
