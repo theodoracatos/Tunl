@@ -114,7 +114,7 @@
     // carry ct/pt only once APPLE_PT is set (App Store Connect -> App Analytics ->
     // Acquisition -> Campaigns -> "Generate a campaign link"): ct without pt is ignored.
     var PKG = 'com.theodoracatos.tunl', APP_ID = 'id6789721765';
-    var APPLE_PT = '';
+    var APPLE_PT = '93838800';
     var HANDOFF_WAIT_MS = 1500, STEP_MS = 700;
     var camp = 'tt_landing';
     try {
@@ -207,10 +207,12 @@
         ga('store_click', { store: kind });
         count('store-' + kind, function () { handoff(kind); }, HANDOFF_WAIT_MS);
     }
-    var _open = window.open;
+    // Returns a stub, not null: the game's openStoreLink() (src/web.js) treats null as
+    // "the browser blocked it" and would navigate to the plain listing on top.
+    var _open = window.open, OPENED = { closed: false };
     window.open = function (url) {
-        if (url === APP_STORE_URL) { openStore('ios'); return null; }
-        if (url === PLAY_STORE_URL) { openStore('android'); return null; }
+        if (url === APP_STORE_URL) { openStore('ios'); return OPENED; }
+        if (url === PLAY_STORE_URL) { openStore('android'); return OPENED; }
         return _open.apply(window, arguments);
     };
     // The title-screen pill (#cta) links straight to the listings with target=_blank.

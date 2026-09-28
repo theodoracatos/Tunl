@@ -62,10 +62,10 @@ function onDown(e) {
         // tap outside the card closes it, a tap on the card's text does nothing.
         if (appOnlyKey) {
             if (_appOnlyAppleBtnRect && inRect(cx, cy, _appOnlyAppleBtnRect)) {
-                sfxUiTap(); window.open(APP_STORE_URL, '_blank', 'noopener'); return;
+                sfxUiTap(); openStoreLink(APP_STORE_URL); return;
             }
             if (_appOnlyPlayBtnRect && inRect(cx, cy, _appOnlyPlayBtnRect)) {
-                sfxUiTap(); window.open(PLAY_STORE_URL, '_blank', 'noopener'); return;
+                sfxUiTap(); openStoreLink(PLAY_STORE_URL); return;
             }
             if (!_appOnlyPanelRect || !inRect(cx, cy, _appOnlyPanelRect)) { appOnlyKey = null; sfxUiClose(); }
             return;
@@ -312,10 +312,10 @@ function onDown(e) {
             const cx = (e.clientX - rect.left) * (W / rect.width);
             const cy = (e.clientY - rect.top)  * (H / rect.height);
             if (_promoAppleBtnRect && inRect(cx, cy, _promoAppleBtnRect)) {
-                sfxUiTap(); window.open(APP_STORE_URL, '_blank', 'noopener'); return;
+                sfxUiTap(); openStoreLink(APP_STORE_URL); return;
             }
             if (_promoPlayBtnRect && inRect(cx, cy, _promoPlayBtnRect)) {
-                sfxUiTap(); window.open(PLAY_STORE_URL, '_blank', 'noopener'); return;
+                sfxUiTap(); openStoreLink(PLAY_STORE_URL); return;
             }
         }
         if (webPromoT >= WEB_PROMO_DISMISS_SEC) { sfxUiTap(); closeWebPromo(); }

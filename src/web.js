@@ -40,6 +40,21 @@ function isAndroidApp() {
     return typeof window.TunlNative !== 'undefined';
 }
 
+// Opens a store listing from one of the canvas store buttons (web only; the apps never
+// draw them). window.open(url, '_blank') keeps the game in its tab, but it can do
+// nothing and return null: a popup blocker (the buttons fire on pointerdown, which a
+// touch does not count as a user gesture - measured: WebKit/iPhone ignored the tap), or
+// an in-app browser whose host has no new-window delegate. Then the page itself goes to
+// the store. No 'noopener' feature: with it window.open returns null even when it
+// worked. flytunl-site/tt/tt-tail.js overrides window.open for the two store URLs (its
+// own counted hand-off) and returns a stub, so nothing navigates twice there.
+function openStoreLink(url) {
+    let w = null;
+    try { w = window.open(url, '_blank'); } catch (e) {}
+    if (w) { try { w.opener = null; } catch (e) {} return; }
+    location.href = url;
+}
+
 // The calendar day whose cave, world name and rock palette we render. Normally
 // today (UTC). The ?d= deep link (webParamDay, YYYYMMDD - parsed below) can point
 // it at a past day so a shared link still flies the same cave after the UTC
