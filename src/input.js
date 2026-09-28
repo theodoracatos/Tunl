@@ -230,8 +230,10 @@ function onDown(e) {
             return;
         }
         if (_shopBtnRect && inCircle(cx, cy, _shopBtnRect)) {
-            showShop = true;
             sfxUiTap();
+            // Web: no IAP bridge, every purchase is app-only -> the "in the app" sheet.
+            if (isWeb()) { appOnlyKey = 'shop'; return; }
+            showShop = true;
             return;
         }
         if (_missionsBtnRect && inCircle(cx, cy, _missionsBtnRect)) {

@@ -4463,7 +4463,8 @@ function drawTitleScreen() {
             items.push({ key: 'leaderboard', locked: true });
             if (!/Android/.test(navigator.userAgent)) items.push({ key: 'challenge', locked: true });
         }
-        items.push({ key: 'shop' });
+        // Web has no IAP bridge, so the shop is greyed out too and opens the same sheet.
+        items.push({ key: 'shop', locked: isWeb() });
         items.push({ key: 'settings' });
 
         // SAFE_R (constants.js) clears the Dynamic Island/notch in landscape --
@@ -5204,8 +5205,9 @@ function drawTitleScreen() {
     if (showShop) {
         drawMenuBackdrop();
 
+        // Apps only: web has no IAP bridge, so its greyed shop icon opens the "in the
+        // app" sheet (drawAppOnlySheet) and this panel never opens there.
         const panW = Math.min(W * 0.56, 340);
-        const hasIAP = !!window.webkit?.messageHandlers?.iap;
 
         const nPadTop    = H * 0.060;
         const nPadBottom = H * 0.040;
@@ -5214,19 +5216,11 @@ function drawTitleScreen() {
         const nShipsGap   = H * 0.022;   // gap above the Unlock All Ships row
         const nRestoreGap = H * 0.022;
         const nRestoreH   = H * 0.062;   // matched to nPrivacyBtnH in the settings panel -- 0.032 read as a squashed sliver
-        // Empty-state block shown instead of the buttons when there's no native IAP
-        // bridge to talk to (web/dev build) -- the Shop button is always shown per
-        // product decision, so this is that build's landing spot rather than a
-        // hidden button. Two lines: purchases are app-only, and so is the +1-life
-        // rewarded revive (both are things the browser build genuinely can't do).
-        const nEmptyH     = H * 0.150;
 
         // Restore Purchase stays hidden only once there's nothing left either
         // product could restore -- unlike the old remove-ads-only check, "owns one"
         // isn't enough to hide it anymore.
-        const nBodyH = hasIAP
-            ? (nIapBtnH + nShipsGap + nIapBtnH + ((removeAdsOwned && allShipsOwned) ? 0 : nRestoreGap + nRestoreH))
-            : nEmptyH;
+        const nBodyH = nIapBtnH + nShipsGap + nIapBtnH + ((removeAdsOwned && allShipsOwned) ? 0 : nRestoreGap + nRestoreH);
         const nPanH = nPadTop + nTitleH + nBodyH + nPadBottom;
 
         const panHCap = H * 0.94;
@@ -5238,7 +5232,6 @@ function drawTitleScreen() {
         const shipsGap   = nShipsGap   * shopScale;
         const restoreGap = nRestoreGap * shopScale;
         const restoreH   = nRestoreH   * shopScale;
-        const emptyH     = nEmptyH     * shopScale;
         const panH = nPanH * shopScale;
 
         const panX = W / 2 - panW / 2;
@@ -5263,97 +5256,77 @@ function drawTitleScreen() {
         _removeAdsBtnRect = null;
         _unlockAllShipsBtnRect = null;
         _restoreBtnRect = null;
-        if (hasIAP) {
-            if (removeAdsOwned) {
-                ctx.font      = `${FS * 0.020}px ${FONT_UI}`;
-                ctx.fillStyle = 'rgba(120,200,150,0.75)';
-                ctx.fillText(T.adsRemoved, W / 2, y + iapBtnH / 2);
-                y += iapBtnH;
-            } else {
-                const abw = panW * 0.78, aby = y;
-                const abx = W / 2 - abw / 2;
-                ctx.fillStyle = 'rgba(15,18,40,0.72)';
-                ctx.beginPath(); ctx.roundRect(abx, aby, abw, iapBtnH, 7); ctx.fill();
-                ctx.strokeStyle = 'rgba(90,160,255,0.55)';
-                ctx.lineWidth   = 1;
-                ctx.beginPath(); ctx.roundRect(abx, aby, abw, iapBtnH, 7); ctx.stroke();
-                ctx.font      = `${FS * 0.023}px ${FONT_UI}`;
-                ctx.fillStyle = 'rgba(150,200,255,0.90)';
-                ctx.fillText(T.removeAds, W / 2, aby + iapBtnH / 2);
-                _removeAdsBtnRect = { x: abx, y: aby, w: abw, h: iapBtnH };
-                y += iapBtnH;
-            }
-
-            // Unlock All Ships: the real-money shortcut past the shard+stardust
-            // grind (constants.js Stardust block) -- same button treatment as
-            // Remove Ads, gold-tinted instead of blue so it reads as the "ships"
-            // product at a glance, matching the shard/skin-grid gold accent used
-            // everywhere else ship-unlock-related.
-            y += shipsGap;
-            if (allShipsOwned) {
-                ctx.font      = `${FS * 0.020}px ${FONT_UI}`;
-                ctx.fillStyle = 'rgba(220,190,120,0.80)';
-                ctx.fillText(T.allShipsOwned, W / 2, y + iapBtnH / 2);
-                y += iapBtnH;
-            } else {
-                const sbw = panW * 0.78, sby = y;
-                const sbx = W / 2 - sbw / 2;
-                ctx.fillStyle = 'rgba(15,18,40,0.72)';
-                ctx.beginPath(); ctx.roundRect(sbx, sby, sbw, iapBtnH, 7); ctx.fill();
-                ctx.strokeStyle = 'rgba(255,200,90,0.55)';
-                ctx.lineWidth   = 1;
-                ctx.beginPath(); ctx.roundRect(sbx, sby, sbw, iapBtnH, 7); ctx.stroke();
-                // Shrink-to-fit, same pattern as the death screen's drawFitLine --
-                // the longest translation (French, "DEBLOQUER TOUS LES VAISSEAUX")
-                // is longer than Remove Ads' longest (German, 18 chars vs. 28), so a
-                // flat font size here either clips French or leaves English cramped.
-                let shipsFsz = FS * 0.023;
-                ctx.font = `${shipsFsz}px ${FONT_UI}`;
-                const shipsTextW = ctx.measureText(T.unlockAllShips).width;
-                const shipsAvailW = sbw * 0.88; // small margin inside the button's own border
-                if (shipsTextW > shipsAvailW) {
-                    shipsFsz = Math.max(shipsFsz * shipsAvailW / shipsTextW, FS * 0.014);
-                    ctx.font = `${shipsFsz}px ${FONT_UI}`;
-                }
-                ctx.fillStyle = 'rgba(255,220,140,0.92)';
-                ctx.fillText(T.unlockAllShips, W / 2, sby + iapBtnH / 2);
-                _unlockAllShipsBtnRect = { x: sbx, y: sby, w: sbw, h: iapBtnH };
-                y += iapBtnH;
-            }
-
-            if (!(removeAdsOwned && allShipsOwned)) {
-                y += restoreGap;
-                const rbw = panW * 0.78, rby = y;
-                const rbx = W / 2 - rbw / 2;
-                ctx.fillStyle = 'rgba(15,18,40,0.72)';
-                ctx.beginPath(); ctx.roundRect(rbx, rby, rbw, restoreH, 7); ctx.fill();
-                ctx.strokeStyle = 'rgba(90,120,160,0.50)';
-                ctx.lineWidth   = 1;
-                ctx.beginPath(); ctx.roundRect(rbx, rby, rbw, restoreH, 7); ctx.stroke();
-                ctx.font      = `${FS * 0.019}px ${FONT_UI}`;
-                ctx.fillStyle = 'rgba(180,200,240,0.92)';
-                ctx.fillText(T.restorePurchases, W / 2, rby + restoreH / 2);
-                _restoreBtnRect = { x: rbx, y: rby, w: rbw, h: restoreH };
-                y += restoreH;
-            }
+        if (removeAdsOwned) {
+            ctx.font      = `${FS * 0.020}px ${FONT_UI}`;
+            ctx.fillStyle = 'rgba(120,200,150,0.75)';
+            ctx.fillText(T.adsRemoved, W / 2, y + iapBtnH / 2);
+            y += iapBtnH;
         } else {
-            // Shrink-to-fit each line independently, same pattern as the Unlock
-            // All Ships button above -- some locales (ru, tr) run these long.
-            const fitLine = (text, baseFrac, cy, clr) => {
-                let fsz = FS * baseFrac;
-                ctx.font = `${fsz}px ${FONT_UI}`;
-                const avail = panW * 0.90;
-                const tw = ctx.measureText(text).width;
-                if (tw > avail) {
-                    fsz = Math.max(fsz * avail / tw, FS * 0.012);
-                    ctx.font = `${fsz}px ${FONT_UI}`;
-                }
-                ctx.fillStyle = clr;
-                ctx.fillText(text, W / 2, cy);
-            };
-            fitLine(T.shopUnavailable, 0.020, y + emptyH * 0.32, 'rgba(155,165,205,0.78)');
-            fitLine(T.reviveAppOnly,   0.016, y + emptyH * 0.68, 'rgba(140,150,190,0.62)');
-            y += emptyH;
+            const abw = panW * 0.78, aby = y;
+            const abx = W / 2 - abw / 2;
+            ctx.fillStyle = 'rgba(15,18,40,0.72)';
+            ctx.beginPath(); ctx.roundRect(abx, aby, abw, iapBtnH, 7); ctx.fill();
+            ctx.strokeStyle = 'rgba(90,160,255,0.55)';
+            ctx.lineWidth   = 1;
+            ctx.beginPath(); ctx.roundRect(abx, aby, abw, iapBtnH, 7); ctx.stroke();
+            ctx.font      = `${FS * 0.023}px ${FONT_UI}`;
+            ctx.fillStyle = 'rgba(150,200,255,0.90)';
+            ctx.fillText(T.removeAds, W / 2, aby + iapBtnH / 2);
+            _removeAdsBtnRect = { x: abx, y: aby, w: abw, h: iapBtnH };
+            y += iapBtnH;
+        }
+
+        // Unlock All Ships: the real-money shortcut past the shard+stardust
+        // grind (constants.js Stardust block) -- same button treatment as
+        // Remove Ads, gold-tinted instead of blue so it reads as the "ships"
+        // product at a glance, matching the shard/skin-grid gold accent used
+        // everywhere else ship-unlock-related.
+        y += shipsGap;
+        if (allShipsOwned) {
+            ctx.font      = `${FS * 0.020}px ${FONT_UI}`;
+            ctx.fillStyle = 'rgba(220,190,120,0.80)';
+            ctx.fillText(T.allShipsOwned, W / 2, y + iapBtnH / 2);
+            y += iapBtnH;
+        } else {
+            const sbw = panW * 0.78, sby = y;
+            const sbx = W / 2 - sbw / 2;
+            ctx.fillStyle = 'rgba(15,18,40,0.72)';
+            ctx.beginPath(); ctx.roundRect(sbx, sby, sbw, iapBtnH, 7); ctx.fill();
+            ctx.strokeStyle = 'rgba(255,200,90,0.55)';
+            ctx.lineWidth   = 1;
+            ctx.beginPath(); ctx.roundRect(sbx, sby, sbw, iapBtnH, 7); ctx.stroke();
+            // Shrink-to-fit, same pattern as the death screen's drawFitLine --
+            // the longest translation (French, "DEBLOQUER TOUS LES VAISSEAUX")
+            // is longer than Remove Ads' longest (German, 18 chars vs. 28), so a
+            // flat font size here either clips French or leaves English cramped.
+            let shipsFsz = FS * 0.023;
+            ctx.font = `${shipsFsz}px ${FONT_UI}`;
+            const shipsTextW = ctx.measureText(T.unlockAllShips).width;
+            const shipsAvailW = sbw * 0.88; // small margin inside the button's own border
+            if (shipsTextW > shipsAvailW) {
+                shipsFsz = Math.max(shipsFsz * shipsAvailW / shipsTextW, FS * 0.014);
+                ctx.font = `${shipsFsz}px ${FONT_UI}`;
+            }
+            ctx.fillStyle = 'rgba(255,220,140,0.92)';
+            ctx.fillText(T.unlockAllShips, W / 2, sby + iapBtnH / 2);
+            _unlockAllShipsBtnRect = { x: sbx, y: sby, w: sbw, h: iapBtnH };
+            y += iapBtnH;
+        }
+
+        if (!(removeAdsOwned && allShipsOwned)) {
+            y += restoreGap;
+            const rbw = panW * 0.78, rby = y;
+            const rbx = W / 2 - rbw / 2;
+            ctx.fillStyle = 'rgba(15,18,40,0.72)';
+            ctx.beginPath(); ctx.roundRect(rbx, rby, rbw, restoreH, 7); ctx.fill();
+            ctx.strokeStyle = 'rgba(90,120,160,0.50)';
+            ctx.lineWidth   = 1;
+            ctx.beginPath(); ctx.roundRect(rbx, rby, rbw, restoreH, 7); ctx.stroke();
+            ctx.font      = `${FS * 0.019}px ${FONT_UI}`;
+            ctx.fillStyle = 'rgba(180,200,240,0.92)';
+            ctx.fillText(T.restorePurchases, W / 2, rby + restoreH / 2);
+            _restoreBtnRect = { x: rbx, y: rby, w: rbw, h: restoreH };
+            y += restoreH;
         }
     }
 
@@ -6567,14 +6540,15 @@ function _wrapLines(text, maxW) {
 // ── Web only: "in the app" sheet ─────────────────────────────────────
 // Opened from a greyed-out title control that only the apps can back (state.js
 // appOnlyKey): the Game Center / Play Games leaderboard, the Game Center challenge, the
-// Lackiererei and the Missions drawer's shard-ad row (while shardsAdAppOnly()). Says what the control is, that it lives in the app, and offers the
+// shop (Remove Ads, Unlock All Ships), the Lackiererei and the Missions drawer's shard-ad
+// row (while shardsAdAppOnly()). Says what the control is, that it lives in the app, and offers the
 // store. Same card language as the title's other panels (drawMenuPanel), content-sized
 // and scaled down until it clears a short desktop window, the method
 // drawWebContinuePromo documents. The challenge is iOS-only, so it offers the App Store
 // alone. Never drawn in either app: appOnlyKey is only ever set behind isWeb().
 function drawAppOnlySheet() {
     const key  = appOnlyKey;
-    const body = { paint: T.appOnlyPaint, challenge: T.appOnlyChallenge, shards: T.appOnlyShards }[key] || T.appOnlyBoard;
+    const body = { paint: T.appOnlyPaint, challenge: T.appOnlyChallenge, shards: T.appOnlyShards, shop: T.appOnlyShop }[key] || T.appOnlyBoard;
     const iosOnly = key === 'challenge';
     const android = /Android/.test(navigator.userAgent);
     const day  = getTheme().wallBase;

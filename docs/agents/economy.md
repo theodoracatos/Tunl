@@ -29,8 +29,9 @@ the forced interstitial, not a video the player actively taps):
   ad, on the shared leaderboard), and **the caption is honest before the tap**. `isWeb()`-
   gated end to end; the apps decide on `rewardedAdReady` alone.
 - **Web shows the app's controls greyed out, never hides them** (2026-09-25, user's call):
-  the Game Center leaderboard and challenge icons on the title rail and the PAINT pill on
-  ALL SHIPS are drawn dimmed on web, and a tap opens the "in the app" sheet
+  the Game Center leaderboard, challenge and shop icons on the title rail and the PAINT pill on
+  ALL SHIPS are drawn dimmed on web (the shop since 2026-09-28: web has no IAP bridge, so it
+  opens the sheet instead of the old empty Shop panel), and a tap opens the "in the app" sheet
   (`state.js appOnlyKey`, `draw.js drawAppOnlySheet`, strings `T.appOnly*`) with the store
   buttons - the challenge offers the App Store only (iOS-only) and is not shown to an
   Android browser. **The Lackiererei is app-only**: web never opens the Paint sheet and
