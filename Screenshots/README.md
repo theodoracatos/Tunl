@@ -139,3 +139,13 @@ screen, and freezing a frame the app itself drew keeps the preview pure app foot
 lands the whole thing at 28.9s, inside ASC's 30s ceiling - the raw take is 30.7s and
 ends on 5s of a static death screen. And `pad` to 886 rather than `scale=1920:886`
 because 1912x880 is not exactly 1920x886; padding 1px keeps the geometry honest.
+
+**18.0 cut (montage).** From a 79s run (`~/Downloads/tunl-20260927-w635-1156pts.mp4`, score
+1156) that no single 30s window can carry, so `iOS_18.0/cut.sh` joins six source windows with
+hard cuts: title + approach, frenzy start, laser through 800, 1000, the crash, the debriefing.
+Each window gets a ~0.1s audio fade at both ends so the music does not click at a cut. Two
+things specific to that source: it is the WEB build, so the window between the crash and the
+debriefing ("SECOND LIFE - IN THE APP", the web offer slot) is cut out and must stay out of any
+store cut; and it is full-range `yuvj420p`, so the scale carries `in_range=full:out_range=limited`
+(without it blacks lift and the picture washes out). Pick window times from frames pulled with the
+`trim` filter, not from `-ss` seeks - the seek sheets were ~3s off on this file.
