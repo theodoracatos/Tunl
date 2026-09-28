@@ -2058,6 +2058,29 @@ Sounds were built as a listening page on the real `audio.js` bus with a 40s cut 
 track, 2-3 level-matched variants per slot; the user picked fanfare "Breit", pad "Saegezahn",
 ping "Glocke", grind "Scrape", end "Motiv", charge quieter, ready/miss/whoosh louder.
 
+2026-09-28, user: the star's glow on the ship was "zu grell", and the star "ein bisschen
+laenger". The aura's core was white at 0.5 additive plus a white hull overlay, pumping in
+16ths: the hull read as a white blob. Now the core is the ship's light lifted halfway to
+white, the falloff has four stops, the pulse is quarter notes at a smaller swing, and the
+hull overlay is a faint sheen in the light (paint stays readable). `FRENZY_SEC` 3.0 -> 3.5,
+measured with `tools/frenzy-sim.js` (good/expert/pro, 6 runs x 10 days, x2 cost): pro duty
+9.0% / 10.3% / 12.0% for 3.0 / 3.5 / 4.0 s; good and below never fill a star in any of them,
+day-best differences within run-to-run noise. 4.0 s was not taken: its 12% duty is the
+concept's first variant that was stepped back from.
+
+Same day, the softened aura still did not please ("gefällt mir noch nicht"). Concept page
+https://claude.ai/artifact/M8tdKQiPAWg2BL3bjt2JKw ran the old and softened aura against four
+directions on real ship sprites: A contour light (follows the silhouette), B a sheen sweep
+across the hull, C a comet glow behind the ship, D four-point glints at nose, wingtips and
+tail. The user picked A + D. Building the page showed that much of the "ball" is the trail:
+its newest circle (0.9 PR, 45% white-hot, hard edge) sits on the hull; left as is until the
+user decides. In the game the contour is stroked from the live 3D faces rather than baked
+like the page did, because the wing sweep changes the silhouette.
+Then "versuche weniger eine Kugel zu machen": the four round things around the ship went
+during a star - the faint aura seat, the ship's own radial glow, the trail's hard discs on
+the hull (now soft puffs from the nozzles back, the page's "Spur ab Düse") and ON FIRE's
+shadowBlur on that trail.
+
 
 ## The web app card stops selling an ad (2026-09-28)
 

@@ -869,6 +869,64 @@ function _frenzyFlicker() {
     const hz = lerp(6, 14, 1 - frenzyTime / FRENZY_WARN_SEC);
     return Math.sin(gtime * hz * Math.PI * 2) > -0.2 ? 1 : 0.35;
 }
+// The star's contour light (constants.js FRENZY_CONTOUR_W): round-joined strokes of the
+// visible hull faces at the live roll, sweep and pitch, widest and faintest first. One
+// stroke() paints its whole path once, so faces meeting at an edge never add up; only the
+// rings add up with each other. Drawn before the hull, so only the part outside shows.
+// Called inside the ship's pitch rotation; the flat hull (no _SHIP3D) goes without.
+const _FZ_CONTOUR_RINGS = [[1, 0.10], [0.68, 0.13], [0.41, 0.18], [0.18, 0.26]];
+function _frenzyContour(x, y, r, lc, a) {
+    if (!_SHIP3D) return;
+    const vis = _ship3dProject(x, y, r);
+    const breath = 0.85 + 0.15 * Math.sin(gtime * FRENZY_TREM_HZ / 4 * Math.PI * 2);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (const v of vis) { const P = v.P; ctx.moveTo(P[0][0], P[0][1]); for (let i = 1; i < P.length; i++) ctx.lineTo(P[i][0], P[i][1]); ctx.closePath(); }
+    for (const [w, al] of _FZ_CONTOUR_RINGS) {
+        ctx.lineWidth = 2 * FRENZY_CONTOUR_W * PR * w;
+        ctx.strokeStyle = `rgba(${lc[0]},${lc[1]},${lc[2]},${al * a * breath})`;
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+// Glints (constants.js FRENZY_GLINT_*): a four-point star pops at nose, top wingtip, tail
+// and bottom wingtip in turn, one per 8th of the track, over the hull. Wingtips follow the
+// sweep (_ship3dTip). Called inside the ship's pitch rotation.
+function _frenzyGlints(x, y, r, L, hot, a) {
+    const step = 2 / FRENZY_TREM_HZ, n = Math.floor(gtime / step);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = a;
+    for (let j = 0; j < 3; j++) {
+        const idx = n - j, age = gtime - idx * step;
+        if (age < 0 || age > FRENZY_GLINT_SEC) continue;
+        const u = age / FRENZY_GLINT_SEC, s = Math.sin(Math.PI * u) * PR * FRENZY_GLINT_R;
+        const k = ((idx % 4) + 4) % 4;
+        let gx, gy;
+        if (k === 0) { gx = x + r * 1.36; gy = y; }
+        else if (k === 2) { gx = x - r; gy = y - r * 0.3; }
+        else if (_SHIP3D) [gx, gy] = _ship3dTip(k === 1 ? 1 : -1, x, y, r);
+        else { gx = x - r * 0.3; gy = y + (k === 1 ? -0.82 : 0.82) * r; }
+        const h = ctx.createRadialGradient(gx, gy, 0, gx, gy, s * 0.9);
+        h.addColorStop(0, `rgba(${hot[0]},${hot[1]},${hot[2]},0.35)`); h.addColorStop(1, `rgba(${L[0]},${L[1]},${L[2]},0)`);
+        ctx.fillStyle = h; ctx.beginPath(); ctx.arc(gx, gy, s * 0.9, 0, Math.PI * 2); ctx.fill();
+        const w = s * 0.16, c = Math.cos(u * 0.5), sn = Math.sin(u * 0.5);
+        const pt = (px, py2) => [gx + px * c - py2 * sn, gy + px * sn + py2 * c];
+        ctx.beginPath();
+        [[0, -s], [w, -w], [s, 0], [w, w], [0, s], [-w, w], [-s, 0], [-w, -w]].forEach(([px, py2], i) => {
+            const [qx, qy] = pt(px, py2); if (i) ctx.lineTo(qx, qy); else ctx.moveTo(qx, qy);
+        });
+        ctx.closePath();
+        const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, s);
+        g.addColorStop(0, 'rgba(255,255,255,1)');
+        g.addColorStop(0.35, `rgba(${hot[0]},${hot[1]},${hot[2]},0.95)`);
+        g.addColorStop(1, `rgba(${L[0]},${L[1]},${L[2]},0.1)`);
+        ctx.fillStyle = g; ctx.fill();
+    }
+    ctx.restore();
+}
 function _coinFrenzy(s, t, wx) {
     // A five-point star, faceted and lit from above like every coin, white-hot at the core.
     const k = _fzToneKey(), R = s * 0.95, r = R * 0.42;
@@ -1413,26 +1471,12 @@ function drawFlightShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
 }
 
 const _ship3dVis = [];
-function drawShip3D(x, y, r, color, sr, sg, sb, blur, fx, lv) {
-    fx = fx === undefined ? true : fx;
-    lv = lv || 0;   // paint kit (paint.js), falsy = FACTORY
+// Projects the visible faces of the 3D hull at the current roll, sweep and pitch into
+// _ship3dVis, back to front: P in screen space, d the light term, depth for the sort.
+// drawShip3D shades them; the frenzy contour (_frenzyContour) strokes their outline.
+function _ship3dProject(x, y, r) {
     const M = _SHIP3D, a = shipRollDeg() * Math.PI / 180, cp = Math.cos(a), sp = Math.sin(a);
-    // The caller rotated the canvas by shipPitch around (PX, py); light stays screen-up.
     const ct = Math.cos(shipPitch), st = Math.sin(shipPitch);
-    // Same paint re-shading as the flat hull's _shipTones (paint.js _paintShade).
-    const [base, kUp, kDn] = _paintShade(paintHullRgb(color, lv), lv);
-    const light = lerpClr(_SHIP_WHITE, [sr, sg, sb], 0.15);
-    // Glow behind the hull: a radial fill instead of shadowBlur (expensive on WKWebView)
-    if (blur > 0) {
-        const gr = ctx.createRadialGradient(x, y, 0, x, y, r * 1.5);
-        gr.addColorStop(0, `rgba(${sr},${sg},${sb},${Math.min(0.32, blur / 60)})`);
-        gr.addColorStop(1, `rgba(${sr},${sg},${sb},0)`);
-        ctx.fillStyle = gr;
-        ctx.beginPath(); ctx.arc(x, y, r * 1.5, 0, Math.PI * 2); ctx.fill();
-    }
-    // Swing wing: the outer panels turn by s * sweep in the wing plane (s = side), which
-    // folds each tip aft and inward; a negative sweep (blue-coin brake) swings them
-    // forward past spread. Normals turn with them (top/bottom stay +-z).
     const sw = shipSweep * SHIP3D_SWEEP_MAX * Math.PI / 180, swc = Math.cos(sw), sws = Math.sin(sw);
     const vis = _ship3dVis; vis.length = 0;
     for (const f of M.faces) {
@@ -1451,6 +1495,28 @@ function drawShip3D(x, y, r, color, sr, sg, sb, blur, fx, lv) {
         vis.push({ p, P, kind: f.kind, d: 0.74 * su + 0.60 * nT + 0.12 * sx, depth: depth / p.length });
     }
     vis.sort((p, q) => p.depth - q.depth);
+    return vis;
+}
+function drawShip3D(x, y, r, color, sr, sg, sb, blur, fx, lv) {
+    fx = fx === undefined ? true : fx;
+    lv = lv || 0;   // paint kit (paint.js), falsy = FACTORY
+    const M = _SHIP3D, a = shipRollDeg() * Math.PI / 180, cp = Math.cos(a), sp = Math.sin(a);
+    // The caller rotated the canvas by shipPitch around (PX, py); light stays screen-up.
+    // Same paint re-shading as the flat hull's _shipTones (paint.js _paintShade).
+    const [base, kUp, kDn] = _paintShade(paintHullRgb(color, lv), lv);
+    const light = lerpClr(_SHIP_WHITE, [sr, sg, sb], 0.15);
+    // Glow behind the hull: a radial fill instead of shadowBlur (expensive on WKWebView)
+    if (blur > 0) {
+        const gr = ctx.createRadialGradient(x, y, 0, x, y, r * 1.5);
+        gr.addColorStop(0, `rgba(${sr},${sg},${sb},${Math.min(0.32, blur / 60)})`);
+        gr.addColorStop(1, `rgba(${sr},${sg},${sb},0)`);
+        ctx.fillStyle = gr;
+        ctx.beginPath(); ctx.arc(x, y, r * 1.5, 0, Math.PI * 2); ctx.fill();
+    }
+    // Swing wing (in _ship3dProject): the outer panels turn by s * sweep in the wing plane
+    // (s = side), which folds each tip aft and inward; a negative sweep (blue-coin brake)
+    // swings them forward past spread. Normals turn with them (top/bottom stay +-z).
+    const vis = _ship3dProject(x, y, r);
     const trace = P => { ctx.moveTo(P[0][0], P[0][1]); for (let i = 1; i < P.length; i++) ctx.lineTo(P[i][0], P[i][1]); ctx.closePath(); };
     ctx.lineJoin = 'round';
     ctx.lineWidth = Math.max(r * 0.012, 0.6);
@@ -1529,10 +1595,8 @@ function drawShip3D(x, y, r, color, sr, sg, sb, blur, fx, lv) {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     for (const s of [-1, 1]) {
-        const tip = _swingPt([-0.330, s * 0.945, 0.060 - M.dz], s, swc, s * sws);
-        const ty = tip[1], tz = tip[2];
-        if (tz * sp - ty * cp < -0.05) continue;
-        const lx = x + r * tip[0], ly = y - (tz * cp + ty * sp) * r;
+        const [lx, ly, front] = _ship3dTip(s, x, y, r);
+        if (!front) continue;
         if (flash) {
             const g = ctx.createRadialGradient(lx, ly, 0, lx, ly, r * 0.14);
             g.addColorStop(0,   'rgba(255,255,255,0.80)');
@@ -1545,6 +1609,16 @@ function drawShip3D(x, y, r, color, sr, sg, sb, blur, fx, lv) {
         ctx.fill();
     }
     ctx.restore();
+}
+
+// Screen position of wingtip s (-1 / 1) at the current roll and sweep, and whether it faces
+// the camera: the strobes sit there, and so do two of the frenzy glints.
+function _ship3dTip(s, x, y, r) {
+    const a = shipRollDeg() * Math.PI / 180, cp = Math.cos(a), sp = Math.sin(a);
+    const sw = shipSweep * SHIP3D_SWEEP_MAX * Math.PI / 180;
+    const tip = _swingPt([-0.330, s * 0.945, 0.060 - _SHIP3D.dz], s, Math.cos(sw), s * Math.sin(sw));
+    const ty = tip[1], tz = tip[2];
+    return [x + r * tip[0], y - (tz * cp + ty * sp) * r, tz * sp - ty * cp >= -0.05];
 }
 
 // How far the drawn 3D ship reaches from the hitbox centre, in r, at a roll and sweep:
@@ -2467,23 +2541,39 @@ function drawWorld() {
     {
         const sk = SKINS[activeSkin] || SKINS[0];
         // A star (constants.js FRENZY_* doc) turns the trail into a white-hot comet in the
-        // ship's own light; it outranks ON FIRE while it lasts.
+        // ship's own light; it outranks ON FIRE while it lasts. It starts at the nozzles and
+        // each puff is a soft gradient: full-size hard discs ending on the hull read as a
+        // ball around the ship (user, 2026-09-28).
         const fzTrail = frenzyTime > 0 && phase === 'play';
         const [sr, sg, sb] = fzTrail ? sk.shadow.map(c => Math.round((c + 255 * 2) / 3))
                            : onFire ? [255, 110, 20] : sk.shadow;
-        const sizeMul = fzTrail ? 1.0 : onFire ? 0.85 : 0.65, alphaMul = fzTrail ? 0.5 : onFire ? 0.40 : 0.26;
-        if (onFire) {
-            ctx.shadowColor = 'rgba(255,130,30,0.9)';
-            ctx.shadowBlur  = 14;
+        const sizeMul = onFire ? 0.85 : 0.65, alphaMul = onFire ? 0.40 : 0.26;
+        if (fzTrail) {
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            for (let i = 0; i < trailY.length; i++) {
+                const frac = i / trailY.length, x = PX + PR * SHIP_NOZZLE_X - (trailY.length-1-i)*6;
+                const r = PR * (0.25 + 0.4 * frac);
+                const g = ctx.createRadialGradient(x, trailY[i], 0, x, trailY[i], r);
+                g.addColorStop(0, `rgba(${sr},${sg},${sb},${frac*0.32})`); g.addColorStop(1, `rgba(${sr},${sg},${sb},0)`);
+                ctx.fillStyle = g;
+                ctx.beginPath(); ctx.arc(x, trailY[i], r, 0, Math.PI*2); ctx.fill();
+            }
+            ctx.restore();
+        } else {
+            if (onFire) {
+                ctx.shadowColor = 'rgba(255,130,30,0.9)';
+                ctx.shadowBlur  = 14;
+            }
+            for (let i = 0; i < trailY.length; i++) {
+                const frac = i / trailY.length, off = (trailY.length-1-i)*5;
+                ctx.beginPath();
+                ctx.arc(PX-off, trailY[i], PR*frac*sizeMul, 0, Math.PI*2);
+                ctx.fillStyle = `rgba(${sr},${sg},${sb},${frac*alphaMul})`;
+                ctx.fill();
+            }
+            if (onFire) ctx.shadowBlur = 0;
         }
-        for (let i = 0; i < trailY.length; i++) {
-            const frac = i / trailY.length, off = (trailY.length-1-i)*5;
-            ctx.beginPath();
-            ctx.arc(PX-off, trailY[i], PR*frac*sizeMul, 0, Math.PI*2);
-            ctx.fillStyle = `rgba(${sr},${sg},${sb},${frac*alphaMul})`;
-            ctx.fill();
-        }
-        if (onFire) ctx.shadowBlur = 0;
     }
 
     // On-fire ignition pop - one quick expanding ring at the instant onFire flips true
@@ -2587,24 +2677,9 @@ function drawWorld() {
         ctx.restore();
     }
 
-    // Frenzy star (constants.js FRENZY_* doc): an aura in the ship's own light behind the
-    // hull, kept inside the hull envelope so it never promises more reach than the hitbox
-    // has, plus one ring pop at the start. Its last FRENZY_WARN_SEC flickers faster and
-    // faster. Additive gradients and stacked strokes, no shadowBlur.
-    if (frenzyTime > 0 && phase === 'play') {
-        const [fr, fg, fb] = (SKINS[activeSkin] || SKINS[0]).shadow;
-        const R = PR * 1.4 * (0.9 + 0.1 * Math.sin(gtime * FRENZY_TREM_HZ * Math.PI * 2));
-        ctx.save();
-        ctx.globalCompositeOperation = 'lighter';
-        ctx.globalAlpha = _frenzyFlicker();
-        const g = ctx.createRadialGradient(PX, py, 0, PX, py, R);
-        g.addColorStop(0, 'rgba(255,255,255,0.5)');
-        g.addColorStop(0.4, `rgba(${fr},${fg},${fb},0.42)`);
-        g.addColorStop(1, `rgba(${fr},${fg},${fb},0)`);
-        ctx.fillStyle = g;
-        ctx.beginPath(); ctx.arc(PX, py, R, 0, Math.PI * 2); ctx.fill();
-        ctx.restore();
-    }
+    // Frenzy star (constants.js FRENZY_* doc): no round aura - the contour light and glints
+    // in the ship block carry the look (a disc of light read as a ball, user 2026-09-28).
+    // One ring pops at the start. Additive strokes, no shadowBlur.
     {
         const u = (gtime - frenzyStartT) / 0.45;
         if (u >= 0 && u < 1 && phase === 'play') {
@@ -2689,17 +2764,26 @@ function drawWorld() {
         // It reads as a distinct thing from the big hero render in
         // drawTitleScreen() (dim, in the tunnel, part of the "world"; the hero
         // is a bright foreground portrait), not a confusing duplicate.
+        const fzOn = frenzyTime > 0 && phase === 'play';
+        const fzA = fzOn ? _frenzyFlicker() : 0;
+        const fzLite = fzOn ? sk.shadow.map(c => Math.round(c + (255 - c) * 0.35)) : null;
+        if (fzOn) _frenzyContour(PX, py, PR, fzLite, fzA);
         ctx.globalAlpha = invulnAlpha;
-        drawFlightShip(PX, py, PR, phase === 'dead' ? '#ff4040' : sk.color, sr, sg, sb, 20, phase !== 'dead', phase === 'dead' ? 0 : paintOf(activeSkin));
+        // During a star the ship's own round glow (blur) steps aside for the contour light.
+        drawFlightShip(PX, py, PR, phase === 'dead' ? '#ff4040' : sk.color, sr, sg, sb, fzOn ? 0 : 20, phase !== 'dead', phase === 'dead' ? 0 : paintOf(activeSkin));
         if (phase === 'play' && hullScratches < HULL_SCRATCHES) drawHullDamage(PX, py, PR, HULL_SCRATCHES - hullScratches);
-        if (frenzyTime > 0 && phase === 'play') {   // the hull glows white-hot through the star
-            ctx.globalCompositeOperation = 'lighter';
-            ctx.globalAlpha = 0.55 * _frenzyFlicker();
-            const hg = ctx.createRadialGradient(PX + PR * 0.2, py, 0, PX + PR * 0.2, py, PR * 1.1);
-            hg.addColorStop(0, 'rgba(255,255,255,0.8)'); hg.addColorStop(1, 'rgba(255,255,255,0)');
-            ctx.fillStyle = hg;
-            ctx.beginPath(); ctx.arc(PX + PR * 0.2, py, PR * 1.1, 0, Math.PI * 2); ctx.fill();
-            ctx.globalCompositeOperation = 'source-over';
+        if (fzOn) {
+            // The hull takes a little of its own light (the faces drawFlightShip just
+            // projected, paint stays readable), then the glints pop over it.
+            if (_SHIP3D) {
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.globalAlpha = 0.12 * fzA;
+                ctx.beginPath();
+                for (const v of _ship3dVis) { const P = v.P; ctx.moveTo(P[0][0], P[0][1]); for (let i = 1; i < P.length; i++) ctx.lineTo(P[i][0], P[i][1]); ctx.closePath(); }
+                ctx.fillStyle = `rgb(${fzLite[0]},${fzLite[1]},${fzLite[2]})`; ctx.fill();
+                ctx.globalCompositeOperation = 'source-over';
+            }
+            _frenzyGlints(PX, py, PR, sk.shadow, sk.shadow.map(c => Math.round((c + 255 * 2) / 3)), fzA);
         }
         ctx.globalAlpha = 1;
         ctx.restore();

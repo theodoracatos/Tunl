@@ -1363,7 +1363,7 @@ const LASER_HALF_W       = PR * 0.3;
 //   The end grants HIT_INVULN_SEC like a warp's.
 const FRENZY_FIRST_COST       = 8;
 const FRENZY_COST_MUL         = 2;
-const FRENZY_SEC              = 3.0;
+const FRENZY_SEC              = 3.5;   // 3.0 until 2026-09-28 (user: "ein bisschen laenger"), see frenzy.md
 const FRENZY_CHICANE_FILL     = 2;
 const FRENZY_MISS_COST        = 1;
 const FRENZY_HAZARD_COIN_COST = 2;
@@ -1383,9 +1383,18 @@ const FRENZY_WASH_ALPHA       = 0.28;   // at the edge; the Zeitblase's is 0.11 
 const FRENZY_HITSTOP_SEC      = 0.04;
 const FRENZY_HITSTOP_GAP      = 0.15;
 const FRENZY_IMPACT_SEC       = 0.18;   // the white flash at a smash
-// The star's shimmer runs in 16ths of the play track (Nebula, 140 BPM): the aura, the icon's
-// core and the audio pad's tremolo share it, so picture and sound pulse together.
+// The star's shimmer runs in 16ths of the play track (Nebula, 140 BPM): the wash, the icon's
+// core and the audio pad's tremolo share it, so picture and sound pulse together. The ship's
+// own light does not pump in 16ths (read as glare): its contour breathes in quarters and the
+// glints step in 8ths.
 const FRENZY_TREM_HZ          = 140 / 60 * 4;
+// The ship during a star (user's pick 2026-09-28, concept A + D): a contour light that follows
+// the live silhouette, reaching FRENZY_CONTOUR_W past the hull, and four-point glints popping
+// at nose, wingtips and tail in turn, one per 8th, each FRENZY_GLINT_SEC long and up to
+// FRENZY_GLINT_R in half-length (both in PR).
+const FRENZY_CONTOUR_W        = 0.22;
+const FRENZY_GLINT_SEC        = 0.32;
+const FRENZY_GLINT_R          = 0.77;
 // The continue offer's own timeout -- deliberately NOT reusing DEATH_INTERACTIVE_SEC
 // above. First real-device pass found 0.9s (matched to that *existing* pre-interactive
 // beat, so declining would cost zero extra wait) too short to actually use: a player

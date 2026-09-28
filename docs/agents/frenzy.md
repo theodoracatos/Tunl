@@ -33,7 +33,8 @@ scratch), the shield is not spent. Speed is unchanged - that is what separates i
   game, 5 tiers, paired plain vs star runs) + `tools/frenzy-sim-report.js`. Chosen values
   measured 8.9% of a pro-tier run as star and +23% day best; the concept's first values (8,
   x1.5, 4s) measured 12.2% / +40%. The effect is survival (walls stop killing), smash points
-  are ~0.1% of the score.
+  are ~0.1% of the score. `FRENZY_SEC` went 3.0 -> 3.5 s on 2026-09-28 (user's call), pro duty
+  measured ~10%; 4 s measured ~12% and was not taken.
 - **The star is a deep-run reward by design (user's call "Stern fuer Koenner").** Pilot tiers
   that play like today's real players (median run ~30) never fill it in any variant measured.
   Making it reachable for them (counting from S0, cost 5-6) doubled good players' median
@@ -46,6 +47,16 @@ scratch), the shield is not spent. Speed is unchanged - that is what separates i
   the corridor, red danger, orange ON FIRE, gold shards. No hue-wheel cycling (a Mario rainbow
   was rejected in concept for that rule). The aura stays inside the hull envelope (1.4 PR) so
   it never promises more reach than the hitbox.
+- **The ship's look is contour light + glints** (user's pick 2026-09-28, concept page
+  https://claude.ai/artifact/M8tdKQiPAWg2BL3bjt2JKw, db collection `schein`: A "Konturlicht" +
+  D "Sternfunkeln", glints at the page's strength 1.4). `_frenzyContour` strokes the live
+  hull faces (`_ship3dProject`, so sweep, roll and pitch are followed; never a baked sprite -
+  the wings change shape) in `_FZ_CONTOUR_RINGS`, one `stroke()` per ring so overlapping faces
+  don't add up; `_frenzyGlints` pops a four-point star at nose, wingtips (`_ship3dTip`) and
+  tail, one per 8th. **No ball** (user, 2026-09-28: "weniger eine Kugel"): no round aura,
+  the ship's own round glow (`blur`) is off during a star, and the star's trail starts at
+  `SHIP_NOZZLE_X` as soft gradient puffs (the plain trail's full-size hard discs end on the
+  hull). Never a white core pumping in 16ths - that read as glare ("zu grell").
 - **Audio has no beat.** The pad's tremolo runs in 16ths (`FRENZY_TREM_HZ`, 140 BPM) but a star
   starts at any moment and slow/warp move the track, so a pulse would land off the beat - the
   reason the sector build-and-drop was removed. Music is lifted on `_bgmLift`/`_bgmShelf`
