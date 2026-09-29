@@ -32,6 +32,9 @@ let _bgmLift = null, _bgmShelf = null;  // sector intensity (bgmSetSector)
 let _bgmOutroBuf = null, _outroNode = null, _outroGain = null;  // the track's own ending, played on death
 let _bgmLoading = false, _titleBgmLoading = false; // in-flight guards for the lazy loaders
 let _bgmActive = false, _bgmPending = false;
+// Where the current _bgmNode was started (context time, offset into _bgmBuf), and the bar a
+// star's excerpt holds the bed at (-1 = not held) - see bgmSetFrenzy.
+let _bgmT0 = 0, _bgmOff0 = 0, _bgmHeldAt = -1;
 let _titleBgmBuf = null, _titleBgmNode = null, _titleBgmGain = null, _titleBgmFlt = null;
 let _titleBgmActive = false, _titleBgmPending = false;
 
@@ -122,6 +125,7 @@ const MUSIC_DUCK_SEC  = 0.40;  // how long it stays there before gliding back
 // re-running that search.
 const BGM_LOOP_START       = 11.53, BGM_LOOP_END       = 11.53 + 16 * 1.714286;
 const BGM_LOOP_XFADE       = 0.857;   // half a bar, equal-power
+const BGM_BAR              = 1.714286;  // 140 BPM, the grid a star's hold resumes on
 // The track's own ending (2026-09-19): full body drops to a quiet pad at ~61.8s, one last
 // hit at ~68.5s, then a decay to silence at ~71.7s. Played once on death in place of the
 // loop (see _playBgmOutro), then silence until the title screen's own music.
@@ -161,7 +165,8 @@ function _startBgMusic() {
     _loadBgmBuffer();
 }
 
-function _playBgmBuffer() {
+// `offset` (seconds into _bgmBuf) resumes the bed where a star held it (bgmSetFrenzy).
+function _playBgmBuffer(offset) {
     if (!_ac || !_bgmBuf || !_bgmActive) return;
     // gain -> lowpass -> music bus. The filter is wide open in normal play and only
     // moves for the death sweep (_fadeBgMusic), which is why it can live here rather
@@ -191,7 +196,19 @@ function _playBgmBuffer() {
         _bgmNode.loopEnd   = Math.min(BGM_LOOP_END, _bgmBuf.duration);
     }
     _bgmNode.connect(_bgmGain);
-    _bgmNode.start();
+    _bgmOff0 = offset || 0; _bgmT0 = _ac.currentTime;
+    _bgmNode.start(0, _bgmOff0);
+}
+
+// The bar line nearest to where the bed is now, in seconds into _bgmBuf. Counted in context
+// time from the node's start, so a slow sag or a warp surge since then leaves it off by
+// the difference; snapping to the bar keeps the resume on the grid either way.
+function _bgmBarNow() {
+    const end = Math.min(BGM_LOOP_END, _bgmBuf.duration), len = end - BGM_LOOP_START;
+    let p = _bgmOff0 + (_ac.currentTime - _bgmT0);
+    if (p >= end) p = BGM_LOOP_START + (p - BGM_LOOP_START) % len;
+    const bar = BGM_LOOP_START + Math.round((p - BGM_LOOP_START) / BGM_BAR) * BGM_BAR;
+    return bar >= end - 0.01 ? BGM_LOOP_START : Math.max(0, bar);
 }
 
 // Snaps the play-music lowpass back open (the death sweep leaves it closed down at
@@ -266,23 +283,29 @@ const DEATH_MUSIC_HZ  = 300;
 function _fadeBgMusic() {
     _bgmActive = false;
     _bgmPending = false;
+    _bgmHeldAt = -1;
     let faded = false;
     if (_bgmGain && _bgmNode) {
         faded = true;
-        const t = _ac.currentTime;
-        _bgmGain.gain.cancelScheduledValues(t);
-        _bgmGain.gain.setValueAtTime(_bgmGain.gain.value, t);
-        _bgmGain.gain.setTargetAtTime(0.0001, t + 0.10, 0.16);
-        if (_bgmFlt) {
-            _bgmFlt.frequency.cancelScheduledValues(t);
-            _bgmFlt.frequency.setValueAtTime(_bgmFlt.frequency.value, t);
-            _bgmFlt.frequency.exponentialRampToValueAtTime(DEATH_MUSIC_HZ, t + DEATH_MUSIC_SEC * 0.8);
-        }
-        const n = _bgmNode; _bgmNode = null;
-        n.onended = null;  // prevent ghost restart from stopped node
-        setTimeout(() => { try { n.stop(); } catch(e){} }, DEATH_MUSIC_SEC * 1000 + 80);
+        _musicCollapse(_bgmGain, _bgmFlt, _bgmNode);
+        _bgmNode.onended = null;  // prevent ghost restart from stopped node
+        _bgmNode = null;
     }
+    // A death inside a star: the excerpt holds the stage (bgmSetFrenzy), so it collapses.
+    if (_fzMus) { faded = true; _musicCollapse(_fzMus.g, _fzMus.lp, _fzMus.src); _fzMus = null; }
     return faded;
+}
+function _musicCollapse(g, flt, n) {
+    const t = _ac.currentTime;
+    g.gain.cancelScheduledValues(t);
+    g.gain.setValueAtTime(g.gain.value, t);
+    g.gain.setTargetAtTime(0.0001, t + 0.10, 0.16);
+    if (flt) {
+        flt.frequency.cancelScheduledValues(t);
+        flt.frequency.setValueAtTime(flt.frequency.value, t);
+        flt.frequency.exponentialRampToValueAtTime(DEATH_MUSIC_HZ, t + DEATH_MUSIC_SEC * 0.8);
+    }
+    setTimeout(() => { try { n.stop(); } catch(e){} }, DEATH_MUSIC_SEC * 1000 + 80);
 }
 
 // The song's real ending on the death screen instead of a fade to nothing. Only when the
@@ -576,6 +599,7 @@ function _loadBgmBuffer() {
             _bgmBuf = _bakeBgmLoop(buf, BGM_LOOP_START, BGM_LOOP_END, BGM_LOOP_XFADE);
             _bgmOutroBuf = _sliceOutro(buf);
             if (_bgmPending && _bgmActive) { _bgmPending = false; _playBgmBuffer(); }
+            if (musicOn) _loadFzMusBuffer();   // the star's excerpt, small, next in line
         })
         .catch(err => {
             _bgmLoading = false;
@@ -639,6 +663,7 @@ function _reviveAudioContext() {
     // Any decode still in flight belongs to the context just closed and will drop itself
     // on the _ac !== ctx check; clear the guards so the fresh context can load again.
     _bgmLoading = false; _titleBgmLoading = false;
+    _fzMusBuf = null; _fzMusLoading = false; _fzMus = null; _bgmHeldAt = -1;   // the star's excerpt too
     _mNode = null; _mGain = null; _mOsc = null;  // magnet shimmer belonged to the closed context
     _lzGain = null; _lzSrc = [];   // laser hum too
     _fzPad = null; _fzGrind = null;   // the star's pad and grind as well
@@ -3002,11 +3027,15 @@ function laserLoopOff() {
 // and slow / warp move the track, so a pulse would land off the beat - the reason the
 // sector build-and-drop was removed. Music is lifted through _bgmLift / _bgmShelf
 // (bgmSetFrenzy), never playbackRate (slow and warp own it).
+// Since 2026-09-29 the star has its own music (bgmSetFrenzy, FZ_MUS_* below): the play track
+// pauses and an excerpt of an epic track in C plays instead. While it runs, the D-major
+// pad steps aside, and the ping ladder and the end motif move onto notes that fit it.
 // Levels measured offline in the real bus, phone band (>400 Hz), loudest 50 ms: fanfare
 // -18.5 dB (milestone -18.1), pad -26.5, ping -21.5 (coin -21.3), grind ~-25.5, end motif
 // -22; charge, ready, miss and whoosh then moved 3 dB as picked. Re-measure before moving.
 const _FZN = { A3: 220, D4: 293.66, D5: 587.33, E5: 659.26, Fs5: 739.99, A5: 880, B5: 987.77,
-               D6: 1174.66, E6: 1318.51, Fs6: 1479.98, A6: 1760, B6: 1975.53, D7: 2349.32 };
+               D6: 1174.66, E6: 1318.51, Fs6: 1479.98, A6: 1760, B6: 1975.53, D7: 2349.32,
+               F5: 698.46, C6: 1046.5, F6: 1396.91, G6: 1567.98, C7: 2093.0 };
 const _FZ_S16 = 60 / 140 / 4, _FZ_S8 = 60 / 140 / 2;
 const FRENZY_LV = { fan: 0.333, pad: 0.092, ping: 0.128, grind: 0.217, end: 0.123,
                     charge: 0.184, ready: 0.031, miss: 0.133, whoosh: 0.153 };
@@ -3083,12 +3112,13 @@ function sfxFrenzyStart() {
     _fzEnv(cg, tc, 0.012, 1, 0.85);
     [_FZN.D5, _FZN.Fs5, _FZN.A5, _FZN.D6].forEach((f, i) =>
         _fzOsc('sawtooth', f * (1 + (i % 2 ? 0.003 : -0.003)), tc, tc + 1.0, cg, 0.22));
-    musicDuck(MUSIC_DUCK_DB, 0.6);
+    // The excerpt's impact lands on the chord (FZ_MUS_START): ducking would blunt it.
+    if (!_fzMus) musicDuck(MUSIC_DUCK_DB, 0.6);
 }
 
 // The star's pad: detuned saws D5 A5 D6 F#6 through a lowpass, a 16th-rate tremolo.
 function frenzyLoopOn() {
-    if (!_ac || _fzPad || !fxOn) return;
+    if (!_ac || _fzPad || !fxOn || _fzMus) return;   // the excerpt is the star's bed (bgmSetFrenzy)
     const t = _ac.currentTime;
     const out = _ac.createGain(); out.connect(_master);
     out.gain.setValueAtTime(0.0001, t); out.gain.linearRampToValueAtTime(FRENZY_LV.pad, t + 0.25);
@@ -3109,14 +3139,17 @@ function frenzyLoopOn() {
 }
 
 // The star's last FRENZY_WARN_SEC: the tremolo speeds up, the filter closes, a falling
-// A5 F#5 D5 on the 8th grid answers the fanfare.
+// A5 F#5 D5 on the 8th grid answers the fanfare. Under the excerpt it is C6 A5 F5: the
+// excerpt stands on its F and Bb bars by then, where an F# would rub.
 function frenzyLoopWarn() {
-    if (!_ac || !_fzPad) return;
+    if (!_ac || !fxOn) return;
     const t = _ac.currentTime, T = FRENZY_WARN_SEC;
-    _fzPad.lfo.frequency.setValueAtTime(FRENZY_TREM_HZ, t); _fzPad.lfo.frequency.linearRampToValueAtTime(14, t + T);
-    _fzPad.lp.frequency.setValueAtTime(2600, t); _fzPad.lp.frequency.exponentialRampToValueAtTime(900, t + T + 0.2);
+    if (_fzPad) {
+        _fzPad.lfo.frequency.setValueAtTime(FRENZY_TREM_HZ, t); _fzPad.lfo.frequency.linearRampToValueAtTime(14, t + T);
+        _fzPad.lp.frequency.setValueAtTime(2600, t); _fzPad.lp.frequency.exponentialRampToValueAtTime(900, t + T + 0.2);
+    }
     const t0 = t + Math.max(0, T - 3 * _FZ_S8 - 0.05);
-    [_FZN.A5, _FZN.Fs5, _FZN.D5].forEach((f, i) => {
+    (_fzMus ? [_FZN.C6, _FZN.A5, _FZN.F5] : [_FZN.A5, _FZN.Fs5, _FZN.D5]).forEach((f, i) => {
         const tt = t0 + i * _FZ_S8, g = _ac.createGain(); g.connect(_master);
         _fzEnv(g, tt, 0.006, FRENZY_LV.end, i === 2 ? 0.55 : 0.2);
         _fzOsc('triangle', f, tt, tt + 0.7, g); _fzOsc('sine', f * 2, tt, tt + 0.4, g, 0.2);
@@ -3133,11 +3166,13 @@ function frenzyLoopDuck(on) {
 
 // `quiet` for a death or a new run: no whoosh, just gone.
 function frenzyLoopOff(quiet) {
-    if (!_fzPad) return;
+    if (!_ac) return;
     const t = _ac.currentTime, p = _fzPad; _fzPad = null;
-    p.out.gain.cancelScheduledValues(t); p.out.gain.setValueAtTime(p.out.gain.value, t);
-    p.out.gain.linearRampToValueAtTime(0.0001, t + (quiet ? 0.08 : 0.3));
-    setTimeout(() => p.srcs.forEach(n => { try { n.stop(); } catch (e) {} }), quiet ? 150 : 400);
+    if (p) {
+        p.out.gain.cancelScheduledValues(t); p.out.gain.setValueAtTime(p.out.gain.value, t);
+        p.out.gain.linearRampToValueAtTime(0.0001, t + (quiet ? 0.08 : 0.3));
+        setTimeout(() => p.srcs.forEach(n => { try { n.stop(); } catch (e) {} }), quiet ? 150 : 400);
+    }
     if (quiet || !fxOn) return;
     const g = _ac.createGain(); g.connect(_master);
     _fzEnv(g, t, 0.05, FRENZY_LV.whoosh, 0.3);
@@ -3148,13 +3183,15 @@ function frenzyLoopOff(quiet) {
 }
 
 // A hazard the star flew into: a bell over its own break sound, one D-major pentatonic step
-// up per hit in this star, at most one per 60 ms.
+// up per hit in this star, at most one per 60 ms. Under the excerpt the ladder is F-major
+// pentatonic (D F G A C D), which sits on its G, F and Bb bars alike.
 function sfxFrenzyPing(step) {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
     if (t - _fzPingT < 0.06) return;
     _fzPingT = t;
-    const steps = [_FZN.D6, _FZN.E6, _FZN.Fs6, _FZN.A6, _FZN.B6, _FZN.D7];
+    const steps = _fzMus ? [_FZN.D6, _FZN.F6, _FZN.G6, _FZN.A6, _FZN.C7, _FZN.D7]
+                         : [_FZN.D6, _FZN.E6, _FZN.Fs6, _FZN.A6, _FZN.B6, _FZN.D7];
     const f = steps[Math.min(Math.max(step, 0), steps.length - 1)];
     const g = _ac.createGain(); g.connect(_master);
     _fzEnv(g, t + 0.01, 0.002, FRENZY_LV.ping, 0.26);
@@ -3193,11 +3230,96 @@ function frenzyGrind(on) {
     }
 }
 
-// Music during a star: the lift and presence shelf on top of the sector build.
-function bgmSetFrenzy(on) {
-    if (_bgmFrenzy === on) return;
+// Music during a star (2026-09-29, user: "die Musik pausieren und einen tollen Ausschnitt
+// aus the_mountain-epic abspielen, danach wieder resumen"). The play track is held at the
+// bar it had reached and faded out; the excerpt plays through its own chain into the music
+// bus; at the star's end the excerpt fades out and the track picks up on that bar again.
+// A death inside a star (`quiet`) leaves the excerpt to _fadeBgMusic, which collapses it
+// the way it collapses the bed, and the song's ending follows as usual.
+// Without the excerpt (music off, still loading, context rebuilt mid-star) the old lift
+// and presence shelf on top of the sector build apply instead.
+//
+// audio/the_mountain_epic.mp3 is 66.0-87.5 s of the_mountain-epic-490003.mp3 (Pixabay,
+// the_mountain, 101.75 BPM, C), cut losslessly (ffmpeg -c copy); the .web.m4a is one AAC
+// encode of the same span from the source. The span is the re-entry after the track's
+// break: a riser, then the full ensemble hits at FZ_MUS_HIT (G, then F and Bb). Playback
+// starts FZ_MUS_START so that hit lands on the fanfare's chord (sfxFrenzyStart, 5 16ths
+// in); the chord's D-F#-A over G reads as Gmaj9, not a clash. The loop is only a safety
+// net for a star stretched by warps; FRENZY_SEC never gets near it.
+// Level (ffmpeg, measured on the files): the excerpt is as loud as the loop body full-band
+// (-11.6 / -11.0 LUFS) but 5.3 dB quieter above 400 Hz, where a phone speaker lives. The
+// low shelf takes out 6 dB of its bass, and FZ_MUS_GAIN matches it to the bed in the phone
+// band (-22.9 + 6.1 = -16.8 LUFS), +1.1 dB full-band. Peaks sit ~1.6 dB under LIMIT_KNEE.
+const FZ_MUS_HIT        = 1.14;    // the hit, s into the file (both encodes within 3 ms)
+const FZ_MUS_START      = FZ_MUS_HIT - 5 * _FZ_S16;
+const FZ_MUS_LOOP_END   = FZ_MUS_HIT + 8 * 60 / 101.75 * 4;
+const FZ_MUS_GAIN       = BGM_GAIN * Math.pow(10, 6.1 / 20);
+const FZ_MUS_SHELF_HZ   = 250, FZ_MUS_SHELF_DB = -6;
+const FZ_MUS_BED_OUT    = MUSIC_FADE_SEC;   // the bed steps out under the fanfare's run-up
+const FZ_MUS_XFADE      = 0.5;              // excerpt out, bed back in, at the star's end
+let _fzMusBuf = null, _fzMusLoading = false, _fzMus = null;
+
+function _loadFzMusBuffer() {
+    if (!_ac || _fzMusBuf || _fzMusLoading) return;
+    _fzMusLoading = true;
+    const ctx = _ac;
+    fetch(_bgmUrl('the_mountain_epic'))
+        .then(r => r.arrayBuffer())
+        .then(ab => ctx.decodeAudioData(ab))
+        .then(buf => { _fzMusLoading = false; if (_ac === ctx) _fzMusBuf = buf; })
+        .catch(err => {
+            _fzMusLoading = false;
+            console.error('[audio]', _bgmUrl('the_mountain_epic'), 'load/decode failed:', err);
+        });
+}
+
+function _fzMusStart() {
+    if (!_ac || !musicOn || !_fzMusBuf || !_bgmNode || !_bgmActive) return false;
+    const t = _ac.currentTime;
+    _bgmHeldAt = _bgmBarNow();
+    const n = _bgmNode; _bgmNode = null; n.onended = null;
+    _bgmGain.gain.cancelScheduledValues(t);
+    _bgmGain.gain.setValueAtTime(_bgmGain.gain.value, t);
+    _bgmGain.gain.linearRampToValueAtTime(0.0001, t + FZ_MUS_BED_OUT);
+    try { n.stop(t + FZ_MUS_BED_OUT + 0.02); } catch (e) {}
+    const src = _ac.createBufferSource(), sh = _ac.createBiquadFilter();
+    const lp = _ac.createBiquadFilter(), g = _ac.createGain();
+    sh.type = 'lowshelf'; sh.frequency.value = FZ_MUS_SHELF_HZ; sh.gain.value = FZ_MUS_SHELF_DB;
+    lp.type = 'lowpass'; lp.frequency.value = 20000; lp.Q.value = 0.7;   // for the death collapse
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(FZ_MUS_GAIN, t + 0.05);
+    src.buffer = _fzMusBuf;
+    src.loop = true; src.loopStart = FZ_MUS_HIT; src.loopEnd = Math.min(FZ_MUS_LOOP_END, _fzMusBuf.duration);
+    src.connect(sh); sh.connect(lp); lp.connect(g); g.connect(_musicBus);
+    src.start(t, FZ_MUS_START);
+    _fzMus = { src, g, lp };
+    return true;
+}
+
+// Returns true when the bed came back, so the caller can re-apply a running slow sag.
+function _fzMusStop() {
+    const m = _fzMus, t = _ac.currentTime; _fzMus = null;
+    m.g.gain.cancelScheduledValues(t);
+    m.g.gain.setValueAtTime(m.g.gain.value, t);
+    m.g.gain.linearRampToValueAtTime(0.0001, t + FZ_MUS_XFADE);
+    try { m.src.stop(t + FZ_MUS_XFADE + 0.05); } catch (e) {}
+    const at = _bgmHeldAt; _bgmHeldAt = -1;
+    if (at < 0 || !musicOn || !_bgmActive || !_bgmBuf || _bgmNode) return false;
+    _bgmGain.gain.cancelScheduledValues(t);
+    _bgmGain.gain.setValueAtTime(0.0001, t);
+    _bgmGain.gain.linearRampToValueAtTime(BGM_GAIN, t + FZ_MUS_XFADE);
+    _playBgmBuffer(at);
+    return true;
+}
+
+// Returns true when a star's end brought the held play track back (see _fzMusStop).
+function bgmSetFrenzy(on, quiet) {
+    if (on && !_bgmFrenzy && !_fzMus && _fzMusStart()) return false;
+    if (!on && _fzMus) return quiet ? false : _fzMusStop();
+    if (_bgmFrenzy === on) return false;
     _bgmFrenzy = on;
     _applySectorIntensity(false, FRENZY_MUSIC_GLIDE);
+    return false;
 }
 
 // The beam catching a boulder (systems.js updateLaser): a short burn sizzle for the

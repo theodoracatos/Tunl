@@ -59,12 +59,14 @@ const APPROACH_WIN_TONE   = [255, 214, 150];
 const APPROACH_STREAK_N      = 40;
 const APPROACH_STREAK_IN_SEC = 1.8;
 const APPROACH_STREAK_MAX    = 0.30;         // alpha at full strength
-// Lip light (2026-09-24): the rock lip catches the dusk light in three steps (steps, not a
-// fade - see "Depth light"). [from, to] in px from the mouth (towards world-x 0), alpha.
-// The void inside stays dark, the light lies on the rock only.
+// Lip light (2026-09-24): the rock lip catches the dusk light in steps (steps, not a
+// fade - see "Depth light"). [from, to] in px from the mouth (towards world-x 0); only the
+// edge line is drawn (APPROACH_LIP_EDGE). The void inside stays dark, the light lies on the
+// rock only. A wide inner band (a 16px stroke in three alpha steps) was removed 2026-09-29:
+// it read as a milky glowing tube with blobs along the lower lip, and under the banner.
 const APPROACH_LIP_TINT  = 0.35;             // warm daylight toward the day's rock
-const APPROACH_LIP_STEPS = [[-W * 0.06, APPROACH_LIP * 0.33, 0.30], [APPROACH_LIP * 0.33, APPROACH_LIP * 0.66, 0.17], [APPROACH_LIP * 0.66, APPROACH_LIP, 0.07]];
-const APPROACH_LIP_EDGE  = [0.55, 0.32];     // extra edge line on the first two steps
+const APPROACH_LIP_STEPS = [[-W * 0.06, APPROACH_LIP * 0.33], [APPROACH_LIP * 0.33, APPROACH_LIP * 0.66]];
+const APPROACH_LIP_EDGE  = [0.55, 0.32];     // edge line alpha per step
 // [x seed px, y as fraction of H, speed factor]: fixed, private LCG (draw-only, never rng()).
 const _APPROACH_STREAKS = (() => {
     let s = 7;
@@ -463,9 +465,6 @@ function drawApproachScene(theme, dayRock) {
             ctx.fillStyle = g;
             ctx.fillRect(xs[0], -H, xEnd - xs[0] + RSTEP * 2, 3 * H);
             _paintStonePattern(cityScroll, 0.5);
-            // Lip light: a wide stroke along the profile, clipped to the rock so only its inner
-            // half shows, in three alpha steps.
-            for (const [a, b, al] of APPROACH_LIP_STEPS) strokeSpan(isTop ? tops : bots, mouthX + a, mouthX + b, rgb(lipTone, al), 16);
             ctx.restore();
         };
         paintRock(traceTop, true);
@@ -479,7 +478,7 @@ function drawApproachScene(theme, dayRock) {
             stroke(-Infinity, mouthX, rgb(horizon, 0.30), 3);
             // The foothill's upper face looks up at the moon; the overhang above faces down.
             if (!isTop) stroke(-Infinity, mouthX, moonRim, 1.5);
-            // Lip edge: the first two lip steps get a brighter line on the rock's edge.
+            // Lip edge: the lip steps get a brighter line on the rock's edge.
             for (let k = 0; k < APPROACH_LIP_EDGE.length; k++) {
                 stroke(mouthX + APPROACH_LIP_STEPS[k][0], mouthX + APPROACH_LIP_STEPS[k][1], rgb(lipTone, APPROACH_LIP_EDGE[k]), 2);
             }

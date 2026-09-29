@@ -360,7 +360,9 @@ function update(dt) {
             if (was > FRENZY_WARN_SEC && frenzyTime <= FRENZY_WARN_SEC) frenzyLoopWarn();
             if (frenzyTime <= 0) {
                 invulnT = Math.max(invulnT, HIT_INVULN_SEC);
-                frenzyLoopOff(); frenzyGrind(false); bgmSetFrenzy(false);
+                frenzyLoopOff(); frenzyGrind(false);
+                // The held play track comes back at rate 1; a time bubble still running sags it again.
+                if (bgmSetFrenzy(false) && slowTime > 0) bgmSetSlow(true, slowTime);
             }
         }
     } else if (frenzyPending || frenzyMeter >= frenzyCost) frenzyTryStart();
@@ -1065,7 +1067,7 @@ function die(bypassShield = false) {
     magnetLoopOff();
     laserLoopOff(); laserTime = 0;   // no beam over the death screen or after a revive
     frenzyTime = 0; frenzyPending = false; frenzyChargeT = 0;   // no star over the death screen or after a revive
-    frenzyLoopOff(true); frenzyGrind(false); bgmSetFrenzy(false);
+    frenzyLoopOff(true); frenzyGrind(false); bgmSetFrenzy(false, true);   // _fadeBgMusic below collapses the star's excerpt
     warpLoopOff();
     approachWindOff();
     sfxBulletFireStop();

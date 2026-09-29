@@ -1164,5 +1164,51 @@ function fzCoin(g, type, ahead = 0, arr = 'coins') {
     check(`a star's end grants HIT_INVULN_SEC (${e('invulnT').toFixed(2)}s)`, e('frenzyTime') === 0 && e('invulnT') > e('HIT_INVULN_SEC') - 0.1);
 }
 
+// ── The star's music (audio.js bgmSetFrenzy, FZ_MUS_*) ──
+// Catches: the play track not pausing for a star, the excerpt not starting at FZ_MUS_START,
+// the D-major pad playing under it, the track not coming back at the star's end or coming
+// back from the top instead of the bar it was held at, and a death inside a star fading the
+// excerpt out politely (and bringing the track back) instead of collapsing it into the
+// song's ending. The real audio.js runs against a recording stand-in for the AudioContext
+// whose ramps land at once; its clock only moves when the test sets it.
+const FAKE_AC = `(() => {
+    const param = v => ({ value: v, setValueAtTime(x) { this.value = x; }, linearRampToValueAtTime(x) { this.value = x; },
+        exponentialRampToValueAtTime(x) { this.value = x; }, setTargetAtTime(x) { this.value = x; },
+        setValueCurveAtTime(c) { this.value = c[c.length - 1]; }, cancelScheduledValues() {}, cancelAndHoldAtTime() {} });
+    const node = () => new Proxy({ connect() {}, disconnect() {},
+        start(t, off) { this.started = [t || 0, off || 0]; }, stop() { this.stopped = true; } },
+        { get: (o, k) => (k in o ? o[k] : typeof k === 'string' ? (o[k] = param(1)) : undefined) });
+    const buf = (ch, len, sr) => { const d = [...Array(ch)].map(() => new Float32Array(len));
+        return { numberOfChannels: ch, length: len, sampleRate: sr, duration: len / sr, getChannelData: c => d[c] }; };
+    _ac = new Proxy({ currentTime: 0, sampleRate: 44100, state: 'running', destination: {}, createBuffer: buf },
+        { get: (o, k) => (k in o ? o[k] : () => node()) });
+    _master = node(); _musicBus = node();
+    musicOn = true; fxOn = true;
+    _bgmBuf = { duration: BGM_LOOP_END }; _bgmOutroBuf = { duration: 10 }; _fzMusBuf = { duration: 21.5 };
+    _bgmActive = true; _playBgmBuffer();
+})()`;
+{
+    const g = fzCave(`${FAKE_AC}; bed0 = _bgmNode; _ac.currentTime = 20; frenzyMeter = frenzyCost;`);
+    g(`for (let i = 0; i < 120 && frenzyTime === 0; i++) { ${FZ_HOLD} }`);
+    const on = g(`({ star: frenzyTime > 0, bedOff: _bgmNode === null && bed0.stopped === true && _bgmGain.gain.value < 0.001,
+                    start: _fzMus && _fzMus.src.started[1], pad: _fzPad !== null })`);
+    check(`a star pauses the play track and plays the excerpt from FZ_MUS_START, no pad under it (from ${on.start}s)`,
+        on.star && on.bedOff && on.start === g('FZ_MUS_START') && !on.pad);
+
+    g(`_ac.currentTime = 24; for (let i = 0; i < 600 && frenzyTime > 0; i++) { ${FZ_HOLD} }`);
+    const off = g(`({ ended: frenzyTime === 0, fz: _fzMus === null, at: _bgmNode && _bgmNode.started[1], gain: _bgmGain.gain.value })`);
+    const bars = (off.at - g('BGM_LOOP_START')) / g('BGM_BAR');
+    check(`a star's end brings the play track back on the bar it was held at (${off.at && off.at.toFixed(3)}s, held at 20s)`,
+        off.ended && off.fz && Math.abs(bars - Math.round(bars)) < 1e-9 && Math.abs(off.at - 20) <= g('BGM_BAR') / 2
+        && off.gain === g('BGM_GAIN'));
+
+    g(`_ac.currentTime = 40; frenzyMeter = frenzyCost; for (let i = 0; i < 120 && frenzyTime === 0; i++) { ${FZ_HOLD} }
+       fz0 = _fzMus; shieldCount = 0; invulnT = 0; rewardedAdReady = false; die(true);`);
+    const d = g(`({ had: !!fz0, gone: _fzMus === null, collapsed: fz0 && fz0.lp.frequency.value === DEATH_MUSIC_HZ,
+                   bed: _bgmNode === null, outro: _outroNode !== null })`);
+    check('a death inside a star collapses the excerpt into the song\'s ending, the track stays down',
+        d.had && d.gone && d.collapsed && d.bed && d.outro);
+}
+
 if (failed) { console.log(`\n${failed} check(s) failed.`); process.exit(1); }
 console.log('\nThe real game runs headless and every simulated rule holds.');

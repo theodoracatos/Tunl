@@ -31,8 +31,10 @@ and score wait for the cave. Concept: https://claude.ai/artifact/ECrpmHcPeTsREMw
   lit windows on the two far layers (`APPROACH_WIN_*`; the level starts at the title's value
   and rises to the mouth, so the tap never pops; the hash is position+day, not `r()`, so the
   skyline is unchanged), wind streaks in the sky only (`APPROACH_STREAK_*`; the sky clip ends
-  at the mouth, so nothing moves behind a wall) and the lip light (`APPROACH_LIP_*`: three
-  alpha steps on the rock lip, the void stays dark). **Rejected in the audit, don't redo:**
+  at the mouth, so nothing moves behind a wall) and the lip light (`APPROACH_LIP_*`: a
+  brighter edge line in two alpha steps on the rock lip, the void stays dark; the wide
+  translucent band inside the rock was removed 2026-09-29 - it read as a milky glowing tube
+  with blobs along the lower lip. Don't bring it back). **Rejected in the audit, don't redo:**
   light lying in the void ahead of the ship, a zoom into the mouth, a black pulse at entry
   (the first deadly metre must stay readable), gate brackets on the lethal edge, a letter-by-
   letter banner (breaks Arabic/Hindi shaping), a sinusoidal thump for the audio hit (reads as

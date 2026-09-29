@@ -2155,3 +2155,12 @@ a boulder, 2 with the ring's centre inside the rock (one with 90% of the hit win
 - Found on the way: `test-cave.js` counted coinBlockedByStal's window as 46 instead of 80,
   so coins nearest the old horizon were placed blind to a spike - 28 coins over 30 days sat
   on one and are now vetoed (22 more coins shift as a knock-on).
+
+## Approach lip light loses its inner band (2026-09-29)
+
+User: "Einflug in den TUNL hat ein komisches Leuchten unterhalb". Rendered headless: the lip
+light's 16px translucent stroke (three alpha steps, clipped to the rock) read as a milky tube
+lying inside the rock, with round blobs where the steps met - most visible along the lower lip
+under the ship, and on the upper lip where it now passes just under the banner
+(`APPROACH_BANNER_Y`). Removed the band; the brighter lip edge line (`APPROACH_LIP_EDGE`,
+two steps) stays and carries the "light catches the lip" idea alone. Draw-only, all targets.
