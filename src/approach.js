@@ -503,22 +503,51 @@ function drawApproachScene(theme, dayRock) {
 }
 
 // "ENTERING THE TUNL" over the city, gone by the time the world banner takes over in the cave.
+// Glint (2026-09-29, concept https://claude.ai/artifact/McF51Sm8vrD6rSYxT3Mv7r): the line
+// starts a shade darker and one bright band sweeps across it once. The band is a gradient
+// fill of the whole string, never per letter, so Arabic joining and Hindi shaping survive.
+// Set at APPROACH_BANNER_Y, above the old H*0.24 slot: on the web's short canvas that slot
+// sat right on top of the "HOLD TO FLY" hint over the ship, which shows at the same time.
+const APPROACH_BANNER_Y     = 0.165;  // text centre, fraction of H
+const APPROACH_GLINT_DELAY  = 0.35;   // s after the fade-in starts
+const APPROACH_GLINT_SEC    = 1.0;
+const APPROACH_GLINT_HALF   = 1.45;   // band half-width, in font sizes
+const APPROACH_GLINT_REACH  = 1.9;    // how far past each end of the text the band starts/ends, in font sizes
 function drawApproachBanner(theme) {
     if (!(phase === 'play' && approachLeft > 0)) return;
-    const tIn  = Math.min(1, Math.max(0, (approachT - START_RAMP_SEC * 0.6) / 0.5));
+    const tIn0 = START_RAMP_SEC * 0.6;
+    const tIn  = Math.min(1, Math.max(0, (approachT - tIn0) / 0.5));
     const tOut = Math.min(1, approachLeft / (scrollSpd() * 0.6));
     const a = Math.min(tIn, tOut);
     if (a <= 0) return;
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
-    ctx.font = `bold ${FS * 0.045}px ${FONT_UI}`;
+    const fs = FS * 0.045;
+    ctx.font = `bold ${fs}px ${FONT_UI}`;
     const m = ctx.measureText(T.entering);
-    const asc = m.actualBoundingBoxAscent || FS * 0.045 * 0.72;
-    ctx.shadowColor = rgb(theme.wallBase, a * 0.8);
-    ctx.shadowBlur = 16;
-    ctx.fillStyle = rgb(lerpClr(theme.wallBase, [255, 255, 255], 0.55), a);
-    ctx.fillText(T.entering, W / 2, H * 0.24 + asc / 2);
+    const asc = m.actualBoundingBoxAscent || fs * 0.72;
+    const base = H * APPROACH_BANNER_Y + asc / 2;
+    ctx.shadowColor = rgb(theme.wallBase, a * 0.7);
+    ctx.shadowBlur = 14;
+    ctx.fillStyle = rgb(lerpClr(theme.wallBase, [255, 255, 255], 0.42), a);
+    ctx.fillText(T.entering, W / 2, base);
+    const p = (approachT - tIn0 - APPROACH_GLINT_DELAY) / APPROACH_GLINT_SEC;
+    if (p > 0 && p < 1) {
+        // Second pass of the same string, transparent except for the band, so its glow
+        // (the shadow) only lights up where the band is.
+        const q = 1 - (1 - Math.min(1, p * 1.1)) ** 3;
+        const reach = fs * APPROACH_GLINT_REACH, half = fs * APPROACH_GLINT_HALF;
+        const x = W / 2 - m.width / 2 - reach + (m.width + 2 * reach) * q;
+        const band = ctx.createLinearGradient(x - half, base - asc, x + half, base);
+        band.addColorStop(0, 'rgba(255,255,255,0)');
+        band.addColorStop(0.5, `rgba(255,248,236,${0.95 * a})`);
+        band.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.shadowColor = rgb(lerpClr(theme.wallBase, [255, 255, 255], 0.5), 0.9 * a);
+        ctx.shadowBlur = 10 * _RASTER_SCALE;
+        ctx.fillStyle = band;
+        ctx.fillText(T.entering, W / 2, base);
+    }
     ctx.shadowBlur = 0;
     ctx.restore();
 }

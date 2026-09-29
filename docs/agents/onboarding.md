@@ -42,6 +42,12 @@ and score wait for the cave. Concept: https://claude.ai/artifact/ECrpmHcPeTsREMw
   `approachUpdate()`. `approachStart()` predicts that moment for the swell; `test-sim.js`
   checks the prediction against the real crossing at three screen sizes.
 - Device check 2026-09-24: look and wind approved by the user on the device, as shipped.
+- **Banner glint + height (2026-09-29, concept https://claude.ai/artifact/McF51Sm8vrD6rSYxT3Mv7r)**:
+  `T.entering` starts a shade darker and one bright band (`APPROACH_GLINT_*`) sweeps across
+  it once, as a gradient fill of the whole string - never per letter (Arabic/Hindi shaping).
+  It sits at `APPROACH_BANNER_Y`, above the old slot, which on the web's short canvas sat on
+  the "HOLD TO FLY" hint that shows at the same time. All targets, no `isWeb()` gate (user's
+  pick). Not picked from the same concept: side rules ("wings"), a dateline, a chamfered plate.
 - Not done yet: optional extras from the concept (aircraft lights, haze bands, a stepped
   banner) and the S0 debriefing scene showing the mouth.
 
