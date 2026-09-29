@@ -20,6 +20,12 @@
 //  page: the sticky nav, the sitemap footer (with the language switcher) and the
 //  hreflang block, all between <!-- site-chrome:... --> markers, plus site/sitemap.xml.
 //
+//  Version numbers in page text: write <span class="tunl-ver"></span> (content is
+//  ignored) and the build stamps TUNL_VERSION from src/constants.js into it, in the
+//  English page and in every translation. The span is blanked before units are
+//  hashed, so a version bump never invalidates a translation; translations must
+//  carry the same empty span. Never type the current version into page text.
+//
 //  Usage
 //    node build-pages.mjs                 build everything
 //    node build-pages.mjs --list a,b      print the English units of pages a,b (key<TAB>text)
@@ -56,6 +62,9 @@ const chrome = (key, lang) => {
   return e[lang] != null ? e[lang] : e.en;
 };
 const VERSION = rd(path.join(HERE, '..', 'src', 'constants.js')).match(/const\s+TUNL_VERSION\s*=\s*['"]([^'"]+)['"]/)[1];
+const VER_SPAN = /(<span class="tunl-ver">)[^<]*(<\/span>)/g;
+const blankVer = (html) => html.replace(VER_SPAN, '$1$2');
+const fillVer = (html) => html.replace(VER_SPAN, `$1${VERSION}$2`);
 
 // ---------- text units -------------------------------------------------------
 const norm = (t) => t.replace(/\s+/g, ' ').trim();
@@ -280,7 +289,8 @@ function invalid(en, tr) {
 }
 
 // ---------- main -------------------------------------------------------------
-const readEn = (page) => rd(path.join(SITE, page, 'index.html'));
+const enFile = (page) => path.join(SITE, page, 'index.html');
+const readEn = (page) => blankVer(rd(enFile(page)));
 const args = process.argv.slice(2);
 const T = loadTranslations();
 
@@ -364,9 +374,9 @@ for (const l of OTHER) for (const p of PAGES) {
 
 // English pages: regenerate their chrome in place
 for (const p of PAGES) {
-  const cur = readEn(p);
-  const next = withChrome(cur, 'en', p);
-  if (next !== cur) writeFileSync(path.join(SITE, p, 'index.html'), next);
+  const cur = rd(enFile(p));
+  const next = fillVer(withChrome(readEn(p), 'en', p));
+  if (next !== cur) writeFileSync(enFile(p), next);
 }
 
 let written = 0;
@@ -384,7 +394,7 @@ for (const l of OTHER) {
     h = h.replace('<html lang="en">', `<html lang="${htmlLang(l)}"${dirAttr(l)}>`);
     h = h.replace(/(<link rel="canonical" href=")[^"]*(">)/, `$1${pageUrl(l, p)}$2`);
     h = h.replace(/(<meta property="og:url" content=")[^"]*(">)/, `$1${pageUrl(l, p)}$2`);
-    h = localizeLinks(h, l);
+    h = fillVer(localizeLinks(h, l));
     mkdirSync(outDir, { recursive: true });
     writeFileSync(path.join(outDir, 'index.html'), h);
     written++;
