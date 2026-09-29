@@ -151,7 +151,16 @@ function _syncWebLegalLabels() {
     const imp = document.getElementById('legal-imp'), priv = document.getElementById('legal-priv');
     if (imp)  { imp.textContent  = T.legalLink;   imp.href  = base + 'impressum/'; }
     if (priv) { priv.textContent = T.privacyLink; priv.href = base + 'privacy/'; }
+    _fitWebLegal();
 }
+// Bottom-left beside the centred pill (tunl.html #legal): cap the width at the pill's
+// left edge so a long label (ru) wraps rather than running under it on a narrow phone.
+function _fitWebLegal() {
+    if (!_legalEl || !_ctaShown) return;
+    const room = _ctaEl.getBoundingClientRect().left - _legalEl.getBoundingClientRect().left - 10;
+    _legalEl.style.maxWidth = Math.max(60, room) + 'px';
+}
+window.addEventListener('resize', _fitWebLegal);
 function _syncWebCta() {
     if (!_ctaEl) return;
     // Hidden while any title-screen panel is open (ALL SHIPS / shop, ship
@@ -171,6 +180,7 @@ function _syncWebCta() {
         el.classList.toggle('show', show);
         el.setAttribute('aria-hidden', show ? 'false' : 'true');
     }
+    _fitWebLegal();
 }
 
 // ── Portrait gate (web only) ─────────────────────────────────────────
