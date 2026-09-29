@@ -52,6 +52,10 @@ and score wait for the cave. Concept: https://claude.ai/artifact/ECrpmHcPeTsREMw
   pick). Not picked from the same concept: side rules ("wings"), a dateline, a chamfered plate.
   The band pass has **no shadow**: on WebKit it drew a ghost copy of the line below the banner
   (see `visuals.md`); the glow comes from the first, solid pass only.
+- **Banner leaves early (2026-09-29, user's call)**: it no longer stays until the cave
+  arrives; it holds `APPROACH_BANNER_HOLD_SEC` from its fade-in start (glint plus about a
+  second to read) and fades over `APPROACH_BANNER_OUT_SEC`. Keep the hold longer than the
+  glint (`APPROACH_GLINT_DELAY + APPROACH_GLINT_SEC`). All targets, no `isWeb()` gate.
 - Not done yet: optional extras from the concept (aircraft lights, haze bands, a stepped
   banner) and the S0 debriefing scene showing the mouth.
 

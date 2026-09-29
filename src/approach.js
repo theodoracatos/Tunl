@@ -501,7 +501,10 @@ function drawApproachScene(theme, dayRock) {
     }
 }
 
-// "ENTERING THE TUNL" over the city, gone by the time the world banner takes over in the cave.
+// "ENTERING THE TUNL" over the city, gone well before the cave arrives: it holds
+// APPROACH_BANNER_HOLD_SEC from the start of its fade-in (the glint done, about a second to
+// read it), then fades over APPROACH_BANNER_OUT_SEC (2026-09-29, user: "darf früher weg" -
+// it used to stay until world-x 0 reached the left edge).
 // Glint (2026-09-29, concept https://claude.ai/artifact/McF51Sm8vrD6rSYxT3Mv7r): the line
 // starts a shade darker and one bright band sweeps across it once. The band is a gradient
 // fill of the whole string, never per letter, so Arabic joining and Hindi shaping survive.
@@ -512,11 +515,14 @@ const APPROACH_GLINT_DELAY  = 0.35;   // s after the fade-in starts
 const APPROACH_GLINT_SEC    = 1.0;
 const APPROACH_GLINT_HALF   = 1.45;   // band half-width, in font sizes
 const APPROACH_GLINT_REACH  = 1.9;    // how far past each end of the text the band starts/ends, in font sizes
+const APPROACH_BANNER_HOLD_SEC = 2.25; // s from the fade-in start to the fade-out start
+const APPROACH_BANNER_OUT_SEC  = 0.5;
 function drawApproachBanner(theme) {
     if (!(phase === 'play' && approachLeft > 0)) return;
     const tIn0 = START_RAMP_SEC * 0.6;
     const tIn  = Math.min(1, Math.max(0, (approachT - tIn0) / 0.5));
-    const tOut = Math.min(1, approachLeft / (scrollSpd() * 0.6));
+    const tOut = Math.min(1, approachLeft / (scrollSpd() * 0.6),
+        1 - (approachT - tIn0 - APPROACH_BANNER_HOLD_SEC) / APPROACH_BANNER_OUT_SEC);
     const a = Math.min(tIn, tOut);
     if (a <= 0) return;
     ctx.save();
