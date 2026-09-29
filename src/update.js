@@ -3,6 +3,14 @@
 
 let prev = 0;
 
+// One trapezoid step of the ship's vertical motion (see the physics block in update()).
+function shipStep(thrust, dt) {
+    const v0 = vy;
+    vy += (thrust ? -THRUST + GRAVITY : (hasHeldThisRun ? GRAVITY : 0)) * dt;
+    vy  = Math.max(-MAX_VY, Math.min(MAX_VY, vy));
+    py += (v0 + vy) * 0.5 * dt;
+}
+
 function update(dt) {
     // A star's smash holds the whole frame for FRENZY_HITSTOP_SEC (constants.js doc): no
     // clock moves, so the picture freezes on the impact and everything resumes as it was.
@@ -43,7 +51,7 @@ function update(dt) {
         p.life -= vdt * 3.2;
         if (p.life <= 0) thrustParts.splice(i, 1);
     }
-    if (holding && (phase === 'play' || phase === 'title')) {
+    if (thrusting() && (phase === 'play' || phase === 'title')) {
         for (const ns of [-1, 1]) {
             const ey = py + PR * shipNozzleDY(ns);
             for (let i = 0; i < 4; i++) {
@@ -177,6 +185,8 @@ function update(dt) {
         const et  = startRamp * startRamp * (3 - 2 * startRamp); // smoothstep
         py        = lerp(H + PR * 4, H / 2, et);
         vy        = 0;
+        // The ramp drives the ship, so a tap here is not a hop (it would fire at the ramp's end).
+        if (tapBurstT > 0) { tapBurstT = 0; if (!holding) thrustOff(); }
         shipPitch = lerp(-Math.PI / 2, 0, et);
         // Exhaust particles firing downward (ship is pointing up)
         for (let i = 0; i < 3; i++) {
@@ -204,6 +214,10 @@ function update(dt) {
         return;
     }
 
+    // Tap tutor (approach.js): plans the next tap and slows time while a due tap is late.
+    // Everything below, physics and clocks alike, runs on the scaled step.
+    dt = tutorStep(dt);
+
     // Physics
     // Gravity is withheld entirely until the player's first hold input of this run
     // (see hasHeldThisRun in state.js) -- otherwise a run that starts with holding
@@ -224,10 +238,16 @@ function update(dt) {
     // same daily cave into the same leaderboard, so that gap was bigger than anything
     // _FEEL_SCALE and the W cap exist to equalise. The average is exact for constant
     // acceleration, which this is between clamps, and costs one extra local.
-    const _vyPrev = vy;
-    vy += (holding ? -THRUST + GRAVITY : (hasHeldThisRun ? GRAVITY : 0)) * dt;
-    vy  = Math.max(-MAX_VY, Math.min(MAX_VY, vy));
-    py += (_vyPrev + vy) * 0.5 * dt;
+    // A tap burst (constants.js TAP_BURST_SEC) that runs out inside this frame is split at
+    // that instant, each part integrated on its own: rounding the end to a frame edge gave
+    // every refresh rate a different hop height.
+    const _burstPart = !holding && tapBurstT > 0 && tapBurstT < dt ? tapBurstT : 0;
+    if (_burstPart > 0) { shipStep(true, _burstPart); shipStep(false, dt - _burstPart); }
+    else shipStep(thrusting(), dt);
+    if (tapBurstT > 0) {
+        tapBurstT = Math.max(0, tapBurstT - dt);
+        if (tapBurstT <= 0 && !holding) thrustOff();
+    }
     // Idle-hold hint timer (draw.js IDLE_HINT_DELAY) -- only worth counting up before
     // the player's first press; irrelevant forever after, so don't bother once true.
     if (!hasHeldThisRun) idleHoldTimer += dt;
@@ -566,7 +586,7 @@ function update(dt) {
 
     // Per-skin effects - only spawn while holding, clear timer when released
     if (phase === 'play') {
-        if (holding) {
+        if (thrusting()) {
             skinFxT += dt;
             // AMBER (1): small embers from engine
             if (activeSkin === 1 && Math.random() < dt * 4) {
@@ -1075,7 +1095,7 @@ function die(bypassShield = false) {
     sfxBulletFireStop();
     bgmSetSlow(false);
     bgmSetWarp(false);
-    phase = 'dead'; deadT = 0; flashA = 1.0; shake = 14; holding = false;
+    phase = 'dead'; deadT = 0; flashA = 1.0; shake = 14; holding = false; tapBurstT = 0;
     _shareCopiedT = 0;
     _homeBtnRect = null; _playBtnRect = null; _shareBtnRect = null; _continueBtnRect = null;
     _promoAppleBtnRect = null; _promoPlayBtnRect = null;

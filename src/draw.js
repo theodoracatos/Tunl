@@ -2705,7 +2705,7 @@ function drawWorld() {
         ctx.rotate(pitchAngle);
         ctx.translate(-PX, -py);
 
-        if ((holding || startRamp < 1) && (phase === 'play' || phase === 'title')) {
+        if ((thrusting() || startRamp < 1) && (phase === 'play' || phase === 'title')) {
             drawThrustPlume(PX, py, PR, sr, sg, sb);
         }
 
@@ -2821,12 +2821,14 @@ function drawWorld() {
     // hasHeldThisRun/idleHoldTimer, state.js + update.js). Gravity is withheld until
     // their first press, so they aren't in danger yet, but they still don't know what
     // to do -- fades in above the parked ship after IDLE_HINT_DELAY and vanishes for
-    // good the instant they press. Reuses T.tap (the title screen's "HOLD TO FLY")
+    // good the instant they press. Reuses T.tap (the title screen's "TAP TO FLY")
     // rather than a new string -- same instruction, just relocated to where the ship
     // actually is instead of a fixed title-screen line (see Onboarding in CLAUDE.md
     // for why a *static* title-screen hint was tried and reverted; this one only ever
     // appears when it's actually needed, and is gone by the player's first touch).
-    if (phase === 'play' && !hasHeldThisRun) {
+    // The tap tutor's circle (approach.js) replaces the words while it shows.
+    drawTapTutor();
+    if (phase === 'play' && !hasHeldThisRun && !(tutorOn && tutorA > 0)) {
         const IDLE_HINT_DELAY = 1.0, IDLE_HINT_FADE = 0.4;
         const ia = Math.max(0, Math.min(1, (idleHoldTimer - IDLE_HINT_DELAY) / IDLE_HINT_FADE));
         if (ia > 0) {
@@ -2847,7 +2849,7 @@ function drawWorld() {
     // Per-skin effects (draw)
     if (phase === 'play') {
         // PEARL (0): tiny shimmer dots near nose while holding
-        if (activeSkin === 0 && holding) {
+        if (activeSkin === 0 && thrusting()) {
             for (let i = 0; i < 2; i++) {
                 const a = Math.max(0, Math.sin(gtime * 9.1 + i * 2.8)) * 0.5;
                 if (a < 0.06) continue;

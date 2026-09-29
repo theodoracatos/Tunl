@@ -93,7 +93,7 @@ share, then **restored on the user's explicit request** because the longer launc
 better. **Don't cut it again without asking.**
 
 On top of that, **every run opens with a level glide**: gravity is withheld until the first
-hold or `HOLD_GATE_MAX_SEC`. Applies to PLAY AGAIN too - `input.js` does not pre-set
+press or `HOLD_GATE_MAX_SEC`. Applies to PLAY AGAIN too - `input.js` does not pre-set
 `holding`/`hasHeldThisRun` on the restart tap, so a restart opens like a fresh start.
 
 **The opening coins teach RELEASE** (`ONBOARD_ARC_WX` / `ONBOARD_ARC_FRAC`, applied in
@@ -102,6 +102,31 @@ so over the opening stretch the coin line is forced onto an arc that starts **be
 launch line (take it by letting go) and rises for the second coin (take it by holding).
 Amplitude tapers to 0 by `ONBOARD_ARC_WX`. `rng()` is consumed either way, so coin types and
 the seeded stream are unchanged - only y positions move.
+
+**The tap tutor (2026-09-29, user's call, "so eine Art mini Tutorial")**: while the all-time
+best is below `MIN_REAL_RUN_SCORE`, a tap circle by the ship shows when to tap so the ship
+flies the opening's route, from the end of the launch ramp over the city until the ship passes
+`SAFE_START_WX`. Only the player's own tap moves the ship (a press is a hop, see physics.md
+"Tap = hop"). Code: approach.js "Tap tutor", `TUTOR_*` in constants.js. Picks from
+https://claude.ai/artifact/VVhDdo7T4gCd4HmEqDYECQ (db `picks`), all six recommendations.
+- **The planner is the real physics run forward** (`tutorPlan()`): a tap is due when a hop
+  started now would top out on the route instead of above it. Recomputed every frame from the
+  ship's state, so a missed or extra tap needs no special case. Route (`tutorRouteY()`): the
+  mouth's centre over the city, then straight lines through the good coins (the RELEASE arc
+  below), kept `PR * 2.2` off the walls.
+- **A late tap slows time** to `TUTOR_SLOW_SCALE` (the whole update step, via `tutorStep()`),
+  only after the player's first tap of the run; before it the gravity gate glides the ship and
+  the circle presses on `TUTOR_DEMO_PERIOD`. The score is world-x, so slow motion changes nothing
+  on the leaderboard.
+- **The circle is the iPhone touch button** (user: "so dieser typische iPhone Knopf Kreis",
+  after a pointing finger read as a white tombstone): a white dot in two translucent rings,
+  neutral white like the system's own. It brightens over `TUTOR_LEAD_SEC` and presses in
+  (shrinks, glows) while a tap is due; a tap sends a ring out, a tap on the beat draws a check
+  mark above the ship (no new string).
+- **Draw and time only**: no `rng()`, no placement. The circle replaces the idle "TAP TO FLY"
+  words while it shows.
+- `test-sim.js` "Tap tutor": a pilot that taps only when the circle says so flies the opening to
+  `SAFE_START_WX` with no wall touch (29 taps, ~15 px mean off the route at H 440).
 
 **Do not re-add a title-screen control hint.** A "HOLD to climb / RELEASE to fall" line was
 removed the same day it shipped: redundant next to HOLD TO FLY, crowded the row below, and

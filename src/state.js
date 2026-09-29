@@ -11,12 +11,16 @@ let phase, py, vy, holding, scrollX, score, newBest, newDailyBest, startRamp;
 // timeout in update.js.
 let hasHeldThisRun;
 // Real seconds elapsed in-flight while hasHeldThisRun is still false. Once this passes
-// IDLE_HINT_DELAY (draw.js), a "HOLD TO FLY" nudge fades in above the parked ship --
+// IDLE_HINT_DELAY (draw.js), a "TAP TO FLY" nudge fades in above the parked ship --
 // the player who never pressed at all still needs to be told what to do, since the
 // gravity gate above only buys them time, not understanding. Reset in startPlay(),
 // counted up in update.js, read in draw.js; stops mattering forever once
 // hasHeldThisRun flips true.
 let idleHoldTimer;
+// Seconds of tap burst left (constants.js TAP_BURST_SEC): set by input.js onDown in play,
+// run down by update.js's physics step. Thrust is on while holding OR this is > 0.
+let tapBurstT = 0;
+function thrusting() { return holding || tapBurstT > 0; }
 const _initToday    = (() => { const d = new Date(); return d.getUTCFullYear()*10000 + (d.getUTCMonth()+1)*100 + d.getUTCDate(); })();
 const _savedLastDay = parseInt(localStorage.getItem('tunnel_lastday') || '0');
 // One-time record reset for 15.0: the personal records saved by earlier versions come from

@@ -46,7 +46,7 @@ function paintSignals() {
     if (phase === 'play') {
         const dt = Math.max(0, Math.min(0.1, gtime - _paintHeatT));
         _paintHeatT = gtime;
-        const tgt = holding ? 1 : 0;
+        const tgt = thrusting() ? 1 : 0;
         _paintHeat += (tgt - _paintHeat) * Math.min(1, dt * (tgt ? 4.5 : 1.8));
         S.th    = _paintHeat;
         S.roll  = Math.max(-1, Math.min(1, (shipRoll - SHIP3D_ROLL_BASE) / SHIP3D_ROLL_AMP));

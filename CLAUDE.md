@@ -59,7 +59,7 @@ reliably `false` in both apps). Build tooling, the site and tests need no gate.
 
 ## How to play
 
-HOLD (tap/click/Space/ArrowUp) = thrust up, RELEASE = gravity. Collect coins (gold widens
+TAP (tap/click/Space/ArrowUp) = a hop (`TAP_BURST_SEC` of thrust), HOLD = keep thrusting, RELEASE = gravity. Collect coins (gold widens
 the corridor), avoid stalactites, mines, boulders, cannon shots and walls.
 `score = floor(scrollX / 60) + bonusScore`. Phases: `'title'` | `'play'` | `'dead'`.
 
@@ -105,7 +105,7 @@ the row before every `src/*.js` edit - **change its `MAP` whenever this table ch
 
 ### Physics and canvas -> `docs/agents/physics.md`
 - W capped at 956 on every platform, H at 600 (520 Android app, 440 web): leaderboard fairness.
-- **THRUST has been walked back twice on player feedback** - read the tuning history before touching it. Hold-to-thrust is an acceleration ramp, not an impulse.
+- **THRUST has been walked back twice on player feedback** - read the tuning history before touching it. Thrust is an acceleration ramp, not an impulse; **every press is a hop** (`TAP_BURST_SEC`, 2026-09-29), holding keeps thrusting. The burst ends inside the frame - `test-sim.js` guards it.
 - **Trapezoid integration** in `update.js` (`py += (vyPrev + vy) * 0.5 * dt`) - do not revert; `test-sim.js` guards it.
 - **GRAVITY/THRUST/MAX_VY scale by `_FEEL_SCALE = H / _H_REF`** on every device. New vertical-motion code stays ratio-based - never compare `vy` against an unscaled px/s literal.
 
@@ -173,7 +173,7 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 
 ### Approach and onboarding -> `docs/agents/onboarding.md`
 - The city lies before world-x 0 (camera offset), never in it. No soft walls.
-- Safe opening flight to `SAFE_START_WX`; opening coins teach RELEASE.
+- Safe opening flight to `SAFE_START_WX`; opening coins teach RELEASE. Tap tutor: a circle (iPhone touch button) shows each tap to `SAFE_START_WX` while the best is below `MIN_REAL_RUN_SCORE`; only the player's tap moves the ship.
 - `START_RAMP_SEC` stays 1.3s (user's call). **No title-screen control hint.**
 
 ### Ads, economy, liveries -> `docs/agents/economy.md`

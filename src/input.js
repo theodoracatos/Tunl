@@ -11,7 +11,7 @@ function inCircle(cx, cy, c) { const dx = cx - c.cx, dy = cy - c.cy; return dx*d
 let _inputSuppressedUntil = 0;
 const INPUT_RESUME_GRACE_MS = 400;
 function _suppressInput() {
-    holding = false; thrustOff();
+    holding = false; tapBurstT = 0; thrustOff();
     _inputSuppressedUntil = performance.now() + INPUT_RESUME_GRACE_MS;
     _pageAway = true;
     pauseForInterrupt();
@@ -374,10 +374,12 @@ function onDown(e) {
         return;
     }
     holding = true;
-    if (phase === 'play') { hasHeldThisRun = true; thrustOn(); }
+    // Every press is a hop (constants.js TAP_BURST_SEC); holding on keeps thrusting.
+    if (phase === 'play') { hasHeldThisRun = true; tapBurstT = TAP_BURST_SEC; thrustOn(); tutorOnTap(); }
 }
 function onUp(e) {
-    holding = false; thrustOff();
+    // A short tap's burst outlives the press: update.js stops the engine when it runs out.
+    holding = false; if (tapBurstT <= 0) thrustOff();
     if (phase === 'title' && _titleStartPending !== null && (!e || e.pointerId === _titleStartPending)) {
         _titleStartPending = null;
         _initAC();
@@ -385,7 +387,8 @@ function onUp(e) {
     }
 }
 function onCancel(e) {
-    holding = false; thrustOff();
+    // A cancelled press still hops: webviews cancel long presses (TikTok), the burst stays.
+    holding = false; if (tapBurstT <= 0) thrustOff();
     if (!e || e.pointerId === _titleStartPending) _titleStartPending = null;
 }
 

@@ -2204,3 +2204,32 @@ peaked at -0.6 dBFS. Sweeps showed the kick body as the lever (the sub sits unde
 and in-phase saw starts as a second spike; the saws now start 1.1 ms apart and the kick is
 0.22 with a 0.15 mid-band partner. Result against Nebula's loop at BGM_GAIN: phone band +1.0 dB
 RMS / +0.7 dB loudest-50ms, full band -1.3 dB RMS / +0.9 dB loudest-50ms, peak -4.5 dBFS.
+
+## Tap = hop and the tap tutor (2026-09-29)
+
+User: "Können wir für Anfänger zeigen wann gedrückt werden muss, damit das Schiff exakt die
+beste Route fliegt? Zumindest bis es zählt. [...] Halten zum Steigen muss weg, die Leute
+verstehen das nicht und es ist zu kompliziert - zumindest bis score 200", then "so ein
+Zeigefinger der tippt und man muss dann selber dort reintippen damit auch wirklich etwas
+passiert - so eine Art mini Tutorial". Evidence behind it: 22 of 25 /tt/ players (28-29.09)
+died at score <= 8, where a run with no input dies (5).
+Concept + playable prototype + six decisions: https://claude.ai/artifact/VVhDdo7T4gCd4HmEqDYECQ
+(db `picks`); the user took all six recommendations ("setze alle Empfehlungen um").
+- **Tap = hop, hold kept**: every press gives `TAP_BURST_SEC` (0.15 s) of the unchanged THRUST
+  ramp; holding keeps thrusting. Rejected: a burst only until score 200 (tap-only players lose
+  lift mid-run), tap-only until 200 then hold-only (a hard mode switch mid-run). Measured with a
+  replay bot (same brain, 0.15 s lag, 30 days): hold 413 median, hold + burst 413, tap-only
+  0.15 s 156 (90% reach 100, 37% reach 200), tap-only 0.12 s 138, tap-only 0.18 s ~169 with a
+  retuned brain. Burst sizes at H 440: 0.12/0.15/0.18 s -> 31/48/70 px hop, 3.5/2.8/2.3 taps/s
+  to hover; before, a 0.05 s tap moved ~5 px. After the build, through the real onDown/onUp
+  (hold pilot, 30 days, HEAD vs new): K 0.3 median 381 -> 384, >= 233 70% -> 80%; K 0.45 median
+  413 -> 418, >= 233 87% -> 80% (2 of 30 days); noise level, not harder.
+- **Tap circle**: first built as a pointing finger; the user swapped it the same evening for
+  "einen Kreis ... so dieser typische iPhone Knopf Kreis" (the finger read as a white
+  tombstone): a white dot in two translucent rings that brightens and presses in on the beat.
+  From the end of the launch ramp until SAFE_START_WX, shown while the all-time
+  best is below MIN_REAL_RUN_SCORE, slow motion (x0.25) while a due tap is late. Rejected:
+  city only, until score 75; carrying on without slow motion; first 3 runs; until best 200.
+  All targets, no isWeb() gate.
+- Open: device test (finger size, feel of the hop on a phone), /tt/'s own HOLD/RELEASE
+  splash + in-flight hint (tt-head.js TT_RULES, tt-tail.js) still teach holding.

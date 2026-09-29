@@ -1270,5 +1270,100 @@ const FAKE_AC = `(() => {
         d.had && d.gone && d.collapsed && d.bed && d.outro);
 }
 
+// ── Tap = hop (input.js onDown, update.js shipStep, constants.js TAP_BURST_SEC) ──
+// Catches: a press that no longer starts the burst, a release that cuts it short, a burst
+// whose end is rounded to a frame edge (every refresh rate would hop to its own height),
+// and an engine sound that runs on after a short tap. Real onDown()/onUp()/update(); the
+// apex is compared against the exact constant-acceleration solution.
+{
+    const hop = (fps, holdSec) => {
+        const g = quietCave(true);
+        g(FAKE_AC);
+        return g(`(() => {
+            hasHeldThisRun = true; holding = false; tapBurstT = 0; vy = 0; invulnT = 99;
+            // A tap starts a little below the middle; a hold starts near the floor, so it has room to climb.
+            py = (b => ${holdSec} > 0 ? b.bot - PR * 1.5 : (b.top + b.bot) / 2 + (b.bot - b.top) * 0.15)(boundsAt(scrollX + PX));
+            const y0 = py; let top = py, soundAfter = null;
+            onDown();
+            const holdSteps = Math.round(${holdSec} * ${fps});
+            for (let i = 0; i < holdSteps; i++) update(1 / ${fps});
+            const vyRel = vy;
+            onUp();
+            for (let i = 0; i < Math.round(0.8 * ${fps}); i++) {
+                update(1 / ${fps}); top = Math.min(top, py);
+                if (soundAfter === null && tapBurstT === 0) soundAfter = _tVoice !== null;
+            }
+            const a = THRUST - GRAVITY, b = TAP_BURST_SEC;
+            return { rise: y0 - top, exact: 0.5 * a * b * b + (a * b) ** 2 / (2 * GRAVITY), soundAfter, vyRel };
+        })()`);
+    };
+    let worst = 0, rises = [];
+    for (const fps of [144, 120, 90, 60, 45, 30, 24]) {
+        const r = hop(fps, 0);
+        rises.push(r.rise.toFixed(1));
+        worst = Math.max(worst, Math.abs(r.rise - r.exact));
+        if (fps === 60) check(`the engine stops when a short tap's burst runs out`, r.soundAfter === false);
+    }
+    // Sampling the apex at frame edges costs at most 0.5*GRAVITY*(dt/2)^2 (~0.3px at 24Hz);
+    // rounding the burst's end to a frame edge is off by ~11px at 24Hz.
+    check(`a tap is one full hop at every frame rate (${rises.join('/')}px, worst ${worst.toFixed(2)}px off exact)`, worst < 0.5);
+    // Climb speed at release after 0.3 s held: a burst alone tops out at (THRUST-GRAVITY)*TAP_BURST_SEC.
+    const held = hop(60, 0.3), burstVy = g0 => g0('(THRUST - GRAVITY) * TAP_BURST_SEC');
+    const cap = burstVy(boot());
+    check(`holding on keeps thrusting past the burst (climbing ${(-held.vyRel).toFixed(0)}px/s at release, a burst gives ${cap.toFixed(0)})`,
+        -held.vyRel > cap * 1.8);
+}
+
+// ── Tap tutor (approach.js "Tap tutor", constants.js TUTOR_*) ────────────────
+// Catches: a planner whose taps no longer fly the opening, a circle that stays past
+// SAFE_START_WX, slow motion that never comes or never leaves, and a tutor shown to a
+// player whose best has cleared MIN_REAL_RUN_SCORE. Real startPlay()/onDown()/update()/draw();
+// the pilot only taps when the circle says so.
+{
+    const g = boot();
+    g(FAKE_AC);
+    g(AUTOPILOT);
+    g('startPlay()');
+    // Past SAFE_START_WX the circle is gone, so the plain autopilot takes over for the fade.
+    const r = g(`(() => {
+        let taps = 0, err = 0, n = 0, slow = false, shown = false, hull = -1;
+        for (let i = 0; i < 60 * 40 && tutorShipU() < SAFE_START_WX + 600; i++) {
+            if (tutorShipU() >= SAFE_START_WX) { if (hull < 0) hull = hullScratches; _pilot(); }
+            else if (startRamp >= 1 && tutorTTap <= 0.02 && !thrusting() && tutorInZone()) { onDown(); onUp(); taps++; }
+            update(1 / 60);
+            if (i % 5 === 0) draw();
+            if (tutorScale < 0.9) slow = true;
+            if (tutorA > 0.5) shown = true;
+            if (tutorInZone() && hasHeldThisRun) { err += Math.abs(py - tutorRouteY(tutorShipU())); n++; }
+            if (phase !== 'play') break;
+        }
+        return { phase, taps, err: err / n, hull, full: HULL_SCRATCHES, slow, shown, a: tutorA, scale: tutorScale, relH: H };
+    })()`);
+    check(`tapping when the circle says so flies the opening to SAFE_START_WX untouched (${r.taps} taps, ${r.err.toFixed(1)}px mean off the route)`,
+        r.shown && r.hull === r.full && r.taps > 10 && r.err < r.relH * 0.06);
+    check('on the beat, time never slows; past SAFE_START_WX the circle is gone and time runs at full speed',
+        !r.slow && r.a === 0 && r.scale === 1);
+
+    const s = boot();
+    s(FAKE_AC);
+    s('startPlay()');
+    const late = s(`(() => {
+        for (let i = 0; i < 600 && !(startRamp >= 1 && tutorInZone()); i++) update(1 / 60);
+        onDown(); onUp();
+        let minScale = 1, wx0 = scrollX;
+        for (let i = 0; i < 90; i++) { update(1 / 60); minScale = Math.min(minScale, tutorScale); }
+        const slowAt = tutorScale;
+        onDown(); onUp();
+        for (let i = 0; i < 20; i++) update(1 / 60);
+        return { minScale, slowAt, after: tutorScale };
+    })()`);
+    check(`a late tap slows time to TUTOR_SLOW_SCALE and the tap brings it back (${late.minScale.toFixed(2)} -> ${late.after.toFixed(2)})`,
+        Math.abs(late.minScale - s('TUTOR_SLOW_SCALE')) < 0.02 && late.after > 0.95);
+
+    const q = boot(956, 440, { tunnel_best: '80', tunnel_record_reset_v15: '1' });   // the flag, or the 15.0 reset zeroes the best
+    q('startPlay()');
+    check('no tap circle once the all-time best has cleared MIN_REAL_RUN_SCORE', q('tutorOn') === false);
+}
+
 if (failed) { console.log(`\n${failed} check(s) failed.`); process.exit(1); }
 console.log('\nThe real game runs headless and every simulated rule holds.');

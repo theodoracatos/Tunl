@@ -1619,6 +1619,30 @@ const LEVEL_INTRO_DUR  = 2.4; // total seconds visible
 // falling like every other unheld ship.
 const HOLD_GATE_MAX_SEC = 2.55;   // 2.25 until 2026-09-19, +0.3s on request
 
+// Tap = hop (2026-09-29, user's call: "Halten zum Steigen muss weg"). Every press starts
+// a thrust burst of TAP_BURST_SEC with the unchanged THRUST ramp; holding longer keeps
+// thrusting exactly as before, so hold is still there but never needed. A 0.05 s tap used
+// to lift the ship ~5 px (read as "tapping does nothing"); a burst lifts it ~11% of H and
+// hovering takes ~2.8 taps/s. All targets, every run, no switch at score 200: a replay bot
+// that holds scored the same with the burst as without (median 413 over 30 days), a
+// tap-only bot reached 100 on 90% of days. update.js ends the burst inside the frame
+// (trapezoid per part), so the hop is the same at every refresh rate - test-sim guards it.
+// Concept: https://claude.ai/artifact/VVhDdo7T4gCd4HmEqDYECQ (docs/agents/physics.md).
+const TAP_BURST_SEC = 0.15;
+
+// Tap tutor (approach.js "Tap tutor", docs/agents/onboarding.md): a tap circle (the iPhone
+// touch button) by the ship shows when to tap for the opening's route (coin line, mouth centre over the
+// city), from the end of the launch ramp until the ship passes SAFE_START_WX. Only the
+// player's own tap moves the ship. Shown while the all-time best is below
+// MIN_REAL_RUN_SCORE. Draw and time only: no rng(), no placement, the cave is unchanged.
+const TUTOR_LEAD_SEC    = 0.45;   // the circle starts brightening this long before a tap is due
+const TUTOR_WINDOW_SEC  = 0.12;   // a tap this close to the due moment counts as on the beat
+const TUTOR_LATE_SEC    = 0.12;   // due and no tap for this long: time slows down
+const TUTOR_SLOW_SCALE  = 0.25;   // time scale while waiting for a late tap
+const TUTOR_LOOKAHEAD   = 1.2;    // planner horizon, seconds
+const TUTOR_DEMO_PERIOD = 0.9;    // before the first tap the circle presses on this beat
+const TUTOR_FADE_SEC    = 0.5;    // circle fade-out after SAFE_START_WX
+
 // Launch ramp (update.js): the run opens with the ship flying up into frame from below
 // and levelling out, with py/vy/shipPitch driven by the ramp rather than by the player.
 // Held at 1.3s through 11.0. Cut to 0.5s in 12.0 after a red-team audit measured what

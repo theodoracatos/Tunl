@@ -14,8 +14,26 @@ difficulty. Wider devices letterbox. H also drives `_FEEL_SCALE`.
 **THRUST has already been walked back twice on real player feedback - read
 `docs/design-history.md` -> "Physics tuning" before touching it.** It was tuned up chasing a
 "Flappy Bird snappy" feel, called "too fast" by players, walked back too far (floaty), and
-settled in between. GRAVITY and MAX_VY never moved. **The input model is unchanged** -
-hold-to-thrust is an acceleration ramp, not an instant velocity impulse.
+settled in between. GRAVITY and MAX_VY never moved. Thrust is still an acceleration ramp,
+never an instant velocity impulse (Flappy's model).
+
+## Tap = hop (2026-09-29, user's call)
+"Halten zum Steigen muss weg": beginners did not understand hold-to-climb (22 of 25 /tt/
+players died where a run with no input dies). **Every press starts a thrust burst of
+`TAP_BURST_SEC`** (input.js `onDown` sets `tapBurstT`); holding longer keeps thrusting as
+before, so hold still works but is never needed. Thrust is on while `thrusting()`
+(`holding || tapBurstT > 0`, state.js); visuals and the engine sound follow it, and a short
+tap's engine stops when its burst runs out (update.js). A `pointercancel` keeps the burst
+(webviews cancel long presses). All targets, every run, no switch at a score: a replay bot
+that holds scored the same with the burst as without; a tap-only bot reached 100 on 90% of
+days. Numbers and the rejected options (switch at 200, tap-only until 200):
+https://claude.ai/artifact/VVhDdo7T4gCd4HmEqDYECQ
+- **The burst ends inside the frame** (`_burstPart` in update.js): the frame is split at
+  that instant and each part integrated with `shipStep()` (the trapezoid). Rounding the end
+  to a frame edge was off by ~11 px at 24 Hz. `test-sim.js` "Tap = hop" checks the apex
+  against the exact solution at seven refresh rates.
+- A tap during the launch ramp is dropped (the ramp drives the ship; the burst would
+  otherwise fire at the ramp's end).
 
 **Frame-rate-independent integration (do not revert).** `update.js` integrates the ship with
 the TRAPEZOID - `py += (vyPrev + vy) * 0.5 * dt` - not `py += vy * dt` after the velocity

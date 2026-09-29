@@ -135,7 +135,7 @@ function dayRollover() {
 
 function titleScreen() {
     approachWindOff();
-    phase = 'title'; py = H / 2; vy = 0; holding = false; scrollX = 0; approachLeft = 0;
+    phase = 'title'; py = H / 2; vy = 0; holding = false; tapBurstT = 0; scrollX = 0; approachLeft = 0;
     score = 0; newBest = false; newDailyBest = false;
     parts = []; thrustParts = []; deadT = 0; titleT = 0; flashA = 0; shake = 0; trailY = [];
     skinFx = []; skinFxT = 0; shipPitch = 0; shipRoll = SHIP3D_ROLL_BASE; shipRollV = 0; shipSweep = SHIP3D_SWEEP_CRUISE; shipBarrelT = -1;
@@ -203,7 +203,8 @@ function startPlay() {
     // head, so this is inert in the iOS/Android builds by construction - see
     // FIREBASE_HEAD there for the session/attribution contract.
     if (typeof window !== 'undefined' && window._tunlGA) window._tunlGA('run_start');
-    phase = 'play'; py = H + PR * 4; vy = 0; holding = false; hasHeldThisRun = false; idleHoldTimer = 0; scrollX = 0; startRamp = 0;
+    phase = 'play'; py = H + PR * 4; vy = 0; holding = false; hasHeldThisRun = false; idleHoldTimer = 0; tapBurstT = 0; scrollX = 0; startRamp = 0;
+    tutorStart();
     score = 0; newBest = false; newDailyBest = false;
     parts = []; thrustParts = []; deadT = 0; flashA = 0; shake = 0; trailY = [];
     skinFx = []; skinFxT = 0; shipPitch = -Math.PI / 2; shipRoll = SHIP3D_ROLL_BASE; shipRollV = 0; shipSweep = SHIP3D_SWEEP_CRUISE; shipBarrelT = -1;

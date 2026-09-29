@@ -4,7 +4,7 @@
 const LANGS = {
     en: {
         name: 'English',
-        tap: 'HOLD TO FLY',
+        tap: 'TAP TO FLY',
         rotateHint: 'ROTATE YOUR DEVICE',
         getApp: 'GET THE APP',
         legalLink: 'Legal notice',
@@ -102,7 +102,7 @@ const LANGS = {
     },
     de: {
         name: 'Deutsch',
-        tap: 'TIPPEN & HALTEN',
+        tap: 'TIPPEN ZUM FLIEGEN',
         rotateHint: 'GERÄT DREHEN',
         getApp: 'APP HOLEN',
         legalLink: 'Impressum',
@@ -200,7 +200,7 @@ const LANGS = {
     },
     fr: {
         name: 'Francais',
-        tap: 'MAINTENIR POUR VOLER',
+        tap: 'TOUCHE POUR VOLER',
         rotateHint: 'TOURNEZ VOTRE APPAREIL',
         getApp: 'TELECHARGER',
         legalLink: 'Mentions légales',
@@ -298,7 +298,7 @@ const LANGS = {
     },
     it: {
         name: 'Italiano',
-        tap: 'TIENI PER VOLARE',
+        tap: 'TOCCA PER VOLARE',
         rotateHint: 'RUOTA IL DISPOSITIVO',
         getApp: 'SCARICA L\'APP',
         legalLink: 'Note legali',
@@ -396,7 +396,7 @@ const LANGS = {
     },
     es: {
         name: 'Espanol',
-        tap: 'MANTEN PARA VOLAR',
+        tap: 'TOCA PARA VOLAR',
         rotateHint: 'GIRA TU DISPOSITIVO',
         getApp: 'DESCARGAR APP',
         legalLink: 'Aviso legal',
@@ -494,7 +494,7 @@ const LANGS = {
     },
     pt: {
         name: 'Portugues',
-        tap: 'SEGURE PARA VOAR',
+        tap: 'TOQUE PARA VOAR',
         rotateHint: 'GIRE O SEU DISPOSITIVO',
         getApp: 'BAIXAR O APP',
         legalLink: 'Aviso legal',
@@ -592,7 +592,7 @@ const LANGS = {
     },
     ja: {
         name: '日本語',
-        tap: '長押しで飛ぶ',
+        tap: 'タップで飛ぶ',
         rotateHint: 'デバイスを横向きにしてください',
         getApp: 'アプリを入手',
         legalLink: '運営者情報',
@@ -690,7 +690,7 @@ const LANGS = {
     },
     ko: {
         name: '한국어',
-        tap: '눌러서 비행',
+        tap: '탭해서 비행',
         rotateHint: '기기를 가로로 돌려주세요',
         getApp: '앱 다운로드',
         legalLink: '법적 고지',
@@ -788,7 +788,7 @@ const LANGS = {
     },
     zh: {
         name: '繁體中文',
-        tap: '長按飛行',
+        tap: '點擊飛行',
         rotateHint: '請將設備橫向旋轉',
         getApp: '獲取應用程式',
         legalLink: '法律聲明',
@@ -886,7 +886,7 @@ const LANGS = {
     },
     ru: {
         name: 'Русский',
-        tap: 'ЗАЖМИ ДЛЯ ПОЛЁТА',
+        tap: 'ТАПНИ ДЛЯ ПОЛЁТА',
         rotateHint: 'ПОВЕРНИТЕ УСТРОЙСТВО',
         getApp: 'СКАЧАТЬ',
         legalLink: 'Правовая информация',
@@ -984,7 +984,7 @@ const LANGS = {
     },
     ar: {
         name: 'العربية',
-        tap: 'اضغط مطولاً للطيران',
+        tap: 'انقر للطيران',
         rotateHint: 'قم بتدوير جهازك',
         getApp: 'تنزيل',
         legalLink: 'إشعار قانوني',
@@ -1082,7 +1082,7 @@ const LANGS = {
     },
     tr: {
         name: 'Türkçe',
-        tap: 'UÇMAK İÇİN BASILI TUT',
+        tap: 'UÇMAK İÇİN DOKUN',
         rotateHint: 'CİHAZINI ÇEVİR',
         getApp: 'İNDİR',
         legalLink: 'Yasal bilgiler',
@@ -1180,7 +1180,7 @@ const LANGS = {
     },
     id: {
         name: 'Indonesia',
-        tap: 'TAHAN UNTUK TERBANG',
+        tap: 'KETUK UNTUK TERBANG',
         rotateHint: 'PUTAR PERANGKAT ANDA',
         getApp: 'UNDUH APP',
         legalLink: 'Informasi hukum',
@@ -1278,7 +1278,7 @@ const LANGS = {
     },
     pl: {
         name: 'Polski',
-        tap: 'PRZYTRZYMAJ, BY LECIEĆ',
+        tap: 'STUKNIJ, BY LECIEĆ',
         rotateHint: 'OBRÓĆ URZĄDZENIE',
         getApp: 'POBIERZ APLIKACJĘ',
         legalLink: 'Nota prawna',
@@ -1376,7 +1376,7 @@ const LANGS = {
     },
     el: {
         name: 'Ελληνικά',
-        tap: 'ΚΡΑΤΑ ΓΙΑ ΠΤΗΣΗ',
+        tap: 'ΠΑΤΑ ΓΙΑ ΠΤΗΣΗ',
         rotateHint: 'ΓΥΡΙΣΕ ΤΗ ΣΥΣΚΕΥΗ',
         getApp: 'ΚΑΤΕΒΑΣΕ ΤΟ APP',
         legalLink: 'Νομική σημείωση',
@@ -1474,7 +1474,7 @@ const LANGS = {
     },
     hi: {
         name: 'हिन्दी',
-        tap: 'उड़ने के लिए दबाए रखें',
+        tap: 'उड़ने के लिए टैप करें',
         rotateHint: 'अपना डिवाइस घुमाएँ',
         getApp: 'ऐप डाउनलोड',
         legalLink: 'कानूनी सूचना',

@@ -561,3 +561,171 @@ function drawApproachBanner(theme) {
     ctx.shadowBlur = 0;
     ctx.restore();
 }
+
+// ── Tap tutor (2026-09-29) ───────────────────────────────────────────
+// "Halten zum Steigen muss weg": a press is a hop now (constants.js TAP_BURST_SEC), and a
+// tap circle by the ship shows when to tap so the ship flies the opening's route, from
+// the end of the launch ramp over the city until the ship passes SAFE_START_WX. It is a
+// mini tutorial, not an autopilot: only the player's own tap moves the ship.
+// Concept + prototype: https://claude.ai/artifact/VVhDdo7T4gCd4HmEqDYECQ
+// - **The planner is the real physics run forward** (GRAVITY/THRUST/MAX_VY, the same
+//   trapezoid as update.js shipStep): a tap is due when the apex of a hop started now
+//   would no longer overshoot the route. Recomputed every frame from the ship's actual
+//   state, so it recovers from a missed or an extra tap by itself.
+// - **The route** is the mouth's centre over the city, then the line through the good
+//   coins (the opening arc that teaches RELEASE, systems.js makeCoin), inside the corridor.
+// - **Time slows while a due tap is late** (TUTOR_SLOW_SCALE), only once the player has
+//   tapped in this run; before the first tap the gravity gate glides the ship level and the
+//   circle presses on a steady beat instead.
+// - **Draw and time only**: no rng(), no placement, no score effect (the score is world-x),
+//   so the cave, test-cave.js and the leaderboard are untouched. Shown while the all-time
+//   best is below MIN_REAL_RUN_SCORE.
+let tutorOn = false;      // this run shows the tap circle
+let tutorA = 0;           // circle alpha (fades in after the ramp, out past SAFE_START_WX)
+let tutorTTap = 1;        // seconds until the next tap is due; <= 0: due now
+let tutorOverdue = 0;     // real seconds a due tap has been missing
+let tutorScale = 1;       // time scale handed to update()
+let tutorTaps = 0;        // presses while the tutor ran
+let tutorHitT = 0;        // on-the-beat check mark timer
+let tutorRippleT = 0;     // tap ripple timer
+let tutorClock = 0;       // demo beat before the first tap
+
+function tutorStart() {
+    tutorOn = best < MIN_REAL_RUN_SCORE;
+    tutorA = 0; tutorTTap = 1; tutorOverdue = 0; tutorScale = 1;
+    tutorTaps = 0; tutorHitT = 0; tutorRippleT = 0; tutorClock = 0;
+}
+
+// The ship's position on the approach+cave line: negative over the city, world-x in the cave.
+function tutorShipU() { return scrollX + PX - approachLeft; }
+function tutorInZone() { return tutorOn && phase === 'play' && startRamp >= 1 && tutorShipU() < SAFE_START_WX; }
+
+// Route height at u: the mouth's centre, then straight lines through the coins ahead
+// (collected ones stay route points; hazard coins are left out), kept off the walls.
+function tutorRouteY(u) {
+    let y = H / 2;
+    if (u > -APPROACH_LIP) {
+        let x0 = -APPROACH_LIP, y0 = H / 2;
+        for (const c of coins) {
+            if (c.type === 'poison' || c.type === 'drain' || c.wx <= x0) continue;
+            if (c.wx >= u) { y = lerp(y0, c.y, (u - x0) / (c.wx - x0)); break; }
+            x0 = c.wx; y0 = y = c.y;
+        }
+    }
+    const b = approachRock(u), m = PR * 2.2;
+    return Math.max(b.top + m, Math.min(b.bot - m, y));
+}
+
+// One planner step: the same trapezoid as update.js shipStep, with gravity on.
+function _tutorStep(s, thrust, h) {
+    const v1 = Math.max(-MAX_VY, Math.min(MAX_VY, s.v + (thrust ? GRAVITY - THRUST : GRAVITY) * h));
+    s.p += (s.v + v1) * 0.5 * h; s.v = v1; s.b -= h;
+}
+// Where a hop started now tops out, and when.
+function _tutorApex(p, v, b) {
+    const s = { p, v, b: Math.max(b, TAP_BURST_SEC) }, h = 1 / 120;
+    let t = 0;
+    while (t < 1.5 && (s.b > 0 || s.v < 0)) { _tutorStep(s, s.b > 0, h); t += h; }
+    return { y: s.p, t };
+}
+// Seconds until the next tap is due (no tap assumed until then); TUTOR_LOOKAHEAD if none.
+function tutorPlan() {
+    if (holding) return TUTOR_LOOKAHEAD;
+    const spd = scrollSpd(), u0 = tutorShipU(), h = 1 / 60;
+    const s = { p: py, v: vy, b: tapBurstT };
+    for (let t = 0; t <= TUTOR_LOOKAHEAD; t += h) {
+        if (s.b <= 0) {
+            const ap = _tutorApex(s.p, s.v, 0);
+            if (ap.y >= tutorRouteY(u0 + (t + ap.t) * spd)) return t;
+        }
+        _tutorStep(s, s.b > 0, h);
+    }
+    return TUTOR_LOOKAHEAD;
+}
+
+// Called by update() once the ramp is over, with the real frame step; returns the step the
+// rest of the frame runs on.
+function tutorStep(dt) {
+    if (!tutorOn) return dt;
+    const live = tutorInZone();
+    tutorA = live ? Math.min(1, tutorA + dt / 0.3) : Math.max(0, tutorA - dt / TUTOR_FADE_SEC);
+    tutorHitT = Math.max(0, tutorHitT - dt);
+    tutorRippleT = Math.max(0, tutorRippleT - dt);
+    let want = 1;
+    if (live) {
+        tutorClock += dt;
+        if (!hasHeldThisRun) {
+            tutorTTap = TUTOR_DEMO_PERIOD - tutorClock % TUTOR_DEMO_PERIOD;
+            tutorOverdue = 0;
+        } else {
+            tutorTTap = tutorPlan();
+            tutorOverdue = tutorTTap <= 0 && !thrusting() ? tutorOverdue + dt : 0;
+            if (tutorTaps > 0 && tutorOverdue > TUTOR_LATE_SEC) want = TUTOR_SLOW_SCALE;
+        }
+    } else tutorOverdue = 0;
+    tutorScale += (want - tutorScale) * Math.min(1, dt * 10);
+    return dt * tutorScale;
+}
+
+// input.js onDown in play, after the burst has started.
+function tutorOnTap() {
+    if (!tutorInZone()) return;
+    const onBeat = tutorTaps === 0
+        || (tutorTTap <= TUTOR_WINDOW_SEC && tutorOverdue <= TUTOR_LATE_SEC)
+        || (!hasHeldThisRun && TUTOR_DEMO_PERIOD - tutorTTap <= TUTOR_WINDOW_SEC);
+    tutorTaps++;
+    tutorRippleT = 0.35;
+    if (onBeat) tutorHitT = 0.6;
+    tutorOverdue = 0;
+}
+
+// The tap circle, below and ahead of the ship: the iPhone's touch button (user, 2026-09-29:
+// "so dieser typische iPhone Knopf Kreis") - a white dot in two translucent rings. It
+// brightens as a tap comes due and presses in (shrinks, glows) while one is due. Neutral
+// white, like the system's own. draw.js calls it right after the ship, approach and cave.
+function drawTapTutor() {
+    if (!tutorOn || tutorA <= 0 || phase !== 'play') return;
+    const [lr, lg, lb] = (SKINS[activeSkin] || SKINS[0]).shadow;
+    const R = PR * 1.5, r = R * 0.5;                       // button, inner dot (AssistiveTouch proportions)
+    const fx = PX + PR * 3.4, tipY = Math.min(H - R * 1.2, py + PR * 2.8);
+    const t = Math.max(0, tutorTTap);
+    const lift = t >= TUTOR_LEAD_SEC ? 1 : t / TUTOR_LEAD_SEC;
+    const due = tutorTTap <= 0.02 && !thrusting();
+    const press = due ? 0.5 + 0.5 * Math.sin(gtime * 11) : 0;
+    const k = 1 - 0.12 * press - 0.05 * (1 - lift);        // pressed in: a little smaller
+    const a = tutorA * (0.5 + 0.5 * (1 - lift));            // brightens as the tap comes due
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.beginPath(); ctx.arc(fx, tipY, R * k, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.13)';
+    ctx.fill();
+    ctx.lineWidth = Math.max(1, R * 0.05);
+    ctx.strokeStyle = 'rgba(255,255,255,0.40)';
+    ctx.stroke();
+    ctx.beginPath(); ctx.arc(fx, tipY, R * 0.74 * k, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.20)';
+    ctx.fill();
+    ctx.beginPath(); ctx.arc(fx, tipY, r * k, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.shadowColor = `rgba(255,255,255,${0.35 + 0.6 * press})`;
+    ctx.shadowBlur = 3 + 12 * press;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = tutorA;
+    if (tutorRippleT > 0) {
+        const k = 1 - tutorRippleT / 0.35;
+        ctx.globalAlpha = tutorA * (1 - k);
+        ctx.beginPath(); ctx.arc(fx, tipY, R * (1 + k * 0.9), 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgb(255,255,255)'; ctx.lineWidth = Math.max(1.5, r * 0.3); ctx.stroke();
+    }
+    if (tutorHitT > 0) {
+        // On the beat: a check mark above the ship, rising and fading.
+        const k = 1 - tutorHitT / 0.6, cx = PX, cy = py - PR * 2.6 - k * PR, u = PR * 0.42;
+        ctx.globalAlpha = tutorA * Math.min(1, tutorHitT * 3);
+        ctx.beginPath();
+        ctx.moveTo(cx - u * 1.2, cy); ctx.lineTo(cx - u * 0.3, cy + u * 0.9); ctx.lineTo(cx + u * 1.4, cy - u * 1.0);
+        ctx.strokeStyle = `rgb(${lr},${lg},${lb})`; ctx.lineWidth = Math.max(2, u * 0.45);
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
+    }
+    ctx.restore();
+}
