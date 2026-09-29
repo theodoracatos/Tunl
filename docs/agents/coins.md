@@ -268,5 +268,9 @@ Concept and picks: https://claude.ai/artifact/4jEGBUKiPVGV9QXGh3qoXM
   `test-sim.js` checks that one grazing frame is enough.
 - **Durations run on the bullets' clock** (`slowScrollFactor() * warpScrollFactor()`), and
   death clears the window (`die()`), so no beam shows over the death screen or after a revive.
+- **The end is announced by a flashlight flicker** over the last `LASER_WARN_SEC`
+  (`systems.js laserFlicker`, 2026-09-29, user: "wie bei einer Taschenlampe"): short irregular
+  dropouts, thicker toward the end, plus a slight brown-out. The beam's look and its hum
+  (`audio.js laserLoopLevel`) follow it; hits never do - the beam keeps hitting through every dropout; hashed on `gtime`, never an rng. Replaced a smooth 0.4s sine.
 - **Kept out on purpose:** no mission, no achievement (the roster is also a store config),
   no magnet exemption (it is a reward, like orange).

@@ -1346,11 +1346,16 @@ const BULLET_HIT_PTS = { stal: 1, mine: 3, shot: 2, boulder: 5 };
 //   for the next orange coin. Measured cadence and duty cycle: docs/agents/coins.md "Laser".
 // - Durations run on the bullets' clock (slowScrollFactor * warpScrollFactor), so a slowed
 //   tunnel does not burn the window down faster than it scrolls.
+// - LASER_WARN_SEC: the beam's last stretch flickers like a flashlight with a dying battery
+//   (systems.js laserFlicker), short irregular dropouts that come thicker toward the end, so
+//   the end is seen and heard coming (the hum stutters along). The beam keeps hitting
+//   through every dropout.
 // LASER_HALF_W is the beam's hit half-thickness in device px, the drawn core's half-width.
 const LASER_START_WX     = BOULDER_START_WX;
 const LASER_INTERVAL_SEC = 20;
-const LASER_SEC          = 2.5;
+const LASER_SEC          = 2.0;
 const LASER_BURN_SEC     = 0.12;
+const LASER_WARN_SEC     = 0.7;
 const LASER_HALF_W       = PR * 0.3;
 
 // ── Frenzy, the star (2026-09-27, concept https://claude.ai/artifact/Nft1eG8rKrq2LZrnKdTRiC) ──

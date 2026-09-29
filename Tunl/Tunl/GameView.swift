@@ -20,19 +20,40 @@ final class TunlWebView: WKWebView {
     }
 }
 
+// AVAudioSession.setActive blocks until the audio server answers, and Xcode flags
+// it on the main thread ("can lead to UI unresponsiveness"). Run it on a serial
+// queue instead; `then` runs on main once the session is active, so anything that
+// needs a live session (the page's AudioContext resume) is chained after it.
+enum AudioSessionActivator {
+    private static let queue = DispatchQueue(label: "ch.flytunl.audiosession", qos: .userInitiated)
+
+    static func activate(then done: (() -> Void)? = nil) {
+        queue.async {
+            do {
+                try AVAudioSession.sharedInstance().setActive(true)
+            } catch {
+                print("AVAudioSession activation failed: \(error.localizedDescription)")
+            }
+            if let done { DispatchQueue.main.async(execute: done) }
+        }
+    }
+}
+
 struct GameView: UIViewRepresentable {
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeUIView(context: Context) -> WKWebView {
         // Without this, WKWebView audio defaults to the "ambient" session
-        // category and is silenced by the hardware mute switch.
+        // category and is silenced by the hardware mute switch. The category is
+        // set synchronously (cheap, and it must be in place before the page
+        // loads); only the blocking activation goes off the main thread.
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, options: [.mixWithOthers])
-            try AVAudioSession.sharedInstance().setActive(true)
         } catch {
             print("AVAudioSession setup failed: \(error.localizedDescription)")
         }
+        AudioSessionActivator.activate()
 
         let config = WKWebViewConfiguration()
         // Allow audio to play without requiring a user gesture each time
@@ -199,15 +220,18 @@ struct GameView: UIViewRepresentable {
                     self?.webView?.evaluateJavaScript("window._tunlShardsRewardDeclined && window._tunlShardsRewardDeclined()")
                 }
             }
-            // TunlApp.swift's AppDelegate reactivates the *native* AVAudioSession on
-            // this same notification, but that alone doesn't recover the WKWebView's
-            // own AudioContext once WebKit has fully closed it after extended
-            // backgrounding - kick the page's own revive path directly rather than
-            // relying only on document.visibilitychange, which WKWebView doesn't
-            // always fire when it's the host app (not the page) that backgrounded.
+            // Without the "audio" background mode, iOS deactivates our AVAudioSession
+            // when the app is backgrounded and nothing reactivates it - reactivate
+            // the *native* session first, then (once it is active) kick the page's
+            // own revive path: reactivation alone doesn't recover the WKWebView's
+            // AudioContext once WebKit has fully closed it after extended
+            // backgrounding, and document.visibilitychange doesn't always fire when
+            // it's the host app (not the page) that backgrounded.
             NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification,
                                                     object: nil, queue: .main) { [weak self] _ in
-                self?.webView?.evaluateJavaScript("window._tunlResumeAudio && window._tunlResumeAudio()")
+                AudioSessionActivator.activate { [weak self] in
+                    self?.webView?.evaluateJavaScript("window._tunlResumeAudio && window._tunlResumeAudio()")
+                }
                 // Refresh the daily-reminder schedule (src/notify.js) - WKWebView
                 // doesn't reliably fire visibilitychange when the host app, not the
                 // page, was backgrounded.

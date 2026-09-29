@@ -3044,11 +3044,11 @@ function drawWorld() {
 // Laser beam (constants.js LASER_* doc): from the nose to laserEndX (systems.js laserTrace)
 // at the ship's height. Additive layers, never shadowBlur (the expensive call on WKWebView):
 // a soft ruby halo, the ruby beam, a white core, and a flare where it strikes. It flickers
-// in its last 0.4s so the end is seen coming.
+// in its last LASER_WARN_SEC so the end is seen coming (systems.js laserFlicker).
 function drawLaserBeam() {
     const x0 = PX + PR * 1.4, x1 = Math.max(x0, laserEndX), y = py, hw = LASER_HALF_W;
-    const fade = laserTime < 0.4 ? 0.55 + 0.45 * Math.sin(gtime * 40) : 1;
-    const wob = 1 + 0.12 * Math.sin(gtime * 57) + 0.06 * Math.sin(gtime * 23);
+    const fade = laserFlicker();
+    const wob = (1 + 0.12 * Math.sin(gtime * 57) + 0.06 * Math.sin(gtime * 23)) * (fade < 0.5 ? 0.7 : 1);
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     ctx.globalAlpha = fade;

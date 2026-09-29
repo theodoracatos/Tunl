@@ -2035,6 +2035,11 @@ all phases built in one go.
   (`bo.burn`), it glows from a white-hot spot and sizzles (`sfxLaserBurn`, -25.4 dB
   loudest-50ms phone band, under coin -21 and shot -23.5) for `LASER_BURN_SEC`, then bursts
   whatever the beam does. Flown past: 8 of 12 now break; the other 4 were never touched.
+- **`LASER_SEC` 2.5 -> 2.0 (2026-09-29, user: "fühlt sich irgendwie zu lange an").** The 2.5s
+  was the concept page's recommended value, never measured. Cut on feel; not re-measured -
+  the beam was on for at most 7% of frames, so balance moves little. Cost: with boulders every
+  ~4-5s from S4 a laser more often runs out without touching one. The stacking cap follows
+  (`LASER_SEC * 2`, now 4s).
 
 ## Frenzy: the star (2026-09-27)
 

@@ -125,6 +125,10 @@ a "Knallfrosch" twice. Method, metrics and traps: `reference_audio_method` memor
   https://claude.ai/artifact/Mvavi3aXRtZG6AX9CbrLRj): a softer `_blast()`, a rubble cascade
   of low grains for most of a second and a faint hiss that swells in after the hit, matched
   to the mine blast in the phone band. Pickup and hum kept as built (no other pick saved).
+  Over the beam's last `LASER_WARN_SEC` the hum stutters with the visual flashlight
+  flicker (`laserLoopLevel`, driven each frame from `systems.js laserFlicker`, 2026-09-29):
+  dropouts of ~12-20 dB gliding with `LASER_FLICKER_TC`; an offline render through the real bus
+  showed no added energy above 6 kHz (no clicks) against the steady hum.
   Numbers: `docs/design-history.md` "Laser". Not heard on a device.
 
 Still open, deliberately: wall-proximity audio and the title sonar pulse. Review proposals and the user's picks:

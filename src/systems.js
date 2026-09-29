@@ -874,6 +874,17 @@ function laserTrace(x0, y) {
     return { end, block };
 }
 
+// Flashlight flicker (constants.js LASER_WARN_SEC): 1 while the beam is fresh; over its
+// last stretch it browns out a little and drops out in short irregular stutters, more of
+// them the nearer the end. The beam's look (draw.js drawLaserBeam) and its hum
+// (audio.js laserLoopLevel) both follow it; hits never do. Hashed on a gtime bucket,
+// never rng() or Math.random().
+function laserFlicker() {
+    if (laserTime >= LASER_WARN_SEC) return 1;
+    const k = 1 - laserTime / LASER_WARN_SEC;
+    const h = Math.sin(Math.floor(gtime * 22) * 12.9898) * 43758.5453, r = h - Math.floor(h);
+    return r < 0.2 + 0.5 * k ? 0.12 + 0.2 * r : 1 - 0.25 * k;
+}
 function updateLaser(dt) {
     const clock = dt * slowScrollFactor() * warpScrollFactor();   // the bullets' clock
     const col = HUD_SPARK_COLOR.laser;
@@ -896,6 +907,7 @@ function updateLaser(dt) {
     if (laserTime <= 0) return;
     laserTime = Math.max(0, laserTime - clock);
     if (laserTime <= 0) { laserLoopOff(); return; }
+    laserLoopLevel(laserFlicker());
     const x0 = PX + PR * 1.4, y = py, hw = LASER_HALF_W;
     const { end, block } = laserTrace(x0, y);
     laserEndX = end;

@@ -580,6 +580,21 @@ function touchCoin(type, setup) {
     check(`a laser coin grants one LASER_SEC window that runs out (got ${win.got.toFixed(2)}s, ran ${win.ran.toFixed(2)}s)`,
         Math.abs(win.got - win.sec) < 0.05 && win.max === win.sec && Math.abs(win.ran - win.sec) < 0.1);
     check('death switches the beam off', win.again > 0 && win.afterDeath === 0);
+
+    // Flashlight flicker (systems.js laserFlicker): steady while fresh, dropouts in the last
+    // LASER_WARN_SEC, more of them toward the end. Sampled over 3s of gtime per point.
+    const fl = g(`(() => {
+        const drops = lt => {
+            laserTime = lt; let n = 0;
+            for (let i = 0; i < 180; i++) { gtime = 100 + i / 60; if (laserFlicker() < 0.5) n++; }
+            return n / 180;
+        };
+        const r = { fresh: drops(LASER_WARN_SEC + 0.01), early: drops(LASER_WARN_SEC * 0.9), late: drops(LASER_WARN_SEC * 0.1) };
+        laserTime = 0;
+        return r;
+    })()`);
+    check(`the beam flickers only in its last LASER_WARN_SEC, thicker toward the end (drop share ${fl.fresh.toFixed(2)} / ${fl.early.toFixed(2)} / ${fl.late.toFixed(2)})`,
+        fl.fresh === 0 && fl.early > 0.1 && fl.late > fl.early + 0.2);
 }
 
 // ── Swing wing: cruise in between, warp folds, blue coin spreads ───────────

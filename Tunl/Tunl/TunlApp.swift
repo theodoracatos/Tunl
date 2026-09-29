@@ -1,5 +1,4 @@
 import SwiftUI
-import AVFoundation
 import FirebaseCore
 import FirebaseAnalytics
 
@@ -76,19 +75,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
               let url = userActivity.webpageURL else { return false }
         DeepLinkRouter.shared.handle(url)
         return true
-    }
-
-    // Without the "audio" background mode, iOS deactivates our AVAudioSession
-    // when the app is backgrounded. Nothing reactivates it afterwards, so both
-    // bgm and sfx stay silent once the app returns to the foreground - reactivate
-    // it here (in addition to resuming the WKWebView's AudioContext, handled in
-    // src/audio.js's visibilitychange listener).
-    func applicationDidBecomeActive(_ application: UIApplication) {
-        do {
-            try AVAudioSession.sharedInstance().setActive(true)
-        } catch {
-            print("AVAudioSession reactivation failed: \(error.localizedDescription)")
-        }
     }
 
     @objc private func deviceOrientationDidChange() {
