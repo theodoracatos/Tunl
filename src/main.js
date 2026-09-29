@@ -140,8 +140,8 @@ function loop(ts) {
 const _ctaEl  = document.getElementById('cta');
 const _ctaLbl = document.getElementById('cta-lbl');
 let _ctaShown = false, _ctaLangShown = null;
-// The legal links (#legal) ride along: same visibility, and they open the site's page
-// in the game's language (the site has one per game language, English at the root).
+// The legal links (#legal) ride along: same visibility (minus the arrival-card wait), and
+// they open the site's page in the game's language (the site has one per game language, English at the root).
 const _legalEl = document.getElementById('legal');
 let _legalLangShown = null;
 function _syncWebLegalLabels() {
@@ -151,36 +151,30 @@ function _syncWebLegalLabels() {
     const imp = document.getElementById('legal-imp'), priv = document.getElementById('legal-priv');
     if (imp)  { imp.textContent  = T.legalLink;   imp.href  = base + 'impressum/'; }
     if (priv) { priv.textContent = T.privacyLink; priv.href = base + 'privacy/'; }
-    _fitWebLegal();
 }
-// Bottom-left beside the centred pill (tunl.html #legal): cap the width at the pill's
-// left edge so a long label (ru) wraps rather than running under it on a narrow phone.
-function _fitWebLegal() {
-    if (!_legalEl || !_ctaShown) return;
-    const room = _ctaEl.getBoundingClientRect().left - _legalEl.getBoundingClientRect().left - 10;
-    _legalEl.style.maxWidth = Math.max(60, room) + 'px';
+let _legalShown = false;
+function _setWebOverlay(el, show) {
+    if (!el) return;
+    el.classList.toggle('show', show);
+    el.setAttribute('aria-hidden', show ? 'false' : 'true');
 }
-window.addEventListener('resize', _fitWebLegal);
 function _syncWebCta() {
     if (!_ctaEl) return;
     // Hidden while any title-screen panel is open (ALL SHIPS / shop, ship
-    // picker, settings, missions, currency info) - the pill sits at the bottom
-    // edge and otherwise floats over the panel content.
+    // picker, settings, missions, currency info) - it otherwise floats over the
+    // panel content.
     const _panelOpen = showShop || showShipPicker || showSettings || showMissions || showCurrencyInfo || appOnlyKey;
     const show = isWeb() && phase === 'title' && !_portraitCovered && !_panelOpen;
-    if (show && _ctaLbl && typeof T !== 'undefined' && T.getApp && _ctaLangShown !== T.getApp) {
+    // The pill sits top-centre, where the day's arrival card is drawn (dayGrantT):
+    // it waits the card out. The legal links do not.
+    const showCta = show && dayGrantT <= 0;
+    if (showCta && _ctaLbl && typeof T !== 'undefined' && T.getApp && _ctaLangShown !== T.getApp) {
         _ctaLbl.textContent = T.getApp;
         _ctaLangShown = T.getApp;
     }
     if (show) _syncWebLegalLabels();
-    if (show === _ctaShown) return;
-    _ctaShown = show;
-    for (const el of [_ctaEl, _legalEl]) {
-        if (!el) continue;
-        el.classList.toggle('show', show);
-        el.setAttribute('aria-hidden', show ? 'false' : 'true');
-    }
-    _fitWebLegal();
+    if (showCta !== _ctaShown) { _ctaShown = showCta; _setWebOverlay(_ctaEl, showCta); }
+    if (show !== _legalShown) { _legalShown = show; _setWebOverlay(_legalEl, show); }
 }
 
 // ── Portrait gate (web only) ─────────────────────────────────────────
