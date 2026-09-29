@@ -1633,8 +1633,9 @@ const TAP_BURST_SEC = 0.15;
 // Tap tutor (approach.js "Tap tutor", docs/agents/onboarding.md): a tap circle (the iPhone
 // touch button) by the ship shows when to tap for the opening's route (coin line, mouth centre over the
 // city), from the end of the launch ramp until the ship passes SAFE_START_WX. Only the
-// player's own tap moves the ship. Shown while the all-time best is below
-// MIN_REAL_RUN_SCORE. Draw and time only: no rng(), no placement, the cave is unchanged.
+// player's own tap moves the ship. Shown while the all-time best is below TUTOR_BEST_MAX.
+// Draw and time only: no rng(), no placement, the cave is unchanged.
+const TUTOR_BEST_MAX    = 233;    // all-time best below this: the circle shows (was MIN_REAL_RUN_SCORE; user 2026-09-29: "unter 233 ist man ja noch schlecht")
 const TUTOR_LEAD_SEC    = 0.45;   // the circle starts brightening this long before a tap is due
 const TUTOR_WINDOW_SEC  = 0.12;   // a tap this close to the due moment counts as on the beat
 const TUTOR_LATE_SEC    = 0.12;   // due and no tap for this long: time slows down

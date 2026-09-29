@@ -579,7 +579,7 @@ function drawApproachBanner(theme) {
 //   circle presses on a steady beat instead.
 // - **Draw and time only**: no rng(), no placement, no score effect (the score is world-x),
 //   so the cave, test-cave.js and the leaderboard are untouched. Shown while the all-time
-//   best is below MIN_REAL_RUN_SCORE.
+//   best is below TUTOR_BEST_MAX.
 let tutorOn = false;      // this run shows the tap circle
 let tutorA = 0;           // circle alpha (fades in after the ramp, out past SAFE_START_WX)
 let tutorTTap = 1;        // seconds until the next tap is due; <= 0: due now
@@ -591,7 +591,7 @@ let tutorRippleT = 0;     // tap ripple timer
 let tutorClock = 0;       // demo beat before the first tap
 
 function tutorStart() {
-    tutorOn = best < MIN_REAL_RUN_SCORE;
+    tutorOn = best < TUTOR_BEST_MAX;
     tutorA = 0; tutorTTap = 1; tutorOverdue = 0; tutorScale = 1;
     tutorTaps = 0; tutorHitT = 0; tutorRippleT = 0; tutorClock = 0;
 }

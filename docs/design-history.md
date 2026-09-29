@@ -2231,5 +2231,10 @@ Concept + playable prototype + six decisions: https://claude.ai/artifact/VVhDdo7
   best is below MIN_REAL_RUN_SCORE, slow motion (x0.25) while a due tap is late. Rejected:
   city only, until score 75; carrying on without slow motion; first 3 runs; until best 200.
   All targets, no isWeb() gate.
+- Same evening the gate moved from a best below MIN_REAL_RUN_SCORE to a best below
+  `TUTOR_BEST_MAX` (233, the beginner band) - user: "also highscore unter 233? dann ist man ja
+  noch schlecht". Rejected in the same exchange: guiding on past SAFE_START_WX to score 233 (the
+  planner knows only coins and walls, and guidance plus slow motion through the hazards would
+  be near-autopilot on the shared daily board).
 - Open: device test (finger size, feel of the hop on a phone), /tt/'s own HOLD/RELEASE
   splash + in-flight hint (tt-head.js TT_RULES, tt-tail.js) still teach holding.

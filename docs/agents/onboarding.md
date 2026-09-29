@@ -104,7 +104,8 @@ Amplitude tapers to 0 by `ONBOARD_ARC_WX`. `rng()` is consumed either way, so co
 the seeded stream are unchanged - only y positions move.
 
 **The tap tutor (2026-09-29, user's call, "so eine Art mini Tutorial")**: while the all-time
-best is below `MIN_REAL_RUN_SCORE`, a tap circle by the ship shows when to tap so the ship
+best is below `TUTOR_BEST_MAX` (the beginner band of "never make score < 233 harder"; it was
+`MIN_REAL_RUN_SCORE` for the first evening, user: "unter 233 ist man ja noch schlecht"), a tap circle by the ship shows when to tap so the ship
 flies the opening's route, from the end of the launch ramp over the city until the ship passes
 `SAFE_START_WX`. Only the player's own tap moves the ship (a press is a hop, see physics.md
 "Tap = hop"). Code: approach.js "Tap tutor", `TUTOR_*` in constants.js. Picks from

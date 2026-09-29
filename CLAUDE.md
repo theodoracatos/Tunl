@@ -173,7 +173,7 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 
 ### Approach and onboarding -> `docs/agents/onboarding.md`
 - The city lies before world-x 0 (camera offset), never in it. No soft walls.
-- Safe opening flight to `SAFE_START_WX`; opening coins teach RELEASE. Tap tutor: a circle (iPhone touch button) shows each tap to `SAFE_START_WX` while the best is below `MIN_REAL_RUN_SCORE`; only the player's tap moves the ship.
+- Safe opening flight to `SAFE_START_WX`; opening coins teach RELEASE. Tap tutor: a circle (iPhone touch button) shows each tap to `SAFE_START_WX` while the best is below `TUTOR_BEST_MAX`; only the player's tap moves the ship.
 - `START_RAMP_SEC` stays 1.3s (user's call). **No title-screen control hint.**
 
 ### Ads, economy, liveries -> `docs/agents/economy.md`

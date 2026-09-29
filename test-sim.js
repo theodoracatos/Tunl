@@ -1360,9 +1360,11 @@ const FAKE_AC = `(() => {
     check(`a late tap slows time to TUTOR_SLOW_SCALE and the tap brings it back (${late.minScale.toFixed(2)} -> ${late.after.toFixed(2)})`,
         Math.abs(late.minScale - s('TUTOR_SLOW_SCALE')) < 0.02 && late.after > 0.95);
 
-    const q = boot(956, 440, { tunnel_best: '80', tunnel_record_reset_v15: '1' });   // the flag, or the 15.0 reset zeroes the best
-    q('startPlay()');
-    check('no tap circle once the all-time best has cleared MIN_REAL_RUN_SCORE', q('tutorOn') === false);
+    // The flag, or the 15.0 reset zeroes the best.
+    const shown = b => { const q = boot(956, 440, { tunnel_best: String(b), tunnel_record_reset_v15: '1' }); q('startPlay()'); return q('tutorOn'); };
+    const cap = boot()('TUTOR_BEST_MAX');
+    check(`the tap circle shows up to a best just below TUTOR_BEST_MAX and not from it on (${cap})`,
+        shown(80) === true && shown(cap - 1) === true && shown(cap) === false);
 }
 
 if (failed) { console.log(`\n${failed} check(s) failed.`); process.exit(1); }
