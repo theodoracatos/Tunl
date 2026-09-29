@@ -6,7 +6,7 @@
 // it exists so a build can identify itself: window.TUNL_VERSION for a DevTools check,
 // and build-play.mjs stamps it into /play as <meta name="tunl:version"> so the live
 // web build's version is greppable without diffing the bundle.
-const TUNL_VERSION = '18.1';
+const TUNL_VERSION = '18.2';
 if (typeof window !== 'undefined') window.TUNL_VERSION = TUNL_VERSION;
 
 const cv  = document.getElementById('c');
@@ -1323,7 +1323,8 @@ const HUD_LANE_WARN_SEC   = 1.0;
 const HUD_LANE_SPARK_MAX  = 4;
 // Points for a bullet hit (systems.js updateBullets). Flat, no combo: ammo is capped and
 // bullets auto-fire, so this is a small bonus for a shot that landed, not a score engine.
-// `boulder` is laser-only (systems.js updateLaser): a bullet only sparks off the rock.
+// Also what the laser, the star and a bomb pickup pay per hazard they break (a shield-hit
+// clear pays nothing). `boulder`: a bullet only sparks off the rock, so only those three pay it.
 const BULLET_HIT_PTS = { stal: 1, mine: 3, shot: 2, boulder: 5 };
 
 // ── Laser (18.0, concept https://claude.ai/artifact/4jEGBUKiPVGV9QXGh3qoXM) ──

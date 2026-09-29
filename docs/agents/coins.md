@@ -185,7 +185,9 @@ the persistent `shards` balance, so it can only cost progress not yet banked.
 
 **Bomb coin**: power-up, the opposite of a hazard. Clears every hazard within
 `BOMB_RADIUS` of the pickup - stalactites fade out like a bullet kill, mines and in-flight
-cannon shots are destroyed, an unfired cannon is disabled (`triggerBombExplosion`). Joins
+cannon shots are destroyed, an unfired cannon is disabled (`triggerBombExplosion`); each
+hazard it breaks pays `BULLET_HIT_PTS` like a bullet/laser/star kill (the shield-hit and
+revive clears reuse the blast and pay nothing). Joins
 the combo and banks toward `runCoins` like any power-up; only the two hazard coins opt out
 of that shared path.
 

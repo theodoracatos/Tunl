@@ -691,7 +691,7 @@ function checkCoinCollection() {
                 // nearby hazards (see triggerBombExplosion). Sfx lives here, not inside
                 // that function, so the "ding-then-boom" pickup identity is a
                 // presentation choice, not baked into the explosion logic itself.
-                triggerBombExplosion(sx, coin.y);
+                triggerBombExplosion(sx, coin.y, true);   // pays for what it breaks
                 burstCoin(sx, coin.y, 0, 26);
                 pushNotif(sx, coin.y - 34, 1.1, T.boom, [255,90,90]);
                 sfxBomb();
@@ -1739,8 +1739,12 @@ function frenzySmash(kind, sx, y) {
 // it reads as caught in the explosion rather than just quietly switched off.
 // Purely logic + particles -- the sfx lives with the pickup itself (systems.js
 // checkCoinCollection) so this can't double up if ever called from elsewhere.
+// `pay`: only the bomb pickup passes true - everything it breaks pays BULLET_HIT_PTS,
+// like a bullet, laser or star kill. The shield-hit and revive clears reuse this blast
+// and pay nothing: they follow a hit, they are not a reward.
 
-function triggerBombExplosion(cx, cy) {
+function triggerBombExplosion(cx, cy, pay = false) {
+    const col = HUD_SPARK_COLOR.bomb;
     const r2 = BOMB_RADIUS * BOMB_RADIUS;
     for (const s of stalactites) {
         if (s.dying) continue;
@@ -1753,6 +1757,7 @@ function triggerBombExplosion(cx, cy) {
             s.dying = true; s.fade = 1.0;
             burstStalCrack(sx, tipY, crystalShardHue());
             if (CRYSTAL_STALS) burstCrystalShards(sx, tipY, crystalShardHue(), 18);
+            if (pay) bulletHitScore(sx, tipY, BULLET_HIT_PTS.stal, col);
         }
     }
     for (let mi = mines.length - 1; mi >= 0; mi--) {
@@ -1763,6 +1768,7 @@ function triggerBombExplosion(cx, cy) {
         if (dx*dx + dy*dy < r2) {
             mines.splice(mi, 1);
             burst(sx, my);
+            if (pay) bulletHitScore(sx, my, BULLET_HIT_PTS.mine, col);
         }
     }
     for (let bi = boulders.length - 1; bi >= 0; bi--) {
@@ -1771,6 +1777,7 @@ function triggerBombExplosion(cx, cy) {
             boulders.splice(bi, 1);
             burstStalCrack(bo.wx - scrollX, bo.y);
             burst(bo.wx - scrollX, bo.y, 20);
+            if (pay) bulletHitScore(bo.wx - scrollX, bo.y, BULLET_HIT_PTS.boulder, col);
         }
     }
     for (let ci = cannonShots.length - 1; ci >= 0; ci--) {
@@ -1780,6 +1787,7 @@ function triggerBombExplosion(cx, cy) {
         if (dx*dx + dy*dy < r2) {
             cannonShots.splice(ci, 1);
             burstStalCrack(sx, s.y);
+            if (pay) bulletHitScore(sx, s.y, BULLET_HIT_PTS.shot, col);
         }
     }
     for (const c of cannons) {

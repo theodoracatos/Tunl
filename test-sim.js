@@ -597,6 +597,39 @@ function touchCoin(type, setup) {
         fl.fresh === 0 && fl.early > 0.1 && fl.late > fl.early + 0.2);
 }
 
+// ── Bomb pays for what it breaks (systems.js triggerBombExplosion) ──────────
+// Catches: a bomb pickup that clears a crystal, a mine and a boulder but pays nothing (or
+// pays the wrong table), and a shield-hit clear that starts paying for a hit.
+{
+    // A crystal hanging to just above the ship, a mine and a flat island ahead, all inside
+    // BOMB_RADIUS of the ship and none touching it this frame.
+    const setup = `const _b = boundsAt(scrollX + PX + W * 0.1), r = PR * 1.4, n = BOULDER_PROF_N + 1;
+        stalactites.push({ wx: scrollX + PX + W * 0.1, isTop: true, length: py - PR * 3 - _b.top,
+                           width: W * 0.02, fade: 1.0, dying: false });
+        mines.push({ wx: scrollX + PX + W * 0.15, baseY: py + PR * 4, bobAmp: 0, phase: 0 });
+        boulders.push({ wx: scrollX + PX + W * 0.2, y: py, r, hl: 40, up: Array(n).fill(r), dn: Array(n).fill(r),
+                        upMax: r, dnMax: r, fTop: Array(n).fill(1), fBot: Array(n).fill(1) });`;
+    const cleared = 'stalactites.every(s => s.dying) && mines.length === 0 && boulders.length === 0';
+    const bomb = withHazards => quietCave(true)(`(() => {
+        ${withHazards ? setup : ''}
+        coins.push({ wx: scrollX + PX, y: py, collected: false, type: 'bomb', fade: 1.0 });
+        const b0 = bonusScore;
+        update(1 / 60);
+        return { gain: bonusScore - b0, cleared: ${cleared},
+                 pts: BULLET_HIT_PTS.stal + BULLET_HIT_PTS.mine + BULLET_HIT_PTS.boulder };
+    })()`);
+    const bare = bomb(false), full = bomb(true);
+    check(`a bomb pickup pays BULLET_HIT_PTS for the crystal, mine and boulder it breaks (+${full.gain - bare.gain}, table ${full.pts})`,
+        full.cleared && full.gain - bare.gain === full.pts);
+    const shield = quietCave(true)(`(() => {
+        ${setup}
+        shieldCount = 1;
+        const b0 = bonusScore, dead = die();
+        return { gain: bonusScore - b0, dead, cleared: ${cleared} };
+    })()`);
+    check('a shield-absorbed hit clears the same blast but pays nothing', !shield.dead && shield.cleared && shield.gain === 0);
+}
+
 // ── Swing wing: cruise in between, warp folds, blue coin spreads ───────────
 // docs/agents/ship-render.md "F-14 hull". Measured on the real update loop, because the
 // rule the user asked for is about WHEN the wings move, not about the easing constant.
