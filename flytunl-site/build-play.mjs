@@ -278,7 +278,10 @@ async function build() {
 // Also writes the funnel counter pages and /tt/diag/ (store-link test bench).
 const TT_GA_DEFAULT = { source: 'tiktok', medium: 'referral', campaign: 'tt_landing' };
 // In funnel order (tt-tail.js has what each one means). run2 sits off the main line.
-const TT_STEPS = ['ready', 'run', 'dead', 'pitch', 'store-ios', 'store-android', 'run2'];
+// The input buckets after them are counted once at the first death (tt-tail.js teleEnd):
+// exactly one of hold0 / lost / tap / hold / holdall, plus cancel on top.
+const TT_STEPS = ['ready', 'run', 'dead', 'pitch', 'store-ios', 'store-android', 'run2',
+  'hold0', 'lost', 'tap', 'hold', 'holdall', 'cancel'];
 
 // Source edits that exist in /tt/'s bundle only - never in /play/, never in the apps, and
 // never in src/, so a /tt/ change needs no /play/ release. Each anchor must match exactly

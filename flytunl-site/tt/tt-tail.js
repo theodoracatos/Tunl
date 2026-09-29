@@ -18,7 +18,8 @@
 //   - the funnel, countable in Cloudflare Web Analytics with no new tracker: invisible
 //     hits on /tt/<step>/ next to the /tt/ page views themselves (see STEPS below), plus
 //     the same steps as GA events through the existing relay;
-//   - a one-time raster downgrade when the title screen runs slow (weak Android).
+//   - a one-time raster downgrade when the title screen runs slow (weak Android);
+//   - per-run input telemetry (see "Input" below).
 // ============================================================
 (function () {
     'use strict';
@@ -275,6 +276,71 @@
         }
     }
 
+    // ── Input telemetry (2026-09-29) ──────────────────────────────────────────
+    // 22 of 25 TikTok players on 28-29.09 died at score <= 8, where a run with no working
+    // control dies. Either they never hold (a tap starts the run, then nothing), or the
+    // TikTok webview ends their hold (long press -> context menu / gesture ->
+    // pointercancel). This tells the two apart, per run:
+    //   presses   pointerdowns during the run (what the player did)
+    //   holds     times the game's own `holding` went true (what input.js made of it)
+    //   first_ms  run start -> first hold (-1 = never); max_ms / held_ms longest / total hold
+    //   run_ms    run start -> death; cancels = pointercancel + touchcancel; ctx =
+    //             contextmenu (a long press the host may act on); blurs = the page
+    //             lost focus mid-run (input.js drops the hold on blur)
+    // GA gets all of it as tt_dead params (first death only, like tt_dead itself). GA has
+    // no custom definitions, so the params are invisible in its reports: the first death
+    // also counts ONE Cloudflare bucket, /tt/<bucket>/ -
+    //   hold0    no press at all
+    //   lost     pressed, but the game never registered a hold (input path broken)
+    //   tap      held, but never for HOLD_MS (taps only)
+    //   hold     at least one hold of HOLD_MS or more
+    //   holdall  held for HOLDALL_FRAC of the run from the first hold on (never let go)
+    // - plus /tt/cancel/ when at least one cancel came in. Run start = the frame phase
+    // becomes 'play' (startPlay), so first_ms includes the launch ramp.
+    var HOLD_MS = 300, HOLDALL_FRAC = 0.8;
+    var tele = null;
+    function inPlay() { return phase === 'play'; }
+    window.addEventListener('pointerdown', function () { if (tele && inPlay()) tele.presses++; }, true);
+    ['pointercancel', 'touchcancel'].forEach(function (t) {
+        window.addEventListener(t, function () { if (tele && inPlay()) tele.cancels++; }, true);
+    });
+    document.addEventListener('contextmenu', function () { if (tele) tele.ctx++; }, true);
+    window.addEventListener('blur', function () { if (tele && inPlay()) tele.blurs++; });
+    function teleStart(ts) {
+        tele = { t0: ts, presses: 0, holds: 0, first: -1, max: 0, held: 0, cancels: 0, ctx: 0, blurs: 0, hs: 0, was: false, last: ts };
+    }
+    function teleFrame(ts) {
+        if (!tele) return;
+        var dt = Math.min(ts - tele.last, 100);
+        tele.last = ts;
+        if (!inPlay()) return;
+        if (holding) {
+            if (!tele.was) { tele.holds++; tele.hs = ts; if (tele.first < 0) tele.first = ts - tele.t0; }
+            tele.held += dt;
+            tele.max = Math.max(tele.max, ts - tele.hs);
+        }
+        tele.was = holding;
+    }
+    function teleEnd(ts, first) {
+        var t = tele;
+        tele = null;
+        if (!t) return;
+        var runMs = Math.round(ts - t.t0);
+        var bucket = t.holds === 0 ? (t.presses === 0 ? 'hold0' : 'lost')
+            : t.max < HOLD_MS ? 'tap'
+            : t.held >= HOLDALL_FRAC * (runMs - t.first) ? 'holdall' : 'hold';
+        TT.lastRun = { bucket: bucket, presses: t.presses, holds: t.holds, first: Math.round(t.first), max: Math.round(t.max),
+            held: Math.round(t.held), run: runMs, cancels: t.cancels, ctx: t.ctx, blurs: t.blurs };
+        if (!first) return;
+        ga('tt_dead', {
+            score: score, presses: t.presses, holds: t.holds, first_ms: Math.round(t.first),
+            max_ms: Math.round(t.max), held_ms: Math.round(t.held), run_ms: runMs,
+            cancels: t.cancels, ctx: t.ctx, blurs: t.blurs,
+        });
+        count(bucket);
+        if (t.cancels) count('cancel');
+    }
+
     // ── Per-frame state ───────────────────────────────────────────────────────
     // Funnel steps (Cloudflare path /tt/<step>/, GA event in brackets):
     //   ready  the game has loaded and the start screen is live (tt_ready)
@@ -301,15 +367,18 @@
 
         if (phase === 'play' && lastPhase !== 'play' && lastPhase !== 'revive') {
             runs++;
+            teleStart(ts);
             if (runs === 1) { TT.firstRun = false; root.classList.remove('tt-fresh'); count('run'); }
             if (runs === 2) { ga('tt_run2'); count('run2'); }
         }
         if (phase !== 'title') hideSplash();
+        teleFrame(ts);
+        if (tele && phase === 'dead') teleEnd(ts, !dead);
 
         if (!dead && phase === 'dead') {
             dead = true;
             window._tunlWebPitchFloor = undefined;
-            ga('tt_dead', { score: score }); count('dead');
+            count('dead');
             autoPitch = continueOfferPending;
         }
         // The first death opens the app card by itself, once the crash's own freeze frame

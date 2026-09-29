@@ -328,7 +328,18 @@ async function handleGA(request, measurementId, apiSecret) {
     params.run_index = clampInt(body.run, 1, 9999, 1);
   }
 
-  if (en === 'tt_dead') params.score = clampInt(body.score, 0, 9999999, 0);
+  if (en === 'tt_dead') {
+    params.score = clampInt(body.score, 0, 9999999, 0);
+    // /tt/ input telemetry of the first run (flytunl-site/tt/tt-tail.js "Input"): did the
+    // player hold at all, and did the webview let the hold last. Counts and ms, clamped.
+    for (const k of ['presses', 'holds', 'cancels', 'ctx', 'blurs']) {
+      if (body[k] !== undefined) params[k] = clampInt(body[k], 0, 9999, 0);
+    }
+    for (const k of ['max_ms', 'held_ms', 'run_ms']) {
+      if (body[k] !== undefined) params[k] = clampInt(body[k], 0, 3600000, 0);
+    }
+    if (body.first_ms !== undefined) params.first_ms = clampInt(body.first_ms, -1, 3600000, -1);
+  }
   // 1 = the card opened by itself at the first death, 0 = from the continue ring.
   if (en === 'pitch_open') params.auto = clampInt(body.auto, 0, 1, 0);
 

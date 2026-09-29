@@ -69,6 +69,11 @@ for (const en of ['tt_ready', 'tt_dead', 'tt_run2']) {
 }
 r = await post({ cid: 'abcdef-0123', sid: '1', en: 'tt_dead', score: '42' });
 check('tt_dead score', r.sent.body.events[0].params.score===42, JSON.stringify(r.sent));
+r = await post({ cid: 'abcdef-0123', sid: '1', en: 'tt_dead', score: 5, presses: 3, holds: 2, first_ms: -1, max_ms: 180,
+  held_ms: 99999999, run_ms: 6300, cancels: 1, ctx: 'x', blurs: 0, evil: 'no' });
+const tp = r.sent.body.events[0].params;
+check('tt_dead input telemetry', tp.presses===3 && tp.holds===2 && tp.first_ms===-1 && tp.max_ms===180 && tp.run_ms===6300 && tp.cancels===1 && tp.blurs===0, JSON.stringify(tp));
+check('tt_dead clamps + drops unknown', tp.held_ms===3600000 && tp.ctx===0 && tp.evil===undefined, JSON.stringify(tp));
 r = await post({ cid: 'abcdef-0123', sid: '1', en: 'pitch_open', auto: 1 });
 check('pitch_open auto=1', r.sent.body.events[0].params.auto===1, JSON.stringify(r.sent));
 r = await post({ cid: 'abcdef-0123', sid: '1', en: 'pitch_open', auto: 7 });
