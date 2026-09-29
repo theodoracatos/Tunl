@@ -882,6 +882,37 @@ function touchCoin(type, setup) {
     check('the next goal is the first locked tier whose gate is still ahead, and nothing once every gate is met',
         surfaces.goal && surfaces.goal.gate > 6 && surfaces.done === null);
 
+    // HOW IT WORKS (Settings): the legend draws in every language inside the screen, its
+    // stardust row opens the stardust path on top, and taps outside peel the layers off one
+    // at a time. Real drawTitleScreen() and onDown(), so a missing key or a dead rect fails.
+    const hiw = ui(`(() => {
+        const r = { fits: [], openPath: false, backToHiw: false, closed: false };
+        titleT = 10; dayGrantT = 0;
+        for (const code of LANG_ORDER) {
+            setLang(code);
+            showSettings = true; showCurrencyInfo = true; drawTitleScreen();
+            const p = _currencyInfoPanelRect, s = _hiwStardustRect;
+            if (!(p && s && p.x >= 0 && p.y >= 0 && p.x + p.w <= W && p.y + p.h <= H
+                  && s.x >= p.x && s.x + s.w <= p.x + p.w + 1)) r.fits.push(code);
+        }
+        setLang('en');
+        drawTitleScreen();
+        const s = _hiwStardustRect;
+        onDown({ clientX: s.x + s.w / 2, clientY: s.y + s.h / 2, pointerId: 1 });
+        r.openPath = showStardustPath && showCurrencyInfo;
+        drawTitleScreen();
+        onDown({ clientX: 2, clientY: 2, pointerId: 1 });
+        r.backToHiw = !showStardustPath && showCurrencyInfo;
+        drawTitleScreen();
+        onDown({ clientX: 2, clientY: 2, pointerId: 1 });
+        r.closed = !showCurrencyInfo && showSettings;
+        showSettings = false;
+        return r;
+    })()`);
+    check('HOW IT WORKS draws inside the screen in every language', hiw.fits.length === 0 || (console.log('   off-screen:', hiw.fits.join(',')), false));
+    check('its stardust row opens the stardust path on top, a tap outside returns to it, the next closes it',
+        hiw.openPath && hiw.backToHiw && hiw.closed);
+
     const gp = boot(956, 440, {});
     const paints = gp(`(() => {
         const comet = [ (bestStreak = 13, paintPartOwned('c', 11)), (bestStreak = 14, paintPartOwned('c', 11)) ];

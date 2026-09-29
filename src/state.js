@@ -359,9 +359,8 @@ let showShop = false;
 let _shopBtnRect = null;
 let _shopPanelRect = null;
 // "HOW IT WORKS" row at the bottom of the Settings panel, opening a one-screen
-// explainer for shards/stardust/coins/hazards -- the numbers (⧫/✦) and the two
-// hazard coins that mean nothing without context, unlike the power-up coins which
-// are self-explanatory by look and effect during a run. Lives in Settings (the
+// legend: the nine coins, warp, repair, the frenzy star and the two wallets (⧫/✦) -
+// the things that mean nothing without context. Lives in Settings (the
 // reference/about surface, one tap from the title) rather than buried in the ALL
 // SHIPS sheet where it started -- ship shopping is the wrong context for the coin
 // and hazard half of the panel. See CLAUDE.md Onboarding: this is opt-in (tap to
@@ -369,6 +368,8 @@ let _shopPanelRect = null;
 let showCurrencyInfo = false;
 let _settingsGuideBtnRect = null;
 let _currencyInfoPanelRect = null;
+// Its stardust half: a tap opens the stardust path on top of it (draw.js, input.js).
+let _hiwStardustRect = null;
 // The stardust path: the day-0-to-last-ship timeline opened by tapping the ✦ wallet on
 // the ALL SHIPS sheet. Answers "what is this number for?" where the question comes up,
 // instead of the Settings explainer's one line two panels away.

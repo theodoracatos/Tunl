@@ -5433,122 +5433,196 @@ function drawTitleScreen() {
         }
     }
 
-    // Shard/stardust/coin explainer, opened from the Settings panel's "HOW IT
-    // WORKS" row (_settingsGuideBtnRect) and drawn here on top of it. One static
-    // panel rather than four separate tooltips -- shards, stardust, the coin
-    // legend and the two hazard coins are the one screen's worth of things that
-    // don't teach themselves by playing (unlike the power-up coins, which read
-    // from look and result during a run), so bundling them beats making a new
-    // player hunt down tiny "i"s one at a time. Opt-in (tap to open, tap outside
-    // to close, same as Shop/Settings) rather than a forced hint -- see CLAUDE.md
-    // Onboarding for why an unprompted hint was rejected here before.
+    // HOW IT WORKS, opened from the Settings panel's row (_settingsGuideBtnRect) and drawn
+    // here on top of it. The things that don't teach themselves by playing, in one panel
+    // rather than tooltips. Opt-in (tap to open, tap outside to close, same as Shop/
+    // Settings) rather than a forced hint - see docs/agents/onboarding.md for why an
+    // unprompted hint was rejected here before.
+    // A legend since 2026-09-29, not six paragraphs: row 1 the nine coins as their real
+    // sprites (COIN_OBJECTS) with a word of effect each, collect | avoid; row 2 the three
+    // things that need a sentence (warp hoop, repair wrench, the frenzy star in the ship's
+    // own light); row 3 the two wallets, the stardust half opening the stardust path on top
+    // (_hiwStardustRect, input.js). Content-sized, and shrunk in steps until it clears the
+    // screen - the line count depends on the locale, so no single scale is known up front.
+    _hiwStardustRect = null;
     if (showCurrencyInfo) {
         drawMenuBackdrop();
 
-        const panW = Math.min(W * 0.72, 460);
-        // Bullet colour matches each item's own in-game colour (gold wallet, pale
-        // stardust glint, the gold coin for the six helpful coins, the poison
-        // flask's green for the two hazard coins, the portal hoop's violet, the repair
-        // kit's wrench) so the dot itself is a second, wordless cue.
-        const rows = [
-            { dot: 'rgba(255,225,110,1)', text: T.shardsInfo },
-            { dot: 'rgba(200,210,255,1)', text: T.stardustInfo },
-            { dot: 'rgba(255,224,64,1)',  text: T.coinsInfo },
-            { dot: 'rgba(95,191,0,1)',    text: T.hazardsInfo },
-            { dot: 'rgba(150,120,255,1)', text: T.portalInfo },
-            { dot: 'rgba(255,190,120,1)', text: T.repairInfo },
+        const COINS  = ['gold', 'blue', 'red', 'orange', 'green', 'bomb', 'laser', 'poison', 'drain'];
+        const N_GOOD = 7;
+        const fzKey  = _fzToneKey();
+        const tiles  = [
+            { head: T.hiwWarpT,   body: T.hiwWarp,   clr: 'rgba(170,150,255,0.95)' },
+            { head: T.hiwRepairT, body: T.hiwRepair, clr: 'rgba(255,190,120,0.95)' },
+            { head: T.frenzy,     body: T.hiwFrenzy, clr: coinTone(fzKey, 0.35, 0.95) },
         ];
+        const wallets = [
+            { glyph: '⧫', head: T.hiwShardsT,   body: T.hiwShards,          clr: 'rgba(255,225,110,1)' },
+            { glyph: '✦', head: T.hiwStardustT, body: T.hiwStardust + ' ›', clr: 'rgba(160,232,255,1)' },
+        ];
+        const panW = Math.min(W * 0.88, 800);
 
-        // Greedy wrap at whatever font is currently set on ctx. Tokenises CJK/
-        // fullwidth characters one at a time (they carry no spaces to break on --
-        // a plain split(' ') treated a whole ja/ko/zh sentence as a single
-        // unbreakable "word" and let it run straight off the edge of the panel,
-        // unclipped, over whatever sat behind it) while keeping Latin/Cyrillic/etc.
-        // words whole and breaking only at spaces, same as before for those.
-        const wrap = _wrapLines;
-
-        // Unlike the Shop panel above (fixed line count, so one linear shopScale
-        // covers it), this panel wraps translated paragraphs -- line count per row
-        // depends on the locale's string length, and shrinking the font reflows
-        // wrapping too (smaller font = fewer, shorter-looking lines), so a single
-        // linear scale can't be computed up front. Iterate the font scale down
-        // instead, re-wrapping each try, until the nominal panel height clears the
-        // screen-height cap or the shrink hits its floor (0.6x) -- short EN/DE text
-        // fits at scale 1 in one pass; long locale strings settle a few steps down.
-        let scale = 1, bodyFontSz, dotR2, padSide, textIndent, rowGap2, lineH, titleH, padTop, padBottom, wrappedRows, panH;
+        let scale = 1, L;
         for (let iter = 0; iter < 14; iter++) {
-            bodyFontSz = FS * 0.020 * scale;
-            ctx.font   = `${bodyFontSz}px ${FONT_UI}`;
-            dotR2      = bodyFontSz * 0.28;
-            // Real side margin from the panel border to the dot -- previously the
-            // dot sat almost flush against the left edge with no breathing room at
-            // all. Mirrored on the right so the text column reads as centred inset,
-            // not lopsided.
-            padSide    = bodyFontSz * 1.1;
-            // 4.4x dotR2 gap from dot to text, not 3.4x -- the dot sits at
-            // padSide + dotR2 with its own radius eating into the gap, so the old
-            // value left barely a hairline of space before the text (dot visibly
-            // touching the first letter).
-            textIndent = padSide + dotR2 * 4.4;
-            rowGap2    = bodyFontSz * 0.9;
-            lineH      = bodyFontSz * 1.35;
-            const wrapWidth = panW - textIndent - padSide;
-            wrappedRows = rows.map(r => wrap(r.text, wrapWidth));
-            titleH    = FS * 0.045 * scale;
-            padTop    = H * 0.065 * scale;
-            padBottom = H * 0.05  * scale;
-            let bodyH = 0;
-            wrappedRows.forEach(lines => { bodyH += lines.length * lineH + rowGap2; });
-            panH = padTop + titleH + bodyH + padBottom;
+            const k = scale;
+            const fs = FS * 0.0165 * k, capFs = FS * 0.0145 * k, labFs = FS * 0.0125 * k, headFs = fs * 0.92;
+            const lh = fs * 1.32, capLh = capFs * 1.25;
+            const padX = FS * 0.034 * k, padTop = FS * 0.030 * k, titleH = FS * 0.040 * k, gap = FS * 0.024 * k;
+            const innerW = panW - padX * 2;
+            const sepW   = FS * 0.03 * k;
+            const colW   = (innerW - sepW) / COINS.length;
+            const iconS  = FS * 0.017 * k;
+            ctx.font = `${capFs}px ${FONT_UI}`;
+            const caps = T.hiwCoins.map(t => _wrapLines(t, colW * 0.96));
+            const capLines = Math.max(...caps.map(c => c.length));
+
+            const tileW = innerW / 3, tIcon = FS * 0.022 * k, tTextOff = tIcon * 2.6;
+            const tTextW = tileW - tTextOff - FS * 0.012 * k;
+            ctx.font = `${fs}px ${FONT_UI}`;
+            const tileLines = tiles.map(t => _wrapLines(t.body, tTextW));
+            const tileRows  = Math.max(...tileLines.map(t => t.length));
+
+            // A wallet reads as one line ("⧫ SHARDS from coins") where it fits, else the
+            // body wraps under its head.
+            const halfW = innerW / 2, glyphFs = fs * 1.35;
+            const wLines = wallets.map(wl => {
+                ctx.font = `bold ${glyphFs}px ${FONT_NUM}`;
+                const gW = ctx.measureText(wl.glyph).width + fs * 0.6;
+                const textW = halfW - gW - fs;
+                ctx.font = `bold ${headFs}px ${FONT_UI}`;
+                ctx.letterSpacing = `${headFs * 0.1}px`;   // as label() draws it
+                const headW = ctx.measureText(wl.head).width + fs * 0.7;
+                ctx.letterSpacing = '0px';
+                ctx.font = `${fs}px ${FONT_UI}`;
+                const inline = headW + ctx.measureText(wl.body).width <= textW;
+                return { gW, headW, inline, body: inline ? [wl.body] : _wrapLines(wl.body, textW) };
+            });
+            const wRows = Math.max(...wLines.map(w => w.inline ? 1 : 1 + w.body.length));
+
+            const sec1 = labFs * 1.9 + iconS * 2.7 + capLines * capLh;
+            const sec2 = fs * 1.5 + tileRows * lh;
+            const sec3 = wRows * lh;
+            const panH = padTop + titleH + gap + sec1 + gap * 2 + sec2 + gap * 2 + sec3 + padTop;
+            L = { fs, capFs, labFs, headFs, lh, capLh, padX, padTop, titleH, gap, sepW, colW, iconS, caps,
+                  tileW, tIcon, tTextOff, tTextW, tileLines, halfW, glyphFs, wLines, sec1, sec2, sec3, panH };
             if (panH <= H * 0.92 || scale <= 0.6) break;
-            scale *= 0.92;
+            scale *= 0.94;
         }
+        const { fs, capFs, labFs, headFs, lh, capLh, padX, padTop, titleH, gap, sepW, colW, iconS, caps,
+                tileW, tIcon, tTextOff, tTextW, tileLines, halfW, glyphFs, wLines, sec1, sec2, sec3, panH } = L;
 
         const panX = W / 2 - panW / 2, panY = H / 2 - panH / 2;
         _currencyInfoPanelRect = { x: panX, y: panY, w: panW, h: panH };
-
         drawMenuPanel(panX, panY, panW, panH, 14);
 
-        ctx.textAlign   = 'center';
-        ctx.font        = `bold ${titleH}px ${FONT_UI}`;
-        // Shrink to fit -- same reasoning as the death screen's SHARE/HOME/PLAY
-        // AGAIN buttons: some locales run long enough to touch the panel's rounded
-        // corners edge to edge with zero margin (Hindi measured 455px of 460px
-        // available). Capped to the same side margin as the body text (padSide*2)
-        // so title and paragraphs share one consistent inset.
+        // A coin sprite with the soft halo drawCoin gives it in the tunnel.
+        const coinIcon = (type, x, y, s) => {
+            const tk = type === 'frenzy' ? fzKey : type === 'repair' ? 'orange' : type;
+            const g = ctx.createRadialGradient(x, y, s * 0.2, x, y, s * 2);
+            g.addColorStop(0, coinTone(tk, 0, 0.18));
+            g.addColorStop(1, coinTone(tk, 0, 0));
+            ctx.beginPath(); ctx.arc(x, y, s * 2, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
+            ctx.save(); ctx.translate(x, y); COIN_OBJECTS[type](s, gtime, 0); ctx.restore();
+        };
+        // Uppercase label with a little tracking, shrunk to fit maxW.
+        const label = (text, x, y, sz, maxW) => {
+            ctx.font = `bold ${sz}px ${FONT_UI}`;
+            ctx.letterSpacing = `${sz * 0.1}px`;
+            const w = ctx.measureText(text).width;
+            if (w > maxW) { ctx.font = `bold ${sz * maxW / w}px ${FONT_UI}`; ctx.letterSpacing = `${sz * maxW / w * 0.1}px`; }
+            if (ctx.textAlign === 'center') centred(text, x, y); else ctx.fillText(text, x, y);
+            ctx.letterSpacing = '0px';
+        };
+        // Centred by measured width, drawn left-aligned: WebKit dropped textAlign 'center'
+        // for Devanagari (system fallback face) and started the text at x instead.
+        const centred = (text, x, yy) => {
+            ctx.textAlign = 'left';
+            ctx.fillText(text, x - ctx.measureText(text).width / 2, yy);
+            ctx.textAlign = 'center';
+        };
+        const rule = yy => {
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(panX + padX, yy); ctx.lineTo(panX + panW - padX, yy); ctx.stroke();
+        };
+
+        ctx.save();
+        ctx.textBaseline = 'middle';
+        ctx.textAlign    = 'center';
+
+        // Title, shrunk to fit the panel's inner width (Hindi ran edge to edge before).
         let titleFsz = titleH;
-        const titleMaxW = panW - padSide * 2;
+        ctx.font = `bold ${titleFsz}px ${FONT_UI}`;
         const titleW = ctx.measureText(T.howItWorks).width;
-        if (titleW > titleMaxW) {
-            titleFsz = Math.max(titleFsz * titleMaxW / titleW, FS * 0.02);
+        if (titleW > panW - padX * 2) {
+            titleFsz = Math.max(titleFsz * (panW - padX * 2) / titleW, FS * 0.02);
             ctx.font = `bold ${titleFsz}px ${FONT_UI}`;
         }
-        ctx.fillStyle   = 'rgba(255,225,110,0.95)';
-        ctx.fillText(T.howItWorks, W / 2, panY + padTop + FS * 0.005); // nudged down a touch instead of up like the other submenu titles; see T.missions title note
+        ctx.fillStyle = 'rgba(255,225,110,0.95)';
+        let y = panY + padTop + titleH * 0.5;
+        centred(T.howItWorks, W / 2, y);
+        y += titleH * 0.5 + gap;
 
-        ctx.textAlign = 'left';
-        ctx.font      = `${bodyFontSz}px ${FONT_UI}`;
-        let ry        = panY + padTop + titleH + rowGap2 * 0.6;
-        const textX   = panX + textIndent;
-        wrappedRows.forEach((lines, i) => {
-            // Dot centred on the first line's own vertical centre -- textBaseline is
-            // 'middle' here (set once for the whole title-phase block above), so
-            // ry already *is* line 1's centre. The old `- lineH * 0.32` assumed an
-            // alphabetic baseline and floated every dot above-left of its text
-            // instead of level with it (same class of bug the info button's "i" had).
-            ctx.beginPath();
-            ctx.arc(panX + padSide + dotR2, ry, dotR2, 0, Math.PI * 2);
-            ctx.fillStyle = rows[i].dot;
-            ctx.fill();
-
-            ctx.fillStyle = 'rgba(220,225,245,0.92)';
-            lines.forEach(line => {
-                ctx.fillText(line, textX, ry);
-                ry += lineH;
-            });
-            ry += rowGap2;
+        // Row 1: the coins.
+        const x0 = panX + padX;
+        ctx.fillStyle = 'rgba(224,233,255,0.50)';
+        label(T.hiwCollect, x0 + colW * N_GOOD / 2, y + labFs * 0.5, labFs, colW * N_GOOD);
+        ctx.fillStyle = 'rgba(255,120,140,0.75)';
+        label(T.hiwAvoid, x0 + colW * (N_GOOD + 1) + sepW, y + labFs * 0.5, labFs, colW * 2);
+        const iy = y + labFs * 1.9 + iconS * 1.2;
+        COINS.forEach((type, i) => {
+            const bad = i >= N_GOOD;
+            const cx = x0 + colW * (i + 0.5) + (bad ? sepW : 0);
+            coinIcon(type, cx, iy, iconS * (COIN_SIZE_MULT[type] > 1.2 ? 1.12 : 1));
+            ctx.font = `${capFs}px ${FONT_UI}`;
+            ctx.fillStyle = bad ? 'rgba(255,190,200,0.85)' : 'rgba(220,225,245,0.85)';
+            caps[i].forEach((ln, j) => centred(ln, cx, iy + iconS * 1.5 + capFs * 0.6 + j * capLh));
         });
-        ctx.textAlign = 'center';
+        const sepX = x0 + colW * N_GOOD + sepW / 2;
+        ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(sepX, y); ctx.lineTo(sepX, y + sec1); ctx.stroke();
+        y += sec1 + gap;
+        rule(y);
+        y += gap;
+
+        // Row 2: warp | repair | frenzy.
+        ctx.textAlign = 'left';
+        tiles.forEach((t, i) => {
+            const tx = x0 + tileW * i, icx = tx + tIcon * 1.1, icy = y + sec2 * 0.45;
+            if (i === 0) {
+                const hoop = { r: tIcon * 1.05, y: icy, used: false, usedFade: 1 };
+                _portalBand(hoop, icx, 1, false); _portalBand(hoop, icx, 1, true);
+            } else {
+                coinIcon(i === 1 ? 'repair' : 'frenzy', icx, icy, tIcon * (i === 1 ? 0.95 : 1.05));
+            }
+            ctx.textAlign = 'left';
+            ctx.fillStyle = t.clr;
+            label(t.head, tx + tTextOff, y + fs * 0.5, headFs, tTextW);
+            ctx.font = `${fs}px ${FONT_UI}`;
+            ctx.fillStyle = 'rgba(220,225,245,0.88)';
+            tileLines[i].forEach((ln, j) => ctx.fillText(ln, tx + tTextOff, y + fs * 1.5 + lh * (j + 0.5)));
+        });
+        y += sec2 + gap;
+        rule(y);
+        y += gap;
+
+        // Row 3: the wallets.
+        wallets.forEach((wl, i) => {
+            const bx = x0 + halfW * i, m = wLines[i];
+            const rows = m.inline ? 1 : 1 + m.body.length;
+            const y0 = y + (sec3 - rows * lh) / 2 + lh / 2;
+            ctx.textAlign = 'left';
+            ctx.font = `bold ${glyphFs}px ${FONT_NUM}`;
+            ctx.fillStyle = wl.clr;
+            ctx.fillText(wl.glyph, bx, y0);
+            const tx = bx + m.gW;
+            label(wl.head, tx, y0, headFs, halfW - m.gW);
+            ctx.font = `${fs}px ${FONT_UI}`;
+            ctx.fillStyle = 'rgba(220,225,245,0.80)';
+            if (m.inline) ctx.fillText(m.body[0], tx + m.headW, y0);
+            else m.body.forEach((ln, j) => ctx.fillText(ln, tx, y0 + lh * (j + 1)));
+        });
+        _hiwStardustRect = { x: x0 + halfW, y: y - gap, w: halfW, h: sec3 + gap * 1.6 };
+        ctx.restore();
     }
 
     // ── Stardust path (2026-09-22) ───────────────────────────────────────

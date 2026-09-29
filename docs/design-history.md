@@ -2116,3 +2116,24 @@ Rebuilt on the user's picks from a decision page (all five matched the recommend
 Same day, separately: canvas store buttons fall back to same-tab navigation when
 `window.open` returns null (`web.js openStoreLink`; they fire on pointerdown, which a
 touch does not count as a user gesture), and /tt/ App Store links carry `pt`/`ct`.
+
+## HOW IT WORKS becomes a legend (2026-09-29)
+
+The Settings explainer (`showCurrencyInfo`, `draw.js`) was six paragraphs with coloured dots
+and no picture of anything it named, and frenzy was missing. A seventh paragraph would have
+pushed it past the 667x375 height cap into the shrink loop. Concept page with before/after
+renders: https://claude.ai/artifact/53JgcR2fVSRTdoPTnDuyJp - the user took all three
+recommendations:
+- **A legend, not two pages of sentences.** Row 1 the nine coins as their `COIN_OBJECTS`
+  sprites with a word of effect (COLLECT | AVOID), row 2 warp (the real `_portalBand` hoop),
+  repair and frenzy as tiles with one sentence each, row 3 the two wallets. German went from
+  ~95 to ~55 words and fits 667x375 without shrinking.
+- **The stardust row opens the stardust path** on top (`_hiwStardustRect`); the streak rules
+  moved there rather than being repeated. Taps outside peel one layer at a time, and
+  keyboard/Android back close the path first.
+- **Frenzy is "the star meter"** ("Stern-Tank"); misses draining it are left out on purpose.
+  The star icon and the heading take the ship's own light (`_fzToneKey`).
+Strings: `hiw*` keys in all 16 languages; `shardsInfo`/`coinsInfo`/`hazardsInfo`/
+`portalInfo`/`repairInfo` removed, `stardustInfo` stays for the path panel. WebKit (Playwright
+build) ignored `textAlign 'center'` for Devanagari, so the panel centres by measured width.
+`test-sim.js` draws it in every language and walks the tap layers.

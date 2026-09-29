@@ -91,8 +91,14 @@ function onDown(e) {
         // still true underneath) -- otherwise a tap outside this panel would be
         // read as "close Settings" and leave this one orphaned.
         if (showCurrencyInfo) {
-            // Tap anywhere outside the panel closes it; a tap inside on the body text does
-            // nothing (no buttons live inside this panel, unlike Shop/Settings).
+            // Its stardust row opens the stardust path on top; a tap outside that closes
+            // it back to this panel.
+            if (showStardustPath) {
+                if (!_stardustPathPanelRect || !inRect(cx, cy, _stardustPathPanelRect)) { showStardustPath = false; sfxUiClose(); }
+                return;
+            }
+            if (_hiwStardustRect && inRect(cx, cy, _hiwStardustRect)) { showStardustPath = true; sfxUiTap(); return; }
+            // Tap anywhere else outside the panel closes it; a tap inside does nothing.
             if (!_currencyInfoPanelRect || !inRect(cx, cy, _currencyInfoPanelRect)) { showCurrencyInfo = false; sfxUiClose(); }
             return;
         }
@@ -285,8 +291,8 @@ function onDown(e) {
     _initAC();
     if (phase === 'title') {
         if (appOnlyKey) { appOnlyKey = null; return; }                // web only, on top of everything
+        if (showStardustPath) { showStardustPath = false; return; }  // over ALL SHIPS or HOW IT WORKS -- topmost
         if (showCurrencyInfo) { showCurrencyInfo = false; return; }  // layered on top of Settings -- dismiss it first
-        if (showStardustPath) { showStardustPath = false; return; }  // same, over the ALL SHIPS sheet
         if (showSettings) { showSettings = false; return; }
         if (showShop) { showShop = false; return; }
         if (showMissions) { showMissions = false; return; }
