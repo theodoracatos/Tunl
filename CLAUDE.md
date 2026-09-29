@@ -136,7 +136,7 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 ### Frenzy, the star -> `docs/agents/frenzy.md`
 - Meter fills by collecting (tank rule, portals too); full -> charge -> `FRENZY_SEC` of Mario-star: hazards shatter, the wall clamps, the shield is kept. Cost escalates per star.
 - **Tune by duty cycle** with `tools/frenzy-sim.js`, never by coin count. It is a deep-run reward by the user's call - don't make it cheaper without re-measuring the leaderboard.
-- No rng(), no placement; colour = the ship's own light; audio pad without a beat, music via `_bgmLift`/`_bgmShelf`.
+- No rng(), no placement; colour = the ship's own light; the pad has no beat (Nebula runs under it). A star's own music is generated in code, never an mp3; while it plays the track is held and resumes on its bar (`_fzMusGen`).
 
 ### Coins -> `docs/agents/coins.md`
 - Gap bonus magnitudes are **fractions of the half-gap**, not of H. Coins are a real difficulty lever - don't shrink them.

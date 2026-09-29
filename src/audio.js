@@ -22,7 +22,7 @@ const AUDIO_LOW_GAIN = 0.4;
 let _fNode = null, _fGain = null;
 let _mNode = null, _mGain = null, _mOsc = null;
 // Laser beam hum (laserLoopOn/Off), same one-instance pattern as the magnet shimmer.
-let _lzGain = null, _lzSrc = [];
+let _lzGain = null, _lzSrc = [], _lzLevel = 1;
 let _wNode = null, _wGain = null, _wOsc = null;
 // Last-fired bullet-fire voices, so a death mid-burst can cut them off instead of
 // letting the tail ring on into sfxDie (see sfxBulletFireStop below).
@@ -33,7 +33,7 @@ let _bgmOutroBuf = null, _outroNode = null, _outroGain = null;  // the track's o
 let _bgmLoading = false, _titleBgmLoading = false; // in-flight guards for the lazy loaders
 let _bgmActive = false, _bgmPending = false;
 // Where the current _bgmNode was started (context time, offset into _bgmBuf), and the bar a
-// star's excerpt holds the bed at (-1 = not held) - see bgmSetFrenzy.
+// star's own music holds the bed at (-1 = not held) - see bgmSetFrenzy.
 let _bgmT0 = 0, _bgmOff0 = 0, _bgmHeldAt = -1;
 let _titleBgmBuf = null, _titleBgmNode = null, _titleBgmGain = null, _titleBgmFlt = null;
 let _titleBgmActive = false, _titleBgmPending = false;
@@ -291,7 +291,7 @@ function _fadeBgMusic() {
         _bgmNode.onended = null;  // prevent ghost restart from stopped node
         _bgmNode = null;
     }
-    // A death inside a star: the excerpt holds the stage (bgmSetFrenzy), so it collapses.
+    // A death inside a star: the star's music holds the stage (bgmSetFrenzy), so it collapses.
     if (_fzMus) { faded = true; _musicCollapse(_fzMus.g, _fzMus.lp, _fzMus.src); _fzMus = null; }
     return faded;
 }
@@ -599,7 +599,6 @@ function _loadBgmBuffer() {
             _bgmBuf = _bakeBgmLoop(buf, BGM_LOOP_START, BGM_LOOP_END, BGM_LOOP_XFADE);
             _bgmOutroBuf = _sliceOutro(buf);
             if (_bgmPending && _bgmActive) { _bgmPending = false; _playBgmBuffer(); }
-            if (musicOn) _loadFzMusBuffer();   // the star's excerpt, small, next in line
         })
         .catch(err => {
             _bgmLoading = false;
@@ -663,7 +662,7 @@ function _reviveAudioContext() {
     // Any decode still in flight belongs to the context just closed and will drop itself
     // on the _ac !== ctx check; clear the guards so the fresh context can load again.
     _bgmLoading = false; _titleBgmLoading = false;
-    _fzMusBuf = null; _fzMusLoading = false; _fzMus = null; _bgmHeldAt = -1;   // the star's excerpt too
+    _fzMus = null; _bgmHeldAt = -1;   // the star's music too
     _mNode = null; _mGain = null; _mOsc = null;  // magnet shimmer belonged to the closed context
     _lzGain = null; _lzSrc = [];   // laser hum too
     _fzPad = null; _fzGrind = null;   // the star's pad and grind as well
@@ -2986,6 +2985,7 @@ function laserLoopOn() {
     if (!_ac || _lzGain || !fxOn) return;
     const t = _ac.currentTime;
     _lzGain = _ac.createGain();
+    _lzLevel = 1;
     _lzGain.gain.setValueAtTime(0.0001, t);
     _lzGain.gain.linearRampToValueAtTime(LASER_LOOP_LEVEL, t + 0.08);
     _lzGain.connect(_master);
@@ -3004,6 +3004,16 @@ function laserLoopOn() {
         _lzSrc.push(o);
     });
     _lzSrc.forEach(n => n.start(t));
+}
+
+// The hum stutters with the beam's flashlight flicker (systems.js laserFlicker), k = 0..1 of
+// LASER_LOOP_LEVEL, called every frame of the window. Each change glides with a
+// LASER_FLICKER_TC time constant: short against a stutter step, long enough not to click.
+const LASER_FLICKER_TC = 0.006;
+function laserLoopLevel(k) {
+    if (!_lzGain || k === _lzLevel) return;
+    _lzLevel = k;
+    _lzGain.gain.setTargetAtTime(LASER_LOOP_LEVEL * k, _ac.currentTime, LASER_FLICKER_TC);
 }
 
 function laserLoopOff() {
@@ -3027,15 +3037,13 @@ function laserLoopOff() {
 // and slow / warp move the track, so a pulse would land off the beat - the reason the
 // sector build-and-drop was removed. Music is lifted through _bgmLift / _bgmShelf
 // (bgmSetFrenzy), never playbackRate (slow and warp own it).
-// Since 2026-09-29 the star has its own music (bgmSetFrenzy, FZ_MUS_* below): the play track
-// pauses and an excerpt of an epic track in C plays instead. While it runs, the D-major
-// pad steps aside, and the ping ladder and the end motif move onto notes that fit it.
+// Since 2026-09-29 a star can have its own music (bgmSetFrenzy, _fzMusGen below): the play
+// track pauses while it plays, and the pad steps aside.
 // Levels measured offline in the real bus, phone band (>400 Hz), loudest 50 ms: fanfare
 // -18.5 dB (milestone -18.1), pad -26.5, ping -21.5 (coin -21.3), grind ~-25.5, end motif
 // -22; charge, ready, miss and whoosh then moved 3 dB as picked. Re-measure before moving.
 const _FZN = { A3: 220, D4: 293.66, D5: 587.33, E5: 659.26, Fs5: 739.99, A5: 880, B5: 987.77,
-               D6: 1174.66, E6: 1318.51, Fs6: 1479.98, A6: 1760, B6: 1975.53, D7: 2349.32,
-               F5: 698.46, C6: 1046.5, F6: 1396.91, G6: 1567.98, C7: 2093.0 };
+               D6: 1174.66, E6: 1318.51, Fs6: 1479.98, A6: 1760, B6: 1975.53, D7: 2349.32 };
 const _FZ_S16 = 60 / 140 / 4, _FZ_S8 = 60 / 140 / 2;
 const FRENZY_LV = { fan: 0.333, pad: 0.092, ping: 0.128, grind: 0.217, end: 0.123,
                     charge: 0.184, ready: 0.031, miss: 0.133, whoosh: 0.153 };
@@ -3112,13 +3120,13 @@ function sfxFrenzyStart() {
     _fzEnv(cg, tc, 0.012, 1, 0.85);
     [_FZN.D5, _FZN.Fs5, _FZN.A5, _FZN.D6].forEach((f, i) =>
         _fzOsc('sawtooth', f * (1 + (i % 2 ? 0.003 : -0.003)), tc, tc + 1.0, cg, 0.22));
-    // The excerpt's impact lands on the chord (FZ_MUS_START): ducking would blunt it.
+    // The star's own music starts with the fanfare: ducking it would blunt its entry.
     if (!_fzMus) musicDuck(MUSIC_DUCK_DB, 0.6);
 }
 
 // The star's pad: detuned saws D5 A5 D6 F#6 through a lowpass, a 16th-rate tremolo.
 function frenzyLoopOn() {
-    if (!_ac || _fzPad || !fxOn || _fzMus) return;   // the excerpt is the star's bed (bgmSetFrenzy)
+    if (!_ac || _fzPad || !fxOn || _fzMus) return;   // the star's music decides its bed (bgmSetFrenzy)
     const t = _ac.currentTime;
     const out = _ac.createGain(); out.connect(_master);
     out.gain.setValueAtTime(0.0001, t); out.gain.linearRampToValueAtTime(FRENZY_LV.pad, t + 0.25);
@@ -3139,8 +3147,7 @@ function frenzyLoopOn() {
 }
 
 // The star's last FRENZY_WARN_SEC: the tremolo speeds up, the filter closes, a falling
-// A5 F#5 D5 on the 8th grid answers the fanfare. Under the excerpt it is C6 A5 F5: the
-// excerpt stands on its F and Bb bars by then, where an F# would rub.
+// A5 F#5 D5 on the 8th grid answers the fanfare.
 function frenzyLoopWarn() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime, T = FRENZY_WARN_SEC;
@@ -3149,7 +3156,7 @@ function frenzyLoopWarn() {
         _fzPad.lp.frequency.setValueAtTime(2600, t); _fzPad.lp.frequency.exponentialRampToValueAtTime(900, t + T + 0.2);
     }
     const t0 = t + Math.max(0, T - 3 * _FZ_S8 - 0.05);
-    (_fzMus ? [_FZN.C6, _FZN.A5, _FZN.F5] : [_FZN.A5, _FZN.Fs5, _FZN.D5]).forEach((f, i) => {
+    [_FZN.A5, _FZN.Fs5, _FZN.D5].forEach((f, i) => {
         const tt = t0 + i * _FZ_S8, g = _ac.createGain(); g.connect(_master);
         _fzEnv(g, tt, 0.006, FRENZY_LV.end, i === 2 ? 0.55 : 0.2);
         _fzOsc('triangle', f, tt, tt + 0.7, g); _fzOsc('sine', f * 2, tt, tt + 0.4, g, 0.2);
@@ -3183,15 +3190,13 @@ function frenzyLoopOff(quiet) {
 }
 
 // A hazard the star flew into: a bell over its own break sound, one D-major pentatonic step
-// up per hit in this star, at most one per 60 ms. Under the excerpt the ladder is F-major
-// pentatonic (D F G A C D), which sits on its G, F and Bb bars alike.
+// up per hit in this star, at most one per 60 ms.
 function sfxFrenzyPing(step) {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime;
     if (t - _fzPingT < 0.06) return;
     _fzPingT = t;
-    const steps = _fzMus ? [_FZN.D6, _FZN.F6, _FZN.G6, _FZN.A6, _FZN.C7, _FZN.D7]
-                         : [_FZN.D6, _FZN.E6, _FZN.Fs6, _FZN.A6, _FZN.B6, _FZN.D7];
+    const steps = [_FZN.D6, _FZN.E6, _FZN.Fs6, _FZN.A6, _FZN.B6, _FZN.D7];
     const f = steps[Math.min(Math.max(step, 0), steps.length - 1)];
     const g = _ac.createGain(); g.connect(_master);
     _fzEnv(g, t + 0.01, 0.002, FRENZY_LV.ping, 0.26);
@@ -3230,51 +3235,26 @@ function frenzyGrind(on) {
     }
 }
 
-// Music during a star (2026-09-29, user: "die Musik pausieren und einen tollen Ausschnitt
-// aus the_mountain-epic abspielen, danach wieder resumen"). The play track is held at the
-// bar it had reached and faded out; the excerpt plays through its own chain into the music
-// bus; at the star's end the excerpt fades out and the track picks up on that bar again.
-// A death inside a star (`quiet`) leaves the excerpt to _fadeBgMusic, which collapses it
-// the way it collapses the bed, and the song's ending follows as usual.
-// Without the excerpt (music off, still loading, context rebuilt mid-star) the old lift
-// and presence shelf on top of the sector build apply instead.
-//
-// audio/the_mountain_epic.mp3 is 66.0-87.5 s of the_mountain-epic-490003.mp3 (Pixabay,
-// the_mountain, 101.75 BPM, C), cut losslessly (ffmpeg -c copy); the .web.m4a is one AAC
-// encode of the same span from the source. The span is the re-entry after the track's
-// break: a riser, then the full ensemble hits at FZ_MUS_HIT (G, then F and Bb). Playback
-// starts FZ_MUS_START so that hit lands on the fanfare's chord (sfxFrenzyStart, 5 16ths
-// in); the chord's D-F#-A over G reads as Gmaj9, not a clash. The loop is only a safety
-// net for a star stretched by warps; FRENZY_SEC never gets near it.
-// Level (ffmpeg, measured on the files): the excerpt is as loud as the loop body full-band
-// (-11.6 / -11.0 LUFS) but 5.3 dB quieter above 400 Hz, where a phone speaker lives. The
-// low shelf takes out 6 dB of its bass, and FZ_MUS_GAIN matches it to the bed in the phone
-// band (-22.9 + 6.1 = -16.8 LUFS), +1.1 dB full-band. Peaks sit ~1.6 dB under LIMIT_KNEE.
-const FZ_MUS_HIT        = 1.14;    // the hit, s into the file (both encodes within 3 ms)
-const FZ_MUS_START      = FZ_MUS_HIT - 5 * _FZ_S16;
-const FZ_MUS_LOOP_END   = FZ_MUS_HIT + 8 * 60 / 101.75 * 4;
-const FZ_MUS_GAIN       = BGM_GAIN * Math.pow(10, 6.1 / 20);
-const FZ_MUS_SHELF_HZ   = 250, FZ_MUS_SHELF_DB = -6;
+// Music during a star (2026-09-29, user: "die Musik pausieren ... danach wieder resumen").
+// The play track is held at the bar it had reached and faded out; the star's own music
+// (_fzMusGen) plays through its own chain into the music bus; at the star's end it fades out
+// and the track picks up on that bar again. A death inside a star (`quiet`) leaves it to
+// _fadeBgMusic, which collapses it the way it collapses the bed; the song's ending follows.
+// Without it (no generator, music off, not loaded) the old lift and presence shelf on top
+// of the sector build and the pad apply.
+// The first star music was an excerpt of an mp3 (the_mountain-epic), then a silent trial;
+// both were taken out the same day (user: "gefaellt mir nicht") in favour of a generated one,
+// picked by ear on https://claude.ai/artifact/VDmLN9Jo5TSA8EpV6pVFmA: B "Future Drop".
+// A generator is fn(t, dest) -> { stop(when) }: it plays from context time t into `dest`
+// and schedules nothing past `when`.
+let _fzMusGen = _fzMusFutureDrop;
+const FZ_MUS_GAIN       = 1.04;   // phone band 1 dB over the bed, see _FZM_LV
 const FZ_MUS_BED_OUT    = MUSIC_FADE_SEC;   // the bed steps out under the fanfare's run-up
-const FZ_MUS_XFADE      = 0.5;              // excerpt out, bed back in, at the star's end
-let _fzMusBuf = null, _fzMusLoading = false, _fzMus = null;
-
-function _loadFzMusBuffer() {
-    if (!_ac || _fzMusBuf || _fzMusLoading) return;
-    _fzMusLoading = true;
-    const ctx = _ac;
-    fetch(_bgmUrl('the_mountain_epic'))
-        .then(r => r.arrayBuffer())
-        .then(ab => ctx.decodeAudioData(ab))
-        .then(buf => { _fzMusLoading = false; if (_ac === ctx) _fzMusBuf = buf; })
-        .catch(err => {
-            _fzMusLoading = false;
-            console.error('[audio]', _bgmUrl('the_mountain_epic'), 'load/decode failed:', err);
-        });
-}
+const FZ_MUS_XFADE      = 0.5;              // star music out, bed back in, at the star's end
+let _fzMus = null;
 
 function _fzMusStart() {
-    if (!_ac || !musicOn || !_fzMusBuf || !_bgmNode || !_bgmActive) return false;
+    if (!_ac || !musicOn || !_fzMusGen || !_bgmNode || !_bgmActive) return false;
     const t = _ac.currentTime;
     _bgmHeldAt = _bgmBarNow();
     const n = _bgmNode; _bgmNode = null; n.onended = null;
@@ -3282,17 +3262,12 @@ function _fzMusStart() {
     _bgmGain.gain.setValueAtTime(_bgmGain.gain.value, t);
     _bgmGain.gain.linearRampToValueAtTime(0.0001, t + FZ_MUS_BED_OUT);
     try { n.stop(t + FZ_MUS_BED_OUT + 0.02); } catch (e) {}
-    const src = _ac.createBufferSource(), sh = _ac.createBiquadFilter();
     const lp = _ac.createBiquadFilter(), g = _ac.createGain();
-    sh.type = 'lowshelf'; sh.frequency.value = FZ_MUS_SHELF_HZ; sh.gain.value = FZ_MUS_SHELF_DB;
     lp.type = 'lowpass'; lp.frequency.value = 20000; lp.Q.value = 0.7;   // for the death collapse
     g.gain.setValueAtTime(0.0001, t);
     g.gain.linearRampToValueAtTime(FZ_MUS_GAIN, t + 0.05);
-    src.buffer = _fzMusBuf;
-    src.loop = true; src.loopStart = FZ_MUS_HIT; src.loopEnd = Math.min(FZ_MUS_LOOP_END, _fzMusBuf.duration);
-    src.connect(sh); sh.connect(lp); lp.connect(g); g.connect(_musicBus);
-    src.start(t, FZ_MUS_START);
-    _fzMus = { src, g, lp };
+    lp.connect(g); g.connect(_musicBus);
+    _fzMus = { src: _fzMusGen(t, lp), g, lp };
     return true;
 }
 
@@ -3310,6 +3285,104 @@ function _fzMusStop() {
     _bgmGain.gain.linearRampToValueAtTime(BGM_GAIN, t + FZ_MUS_XFADE);
     _playBgmBuffer(at);
     return true;
+}
+
+// "Future Drop": Nebula's own genre one step up - supersaw chords pumping on the quarter under
+// a sidechain, a sub with a mid-band partner, clap on 2 and 4, 16th hats, a plucked hook. D | G A
+// over two bars at 140 BPM; the first downbeat lands on the fanfare's chord (5 16ths into
+// sfxFrenzyStart), and the A at the star's end leads back into Nebula's D. Built a step at a
+// time FZ_MUS_AHEAD ahead of the clock, never the whole star at once. Ported 1:1 from the
+// concept page, except for the levels (_FZM_LV) and the staggered saw starts.
+const FZ_MUS_AHEAD = 0.2, FZ_MUS_TICK_MS = 50;
+const _FZM_ROOT = [38, 43, 45], _FZM_TRI = [[62, 66, 69], [62, 67, 71], [61, 64, 69]];
+const _FZM_SEG_LEN = { 0: 16, 16: 8, 24: 8 };   // step -> length of the chord that starts there
+// Voice levels, set by offline render in the real bus (MASTER_GAIN + limiter, headless Chrome,
+// 2026-09-29), not by ear. The concept page matched only the phone band (>400 Hz), where the
+// page's kick 0.85 and sub 0.34 cost nothing - full-band that ran 6.6 dB RMS / 10 dB loudest-
+// 50ms over Nebula and peaked at -0.6 dBFS, deep in the limiter. The kick body is the lever
+// (the sub is under the sidechain); its mid-band partner keeps the beat on a phone. With these
+// and FZ_MUS_GAIN, against Nebula's loop at BGM_GAIN: phone band +1.0 dB RMS / +0.7 dB
+// loudest-50ms, full band -1.3 dB RMS / +0.9 dB loudest-50ms, peak -4.5 dBFS (knee -3.1;
+// one render in three touched -3.2 where noise hits of clap and hats happened to coincide).
+const _FZM_LV = { saw: 0.075, sub: 0.2, sub2: 0.08, kick: 0.22, kickMid: 0.15, clap: 0.42, hat: 0.025, hatOff: 0.05, hook: 0.13 };
+const _FZM_HOOK = { 0: 81, 3: 78, 6: 81, 8: 83, 11: 81, 14: 78, 16: 83, 19: 81, 22: 79, 24: 81, 27: 85, 30: 88 };
+const _mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+let _fzmNoise = null;   // { ctx, buf }: one 2 s noise buffer per context for the drums
+
+function _fzmNoiseSrc(t, dur) {
+    if (!_fzmNoise || _fzmNoise.ctx !== _ac) _fzmNoise = { ctx: _ac, buf: _noiseBuf(2) };
+    const s = _ac.createBufferSource(); s.buffer = _fzmNoise.buf;
+    s.start(t, Math.random() * 0.6); s.stop(t + dur);
+    return s;
+}
+function _fzmEnv(dest, t, a, peak, dec) {
+    const g = _ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + a);
+    g.gain.exponentialRampToValueAtTime(Math.max(peak * 1e-4, 1e-5), t + a + dec); g.connect(dest);
+    return g;
+}
+function _fzmFilt(type, f, q, dest) {
+    const b = _ac.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; b.connect(dest);
+    return b;
+}
+function _fzmKick(dest, t, l, mid) {
+    const o = _fzOsc('sine', 150, t, t + 0.4, _fzmEnv(dest, t, 0.002, l, 0.32));
+    o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(46, t + 0.11);
+    const o2 = _fzOsc('triangle', 260, t, t + 0.1, _fzmEnv(dest, t, 0.001, mid, 0.06));   // mid-band partner
+    o2.frequency.setValueAtTime(260, t); o2.frequency.exponentialRampToValueAtTime(120, t + 0.05);
+}
+function _fzmClap(dest, t, l) {
+    const bp = _fzmFilt('bandpass', 1300, 1.1, dest);
+    [0, 0.011, 0.022].forEach(o => _fzmNoiseSrc(t + o, 0.02).connect(_fzmEnv(bp, t + o, 0.001, l, 0.009)));
+    _fzmNoiseSrc(t + 0.03, 0.2).connect(_fzmEnv(bp, t + 0.03, 0.001, l * 0.8, 0.14));
+}
+function _fzmHat(dest, t, l) {
+    _fzmNoiseSrc(t, 0.085).connect(_fzmFilt('highpass', 7000, 0.7, _fzmEnv(dest, t, 0.001, l, 0.035)));
+}
+function _fzmPluck(dest, f, t, l, cut, dec) {
+    const lp = _fzmFilt('lowpass', cut, 2, _fzmEnv(dest, t, 0.003, l, dec));
+    lp.frequency.setValueAtTime(cut, t); lp.frequency.exponentialRampToValueAtTime(Math.max(300, cut * 0.15), t + dec);
+    _fzOsc('sawtooth', f, t, t + dec + 0.05, lp); _fzOsc('sawtooth', f * 1.004, t, t + dec + 0.05, lp, 0.6);
+}
+function _fzmSaws(dest, f, t, dur, l, n, spread) {
+    const g = _ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(l, t + 0.012);
+    g.gain.setValueAtTime(l, t + Math.max(0.02, dur - 0.04)); g.gain.linearRampToValueAtTime(0.0001, t + dur); g.connect(dest);
+    // Staggered starts: seven saws starting in phase add up to a spike on every chord onset.
+    for (let i = 0; i < n; i++) _fzOsc('sawtooth', f, t + i * 0.0011, t + dur + 0.02, g, 1 / n).detune.value = (i / (n - 1) * 2 - 1) * spread;
+}
+function _fzMusFutureDrop(t, dest) {
+    const root = _ac.createGain(); root.connect(dest);
+    const pump = _ac.createGain(); pump.connect(root); pump.gain.setValueAtTime(1, t);
+    const lp = _fzmFilt('lowpass', 3200, 0.9, pump);
+    const t0 = t + 5 * _FZ_S16, ctx = _ac;
+    let s = 0, end = Infinity;
+    const step = (st, tt) => {
+        const seg = st < 16 ? 0 : st < 24 ? 1 : 2;
+        if (_FZM_SEG_LEN[st]) {
+            const dur = _FZM_SEG_LEN[st] * _FZ_S16, r = _FZM_ROOT[seg];
+            [..._FZM_TRI[seg], _FZM_TRI[seg][0] + 12].forEach(m => _fzmSaws(lp, _mtof(m), tt, dur, _FZM_LV.saw, 7, 22));
+            _fzOsc('sine', _mtof(r), tt, tt + dur, _fzmEnv(pump, tt, 0.01, _FZM_LV.sub, dur));
+            _fzOsc('triangle', _mtof(r + 12), tt, tt + dur, _fzmEnv(pump, tt, 0.01, _FZM_LV.sub2, dur));
+        }
+        if (st % 4 === 0) {
+            _fzmKick(root, tt, _FZM_LV.kick, _FZM_LV.kickMid);
+            pump.gain.setValueAtTime(0.22, tt); pump.gain.linearRampToValueAtTime(1, tt + 0.25);   // the sidechain
+        }
+        if (st % 8 === 4) _fzmClap(root, tt, _FZM_LV.clap);
+        _fzmHat(root, tt, st % 2 ? _FZM_LV.hatOff : _FZM_LV.hat);
+        if (_FZM_HOOK[st] !== undefined) _fzmPluck(root, _mtof(_FZM_HOOK[st]), tt, _FZM_LV.hook, 3800, 0.2);
+    };
+    const tick = () => {
+        if (_ac !== ctx) return;   // the context was rebuilt (_reviveAudioContext): this star's music is gone
+        const horizon = Math.min(end, _ac.currentTime + FZ_MUS_AHEAD);
+        for (let tt = t0 + s * _FZ_S16; tt < horizon; tt = t0 + s * _FZ_S16) step(s++ % 32, tt);
+        if (t0 + s * _FZ_S16 < end) setTimeout(tick, FZ_MUS_TICK_MS);
+    };
+    tick();
+    return { stop(when) {
+        const now = ctx.currentTime;
+        end = Math.min(end, when === undefined ? now : when);
+        setTimeout(() => { try { root.disconnect(); } catch (e) {} }, (Math.max(0, end - now) + 1.5) * 1000);
+    } };
 }
 
 // Returns true when a star's end brought the held play track back (see _fzMusStop).

@@ -251,7 +251,7 @@ async function build() {
 
   const audioOut = path.join(outDir, 'audio');
   await mkdir(audioOut, { recursive: true });
-  for (const track of ['the_mountain.web.m4a', 'the_mountain_documentary.web.m4a', 'the_mountain_epic.web.m4a']) {
+  for (const track of ['the_mountain.web.m4a', 'the_mountain_documentary.web.m4a']) {
     await copyFile(path.join(root, 'audio', track), path.join(audioOut, track));
   }
 

@@ -67,6 +67,9 @@ a "Knallfrosch" twice. Method, metrics and traps: `reference_audio_method` memor
   `_stopBgmOutro()` cuts it on restart, revive and return to title. `commitDeath()`
   deliberately does NOT start the title music - the ending plays through the continue offer
   and the debriefing; the piano returns only on the title screen.
+- **A star can pause the music** (`bgmSetFrenzy`, `_fzMusGen`, rule in `frenzy.md`): the play
+  track is held on its bar (`_bgmBarNow`, `BGM_BAR`) and resumes there while the star's own
+  generated music plays. No third music file: an mp3 excerpt was tried and removed.
 - **One sound, one meaning.** Hull scratch (`sfxHullScratch`) and revive (`sfxRevive`) do
   not reuse `sfxShieldBreak`.
 - **Stereo, centred on the ship** (`_sfxOut(x)`): cannon fire, mine blasts, rock hits and

@@ -2173,3 +2173,29 @@ gradient and set `shadowBlur`; WebKit renders a gradient-filled text's shadow as
 ghost of the whole line. Chrome was fine, which is why the headless Chrome check missed it
 (the lip-band fix in f94c83a was a misread of the same report). Reproduced and verified in
 Playwright WebKit; the band pass now draws without a shadow, the solid first pass keeps its glow.
+
+## The star plays its own music (2026-09-29)
+
+User: "wenn frenzy ist, muesste die musik pausieren und in dieser Zeit einen tollen ausschnitt
+aus the_mountain-epic-490003.mp3 abspielen. Danach wieder die Musik resumen." First built as an
+mp3 excerpt (66.0-87.5 s, the re-entry after the track's break, chosen by loudness curve, onsets
+and chroma, not by ear; C, ~101.75 BPM, so pings and end motif were moved into C), committed in
+f94c83a. The play track is held on its 140 BPM bar (`_bgmBarNow`) and resumes there; a death
+inside a star collapses the star's music and the song's ending follows. Then a silent star was
+tried ("versuche mal gar keinen sound"), then the excerpt again ("fuege die musik wieder ein").
+Then, still 2026-09-29, both dropped (user: "nicht das mp3, das kannst du wieder ausbauen -
+gefaellt mir nicht"): `audio/the_mountain_epic.*` and their Xcode / build-play / LICENSE entries
+are gone, and so are the C transposition of pings and end motif. The hold-and-resume stays behind
+a generator hook, `_fzMusGen` (null until a pick), fed by a generated star music. Five candidates
+on https://claude.ai/artifact/VDmLN9Jo5TSA8EpV6pVFmA: A Sternlauf (chip riff), B Future Drop
+(supersaw + sidechain, Nebula's genre), C Hyperdrive (rolling bass, filter sweep, snare roll),
+D Kristallglocken (FM bells, halftime), E Synth-Hymne (brass stabs, taiko). All D major, 140 BPM,
+2 bars D | G A, entering on the fanfare's chord.
+The user picked B "Future Drop" (db `sternmusik/wahl`, no note). Ported as `_fzMusFutureDrop`
+with a lookahead timer. The page's level match looked only above 400 Hz, where the kick's body
+and the sub barely register: rendered offline in the real bus (headless Chrome, MASTER_GAIN +
+soft clipper) the page's mix ran +6.6 dB RMS / +10.3 dB loudest-50ms over Nebula full-band and
+peaked at -0.6 dBFS. Sweeps showed the kick body as the lever (the sub sits under the sidechain)
+and in-phase saw starts as a second spike; the saws now start 1.1 ms apart and the kick is
+0.22 with a 0.15 mid-band partner. Result against Nebula's loop at BGM_GAIN: phone band +1.0 dB
+RMS / +0.7 dB loudest-50ms, full band -1.3 dB RMS / +0.9 dB loudest-50ms, peak -4.5 dBFS.

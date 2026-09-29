@@ -59,9 +59,24 @@ scratch), the shield is not spent. Speed is unchanged - that is what separates i
   hull). Never a white core pumping in 16ths - that read as glare ("zu grell").
 - **Audio has no beat.** The pad's tremolo runs in 16ths (`FRENZY_TREM_HZ`, 140 BPM) but a star
   starts at any moment and slow/warp move the track, so a pulse would land off the beat - the
-  reason the sector build-and-drop was removed. Music is lifted on `_bgmLift`/`_bgmShelf`
-  (`bgmSetFrenzy`), never `playbackRate`. Levels in `audio.js` `FRENZY_LV`, measured offline in
+  reason the sector build-and-drop was removed. Levels in `audio.js` `FRENZY_LV`, measured offline in
   the real bus (fanfare just under the milestone, ping = coin); judge changes by render.
+- **A star can pause the play track for music of its own** (2026-09-29, user's call;
+  `bgmSetFrenzy`, `_fzMusGen` doc in `audio.js`): the track is held on the bar it reached,
+  fades out, and resumes on that bar at the star's end; the star's music plays through its own
+  chain and the pad stays off. A death inside a star collapses it like the bed (die() passes
+  `quiet`) and the song's ending follows. Slow and warp act on the held track only.
+  **The music is generated in code, never an mp3** (user: an epic mp3 excerpt and a silent star
+  were both tried and dropped the same day, "gefaellt mir nicht"). Candidates on
+  https://claude.ai/artifact/VDmLN9Jo5TSA8EpV6pVFmA (db `sternmusik/wahl`); the user picked
+  **B "Future Drop"** (`_fzMusFutureDrop`): supersaw chords under a quarter-note sidechain, sub,
+  clap on 2 and 4, 16th hats, a plucked hook; D | G A over two bars at 140 BPM, first downbeat on
+  the fanfare's chord, the A leading back into Nebula's D. Built `FZ_MUS_AHEAD` ahead of the
+  clock by a timer bound to its context. **Levels (`_FZM_LV`, `FZ_MUS_GAIN`) were set by
+  offline render in the real bus, full band AND phone band**: the concept page matched the
+  phone band only and its kick ran 10 dB over Nebula full-band into the limiter. Re-measure
+  both bands before touching a voice level. With music off or no generator the old lift on
+  `_bgmLift`/`_bgmShelf` plus the pad apply. **Not heard in the game or on a device.**
 - **The meter is NOT a power-up lane** (user's call 2026-09-27, "klar abgetrennt"): a vertical
   bar at the bottom-left edge, left of the hull plates, filling upward with the star icon on top
   (`_hudFrenzy` in `draw.js`, state from `_hudLaneState('frenzy')`). A key added to
