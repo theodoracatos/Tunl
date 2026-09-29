@@ -2164,3 +2164,12 @@ lying inside the rock, with round blobs where the steps met - most visible along
 under the ship, and on the upper lip where it now passes just under the banner
 (`APPROACH_BANNER_Y`). Removed the band; the brighter lip edge line (`APPROACH_LIP_EDGE`,
 two steps) stays and carries the "light catches the lip" idea alone. Draw-only, all targets.
+
+## Approach banner glint: no shadow on the band pass (2026-09-29)
+
+User screenshot (iPhone): a blurred, hard-cut copy of "EINFLUG IN DEN TUNL" sat well below the
+banner while the glint ran. Cause: the glint's second pass fills the string with a linear
+gradient and set `shadowBlur`; WebKit renders a gradient-filled text's shadow as an offset
+ghost of the whole line. Chrome was fine, which is why the headless Chrome check missed it
+(the lip-band fix in f94c83a was a misread of the same report). Reproduced and verified in
+Playwright WebKit; the band pass now draws without a shadow, the solid first pass keeps its glow.

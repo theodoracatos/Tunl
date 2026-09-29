@@ -533,8 +533,9 @@ function drawApproachBanner(theme) {
     ctx.fillText(T.entering, W / 2, base);
     const p = (approachT - tIn0 - APPROACH_GLINT_DELAY) / APPROACH_GLINT_SEC;
     if (p > 0 && p < 1) {
-        // Second pass of the same string, transparent except for the band, so its glow
-        // (the shadow) only lights up where the band is.
+        // Second pass of the same string, transparent except for the band. No shadow on this
+        // pass: WebKit draws a gradient-filled text's shadow as a blurred copy of the whole
+        // line well below it, cut off hard (iPhone, 2026-09-29). The first pass's glow is enough.
         const q = 1 - (1 - Math.min(1, p * 1.1)) ** 3;
         const reach = fs * APPROACH_GLINT_REACH, half = fs * APPROACH_GLINT_HALF;
         const x = W / 2 - m.width / 2 - reach + (m.width + 2 * reach) * q;
@@ -542,8 +543,7 @@ function drawApproachBanner(theme) {
         band.addColorStop(0, 'rgba(255,255,255,0)');
         band.addColorStop(0.5, `rgba(255,248,236,${0.95 * a})`);
         band.addColorStop(1, 'rgba(255,255,255,0)');
-        ctx.shadowColor = rgb(lerpClr(theme.wallBase, [255, 255, 255], 0.5), 0.9 * a);
-        ctx.shadowBlur = 10 * _RASTER_SCALE;
+        ctx.shadowBlur = 0;
         ctx.fillStyle = band;
         ctx.fillText(T.entering, W / 2, base);
     }

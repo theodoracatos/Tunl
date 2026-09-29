@@ -50,6 +50,8 @@ and score wait for the cave. Concept: https://claude.ai/artifact/ECrpmHcPeTsREMw
   It sits at `APPROACH_BANNER_Y`, above the old slot, which on the web's short canvas sat on
   the "HOLD TO FLY" hint that shows at the same time. All targets, no `isWeb()` gate (user's
   pick). Not picked from the same concept: side rules ("wings"), a dateline, a chamfered plate.
+  The band pass has **no shadow**: on WebKit it drew a ghost copy of the line below the banner
+  (see `visuals.md`); the glow comes from the first, solid pass only.
 - Not done yet: optional extras from the concept (aircraft lights, haze bands, a stepped
   banner) and the S0 debriefing scene showing the mouth.
 

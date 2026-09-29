@@ -26,6 +26,10 @@ Study: https://claude.ai/artifact/QPvLrDmGiU6przXNwXLV9y
 - **HUD score, BEST and the world intro banner sit on the ALPHABETIC baseline from measured
   ink**, never `textBaseline 'top'`/`'middle'` (WebKit puts the em-box top lower than
   Chromium). The banner never sits above the HUD stack (`hudY`).
+- **No `shadowBlur` on text filled with a gradient or pattern.** WebKit draws that shadow as a
+  blurred copy of the whole line well below the text, cut off hard (the approach banner's
+  glint, iPhone 2026-09-29; Chrome looks right). Put the glow on a solid-colour pass instead.
+  Headless WebKit reproduces it: Playwright's `webkit` (global install) on a staged frame.
 - **Title screen accent = the day's `wallBase`**, same rule as the debriefing (logo halo, the
   U, underline, world line, ALL SHIPS pill, rail rims). Hero ring and ship keep the SKIN
   colour; the planet line is neutral (logo > world > planet). Deliberately NOT done: a PLAY
