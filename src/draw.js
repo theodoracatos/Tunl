@@ -6896,13 +6896,11 @@ function drawAppOnlySheet() {
         ctx.fillStyle = filled ? 'rgba(8,8,16,1)' : 'rgba(232,238,255,0.92)';
         ctx.fillText(label, r.x + r.w / 2, r.y + r.h / 2 + sz * 0.35);
     };
-    // The visitor's own known store is a single filled button, as on the app card; an
-    // unknown device gets both, outlined. The challenge's lone App Store button is filled
-    // only when the device is known too, so on desktop it stays outlined like every other
-    // sheet's buttons instead of a lone block of the day's accent.
-    const filled = !!webStoreOnly();
-    if (_appOnlyAppleBtnRect) storeBtn(_appOnlyAppleBtnRect, 'APP STORE', filled);
-    if (_appOnlyPlayBtnRect)  storeBtn(_appOnlyPlayBtnRect,  'GOOGLE PLAY', filled);
+    // A single store button is filled, as on the app card: the visitor's own known store,
+    // or the challenge's App Store (iOS-only, so one button on every device, desktop too).
+    // An unknown device gets both, outlined.
+    if (_appOnlyAppleBtnRect) storeBtn(_appOnlyAppleBtnRect, 'APP STORE', !!only);
+    if (_appOnlyPlayBtnRect)  storeBtn(_appOnlyPlayBtnRect,  'GOOGLE PLAY', !!only);
 
     ctx.restore();
 }
