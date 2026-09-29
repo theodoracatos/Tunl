@@ -955,6 +955,36 @@ function touchCoin(type, setup) {
         res.every(r => r.enters.length === 1 && r.mouthSec > 1.3 && Math.abs(r.enters[0] - r.mouthSec) <= 1.5 / 60));
 }
 
+// ── World banner vs. the walls-live hint (approach.js approachStep, update.js) ──
+// Catches: the banner starting at the cave instead of over the mouth (or never), and the
+// "walls now deadly" notif firing while the banner is still up - it rises from above the
+// ship through the planet line - or not at all on a first run. Real startPlay()/update().
+{
+    const res = [[956, 440], [812, 375], [956, 600]].map(([w, h]) => {
+        const g = boot(w, h);
+        g(AUTOPILOT);
+        g('totalRuns = 0; startPlay()');
+        return g(`(() => {
+            const r = { mouthAtStart: null, leftAtStart: null, introLeftAtHint: null, hints: 0, W };
+            let prevIntro = 0;
+            for (let i = 0; i < 60 * 20 && (approachLeft > 0 || scrollX < W); i++) {
+                shieldCount = 9; hullScratches = HULL_SCRATCHES; _pilot();
+                const shown = wallsLiveShown;
+                update(1 / 60);
+                if (levelIntroT > prevIntro && r.mouthAtStart === null) { r.mouthAtStart = approachLeft - APPROACH_LIP; r.leftAtStart = approachLeft; }
+                prevIntro = levelIntroT;
+                if (!shown && wallsLiveShown) { r.introLeftAtHint = levelIntroT; r.hints = notifs.filter(n => n.text === T.wallsLive).length; }
+            }
+            return r;
+        })()`);
+    });
+    check(`the world banner starts over the approach once the mouth passes mid-screen (mouth at ${
+        res.map(r => (r.mouthAtStart / r.W).toFixed(3) + 'W').join(', ')})`,
+        res.every(r => r.leftAtStart > 0 && r.mouthAtStart <= r.W / 2 && r.mouthAtStart > r.W * 0.45));
+    check('a first run shows "walls now deadly" once, only after the world banner has folded away',
+        res.every(r => r.hints === 1 && r.introLeftAtHint === 0));
+}
+
 // ── Hazard graze chain (update.js trackGraze, constants.js GRAZE_*) ─────────
 // Catches: paying on entry instead of on the way out (a graze that ends in a hit pays),
 // a zone as wide as the wall window or none at all, the chain not climbing inside

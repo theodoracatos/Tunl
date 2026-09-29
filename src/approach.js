@@ -80,6 +80,7 @@ let approachFull = 0;          // approachLeft at the start, for the banner's fa
 let cityScroll = 0;            // camera distance flown over the city (title drift included, never reset)
 let _approachBumpT = 0;        // throttles the city bump's haptic
 let _approachWindIn = false;   // the wind has been cut at the mouth this run (audio.js approachWindEnter)
+let _approachIntroOn = false;  // the world banner has been started this run
 let _cityKey = '', _cityLayers = null;
 
 // Seeded per cave day, so every day's metropolis differs a little. A private LCG, not rng():
@@ -195,7 +196,8 @@ function approachStart() {
     approachT = 0;
     approachLeft = approachFull = scrollSpd() * APPROACH_SEC;
     _approachBumpT = 0;
-    levelIntroT = 0;   // the world banner waits for the cave (approachStep)
+    levelIntroT = 0;   // the world banner waits for the mouth (approachStep)
+    _approachIntroOn = false;
     // Wind (audio.js): seconds until the mouth reaches the ship. The camera's ease-in covers
     // the average of both speeds over APPROACH_EASE_SEC (smoothstep), then runs at scrollSpd().
     _approachWindIn = false;
@@ -213,7 +215,10 @@ function approachStep(dt) {
     _approachBumpT = Math.max(0, _approachBumpT - dt);
     // The ship is in the mouth (same line approachUpdate's lethal-wall rule uses): cut the wind.
     if (!_approachWindIn && approachLeft <= PX + APPROACH_LIP) { _approachWindIn = true; approachWindEnter(); }
-    if (approachLeft <= 0) levelIntroT = LEVEL_INTRO_DUR;
+    // The mouth has passed the middle of the screen: the world banner starts, as "ENTERING THE
+    // TUNL" finishes fading (2026-09-29, user's call; it used to wait for world-x 0 to reach the
+    // left edge). A share of the start speed's seconds, so the same moment on every width.
+    if (!_approachIntroOn && approachLeft - APPROACH_LIP <= W / 2) { _approachIntroOn = true; levelIntroT = LEVEL_INTRO_DUR; }
 }
 
 // The whole play frame while approaching, called from update.js right after the physics

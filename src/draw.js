@@ -3433,7 +3433,7 @@ function drawEnergyConsole() {
 function drawHUD() {
     const theme = getTheme();
     // Approach (approach.js): no score yet - the run starts counting in the cave.
-    if (phase !== 'title' && approachLeft > 0) { drawApproachBanner(theme); return; }
+    if (phase !== 'title' && approachLeft > 0) { drawApproachBanner(theme); drawWorldIntro(theme, 0); return; }
 
     // ── HUD ───────────────────────────────────────────────────────────
     ctx.textAlign    = 'center';
@@ -3633,43 +3633,7 @@ function drawHUD() {
     // Energy console: power-up lanes, magazine and hull plates along the bottom edge.
     if (phase === 'play') drawEnergyConsole();
 
-    // World intro banner -- "WORLD n: Name", shown briefly at the start of each run
-    if (levelIntroT > 0 && phase === 'play') {
-        const lia = Math.min(1, levelIntroT / LEVEL_INTRO_FADE);
-        ctx.save();
-        ctx.textAlign    = 'center';
-        // Alphabetic baseline from measured ink (see the score cascade above for why not
-        // 'middle'/'top'), centred on the old H*0.30 slot, but never above the HUD stack:
-        // on a 375pt-tall screen that slot sat on top of the BEST line. hudY is the bottom
-        // of the stack; one nudge line's height is kept free in case the skin hint shows.
-        ctx.textBaseline = 'alphabetic';
-        ctx.font         = `bold ${FS*0.045}px ${FONT_UI}`;
-        const introStr   = `${T.level} ${LEVEL_NUM}: ${WORLD_NAME.toUpperCase()}`;
-        const introM     = ctx.measureText(introStr);
-        const introAsc   = introM.actualBoundingBoxAscent || FS * 0.045 * 0.72;
-        const introBase  = Math.max(H * 0.30 + introAsc / 2, hudY + FS * 0.030 + introAsc);
-        ctx.shadowColor  = `rgba(90,140,255,${lia * 0.85})`;
-        ctx.shadowBlur   = 20;
-        ctx.fillStyle    = `rgba(200,222,255,${lia})`;
-        ctx.fillText(introStr, W/2, introBase);
-        // Planet line -- today's WEEKDAY_PALETTES entry (constants.js) named after a
-        // real (mostly) celestial body matching that day's rock color, so the banner
-        // reads as "which world is this, and what's it made of" rather than just a
-        // difficulty-ramp label. Colored with that same day's wallBase (the bright
-        // accent already used for the wall glow elsewhere in this file) so the name
-        // itself visually IS the day's rock, not just a caption next to it. Smaller
-        // than the level line above and fades on the same `lia` clock, so it still
-        // reads as a subtitle, not a second headline.
-        ctx.font        = `${FS*0.024}px ${FONT_UI}`;
-        // Lightened toward white (matches the title screen's planet line) so the
-        // name reads clearly even on the darker-accent days, not just a dim caption.
-        ctx.shadowColor = rgb(theme.wallBase, lia * 0.9);
-        ctx.shadowBlur  = 12;
-        ctx.fillStyle   = rgb(lerpClr(theme.wallBase, [255, 255, 255], 0.4), lia);
-        ctx.fillText(`${T.planet} ${WEEKDAY_PALETTES[weekdayIndex(_tunlActiveDate())].planet.toUpperCase()}`, W/2, introBase + (introM.actualBoundingBoxDescent || 0) + FS * 0.042);
-        ctx.shadowBlur   = 0;
-        ctx.restore();
-    }
+    drawWorldIntro(theme, hudY + FS * 0.030);
 
     // Milestone flash
     if (milestoneFlash > 0 && phase === 'play') {
@@ -3689,6 +3653,97 @@ function drawHUD() {
         ctx.shadowBlur   = 0;
         ctx.restore();
     }
+}
+
+// World intro banner -- "WORLD n: Name", shown briefly at the start of each run. It starts
+// over the approach once the mouth has passed mid-screen (approachStep) and runs on into the
+// cave. minBase: the lowest baseline the HUD stack above leaves free.
+// Scan line (2026-09-29, variant E of https://claude.ai/artifact/UikWNMwTEQ4N53oqRskeam, the
+// user left the pick to Claude): a thin line in the day's colour draws out from the centre, the
+// title unfolds upward out of it and the planet line downward; at the end both fold back in
+// and the line retracts. Clip rects over the whole string, never per letter (Arabic, Hindi).
+// Before, the banner popped in at full strength and only faded out.
+const WORLD_INTRO_LINE_SEC  = 0.25;   // the line draws out
+const WORLD_INTRO_OPEN_AT   = 0.2;    // s into the banner the unfold starts
+const WORLD_INTRO_OPEN_SEC  = 0.4;
+const WORLD_INTRO_CLOSE_SEC = 0.3;    // fold starts this + WORLD_INTRO_LINE_OUT before the end
+const WORLD_INTRO_LINE_OUT  = 0.22;   // the line retracts over the last this many s
+const WORLD_INTRO_LINE_REST = 0.35;   // line alpha while the banner is open (a separator)
+let _introY = 0, _introPrevT = 0;
+function drawWorldIntro(theme, minBase) {
+    if (!(levelIntroT > 0 && phase === 'play')) return;
+    const it = LEVEL_INTRO_DUR - levelIntroT;
+    const eOut = x => 1 - (1 - x) ** 3, eIn = x => x * x * x;
+    const cl = x => Math.min(1, Math.max(0, x));
+    const lineIn  = eOut(cl(it / WORLD_INTRO_LINE_SEC));
+    const lineOut = eIn(cl((it - (LEVEL_INTRO_DUR - WORLD_INTRO_LINE_OUT)) / WORLD_INTRO_LINE_OUT));
+    const open    = eOut(cl((it - WORLD_INTRO_OPEN_AT) / WORLD_INTRO_OPEN_SEC))
+                  * (1 - eIn(cl((it - (LEVEL_INTRO_DUR - WORLD_INTRO_LINE_OUT - WORLD_INTRO_CLOSE_SEC)) / WORLD_INTRO_CLOSE_SEC)));
+    ctx.save();
+    ctx.textAlign    = 'center';
+    // Alphabetic baseline from measured ink (see the score cascade above for why not
+    // 'middle'/'top'), centred on the old H*0.30 slot, but never above the HUD stack:
+    // on a 375pt-tall screen that slot sat on top of the BEST line. minBase is the bottom
+    // of the stack plus one nudge line's height, kept free in case the skin hint shows
+    // (0 over the approach, which draws no stack).
+    ctx.textBaseline = 'alphabetic';
+    ctx.font         = `bold ${FS*0.045}px ${FONT_UI}`;
+    const introStr   = `${T.level} ${LEVEL_NUM}: ${WORLD_NAME.toUpperCase()}`;
+    const introM     = ctx.measureText(introStr);
+    const introAsc   = introM.actualBoundingBoxAscent || FS * 0.045 * 0.72;
+    // The banner starts over the approach, which has no HUD stack, and the stack arrives
+    // with the cave while it is still up: glide to the new slot instead of jumping. The
+    // banner's own clock gives the step (a restart snaps).
+    const introTarget = Math.max(H * 0.30 + introAsc / 2, minBase + introAsc);
+    const introStep   = _introPrevT - levelIntroT;
+    _introY = introStep < 0 || introStep > 0.25 ? introTarget : _introY + (introTarget - _introY) * Math.min(1, introStep * 10);
+    _introPrevT = levelIntroT;
+    const introBase  = _introY;
+    const planetBase = introBase + (introM.actualBoundingBoxDescent || 0) + FS * 0.042;
+    const planetFs   = FS * 0.024;
+    const lineY      = (introBase + planetBase - planetFs * 0.72) / 2;   // between the two lines
+    const planetClr  = lerpClr(theme.wallBase, [255, 255, 255], 0.4);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, lineY - (lineY - introBase + introAsc + 24) * open, W, (lineY - introBase + introAsc + 24) * open);
+    ctx.clip();
+    ctx.shadowColor  = 'rgba(90,140,255,0.85)';
+    ctx.shadowBlur   = 20;
+    ctx.fillStyle    = 'rgb(200,222,255)';
+    ctx.fillText(introStr, W/2, introBase);
+    ctx.restore();
+    // Planet line -- today's WEEKDAY_PALETTES entry (constants.js) named after a
+    // real (mostly) celestial body matching that day's rock color, so the banner
+    // reads as "which world is this, and what's it made of" rather than just a
+    // difficulty-ramp label. Colored with that same day's wallBase (the bright
+    // accent already used for the wall glow elsewhere in this file) so the name
+    // itself visually IS the day's rock, not just a caption next to it. Smaller
+    // than the level line above and unfolds on the same `open` clock, so it still
+    // reads as a subtitle, not a second headline.
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, lineY, W, (planetBase - lineY + planetFs * 0.3 + 12) * open);
+    ctx.clip();
+    ctx.font        = `${planetFs}px ${FONT_UI}`;
+    // Lightened toward white (matches the title screen's planet line) so the
+    // name reads clearly even on the darker-accent days, not just a dim caption.
+    ctx.shadowColor = rgb(theme.wallBase, 0.9);
+    ctx.shadowBlur  = 12;
+    ctx.fillStyle   = rgb(planetClr, 1);
+    ctx.fillText(`${T.planet} ${WEEKDAY_PALETTES[weekdayIndex(_tunlActiveDate())].planet.toUpperCase()}`, W/2, planetBase);
+    ctx.restore();
+    // The scan line, a little wider than the longer of the two lines.
+    ctx.font = `${planetFs}px ${FONT_UI}`;
+    const lineW = (Math.max(introM.width, ctx.measureText(`${T.planet} ${WEEKDAY_PALETTES[weekdayIndex(_tunlActiveDate())].planet.toUpperCase()}`).width) + FS * 0.05)
+                * lineIn * (1 - lineOut);
+    if (lineW > 0.5) {
+        ctx.shadowColor = rgb(theme.wallBase, 0.9);
+        ctx.shadowBlur  = 10;
+        ctx.fillStyle   = rgb(planetClr, 1 + (WORLD_INTRO_LINE_REST - 1) * open);
+        ctx.fillRect(W / 2 - lineW / 2, lineY - 0.75, lineW, 1.5);
+    }
+    ctx.shadowBlur   = 0;
+    ctx.restore();
 }
 
 // CONCEPT A icon rail glyphs, hand-drawn as vector paths instead of Unicode/

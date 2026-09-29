@@ -477,8 +477,10 @@ function update(dt) {
 
     // On a player's first few runs, say it out loud as the ship enters the tunnel: the walls
     // are lethal from the first metre (no soft walls since 2026-09-19, the hull scratches
-    // cover the first mistakes). Veterans know, so it stays quiet for them.
-    if (totalRuns <= WALLS_LIVE_HINT_RUNS && !wallsLiveShown && scrollX > 0) {
+    // cover the first mistakes). Veterans know, so it stays quiet for them. It waits for the
+    // world banner to fold away (levelIntroT): the notif rises from above the ship straight
+    // through the banner's planet line, which is still up when the cave arrives (2026-09-29).
+    if (totalRuns <= WALLS_LIVE_HINT_RUNS && !wallsLiveShown && scrollX > 0 && levelIntroT <= 0) {
         wallsLiveShown = true;
         pushNotif(PX + PR * 3, py - H * 0.10, 1.8, T.wallsLive, [255, 120, 70]);
         window.webkit?.messageHandlers?.haptic?.postMessage('medium');

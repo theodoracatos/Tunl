@@ -1598,9 +1598,9 @@ const POISON_LOSS_PCT_MAX = 0.15;
 
 // Run-start "LEVEL n: Name" banner timing. Was 1.6/0.5 -- bumped on explicit
 // request to give the new planet subtitle line (draw.js) enough time to
-// actually be read, not just glimpsed before it fades.
+// actually be read, not just glimpsed before it fades. Its unfold and fold
+// (WORLD_INTRO_* in draw.js) happen inside this.
 const LEVEL_INTRO_DUR  = 2.4; // total seconds visible
-const LEVEL_INTRO_FADE = 0.6; // seconds of that spent fading out at the end
 
 // Idle-hold gravity gate (update.js): every run opens with holding false (both the
 // title-screen tap-to-confirm path and PLAY AGAIN, see input.js onDown/onUp) and

@@ -9,7 +9,7 @@ and flies through a rock mouth into the safe opening flight; the title screen IS
 `APPROACH_SEC` = `START_RAMP_SEC` + a fixed lead (user's call: the start is the same every
 time, PLAY AGAIN included). If shortened, keep it above ~2.3s or the ship launches through
 the mountain foot. "ENTERING THE TUNL" (`T.entering`) shows over the city; the world banner
-and score wait for the cave. Concept: https://claude.ai/artifact/ECrpmHcPeTsREMwEtK6vNs
+starts once the mouth has passed mid-screen, the score waits for the cave. Concept: https://claude.ai/artifact/ECrpmHcPeTsREMwEtK6vNs
 - **The city lies before world-x 0, never in it.** `scrollX` stays 0; only `approachLeft`
   (a camera offset) moves, and `drawWorld()` draws the cave translated + clipped by it.
   `update.js` returns right after the physics while `approachLeft > 0`, so no clock, hazard,
@@ -56,6 +56,17 @@ and score wait for the cave. Concept: https://claude.ai/artifact/ECrpmHcPeTsREMw
   arrives; it holds `APPROACH_BANNER_HOLD_SEC` from its fade-in start (glint plus about a
   second to read) and fades over `APPROACH_BANNER_OUT_SEC`. Keep the hold longer than the
   glint (`APPROACH_GLINT_DELAY + APPROACH_GLINT_SEC`). All targets, no `isWeb()` gate.
+- **World banner over the mouth (2026-09-29, user's call)**: "WORLD n: Name" starts in
+  `approachStep()` once the mouth has passed mid-screen (`approachLeft - APPROACH_LIP <= W/2`),
+  about when `T.entering` finishes fading, not when world-x 0 reaches the left edge. It is
+  drawn by `drawWorldIntro()` in both HUD branches; the approach has no HUD stack, so the
+  banner glides to its in-cave slot when the stack appears rather than jumping.
+- **World banner scan line (2026-09-29, variant E of
+  https://claude.ai/artifact/UikWNMwTEQ4N53oqRskeam, pick left to Claude)**: a thin line in the
+  day's colour draws out, the title unfolds up out of it and the planet line down; at the end
+  both fold back and the line retracts (`WORLD_INTRO_*` in draw.js, all inside
+  `LEVEL_INTRO_DUR`). Clip rects over the whole string only. Not picked: B rise, C light edge
+  (repeats the entering glint a second earlier), D focus, F signal flicker (every run).
 - Not done yet: optional extras from the concept (aircraft lights, haze bands, a stepped
   banner) and the S0 debriefing scene showing the mouth.
 
@@ -68,7 +79,9 @@ screen edges (`boundsAt()` only, never `boundsBase()`), easing shut at the end. 
 stalactites, mines, boulders or cannon fire** until `HAZARD_START_WX`; boulders and cannons
 only from their sectors. Coins and the warp portal still appear. **Walls are lethal from the
 tunnel entry**; two hull scratches cover the first mistakes. The "walls now deadly" notif
-fires on a player's first `WALLS_LIVE_HINT_RUNS` runs. Every run counts normally.
+fires on a player's first `WALLS_LIVE_HINT_RUNS` runs. Every run counts normally. It waits
+for the world banner to fold away (`levelIntroT <= 0`): rising from above the ship, it crossed
+the planet line (2026-09-29). `test-sim.js` checks both.
 
 Fair by construction (fixed world-px offsets; `test-cave.js` mirrors the start cursors).
 Consequence: every score starts with ~50 nearly-free points - leaderboard audit numbers
