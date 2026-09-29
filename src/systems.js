@@ -1548,6 +1548,25 @@ function _fitIsland(wx, y, r, hl, prof) {
         const dy = Math.max(0, Math.abs(m.baseY - y) - m.bobAmp) * _H_TO_REF;
         if (boulderHit(ref, m.wx - wx, dy, PLACE_MINE_R)) return null;
     }
+    // A warp hoop the rock would cut into. Portals are the fixed point like coins
+    // (constants.js SPAWN_AHEAD_PORTAL doc: they exist before any boulder that could
+    // reach them), so the ROCK yields. The whole hoop has to stay clear, not just its
+    // centre: the ring is drawn and its hit window is the accuracy gradient, so a ring
+    // half inside the rock is either unflyable or a lie. The hoop is its hit window
+    // (half-height Math.max(p.r, PR * 1.6), half-width PORTAL_RX_FRAC of p.r) with a
+    // ship's radius around it, sampled at ship-radius spacing - reference units, so
+    // the verdict is the same on every screen.
+    for (const p of portals) {
+        const rRef = p.r * _H_TO_REF;
+        const rx = rRef * PORTAL_RX_FRAC, hh = Math.max(rRef, PLACE_PR * 1.6);
+        const dx = p.wx - wx;
+        if (Math.abs(dx) >= hl + rx + PLACE_PR) continue;
+        const dy = (p.y - y) * _H_TO_REF;
+        const ny = Math.ceil(2 * hh / PLACE_PR);
+        for (const sx of [dx - rx, dx, dx + rx]) for (let i = 0; i <= ny; i++) {
+            if (boulderHit(ref, sx, dy - hh + 2 * hh * i / ny, PLACE_PR)) return null;
+        }
+    }
     return {
         wx, y, r, hl, up, dn, fTop: prof.top, fBot: prof.bot,
         upMax, dnMax,
@@ -1593,6 +1612,8 @@ function _makePortalAt(wx) {
     // reachable, and that's the exact same question coinBlockedByStal already
     // answers for every coin placed in the game, at every difficulty, without a
     // bespoke geometric veto (see the doc at PORTAL_R_FRAC for why not).
+    // Boulders are not checked here: the portal is their fixed point and the rock
+    // yields (_fitIsland, constants.js SPAWN_AHEAD_PORTAL doc).
     if (coinBlockedByStal(wx, y)) return null;
     return { wx, y, r: hg * PORTAL_R_FRAC, used: false, usedFade: 1.0 };
 }
@@ -1676,9 +1697,9 @@ function frenzyBegin() {
     frenzyHits = 0;
     runFrenzies++;
     frenzyStartT = gtime;
+    bgmSetFrenzy(true);   // first: the star's music decides whether the pad plays and the fanfare ducks (audio.js)
     sfxFrenzyStart();
     frenzyLoopOn();
-    bgmSetFrenzy(true);
     pushNotif(PX, py - H * 0.08, 1.3, T.frenzy, (SKINS[activeSkin] || SKINS[0]).shadow.map(c => Math.round((c + 255) / 2)));
 }
 

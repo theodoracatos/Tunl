@@ -75,6 +75,12 @@ its centre point has to be provably flyable, and that question is already answer
 every coin in the game. So: never a bespoke geometric veto, which is exactly the mistake
 that nearly wiped out boulders and cannons (see `fairness.md`, `SPAWN_AHEAD_*`).
 `PORTAL_RETRY_OFFSETS` follows the same retry-on-veto pattern as mines/cannons/boulders.
+**Portals are the fixed point for boulders, like coins** (2026-09-29): `_fitIsland` rejects
+an island that touches a hoop's hit window (plus `PLACE_PR`) and falls back to a shorter
+island / the next retry offset / none. The portal never checks boulders. That needs every
+hoop a boulder can reach to exist already, hence `SPAWN_AHEAD_PORTAL` sits at the boulder's
+reach, which in turn pushed `SPAWN_AHEAD_STAL` out; `test-cave.js` asserts both budgets and
+0 hoops touching a rock on a 30-day sweep. Before, 11 of 251 hoops cut into a boulder.
 The ring triggers on an **x-crossing test**, not a circle overlap: a fast-scrolling frame can
 jump the player past a thin ring in one step, a risk that only grows once
 `warpScrollFactor()` is live.

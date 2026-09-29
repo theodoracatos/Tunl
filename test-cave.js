@@ -236,7 +236,10 @@ for (const day of DAYS) {
     const MAX_BOULDER_R_REF = g('BOULDER_MAX_HALF_LEN');
     const budget = [
         // [name, own horizon, largest retry offset, inspection radius]
-        ['coins',   g('SPAWN_AHEAD_COIN'),    0,                                   REF_STAL_W + 956 * 0.009 * 2],
+        // coinBlockedByStal's own window: the widest spike plus (PLACE_PR + PLACE_COIN_R)
+        // on each side. This line used to read 956 * 0.009 * 2 (46 instead of 81), which
+        // let coins near the horizon be placed blind to a spike until 2026-09-29.
+        ['coins',   g('SPAWN_AHEAD_COIN'),    0,                                   REF_STAL_W + (g('PLACE_PR') + g('PLACE_COIN_R')) * 2],
         ['mines',   g('SPAWN_AHEAD_MINE'),    Math.max(...g('MINE_RETRY_OFFSETS')),    300],
         ['cannons', g('SPAWN_AHEAD_CANNON'),  Math.max(...g('CANNON_RETRY_OFFSETS')),  REF_STAL_W + g('PLACE_CANNON_R')],
         ['boulder', g('SPAWN_AHEAD_BOULDER'), Math.max(...g('BOULDER_RETRY_OFFSETS')), REF_STAL_W + MAX_BOULDER_R_REF],
@@ -256,6 +259,13 @@ for (const day of DAYS) {
     for (const [name, need] of Object.entries(reach)) {
         check(`${name} reach ${Math.round(need)} <= SPAWN_AHEAD_COIN ${coinAhead} (every coin it can overlap already exists)`, need <= coinAhead);
     }
+    // Boulders yield to portals the same way (constants.js SPAWN_AHEAD_PORTAL doc): the
+    // widest hoop is PORTAL_RX_FRAC of a ring drawn at PORTAL_R_FRAC of a half-gap that
+    // can never exceed half the reference height, plus the ship's clearance.
+    const portalAhead = g('SPAWN_AHEAD_PORTAL');
+    const hoopReach = g('SPAWN_AHEAD_BOULDER') + Math.max(...g('BOULDER_RETRY_OFFSETS')) + g('BOULDER_MAX_HALF_LEN')
+        + g('PORTAL_R_FRAC') * g('PORTAL_RX_FRAC') * g('_H_REF') / 2 + g('PLACE_PR');
+    check(`boulder reach ${Math.round(hoopReach)} <= SPAWN_AHEAD_PORTAL ${portalAhead} (every hoop it can overlap already exists)`, hoopReach <= portalAhead);
     for (const [name, ahead, retry, inspect] of budget) {
         const need = ahead + retry + inspect;
         check(`${name}: horizon ${ahead} + retry ${retry} + inspect ${Math.round(inspect)} = ${Math.round(need)} <= SPAWN_AHEAD_STAL ${stalAhead}`,
@@ -382,6 +392,40 @@ for (const day of DAYS) {
         checked > 5 && blocked === 0);
     check(`every portal ring stays inside the corridor with margin (worst ${(worstMargin*100).toFixed(0)}% of halfGap spare)`,
         worstMargin > 0);
+}
+
+// ── No warp hoop inside a boulder ───────────────────────────────────────
+// Neither spawner checked the other until 2026-09-29: a 60-day replay found 11 of 251
+// hoops cutting into a boulder, 2 with the ring's centre inside the rock. Checked on a
+// day sweep because the overlap is rare (3 in the first 30 days below). The hoop is
+// probed densely here - the whole hit window (update.js portalHitTol) across the drawn
+// width - with the ship's radius, against the live outline boulderHit collides with.
+{
+    const w = makeWorld(956, 440);
+    const boulderHit = vm.runInContext('boulderHit', w);
+    const PR = vm.runInContext('PR', w), RX = vm.runInContext('PORTAL_RX_FRAC', w);
+    let hoops = 0, near = 0, hits = 0, firstHit = '';
+    for (let i = 0; i < 30; i++) {
+        const d = new Date(Date.UTC(2026, 7, 31 + i));
+        const day = d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
+        const { snap } = replay(956, 440, day, UNTIL_WX);
+        for (const [pwx, py, pr] of snap.portal) {
+            hoops++;
+            const hh = Math.max(pr, PR * 1.6), rx = pr * RX;
+            for (const [bwx, by, , hl, up, dn] of snap.boulder) {
+                if (Math.abs(pwx - bwx) > hl + rx + PR) continue;
+                near++;
+                const bo = { hl, up, dn, upMax: Math.max(...up), dnMax: Math.max(...dn) };
+                let hit = false;
+                for (let a = 0; a <= 8 && !hit; a++) for (let b = 0; b <= 40 && !hit; b++) {
+                    hit = boulderHit(bo, pwx - rx + 2 * rx * a / 8 - bwx, py - hh + 2 * hh * b / 40 - by, PR);
+                }
+                if (hit) { hits++; if (!firstHit) firstHit = ` - first: day ${day}, hoop wx ${Math.round(pwx)}, boulder wx ${Math.round(bwx)}`; }
+            }
+        }
+    }
+    check(`no warp hoop cuts into a boulder (${hoops} hoops, ${near} with a boulder in reach, ${hits} touching)${firstHit}`,
+        hoops > 50 && hits === 0);
 }
 
 if (failed) {

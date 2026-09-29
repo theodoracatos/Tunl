@@ -2137,3 +2137,21 @@ Strings: `hiw*` keys in all 16 languages; `shardsInfo`/`coinsInfo`/`hazardsInfo`
 `portalInfo`/`repairInfo` removed, `stardustInfo` stays for the path panel. WebKit (Playwright
 build) ignored `textAlign 'center'` for Devanagari, so the panel centres by measured width.
 `test-sim.js` draws it in every language and walks the tap layers.
+
+## Warp hoops no longer sit in boulders (2026-09-29)
+
+Player report: today's portal (day 20260929, score ~367) hung half inside a boulder.
+Neither spawner checked the other - `_makePortalAt` only ran `coinBlockedByStal`, and
+`_fitIsland` vetoed coins and mines but not hoops. A 60-day replay: 11 of 251 hoops cut into
+a boulder, 2 with the ring's centre inside the rock (one with 90% of the hit window blocked).
+- **The portal is the fixed point, the rock yields** (like coins). Rejected: the portal
+  yielding, because boulders would then have to exist first, pushing `SPAWN_AHEAD_BOULDER`
+  out and with it the coin and stalactite horizons; and a mutual "whoever came first" veto,
+  whose tie within one frame depends on the frame step.
+- **The whole hoop stays clear, not only its centre** (hit window + `PLACE_PR`): the
+  accuracy gradient spans the drawn ring, so a ring half in the rock is a lie.
+- `SPAWN_AHEAD_PORTAL` moved out to the boulder's reach, `SPAWN_AHEAD_STAL` with it. The
+  portal set and the stalactites are unchanged; 6 of 278 boulders moved over 30 days.
+- Found on the way: `test-cave.js` counted coinBlockedByStal's window as 46 instead of 80,
+  so coins nearest the old horizon were placed blind to a spike - 28 coins over 30 days sat
+  on one and are now vetoed (22 more coins shift as a knock-on).

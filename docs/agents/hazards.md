@@ -114,6 +114,8 @@ ship, bullets and bombs). `hl` is keyed off the REFERENCE radius, so the island 
 same world-x on every device. `_fitIsland` checks both passes at every outline sample
 against that sample's bounds and every overlapping spike, falling back to a shorter island
 (`BOULDER_STRETCH_FALLBACK`). `test-cave.js` re-checks both passes along the outline.
+The same fallback also yields to coins, mines and warp hoops that already exist
+(`fairness.md`, `portal.md`).
 
 ## Cannons
 

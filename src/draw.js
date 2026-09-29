@@ -1706,7 +1706,7 @@ function _portalBand(p, sx, alpha, front) {
     const flare = p.used ? 1 - p.usedFade : 0;
     const s  = 1 + flare * 0.6;
     const ry = Math.max(p.r, PR * 1.6) * s;   // = update.js portalHitTol
-    const rx = p.r * 0.30 * s;
+    const rx = p.r * PORTAL_RX_FRAC * s;
     const a0 = front ? -Math.PI * 0.5 : Math.PI * 0.5;
     const a1 = a0 + Math.PI;
     const a  = alpha * (front ? 1 : 0.55);

@@ -63,8 +63,9 @@ This needs coins to exist first, hence `SPAWN_AHEAD_COIN`'s reach (bounded by th
 stalactite budget). **Do not lower it or reorder `maintainCoins()` after
 `maintainBoulders()`/`maintainMines()`** - verdicts would then depend on frame timing, i.e.
 screen width. `test-cave.js` asserts the reach budget and 0 overlaps, but not the call
-order (its `step()` repeats update.js's order by hand). Not covered: falling stalactites
-and portal rings.
+order (its `step()` repeats update.js's order by hand). Not covered: falling stalactites.
+**Portals are the same kind of fixed point for boulders** (`SPAWN_AHEAD_PORTAL` >= the
+boulder's reach; `portal.md`).
 
 `_makeMineAt`'s tip-push radius shrinks over `_prog2` for the same reason - at minimum
 stalactite spacing a flat radius left no vertical room past the plateau.

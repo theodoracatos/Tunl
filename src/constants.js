@@ -647,11 +647,15 @@ const SPAWN_W = 956;
 // sealed (an unavoidable death), which is exactly the "always a pass above AND
 // below" contract makeBoulder exists to keep.
 // test-cave.js asserts this table rather than trusting it to stay current:
-//   coins  1500 +    0 +  46 = 1546 <= 1550  OK  (coinBlockedByStal, no retry)
-//   mines   200 +  135 + 300 =  635 <= 1550  OK  (_makeMineAt tip push)
-//   cannons 300 +  600 +  48 =  948 <= 1550  OK  (makeCannon overlap)
-//   boulder 300 + 1000 + 108 = 1408 <= 1550  OK  (makeBoulder overlap)
-//   portal  300 + 1040 +  81 = 1421 <= 1550  OK  (coinBlockedByStal window)
+//   coins  1500 +    0 +  80 = 1580 <= 2650  OK  (coinBlockedByStal, no retry)
+//   mines   200 +  135 + 300 =  635 <= 2650  OK  (_makeMineAt tip push)
+//   cannons 300 +  600 +  48 =  948 <= 2650  OK  (makeCannon overlap)
+//   boulder 300 + 1000 + 129 = 1429 <= 2650  OK  (makeBoulder overlap)
+//   portal 1500 + 1040 +  80 = 2620 <= 2650  OK  (coinBlockedByStal window)
+// (Was 1550 until 2026-09-29, when the portal horizon moved out to SPAWN_AHEAD_PORTAL's
+// boulder reach - see that constant - and took the stalactite horizon with it. The coin
+// row read 46 until then, a miscount of coinBlockedByStal's window: at 1550 the coins
+// nearest the horizon were placed blind to a spike, ~1 per day sat on one.)
 // Raising the stalactite horizon rather than clamping the offsets is deliberate:
 // clamping boulders to the ~226px that fit inside the old 600 would have dropped 15
 // of 18 boulders, i.e. re-created the near-extinction the retry loops were added to
@@ -659,14 +663,15 @@ const SPAWN_W = 956;
 // has owned its own rng stream since the cross-device pass, so creating stalactites
 // earlier no longer reorders anyone's draws) - it only means the vetoes can now see
 // what they are vetoing against. Everything is still created well off the right edge
-// (W <= 956); the cost is a longer live stalactite array (~39 -> ~70 deep).
+// (W <= 956); the cost is a longer live stalactite array (~39 -> ~70 deep, more since
+// the 2026-09-29 raise).
 // SPAWN_AHEAD_COIN is the ORDERING INVARIANT's mirror image: boulders and mines yield to
 // coins (a power-up must never sit inside a rock or a mine - 2026-09-20, measured 1% of
 // coins inside a boulder, 3% touching a mine), so every coin they could overlap has to
 // exist already. A boulder probes up to SPAWN_AHEAD_BOULDER + 1000 (retry) + 100 (half
 // length) + PLACE_COIN_CLEAR_R ahead, hence 1500. That is as far as it can go: coins
-// themselves inspect stalactites (+46), so 1500 + 46 <= SPAWN_AHEAD_STAL.
-const SPAWN_AHEAD_STAL    = 1550;
+// themselves inspect stalactites (+80), so 1500 + 80 <= SPAWN_AHEAD_STAL.
+const SPAWN_AHEAD_STAL    = 2650;
 const SPAWN_AHEAD_COIN    = 1500;
 const SPAWN_AHEAD_MINE    = 200;
 const SPAWN_AHEAD_CANNON  = 300;
@@ -831,7 +836,7 @@ const CRYSTAL_MATERIALS = [
 // case at the dt clamp (main.js, 0.05s) and WARP_MULT_MAX below, a single frame
 // advances scrollX by scrollSpd() * WARP_MULT_MAX * 0.05 - a few hundred
 // world-px even at a very high deep-run scrollSpd(), nowhere near
-// SPAWN_AHEAD_STAL (1550, see the budget doc above SPAWN_AHEAD_STAL).
+// SPAWN_AHEAD_STAL (see the budget doc above it).
 const PORTAL_START_WX      = 3000;    // ~score 50, generous per the leaderboard audit
 // Fraction of halfGapAt(wx) used for the portal ring's DRAWN radius only - always
 // comfortably inside the corridor (r + max centre jitter stays well under
@@ -845,12 +850,22 @@ const PORTAL_START_WX      = 3000;    // ~score 50, generous per the leaderboard
 // coin contract sidesteps it because coins already place successfully at every
 // difficulty without one.
 const PORTAL_R_FRAC        = 0.40;
+// The hoop's drawn half-WIDTH as a fraction of p.r (draw.js _portalBand); its half-height
+// is the hit window, Math.max(p.r, PR * 1.6). Shared with _fitIsland's portal veto.
+const PORTAL_RX_FRAC       = 0.30;
 // Per-spawner horizon offset (constants.js SPAWN_AHEAD_* budget doc above
 // SPAWN_AHEAD_STAL). Portal placement only inspects the same narrow window
 // coinBlockedByStal already does - same shape budget as a coin, just with
 // retries (a coin has none; losing an occasional coin slot is a non-event, but a
 // portal is rare enough that PORTAL_RETRY_OFFSETS, systems.js, is worth it).
-const SPAWN_AHEAD_PORTAL   = 300;
+// Portals are also the FIXED POINT for boulders, like coins (2026-09-29: a 60-day
+// replay found 11 of 251 hoops overlapping a boulder, 2 with the centre inside the
+// rock - neither spawner checked the other). _fitIsland yields, so every hoop a
+// boulder can overlap must already exist: SPAWN_AHEAD_BOULDER + 1000 (retry) + 100
+// (half length) + the hoop's half-width + PLACE_PR, hence the same 1500 as coins.
+// This horizon is what pushed SPAWN_AHEAD_STAL out (1500 + 1040 retry + 81 inspect).
+// The portal set itself does not depend on the horizon (no rng, only stalactites).
+const SPAWN_AHEAD_PORTAL   = 1500;
 // scrollSpd() multiplier while a warp is live, scaled by the player's OWN _prog2
 // at the moment of trigger (systems.js triggerWarp(), rolled into state.js
 // warpMult once per warp - never re-rolled mid-warp). Capped at _prog2 >= 1
