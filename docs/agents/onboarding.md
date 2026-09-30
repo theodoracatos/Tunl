@@ -148,6 +148,12 @@ https://claude.ai/artifact/VVhDdo7T4gCd4HmEqDYECQ (db `picks`), all six recommen
   track's half notes (`bgmIntroBeatIn`, `TUTOR_DEMO_PERIOD` = the half note). A candidates page
   with four generated hold musics (https://claude.ai/artifact/NharAWyrz679j6xPLXgyaK) was
   superseded by the user's idea.
+- **The entering banner waits for the tunnel on a tutor run (2026-09-30, user: "wieso kommt der
+  Schriftzug EINFLUG IN DEN TUNL im Tutorial nicht mehr?")**: its clock started with the run, so it
+  played out over the waiting city, before anyone had tapped, and was gone when the mountain came.
+  Now `drawApproachBanner` skips it until the practice flight is over and runs it from there
+  (`_approachBannerT0`, set in `_tutorPracEnd`): it shows as the mountain rolls in, as long as on a
+  normal run. Normal runs are unchanged.
 - **Practice flight over the city (2026-09-30, user: "Kadenz des Tippens beibringen ... erst den
   Tunnel bringen wenn man es einigermassen im Griff hat")**: after the first press the camera flies
   over the city while `approachLeft` holds (`tutorPracticing()`, `tutorPracticeMove()`; the mountain

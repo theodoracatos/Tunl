@@ -1542,6 +1542,29 @@ const FAKE_AC = `(() => {
     check(`the first press hands back to the track at the same point and it runs on into the beat (${lift.p.toFixed(2)} s after 4 s)`,
         lift.back && lift.same && lift.region[0] === lift.loop[0] && lift.region[1] === lift.loop[1] && lift.p > lift.hi);
 
+    // The "ENTERING THE TUNL" banner waits for the tunnel on a tutor run (approach.js
+    // drawApproachBanner, _approachBannerT0): not over the waiting city or the practice flight,
+    // but as the mountain rolls in after it, for as long as on a normal run. Catches: the banner
+    // spent while the city waits (it was, 2026-09-30), or not shown at all.
+    const ban = best => {
+        const b = boot(956, 440, { tunnel_best: best, tunnel_record_reset_v15: '1' });
+        b(FAKE_AC);
+        b(`_seen = []; _t = 0; ctx.fillText = function (s) { if (s === T.entering) _seen.push(_t); }; startPlay();`);
+        return b(`(() => {
+            let tapped = false, pracEnd = -1;
+            for (let i = 0; i < 60 * 40 && approachLeft > 0; i++) {
+                if (!tapped && _t > 6 && startRamp >= 1) { onDown(); onUp(); tapped = true; }
+                if (tapped && tutorOn && tutorTTap <= 0.02 && !thrusting() && tutorInZone()) { onDown(); onUp(); }
+                update(1 / 60); draw(); _t += 1 / 60;
+                if (pracEnd < 0 && tutorOn && tutorWaitOver && tutorPracDone) pracEnd = _t;
+            }
+            return { first: _seen[0], n: _seen.length, pracEnd, mouth: _t };
+        })()`);
+    };
+    const bt = ban('0'), bn = ban('240');
+    check(`on a tutor run the entering banner shows as the mountain rolls in after the practice flight (${bt.first.toFixed(2)} s, practice over at ${bt.pracEnd.toFixed(2)} s), as long as on a normal run (${bt.n} vs ${bn.n} frames)`,
+        bt.first >= bt.pracEnd && bt.first - bt.pracEnd < 0.1 && Math.abs(bt.n - bn.n) <= 3 && bt.first < bt.mouth && bn.first < 1.5);
+
     // The flag, or the 15.0 reset zeroes the best.
     const shown = b => { const q = boot(956, 440, { tunnel_best: String(b), tunnel_record_reset_v15: '1' }); q('startPlay()'); return q('tutorOn'); };
     const cap = boot()('TUTOR_BEST_MAX');

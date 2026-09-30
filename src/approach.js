@@ -78,6 +78,8 @@ let approachLeft = 0;          // screen px until world-x 0 reaches the left edg
 let approachT = 0;             // seconds since the approach started (camera ease-in, banner)
 let approachFull = 0;          // approachLeft at the start, for the banner's fade
 let _approachGoT = -1;         // approachT when a tutor hold ended (camera eases in from 0); -1: no hold this run
+let _approachBannerT0 = 0;     // subtracted from approachT for the entering banner; moved on a tutor run (_tutorPracEnd)
+function _approachBannerAt() { return approachT - _approachBannerT0; }
 let cityScroll = 0;            // camera distance flown over the city (title drift included, never reset)
 let _approachBumpT = 0;        // throttles the city bump's haptic
 let _approachWindIn = false;   // the wind has been cut at the mouth this run (audio.js approachWindEnter)
@@ -196,6 +198,7 @@ function approachStart() {
     _buildCity();
     approachT = 0;
     _approachGoT = -1;
+    _approachBannerT0 = 0;
     approachLeft = approachFull = scrollSpd() * APPROACH_SEC;
     _approachBumpT = 0;
     levelIntroT = 0;   // the world banner waits for the mouth (approachStep)
@@ -538,6 +541,10 @@ const APPROACH_BANNER_HOLD_SEC = 2.25; // s from the fade-in start to the fade-o
 const APPROACH_BANNER_OUT_SEC  = 0.5;
 function drawApproachBanner(theme) {
     if (!(phase === 'play' && approachLeft > 0)) return;
+    // On a tutor run the banner waits for the tunnel: it plays once the practice flight is over
+    // and the mountain rolls in (_approachBannerT0), not over the waiting city (2026-09-30).
+    if (tutorOn && !(tutorWaitOver && tutorPracDone)) return;
+    const approachT = _approachBannerAt();
     const tIn0 = START_RAMP_SEC * 0.6;
     const tIn  = Math.min(1, Math.max(0, (approachT - tIn0) / 0.5));
     const tOut = Math.min(1, approachLeft / (scrollSpd() * 0.6),
@@ -675,6 +682,8 @@ function tutorPracticeMove(d) {
 function _tutorPracEnd() {
     if (tutorPracDone) return;
     tutorPracDone = true;
+    // The entering banner starts now, as it would a moment after a normal launch.
+    _approachBannerT0 = approachT - START_RAMP_SEC * 0.6;
     approachWindRetime((approachLeft - PX - APPROACH_LIP) / scrollSpd());
 }
 
