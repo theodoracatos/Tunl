@@ -67,10 +67,10 @@ a "Knallfrosch" twice. Method, metrics and traps: `reference_audio_method` memor
   `_stopBgmOutro()` cuts it on restart, revive and return to title. `commitDeath()`
   deliberately does NOT start the title music - the ending plays through the continue offer
   and the debriefing; the piano returns only on the title screen.
-- **The tap tutor's hold loops the bed's intro** (`bgmIntroHold`, rule in `onboarding.md`):
-  loop points on matching samples, not on the bar lines (those jump by ~0.018, a click); any change
-  of the bed's loop region rebases `_bgmOff0`/`_bgmT0` first, or `_bgmPos()`/`_bgmBarNow()` lose
-  their place.
+- **The tap tutor's hold repeats the bed's intro bar** (`bgmIntroHold`, `bgmIntroHoldTick`, rule in
+  `onboarding.md`): a separate crossfaded buffer of bar 2, swapped in and out at the same sample; the
+  track's buffer is never altered. Every node or loop change rebases `_bgmOff0`/`_bgmT0` first, or
+  `_bgmPos()`/`_bgmBarNow()` lose their place.
 - **A star can pause the music** (`bgmSetFrenzy`, `_fzMusGen`, rule in `frenzy.md`): the play
   track is held on its bar (`_bgmBarNow`, `BGM_BAR`) and resumes there while the star's own
   generated music plays. No third music file: an mp3 excerpt was tried and removed. The

@@ -1497,32 +1497,50 @@ const FAKE_AC = `(() => {
     check(`a player who lights no bead still gets the tunnel at TUTOR_PRACTICE_MAX_SEC (${bad.done.toFixed(1)} s, ${bad.lit} lit)`,
         Math.abs(bad.done - boot()('TUTOR_PRACTICE_MAX_SEC')) < 0.1 && bad.lit === 0 && bad.left === 0);
 
-    // The bed holds on its intro while the city waits (audio.js bgmIntroHold) and the first
-    // press just lifts the loop: the playhead runs on from where it is, into the beat. The
-    // circle presses on the music's half notes meanwhile. Catches: no hold, a press that jumps
-    // or restarts the track, a playhead clock that loses its place, a circle off the music's beat.
+    // The bed repeats the intro's second bar while the city waits (audio.js bgmIntroHoldTick) and
+    // the first press hands back to the track at the same point (bgmIntroHold): sample-exact, into
+    // the beat. The repeat is baked with its last BGM_INTRO_XF crossfaded into the audio before the
+    // bar, so the wrap is continuous. The circle presses on the track's half notes meanwhile.
+    // Catches: no repeat, a swap or hand-back that jumps, a wrap that clicks, a circle off the beat.
+    // A decodable stand-in track (a slow sweep, so every sample differs) replaces the fake buffer.
     const m = boot();
     m(FAKE_AC);
+    m(`_bgmBuf = (() => { const sr = 8000, len = Math.ceil(sr * BGM_LOOP_END);
+           const d = [0, 1].map(c => { const a = new Float32Array(len); for (let n = 0; n < len; n++) a[n] = Math.sin(n * (0.01 + n * 1e-7) + c); return a; });
+           return { sampleRate: sr, numberOfChannels: 2, length: len, duration: len / sr, getChannelData: c => d[c] }; })();`);
     m('startPlay()');
     const hold = m(`(() => {
         for (let i = 0; i < 600 && !(startRamp >= 1 && tutorWaiting()); i++) update(1 / 60);
-        update(1 / 60);
-        const held = _bgmNode.loopStart === BGM_INTRO_LOOP[0] && _bgmNode.loopEnd === BGM_INTRO_LOOP[1];
-        _ac.currentTime += 5.3; update(1 / 60);   // well past the intro's end: it must have wrapped
-        const p = _bgmPos(), half = TUTOR_DEMO_PERIOD;
-        const want = half - (p - BGM_INTRO_LOOP[0]) % half;
-        return { held, p, beatOff: Math.abs(tutorTTap - want), lo: BGM_INTRO_LOOP[0], hi: BGM_INTRO_LOOP[1] };
+        const bed = _bgmNode;
+        _ac.currentTime += 2.0;
+        const off0 = _bgmOff0, t0 = _bgmT0;              // the track's clock before the swap
+        update(1 / 60);                                  // the track is now inside bar 2: swap
+        const swapped = _bgmHoldOn && _bgmNode !== bed && bed.stopped === true && _bgmNode.buffer === _bgmIntroBuf.buf;
+        const q = _bgmNode.started[1], filePosAtSwap = BGM_INTRO_LOOP[0] + q;
+        const swapAtPlayhead = Math.abs(filePosAtSwap - (off0 + (_bgmNode.started[0] - t0))) < 1e-9;
+        // the repeat's sample at q is the track's own sample at the same point (outside the crossfade)
+        const B = _bgmBuf, H = _bgmIntroBuf.buf, sr = B.sampleRate, ia = Math.round(BGM_INTRO_LOOP[0] * sr);
+        const iq = Math.round(q * sr), sameAtSwap = H.getChannelData(0)[iq] === B.getChannelData(0)[ia + iq];
+        const L = H.length, wrapJump = Math.abs(H.getChannelData(0)[L - 1] - B.getChannelData(0)[ia - 1]);
+        _ac.currentTime += 5.3; update(1 / 60);          // several wraps later
+        const fp = _bgmFilePos(), want = TUTOR_DEMO_PERIOD - ((fp - BGM_INTRO_LOOP[0]) % TUTOR_DEMO_PERIOD);
+        return { swapped, swapAtPlayhead, sameAtSwap, wrapJump, fp, lo: BGM_INTRO_LOOP[0], hi: BGM_INTRO_LOOP[1], beatOff: Math.abs(tutorTTap - want), filePosAtSwap };
     })()`);
-    check(`waiting over the city loops the play track's intro, with the circle on its half notes (playhead ${hold.p.toFixed(2)} s)`,
-        hold.held && hold.p >= hold.lo && hold.p < hold.hi && hold.beatOff < 1e-6);
+    check(`waiting over the city repeats the intro's second bar from the same sample, the wrap continuous, the circle on its half notes (file ${hold.fp.toFixed(2)} s, wrap step ${hold.wrapJump.toExponential(1)})`,
+        hold.swapped && hold.swapAtPlayhead && hold.sameAtSwap && hold.wrapJump < 0.05 && hold.fp >= hold.lo && hold.fp < hold.hi && hold.beatOff < 1e-6);
     const lift = m(`(() => {
-        const p0 = _bgmPos(); onDown(); onUp(); update(1 / 60);
-        const same = Math.abs(_bgmPos() - p0) < 1e-9, region = [_bgmNode.loopStart, _bgmNode.loopEnd];
+        const hold = _bgmNode;
+        onDown(); onUp(); update(1 / 60);
+        const ts = _bgmNode.started[0], off = _bgmNode.started[1];
+        const L = BGM_INTRO_LOOP[1] - BGM_INTRO_LOOP[0];
+        const qAt = (hold.started[1] + (ts - hold.started[0])) % L;   // where the repeat is at the hand-back
+        const same = Math.abs(off - (BGM_INTRO_LOOP[0] + qAt)) < 1e-9 || Math.abs(off - BGM_INTRO_LOOP[0]) < 1e-9;
         _ac.currentTime += 4;
-        return { same, region, p: _bgmPos(), loop: [BGM_LOOP_START, BGM_LOOP_END], hi: BGM_INTRO_LOOP[1] };
+        return { back: !_bgmHoldOn && _bgmNode.buffer === _bgmBuf && hold.stopped === true, same, region: [_bgmNode.loopStart, _bgmNode.loopEnd],
+                 loop: [BGM_LOOP_START, BGM_LOOP_END], p: _bgmFilePos(), hi: BGM_INTRO_LOOP[1] };
     })()`);
-    check(`the first press lifts the loop without a jump and the track runs on past the intro (${lift.p.toFixed(2)} s after 4 s)`,
-        lift.same && lift.region[0] === lift.loop[0] && lift.region[1] === lift.loop[1] && lift.p > lift.hi);
+    check(`the first press hands back to the track at the same point and it runs on into the beat (${lift.p.toFixed(2)} s after 4 s)`,
+        lift.back && lift.same && lift.region[0] === lift.loop[0] && lift.region[1] === lift.loop[1] && lift.p > lift.hi);
 
     // The flag, or the 15.0 reset zeroes the best.
     const shown = b => { const q = boot(956, 440, { tunnel_best: String(b), tunnel_record_reset_v15: '1' }); q('startPlay()'); return q('tutorOn'); };

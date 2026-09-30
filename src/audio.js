@@ -196,49 +196,99 @@ function _playBgmBuffer(offset) {
         _bgmNode.loopStart = BGM_LOOP_START;
         _bgmNode.loopEnd   = Math.min(BGM_LOOP_END, _bgmBuf.duration);
     }
-    if (_bgmIntroHold && (offset || 0) < BGM_INTRO_LOOP[1]) { _bgmNode.loopStart = BGM_INTRO_LOOP[0]; _bgmNode.loopEnd = BGM_INTRO_LOOP[1]; }
     _bgmNode.connect(_bgmGain);
     _bgmOff0 = offset || 0; _bgmT0 = _ac.currentTime;
     _bgmNode.start(0, _bgmOff0);
 }
 
 // The tap tutor's hold (approach.js tutorWaiting; 2026-09-30, user: "die ersten 3 Sekunden der
-// Hintergrundmusik immer repetieren ... nahtloser Übergang"): while the city waits for the first
-// press the bed loops its own intro, and the press only lifts the loop, so the track runs on from
-// where it is into the beat at the loop's end - no cut, no crossfade. BGM_INTRO_LOOP is the quiet
-// swell before Nebula's first downbeat: two bars (measured on the decoded file: the level jumps from
-// about -28 to -16 dB at 3.446 s, eighths on the 140 BPM grid from there), so it wraps in time. The
-// ends sit on the nearest matching samples within 3 ms (both channels, value and slope): the bar
-// lines themselves jump by about 0.018 (a click), these by under 0.001; 4 ms over two bars.
-const BGM_INTRO_LOOP = [0.015556, 3.448027];
-let _bgmIntroHold = false;
-// Where the bed's playhead is in the file, for a loop region that has not changed since _bgmT0
-// (every region change rebases _bgmOff0/_bgmT0 first). Rate 1 only: nothing bends the bed here.
+// Hintergrundmusik immer repetieren ... nahtloser Übergang", then "der loop ... muss nahtloser
+// werden"): while the city waits for the first press the bed repeats the second bar of its intro,
+// the steady one right before Nebula's first downbeat; the press hands back to the track at the
+// same point of that bar, sample-exact, so it runs on into the beat. Measured on the decoded file:
+// bar 1 of the intro is nearly silent and brightening (-42 to -31 dB), bar 2 steady (about -34 dB),
+// the drop's attack starts at 3.452 s. Looping both bars restarted the swell audibly on every pass.
+// The repeat plays from its own small buffer (_bgmIntroLoopBuf): bar 2 with its last
+// BGM_INTRO_XF crossfaded (equal power) into the audio just before bar 2, so every wrap sounds
+// like the natural bar 1 -> bar 2 change. The track's own buffer is never altered.
+const BGM_INTRO_LOOP = [3.448 - BGM_BAR, 3.448];   // one bar, ending just before the drop's attack
+const BGM_INTRO_XF = 0.12;
+let _bgmIntroHold = false;    // the tutor wants the hold
+let _bgmHoldOn = false;       // _bgmNode is the repeat of bar 2 right now
+let _bgmIntroBuf = null;      // { src, ctx, buf }
+function _bgmIntroLoopBuf() {
+    const B = _bgmBuf;
+    if (!B || !B.getChannelData) return null;
+    if (_bgmIntroBuf && _bgmIntroBuf.src === B && _bgmIntroBuf.ctx === _ac) return _bgmIntroBuf.buf;
+    const sr = B.sampleRate, a = Math.round(BGM_INTRO_LOOP[0] * sr), b = Math.round(BGM_INTRO_LOOP[1] * sr);
+    const xf = Math.round(BGM_INTRO_XF * sr), L = b - a;
+    const out = _ac.createBuffer(B.numberOfChannels, L, sr);
+    for (let c = 0; c < B.numberOfChannels; c++) {
+        const src = B.getChannelData(c), dst = out.getChannelData(c);
+        for (let n = 0; n < L; n++) dst[n] = src[a + n];
+        for (let k = 0; k < xf; k++) {
+            const u = (k + 0.5) / xf * Math.PI / 2;
+            dst[L - xf + k] = src[b - xf + k] * Math.cos(u) + src[a - xf + k] * Math.sin(u);
+        }
+    }
+    _bgmIntroBuf = { src: B, ctx: _ac, buf: out };
+    return out;
+}
+// The playhead within the playing node's buffer (loop-wrapped), rate 1 only; every change of the
+// node or its loop region rebases _bgmOff0/_bgmT0 first.
 function _bgmPos() {
     let p = _bgmOff0 + (_ac.currentTime - _bgmT0);
     const n = _bgmNode, ls = n.loopStart, le = n.loopEnd;
     if (n.loop && le > ls && p >= le) p = ls + (p - ls) % (le - ls);
     return p;
 }
-function bgmIntroHold(on) {
-    if (_bgmIntroHold === on) return;
-    _bgmIntroHold = on;
-    const n = _bgmNode;
-    if (!_ac || !n || !_bgmBuf) return;
-    const p = _bgmPos();
-    if (on && p >= BGM_INTRO_LOOP[1] - 0.02) return;   // already past the intro: nothing to hold on
-    _bgmOff0 = p; _bgmT0 = _ac.currentTime;
-    if (on) { n.loopStart = BGM_INTRO_LOOP[0]; n.loopEnd = BGM_INTRO_LOOP[1]; }
-    else if (_bgmBuf.duration > BGM_LOOP_START + 1) { n.loopEnd = Math.min(BGM_LOOP_END, _bgmBuf.duration); n.loopStart = BGM_LOOP_START; }
-    else { n.loopStart = 0; n.loopEnd = 0; }
+// The same point in the track's file, also while the repeat of bar 2 plays.
+function _bgmFilePos() { return _bgmPos() + (_bgmHoldOn ? BGM_INTRO_LOOP[0] : 0); }
+function _bgmSource(buf, loopStart, loopEnd) {
+    const n = _ac.createBufferSource();
+    n.buffer = buf; n.loop = true; n.loopStart = loopStart; n.loopEnd = loopEnd;
+    n.connect(_bgmGain);
+    return n;
 }
-// Seconds until the bed's next beat of `period` while it holds on the intro, -1 otherwise: the
-// tutor's circle presses on the music's half notes (the loop is four of them, so the grid wraps).
+// `abandon`: a new run is starting; drop the hold without handing back (the run starts its own bed).
+function bgmIntroHold(on, abandon) {
+    _bgmIntroHold = on;
+    if (on || !_bgmHoldOn) return;
+    _bgmHoldOn = false;
+    if (abandon || !_ac || !_bgmNode || !_bgmBuf) return;
+    const L = BGM_INTRO_LOOP[1] - BGM_INTRO_LOOP[0];
+    let ts = _ac.currentTime + 0.03;
+    let q = (_bgmOff0 + (ts - _bgmT0)) % L;
+    if (q > L - BGM_INTRO_XF - 0.005) { ts += L - q; q = 0; }   // inside the crossfade: hand back on the wrap
+    const hold = _bgmNode, off = BGM_INTRO_LOOP[0] + q;
+    const full = _bgmBuf.duration > BGM_LOOP_START + 1;
+    const n = _bgmSource(_bgmBuf, full ? BGM_LOOP_START : 0, full ? Math.min(BGM_LOOP_END, _bgmBuf.duration) : 0);
+    n.start(ts, off);
+    try { hold.stop(ts); } catch (e) {}
+    _bgmNode = n; _bgmOff0 = off; _bgmT0 = ts;
+}
+// Called every frame the city waits: once the track is inside bar 2, swap to the repeat of it at
+// the same sample. Without a decodable buffer (tests, odd platforms) the bed plays on.
+function bgmIntroHoldTick() {
+    if (!_bgmIntroHold || _bgmHoldOn || !_ac || !_bgmNode || !_bgmBuf || !_bgmGain) return;
+    const t = _ac.currentTime, ts = t + 0.03;
+    const pos = _bgmPos() + (ts - t), a = BGM_INTRO_LOOP[0], b = BGM_INTRO_LOOP[1];
+    if (pos < a || pos > b - BGM_INTRO_XF - 0.005) return;   // not in bar 2 yet, or already past it
+    const buf = _bgmIntroLoopBuf();
+    if (!buf) return;
+    const q = pos - a, bed = _bgmNode;
+    const n = _bgmSource(buf, 0, buf.duration);
+    n.start(ts, q);
+    try { bed.stop(ts); } catch (e) {}
+    _bgmNode = n; _bgmOff0 = q; _bgmT0 = ts; _bgmHoldOn = true;
+}
+// Seconds until the track's next beat of `period` while the tutor holds, -1 otherwise: the circle
+// presses on the music's half notes, on a grid anchored at the loop's bar line.
 function bgmIntroBeatIn(period) {
     if (!_bgmIntroHold || !_ac || !_bgmNode || !_bgmBuf) return -1;
-    const p = _bgmPos() - BGM_INTRO_LOOP[0];
-    if (p < 0 || p > BGM_INTRO_LOOP[1] - BGM_INTRO_LOOP[0]) return -1;
-    return period - p % period;
+    const p = _bgmFilePos() - BGM_INTRO_LOOP[0];
+    if (p > BGM_INTRO_LOOP[1] - BGM_INTRO_LOOP[0]) return -1;
+    return period - ((p % period) + period) % period;
 }
 
 // The bar line nearest to where the bed is now, in seconds into _bgmBuf. Counted in context

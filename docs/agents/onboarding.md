@@ -137,12 +137,17 @@ https://claude.ai/artifact/VVhDdo7T4gCd4HmEqDYECQ (db `picks`), all six recommen
   The city is before world-x 0, so nothing on the board moves while it waits. `test-sim.js`
   "Tap tutor" checks the 12 s hold, the release and the retimed swell.
 - **The music waits too (2026-09-30, user: "die ersten 3 Sekunden der Hintergrundmusik immer
-  repetieren ... nahtloser Übergang")**: while the city waits the play track loops its own intro
-  (`bgmIntroHold`, `BGM_INTRO_LOOP` in `audio.js`: the two-bar swell before Nebula's first
-  downbeat), and the first press only lifts the loop, so the track runs on into its beat without a
-  cut. The circle presses on the track's half notes meanwhile (`bgmIntroBeatIn`,
-  `TUTOR_DEMO_PERIOD` = the half note). A candidates page with four generated hold musics
-  (https://claude.ai/artifact/NharAWyrz679j6xPLXgyaK) was superseded by this idea of the user's.
+  repetieren ... nahtloser Übergang", then "der loop ... muss nahtloser werden")**: while the city
+  waits the play track repeats the second bar of its intro, the steady one right before Nebula's
+  first downbeat (`BGM_INTRO_LOOP`, `bgmIntroHoldTick` swaps to the repeat at the same sample once
+  the track is in that bar), and the first press hands back to the track at the same point of the
+  bar (`bgmIntroHold`), so it runs on into the beat. The repeat is its own small buffer with its
+  last `BGM_INTRO_XF` crossfaded into the audio just before the bar, so each wrap sounds like the
+  track's own bar 1 -> bar 2 change (measured: -30.2 -> -31.6 dB, the track itself -30.4 -> -31.6;
+  the first version looped both bars and dropped 9 dB on every wrap). The circle presses on the
+  track's half notes (`bgmIntroBeatIn`, `TUTOR_DEMO_PERIOD` = the half note). A candidates page
+  with four generated hold musics (https://claude.ai/artifact/NharAWyrz679j6xPLXgyaK) was
+  superseded by the user's idea.
 - **Practice flight over the city (2026-09-30, user: "Kadenz des Tippens beibringen ... erst den
   Tunnel bringen wenn man es einigermassen im Griff hat")**: after the first press the camera flies
   over the city while `approachLeft` holds (`tutorPracticing()`, `tutorPracticeMove()`; the mountain

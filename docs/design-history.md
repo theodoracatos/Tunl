@@ -2287,3 +2287,9 @@ two-bar swell before the first downbeat at 3.446 s, found by level and onset ana
 file) loops while the city waits; the press lifts the loop and the track runs on. Loop ends on the
 nearest matching samples (jump < 0.001 vs 0.018 at the bar lines). The circle presses on the track's
 half notes (0.857 s) instead of the old 0.9 s beat. Not heard in the game yet.
+
+The user tested the two-bar loop live: "der loop kann noch verbessert werden - er muss nahtloser werden".
+Measured why: bar 1 of the intro is nearly silent and brightening (-42 to -31 dB), bar 2 steady (about
+-34 dB); every wrap dropped from -30.2 to -39.5 dB, a restart. Now only bar 2 repeats (ends 3.448 s,
+just before the drop's attack at 3.452 s), from a small baked buffer whose last 120 ms crossfade into
+the audio just before bar 2; wrap -30.2 -> -31.6 dB, the same as the track's own bar change.

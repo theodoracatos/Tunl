@@ -614,7 +614,7 @@ let tutorBeadNext = 0;    // index of the next bead to create
 let tutorBeadLog = [];    // lit (true/false) per passed bead, oldest first
 
 function tutorStart() {
-    bgmIntroHold(false);
+    bgmIntroHold(false, true);
     tutorOn = best < TUTOR_BEST_MAX;
     tutorA = 0; tutorTTap = 1; tutorOverdue = 0; tutorScale = 1;
     tutorTaps = 0; tutorHitT = 0; tutorRippleT = 0; tutorClock = 0;
@@ -743,6 +743,7 @@ function tutorStep(dt) {
             bgmIntroHold(true);    // the bed loops its intro while the city waits
         }
     }
+    if (tutorWaiting()) bgmIntroHoldTick();
     if (tutorPracticing()) { tutorPracT += dt; if (tutorPracT >= TUTOR_PRACTICE_MAX_SEC) _tutorPracEnd(); }
     const live = tutorInZone();
     tutorA = live ? Math.min(1, tutorA + dt / 0.3) : Math.max(0, tutorA - dt / TUTOR_FADE_SEC);
