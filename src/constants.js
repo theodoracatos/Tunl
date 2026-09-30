@@ -1642,7 +1642,7 @@ const TUTOR_WINDOW_SEC  = 0.12;   // a tap this close to the due moment counts a
 const TUTOR_LATE_SEC    = 0.12;   // due and no tap for this long: time slows down
 const TUTOR_SLOW_SCALE  = 0.25;   // time scale while waiting for a late tap
 const TUTOR_LOOKAHEAD   = 1.2;    // planner horizon, seconds
-const TUTOR_DEMO_PERIOD = 0.9;    // before the first tap the circle presses on this beat
+const TUTOR_DEMO_PERIOD = 60 / 140 * 2;   // before the first tap the circle presses on this beat: the play track's half note (140 BPM)
 const TUTOR_FADE_SEC    = 0.5;    // circle fade-out after SAFE_START_WX
 // Practice flight over the city (approach.js "Tap tutor", 2026-09-30, user: "erst den Tunnel
 // bringen wenn man es einigermassen im Griff hat"): after the first press a tutor run flies

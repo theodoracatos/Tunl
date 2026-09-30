@@ -1497,6 +1497,33 @@ const FAKE_AC = `(() => {
     check(`a player who lights no bead still gets the tunnel at TUTOR_PRACTICE_MAX_SEC (${bad.done.toFixed(1)} s, ${bad.lit} lit)`,
         Math.abs(bad.done - boot()('TUTOR_PRACTICE_MAX_SEC')) < 0.1 && bad.lit === 0 && bad.left === 0);
 
+    // The bed holds on its intro while the city waits (audio.js bgmIntroHold) and the first
+    // press just lifts the loop: the playhead runs on from where it is, into the beat. The
+    // circle presses on the music's half notes meanwhile. Catches: no hold, a press that jumps
+    // or restarts the track, a playhead clock that loses its place, a circle off the music's beat.
+    const m = boot();
+    m(FAKE_AC);
+    m('startPlay()');
+    const hold = m(`(() => {
+        for (let i = 0; i < 600 && !(startRamp >= 1 && tutorWaiting()); i++) update(1 / 60);
+        update(1 / 60);
+        const held = _bgmNode.loopStart === BGM_INTRO_LOOP[0] && _bgmNode.loopEnd === BGM_INTRO_LOOP[1];
+        _ac.currentTime += 5.3; update(1 / 60);   // well past the intro's end: it must have wrapped
+        const p = _bgmPos(), half = TUTOR_DEMO_PERIOD;
+        const want = half - (p - BGM_INTRO_LOOP[0]) % half;
+        return { held, p, beatOff: Math.abs(tutorTTap - want), lo: BGM_INTRO_LOOP[0], hi: BGM_INTRO_LOOP[1] };
+    })()`);
+    check(`waiting over the city loops the play track's intro, with the circle on its half notes (playhead ${hold.p.toFixed(2)} s)`,
+        hold.held && hold.p >= hold.lo && hold.p < hold.hi && hold.beatOff < 1e-6);
+    const lift = m(`(() => {
+        const p0 = _bgmPos(); onDown(); onUp(); update(1 / 60);
+        const same = Math.abs(_bgmPos() - p0) < 1e-9, region = [_bgmNode.loopStart, _bgmNode.loopEnd];
+        _ac.currentTime += 4;
+        return { same, region, p: _bgmPos(), loop: [BGM_LOOP_START, BGM_LOOP_END], hi: BGM_INTRO_LOOP[1] };
+    })()`);
+    check(`the first press lifts the loop without a jump and the track runs on past the intro (${lift.p.toFixed(2)} s after 4 s)`,
+        lift.same && lift.region[0] === lift.loop[0] && lift.region[1] === lift.loop[1] && lift.p > lift.hi);
+
     // The flag, or the 15.0 reset zeroes the best.
     const shown = b => { const q = boot(956, 440, { tunnel_best: String(b), tunnel_record_reset_v15: '1' }); q('startPlay()'); return q('tutorOn'); };
     const cap = boot()('TUTOR_BEST_MAX');

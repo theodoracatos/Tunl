@@ -196,9 +196,49 @@ function _playBgmBuffer(offset) {
         _bgmNode.loopStart = BGM_LOOP_START;
         _bgmNode.loopEnd   = Math.min(BGM_LOOP_END, _bgmBuf.duration);
     }
+    if (_bgmIntroHold && (offset || 0) < BGM_INTRO_LOOP[1]) { _bgmNode.loopStart = BGM_INTRO_LOOP[0]; _bgmNode.loopEnd = BGM_INTRO_LOOP[1]; }
     _bgmNode.connect(_bgmGain);
     _bgmOff0 = offset || 0; _bgmT0 = _ac.currentTime;
     _bgmNode.start(0, _bgmOff0);
+}
+
+// The tap tutor's hold (approach.js tutorWaiting; 2026-09-30, user: "die ersten 3 Sekunden der
+// Hintergrundmusik immer repetieren ... nahtloser Übergang"): while the city waits for the first
+// press the bed loops its own intro, and the press only lifts the loop, so the track runs on from
+// where it is into the beat at the loop's end - no cut, no crossfade. BGM_INTRO_LOOP is the quiet
+// swell before Nebula's first downbeat: two bars (measured on the decoded file: the level jumps from
+// about -28 to -16 dB at 3.446 s, eighths on the 140 BPM grid from there), so it wraps in time. The
+// ends sit on the nearest matching samples within 3 ms (both channels, value and slope): the bar
+// lines themselves jump by about 0.018 (a click), these by under 0.001; 4 ms over two bars.
+const BGM_INTRO_LOOP = [0.015556, 3.448027];
+let _bgmIntroHold = false;
+// Where the bed's playhead is in the file, for a loop region that has not changed since _bgmT0
+// (every region change rebases _bgmOff0/_bgmT0 first). Rate 1 only: nothing bends the bed here.
+function _bgmPos() {
+    let p = _bgmOff0 + (_ac.currentTime - _bgmT0);
+    const n = _bgmNode, ls = n.loopStart, le = n.loopEnd;
+    if (n.loop && le > ls && p >= le) p = ls + (p - ls) % (le - ls);
+    return p;
+}
+function bgmIntroHold(on) {
+    if (_bgmIntroHold === on) return;
+    _bgmIntroHold = on;
+    const n = _bgmNode;
+    if (!_ac || !n || !_bgmBuf) return;
+    const p = _bgmPos();
+    if (on && p >= BGM_INTRO_LOOP[1] - 0.02) return;   // already past the intro: nothing to hold on
+    _bgmOff0 = p; _bgmT0 = _ac.currentTime;
+    if (on) { n.loopStart = BGM_INTRO_LOOP[0]; n.loopEnd = BGM_INTRO_LOOP[1]; }
+    else if (_bgmBuf.duration > BGM_LOOP_START + 1) { n.loopEnd = Math.min(BGM_LOOP_END, _bgmBuf.duration); n.loopStart = BGM_LOOP_START; }
+    else { n.loopStart = 0; n.loopEnd = 0; }
+}
+// Seconds until the bed's next beat of `period` while it holds on the intro, -1 otherwise: the
+// tutor's circle presses on the music's half notes (the loop is four of them, so the grid wraps).
+function bgmIntroBeatIn(period) {
+    if (!_bgmIntroHold || !_ac || !_bgmNode || !_bgmBuf) return -1;
+    const p = _bgmPos() - BGM_INTRO_LOOP[0];
+    if (p < 0 || p > BGM_INTRO_LOOP[1] - BGM_INTRO_LOOP[0]) return -1;
+    return period - p % period;
 }
 
 // The bar line nearest to where the bed is now, in seconds into _bgmBuf. Counted in context

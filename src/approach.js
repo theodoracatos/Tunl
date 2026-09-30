@@ -614,6 +614,7 @@ let tutorBeadNext = 0;    // index of the next bead to create
 let tutorBeadLog = [];    // lit (true/false) per passed bead, oldest first
 
 function tutorStart() {
+    bgmIntroHold(false);
     tutorOn = best < TUTOR_BEST_MAX;
     tutorA = 0; tutorTTap = 1; tutorOverdue = 0; tutorScale = 1;
     tutorTaps = 0; tutorHitT = 0; tutorRippleT = 0; tutorClock = 0;
@@ -732,12 +733,14 @@ function tutorStep(dt) {
     if (!tutorWaitOver) {
         if (thrusting()) {
             tutorWaitOver = true;
+            bgmIntroHold(false);   // the track runs on from the intro into its beat
             // The wind stays held through the practice flight; _tutorPracEnd() re-aims it.
             if (approachLeft > 0 && startRamp >= 1) { if (!tutorWaited) approachWindHold(); _tutorPracStart(); }
             else tutorPracDone = true;
         } else if (tutorWaiting() && !tutorWaited) {
             tutorWaited = true;
             approachWindHold();
+            bgmIntroHold(true);    // the bed loops its intro while the city waits
         }
     }
     if (tutorPracticing()) { tutorPracT += dt; if (tutorPracT >= TUTOR_PRACTICE_MAX_SEC) _tutorPracEnd(); }
@@ -749,7 +752,9 @@ function tutorStep(dt) {
     if (live) {
         tutorClock += dt;
         if (!hasHeldThisRun) {
-            tutorTTap = TUTOR_DEMO_PERIOD - tutorClock % TUTOR_DEMO_PERIOD;
+            // On the music's half notes while the bed holds on its intro, else a plain beat.
+            const onBeat = bgmIntroBeatIn(TUTOR_DEMO_PERIOD);
+            tutorTTap = onBeat >= 0 ? onBeat : TUTOR_DEMO_PERIOD - tutorClock % TUTOR_DEMO_PERIOD;
             tutorOverdue = 0;
         } else {
             tutorTTap = tutorPlan();

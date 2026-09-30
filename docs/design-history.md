@@ -2273,3 +2273,17 @@ mid-glide carries the rate both ways, so the bed no longer re-sags after a star.
 Chrome: loop 3.429 s, both passes -26.3 dB RMS, peak -8.5 dBFS pre-master, seam at the bar line with
 no sample jump. Rejected: shifting the live generator's note pitches and step times by the rate
 (sustained chords would not glide, and it would only approximate what the bed does).
+
+## Hold music = the bed's own intro, looped (2026-09-30)
+
+User: "so lang niemand tippt, soll eine Art Haltemusik ertönen ... im Tutorial". Four generated
+candidates at Nebula's tempo and key went on a page (A marimba, B synth pad, C elevator jazz, D Nebula
+through a phone band; https://claude.ai/artifact/NharAWyrz679j6xPLXgyaK). The first publish played
+nothing: the page's scheduler ran its first tick before it recorded the candidate and stopped
+itself; my check had only proved "no errors", not "notes scheduled". After the fix the user heard it
+and proposed the simpler idea: "die ersten 3 Sekunden der Hintergrundmusik immer repetieren? Dann hat
+man beim Tippen einen nahtlosen Übergang". Built that: Nebula's intro (0.016-3.448 s, the quiet
+two-bar swell before the first downbeat at 3.446 s, found by level and onset analysis of the decoded
+file) loops while the city waits; the press lifts the loop and the track runs on. Loop ends on the
+nearest matching samples (jump < 0.001 vs 0.018 at the bar lines). The circle presses on the track's
+half notes (0.857 s) instead of the old 0.9 s beat. Not heard in the game yet.

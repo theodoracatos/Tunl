@@ -136,6 +136,13 @@ https://claude.ai/artifact/VVhDdo7T4gCd4HmEqDYECQ (db `picks`), all six recommen
   never pressed at all; the gate ran out over the city and they sank into the mouth at score 5.
   The city is before world-x 0, so nothing on the board moves while it waits. `test-sim.js`
   "Tap tutor" checks the 12 s hold, the release and the retimed swell.
+- **The music waits too (2026-09-30, user: "die ersten 3 Sekunden der Hintergrundmusik immer
+  repetieren ... nahtloser Übergang")**: while the city waits the play track loops its own intro
+  (`bgmIntroHold`, `BGM_INTRO_LOOP` in `audio.js`: the two-bar swell before Nebula's first
+  downbeat), and the first press only lifts the loop, so the track runs on into its beat without a
+  cut. The circle presses on the track's half notes meanwhile (`bgmIntroBeatIn`,
+  `TUTOR_DEMO_PERIOD` = the half note). A candidates page with four generated hold musics
+  (https://claude.ai/artifact/NharAWyrz679j6xPLXgyaK) was superseded by this idea of the user's.
 - **Practice flight over the city (2026-09-30, user: "Kadenz des Tippens beibringen ... erst den
   Tunnel bringen wenn man es einigermassen im Griff hat")**: after the first press the camera flies
   over the city while `approachLeft` holds (`tutorPracticing()`, `tutorPracticeMove()`; the mountain
