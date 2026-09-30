@@ -2250,3 +2250,12 @@ Picked (user: "ja setze diese Dinge gerne um"): on a tutor run the approach hold
 until the first press, ship level, circle plus "TAP TO FLY" words. Not picked for now: a merciful
 first wall hit (the hull scratches already cover it, and nobody reaches a wall without a press any
 more) and extra touch-action hardening (a cancelled press already keeps its hop).
+
+## Practice flight over the city (2026-09-30)
+
+User, after the city-waits change ("viel besser"): teach the tapping cadence, and bring the tunnel
+only once the player has it roughly under control. Built: after the first press a tutor run flies
+over the city along light beads (flat, then waves) and the mountain comes after 6 of the last 8
+beads are lit (at least 12), or after 30 s. Asked and picked: every tutor run (not only until passed
+once), 30 s cap (over no cap and 60 s). Measured in test-sim: a player tapping with the circle passes
+in 5.9 s with 12/12 lit; a player lighting none gets the tunnel at exactly 30 s.

@@ -1644,6 +1644,22 @@ const TUTOR_SLOW_SCALE  = 0.25;   // time scale while waiting for a late tap
 const TUTOR_LOOKAHEAD   = 1.2;    // planner horizon, seconds
 const TUTOR_DEMO_PERIOD = 0.9;    // before the first tap the circle presses on this beat
 const TUTOR_FADE_SEC    = 0.5;    // circle fade-out after SAFE_START_WX
+// Practice flight over the city (approach.js "Tap tutor", 2026-09-30, user: "erst den Tunnel
+// bringen wenn man es einigermassen im Griff hat"): after the first press a tutor run flies
+// over the city along a row of light beads before the mountain comes. Flat first (the hover
+// cadence), then gentle waves (tap faster to climb, pause to sink). A bead passed within
+// TUTOR_BEAD_TOL of its height lights up. The tunnel comes once TUTOR_PASS_NEED of the last
+// TUTOR_PASS_OF beads are lit (at least TUTOR_PASS_MIN passed), or after TUTOR_PRACTICE_MAX_SEC
+// either way (user's pick). No score, no rng(): the city lies before world-x 0.
+const TUTOR_BEAD_SEC         = 0.4;    // seconds of flight between beads
+const TUTOR_BEAD_FLAT        = 6;      // flat beads before the waves
+const TUTOR_BEAD_WAVE        = 8;      // beads per wave period
+const TUTOR_BEAD_AMP         = 0.10;   // wave amplitude, fraction of H
+const TUTOR_BEAD_TOL         = 0.075;  // a bead lights within this fraction of H of its height
+const TUTOR_PASS_OF          = 8;
+const TUTOR_PASS_NEED        = 6;
+const TUTOR_PASS_MIN         = 12;
+const TUTOR_PRACTICE_MAX_SEC = 30;     // real seconds; then the tunnel comes anyway (user's pick)
 
 // Launch ramp (update.js): the run opens with the ship flying up into frame from below
 // and levelling out, with py/vy/shipPitch driven by the ramp rather than by the player.

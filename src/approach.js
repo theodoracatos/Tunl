@@ -223,7 +223,9 @@ function approachStep(dt, canHold = false) {
         d = lerp(APPROACH_TITLE_SPD, scrollSpd(), e * e * (3 - 2 * e)) * dt;
     }
     cityScroll += d;
-    approachLeft = Math.max(0, approachLeft - d);
+    // The practice flight flies over the city; the mountain stays out of view until it is passed.
+    if (canHold && tutorPracticing()) tutorPracticeMove(d);
+    else { approachLeft = Math.max(0, approachLeft - d); if (tutorBeads.length) _tutorBeadsScroll(d); }
     _approachBumpT = Math.max(0, _approachBumpT - dt);
     // The ship is in the mouth (same line approachUpdate's lethal-wall rule uses): cut the wind.
     if (!_approachWindIn && approachLeft <= PX + APPROACH_LIP) { _approachWindIn = true; approachWindEnter(); }
@@ -603,12 +605,20 @@ let tutorRippleT = 0;     // tap ripple timer
 let tutorClock = 0;       // demo beat before the first tap
 let tutorWaitOver = false; // the first press of the run has happened (or the tutor is off)
 let tutorWaited = false;  // the approach was held at least one frame this run
+let tutorPracDone = true; // the practice flight is over (passed or timed out), or never ran
+let tutorPracT = 0;       // real seconds of practice flight
+let tutorPracX = 0;       // px flown on the practice flight
+let tutorBeadGap = 0;     // px between beads (fixed at the start of the flight)
+let tutorBeads = [];      // { k, x, y, passed, lit }
+let tutorBeadNext = 0;    // index of the next bead to create
+let tutorBeadLog = [];    // lit (true/false) per passed bead, oldest first
 
 function tutorStart() {
     tutorOn = best < TUTOR_BEST_MAX;
     tutorA = 0; tutorTTap = 1; tutorOverdue = 0; tutorScale = 1;
     tutorTaps = 0; tutorHitT = 0; tutorRippleT = 0; tutorClock = 0;
     tutorWaitOver = !tutorOn; tutorWaited = false;
+    tutorPracDone = !tutorOn; tutorPracT = 0; tutorPracX = 0; tutorBeads = []; tutorBeadNext = 0; tutorBeadLog = [];
 }
 
 // "The city waits" (2026-09-30, /tt/ telemetry: 35% of first runs never pressed at all, and
@@ -621,11 +631,50 @@ function tutorWaiting() {
     return !tutorWaitOver && tutorOn && phase === 'play' && startRamp >= 1 && approachLeft > 0;
 }
 
-// Seconds until the mouth reaches the ship once the camera eases in from a standstill: the
-// same line approachStep() cuts the wind at, for approachWindRetime().
-function _tutorMouthSec() {
-    const spd = scrollSpd(), dist = approachLeft - PX - APPROACH_LIP, ease = APPROACH_EASE_SEC * spd / 2;
-    return dist <= ease ? APPROACH_EASE_SEC * Math.sqrt(Math.max(0, dist) / ease) : APPROACH_EASE_SEC + (dist - ease) / spd;
+function tutorPracticing() {
+    return tutorWaitOver && !tutorPracDone && tutorOn && phase === 'play' && startRamp >= 1 && approachLeft > 0;
+}
+
+// Practice line height at bead index k (fractional between beads): flat, then waves that fade in
+// over their first period.
+function tutorPracY(k) {
+    if (k <= TUTOR_BEAD_FLAT) return H / 2;
+    const w = (k - TUTOR_BEAD_FLAT) / TUTOR_BEAD_WAVE;
+    return H / 2 - H * TUTOR_BEAD_AMP * Math.min(1, w) * Math.sin(w * Math.PI * 2);
+}
+function _tutorPracK(x) { return (x - W * 0.5) / tutorBeadGap; }   // bead 0 starts half a screen ahead
+
+// Called when the first press ends the wait: the mountain moves out of view, the beads start.
+function _tutorPracStart() {
+    tutorPracDone = false;
+    tutorBeadGap = scrollSpd() * TUTOR_BEAD_SEC;
+    approachLeft = Math.max(approachLeft, W * 1.05 + APPROACH_LIP + APPROACH_FUN_B);
+}
+
+// Camera step d (px) of the practice flight: beads scroll past the ship and light if it is close.
+function _tutorBeadsScroll(d) {
+    tutorPracX += d;
+    while (tutorBeads.length && tutorBeads[0].x < tutorPracX - PX - 40) tutorBeads.shift();
+}
+function tutorPracticeMove(d) {
+    _tutorBeadsScroll(d);
+    while (tutorBeadNext * tutorBeadGap + W * 0.5 < tutorPracX + W * 1.2) {
+        const k = tutorBeadNext++;
+        tutorBeads.push({ k, x: W * 0.5 + k * tutorBeadGap, y: tutorPracY(k), passed: false, lit: false });
+    }
+    for (const b of tutorBeads) {
+        if (b.passed || b.x > tutorPracX) continue;   // screen x = PX + (b.x - tutorPracX)
+        b.passed = true;
+        b.lit = Math.abs(py - b.y) <= H * TUTOR_BEAD_TOL;
+        tutorBeadLog.push(b.lit);
+    }
+    const last = tutorBeadLog.slice(-TUTOR_PASS_OF);
+    if (tutorBeadLog.length >= TUTOR_PASS_MIN && last.filter(Boolean).length >= TUTOR_PASS_NEED) _tutorPracEnd();
+}
+function _tutorPracEnd() {
+    if (tutorPracDone) return;
+    tutorPracDone = true;
+    approachWindRetime((approachLeft - PX - APPROACH_LIP) / scrollSpd());
 }
 
 // The ship's position on the approach+cave line: negative over the city, world-x in the cave.
@@ -635,6 +684,7 @@ function tutorInZone() { return tutorOn && phase === 'play' && startRamp >= 1 &&
 // Route height at u: the mouth's centre, then straight lines through the coins ahead
 // (collected ones stay route points; hazard coins are left out), kept off the walls.
 function tutorRouteY(u) {
+    if (tutorPracticing()) return tutorPracY(_tutorPracK(tutorPracX + u - tutorShipU()));
     let y = H / 2;
     if (u > -APPROACH_LIP) {
         let x0 = -APPROACH_LIP, y0 = H / 2;
@@ -682,12 +732,15 @@ function tutorStep(dt) {
     if (!tutorWaitOver) {
         if (thrusting()) {
             tutorWaitOver = true;
-            if (tutorWaited) approachWindRetime(_tutorMouthSec());
+            // The wind stays held through the practice flight; _tutorPracEnd() re-aims it.
+            if (approachLeft > 0 && startRamp >= 1) { if (!tutorWaited) approachWindHold(); _tutorPracStart(); }
+            else tutorPracDone = true;
         } else if (tutorWaiting() && !tutorWaited) {
             tutorWaited = true;
             approachWindHold();
         }
     }
+    if (tutorPracticing()) { tutorPracT += dt; if (tutorPracT >= TUTOR_PRACTICE_MAX_SEC) _tutorPracEnd(); }
     const live = tutorInZone();
     tutorA = live ? Math.min(1, tutorA + dt / 0.3) : Math.max(0, tutorA - dt / TUTOR_FADE_SEC);
     tutorHitT = Math.max(0, tutorHitT - dt);
@@ -720,6 +773,37 @@ function tutorOnTap() {
     tutorOverdue = 0;
 }
 
+// Practice beads: a row of small lights along the line. Ahead unlit (a faint ring), passed and
+// lit filled in the ship's light, passed and missed gone dim. After the flight they scroll away.
+function _drawTutorBeads(lr, lg, lb) {
+    if (!tutorBeads.length) return;
+    const r = PR * 0.28;
+    ctx.save();
+    for (const b of tutorBeads) {
+        const sx = PX + (b.x - tutorPracX);
+        if (sx < -r * 4 || sx > W + r * 4) continue;
+        ctx.beginPath(); ctx.arc(sx, b.y, b.lit ? r * 1.25 : r, 0, Math.PI * 2);
+        if (!b.passed) {
+            ctx.globalAlpha = tutorA * 0.7;
+            ctx.lineWidth = Math.max(1, r * 0.45);
+            ctx.strokeStyle = 'rgba(236,242,255,0.8)';
+            ctx.stroke();
+        } else if (b.lit) {
+            ctx.globalAlpha = tutorA;
+            ctx.fillStyle = `rgb(${lr},${lg},${lb})`;
+            ctx.shadowColor = `rgba(${lr},${lg},${lb},0.9)`;
+            ctx.shadowBlur = 10;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        } else {
+            ctx.globalAlpha = tutorA * 0.25;
+            ctx.fillStyle = 'rgba(236,242,255,0.6)';
+            ctx.fill();
+        }
+    }
+    ctx.restore();
+}
+
 // The tap circle, below and ahead of the ship: the iPhone's touch button (user, 2026-09-29:
 // "so dieser typische iPhone Knopf Kreis") - a white dot in two translucent rings. It
 // brightens as a tap comes due and presses in (shrinks, glows) while one is due. Neutral
@@ -727,6 +811,7 @@ function tutorOnTap() {
 function drawTapTutor() {
     if (!tutorOn || tutorA <= 0 || phase !== 'play') return;
     const [lr, lg, lb] = (SKINS[activeSkin] || SKINS[0]).shadow;
+    _drawTutorBeads(lr, lg, lb);
     const R = PR * 1.5, r = R * 0.5;                       // button, inner dot (AssistiveTouch proportions)
     const fx = PX + PR * 3.4, tipY = Math.min(H - R * 1.2, py + PR * 2.8);
     const t = Math.max(0, tutorTTap);

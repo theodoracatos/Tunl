@@ -136,6 +136,16 @@ https://claude.ai/artifact/VVhDdo7T4gCd4HmEqDYECQ (db `picks`), all six recommen
   never pressed at all; the gate ran out over the city and they sank into the mouth at score 5.
   The city is before world-x 0, so nothing on the board moves while it waits. `test-sim.js`
   "Tap tutor" checks the 12 s hold, the release and the retimed swell.
+- **Practice flight over the city (2026-09-30, user: "Kadenz des Tippens beibringen ... erst den
+  Tunnel bringen wenn man es einigermassen im Griff hat")**: after the first press the camera flies
+  over the city while `approachLeft` holds (`tutorPracticing()`, `tutorPracticeMove()`; the mountain
+  is first pushed out of view). A row of light beads (`TUTOR_BEAD_*`) shows the line: flat first
+  (the hover cadence), then waves; the planner's route follows it, so the circle keeps the beat.
+  A bead passed within `TUTOR_BEAD_TOL` lights. The tunnel comes once `TUTOR_PASS_NEED` of the
+  last `TUTOR_PASS_OF` are lit (at least `TUTOR_PASS_MIN`), or after `TUTOR_PRACTICE_MAX_SEC`
+  either way; the wind stays held and `_tutorPracEnd()` re-aims it. Every tutor run gets it (a
+  good player is through in about the old approach time). User's picks: every tutor run, 30 s cap.
+  No sound for a lit bead yet (would need an offline-render pass, see `audio.md`).
 - `test-sim.js` "Tap tutor": a pilot that taps only when the circle says so flies the opening to
   `SAFE_START_WX` with no wall touch (29 taps, ~15 px mean off the route at H 440).
 

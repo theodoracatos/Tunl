@@ -986,8 +986,9 @@ function touchCoin(type, setup) {
 // rising when it is cut), and approachWindEnter() firing twice or not at all. Real
 // startPlay()/update(); only the two audio hooks are replaced by recorders.
 {
+    // A player past TUTOR_BEST_MAX: no tutor hold or practice flight (those have their own check).
     const res = [[956, 440], [812, 375], [956, 600]].map(([w, h]) => {
-        const g = boot(w, h);
+        const g = boot(w, h, { tunnel_best: '240', tunnel_record_reset_v15: '1' });
         g(AUTOPILOT);
         g(`_windRec = { mouthSec: -1, enters: [] }; _simT = 0;
            approachWindOn = (ramp, mouthSec) => { _windRec.mouthSec = mouthSec; };
@@ -1431,6 +1432,33 @@ const FAKE_AC = `(() => {
         for (let i = 0; i < 60; i++) update(1 / 60); return [l, approachLeft, tutorWaiting()]; })()`);
     check('no hold for a player past TUTOR_BEST_MAX: the approach flies on without a press',
         noWait[1] < noWait[0] && noWait[2] === false);
+
+    // Practice flight over the city (approach.js tutorPracticeMove): tapping with the circle
+    // lights the beads and brings the tunnel after about TUTOR_PASS_MIN beads; never lighting
+    // them still brings it at TUTOR_PRACTICE_MAX_SEC. Catches: a flight that never ends, one that
+    // ends without passing, the mountain drifting in during practice, a timeout that never fires.
+    const prac = (tapWithCircle) => {
+        const p = boot();
+        p(FAKE_AC);
+        p('startPlay()');
+        return p(`(() => {
+            let t = 0, done = -1, minLeft = Infinity, taps = 0, far = W + APPROACH_LIP + APPROACH_FUN_B;
+            for (let i = 0; i < 60 * 45 && approachLeft > 0; i++) {
+                const due = startRamp >= 1 && tutorTTap <= 0.02 && !thrusting();
+                if (${tapWithCircle} ? due : (startRamp >= 1 && !tutorWaitOver)) { onDown(); onUp(); taps++; }
+                if (!${tapWithCircle} && tutorWaitOver) holding = true;   // clamps to the ceiling, lights nothing
+                update(1 / 60); t += 1 / 60;
+                if (tutorPracticing()) minLeft = Math.min(minLeft, approachLeft - far);
+                if (done < 0 && tutorWaitOver && tutorPracDone) done = tutorPracT;
+            }
+            return { done, lit: tutorBeadLog.filter(Boolean).length, passed: tutorBeadLog.length, minLeft, left: approachLeft, phase };
+        })()`);
+    };
+    const good = prac(true), bad = prac(false);
+    check(`tapping with the circle passes the practice flight in ${good.done.toFixed(1)} s (${good.lit}/${good.passed} beads lit) and the tunnel comes; the mountain stays out of view meanwhile`,
+        good.done > 0 && good.done < 10 && good.passed >= boot()('TUTOR_PASS_MIN') && good.left === 0 && good.minLeft >= 0);
+    check(`a player who lights no bead still gets the tunnel at TUTOR_PRACTICE_MAX_SEC (${bad.done.toFixed(1)} s, ${bad.lit} lit)`,
+        Math.abs(bad.done - boot()('TUTOR_PRACTICE_MAX_SEC')) < 0.1 && bad.lit === 0 && bad.left === 0);
 
     // The flag, or the 15.0 reset zeroes the best.
     const shown = b => { const q = boot(956, 440, { tunnel_best: String(b), tunnel_record_reset_v15: '1' }); q('startPlay()'); return q('tutorOn'); };
