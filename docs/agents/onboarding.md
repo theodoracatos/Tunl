@@ -126,6 +126,16 @@ https://claude.ai/artifact/VVhDdo7T4gCd4HmEqDYECQ (db `picks`), all six recommen
   mark above the ship (no new string).
 - **Draw and time only**: no `rng()`, no placement. The circle replaces the idle "TAP TO FLY"
   words while it shows.
+- **The city waits (2026-09-30)**: on a tutor run the approach holds over the city after the
+  launch ramp until the first press (`tutorWaiting()`; only `approachUpdate()` may hold, the
+  ramp's last frame already reads `startRamp` 1). The ship hovers level because the gravity gate
+  (`HOLD_GATE_MAX_SEC`) stays shut while it waits, and the idle "TAP TO FLY" words show beside
+  the circle. The first press eases the camera in from a standstill (`_approachGoT`); the wind's
+  swell is frozen during the hold (`approachWindHold`) and re-aimed at the mouth on release
+  (`approachWindRetime(_tutorMouthSec())`). Why: /tt/ first runs (tt_0110, 48 players) - 35%
+  never pressed at all; the gate ran out over the city and they sank into the mouth at score 5.
+  The city is before world-x 0, so nothing on the board moves while it waits. `test-sim.js`
+  "Tap tutor" checks the 12 s hold, the release and the retimed swell.
 - `test-sim.js` "Tap tutor": a pilot that taps only when the circle says so flies the opening to
   `SAFE_START_WX` with no wall touch (29 taps, ~15 px mean off the route at H 440).
 

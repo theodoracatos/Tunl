@@ -226,7 +226,8 @@ function update(dt) {
     // its own past HOLD_GATE_MAX_SEC (constants.js) even with zero input, so a player
     // who never presses at all can't ride a risk-free straight glide indefinitely --
     // gravity engages exactly as if the gate had never existed.
-    if (!hasHeldThisRun && idleHoldTimer > HOLD_GATE_MAX_SEC) hasHeldThisRun = true;
+    // A tutor run holding over the city keeps the gate shut until the first press (approach.js tutorWaiting).
+    if (!hasHeldThisRun && idleHoldTimer > HOLD_GATE_MAX_SEC && !tutorWaiting()) hasHeldThisRun = true;
     // Trapezoidal integration: move by the AVERAGE of the old and new velocity, not by
     // the new one. `py += vy * dt` after the velocity update silently pretends the ship
     // spent the whole frame already at its end-of-frame speed, which overshoots by

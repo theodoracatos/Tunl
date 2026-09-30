@@ -77,6 +77,7 @@ const _APPROACH_STREAKS = (() => {
 let approachLeft = 0;          // screen px until world-x 0 reaches the left edge; > 0 = approach live
 let approachT = 0;             // seconds since the approach started (camera ease-in, banner)
 let approachFull = 0;          // approachLeft at the start, for the banner's fade
+let _approachGoT = -1;         // approachT when a tutor hold ended (camera eases in from 0); -1: no hold this run
 let cityScroll = 0;            // camera distance flown over the city (title drift included, never reset)
 let _approachBumpT = 0;        // throttles the city bump's haptic
 let _approachWindIn = false;   // the wind has been cut at the mouth this run (audio.js approachWindEnter)
@@ -194,6 +195,7 @@ function approachCamX() { return phase === 'title' ? W * 4 : approachLeft; }
 function approachStart() {
     _buildCity();
     approachT = 0;
+    _approachGoT = -1;
     approachLeft = approachFull = scrollSpd() * APPROACH_SEC;
     _approachBumpT = 0;
     levelIntroT = 0;   // the world banner waits for the mouth (approachStep)
@@ -206,10 +208,20 @@ function approachStart() {
 }
 
 // Advance the camera. Runs under the launch ramp too, so the ship takes off over a moving city.
-function approachStep(dt) {
+function approachStep(dt, canHold = false) {
     approachT += dt;
-    const e = Math.min(1, approachT / APPROACH_EASE_SEC);
-    const d = lerp(APPROACH_TITLE_SPD, scrollSpd(), e * e * (3 - 2 * e)) * dt;
+    // The tap tutor holds the camera until the first press ("the city waits", tutorWaiting());
+    // the banner keeps its clock. After a hold the camera eases in again from a standstill.
+    // Only approachUpdate() may hold: the launch ramp's last frame already reads startRamp 1.
+    if (canHold && tutorWaiting()) { _approachGoT = approachT; _approachBumpT = Math.max(0, _approachBumpT - dt); return; }
+    let d;
+    if (_approachGoT >= 0) {
+        const e = Math.min(1, (approachT - _approachGoT) / APPROACH_EASE_SEC);
+        d = scrollSpd() * e * e * (3 - 2 * e) * dt;
+    } else {
+        const e = Math.min(1, approachT / APPROACH_EASE_SEC);
+        d = lerp(APPROACH_TITLE_SPD, scrollSpd(), e * e * (3 - 2 * e)) * dt;
+    }
     cityScroll += d;
     approachLeft = Math.max(0, approachLeft - d);
     _approachBumpT = Math.max(0, _approachBumpT - dt);
@@ -224,7 +236,7 @@ function approachStep(dt) {
 // The whole play frame while approaching, called from update.js right after the physics
 // integration (which already ran): camera, soft collision, pitch and trail - nothing else.
 function approachUpdate(dt) {
-    approachStep(dt);
+    approachStep(dt, true);
     const r = PR;
     let top = 0, bot = H;
     for (const dx of [-r * 0.7, 0, r * 0.7]) {
@@ -589,11 +601,31 @@ let tutorTaps = 0;        // presses while the tutor ran
 let tutorHitT = 0;        // on-the-beat check mark timer
 let tutorRippleT = 0;     // tap ripple timer
 let tutorClock = 0;       // demo beat before the first tap
+let tutorWaitOver = false; // the first press of the run has happened (or the tutor is off)
+let tutorWaited = false;  // the approach was held at least one frame this run
 
 function tutorStart() {
     tutorOn = best < TUTOR_BEST_MAX;
     tutorA = 0; tutorTTap = 1; tutorOverdue = 0; tutorScale = 1;
     tutorTaps = 0; tutorHitT = 0; tutorRippleT = 0; tutorClock = 0;
+    tutorWaitOver = !tutorOn; tutorWaited = false;
+}
+
+// "The city waits" (2026-09-30, /tt/ telemetry: 35% of first runs never pressed at all, and
+// the gravity gate ran out over the city, so they sank into the mouth at score 5): on a tutor
+// run the approach holds over the city after the launch ramp until the first press. The ship
+// hovers level (the gravity gate stays shut, update.js), the circle keeps its beat and the
+// "TAP TO FLY" words come back (draw.js). The city lies before world-x 0, so no score, clock or
+// cave position moves while it waits.
+function tutorWaiting() {
+    return !tutorWaitOver && tutorOn && phase === 'play' && startRamp >= 1 && approachLeft > 0;
+}
+
+// Seconds until the mouth reaches the ship once the camera eases in from a standstill: the
+// same line approachStep() cuts the wind at, for approachWindRetime().
+function _tutorMouthSec() {
+    const spd = scrollSpd(), dist = approachLeft - PX - APPROACH_LIP, ease = APPROACH_EASE_SEC * spd / 2;
+    return dist <= ease ? APPROACH_EASE_SEC * Math.sqrt(Math.max(0, dist) / ease) : APPROACH_EASE_SEC + (dist - ease) / spd;
 }
 
 // The ship's position on the approach+cave line: negative over the city, world-x in the cave.
@@ -647,6 +679,15 @@ function tutorPlan() {
 // rest of the frame runs on.
 function tutorStep(dt) {
     if (!tutorOn) return dt;
+    if (!tutorWaitOver) {
+        if (thrusting()) {
+            tutorWaitOver = true;
+            if (tutorWaited) approachWindRetime(_tutorMouthSec());
+        } else if (tutorWaiting() && !tutorWaited) {
+            tutorWaited = true;
+            approachWindHold();
+        }
+    }
     const live = tutorInZone();
     tutorA = live ? Math.min(1, tutorA + dt / 0.3) : Math.max(0, tutorA - dt / TUTOR_FADE_SEC);
     tutorHitT = Math.max(0, tutorHitT - dt);

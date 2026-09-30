@@ -2826,9 +2826,10 @@ function drawWorld() {
     // actually is instead of a fixed title-screen line (see Onboarding in CLAUDE.md
     // for why a *static* title-screen hint was tried and reverted; this one only ever
     // appears when it's actually needed, and is gone by the player's first touch).
-    // The tap tutor's circle (approach.js) replaces the words while it shows.
+    // The tap tutor's circle (approach.js) replaces the words while it shows, except while the
+    // city waits for a first press: then both show.
     drawTapTutor();
-    if (phase === 'play' && !hasHeldThisRun && !(tutorOn && tutorA > 0)) {
+    if (phase === 'play' && !hasHeldThisRun && (!(tutorOn && tutorA > 0) || tutorWaiting())) {
         const IDLE_HINT_DELAY = 1.0, IDLE_HINT_FADE = 0.4;
         const ia = Math.max(0, Math.min(1, (idleHoldTimer - IDLE_HINT_DELAY) / IDLE_HINT_FADE));
         if (ia > 0) {

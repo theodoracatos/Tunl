@@ -105,6 +105,8 @@ const AUTOPILOT = `
         const target = approachLeft > 0 ? H / 2
             : (b => (b.top + b.bot) / 2)(boundsAt(scrollX + PX + W * 0.05));
         holding = (py - target) + 0.18 * vy > 0;
+        // A tutor run waits over the city for the first press (approach.js tutorWaiting): press.
+        if (tutorWaiting()) holding = true;
     };
 `;
 
@@ -1392,6 +1394,43 @@ const FAKE_AC = `(() => {
     })()`);
     check(`a late tap slows time to TUTOR_SLOW_SCALE and the tap brings it back (${late.minScale.toFixed(2)} -> ${late.after.toFixed(2)})`,
         Math.abs(late.minScale - s('TUTOR_SLOW_SCALE')) < 0.02 && late.after > 0.95);
+
+    // "The city waits" (approach.js tutorWaiting): with no press at all the run holds over the
+    // city instead of sinking into the mouth at score 5, and the first tap starts the approach
+    // with the wind re-aimed at the mouth. Catches: the hold not happening, the gravity gate
+    // opening anyway, the camera not moving after the tap, and a retimed swell that misses the mouth.
+    const w = boot();
+    w(FAKE_AC);
+    w(AUTOPILOT);   // only flown after the tap, to get through the mouth
+    w(`_windRec = { retime: -1, enters: [] }; _simT = 0;
+       approachWindRetime = sec => { _windRec.retime = sec; _windRec.at = _simT; };
+       approachWindEnter = () => { _windRec.enters.push(_simT); };`);
+    w('startPlay()');
+    const idle = w(`(() => {
+        for (let i = 0; i < 600 && startRamp < 1; i++) { _simT += 1 / 60; update(1 / 60); }
+        update(1 / 60); _simT += 1 / 60;
+        const left0 = approachLeft;
+        for (let i = 0; i < 60 * 12; i++) { _simT += 1 / 60; update(1 / 60); if (i % 60 === 0) draw(); }
+        return { phase, held: approachLeft === left0, left0, scrollX, score, dy: Math.abs(py - H / 2), gate: hasHeldThisRun, waiting: tutorWaiting() };
+    })()`);
+    check(`with no press the tutor run waits over the city for 12 s: camera still, ship level, no score (dy ${idle.dy.toFixed(1)}px)`,
+        idle.phase === 'play' && idle.held && idle.left0 > 0 && idle.scrollX === 0 && idle.score === 0 && idle.dy < 1 && !idle.gate && idle.waiting);
+    const go = w(`(() => {
+        onDown(); onUp();
+        for (let i = 0; i < 60 * 20 && approachLeft > 0; i++) {
+            shieldCount = 9; hullScratches = HULL_SCRATCHES; _pilot(); _simT += 1 / 60; update(1 / 60);
+        }
+        return { left: approachLeft, rec: _windRec };
+    })()`);
+    const lateBy = go.rec.enters[0] - go.rec.at - go.rec.retime;
+    check(`the first tap starts the approach and the retimed wind swell lands on the mouth (off by ${lateBy.toFixed(3)} s)`,
+        go.left === 0 && go.rec.retime > 1 && go.rec.enters.length === 1 && Math.abs(lateBy) <= 1.5 / 60);
+    const n = boot(956, 440, { tunnel_best: '240', tunnel_record_reset_v15: '1' });
+    n('startPlay()');
+    const noWait = n(`(() => { for (let i = 0; i < 600 && startRamp < 1; i++) update(1 / 60); const l = approachLeft;
+        for (let i = 0; i < 60; i++) update(1 / 60); return [l, approachLeft, tutorWaiting()]; })()`);
+    check('no hold for a player past TUTOR_BEST_MAX: the approach flies on without a press',
+        noWait[1] < noWait[0] && noWait[2] === false);
 
     // The flag, or the 15.0 reset zeroes the best.
     const shown = b => { const q = boot(956, 440, { tunnel_best: String(b), tunnel_record_reset_v15: '1' }); q('startPlay()'); return q('tutorOn'); };

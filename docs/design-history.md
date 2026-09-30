@@ -2238,3 +2238,15 @@ Concept + playable prototype + six decisions: https://claude.ai/artifact/VVhDdo7
   be near-autopilot on the shared daily board).
 - Open: device test (finger size, feel of the hop on a phone), /tt/'s own HOLD/RELEASE
   splash + in-flight hint (tt-head.js TT_RULES, tt-tail.js) still teach holding.
+
+## The city waits for the first press (2026-09-30)
+
+/tt/ telemetry with the tap circle live (tt_0110, ~18 h, 48 Indonesian first runs): hold0 (never
+pressed) 35%, tap 15%, hold 40%, holdall 4%, lost 6%, cancel 8% (cancel overlaps the others).
+Read against tap = hop, "tap" is working control, so ~59% steer and the real failure is the third
+that never touches the screen. The gravity gate (`HOLD_GATE_MAX_SEC`) ran out ~1.5 s before the
+mouth, so they sank and died at score 5, and the tutor's slow motion only starts after a first tap.
+Picked (user: "ja setze diese Dinge gerne um"): on a tutor run the approach holds over the city
+until the first press, ship level, circle plus "TAP TO FLY" words. Not picked for now: a merciful
+first wall hit (the hull scratches already cover it, and nobody reaches a wall without a press any
+more) and extra touch-action hardening (a cancelled press already keeps its hop).

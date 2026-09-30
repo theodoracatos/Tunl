@@ -3570,6 +3570,21 @@ function approachWindOn(rampSec, mouthSec) {
     _awSrc = src; _awLfo = lfo;
 }
 
+// The tap tutor holds the approach until the first press (approach.js tutorWaiting): the swell
+// stops where it is, and approachWindRetime() aims it at the mouth again once the camera moves.
+function approachWindHold() {
+    if (!_awSrc) return;
+    const t = _ac.currentTime;
+    for (const p of [_awGain.gain, _awLp.frequency]) { const v = p.value; p.cancelScheduledValues(t); p.setValueAtTime(v, t); }
+}
+function approachWindRetime(mouthSec) {
+    if (!_awSrc) return;
+    const t = _ac.currentTime;
+    approachWindHold();
+    _awLp.frequency.linearRampToValueAtTime(APPROACH_WIND_OPEN_HZ[1], t + mouthSec);
+    _awGain.gain.linearRampToValueAtTime(APPROACH_WIND_PEAK, t + mouthSec);
+}
+
 // The mouth passes the ship: dull, drop, and ring out in the cave.
 function approachWindEnter() {
     if (!_awSrc) return;
