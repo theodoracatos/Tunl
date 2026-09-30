@@ -382,7 +382,9 @@ function update(dt) {
             if (frenzyTime <= 0) {
                 invulnT = Math.max(invulnT, HIT_INVULN_SEC);
                 frenzyLoopOff(); frenzyGrind(false);
-                // The held play track comes back at rate 1; a time bubble still running sags it again.
+                // The held play track comes back. After the baked star music it carries the running
+                // slow glide itself (audio.js _musRateCarry); after the live generator it comes back
+                // at rate 1 and a time bubble still running sags it again.
                 if (bgmSetFrenzy(false) && slowTime > 0) bgmSetSlow(true, slowTime);
             }
         }

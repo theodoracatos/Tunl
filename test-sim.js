@@ -1306,6 +1306,43 @@ const FAKE_AC = `(() => {
         d.had && d.gone && d.collapsed && d.bed && d.outro);
 }
 
+// ── The star's music follows slow and warp (audio.js _fzMusBaked, bgmSetSlow, bgmSetWarp) ──
+// Catches: a time bubble or a warp during a star leaving the star's music at normal speed, a star
+// starting mid-glide at rate 1 instead of where the bed was, and the bed coming back from a star
+// with the glide started over (a second sag). Real frenzy, update() and audio code; the baked
+// loop's buffer and the buffer sources are recording stand-ins.
+{
+    const REC = `(() => {
+        const param = v => ({ value: v, log: [], cancelScheduledValues() {},
+            setValueAtTime(x) { this.value = x; this.log.push(['set', +x.toFixed(2)]); },
+            linearRampToValueAtTime(x, at) { this.value = x; this.log.push(['ramp', x, +(at - _ac.currentTime).toFixed(2)]); } });
+        _ac.createBufferSource = () => ({ playbackRate: param(1), connect() {}, disconnect() {},
+            start(t, off) { this.started = [t, off || 0]; }, stop() { this.stopped = true; } });
+        _fzmLoop = { ctx: _ac, buf: { duration: 64 * _FZ_S16 } };
+    })()`;
+    const g = fzCave(`${FAKE_AC}; ${REC}; _ac.currentTime = 10; _playBgmBuffer(0); frenzyMeter = frenzyCost;`);
+    // A glide already running when the star starts: the bed is at 0.8, due back at 1.0 in 2 s.
+    g(`_bgmNode.playbackRate.value = 0.8; _musGlide = { until: _ac.currentTime + 2 };`);
+    g(`for (let i = 0; i < 120 && frenzyTime === 0; i++) { ${FZ_HOLD} }`);
+    const start = g(`({ star: frenzyTime > 0, baked: !!(_fzMus && _fzMus.src.rate), log: _fzMus && _fzMus.src.rate.log.slice() })`);
+    check(`a star starting mid-glide carries the bed's rate into its baked music and finishes the glide (${JSON.stringify(start.log)})`,
+        start.star && start.baked && JSON.stringify(start.log) === JSON.stringify([['set', 0.8], ['ramp', 1, 2]]));
+    const slow = g(`(() => { _fzMus.src.rate.log = []; bgmSetSlow(true, 3); return _fzMus.src.rate.log.slice(); })()`);
+    const warp = g(`(() => { _fzMus.src.rate.log = []; bgmSetWarp(true, 2); return _fzMus.src.rate.log.slice(); })()`);
+    check(`a time bubble and a warp during a star bend the star's music like the bed (slow ${JSON.stringify(slow)}, warp ${JSON.stringify(warp)})`,
+        JSON.stringify(slow) === JSON.stringify([['set', 1], ['ramp', 0.6, 0.22], ['ramp', 1, 3]])
+        && JSON.stringify(warp) === JSON.stringify([['set', 1], ['ramp', 1.35, 0.12], ['ramp', 1, 2]]));
+    // A time bubble running as the star ends: the bed comes back carrying the rate, no second sag.
+    const end = g(`(() => {
+        _musGlide = { until: _ac.currentTime + 9 }; slowTime = 9; slowTimeMax = 9; _fzMus.src.rate.value = 0.7;
+        for (let i = 0; i < 600 && frenzyTime > 0; i++) { py = y0; vy = 0; holding = false; update(1 / 60); }
+        return { back: !!_bgmNode && _fzMus === null, log: _bgmNode && _bgmNode.playbackRate.log.slice() };
+    })()`);
+    check(`the bed comes back from a star carrying its rate and finishing the glide, without a second sag (${JSON.stringify(end.log)})`,
+        end.back && end.log.length === 2 && end.log[0][0] === 'set' && end.log[0][1] === 0.7 && end.log[1][1] === 1 && end.log[1][2] === 9
+        && !end.log.some(e => e[1] === 0.6));
+}
+
 // ── Tap = hop (input.js onDown, update.js shipStep, constants.js TAP_BURST_SEC) ──
 // Catches: a press that no longer starts the burst, a release that cuts it short, a burst
 // whose end is rounded to a frame edge (every refresh rate would hop to its own height),

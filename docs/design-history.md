@@ -2259,3 +2259,17 @@ over the city along light beads (flat, then waves) and the mountain comes after 
 beads are lit (at least 12), or after 30 s. Asked and picked: every tutor run (not only until passed
 once), 30 s cap (over no cap and 60 s). Measured in test-sim: a player tapping with the circle passes
 in 5.9 s with 12/12 lit; a player lighting none gets the tunnel at exactly 30 s.
+
+## The star's music follows slow and warp (2026-09-30)
+
+User: "wenn man slow ist und frenzy aktiviert oder fast ist und frenzy aktiviert, dann soll der
+frenzy sound auch langsamer / schneller ertönen - wie der background sound". The bed bends by its
+buffer's playbackRate (tempo and pitch together); the star's Future Drop was built live from
+oscillators, so a time bubble or a warp during a star changed nothing (bgmSetSlow/Warp only touched
+the held `_bgmNode`, which is null during a star). Now Future Drop is rendered once per context into
+an OfflineAudioContext buffer (two passes of its two bars, the second looped so the seam carries the
+tails) and played as a buffer source whose playbackRate slow and warp drive like the bed's. Handover
+mid-glide carries the rate both ways, so the bed no longer re-sags after a star. Render measured in
+Chrome: loop 3.429 s, both passes -26.3 dB RMS, peak -8.5 dBFS pre-master, seam at the bar line with
+no sample jump. Rejected: shifting the live generator's note pitches and step times by the rate
+(sustained chords would not glide, and it would only approximate what the bed does).

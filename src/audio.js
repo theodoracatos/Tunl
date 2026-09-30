@@ -168,6 +168,7 @@ function _startBgMusic() {
 // `offset` (seconds into _bgmBuf) resumes the bed where a star held it (bgmSetFrenzy).
 function _playBgmBuffer(offset) {
     if (!_ac || !_bgmBuf || !_bgmActive) return;
+    _fzMusPrerender();   // the star's baked loop, long before any star (no-op once done)
     // gain -> lowpass -> music bus. The filter is wide open in normal play and only
     // moves for the death sweep (_fadeBgMusic), which is why it can live here rather
     // than being built and torn down per death.
@@ -385,19 +386,40 @@ function musicDuck(dB, dur) {
 // belt-and-braces calls in update.js on slowTime hitting 0, plus startPlay/die) just
 // snaps the rate home in case the glide and the gameplay timer ever drift apart.
 function bgmSetSlow(on, duration) {
-    if (!_ac || !_bgmNode) return;
-    const t    = _ac.currentTime;
-    const rate = _bgmNode.playbackRate;
+    if (!_ac) return;
+    const t = _ac.currentTime;
+    _musGlide = on ? { until: t + Math.max(duration || 0, 0.6) } : null;
+    for (const rate of _musRates()) {
+        try {
+            rate.cancelScheduledValues(t);
+            rate.setValueAtTime(rate.value, t);
+            if (on) {
+                rate.linearRampToValueAtTime(0.6, t + 0.22);   // gentle sag on pickup
+                rate.linearRampToValueAtTime(1.0, _musGlide.until);   // then ease back up over the effect
+            } else {
+                rate.linearRampToValueAtTime(1.0, t + 0.15);
+            }
+        } catch (e) {}
+    }
+}
+
+// Every music source that slow and warp bend: the play track, and a star's baked music
+// (2026-09-30, user: the star's music follows a time bubble and a warp like the bed does).
+let _musGlide = null;   // { until }: the running slow/warp glide ends back at 1.0 then
+function _musRates() {
+    const r = [];
+    if (_bgmNode) r.push(_bgmNode.playbackRate);
+    if (_fzMus && _fzMus.src.rate) r.push(_fzMus.src.rate);
+    return r;
+}
+// A source taking over from another mid-glide (a star starting or ending) carries the rate
+// the old one had reached and finishes the same glide, instead of starting it over.
+function _musRateCarry(rate, from) {
+    const t = _ac.currentTime;
     try {
         rate.cancelScheduledValues(t);
-        rate.setValueAtTime(rate.value, t);
-        if (on) {
-            const dur = Math.max(duration || 0, 0.6);
-            rate.linearRampToValueAtTime(0.6, t + 0.22);   // gentle sag on pickup
-            rate.linearRampToValueAtTime(1.0, t + dur);    // then ease back up over the effect
-        } else {
-            rate.linearRampToValueAtTime(1.0, t + 0.15);
-        }
+        rate.setValueAtTime(from, t);
+        rate.linearRampToValueAtTime(1.0, _musGlide && _musGlide.until > t + 0.05 ? _musGlide.until : t + 0.15);
     } catch (e) {}
 }
 
@@ -417,20 +439,21 @@ function bgmSetSlow(on, duration) {
 // startPlay/die) just snaps the rate home in case the glide and the gameplay
 // timer ever drift apart, identical to bgmSetSlow's own off-path.
 function bgmSetWarp(on, duration) {
-    if (!_ac || !_bgmNode) return;
-    const t    = _ac.currentTime;
-    const rate = _bgmNode.playbackRate;
-    try {
-        rate.cancelScheduledValues(t);
-        rate.setValueAtTime(rate.value, t);
-        if (on) {
-            const dur = Math.max(duration || 0, 0.4);
-            rate.linearRampToValueAtTime(1.35, t + 0.12);  // quick surge on entry
-            rate.linearRampToValueAtTime(1.0,  t + dur);   // glide back down over the window
-        } else {
-            rate.linearRampToValueAtTime(1.0, t + 0.15);
-        }
-    } catch (e) {}
+    if (!_ac) return;
+    const t = _ac.currentTime;
+    _musGlide = on ? { until: t + Math.max(duration || 0, 0.4) } : null;
+    for (const rate of _musRates()) {
+        try {
+            rate.cancelScheduledValues(t);
+            rate.setValueAtTime(rate.value, t);
+            if (on) {
+                rate.linearRampToValueAtTime(1.35, t + 0.12);  // quick surge on entry
+                rate.linearRampToValueAtTime(1.0, _musGlide.until);   // glide back down over the window
+            } else {
+                rate.linearRampToValueAtTime(1.0, t + 0.15);
+            }
+        } catch (e) {}
+    }
 }
 
 function _startTitleMusic() {
@@ -3267,11 +3290,15 @@ function _fzMusStart() {
     g.gain.setValueAtTime(0.0001, t);
     g.gain.linearRampToValueAtTime(FZ_MUS_GAIN, t + 0.05);
     lp.connect(g); g.connect(_musicBus);
-    _fzMus = { src: _fzMusGen(t, lp), g, lp };
+    const baked = _fzMusGen === _fzMusFutureDrop && _fzmLoop && _fzmLoop.ctx === _ac;
+    _fzMus = { src: baked ? _fzMusBaked(t, lp) : _fzMusGen(t, lp), g, lp };
+    if (_fzMus.src.rate) _musRateCarry(_fzMus.src.rate, n.playbackRate.value);
     return true;
 }
 
-// Returns true when the bed came back, so the caller can re-apply a running slow sag.
+// Returns true when the bed came back at rate 1 from a star whose music could not follow slow
+// and warp (the live generator), so the caller can re-apply a running slow sag. After the baked
+// loop the bed carries the loop's rate and finishes the glide itself, and this returns false.
 function _fzMusStop() {
     const m = _fzMus, t = _ac.currentTime; _fzMus = null;
     m.g.gain.cancelScheduledValues(t);
@@ -3284,7 +3311,9 @@ function _fzMusStop() {
     _bgmGain.gain.setValueAtTime(0.0001, t);
     _bgmGain.gain.linearRampToValueAtTime(BGM_GAIN, t + FZ_MUS_XFADE);
     _playBgmBuffer(at);
-    return true;
+    if (!m.src.rate || !_bgmNode) return true;
+    _musRateCarry(_bgmNode.playbackRate, m.src.rate.value);
+    return false;
 }
 
 // "Future Drop": Nebula's own genre one step up - supersaw chords pumping on the quarter under
@@ -3349,40 +3378,79 @@ function _fzmSaws(dest, f, t, dur, l, n, spread) {
     // Staggered starts: seven saws starting in phase add up to a spike on every chord onset.
     for (let i = 0; i < n; i++) _fzOsc('sawtooth', f, t + i * 0.0011, t + dur + 0.02, g, 1 / n).detune.value = (i / (n - 1) * 2 - 1) * spread;
 }
-function _fzMusFutureDrop(t, dest) {
+// The three buses one Future Drop plays through: root, the sidechained pump, the saws' lowpass.
+function _fzmNodes(dest, t) {
     const root = _ac.createGain(); root.connect(dest);
     const pump = _ac.createGain(); pump.connect(root); pump.gain.setValueAtTime(1, t);
-    const lp = _fzmFilt('lowpass', 3200, 0.9, pump);
+    return { root, pump, lp: _fzmFilt('lowpass', 3200, 0.9, pump) };
+}
+// One 16th of Future Drop: step st (0..31 of the two bars) at context time tt.
+function _fzmStep(st, tt, n) {
+    const seg = st < 16 ? 0 : st < 24 ? 1 : 2;
+    if (_FZM_SEG_LEN[st]) {
+        const dur = _FZM_SEG_LEN[st] * _FZ_S16, r = _FZM_ROOT[seg];
+        [..._FZM_TRI[seg], _FZM_TRI[seg][0] + 12].forEach(m => _fzmSaws(n.lp, _mtof(m), tt, dur, _FZM_LV.saw, 7, 22));
+        _fzOsc('sine', _mtof(r), tt, tt + dur, _fzmEnv(n.pump, tt, 0.01, _FZM_LV.sub, dur));
+        _fzOsc('triangle', _mtof(r + 12), tt, tt + dur, _fzmEnv(n.pump, tt, 0.01, _FZM_LV.sub2, dur));
+    }
+    if (st % 4 === 0) {
+        _fzmKick(n.root, tt, _FZM_LV.kick, _FZM_LV.kickMid);
+        n.pump.gain.setValueAtTime(0.22, tt); n.pump.gain.linearRampToValueAtTime(1, tt + 0.25);   // the sidechain
+    }
+    if (st % 8 === 4) _fzmClap(n.root, tt, _FZM_LV.clap);
+    _fzmHat(n.root, tt, st % 2 ? _FZM_LV.hatOff : _FZM_LV.hat);
+    if (_FZM_HOOK[st] !== undefined) _fzmPluck(n.root, _mtof(_FZM_HOOK[st]), tt, _FZM_LV.hook, 3800, 0.2);
+}
+function _fzMusFutureDrop(t, dest) {
+    const n = _fzmNodes(dest, t);
     const t0 = t + 5 * _FZ_S16, ctx = _ac;
     let s = 0, end = Infinity;
-    const step = (st, tt) => {
-        const seg = st < 16 ? 0 : st < 24 ? 1 : 2;
-        if (_FZM_SEG_LEN[st]) {
-            const dur = _FZM_SEG_LEN[st] * _FZ_S16, r = _FZM_ROOT[seg];
-            [..._FZM_TRI[seg], _FZM_TRI[seg][0] + 12].forEach(m => _fzmSaws(lp, _mtof(m), tt, dur, _FZM_LV.saw, 7, 22));
-            _fzOsc('sine', _mtof(r), tt, tt + dur, _fzmEnv(pump, tt, 0.01, _FZM_LV.sub, dur));
-            _fzOsc('triangle', _mtof(r + 12), tt, tt + dur, _fzmEnv(pump, tt, 0.01, _FZM_LV.sub2, dur));
-        }
-        if (st % 4 === 0) {
-            _fzmKick(root, tt, _FZM_LV.kick, _FZM_LV.kickMid);
-            pump.gain.setValueAtTime(0.22, tt); pump.gain.linearRampToValueAtTime(1, tt + 0.25);   // the sidechain
-        }
-        if (st % 8 === 4) _fzmClap(root, tt, _FZM_LV.clap);
-        _fzmHat(root, tt, st % 2 ? _FZM_LV.hatOff : _FZM_LV.hat);
-        if (_FZM_HOOK[st] !== undefined) _fzmPluck(root, _mtof(_FZM_HOOK[st]), tt, _FZM_LV.hook, 3800, 0.2);
-    };
     const tick = () => {
         if (_ac !== ctx) return;   // the context was rebuilt (_reviveAudioContext): this star's music is gone
         const horizon = Math.min(end, _ac.currentTime + FZ_MUS_AHEAD);
-        for (let tt = t0 + s * _FZ_S16; tt < horizon; tt = t0 + s * _FZ_S16) step(s++ % 32, tt);
+        for (let tt = t0 + s * _FZ_S16; tt < horizon; tt = t0 + s * _FZ_S16) _fzmStep(s++ % 32, tt, n);
         if (t0 + s * _FZ_S16 < end) setTimeout(tick, FZ_MUS_TICK_MS);
     };
     tick();
     return { stop(when) {
         const now = ctx.currentTime;
         end = Math.min(end, when === undefined ? now : when);
-        setTimeout(() => { try { root.disconnect(); } catch (e) {} }, (Math.max(0, end - now) + 1.5) * 1000);
+        setTimeout(() => { try { n.root.disconnect(); } catch (e) {} }, (Math.max(0, end - now) + 1.5) * 1000);
     } };
+}
+
+// Future Drop baked into a loop (2026-09-30), so a time bubble and a warp can ride its
+// playbackRate exactly like the bed's (bgmSetSlow / bgmSetWarp): tempo and pitch together. The
+// same voices, levels and chain as the live generator, rendered once per context into two
+// passes of the two bars; playback loops the second pass, whose start carries the first
+// pass's tails, so the seam is the music's own. Rendered in the background when the play track
+// starts; until it is there (or without OfflineAudioContext) a star uses the live generator.
+let _fzmLoop = null;       // { ctx, buf } for the context it was rendered for
+let _fzmLoopBusy = false;
+function _fzMusPrerender() {
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!_ac || !OAC || _fzmLoopBusy || (_fzmLoop && _fzmLoop.ctx === _ac)) return;
+    const live = _ac, L = 32 * _FZ_S16;
+    let off;
+    try { off = new OAC(2, Math.ceil(live.sampleRate * 2 * L), live.sampleRate); } catch (e) { return; }
+    _fzmLoopBusy = true;
+    _ac = off;   // the voice helpers build on _ac; schedule the whole render synchronously
+    try {
+        const n = _fzmNodes(off.destination, 0);
+        for (let s = 0; s < 64; s++) _fzmStep(s % 32, s * _FZ_S16, n);
+    } catch (e) { _ac = live; _fzmLoopBusy = false; return; }
+    _ac = live;
+    const done = buf => { _fzmLoopBusy = false; if (buf && _ac === live) _fzmLoop = { ctx: live, buf }; };
+    const p = off.startRendering();
+    if (p && p.then) p.then(done, () => done(null));
+    else off.oncomplete = e => done(e.renderedBuffer);   // older WebKit
+}
+function _fzMusBaked(t, dest) {
+    const src = _ac.createBufferSource(), L = 32 * _FZ_S16;
+    src.buffer = _fzmLoop.buf; src.loop = true; src.loopStart = L; src.loopEnd = 2 * L;
+    src.connect(dest);
+    src.start(t + 5 * _FZ_S16);   // the first downbeat on the fanfare's chord, as live
+    return { rate: src.playbackRate, stop(when) { try { src.stop(when === undefined ? _ac.currentTime : when); } catch (e) {} } };
 }
 
 // Returns true when a star's end brought the held play track back (see _fzMusStop).

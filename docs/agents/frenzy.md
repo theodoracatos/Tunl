@@ -65,7 +65,12 @@ scratch), the shield is not spent. Speed is unchanged - that is what separates i
   `bgmSetFrenzy`, `_fzMusGen` doc in `audio.js`): the track is held on the bar it reached,
   fades out, and resumes on that bar at the star's end; the star's music plays through its own
   chain and the pad stays off. A death inside a star collapses it like the bed (die() passes
-  `quiet`) and the song's ending follows. Slow and warp act on the held track only.
+  `quiet`) and the song's ending follows. **Slow and warp bend the star's music like the bed**
+  (2026-09-30, user's call): Future Drop plays as a baked loop (`_fzMusBaked`, rendered once per
+  context by `_fzMusPrerender()` when the play track starts), so `bgmSetSlow`/`bgmSetWarp` ride its
+  `playbackRate` (`_musRates()`); a source taking over mid-glide carries the rate and finishes
+  the glide (`_musRateCarry`, `_musGlide`), so no second sag at the star's end. Without
+  OfflineAudioContext, or before the render lands, the live generator plays and cannot follow.
   **The music is generated in code, never an mp3** (user: an epic mp3 excerpt and a silent star
   were both tried and dropped the same day, "gefaellt mir nicht"). Candidates on
   https://claude.ai/artifact/VDmLN9Jo5TSA8EpV6pVFmA (db `sternmusik/wahl`); the user picked

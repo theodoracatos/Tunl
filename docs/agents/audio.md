@@ -69,7 +69,9 @@ a "Knallfrosch" twice. Method, metrics and traps: `reference_audio_method` memor
   and the debriefing; the piano returns only on the title screen.
 - **A star can pause the music** (`bgmSetFrenzy`, `_fzMusGen`, rule in `frenzy.md`): the play
   track is held on its bar (`_bgmBarNow`, `BGM_BAR`) and resumes there while the star's own
-  generated music plays. No third music file: an mp3 excerpt was tried and removed.
+  generated music plays. No third music file: an mp3 excerpt was tried and removed. The
+  generated music is baked into a loop (`_fzMusPrerender`, same voices and levels as the live
+  generator) so slow and warp bend it like the bed; see `frenzy.md`.
 - **One sound, one meaning.** Hull scratch (`sfxHullScratch`) and revive (`sfxRevive`) do
   not reuse `sfxShieldBreak`.
 - **Stereo, centred on the ship** (`_sfxOut(x)`): cannon fire, mine blasts, rock hits and
