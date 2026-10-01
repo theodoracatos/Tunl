@@ -448,6 +448,49 @@ function touchCoin(type, setup) {
         r.n > 1000 && r.worst < 2.5);
 }
 
+// ── 9b. What killed the run (state.js deathWhat), web telemetry ────────────────
+// Catches: a kill site that files the wrong kind (deathCause lumps a crystal with its wall
+// and every free hazard under 'open'), a stale kind from an earlier run, and run_end losing
+// the cause or the position. Real update()/die()/commitDeath(); _tunlGA is the web head's
+// sender, stubbed to record what run_end would post.
+{
+    const kill = setup => {
+        const g = quietCave(true);
+        g(`_ga = []; window._tunlGA = (n, p) => _ga.push([n, p]);
+           shieldCount = 0; hullScratches = 0; invulnT = 0; wallGraceT = 0; deathWhat = 'stale';`);
+        g(setup);
+        return g(`(() => {
+            for (let i = 0; i < 60 * 5 && !_ga.some(e => e[0] === 'run_end'); i++) { if (phase === 'play') { holding = false; vy = 0; } update(1 / 60); }
+            const e = _ga.find(e => e[0] === 'run_end');
+            return { what: deathWhat, sent: e && e[1], sx: scrollX + PX };
+        })()`);
+    };
+    const cases = {
+        mine:  `mines.push({ wx: scrollX + PX + 2, baseY: py, phase: 0, bobAmp: 0 });`,
+        shot:  `cannonShots.push({ wx: scrollX + PX + 6, y: py, vx: 0, vy: 0 });`,
+        stal:  `{ const b = boundsAt(scrollX + PX + 4); stalactites.push({ wx: scrollX + PX + 4, isTop: true, length: (py - b.top) + PR * 2, width: PR * 3, fade: 1.0, dying: false }); }`,
+        wall:  `py = boundsAt(scrollX + PX).top + PR * 0.3;`,
+    };
+    for (const [want, setup] of Object.entries(cases)) {
+        const r = kill(setup);
+        check(`a ${want} kill is filed as deathWhat '${want}' and run_end carries it with the ship's world-x`,
+            r.what === want && r.sent && r.sent.cause === want && Math.abs(r.sent.wx - r.sx) <= 1);
+    }
+    // The rock mouth (approach.js): a player past the tutor, steered into the mouth's roof.
+    const m = boot(956, 440, { tunnel_best: '300', tunnel_record_reset_v15: '1' });
+    m(`_ga = []; window._tunlGA = (n, p) => _ga.push([n, p]); startPlay();`);
+    const mouth = m(`(() => {
+        for (let i = 0; i < 60 * 20 && !(startRamp >= 1 && approachLeft < PX + APPROACH_LIP * 0.5); i++) { holding = vy > 0 && py > H / 2; update(1 / 60); }
+        shieldCount = 0; hullScratches = 0; invulnT = 0; wallGraceT = 0;
+        py = PR * 1.1; vy = -50;
+        for (let i = 0; i < 60 * 5 && !_ga.some(e => e[0] === 'run_end'); i++) update(1 / 60);
+        const e = _ga.find(e => e[0] === 'run_end');
+        return { what: deathWhat, sent: e && e[1] };
+    })()`);
+    check(`a crash in the rock mouth is filed as 'mouth' with a negative world-x (${mouth.sent && mouth.sent.wx})`,
+        mouth.what === 'mouth' && mouth.sent && mouth.sent.cause === 'mouth' && mouth.sent.wx < 0);
+}
+
 // ── 10. Repair kit (systems.js spawnRepairKit / updateRepairKits) ────────────
 // Catches: a bullet kill that drops no kit, a kit leaking into `coins` (spawner vetoes
 // read it, so the daily cave would fork per player), a kit that no longer refills the hull

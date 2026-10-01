@@ -46,6 +46,14 @@ check('nicht-numerischer score -> 0', r.sent.body.events[0].params.score===0);
 r = await post({ cid: 'x', sid: '1' });
 check('kaputte cid -> 400', r.status===400);
 
+// 4b. death cause + position (2026-10-01): allowlisted cause, clamped wx, junk dropped
+r = await post({ cid: 'abcdef-0123', sid: '1', en: 'run_end', score: 6, run: 2, cause: 'edge', wx: -40 });
+check('run_end cause + wx', r.sent.body.events[0].params.cause==='edge' && r.sent.body.events[0].params.wx===-40, JSON.stringify(r.sent));
+r = await post({ cid: 'abcdef-0123', sid: '1', en: 'tt_dead', score: 6, cause: 'mine', wx: 1e15 });
+check('tt_dead cause, wx geklemmt', r.sent.body.events[0].params.cause==='mine' && r.sent.body.events[0].params.wx===100000000, JSON.stringify(r.sent));
+r = await post({ cid: 'abcdef-0123', sid: '1', en: 'run_end', score: 6, cause: '<b>x</b>' });
+check('fremde cause verworfen', !('cause' in r.sent.body.events[0].params) && !('wx' in r.sent.body.events[0].params), JSON.stringify(r.sent));
+
 // 5. no secret
 const r2 = await worker.fetch(new Request('https://w.dev/ga',{method:'POST',body:'{}'}), { GA_MEASUREMENT_ID:'G' });
 check('ohne Secret -> 501', r2.status===501);

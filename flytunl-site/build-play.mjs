@@ -281,7 +281,9 @@ const TT_GA_DEFAULT = { source: 'tiktok', medium: 'referral', campaign: 'tt_land
 // The input buckets after them are counted once at the first death (tt-tail.js teleEnd):
 // exactly one of hold0 / lost / tap / hold / holdall, plus cancel on top.
 const TT_STEPS = ['ready', 'run', 'press', 'practice', 'cave', 'dead', 'pitch', 'store-ios', 'store-android', 'run2',
-  'hold0', 'lost', 'tap', 'hold', 'holdall', 'cancel'];
+  'hold0', 'lost', 'tap', 'hold', 'holdall', 'cancel',
+  // first death's cause (tt-tail.js TT_DIE = src/state.js deathWhat values), 2026-10-01
+  'die-wall', 'die-edge', 'die-mouth', 'die-stal', 'die-mine', 'die-boulder', 'die-shot'];
 
 // Source edits that exist in /tt/'s bundle only - never in /play/, never in the apps, and
 // never in src/, so a /tt/ change needs no /play/ release. Each anchor must match exactly

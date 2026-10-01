@@ -274,6 +274,16 @@ async function handleReferralClaim(request, db) {
 const GA_EVENTS = new Set(['page_view', 'run_start', 'run_end', 'pitch_open', 'store_click',
   'tt_ready', 'tt_dead', 'tt_run2', 'tt_press', 'tt_cave']);
 
+// What killed a run (src/state.js deathWhat), sent with run_end and tt_dead since 2026-10-01.
+// An allowlist like GA_EVENTS: anything else is dropped, never forwarded as free text.
+const DEATH_WHAT = new Set(['wall', 'edge', 'mouth', 'stal', 'mine', 'boulder', 'shot']);
+function deathParams(body, params) {
+  const c = String(body.cause || '');
+  if (DEATH_WHAT.has(c)) params.cause = c;
+  // world-x of the ship at death; negative = still in the rock mouth before the cave
+  if (body.wx !== undefined) params.wx = clampInt(body.wx, -100000, 100000000, 0);
+}
+
 // Coerce an untrusted value to an integer inside [lo, hi], falling back to
 // `dflt` for anything non-numeric. Every number this endpoint forwards to GA4
 // comes from a public POST, so none of them are trusted.
@@ -327,10 +337,12 @@ async function handleGA(request, measurementId, apiSecret) {
   if (en === 'run_end') {
     params.score = clampInt(body.score, 0, 9999999, 0);
     params.run_index = clampInt(body.run, 1, 9999, 1);
+    deathParams(body, params);
   }
 
   if (en === 'tt_dead') {
     params.score = clampInt(body.score, 0, 9999999, 0);
+    deathParams(body, params);
     // /tt/ input telemetry of the first run (flytunl-site/tt/tt-tail.js "Input"): did the
     // player hold at all, and did the webview let the hold last. Counts and ms, clamped.
     for (const k of ['presses', 'holds', 'cancels', 'ctx', 'blurs']) {

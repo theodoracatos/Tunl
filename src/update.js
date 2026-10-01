@@ -724,7 +724,7 @@ function update(dt) {
             // Flight plan: wall mistakes cost a scratch, not the run (constants.js HULL_SCRATCHES).
             // A shield goes first (die() spends it), the hull only scratches once it is gone.
             if (hullScratches > 0 && shieldCount === 0) { hullScratch(b.top, b.bot, cPR); break; }
-            deathCause = (py - cPR < b.top) ? 'wallTop' : 'wallBot';
+            deathCause = (py - cPR < b.top) ? 'wallTop' : 'wallBot'; deathWhat = 'wall';
             markDeathHit(PX + dx, (py - cPR < b.top) ? b.top : b.bot, cPR);
             if (die()) return;
             break;
@@ -734,7 +734,7 @@ function update(dt) {
         if (invulnT > 0 || warpTime > 0 || wallGraceT > 0 || frenzyTime > 0) clampShipToWall(0, H, cPR);
         else if (hullScratches > 0 && shieldCount === 0) hullScratch(0, H, cPR);
         else {
-            deathCause = (py - cPR < 0) ? 'wallTop' : 'wallBot';
+            deathCause = (py - cPR < 0) ? 'wallTop' : 'wallBot'; deathWhat = 'edge';
             markDeathHit(PX, (py - cPR < 0) ? 0 : H, cPR);
             if (die()) return;
         }
@@ -760,7 +760,7 @@ function update(dt) {
                 continue;
             }
             s.gz = 2;
-            deathCause = s.isTop ? 'wallTop' : 'wallBot';
+            deathCause = s.isTop ? 'wallTop' : 'wallBot'; deathWhat = 'stal';
             const sb = boundsAt(s.wx), sfy = stalFallY(s);
             markDeathHit(s.wx - scrollX, s.isTop ? sb.top + s.length + sfy : sb.bot - s.length, s.width);
             if (die()) {
@@ -837,7 +837,7 @@ function update(dt) {
                 frenzySmash('mine', sx, my);
                 continue;
             }
-            deathCause = 'open';
+            deathCause = 'open'; deathWhat = 'mine';
             markDeathHit(sx, my, MINE_R);
             // The mine detonates whatever happens next (death, shield, grace window), so
             // it gets the same boom as a shot-down mine, layered under die()'s own cue.
@@ -870,7 +870,7 @@ function update(dt) {
                 continue;
             }
             bo.gz = 2;
-            deathCause = 'open';
+            deathCause = 'open'; deathWhat = 'boulder';
             markDeathHit(Math.max(sx - bo.hl, Math.min(sx + bo.hl, PX)), bo.y, bo.r);
             if (die()) return;
             // Shield absorbed - shove the ship clear of the rock, out over whichever
@@ -919,7 +919,7 @@ function update(dt) {
                 frenzySmash('shot', sx, s.y);
                 continue;
             }
-            deathCause = 'open';
+            deathCause = 'open'; deathWhat = 'shot';
             markDeathHit(sx, s.y, CANNON_SHOT_R);
             if (die()) return;
             // Shield absorbed - destroy the shot so it can't immediately re-hit
@@ -1195,9 +1195,11 @@ function commitDeath() {
     // rather than die() so a rewarded continue does not count as a finished run,
     // matching every other end-of-run bookkeeping here. `run` is the lifetime run
     // count, which is what separates "bounced after one go" from "kept playing".
-    // Inert outside the web build - see startPlay's run_start hook.
+    // Inert outside the web build - see startPlay's run_start hook. `cause` (deathWhat) and `wx`
+    // (world-x of the ship, negative in the rock mouth) say what killed the run and where
+    // (2026-10-01: web players' daily bests sat at score 5-27, before any hazard).
     if (typeof window !== 'undefined' && window._tunlGA) {
-        window._tunlGA('run_end', { score: score, run: totalRuns });
+        window._tunlGA('run_end', { score: score, run: totalRuns, cause: deathWhat || '', wx: Math.round(scrollX + PX - approachLeft) });
     }
     runsWithoutPB = newBest ? 0 : runsWithoutPB + 1;
     newDailyBest = score > dailyBest;

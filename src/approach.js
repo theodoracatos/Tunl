@@ -255,7 +255,7 @@ function approachUpdate(dt) {
             if (invulnT > 0 || wallGraceT > 0) clampShipToWall(top, bot, r);
             else if (hullScratches > 0 && shieldCount === 0) hullScratch(top, bot, r);
             else {
-                deathCause = hitTop ? 'wallTop' : 'wallBot';
+                deathCause = hitTop ? 'wallTop' : 'wallBot'; deathWhat = 'mouth';
                 markDeathHit(PX, edge, r);
                 die();
             }

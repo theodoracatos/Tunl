@@ -145,7 +145,7 @@ function titleScreen() {
     chicaneCoins = []; lastChicaneCoinWx = -Infinity;
     gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; slowPending = 0; slowFxVis = 0; slowFxPulseT = -1; shieldCount = 0; shieldFlash = 0; magnetTime = 0; magnetTimeMax = 0; laserTime = 0; laserTimeMax = 0; laserEndX = 0; notifs = []; hudSparks = []; hudBump = 0;
     hudLaneFx = {}; hudLaneSparks = []; hudAmmoEjects = []; hudHullHitT = -9;
-    invulnT = 0; wallGraceT = 0; deathCause = null;
+    invulnT = 0; wallGraceT = 0; deathCause = null; deathWhat = null;
     safeEndWx = 0; safeCloseWx = 1; wallsLiveShown = false;
     hullScratches = 0; lastSectorShown = 0; repairKits = []; hullRepairFlash = 0;
     continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;
@@ -224,7 +224,7 @@ function startPlay() {
     chicaneCoins = []; lastChicaneCoinWx = -Infinity;
     gapBonus = 0; gapBonusVisual = 0; slowTime = 0; slowTimeMax = 0; slowPending = 0; slowFxVis = 0; slowFxPulseT = -1; shieldCount = 0; shieldFlash = 0; magnetTime = 0; magnetTimeMax = 0; laserTime = 0; laserTimeMax = 0; laserEndX = 0; notifs = []; hudSparks = []; hudBump = 0;
     hudLaneFx = {}; hudLaneSparks = []; hudAmmoEjects = []; hudHullHitT = -9;
-    invulnT = 0; wallGraceT = 0; deathCause = null;
+    invulnT = 0; wallGraceT = 0; deathCause = null; deathWhat = null;
     frenzyMeter = 0; frenzyCost = FRENZY_FIRST_COST; frenzyTime = 0; frenzyPending = false; frenzyHits = 0;
     runFrenzies = 0; runFrenzySmashes = 0; frenzyStartT = -9; frenzyChargeT = 0; frenzyGrindT = 0;
     frenzyHitStopT = 0; frenzyLastStopT = -9; frenzyImpacts = [];

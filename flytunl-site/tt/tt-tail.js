@@ -298,6 +298,7 @@
     // - plus /tt/cancel/ when at least one cancel came in. Run start = the frame phase
     // becomes 'play' (startPlay), so first_ms includes the launch ramp.
     var HOLD_MS = 300, HOLDALL_FRAC = 0.8;
+    var TT_DIE = ['wall', 'edge', 'mouth', 'stal', 'mine', 'boulder', 'shot'];   // = build-play.mjs TT_STEPS die-*
     var tele = null;
     function inPlay() { return phase === 'play'; }
     window.addEventListener('pointerdown', function () { if (tele && inPlay()) tele.presses++; }, true);
@@ -336,9 +337,13 @@
             score: score, presses: t.presses, holds: t.holds, first_ms: Math.round(t.first),
             max_ms: Math.round(t.max), held_ms: Math.round(t.held), run_ms: runMs,
             cancels: t.cancels, ctx: t.ctx, blurs: t.blurs,
+            cause: deathWhat || '', wx: Math.round(scrollX + PX - approachLeft),
         });
         count(bucket);
         if (t.cancels) count('cancel');
+        // What killed the first run (2026-10-01: web daily bests sat at score 5-27, before any
+        // hazard): one bucket per src/state.js deathWhat value, /tt/die-<what>/.
+        if (TT_DIE.indexOf(deathWhat) >= 0) count('die-' + deathWhat);
     }
 
     // ── City funnel (2026-10-01) ──────────────────────────────────────────────
@@ -376,7 +381,7 @@
     //   ready  the game has loaded and the start screen is live (tt_ready)
     //   run    the first run started (run_start, from lifecycle.js)
     //   press / practice / cave  see "City funnel" above (tt_press, tt_cave)
-    //   dead   the first run ended (tt_dead {score})
+    //   dead   the first run ended (tt_dead {score, cause, wx}); die-<what> = its cause (TT_DIE)
     //   pitch  the app card opened (pitch_open {auto}: 1 = opened by itself at the first
     //          death, 0 = from the continue ring of a later run)
     //   store-ios / store-android  a store button (store_click {store}, every tap)

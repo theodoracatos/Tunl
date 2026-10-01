@@ -662,6 +662,11 @@ const MAX_DEATH_MARKERS = 25;
 // in that wall) -> the ring hangs on that wall; 'open' (mine / cannon shot) -> corridor
 // centre. null -> fall back to whichever wall py was nearer.
 let deathCause = null;
+// The kind of thing that landed the fatal hit, finer than deathCause (which files a crystal under
+// its wall and every free hazard under 'open'): 'wall' | 'edge' (the screen edge) | 'mouth' (the rock
+// mouth, approach.js) | 'stal' | 'mine' | 'boulder' | 'shot'. Set beside deathCause; read only by
+// web telemetry (run_end in commitDeath, /tt/ tt_dead), so it changes nothing in play.
+let deathWhat = null;
 // Where the fatal hit landed, in SCREEN coords, plus the radius of whatever landed it.
 // Set at the same collision sites as deathCause just above, and read only by draw.js's
 // freeze-frame (DEATH_REPLAY_SEC) to ring the thing that killed the player before the
