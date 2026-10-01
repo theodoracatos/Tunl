@@ -74,6 +74,12 @@ r = await post({ cid: 'abcdef-0123', sid: '1', en: 'tt_dead', score: 5, presses:
 const tp = r.sent.body.events[0].params;
 check('tt_dead input telemetry', tp.presses===3 && tp.holds===2 && tp.first_ms===-1 && tp.max_ms===180 && tp.run_ms===6300 && tp.cancels===1 && tp.blurs===0, JSON.stringify(tp));
 check('tt_dead clamps + drops unknown', tp.held_ms===3600000 && tp.ctx===0 && tp.evil===undefined, JSON.stringify(tp));
+// /tt/ press + cave steps (2026-10-01)
+r = await post({ cid: 'abcdef-0123', sid: '1', en: 'tt_press', first_press_ms: 2345.7, evil: 'no' });
+const pp = r.sent.body.events[0].params;
+check('tt_press first_press_ms', r.status===200 && r.sent.body.events[0].name==='tt_press' && pp.first_press_ms===2345 && pp.evil===undefined, JSON.stringify(r.sent));
+r = await post({ cid: 'abcdef-0123', sid: '1', en: 'tt_cave', cave_ms: -5 });
+check('tt_cave cave_ms geklemmt', r.status===200 && r.sent.body.events[0].params.cave_ms===0 && r.sent.body.events[0].params.first_press_ms===undefined, JSON.stringify(r.sent));
 r = await post({ cid: 'abcdef-0123', sid: '1', en: 'pitch_open', auto: 1 });
 check('pitch_open auto=1', r.sent.body.events[0].params.auto===1, JSON.stringify(r.sent));
 r = await post({ cid: 'abcdef-0123', sid: '1', en: 'pitch_open', auto: 7 });

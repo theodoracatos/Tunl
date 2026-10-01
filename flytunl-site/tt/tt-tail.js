@@ -341,10 +341,41 @@
         if (t.cancels) count('cancel');
     }
 
+    // ── City funnel (2026-10-01) ──────────────────────────────────────────────
+    // Since 2026-09-30 a tutor run waits over the city for the first press (approach.js
+    // tutorWaiting) and then flies a practice line of beads before the mountain comes, so a
+    // run nobody steers no longer dies: tt_0210 had run 232 against dead 13. Three steps of
+    // the FIRST run split that gap, each counted at most once per page view:
+    //   press     the first press of the run, tap or hold (the game's own hasHeldThisRun);
+    //             GA tt_press {first_press_ms}, run start -> press, launch ramp included
+    //   practice  the practice flight began (tutorPracticing): equals press on a tutor run
+    //             whose press came after the launch ramp; missing when the tutor is off
+    //             (best >= TUTOR_BEST_MAX) or the press came during the ramp
+    //   cave      the ship reached world-x 0, the cave (approachLeft is the camera's
+    //             offset before it); GA tt_cave {cave_ms}, run start -> cave
+    // Read-only, like the telemetry above; a game global that went missing in a later
+    // src change stops these counts, never the page.
+    var city = null;
+    function cityFrame(ts) {
+        if (!city || phase !== 'play') return;
+        try {
+            if (!city.press && hasHeldThisRun) {
+                city.press = true;
+                ga('tt_press', { first_press_ms: Math.round(ts - city.t0) }); count('press');
+            }
+            if (!city.practice && tutorPracticing()) { city.practice = true; count('practice'); }
+            if (!city.cave && scrollX + PX - approachLeft >= 0) {
+                city.cave = true;
+                ga('tt_cave', { cave_ms: Math.round(ts - city.t0) }); count('cave');
+            }
+        } catch (e) { city = null; }
+    }
+
     // ── Per-frame state ───────────────────────────────────────────────────────
     // Funnel steps (Cloudflare path /tt/<step>/, GA event in brackets):
     //   ready  the game has loaded and the start screen is live (tt_ready)
     //   run    the first run started (run_start, from lifecycle.js)
+    //   press / practice / cave  see "City funnel" above (tt_press, tt_cave)
     //   dead   the first run ended (tt_dead {score})
     //   pitch  the app card opened (pitch_open {auto}: 1 = opened by itself at the first
     //          death, 0 = from the continue ring of a later run)
@@ -368,11 +399,13 @@
         if (phase === 'play' && lastPhase !== 'play' && lastPhase !== 'revive') {
             runs++;
             teleStart(ts);
-            if (runs === 1) { TT.firstRun = false; root.classList.remove('tt-fresh'); count('run'); }
+            if (runs === 1) { TT.firstRun = false; root.classList.remove('tt-fresh'); count('run'); city = { t0: ts }; }
             if (runs === 2) { ga('tt_run2'); count('run2'); }
         }
         if (phase !== 'title') hideSplash();
         teleFrame(ts);
+        cityFrame(ts);
+        if (phase === 'dead') city = null;
         if (tele && phase === 'dead') teleEnd(ts, !dead);
 
         if (!dead && phase === 'dead') {

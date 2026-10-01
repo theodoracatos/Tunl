@@ -280,7 +280,7 @@ const TT_GA_DEFAULT = { source: 'tiktok', medium: 'referral', campaign: 'tt_land
 // In funnel order (tt-tail.js has what each one means). run2 sits off the main line.
 // The input buckets after them are counted once at the first death (tt-tail.js teleEnd):
 // exactly one of hold0 / lost / tap / hold / holdall, plus cancel on top.
-const TT_STEPS = ['ready', 'run', 'dead', 'pitch', 'store-ios', 'store-android', 'run2',
+const TT_STEPS = ['ready', 'run', 'press', 'practice', 'cave', 'dead', 'pitch', 'store-ios', 'store-android', 'run2',
   'hold0', 'lost', 'tap', 'hold', 'holdall', 'cancel'];
 
 // Source edits that exist in /tt/'s bundle only - never in /play/, never in the apps, and
