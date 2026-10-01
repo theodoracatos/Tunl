@@ -1648,5 +1648,95 @@ const FAKE_AC = `(() => {
         shown(80) === true && shown(cap - 1) === true && shown(cap) === false);
 }
 
+// ── Ads: continue by runs, app events, shards chip (2026-10-01) ─────────────
+// constants.js CONTINUE_RUN_FROM doc, state.js appEvent, draw.js reward chips. Real die(),
+// onDown(), update() and drawDeathScreen(); the ads bridge records what reaches native.
+{
+    const g = quietCave();
+    // No AudioContext in Node: a tap only wakes audio, which is not under test here.
+    g(`_initAC = function () {}; _posted = []; window.webkit.messageHandlers.ads = { postMessage(m) { _posted.push(m); } };
+       this._reset = function (runs, sc) {
+           phase = 'play'; continueOfferPending = false; continueAdPending = false; continuesUsedThisRun = 0;
+           deadT = 0; shieldCount = 0; invulnT = 0; rewardedAdReady = true; dailyRuns = runs; score = sc; _posted = [];
+       };`);
+    const offer = (runs, sc, extra = '') => g(`(() => { _reset(${runs}, ${sc}); ${extra} die(true);
+        const ev = _posted.find(m => m.action === 'event' && m.name === 'ad_offer');
+        return { pending: continueOfferPending, early: continueOfferEarly, ev: ev ? ev.params : null }; })()`);
+    const r2 = offer(2, 10), r3 = offer(3, 10), r4 = offer(4, 10), r6 = offer(6, 10), r4hi = offer(4, 80);
+    const mouth = offer(3, 10, 'approachLeft = 40;');
+    g('approachLeft = 0;');
+    check('a short run gets no continue offer before the CONTINUE_RUN_FROM-th run of the day',
+        r2.pending === false && r2.ev === null);
+    check('from that run on, every CONTINUE_RUN_EVERY-th run offers it at any score, logged as early',
+        r3.pending && r3.early && r3.ev && r3.ev.early === 1 && r4.pending === false && r6.pending && r6.early);
+    check('a run past the score floor is offered as before and not marked early',
+        r4hi.pending && r4hi.early === false && r4hi.ev.early === 0);
+    check('no run-route offer over the city or in the rock mouth (approachLeft > 0)', mouth.pending === false);
+
+    // Declining: a tap off the ring ends an early offer once CONTINUE_EARLY_DECLINE_SEC has
+    // shown; a floor offer keeps swallowing taps; an untouched offer times out. Each logs
+    // one ad_result, and the committed death logs run_end.
+    const tapAt = (runs, sc, sec) => g(`(() => { _reset(${runs}, ${sc}); lastRunScore = -1; die(true);
+        for (let i = 0; i < 600 && deadT < ${sec}; i++) update(1 / 60);
+        onDown({ clientX: 3, clientY: 3, pointerId: 1 });
+        const res = _posted.filter(m => m.name === 'ad_result').map(m => m.params.how);
+        const end = _posted.find(m => m.name === 'run_end');
+        return { pending: continueOfferPending, committed: lastRunScore === ${sc}, res, end: end ? end.params : null }; })()`);
+    const early = g('DEATH_REPLAY_SEC + CONTINUE_EARLY_DECLINE_SEC');
+    const tooSoon = tapAt(3, 10, early - 0.1), offTap = tapAt(3, 10, early + 0.05), floorTap = tapAt(3, 80, early + 0.05);
+    check('a tap off the ring before CONTINUE_EARLY_DECLINE_SEC is swallowed', tooSoon.pending === true);
+    check(`after it a tap off the ring declines an early offer at once (${early.toFixed(2)} s) and commits the death`,
+        offTap.pending === false && offTap.committed && offTap.res.join() === 'tap');
+    check('an offer by the score floor still swallows a tap off the ring', floorTap.pending === true && floorTap.res.length === 0);
+    check('the committed death sends run_end with score, day run, best and cause',
+        offTap.end && offTap.end.score === 10 && offTap.end.day_run === 3 && typeof offTap.end.best === 'number'
+        && typeof offTap.end.sec === 'number' && 'cause' in offTap.end);
+    const timeout = g(`(() => { _reset(3, 10); die(true);
+        for (let i = 0; i < 60 * 6 && continueOfferPending; i++) update(1 / 60);
+        return _posted.filter(m => m.name === 'ad_result').map(m => m.params.how).join(); })()`);
+    check('an untouched offer times out and logs ad_result timeout once', timeout === 'timeout');
+    const watched = g(`(() => { _reset(3, 10); die(true); grantRevive();
+        const r = _posted.find(m => m.name === 'ad_result'); return r ? r.params.granted + r.params.how : ''; })()`);
+    check('a watched continue logs ad_result granted', watched === '1watched');
+    const start = g(`(() => { _posted = []; startPlay(); const e = _posted.find(m => m.name === 'run_start');
+        return e ? e.params : null; })()`);
+    check('startPlay sends run_start with the lifetime and day run counts', start && start.run > 0 && start.day_run > 0);
+
+    // The day's shards video as a reward chip on the death screen, and a real tap on it.
+    const chip = (setup) => g(`(() => { _reset(1, 10); rewardedAdReady = false; ${setup} die(true);
+        for (let i = 0; i < 60 * 3; i++) { update(1 / 60); draw(); }
+        const c = _shardsChipRect, play = _playBtnRect; let tap = null;
+        if (c) { _posted = []; onDown({ clientX: c.x + c.w / 2, clientY: c.y + c.h / 2, pointerId: 1 });
+                 tap = { req: _posted.some(m => m.action === 'shardsAdRequest'), pending: shardsAdPending, src: shardsAdSource, phase: phase }; }
+        shardsAdPending = false;
+        return { c, play: play ? { y: play.y } : null, tap, W: W }; })()`);
+    const on = chip('runCoins = 5; shardsAdReady = true; shardsAdClaimedToday = false; shardsAdPending = false;');
+    const claimed = chip('runCoins = 5; shardsAdReady = true; shardsAdClaimedToday = true;');
+    const noCoins = chip('runCoins = 0; shardsAdReady = true; shardsAdClaimedToday = false;');
+    check('a run that banked shards shows the shards-video chip while the day\'s video is unclaimed',
+        on.c !== null && claimed.c === null && noCoins.c === null);
+    check('a tap on the chip asks native for the shards video, from the death screen, and starts no run',
+        on.tap && on.tap.req && on.tap.pending && on.tap.src === 'death' && on.tap.phase === 'dead');
+    // Every language, and a short phone: the chip stays left of the world column and above the buttons.
+    let worst = null;
+    for (const [w, h] of [[956, 440], [808, 371]]) {
+        const q = boot(w, h);
+        q(AUTOPILOT); q('startPlay()');
+        q(`for (let i = 0; i < 20000 && (scrollX < 4200 || approachLeft > 0 || startRamp < 1); i++) { shieldCount = 9; hullScratches = HULL_SCRATCHES; _pilot(); update(1 / 60); }`);
+        q(`window.webkit.messageHandlers.ads = { postMessage() {} }; shieldCount = 0; invulnT = 0; rewardedAdReady = false;
+           runCoins = 5; shardsAdReady = true; shardsAdClaimedToday = false; die(true);
+           for (let i = 0; i < 60 * 3; i++) update(1 / 60);`);
+        for (const code of q('Object.keys(LANGS)')) {
+            const r = q(`(() => { setLang('${code}'); draw(); const c = _shardsChipRect, p = _playBtnRect;
+                return c ? { right: (c.x + c.w) / W, bottom: c.y + c.h, btn: p.y } : null; })()`);
+            const bad = !r || r.right > 0.5705 || r.bottom > r.btn;
+            if (bad && !worst) worst = `${code} ${w}x${h} ${JSON.stringify(r)}`;
+        }
+        q("setLang('en')");
+    }
+    check(`in every language the shards chip fits the left column above the buttons${worst ? ' - ' + worst : ''}`, worst === null);
+    g('delete window.webkit.messageHandlers.ads;');
+}
+
 if (failed) { console.log(`\n${failed} check(s) failed.`); process.exit(1); }
 console.log('\nThe real game runs headless and every simulated rule holds.');

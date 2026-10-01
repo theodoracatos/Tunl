@@ -84,6 +84,7 @@ window._tunlShardsRewardGranted = function () {
     if (!shardsAdPending) return;
     shardsAdPending = false;
     if (shardsAdClaimedToday) return;   // belt-and-braces against a double fire
+    appEvent('ad_result', { format: 'shards', granted: 1, how: 'watched', src: shardsAdSource });
     shards += SHARDS_AD_REWARD;
     shardsAdClaimedToday = true;
     localStorage.setItem('tunnel_shards', shards);
@@ -91,6 +92,7 @@ window._tunlShardsRewardGranted = function () {
     sfxMissionDone();   // already the "you earned shards" chime
 };
 window._tunlShardsRewardDeclined = function () {
+    if (shardsAdPending) appEvent('ad_result', { format: 'shards', granted: 0, how: 'closed', src: shardsAdSource });
     shardsAdPending = false;
 };
 

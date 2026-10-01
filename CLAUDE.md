@@ -179,6 +179,7 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 ### Ads, economy, liveries -> `docs/agents/economy.md`
 - Ad floor `MIN_REAL_RUN_SCORE` is mirrored in `AdsManager.swift`/`.kt` and `ads-web.js` - keep all four in sync.
 - Rewarded continue repairs the hull, no extra shield. Web's offer slot pitches the app and **never grants a revive**.
+- The continue also comes by runs (`CONTINUE_RUN_FROM`/`_EVERY`, apps only, no score number); such an early offer is declined by a tap off the ring. The day's shards video is also a death-screen chip. Apps log run/ad events via `appEvent()` - read them before changing an ad rule.
 - Shard ladder is set so stardust binds at every tier - re-run the numbers before changing either side.
 - The day rolls over in `dayRollover()` (`lifecycle.js`), called from the title **and** from `startPlay()`. Every 7th unbroken day pays a bonus ✦, `STREAK_WEEK_SHARDS` outside the cap and one rest day; a rest day absorbs a single missed day, banked ✦ is never taken away, `bestStreak` only grows.
 - Hangar paint (`paint.js`) is a kit (hull colour, pattern, accent, finish, effect): purely visual, parts bought once, combined per ship. The hull may change hue; the ship's **light** (glow, nozzles, strobes) never does.

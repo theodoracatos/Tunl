@@ -122,6 +122,7 @@ function update(dt) {
         // short once. CONTINUE_OFFER_SEC keeps meaning "seconds the offer is on screen".
         if (continueOfferPending && !continueAdPending && !webPromoOn && deadT >= CONTINUE_OFFER_SEC + DEATH_REPLAY_SEC) {
             continueOfferPending = false;
+            continueOfferLost('timeout');
             commitDeath();
         }
         return;
@@ -1100,7 +1101,7 @@ function die(bypassShield = false) {
     bgmSetWarp(false);
     phase = 'dead'; deadT = 0; flashA = 1.0; shake = 14; holding = false; tapBurstT = 0;
     _shareCopiedT = 0;
-    _homeBtnRect = null; _playBtnRect = null; _shareBtnRect = null; _continueBtnRect = null;
+    _homeBtnRect = null; _playBtnRect = null; _shareBtnRect = null; _continueBtnRect = null; _shardsChipRect = null;
     _promoAppleBtnRect = null; _promoPlayBtnRect = null;
     // Impact feedback fires now, unconditionally -- a hit should always feel like a
     // hit, whether or not a rewarded continue ends up saving the run a moment later
@@ -1123,13 +1124,31 @@ function die(bypassShield = false) {
     // flytunl-site/tt/tt-tail.js, for a first run); the apps never read it.
     const offerFloor = (isWeb() && typeof window._tunlWebPitchFloor === 'number')
         ? window._tunlWebPitchFloor : CONTINUE_MIN_SCORE;
-    if (continuesUsedThisRun < MAX_CONTINUES_PER_RUN && score >= offerFloor
+    // Second route, by runs (constants.js CONTINUE_RUN_FROM doc): apps only, tunnel only.
+    const earlyOffer = score < offerFloor && continueRunTurn();
+    if (continuesUsedThisRun < MAX_CONTINUES_PER_RUN && (score >= offerFloor || earlyOffer)
         && (rewardedAdReady || isWeb())) {
         continueOfferPending = true;
+        continueOfferEarly = earlyOffer;
+        appEvent('ad_offer', { format: 'continue', score: score, early: earlyOffer ? 1 : 0, day_run: dailyRuns });
         return true;
     }
     commitDeath();
     return true;
+}
+
+// The run route to the continue offer (constants.js CONTINUE_RUN_FROM doc): this run of
+// the day may offer it at any score. Never on web, never over the city or in the rock
+// mouth (approachLeft > 0), where a revive has no corridor to recentre into.
+function continueRunTurn() {
+    if (isWeb() || approachLeft > 0 || dailyRuns < CONTINUE_RUN_FROM) return false;
+    return (dailyRuns - CONTINUE_RUN_FROM) % CONTINUE_RUN_EVERY === 0;
+}
+
+// The continue offer ended without a revive: 'timeout' (no tap), 'tap' (a tap off an early
+// offer's ring), 'failed' (native could not show or reward the ad). One event per offer.
+function continueOfferLost(how) {
+    appEvent('ad_result', { format: 'continue', granted: 0, how: how, early: continueOfferEarly ? 1 : 0 });
 }
 
 // Store rating prompt (constants.js REVIEW_MIN_SCORE/REVIEW_COOLDOWN_MS doc block).
@@ -1198,6 +1217,13 @@ function commitDeath() {
     // Inert outside the web build - see startPlay's run_start hook. `cause` (deathWhat) and `wx`
     // (world-x of the ship, negative in the rock mouth) say what killed the run and where
     // (2026-10-01: web players' daily bests sat at score 5-27, before any hazard).
+    // The apps' half of the same (state.js appEvent; no-op on web), with the same cause and
+    // wx plus the day's run count, the all-time best after this run and its length in seconds.
+    appEvent('run_end', {
+        score: score, run: totalRuns, day_run: dailyRuns, best: best, new_best: newBest ? 1 : 0,
+        sec: Math.round((performance.now() - _webRunStartMs) / 1000),
+        cause: deathWhat || '', wx: Math.round(scrollX + PX - approachLeft),
+    });
     if (typeof window !== 'undefined' && window._tunlGA) {
         window._tunlGA('run_end', { score: score, run: totalRuns, cause: deathWhat || '', wx: Math.round(scrollX + PX - approachLeft) });
     }
@@ -1424,6 +1450,7 @@ function commitDeath() {
 // commitDeath()'s bookkeeping, because commitDeath() never ran for this hit --
 // die() held it behind continueOfferPending instead of committing then undoing.
 function grantRevive() {
+    appEvent('ad_result', { format: 'continue', granted: 1, how: 'watched', early: continueOfferEarly ? 1 : 0 });
     continueOfferPending = false;
     continueAdPending = false;
     continuesUsedThisRun++;
@@ -1475,6 +1502,7 @@ function grantRevive() {
 // separate "declined" bookkeeping path.
 function declineRevive() {
     if (!continueOfferPending) return; // already resolved (timeout or a second callback)
+    if (!isWeb()) continueOfferLost('failed');
     continueOfferPending = false;
     continueAdPending = false;
     commitDeath();

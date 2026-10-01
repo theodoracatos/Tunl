@@ -198,6 +198,23 @@ class MainActivity : ComponentActivity() {
         })();
     """.trimIndent()
 
+    // App analytics (src/state.js appEvent), mirror of GameView.swift's "event" case: a
+    // Firebase custom event per run start/end and per rewarded-ad offer/result. Only
+    // numbers and short strings are passed on; booleans arrive as 0/1 from the game.
+    private fun logAppEvent(name: String, params: JSONObject?) {
+        if (name.isEmpty()) return
+        val bundle = Bundle()
+        params?.keys()?.forEach { k ->
+            when (val v = params.opt(k)) {
+                is Int -> bundle.putLong(k, v.toLong())
+                is Long -> bundle.putLong(k, v)
+                is Double -> bundle.putDouble(k, v)
+                is String -> bundle.putString(k, v.take(100))
+            }
+        }
+        FirebaseAnalytics.getInstance(this).logEvent(name, bundle)
+    }
+
     // Mirrors the iOS wrapper's WKScriptMessageHandler bridge: the game code calls
     // window.webkit.messageHandlers.{gameCenter,iap,ads}.postMessage({...}) unmodified
     // on both platforms, funneled here via the shim above.
@@ -231,6 +248,7 @@ class MainActivity : ComponentActivity() {
                         "reviveRequest" -> ads.requestRevive(body.optInt("score"))
                         "shardsAdRequest" -> ads.requestShardsAd()
                         "privacyOptions" -> ads.showPrivacyOptionsForm(this@MainActivity)
+                        "event" -> logAppEvent(body.optString("name"), body.optJSONObject("params"))
                     }
                     "notifications" -> when (body.optString("action")) {
                         "requestPermission" -> requestNotifPermission()

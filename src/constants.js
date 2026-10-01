@@ -1216,9 +1216,13 @@ function worldRankWorthShowing() {
 //
 // **It became 75 on 2026-09-14; it must never drop to or below 50 again.** It was
 // 25 everywhere, which stopped being a floor at all when the 12.0 safe opening
-// flight shipped: no death is possible before SAFE_START_WX (both wall-collision
-// paths in update.js bump instead of killing, and no hazard exists before
-// HAZARD_START_WX), so **the minimum score of any completed run is now 50**.
+// flight shipped: at that time no death was possible before SAFE_START_WX, so the
+// minimum score of any completed run was 50.
+// **That premise no longer holds (checked 2026-10-01):** the opening corridor is wide but
+// its walls kill from the rock mouth on (update.js wall check, approach.js mouth), and real
+// new players die there at 5-27 (web D1 since 2026-09-24: 38 of 47 daily bests under 25).
+// 75 now means "about 9 s survived in the tunnel". The floor stays for what it was for;
+// the rewarded continue has a second route by runs instead (CONTINUE_RUN_FROM below).
 // Every gate below that was silently passing every run, including the instant
 // faceplants each one was written to exclude - an interstitial after a 1-second
 // tutorial death, a 30-second rewarded-video offer on the same, a share button on
@@ -1236,6 +1240,21 @@ const MIN_REAL_RUN_SCORE   = 75;
 // runs below it are instant faceplants, not worth a 15-30s video either way.
 const CONTINUE_MIN_SCORE   = MIN_REAL_RUN_SCORE;
 const MAX_CONTINUES_PER_RUN = 1;
+// Second route to the offer, by runs instead of score (2026-10-01, user's go-ahead on the
+// ad revenue options page, variant a1). With the floor alone almost no new player ever saw
+// the offer: they die at 5-27, far below 75 (MIN_REAL_RUN_SCORE doc). From the
+// CONTINUE_RUN_FROM-th run of the day, every CONTINUE_RUN_EVERY-th run (counted on
+// dailyRuns) may offer it at any score, once the approach is over (a revive needs
+// boundsAt(), which the rock mouth is not). No score number is involved, so the "no new
+// threshold at or below 50" rule above is untouched; what changes is that the continue no
+// longer hangs on MIN_REAL_RUN_SCORE alone.
+// Such an early offer can be declined with a tap anywhere off the ring once it has shown
+// for CONTINUE_EARLY_DECLINE_SEC: a 10-point run must not cost a beginner the full
+// CONTINUE_OFFER_SEC wait. An offer by the floor keeps swallowing taps as before.
+// Apps only: the web slot keeps the app pitch at 75 (user's call 2026-09-28).
+const CONTINUE_RUN_FROM          = 3;
+const CONTINUE_RUN_EVERY         = 3;
+const CONTINUE_EARLY_DECLINE_SEC = 0.4;
 
 // ── Store rating prompt ─────────────────────────────────────────────
 // Native review sheet (SKStoreReviewController on iOS, Play In-App Review on

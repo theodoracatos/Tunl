@@ -296,6 +296,17 @@ let shardsAdReady = false;
 // cleared by _tunlShardsRewardGranted/_tunlShardsRewardDeclined in main.js) -- guards
 // the grant callback against a stray second fire.
 let shardsAdPending = false;
+// Where the pending shards ad was asked for ('missions' | 'death'), for appEvent's ad_result.
+let shardsAdSource = 'missions';
+// App analytics (2026-10-01, ad revenue options page, measurement step m3): a Firebase
+// custom event through the ads bridge (GameView.swift / MainActivity.kt "event"), so run
+// counts and rewarded-offer take rates can be read per player in GA4. The apps sent only
+// Firebase's automatic events before. Web keeps its own relay (window._tunlGA), so this is a
+// no-op there. Params: numbers and short strings only; booleans as 0/1.
+function appEvent(name, params) {
+    if (isWeb()) return;
+    window.webkit?.messageHandlers?.ads?.postMessage({ action: 'event', name: name, params: params || {} });
+}
 let activeSkin    = parseInt(localStorage.getItem('tunnel_skin')  || '0');
 if (!(unlockedSkins & (1 << activeSkin))) activeSkin = 0;
 // Per-ship mastery XP (constants.js masteryLevel/masteryLerp), index-aligned with SKINS.
@@ -349,6 +360,8 @@ let planetsFlown = parseInt(localStorage.getItem('tunnel_planets_flown') || '0')
 let stardust = parseInt(localStorage.getItem('tunnel_stardust') || '0');
 let _homeBtnRect = null, _playBtnRect = null, _shareBtnRect = null;
 let _continueBtnRect = null;
+// Death-screen shards-ad chip (draw.js reward chips, constants.js SHARDS_AD_REWARD), null when not drawn.
+let _shardsChipRect = null;
 // Web app-pitch store buttons (draw.js drawWebContinuePromo), null while it is not up.
 let _promoAppleBtnRect = null, _promoPlayBtnRect = null;
 // >0 while the death-screen SHARE button should read "link copied" instead of
@@ -536,6 +549,9 @@ let repairKits = [], hullRepairFlash = 0;
 // freezes deadT so a slow-loading/long-watched ad can't let the auto-commit fire out
 // from under a decision the player already made.
 let continuesUsedThisRun, continueOfferPending, continueAdPending;
+// The pending offer came by the run route, not the score floor (constants.js
+// CONTINUE_RUN_FROM): a tap off the ring declines it. Set in die() with every offer.
+let continueOfferEarly = false;
 // Web only (constants.js WEB_PROMO_DISMISS_SEC doc): the app pitch that stands in for
 // the rewarded video. webPromoT counts up while the promo screen is on; webPromoOn is
 // what draw.js/input.js route on. Never set in either app - isWeb() gates every write.

@@ -2305,3 +2305,18 @@ below best 233, that was nearly every real player before every retry. Web leader
 median daily best 6, 40 of 41 player-days at 27 or below. Now a pass is remembered on the device and
 the cap is 12 s. Not done from the same page: PLAY AGAIN starting at the mountain (would undo the
 "every start the same" approach call), mission recalibration (needs runs-per-session data first).
+
+## Ad revenue per player: continue by runs, shards chip, app events (2026-10-01)
+
+Measured before deciding (AdMob, GA4, web D1): September 459 impressions, 1.84 CHF, 53% from
+rewarded; outside CH a player brought ~0.7 cent a month. New players play 18 s (US iOS) to
+2 min (RU) in total and die at 5-27, so the 75 floor kept nearly all of them from any ad.
+The options page (https://claude.ai/artifact/AeqG3sF8iZUtnR6fj5cgpj) weighed six options; the
+user said "baue es" to the recommendation. Built: a1 (continue by runs, see economy.md), d
+(shards video as a death-screen chip), and the app events every later reading depends on.
+Not built: b' (interstitial by play time from the second day) waits for D1/D7 after the
+retry-loop change, so the two effects can be told apart. Rejected: a banner (the whole screen
+is a tap target, so accidental clicks risk the AdMob account). Deferred: Remove Ads offer
+(nothing to remove for players who see no interstitial), mediation (cents at this volume).
+Also found: the `MIN_REAL_RUN_SCORE` doc claimed no death before `SAFE_START_WX`; walls kill
+from the rock mouth on. The doc was corrected; the floor itself stays.

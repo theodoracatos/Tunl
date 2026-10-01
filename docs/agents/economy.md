@@ -21,6 +21,15 @@ the forced interstitial, not a video the player actively taps):
   recentres, bomb-clears and grants `HIT_INVULN_SEC`; a shield would blur "scratches
   forgive wall mistakes, direct hits are the shield's job". If revisited, measure death
   cause by sector per tier first. See the Rewarded continue notes in `constants.js`.
+- **The continue also comes by runs, not only by score** (2026-10-01, the user's go-ahead on
+  the ad revenue options page, variant a1). Real new players die at 5-27, so the floor alone
+  kept almost everyone from ever seeing it. From the `CONTINUE_RUN_FROM`-th run of the day,
+  every `CONTINUE_RUN_EVERY`-th run (on `dailyRuns`) offers it at any score, apps only, never
+  while `approachLeft > 0` (`continueRunTurn()` in update.js). **No score number is added**,
+  so the "no new threshold at or below 50" rule holds. **Such an early offer is declined by a
+  tap off the ring** once it has shown `CONTINUE_EARLY_DECLINE_SEC`; an offer by the floor
+  still swallows taps. Without that, a beginner would wait `CONTINUE_OFFER_SEC` on every
+  third death, right where the retry loop was just shortened. Web keeps the pitch at 75.
 - **Web has no rewarded video, so the offer slot carries the app pitch**
   (`WEB_PROMO_DISMISS_SEC` doc, `draw.js drawWebContinuePromo`). The ring appears captioned
   `T.secondLifeApp` with "+1"; a tap opens the app card (/tt/ opens it by itself on the first
@@ -50,7 +59,17 @@ the forced interstitial, not a video the player actively taps):
   `DAILY_SHARD_CAP` like a mission reward. Native plumbing
   (`shardsAdRequest` / `_tunlShardsRewardGranted` / `_tunlShardsRewardDeclined` /
   `shardsAdReady`) mirrors the continue's 1:1. With no native bridge (browser) the row
-  stays inert.
+  stays inert. **Since 2026-10-01 the same video also sits on the death screen** as the one
+  outlined (tappable) reward chip, next to the shards chip of a run that banked shards, until
+  claimed (`_shardsChipRect`, label `T.watchAdShards` + the amount, no new string). Same
+  amount, same once per day, so the shard ladder is untouched; a second video or "double the
+  run's shards" would change the economy and needs the numbers re-run first.
+- **App analytics** (2026-10-01): `appEvent()` (state.js) sends Firebase custom events through
+  the ads bridge (`{action:'event'}`, GameView.swift / MainActivity.kt): `run_start`,
+  `run_end` (score, run, day_run, best, new_best, sec, cause and wx as on web), `ad_offer` and `ad_result`
+  (format continue|shards, granted, how, early/src). No-op on web, which has its own relay.
+  This is how ad changes are read per player; interstitial impressions come from AdMob's own
+  `ad_impression`.
 - **A failed rewarded load retries on a timer** (2026-09-28, both `AdsManager`s,
   `retryBaseDelay`/`RETRY_BASE_MS` doubling to the max, reset on the next fill), and iOS
   loads the three units in parallel. Before, one "No ad to show" greyed the continue ring

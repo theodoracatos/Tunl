@@ -182,6 +182,7 @@ function onDown(e) {
                 if (shardsAdReady && !shardsAdClaimedToday) {
                     sfxUiTap();
                     shardsAdPending = true;
+                    shardsAdSource = 'missions';
                     window.webkit?.messageHandlers?.ads?.postMessage({ action: 'shardsAdRequest' });
                 } else {
                     sfxUiDenied();
@@ -338,6 +339,16 @@ function onDown(e) {
             if (isWeb()) { webPromoOn = true; webPromoT = 0; return; }
             continueAdPending = true;
             window.webkit?.messageHandlers?.ads?.postMessage({ action: 'reviveRequest', score });
+            return;
+        }
+        // An offer by the run route (constants.js CONTINUE_RUN_FROM) is declined by a tap off
+        // the ring once it has shown for CONTINUE_EARLY_DECLINE_SEC; taps before that, and on
+        // an offer by the score floor, are swallowed as before.
+        if (continueOfferEarly && deadT >= DEATH_REPLAY_SEC + CONTINUE_EARLY_DECLINE_SEC) {
+            sfxUiTap();
+            continueOfferPending = false;
+            continueOfferLost('tap');
+            commitDeath();
         }
         return;
     }
@@ -356,6 +367,19 @@ function onDown(e) {
             sfxUiTap();
             window.webkit?.messageHandlers?.ads?.postMessage({ action: 'interstitialRequest', score });
             titleScreen(); return;
+        }
+        // The day's shards video as a reward chip (draw.js, constants.js SHARDS_AD_REWARD):
+        // the same once-per-day grant as the Missions drawer row, only where players look.
+        if (_shardsChipRect && inRect(cx, cy, _shardsChipRect)) {
+            if (shardsAdReady && !shardsAdClaimedToday && !shardsAdPending) {
+                sfxUiTap();
+                shardsAdPending = true;
+                shardsAdSource = 'death';
+                window.webkit?.messageHandlers?.ads?.postMessage({ action: 'shardsAdRequest' });
+            } else {
+                sfxUiDenied();
+            }
+            return;
         }
         // Share does NOT start a new run or request an interstitial -- it hands the
         // card to the OS share sheet and leaves the death screen up, so the player

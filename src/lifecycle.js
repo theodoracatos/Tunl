@@ -284,6 +284,8 @@ function startPlay() {
             window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: ra.id });
         }
     }
+    // App analytics (state.js appEvent; no-op on web, which sends its own run_start above).
+    appEvent('run_start', { run: totalRuns, day_run: dailyRuns, best: best, tutor: tutorOn ? 1 : 0 });
     // Safe opening flight (constants.js SAFE_START_WX doc).
     safeEndWx = SAFE_START_WX; safeCloseWx = SAFE_CLOSE_WX;
     hullScratches = HULL_SCRATCHES; lastSectorShown = 1;   // constants.js flight plan

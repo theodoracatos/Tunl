@@ -6301,12 +6301,21 @@ function drawDeathScreen() {
         let s = `+${runShardsBanked} ⧫  ·  ${disp} ⧫`;
         if (runShardsBanked < runCoins) s += `  (${T.dailyCap})`;
         rewards.push({ t: s, c: [255, 200, 97] });
+        // The day's shards video, offered where the shards just landed (2026-10-01, ad
+        // revenue options page, option d): the same once-per-day SHARDS_AD_REWARD as the
+        // Missions drawer row, which players rarely open. Apps only, only with an ad loaded,
+        // gone once claimed. The one tappable chip, so it is drawn outlined, not filled.
+        if (!isWeb() && shardsAdReady && !shardsAdClaimedToday && !shardsAdPending) {
+            rewards.push({ t: `${T.watchAdShards}  +${SHARDS_AD_REWARD} ⧫`, c: [255, 200, 97], tap: true });
+        }
     }
+    _shardsChipRect = null;
     let cx = L, cy = yRailLbl + step(0.020, DS_LBL, 0.75);
     for (const rw of rewards) {
         const w = chipW(rw.t);
         if (cx > L && cx + w > L + chipMaxW) { cx = L; cy += chipH + step(0.016, DS_LBL, 0.45); }
-        chip(rw.t, cx, cy, rw.c, true);
+        chip(rw.t, cx, cy, rw.c, !rw.tap);
+        if (rw.tap) _shardsChipRect = { x: cx, y: cy, w: w, h: chipH };
         cx += w + W * 0.010;
     }
     const leftBottom = rewards.length ? cy + chipH : yRailLbl;

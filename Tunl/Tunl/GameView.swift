@@ -3,6 +3,7 @@ import WebKit
 import GameKit
 import AVFoundation
 import StoreKit
+import FirebaseAnalytics
 
 // Dynamic Island/notch clearance for the title screen's icon rail (CLAUDE.md
 // Concept A). TunlApp.swift's .ignoresSafeArea() (plus its manual window-transform
@@ -609,6 +610,17 @@ struct GameView: UIViewRepresentable {
                     ads.requestShardsAd()
                 case "privacyOptions":
                     ads.showPrivacyOptionsForm()
+                case "event":
+                    // App analytics (src/state.js appEvent): a Firebase custom event per run
+                    // start/end and per rewarded-ad offer/result. Names and keys come from the
+                    // game's own code; only numbers and short strings are passed on.
+                    guard let name = body["name"] as? String, !name.isEmpty else { break }
+                    let params = (body["params"] as? [String: Any])?.compactMapValues { v -> Any? in
+                        if let n = v as? NSNumber { return n }
+                        if let s = v as? String { return String(s.prefix(100)) }
+                        return nil
+                    }
+                    Analytics.logEvent(name, parameters: params)
                 default: break
                 }
                 return
