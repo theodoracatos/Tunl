@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>TUNL - Get the app</title>
+<link rel="canonical" href="https://flytunl.ch/">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png">
+<meta name="theme-color" content="#04040a">
+<!--
+  flytunl.ch/get/ - one link for both stores (ads, bios, clips that promote iOS and
+  Android together). No game here: it detects the phone and goes straight to its store.
+    iPhone / iPad  -> App Store
+    Android        -> Google Play
+    anything else  -> both store buttons (desktop, HarmonyOS NEXT, unknown UA)
+
+  Device detection and the in-app-browser hand-off are the same as /tt/'s (see
+  flytunl-site/tt/tt-head.js "Which store" and tt-tail.js "Store links"); keep them in
+  step. Differences: the first hand-off runs without a user gesture, so a host that
+  refuses it leaves the page in front - then the own store's button shows and a tap
+  runs the same cascade again, this time with a gesture.
+
+  Attribution: ?utm_source=<s>&utm_campaign=<c> (defaults get / get). Play gets them as
+  the install referrer (Play Console -> acquisition by UTM), the App Store as ct=<c>
+  with the provider token pt (App Store Connect -> App Analytics -> Campaigns; a
+  campaign shows once >= 5 Apple accounts installed through it).
+  Visits: Cloudflare Web Analytics path /get/. The hand-off waits until the beacon's
+  page-view request came back (as /tt/'s step pages do), at most COUNT_WAIT_MS, so a
+  fast redirect does not tear the hit down in flight.
+
+  Wordless on purpose (store names only), so it needs no i18n.
+-->
+<style>
+:root { --bg:#04040a; --fg:#e8ecff; --dim:#8a93c0; --btn:#141a3a; --btn-hi:#1f2856; --line:rgba(140,160,255,0.28); }
+* { box-sizing:border-box; }
+html, body { margin:0; height:100%; }
+body {
+    background:radial-gradient(ellipse at 50% 42%, #141c44 0%, #080b22 55%, var(--bg) 100%) var(--bg);
+    color:var(--fg); font:16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:28px;
+    padding:24px 16px; text-align:center; -webkit-tap-highlight-color:transparent;
+}
+.mark { width:min(260px, 62vw); height:auto; display:block; }
+.spin {
+    width:34px; height:34px; border-radius:50%;
+    border:3px solid var(--line); border-top-color:var(--fg);
+    animation:spin .8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+.stores { display:none; flex-wrap:wrap; justify-content:center; gap:14px; }
+.stores a {
+    display:inline-flex; align-items:center; gap:10px; min-width:190px; justify-content:center;
+    padding:14px 22px; border-radius:14px; border:1px solid var(--line);
+    background:var(--btn); color:var(--fg); text-decoration:none; font-size:18px; font-weight:600;
+}
+.stores a:active, .stores a:hover { background:var(--btn-hi); }
+.stores svg { width:22px; height:22px; fill:currentColor; flex:none; }
+.home { color:var(--dim); font-size:14px; text-decoration:none; display:none; }
+/* Both stores: unknown device, or a hand-off that did not leave the page. */
+html.show .spin { display:none; }
+html.show .stores, html.show .home { display:flex; }
+html.ios a.android, html.android a.ios { display:none; }
+</style>
+</head>
+<body>
+<img class="mark" src="/wordmark.svg" alt="TUNL">
+<div class="spin" aria-hidden="true"></div>
+<div class="stores">
+  <a class="ios" href="https://apps.apple.com/app/id6789721765"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.6c0-2.5 2.1-3.7 2.2-3.8-1.2-1.7-3-2-3.6-2-1.5-.2-3 .9-3.8.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.2 2.5-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8s2 .8 3.3.8c1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.8-1.1-2.9-4.1zM13.9 5.2c.7-.8 1.2-2 1-3.2-1 .1-2.2.7-3 1.5-.6.7-1.2 1.9-1 3.1 1.1.1 2.3-.6 3-1.4z"/></svg>App Store</a>
+  <a class="android" href="https://play.google.com/store/apps/details?id=com.theodoracatos.tunl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.6 1.8c-.3.3-.4.7-.4 1.2v18c0 .5.1.9.4 1.2l10-10.2-10-10.2zm11.1 11.3 2.8 2.8-11.7 6.7 8.9-9.5zm3.9-3.9 3 1.7c.9.5.9 1.8 0 2.3l-3 1.7-3-3 3-2.7zM5.8 1.4l11.7 6.7-2.8 2.8-8.9-9.5z"/></svg>Google Play</a>
+</div>
+<a class="home" href="/">flytunl.ch</a>
+<script>
+(function () {
+    'use strict';
+    var root = document.documentElement;
+    var ua = navigator.userAgent || '';
+    // Same detection as /tt/ (tt-head.js).
+    var uaData = navigator.userAgentData;
+    var android = /Android/i.test(ua) || !!(uaData && /android/i.test(uaData.platform || ''));
+    var ios = !android && (/iPhone|iPad|iPod/.test(ua)
+        || (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1));
+    if (!android && !ios) {
+        if (/Channel\/googleplay/i.test(ua)) android = true;
+        else if (/Channel\/App ?Store/i.test(ua)) ios = true;
+    }
+    var inApp = /musical_ly|trill|BytedanceWebview|ByteLocale|TikTok/i.test(ua)
+        || /FBAN|FBAV|Instagram|Line\/|Snapchat/.test(ua)
+        || (android && /; wv\)/.test(ua));
+    var os = android ? 'android' : ios ? 'ios' : '';
+    if (os) root.classList.add(os);
+
+    var PKG = 'com.theodoracatos.tunl', APP_ID = 'id6789721765', APPLE_PT = '93838800';
+    var COUNT_WAIT_MS = 1200, STEP_MS = 700, SHOW_MS = 2500;
+    function param(k, def) {
+        try {
+            var v = new URLSearchParams(location.search).get(k);
+            if (v && /^[\w.-]{1,40}$/.test(v)) return v;
+        } catch (e) {}
+        return def;
+    }
+    var src = param('utm_source', 'get'), camp = param('utm_campaign', 'get');
+    var refQ = 'referrer=' + encodeURIComponent('utm_source=' + src + '&utm_campaign=' + camp);
+    var PLAY_HTTPS = 'https://play.google.com/store/apps/details?id=' + PKG + '&' + refQ;
+    var PLAY_MARKET = 'market://details?id=' + PKG + '&' + refQ;
+    var PLAY_INTENT = 'intent://details?id=' + PKG + '&' + refQ + '#Intent;scheme=market;package=com.android.vending;S.browser_fallback_url='
+        + encodeURIComponent(PLAY_HTTPS) + ';end';
+    var appQ = '?pt=' + APPLE_PT + '&ct=' + encodeURIComponent(camp) + '&mt=8';
+    var APP_HTTPS = 'https://apps.apple.com/app/' + APP_ID + appQ;
+    var APP_NATIVE = 'itms-apps://apps.apple.com/app/' + APP_ID + appQ;
+    document.querySelector('a.ios').href = APP_HTTPS;
+    document.querySelector('a.android').href = PLAY_HTTPS;
+
+    if (!os) { root.classList.add('show'); return; }
+
+    // ── Hand-off (tt-tail.js "Store links") ──────────────────────────────────
+    var left = false;
+    function markLeft() { left = true; }
+    document.addEventListener('visibilitychange', function () { if (document.hidden) markLeft(); });
+    window.addEventListener('pagehide', markLeft);
+    window.addEventListener('blur', markLeft);
+    // Back from the store (bfcache): show the button rather than a spinner forever.
+    window.addEventListener('pageshow', function (e) { if (e.persisted) root.classList.add('show'); });
+    function schemeFrame(url) {
+        try {
+            var f = document.createElement('iframe');
+            f.style.display = 'none';
+            f.src = url;
+            root.appendChild(f);
+            setTimeout(function () { try { f.remove(); } catch (e) {} }, 3000);
+        } catch (e) {}
+    }
+    function cascade(steps) {
+        left = false;
+        (function next(i) {
+            if (i >= steps.length || left || document.hidden) return;
+            steps[i][0]();
+            setTimeout(function () { next(i + 1); }, steps[i][1]);
+        })(0);
+    }
+    function handoff() {
+        if (android) {
+            if (inApp) cascade([
+                [function () { schemeFrame(PLAY_INTENT); }, STEP_MS],
+                [function () { schemeFrame(PLAY_MARKET); }, STEP_MS],
+                [function () { location.href = PLAY_HTTPS; }, 0],
+            ]);
+            else location.replace(PLAY_HTTPS);
+        } else {
+            if (inApp) cascade([
+                [function () { location.href = APP_NATIVE; }, 1200],
+                [function () { location.href = APP_HTTPS; }, 0],
+            ]);
+            else location.replace(APP_HTTPS);
+        }
+        setTimeout(function () { if (!document.hidden) root.classList.add('show'); }, SHOW_MS);
+    }
+    // A tap on the own store's button re-runs the cascade with a user gesture.
+    document.querySelector('a.' + os).addEventListener('click', function (e) {
+        if (!inApp) return;
+        e.preventDefault();
+        handoff();
+    });
+
+    // ── Wait for the Cloudflare page view (build-play.mjs TT_STEP_PAGE) ──────
+    var gone = false;
+    function go() { if (gone) return; gone = true; handoff(); }
+    var rum = /\/cdn-cgi\/rum/;
+    var X = XMLHttpRequest.prototype, xo = X.open, xs = X.send;
+    X.open = function (m, u) { this._getRum = rum.test(String(u)); return xo.apply(this, arguments); };
+    X.send = function () { if (this._getRum) this.addEventListener('loadend', go); return xs.apply(this, arguments); };
+    if (navigator.sendBeacon) {
+        var sb = navigator.sendBeacon.bind(navigator);
+        navigator.sendBeacon = function (u) { var r = sb.apply(null, arguments); if (r && rum.test(String(u))) go(); return r; };
+    }
+    setTimeout(go, COUNT_WAIT_MS);
+})();
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "7783839e84374212b7d76f25e1fb8e87"}'></script>
+</body>
+</html>
