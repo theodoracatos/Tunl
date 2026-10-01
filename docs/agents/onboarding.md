@@ -161,11 +161,22 @@ https://claude.ai/artifact/VVhDdo7T4gCd4HmEqDYECQ (db `picks`), all six recommen
   (the hover cadence), then waves; the planner's route follows it, so the circle keeps the beat.
   A bead passed within `TUTOR_BEAD_TOL` lights. The tunnel comes once `TUTOR_PASS_NEED` of the
   last `TUTOR_PASS_OF` are lit (at least `TUTOR_PASS_MIN`), or after `TUTOR_PRACTICE_MAX_SEC`
-  either way; the wind stays held and `_tutorPracEnd()` re-aims it. Every tutor run gets it (a
-  good player is through in about the old approach time). User's picks: every tutor run, 30 s cap.
-  No sound for a lit bead yet (would need an offline-render pass, see `audio.md`).
+  either way; the wind stays held and `_tutorPracEnd()` re-aims it. User's picks at the time:
+  every tutor run, 30 s cap. No sound for a lit bead yet (would need an offline-render pass, see `audio.md`).
+- **Passed once, the practice flight never comes again (2026-10-01, retention audit
+  https://claude.ai/artifact/XBmzbuMaPgJL7cBT9rTknS, picks r1 + r2, user: "ja gerne")**: it ran on
+  every tutor run, i.e. for practically every real player (best below `TUTOR_BEST_MAX`), and the
+  sim put PLAY AGAIN -> cave at more than twice the no-tutor time even with perfect taps; a pilot
+  tapping ~0.15 s off the circle mostly sat the full cap. A pass (not a timeout) sets
+  `TUTOR_PRAC_PASSED_KEY` in localStorage (`tutorPracPassed`); from then on the first press after
+  the city's wait calls `_tutorPracEnd()` directly: banner and wind retimed, the swell adding half
+  of `APPROACH_EASE_SEC` for the camera's ease-in from a standstill. The city still waits and the
+  circle still shows to `SAFE_START_WX`. The cap `TUTOR_PRACTICE_MAX_SEC` was lowered in the same
+  change, so a player who never passes waits less before every run. All targets, no `isWeb()` gate.
 - `test-sim.js` "Tap tutor": a pilot that taps only when the circle says so flies the opening to
-  `SAFE_START_WX` with no wall touch (29 taps, ~15 px mean off the route at H 440).
+  `SAFE_START_WX` with no wall touch (29 taps, ~15 px mean off the route at H 440). It also checks
+  that a pass is stored and a timeout is not, and that a run with the flag skips the flight with
+  banner and wind on the mouth (each mutation-tested).
 
 **Do not re-add a title-screen control hint.** A "HOLD to climb / RELEASE to fall" line was
 removed the same day it shipped: redundant next to HOLD TO FLY, crowded the row below, and

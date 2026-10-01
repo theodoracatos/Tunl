@@ -2293,3 +2293,15 @@ Measured why: bar 1 of the intro is nearly silent and brightening (-42 to -31 dB
 -34 dB); every wrap dropped from -30.2 to -39.5 dB, a restart. Now only bar 2 repeats (ends 3.448 s,
 just before the drop's attack at 3.452 s), from a small baked buffer whose last 120 ms crossfade into
 the audio just before bar 2; wrap -30.2 -> -31.6 dB, the same as the track's own bar change.
+
+## Practice flight only until passed once, cap lowered (2026-10-01)
+
+Reverses two picks of 2026-09-30 ("every tutor run", 30 s cap). Retention audit
+(https://claude.ai/artifact/XBmzbuMaPgJL7cBT9rTknS) measured in test-sim (app 956x440, days 2026-10-01
+to 05, real onDown/onUp, immediate press): PLAY AGAIN -> cave 10.9 s on a tutor run against 4.9 s
+without, at every day; the flight is 5.7 s with perfect taps, a median 13.7 s with ~0.10 s of timing
+error per hop and mostly the full 30 s from ~0.15 s on (24 runs per level). Since the tutor shows
+below best 233, that was nearly every real player before every retry. Web leaderboard 25.09-01.10:
+median daily best 6, 40 of 41 player-days at 27 or below. Now a pass is remembered on the device and
+the cap is 12 s. Not done from the same page: PLAY AGAIN starting at the mountain (would undo the
+"every start the same" approach call), mission recalibration (needs runs-per-session data first).

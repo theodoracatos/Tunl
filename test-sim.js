@@ -1488,7 +1488,8 @@ const FAKE_AC = `(() => {
                 if (tutorPracticing()) minLeft = Math.min(minLeft, approachLeft - far);
                 if (done < 0 && tutorWaitOver && tutorPracDone) done = tutorPracT;
             }
-            return { done, lit: tutorBeadLog.filter(Boolean).length, passed: tutorBeadLog.length, minLeft, left: approachLeft, phase };
+            return { done, lit: tutorBeadLog.filter(Boolean).length, passed: tutorBeadLog.length, minLeft, left: approachLeft, phase,
+                     flag: localStorage.getItem(TUTOR_PRAC_PASSED_KEY), mem: tutorPracPassed };
         })()`);
     };
     const good = prac(true), bad = prac(false);
@@ -1496,6 +1497,38 @@ const FAKE_AC = `(() => {
         good.done > 0 && good.done < 10 && good.passed >= boot()('TUTOR_PASS_MIN') && good.left === 0 && good.minLeft >= 0);
     check(`a player who lights no bead still gets the tunnel at TUTOR_PRACTICE_MAX_SEC (${bad.done.toFixed(1)} s, ${bad.lit} lit)`,
         Math.abs(bad.done - boot()('TUTOR_PRACTICE_MAX_SEC')) < 0.1 && bad.lit === 0 && bad.left === 0);
+    check('passing the practice flight is remembered on the device; a timeout is not',
+        good.flag === '1' && good.mem === true && bad.flag === null && bad.mem === false);
+
+    // Passed once, the flight never comes again (approach.js tutorPracPassed, 2026-10-01): the
+    // first press after the wait goes straight to the mountain, with the entering banner and the
+    // wind swell retimed for the camera's ease-in from a standstill. Catches: the flight coming
+    // back, a skipped flight that loses the banner (its gate waits for tutorPracDone), and a swell
+    // that misses the mouth by the ease-in.
+    const k = boot(956, 440, { [boot()('TUTOR_PRAC_PASSED_KEY')]: '1' });
+    k(FAKE_AC);
+    k(AUTOPILOT);
+    k(`_windRec = { retime: -1, enters: [] }; _simT = 0; _seen = [];
+       approachWindRetime = sec => { _windRec.retime = sec; _windRec.at = _simT; };
+       approachWindEnter = () => { _windRec.enters.push(_simT); };
+       ctx.fillText = function (s) { if (s === T.entering) _seen.push(_simT); };
+       startPlay();`);
+    const skip = k(`(() => {
+        for (let i = 0; i < 600 && startRamp < 1; i++) { _simT += 1 / 60; update(1 / 60); }
+        for (let i = 0; i < 60; i++) { _simT += 1 / 60; update(1 / 60); }   // the city waits a second
+        const waited = tutorWaiting(), pressAt = _simT;
+        onDown(); onUp();
+        let beads = 0, prac = false;
+        for (let i = 0; i < 60 * 20 && approachLeft > 0; i++) {
+            shieldCount = 9; hullScratches = HULL_SCRATCHES; _pilot(); _simT += 1 / 60; update(1 / 60); draw();
+            beads = Math.max(beads, tutorBeads.length); if (tutorPracticing()) prac = true;
+        }
+        return { waited, pressAt, beads, prac, done: tutorPracDone, tutorOn, left: approachLeft, rec: _windRec, banner: _seen[0], n: _seen.length, cave: _simT };
+    })()`);
+    const skipLate = skip.rec.enters[0] - skip.rec.at - skip.rec.retime;
+    check(`after a passed practice flight the next tutor run skips it: the city still waits, the mountain comes ${(skip.cave - skip.pressAt).toFixed(1)} s after the press, banner shown, wind on the mouth (off by ${skipLate.toFixed(3)} s)`,
+        skip.tutorOn && skip.waited && !skip.prac && skip.beads === 0 && skip.done && skip.left === 0
+        && skip.banner >= skip.pressAt && skip.n > 30 && skip.rec.enters.length === 1 && Math.abs(skipLate) <= 1.5 / 60);
 
     // The bed repeats the intro's second bar while the city waits (audio.js bgmIntroHoldTick) and
     // the first press hands back to the track at the same point (bgmIntroHold): sample-exact, into

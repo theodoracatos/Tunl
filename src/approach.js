@@ -619,6 +619,10 @@ let tutorBeadGap = 0;     // px between beads (fixed at the start of the flight)
 let tutorBeads = [];      // { k, x, y, passed, lit }
 let tutorBeadNext = 0;    // index of the next bead to create
 let tutorBeadLog = [];    // lit (true/false) per passed bead, oldest first
+// The practice flight was passed once on this device: it never comes again (2026-10-01, retention
+// audit: it ran on every tutor run, 6-30 s before each retry). A timeout does not count.
+const TUTOR_PRAC_PASSED_KEY = 'tunl_tutor_practice_passed';
+let tutorPracPassed = localStorage.getItem(TUTOR_PRAC_PASSED_KEY) === '1';
 
 function tutorStart() {
     bgmIntroHold(false, true);
@@ -677,14 +681,20 @@ function tutorPracticeMove(d) {
         tutorBeadLog.push(b.lit);
     }
     const last = tutorBeadLog.slice(-TUTOR_PASS_OF);
-    if (tutorBeadLog.length >= TUTOR_PASS_MIN && last.filter(Boolean).length >= TUTOR_PASS_NEED) _tutorPracEnd();
+    if (tutorBeadLog.length >= TUTOR_PASS_MIN && last.filter(Boolean).length >= TUTOR_PASS_NEED) {
+        if (!tutorPracPassed) { tutorPracPassed = true; localStorage.setItem(TUTOR_PRAC_PASSED_KEY, '1'); }
+        _tutorPracEnd();
+    }
 }
+// Also called by the first press when the flight is skipped; the camera then eases in from a
+// standstill (approachStep, _approachGoT), which costs half of APPROACH_EASE_SEC on the way to the mouth.
 function _tutorPracEnd() {
     if (tutorPracDone) return;
     tutorPracDone = true;
     // The entering banner starts now, as it would a moment after a normal launch.
     _approachBannerT0 = approachT - START_RAMP_SEC * 0.6;
-    approachWindRetime((approachLeft - PX - APPROACH_LIP) / scrollSpd());
+    const ease = tutorPracX === 0 && _approachGoT >= 0 ? APPROACH_EASE_SEC / 2 : 0;
+    approachWindRetime((approachLeft - PX - APPROACH_LIP) / scrollSpd() + ease);
 }
 
 // The ship's position on the approach+cave line: negative over the city, world-x in the cave.
@@ -744,7 +754,10 @@ function tutorStep(dt) {
             tutorWaitOver = true;
             bgmIntroHold(false);   // the track runs on from the intro into its beat
             // The wind stays held through the practice flight; _tutorPracEnd() re-aims it.
-            if (approachLeft > 0 && startRamp >= 1) { if (!tutorWaited) approachWindHold(); _tutorPracStart(); }
+            if (approachLeft > 0 && startRamp >= 1) {
+                if (!tutorWaited) approachWindHold();
+                if (tutorPracPassed) _tutorPracEnd(); else _tutorPracStart();
+            }
             else tutorPracDone = true;
         } else if (tutorWaiting() && !tutorWaited) {
             tutorWaited = true;
