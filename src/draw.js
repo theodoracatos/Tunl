@@ -6108,14 +6108,20 @@ function drawDeathScreen() {
     // compete with either: they simply sit next to it.
     const chipH = Math.max(H * 0.056, DS_LBL * 2.2);
     const chipW = txt => { font(DS_LBL); return ctx.measureText(txt).width + chipH * 0.88; };
-    const chip  = (txt, x, y, clr, solid) => {
+    // `tap`: the one chip that is a button (the shards video). A reward chip is a filled
+    // tint with a quiet edge; the button gets a strong edge in its own colour that breathes
+    // with deadT, so it reads as something to press, not as a greyed-out reward
+    // (2026-10-01, a WebKit screenshot of the first, faint version).
+    const chip  = (txt, x, y, clr, solid, tap) => {
         const w = chipW(txt);
         sh(0);
         ctx.fillStyle = solid ? `rgba(${clr[0]},${clr[1]},${clr[2]},${a * 0.15})`
+                      : tap   ? `rgba(${clr[0]},${clr[1]},${clr[2]},${a * 0.10})`
                               : `rgba(255,255,255,${a * 0.05})`;
         ctx.beginPath(); ctx.roundRect(x, y, w, chipH, chipH / 2); ctx.fill();
-        ctx.strokeStyle = `rgba(${clr[0]},${clr[1]},${clr[2]},${a * (solid ? 0.42 : 0.20)})`;
-        ctx.lineWidth   = 1;
+        const edge = tap ? 0.70 + 0.25 * Math.sin(deadT * 4) : (solid ? 0.42 : 0.20);
+        ctx.strokeStyle = `rgba(${clr[0]},${clr[1]},${clr[2]},${a * edge})`;
+        ctx.lineWidth   = tap ? 2 : 1;
         ctx.beginPath(); ctx.roundRect(x, y, w, chipH, chipH / 2); ctx.stroke();
         ctx.fillStyle    = `rgba(${clr[0]},${clr[1]},${clr[2]},${a * 0.95})`;
         ctx.textBaseline = 'middle';
@@ -6304,7 +6310,7 @@ function drawDeathScreen() {
         // The day's shards video, offered where the shards just landed (2026-10-01, ad
         // revenue options page, option d): the same once-per-day SHARDS_AD_REWARD as the
         // Missions drawer row, which players rarely open. Apps only, only with an ad loaded,
-        // gone once claimed. The one tappable chip, so it is drawn outlined, not filled.
+        // gone once claimed. The one tappable chip, so it is drawn as a button (chip's `tap`).
         if (!isWeb() && shardsAdReady && !shardsAdClaimedToday && !shardsAdPending) {
             rewards.push({ t: `${T.watchAdShards}  +${SHARDS_AD_REWARD} ⧫`, c: [255, 200, 97], tap: true });
         }
@@ -6314,7 +6320,7 @@ function drawDeathScreen() {
     for (const rw of rewards) {
         const w = chipW(rw.t);
         if (cx > L && cx + w > L + chipMaxW) { cx = L; cy += chipH + step(0.016, DS_LBL, 0.45); }
-        chip(rw.t, cx, cy, rw.c, !rw.tap);
+        chip(rw.t, cx, cy, rw.c, !rw.tap, !!rw.tap);
         if (rw.tap) _shardsChipRect = { x: cx, y: cy, w: w, h: chipH };
         cx += w + W * 0.010;
     }
