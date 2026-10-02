@@ -4,9 +4,9 @@
 // ship and the stalactites. Both used to be hand-copied geometry (the K5 hull, plain
 // triangles) and went stale when the game moved to the F-14 and crystal stalactites.
 // Like render-ship-mark.mjs, this script loads src/*.js in headless Chrome and lets the
-// game paint: drawShip3D for the ship (cruise sweep, SHIP3D_ROLL_BASE, PEARL) and
-// drawCrystalSpike for one ceiling twin and one floor druse per weekday, each in that
-// day's palette and crystal material. The result is one image for the ship and one per
+// game paint: drawShip3D for the ship (cruise sweep, SHIP3D_ROLL_BASE, PEARL), drawCoin for a
+// gold coin, and drawCrystalSpike for one ceiling twin and one floor druse per weekday, each in
+// that day's palette and crystal material. The result is one image for ship and coin and one per
 // weekday (so the page loads only today's), plus a JSON map of cell rects and anchors written
 // between the FEEL SPRITES markers in home.src.html.
 //
@@ -66,14 +66,22 @@ const S = paint(${SHIP_R} * 5, ${SHIP_R} * 4, ${SHIP_R} * 2.4, ${SHIP_R} * 2,
     () => drawShip3D(0, 0, ${SHIP_R}, sk.color, sr, sg, sb, 14, false));
 S.g = 0; cells.push(S); out.ship = { cell: 0, r: ${SHIP_R}, nozzleX: SHIP_NOZZLE_X, nozzleY: [shipNozzleDY(-1), shipNozzleDY(1)] };
 
-// Crystals: a flat wall at y 0. The socket is filled in the strip's own rock colour, so
-// the rock lip blends into the page's wall instead of the game's.
+// Gold coin, as drawCoin paints it in the game (glow included), at half-extent COIN_S.
+const COIN_S = 16, cScale = COIN_S / (COIN_R * COIN_SIZE_MULT.gold * COIN_OBJECT_SCALE * COIN_OBJECT_BOOST.gold);
+const G = paint(COIN_S * 6, COIN_S * 6, COIN_S * 3, COIN_S * 3, () => drawCoin(0, 0, 'gold', 0, cScale));
+G.g = 0; cells.push(G); out.coin = { cell: cells.length - 1, s: COIN_S };
+
+// Crystals: a flat wall at y 0, roots sunk into it as in the game.
 boundsAt = () => ({ top: 0, bot: 0 });
 const ROCK = [16, 16, 26];
 for (let wd = 0; wd < 7; wd++) {
     const date = new Date(Date.UTC(2026, 8, 28 + wd));          // 2026-09-28 is a Monday
     _tunlActiveDate = () => date;
     const theme = Object.assign({}, getTheme(), { wall: ROCK, stal: ROCK });
+    // No rock socket: the page clips the crystals to its corridor instead, so they meet a
+    // sloped wall exactly; a flat socket stuck out of it as a dark bar. The tone object is
+    // cached per (stalEdge, material), so drawCrystalSpike below gets this same one.
+    _crystalTones(theme, CRYSTAL_MATERIALS[weekdayIndex(date)]).socket = 'rgba(0,0,0,0)';
     const day = { mat: CRYSTAL_MATERIALS[weekdayIndex(date)].name };
     for (const isTop of [true, false]) {
         const s = { isTop, wx: 1000 + wd * 977 + (isTop ? 0 : 431), width: ${HW} * 2, length: ${LEN} };

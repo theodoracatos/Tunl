@@ -1080,7 +1080,7 @@
        plus a floor druse per weekday in that day's palette and crystal material. Regenerate
        with `node branding/render-feel-sprites.mjs`; it rewrites the map below. */
     /* BEGIN feel sprites: branding/render-feel-sprites.mjs (do not hand-edit) */
-    var FEEL = {"ship":{"cell":0,"r":36,"nozzleX":-0.98,"nozzleY":[0.20754483839984453,-0.1606571029811316]},"days":[{"mat":"Kalzit","top":1,"bot":2},{"mat":"Rostquarz","top":3,"bot":4},{"mat":"Selenit","top":5,"bot":6},{"mat":"Obsidian","top":7,"bot":8},{"mat":"Amethyst","top":9,"bot":10},{"mat":"Olivin","top":11,"bot":12},{"mat":"Rhodonit","top":13,"bot":14}],"cells":[[0,0,0,103,102,50.39999999999999,51],[1,0,0,105,107,52.5,17],[1,107,0,105,107,52.5,90],[2,0,0,105,107,52.5,17],[2,107,0,105,107,52.5,90],[3,0,0,105,107,52.5,17],[3,107,0,105,107,52.5,90],[4,0,0,105,107,52.5,17],[4,107,0,105,107,52.5,90],[5,0,0,105,107,52.5,17],[5,107,0,105,107,52.5,90],[6,0,0,105,107,52.5,17],[6,107,0,105,107,52.5,90],[7,0,0,105,107,52.5,17],[7,107,0,105,107,52.5,90]],"hw":15,"len":60};
+    var FEEL = {"ship":{"cell":0,"r":36,"nozzleX":-0.98,"nozzleY":[0.20754483839984453,-0.1606571029811316]},"days":[{"mat":"Kalzit","top":2,"bot":3},{"mat":"Rostquarz","top":4,"bot":5},{"mat":"Selenit","top":6,"bot":7},{"mat":"Obsidian","top":8,"bot":9},{"mat":"Amethyst","top":10,"bot":11},{"mat":"Olivin","top":12,"bot":13},{"mat":"Rhodonit","top":14,"bot":15}],"coin":{"cell":1,"s":16},"cells":[[0,0,0,103,102,50.39999999999999,51],[0,105,0,62,62,31,31],[1,0,0,66,94,33.5,4],[1,68,0,98,94,48.5,90],[2,0,0,65,94,32.5,4],[2,67,0,98,94,48.5,90],[3,0,0,66,94,33.5,4],[3,68,0,98,94,49.5,90],[4,0,0,67,94,33.5,4],[4,69,0,98,94,48.5,90],[5,0,0,66,94,33.5,4],[5,68,0,98,94,49.5,90],[6,0,0,65,94,32.5,4],[6,67,0,98,94,49.5,90],[7,0,0,66,94,32.5,4],[7,68,0,98,94,49.5,90]],"hw":15,"len":60};
     /* END feel sprites */
     /* Monday first, like weekdayIndex() and day.js; the page loads only today's crystals */
     var WD = (new Date().getUTCDay() + 6) % 7, DAY = FEEL ? FEEL.days[WD] : null;
@@ -1092,11 +1092,14 @@
       im.src = url;
       imgs[g] = im;
     }
-    if (FEEL) { want(0, '/media-ships/feel-ship.png?v=1'); want(WD + 1, '/media-ships/feel-day-' + WD + '.png?v=1'); }
-    function blit(cell, x, y, s) {
+    if (FEEL) { want(0, '/media-ships/feel-ship.png?v=3'); want(WD + 1, '/media-ships/feel-day-' + WD + '.png?v=3'); }
+    /* k shears the sprite vertically along a sloped wall, like the game's own fit
+       (src/draw.js _xtalFit X.k): every root moves with the wall, every crystal stays upright. */
+    function blit(cell, x, y, s, k) {
       var c = FEEL.cells[cell];          /* [image, x, y, w, h, anchorX, anchorY] */
       ctx.save();
       ctx.translate(x, y);
+      if (k) ctx.transform(1, k, 0, 1, 0, 0);
       ctx.scale(s, s);
       ctx.drawImage(imgs[c[0]], c[1], c[2], c[3], c[4], -c[5], -c[6], c[3], c[4]);
       ctx.restore();
@@ -1123,8 +1126,9 @@
     }
     var halfGap = function () { return H * 0.30; };
 
-    var scroll = 0, py = 0, vy = 0, holding = false, lastLit = null, lastDodge = null;
+    var scroll = 0, py = 0, vy = 0, burst = 0, holding = false, lastLit = null, lastDodge = null;
     var SCROLL_SPD = 96;                 /* px/s of cave sliding past */
+    var TAP_BURST = 0.15;                /* TAP_BURST_SEC: every press is a hop */
 
     /* hazards on screen right now, shared by step() (to light DODGE) and draw()
        (to render the spikes), so the two never fall out of sync. */
@@ -1138,29 +1142,93 @@
         var c = centre(hz.x), len = g * 0.55;
         var baseY = hz.top ? c - g : c + g;
         var tipY = hz.top ? baseY + len : baseY - len;
-        out.push({ sx: sx, top: hz.top, baseY: baseY, tipY: tipY });
+        /* the wall's slope under the spike (both walls run parallel to the centreline) */
+        var slope = (centre(hz.x + 6) - centre(hz.x - 6)) / 12;
+        out.push({ sx: sx, top: hz.top, baseY: baseY, tipY: tipY, k: slope });
       }
       return out;
+    }
+
+    /* ---- a small simulation of a run ----
+       The route, like the game's tap tutor (src/approach.js tutorRouteY): past every crystal
+       an avoidance point on the far side, and between two crystals a line of three gold
+       coins that IS the crossing from one side to the other - the coins teach the line. */
+    var COIN_DX = 24, AVOID = 0.36, COIN_SWING = 0.22;
+    function coinsAt(k) {                /* the three coins between crystal k-1 and crystal k */
+      var x0 = k * HAZ_SPACING, from = hazardAt(k - 1).top ? 1 : -1, out = [];
+      for (var j = -1; j <= 1; j++) {
+        var x = x0 + j * COIN_DX;
+        out.push({ key: k * 3 + j + 1, x: x, y: centre(x) + from * COIN_SWING * halfGap() * -j });
+      }
+      return out;
+    }
+    function routeY(x) {                 /* the line the autopilot wants to be on at world-x */
+      var k = Math.floor(x / HAZ_SPACING), g = halfGap();
+      var h = hazardAt(k), pts = [];
+      /* avoidance points of crystals k-1, k and k+1, coins of the gaps k and k+1, in x order */
+      [hazardAt(k - 1), h, hazardAt(k + 1)].forEach(function (hz) {
+        pts.push([hz.x, centre(hz.x) + (hz.top ? 1 : -1) * AVOID * g]);
+      });
+      coinsAt(k).concat(coinsAt(k + 1)).forEach(function (cn) { pts.push([cn.x, cn.y]); });
+      pts.sort(function (p, q) { return p[0] - q[0]; });
+      for (var i = 1; i < pts.length; i++) {
+        if (x <= pts[i][0]) {
+          var t = (x - pts[i - 1][0]) / (pts[i][0] - pts[i - 1][0]);
+          t = t * t * (3 - 2 * t);       /* ease, so the line has no corners to chase */
+          return pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * t;
+        }
+      }
+      return centre(x);
+    }
+
+    var taken = {}, sparks = [], coinCount = 0;
+    function physics(state, dt, scale) {  /* one step of update.js's ship: burst, cap, trapezoid */
+      var thrust = state.b > 0;
+      var vPrev = state.v;
+      state.v += (thrust ? -1800 : 1300) * scale * dt;
+      var cap = 1080 * scale;
+      if (state.v >  cap) state.v =  cap;
+      if (state.v < -cap) state.v = -cap;
+      state.y += (vPrev + state.v) * 0.5 * dt;
+      if (thrust) state.b = Math.max(0, state.b - dt);
+    }
+    /* The tutor's rule (src/approach.js tutorPlan): a tap is due when a hop started now
+       would top out ON the route, not above it. Run the real physics forward to find out. */
+    function tapDue(scale, shipX) {
+      var st = { y: py, v: vy, b: TAP_BURST }, t = 0, dt = 1 / 120;
+      while (t < 0.8) {
+        physics(st, dt, scale); t += dt;
+        if (st.b <= 0 && st.v >= 0) break;          /* apex */
+      }
+      return st.y >= routeY(shipX + t * SCROLL_SPD);
     }
 
     function step(dt) {
       var scale = H / 440;               /* _FEEL_SCALE */
       scroll += SCROLL_SPD * dt;
+      var px = W * 0.22, shipX = scroll + px;
 
-      /* autopilot: aim a little ahead of the ship, hold when below the line */
-      var aim = centre(scroll + W * 0.34);
-      holding = py > aim;
+      if (burst <= 0 && tapDue(scale, shipX)) burst = TAP_BURST;
+      var st = { y: py, v: vy, b: burst };
+      physics(st, dt, scale);
+      py = st.y; vy = st.v; burst = st.b;
+      holding = burst > 0;
 
-      var vPrev = vy;
-      vy += (holding ? -1800 : 1300) * scale * dt;
-      var cap = 1080 * scale;
-      if (vy >  cap) vy =  cap;
-      if (vy < -cap) vy = -cap;
-      py += (vPrev + vy) * 0.5 * dt;     /* trapezoid, same as update.js */
-
-      var c = centre(scroll + W * 0.22), g = halfGap();
+      var c = centre(shipX), g = halfGap();
       if (py < c - g + 6) { py = c - g + 6; if (vy < 0) vy = 0; }
       if (py > c + g - 6) { py = c + g - 6; if (vy > 0) vy = 0; }
+
+      /* coins: picked up inside the ship's radius, like the game's hitbox */
+      var r = Math.max(9, H * 0.085), k = Math.floor(shipX / HAZ_SPACING);
+      for (var kk = k; kk <= k + 1; kk++) {
+        coinsAt(kk).forEach(function (cn) {
+          if (taken[cn.key] || Math.abs(cn.x - shipX) > r * 1.2 || Math.abs(cn.y - py) > r * 1.2) return;
+          taken[cn.key] = true; coinCount++;
+          sparks.push({ x: cn.x, y: cn.y, t: 0 });
+        });
+      }
+      for (var key in taken) if (key < (k - 2) * 3) delete taken[key];
+      sparks = sparks.filter(function (sp) { sp.t += dt; return sp.t < 0.35; });
 
       if (holding !== lastLit) {
         lastLit = holding;
@@ -1168,7 +1236,7 @@
         if (fallBox) fallBox.classList.toggle('lit', !holding);
       }
 
-      var px = W * 0.22, dodgeWindow = Math.max(24, H * 0.09);
+      var dodgeWindow = Math.max(24, H * 0.09);
       var dodging = visibleHazards().some(function (h) { return Math.abs(h.sx - px) < dodgeWindow; });
       if (dodging !== lastDodge) {
         lastDodge = dodging;
@@ -1203,11 +1271,21 @@
       /* stalactites/stalagmites - a wall spike per hazardAt(), lit like a crystal
          edge so DODGE has something on screen to react to. */
       var haz = visibleHazards();
+      /* crystals live in the corridor: clip at the wall line, so their roots end exactly
+         on a curved, sloped wall instead of floating over it or poking into the rock */
+      ctx.save();
+      if (sheetOk) {
+        ctx.beginPath();
+        for (i = 0; i <= N; i++) { x = i * 6; ctx[i ? 'lineTo' : 'moveTo'](x, centre(scroll + x) - halfGap()); }
+        for (i = N; i >= 0; i--) { x = i * 6; ctx.lineTo(x, centre(scroll + x) + halfGap()); }
+        ctx.closePath();
+        ctx.clip();
+      }
       for (var hi = 0; hi < haz.length; hi++) {
         var h = haz[hi], halfW = Math.max(7, H * 0.045);
         if (sheetOk) {
           /* the crystal's length matches the spike's, so DODGE keeps its timing */
-          blit(h.top ? DAY.top : DAY.bot, h.sx, h.baseY, Math.abs(h.tipY - h.baseY) / FEEL.len);
+          blit(h.top ? DAY.top : DAY.bot, h.sx, h.baseY, Math.abs(h.tipY - h.baseY) / FEEL.len, h.k);
           continue;
         }
         ctx.beginPath();
@@ -1221,10 +1299,31 @@
         ctx.lineWidth = 1.2;
         ctx.stroke();
       }
+      ctx.restore();
 
       ctx.strokeStyle = rgb(0.55);
       ctx.lineWidth = 1.4;
       for (var ei = 0; ei < edges.length; ei++) ctx.stroke(edges[ei]);
+
+      /* gold coins (src/draw.js drawCoin), and a ring where one was taken */
+      var cs = Math.max(4, H * 0.036);
+      var kc0 = Math.floor(scroll / HAZ_SPACING), kc1 = Math.ceil((scroll + W) / HAZ_SPACING) + 1;
+      for (var kc = kc0; kc <= kc1; kc++) {
+        coinsAt(kc).forEach(function (cn) {
+          var sx = cn.x - scroll;
+          if (taken[cn.key] || sx < -20 || sx > W + 20) return;
+          if (sheetOk) { blit(FEEL.coin.cell, sx, cn.y, cs / FEEL.coin.s); return; }
+          ctx.fillStyle = 'rgb(255,225,50)';
+          ctx.beginPath(); ctx.moveTo(sx, cn.y - cs); ctx.lineTo(sx + cs * 0.7, cn.y);
+          ctx.lineTo(sx, cn.y + cs); ctx.lineTo(sx - cs * 0.7, cn.y); ctx.closePath(); ctx.fill();
+        });
+      }
+      sparks.forEach(function (sp) {
+        var u = sp.t / 0.35;
+        ctx.strokeStyle = 'rgba(255,225,50,' + (0.8 * (1 - u)).toFixed(3) + ')';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(sp.x - scroll, sp.y, cs * (1 + u * 1.6), 0, Math.PI * 2); ctx.stroke();
+      });
 
       /* ship, pitched by climb rate like the real one */
       var px = W * 0.22, r = Math.max(9, H * 0.085);
@@ -1259,6 +1358,12 @@
         ctx.fill();
       }
       ctx.restore();
+
+      /* score like the game's: distance (one point per 60 px) plus the coins */
+      ctx.font = '600 ' + Math.round(Math.max(11, H * 0.08)) + 'px "JetBrains Mono", monospace';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillText(String(Math.floor(scroll / 60) + coinCount), 12, 10);
     }
 
     var last = 0, running = false, rafId = 0;
