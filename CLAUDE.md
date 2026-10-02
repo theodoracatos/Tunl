@@ -78,28 +78,9 @@ the corridor), avoid stalactites, mines, boulders, cannon shots and walls.
 
 ## Which docs to read before editing a file
 
-Pick the row for the file you are about to change and read those `docs/agents/` files first.
-A PreToolUse hook (`.claude/hooks/docs-pointer.js`, wired in `.claude/settings.json`) prints
-the row before every `src/*.js` edit - **change its `MAP` whenever this table changes.**
-
-| file | read first |
-|------|-----------|
-| `update.js` | physics, fairness, hazards, coins, portal, frenzy |
-| `systems.js` (spawners, `make*`/`maintain*`, warp, frenzy) | fairness, hazards, coins, portal, frenzy; then run `test-cave.js` |
-| `world.js` (curves, `boundsAt`/`boundsBase`, sectors) | difficulty, fairness, coins |
-| `constants.js` | the topic of the constant you touch (its doc block names it) |
-| `lifecycle.js`, `state.js` | fairness (rng streams, world-x cursors), onboarding |
-| `draw.js` ship / 3D hull | ship-render, economy |
-| `paint.js` (hangar paint kit, Paint sheet) | economy, ship-render |
-| `draw.js` walls, HUD, title, depth light, portal ring | visuals, hazards (crystals), portal |
-| `draw.js` death screen, freeze frame | screens, share |
-| `share.js` | share |
-| `approach.js` | onboarding |
-| `audio.js` | audio |
-| `input.js` | screens (milestones), README (hard rules) |
-| `ads-web.js`, `main.js` web frame, ad/IAP native code | economy |
-| `fonts.js` | visuals |
-| `branding/` | ship-render |
+A PreToolUse hook (`.claude/hooks/docs-pointer.js`, wired in `.claude/settings.json`) names the
+`docs/agents/` files to read before every `src/*.js` edit - its `MAP` is the list, read them first.
+Outside `src/`: `branding/` -> ship-render; native ad/IAP code -> economy.
 
 ## Topic rules and where the detail lives
 

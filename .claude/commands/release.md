@@ -158,7 +158,20 @@ State this explicitly in the final report so the user knows what's still manual:
 - No git commit/push (run `/autocommit` in each repo separately once satisfied)
 - No new screenshot/video capture (simulator-only, needs the user's own machine)
 
-## 7. Final report
+## 7. Memory sweep (every release, also when it goes live or is submitted)
+
+Status memories rot after every release - it has needed a cleanup six times. Before the
+final report, in the memory directory (`~/.claude/projects/-Users-theodoracatos-Development-Tunl/memory/`):
+- `project_release_status`: replace the block of this release with its current state
+  (bumped / submitted / live). It holds STATE only - collapse superseded versions to one
+  "Live" line, never append a dated log.
+- Every `project_*` memory whose work ships in this release: fix the `description:` and any
+  "uncommitted / not deployed / apps not built" line. Find them with
+  `grep -il 'uncommitted\|not deployed\|not yet committed\|apps not built\|not in any app build'`,
+  and map commits to releases with `git merge-base --is-ancestor <commit> <release commit>`.
+- Keep `MEMORY.md` hooks short and status-free. Rules: `feedback_memory_hygiene`.
+
+## 8. Final report
 
 Give the user a short checklist: what got bumped/replaced/drafted, what's still needed
 from them before this can actually ship, and where to find the release-notes file.
