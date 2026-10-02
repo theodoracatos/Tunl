@@ -1075,41 +1075,32 @@
     var dodgeBox = document.getElementById('feelDodge');
     var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    /* the real hull (src/draw.js SHIP_OUTLINE / SHIP_FACETS / drawShip, the K5 "Facette +
-       Licht" hull shipped in 12.0), PEARL's own colours - not a hand-drawn approximation. */
-    var SHIP_OUTLINE_TOP = new Path2D('M1.4 0 0.95 -0.13 0.3 -0.2 -0.6 -0.98 -0.72 -0.94 -1 -0.24 -1.22 -0.38 '
-                        + '-1.04 -0.1 -0.92 0Z');
-    var SHIP_OUTLINE_BOT = new Path2D('M1.4 0 0.95 0.13 0.3 0.2 -0.6 0.98 -0.72 0.94 -1 0.24 -1.22 0.38 '
-                        + '-1.04 0.1 -0.92 0Z');
-    var SHIP_FACETS = [
-      { p: [[1.40,0],[0.95,-0.13],[0.95,0]],                             top: 0.46, bot: -0.04 },
-      { p: [[0.95,0],[0.95,-0.13],[0.30,-0.20],[0.30,0]],                top: 0.30, bot: -0.20 },
-      { p: [[0.30,0],[0.30,-0.20],[-1.00,-0.24],[-1.04,-0.10],[-0.92,0]], top: 0.16, bot: -0.32 },
-      { p: [[0.30,-0.20],[-0.15,-0.59],[-0.86,-0.59],[-1.00,-0.24]],     top: 0.06, bot: -0.40 },
-      { p: [[0.30,-0.20],[-0.60,-0.98],[-0.50,-0.72],[0.12,-0.26]],      top: 0.26, bot: -0.22 },
-      { p: [[-0.15,-0.59],[-0.60,-0.98],[-0.72,-0.94],[-0.86,-0.59]],    top: -0.08, bot: -0.54 },
-      { p: [[-1.00,-0.24],[-1.22,-0.38],[-1.04,-0.10]],                  top: 0.22, bot: -0.26 }
-    ];
-    function facetPath(pts, flip) {
-      var d = 'M' + pts[0][0] + ' ' + (pts[0][1] * flip);
-      for (var i = 1; i < pts.length; i++) d += 'L' + pts[i][0] + ' ' + (pts[i][1] * flip);
-      return new Path2D(d + 'Z');
+    /* The ship and the crystals are painted by the game itself (src/draw.js drawShip3D /
+       drawCrystalSpike) into small sprites - the F-14 in cruise, PEARL, and a ceiling twin
+       plus a floor druse per weekday in that day's palette and crystal material. Regenerate
+       with `node branding/render-feel-sprites.mjs`; it rewrites the map below. */
+    /* BEGIN feel sprites: branding/render-feel-sprites.mjs (do not hand-edit) */
+    var FEEL = {"ship":{"cell":0,"r":36,"nozzleX":-0.98,"nozzleY":[0.20754483839984453,-0.1606571029811316]},"days":[{"mat":"Kalzit","top":1,"bot":2},{"mat":"Rostquarz","top":3,"bot":4},{"mat":"Selenit","top":5,"bot":6},{"mat":"Obsidian","top":7,"bot":8},{"mat":"Amethyst","top":9,"bot":10},{"mat":"Olivin","top":11,"bot":12},{"mat":"Rhodonit","top":13,"bot":14}],"cells":[[0,0,0,103,102,50.39999999999999,51],[1,0,0,105,107,52.5,17],[1,107,0,105,107,52.5,90],[2,0,0,105,107,52.5,17],[2,107,0,105,107,52.5,90],[3,0,0,105,107,52.5,17],[3,107,0,105,107,52.5,90],[4,0,0,105,107,52.5,17],[4,107,0,105,107,52.5,90],[5,0,0,105,107,52.5,17],[5,107,0,105,107,52.5,90],[6,0,0,105,107,52.5,17],[6,107,0,105,107,52.5,90],[7,0,0,105,107,52.5,17],[7,107,0,105,107,52.5,90]],"hw":15,"len":60};
+    /* END feel sprites */
+    /* Monday first, like weekdayIndex() and day.js; the page loads only today's crystals */
+    var WD = (new Date().getUTCDay() + 6) % 7, DAY = FEEL ? FEEL.days[WD] : null;
+    var imgs = [], pending = 0, sheetOk = false;
+    function want(g, url) {
+      var im = new Image();
+      pending++;
+      im.onload = function () { if (--pending === 0) { sheetOk = true; if (!running) draw(); } };
+      im.src = url;
+      imgs[g] = im;
     }
-    var SHIP_FACET_TOP = SHIP_FACETS.map(function (f) { return facetPath(f.p, 1); });
-    var SHIP_FACET_BOT = SHIP_FACETS.map(function (f) { return facetPath(f.p, -1); });
-    /* _shipTones (src/draw.js), PEARL's colour and glow, no livery */
-    var SHIP_BASE = [232, 238, 255], SHIP_DARK = [6, 8, 16];
-    var SHIP_LIGHT = [255 + (210 - 255) * 0.15, 255 + (220 - 255) * 0.15, 255 + (255 - 255) * 0.15];
-    function shipToneCss(k) {
-      k = Math.max(-0.92, Math.min(0.92, k));
-      var to = k >= 0 ? SHIP_LIGHT : SHIP_DARK, t = k >= 0 ? k : -k;
-      var r = SHIP_BASE[0] + (to[0] - SHIP_BASE[0]) * t;
-      var g = SHIP_BASE[1] + (to[1] - SHIP_BASE[1]) * t;
-      var b = SHIP_BASE[2] + (to[2] - SHIP_BASE[2]) * t;
-      return 'rgb(' + (r | 0) + ',' + (g | 0) + ',' + (b | 0) + ')';
+    if (FEEL) { want(0, '/media-ships/feel-ship.png?v=1'); want(WD + 1, '/media-ships/feel-day-' + WD + '.png?v=1'); }
+    function blit(cell, x, y, s) {
+      var c = FEEL.cells[cell];          /* [image, x, y, w, h, anchorX, anchorY] */
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(s, s);
+      ctx.drawImage(imgs[c[0]], c[1], c[2], c[3], c[4], -c[5], -c[6], c[3], c[4]);
+      ctx.restore();
     }
-    var SHIP_FACET_TOP_TONE = SHIP_FACETS.map(function (f) { return shipToneCss(f.top); });
-    var SHIP_FACET_BOT_TONE = SHIP_FACETS.map(function (f) { return shipToneCss(f.bot); });
 
     /* a stalactite/stalagmite along the corridor, evenly spaced so DODGE lights up
        once per pass instead of never - the label used to have nothing to react to. */
@@ -1190,23 +1181,23 @@
       var rgb = function (a) { return 'rgba(' + day[0] + ',' + day[1] + ',' + day[2] + ',' + a + ')'; };
       ctx.clearRect(0, 0, W, H);
 
-      var i, x, c, g, N = Math.ceil(W / 6);
+      /* rock first, then the crystals (their sockets sit in it), then the lit edge on top */
+      var i, x, c, g, N = Math.ceil(W / 6), edges = [];
       for (var side = 0; side < 2; side++) {
+        var edge = new Path2D();
         ctx.beginPath();
         for (i = 0; i <= N; i++) {
           x = i * 6;
           c = centre(scroll + x); g = halfGap();
           var y = side ? c + g : c - g;
-          if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+          if (i) { ctx.lineTo(x, y); edge.lineTo(x, y); } else { ctx.moveTo(x, y); edge.moveTo(x, y); }
         }
         ctx.lineTo(W, side ? H : 0);
         ctx.lineTo(0, side ? H : 0);
         ctx.closePath();
         ctx.fillStyle = 'rgba(16,16,26,0.92)';
         ctx.fill();
-        ctx.strokeStyle = rgb(0.55);
-        ctx.lineWidth = 1.4;
-        ctx.stroke();
+        edges.push(edge);
       }
 
       /* stalactites/stalagmites - a wall spike per hazardAt(), lit like a crystal
@@ -1214,6 +1205,11 @@
       var haz = visibleHazards();
       for (var hi = 0; hi < haz.length; hi++) {
         var h = haz[hi], halfW = Math.max(7, H * 0.045);
+        if (sheetOk) {
+          /* the crystal's length matches the spike's, so DODGE keeps its timing */
+          blit(h.top ? DAY.top : DAY.bot, h.sx, h.baseY, Math.abs(h.tipY - h.baseY) / FEEL.len);
+          continue;
+        }
         ctx.beginPath();
         ctx.moveTo(h.sx - halfW, h.baseY);
         ctx.lineTo(h.sx + halfW, h.baseY);
@@ -1224,49 +1220,45 @@
         ctx.strokeStyle = rgb(0.55);
         ctx.lineWidth = 1.2;
         ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(h.sx - halfW * 0.3, h.baseY);
-        ctx.lineTo(h.sx, h.tipY);
-        ctx.strokeStyle = rgb(0.85);
-        ctx.lineWidth = 1;
-        ctx.stroke();
       }
 
-      /* ship, pitched by climb rate like the real one - the actual K5 faceted hull
-         (src/draw.js SHIP_OUTLINE/SHIP_FACETS/drawShip), not a hand-drawn stand-in. */
+      ctx.strokeStyle = rgb(0.55);
+      ctx.lineWidth = 1.4;
+      for (var ei = 0; ei < edges.length; ei++) ctx.stroke(edges[ei]);
+
+      /* ship, pitched by climb rate like the real one */
       var px = W * 0.22, r = Math.max(9, H * 0.085);
       var pitch = Math.max(-0.5, Math.min(0.5, vy / (1080 * (H / 440)))) * 0.6;
       ctx.save();
       ctx.translate(px, py);
       ctx.rotate(pitch);
-      ctx.scale(r, r);
-      ctx.fillStyle = 'rgb(' + SHIP_BASE[0] + ',' + SHIP_BASE[1] + ',' + SHIP_BASE[2] + ')';
-      ctx.fill(SHIP_OUTLINE_TOP);
-      ctx.fill(SHIP_OUTLINE_BOT);
-      for (var fi = 0; fi < SHIP_FACETS.length; fi++) {
-        ctx.fillStyle = SHIP_FACET_TOP_TONE[fi];
-        ctx.fill(SHIP_FACET_TOP[fi]);
-        ctx.fillStyle = SHIP_FACET_BOT_TONE[fi];
-        ctx.fill(SHIP_FACET_BOT[fi]);
-      }
-      ctx.restore();
-
       if (holding) {                     /* the plume is the whole point */
-        ctx.save();
-        ctx.translate(px, py);
-        ctx.rotate(pitch);
-        var grd = ctx.createLinearGradient(-r * 1.0, 0, -r * 2.6, 0);
-        grd.addColorStop(0, rgb(0.85));
-        grd.addColorStop(1, rgb(0));
-        ctx.fillStyle = grd;
+        var nx = (FEEL ? FEEL.ship.nozzleX : -0.95) * r;
+        var nys = FEEL ? FEEL.ship.nozzleY : [0];
+        for (var ni = 0; ni < nys.length; ni++) {
+          var ny = nys[ni] * r, L = r * (1.1 + Math.random() * 0.5);
+          var grd = ctx.createLinearGradient(nx, 0, nx - L, 0);
+          grd.addColorStop(0, rgb(0.85));
+          grd.addColorStop(1, rgb(0));
+          ctx.fillStyle = grd;
+          ctx.beginPath();
+          ctx.moveTo(nx, ny - r * 0.11);
+          ctx.lineTo(nx - L, ny);
+          ctx.lineTo(nx, ny + r * 0.11);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+      if (sheetOk) {
+        blit(FEEL.ship.cell, 0, 0, r / FEEL.ship.r);
+      } else {                           /* until the sheet is in: a plain dart */
+        ctx.fillStyle = 'rgb(232,238,255)';
         ctx.beginPath();
-        ctx.moveTo(-r * 0.95, -r * 0.24);
-        ctx.lineTo(-r * (2.0 + Math.random() * 0.6), 0);
-        ctx.lineTo(-r * 0.95, r * 0.24);
+        ctx.moveTo(r * 1.4, 0); ctx.lineTo(-r * 0.9, -r * 0.6); ctx.lineTo(-r * 0.6, 0); ctx.lineTo(-r * 0.9, r * 0.6);
         ctx.closePath();
         ctx.fill();
-        ctx.restore();
       }
+      ctx.restore();
     }
 
     var last = 0, running = false, rafId = 0;
