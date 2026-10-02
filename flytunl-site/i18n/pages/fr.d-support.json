@@ -10,7 +10,6 @@
  "dedb09f": "TUNL est fait par une seule personne, et chaque message est lu par celle qui peut le corriger.",
  "ba58242": "Jouer au jeu",
  "ad118c3": "Comment je joue ?",
- "a59c9b2": "Maintiens n'importe où sur l'écran (ou Espace, ou la flèche haut au clavier) pour monter, et relâche pour tomber. C'est tout le schéma de commande. Le <a href=\"/how-to-play/\">guide comment jouer</a> couvre le score, les huit pièces, chaque danger et la stratégie qui fait monter ton score.",
  "cb489b3": "Le jeu me semble trop dur. Un conseil ?",
  "2b6beaa": "Chaque partie commence par un tronçon de grotte sûr sans dangers, et tu as deux éraflures de coque pour toute la partie, la première paroi que tu touches ne la terminera donc pas. Pense un virage à l'avance plutôt que de réagir au virage où tu te trouves, et prends les pièces d'or : elles élargissent le couloir. Le <a href=\"/how-to-play/\">guide</a> a une section sur la stratégie.",
  "e1b58e1": "La grotte est-elle vraiment la même pour tout le monde ?",
@@ -50,5 +49,6 @@
  "d1cf96f": "TUNL est disponible en 16 langues. Si une phrase sonne bizarrement dans la tienne, <a href=\"mailto:info@flytunl.ch\">préviens-moi</a> et je la corrigerai.",
  "af0dbac": "Pas trouvé ? <a href=\"mailto:info@flytunl.ch\">Écris-moi</a>. Pour les logos, captures d'écran et une description du jeu pour un article, voir le <a href=\"/press/\">kit presse</a>, et pour qui fait TUNL et pourquoi, voir <a href=\"/about/\">À propos</a>.",
  "ceae810": "Réponses aux questions courantes sur TUNL : comment jouer, pourquoi c'est difficile, comment débloquer les vaisseaux, où ta progression est stockée, supprimer les publicités, restaurer les achats, classements et confidentialité, plus comment contacter le développeur.",
- "4fe0e3e": "Support &middot; mis à jour le 23 septembre 2026 pour TUNL 17.0"
+ "4fe0e3e": "Support &middot; mis à jour le 23 septembre 2026 pour TUNL 17.0",
+ "4759f87": "Touche n'importe où sur l'écran (ou Espace, ou la flèche haut au clavier) pour un petit saut, maintiens pour continuer à monter et relâche pour tomber. C'est tout le schéma de commande. Le <a href=\"/how-to-play/\">guide de jeu</a> couvre le score, les neuf pièces, chaque danger, l'étoile et la stratégie qui fait monter ton score."
 }

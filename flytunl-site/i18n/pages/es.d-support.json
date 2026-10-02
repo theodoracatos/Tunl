@@ -10,7 +10,6 @@
  "dedb09f": "TUNL lo hace una sola persona, y cada mensaje lo lee quien puede arreglarlo.",
  "ba58242": "Jugar",
  "ad118c3": "¿Cómo juego?",
- "a59c9b2": "Mantén pulsado en cualquier parte de la pantalla (o Espacio, o la flecha arriba en un teclado) para subir, y suelta para caer. Ese es todo el esquema de control. La <a href=\"/how-to-play/\">guía de cómo jugar</a> cubre la puntuación, las ocho monedas, cada peligro y la estrategia que sube tu puntuación.",
  "cb489b3": "El juego se siente muy difícil. ¿Algún consejo?",
  "2b6beaa": "Cada partida empieza con un tramo de cueva seguro sin peligros, y tienes dos rasguños de casco para toda la partida, así que la primera pared que toques no la terminará. Piensa una curva por delante en lugar de reaccionar a la curva en la que estás, y coge monedas de oro: ensanchan el pasillo. La <a href=\"/how-to-play/\">guía</a> tiene una sección sobre estrategia.",
  "e1b58e1": "¿La cueva es de verdad la misma para todos?",
@@ -50,5 +49,6 @@
  "d1cf96f": "TUNL está disponible en 16 idiomas. Si una frase suena rara en el tuyo, <a href=\"mailto:info@flytunl.ch\">avísame</a> y la arreglaré.",
  "af0dbac": "¿No está aquí? <a href=\"mailto:info@flytunl.ch\">Escríbeme</a>. Para logos, capturas de pantalla y una descripción del juego para un artículo, consulta el <a href=\"/press/\">kit de prensa</a>, y para quién hace TUNL y por qué, consulta <a href=\"/about/\">Acerca de</a>.",
  "ceae810": "Respuestas a preguntas comunes sobre TUNL: cómo jugar, por qué es difícil, cómo se desbloquean las naves, dónde se guarda tu progreso, quitar anuncios, restaurar compras, rankings y privacidad, además de cómo contactar al desarrollador.",
- "4fe0e3e": "Soporte &middot; actualizado el 23 de septiembre de 2026 para TUNL 17.0"
+ "4fe0e3e": "Soporte &middot; actualizado el 23 de septiembre de 2026 para TUNL 17.0",
+ "4759f87": "Toca en cualquier parte de la pantalla (o Espacio, o la flecha arriba del teclado) para dar un pequeño salto, mantén pulsado para seguir subiendo y suelta para caer. Ese es todo el esquema de control. La <a href=\"/how-to-play/\">guía de juego</a> explica la puntuación, las nueve monedas, cada peligro, la estrella y la estrategia que sube tu puntuación."
 }

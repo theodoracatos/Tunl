@@ -6,8 +6,8 @@
 <!-- Google AdSense (site verification + ad serving) -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4882203470005029"
      crossorigin="anonymous"></script>
-<title>TUNL - Eternal Labyrinth</title>
-<meta name="description" content="TUNL is a hold-to-thrust cave flyer for iOS and Android. Hold to fly, release to fall, and see how deep you can go.">
+<title>TUNL - Eternal Labyrinth | One-button cave flyer</title>
+<meta name="description" content="TUNL is a one-button cave flyer for iPhone, Android and the browser. Tap to hop, hold to climb, and see how deep you can go.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
@@ -15,14 +15,20 @@
 <link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#04040a">
-<meta property="og:title" content="TUNL - Eternal Labyrinth">
-<meta property="og:description" content="A hold-to-thrust cave flyer for iOS and Android. Hold to climb, release to fall, and see how far you can push into the dark.">
-<meta property="og:image" content="https://flytunl.ch/media-15.0/hero-15.0-play.jpg">
+<meta property="og:title" content="TUNL - Eternal Labyrinth | One-button cave flyer">
+<meta property="og:description" content="A one-button cave flyer for iPhone, Android and the browser. Tap to hop, hold to climb, and see how far you can push into the dark.">
+<meta property="og:image" content="https://flytunl.ch/media-18.4/og-star.jpg">
 <meta property="og:url" content="https://flytunl.ch/">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://flytunl.ch/media-15.0/hero-15.0-play.jpg">
+<meta name="twitter:image" content="https://flytunl.ch/media-18.4/og-star.jpg">
 <script src="/day.js?v=20260921a"></script>
+<script>
+  /* Phones get the app as the first button and the browser game as the second:
+     the goal is installs, and a phone can install in two taps. Desktop keeps
+     "play in your browser" first. Set before first paint, so nothing jumps. */
+  if (/iPhone|iPod|Android/i.test(navigator.userAgent)) document.documentElement.classList.add('is-phone');
+</script>
 <link rel="stylesheet" href="/site.css?v=20260923a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -225,6 +231,14 @@
     color:#05050c;
   }
   .play-cta svg { width:20px; height:20px; fill:#05050c; flex:none; }
+  /* Phone order (html.is-phone, set in <head>): the app button (/get/ sends each
+     phone to its own store) replaces the browser button, store badges and their
+     label; the browser game stays one quiet link below it. */
+  .app-cta, .alt-play { display:none; }
+  html.is-phone .web-cta { display:none; }
+  html.is-phone .play-cta.app-cta { display:inline-flex; }
+  html.is-phone .alt-play { display:block; }
+  .alt-play { color:var(--text-dim); font-size:14px; margin:0 auto 4px; width:max-content; }
   .badges-label {
     color:var(--text-faint);
     font-size:11.5px;
@@ -675,15 +689,20 @@
         <img class="wordmark" src="/wordmark.svg" alt="TUNL">
         <p class="eyebrow">Eternal Labyrinth</p>
         <p class="pitch" id="heroPitch"
-           data-alt="You just watched it. Now fly it.">Hold to climb, release to fall. See how far you get before the tunnel closes in.</p>
+           data-alt="You just watched it. Now fly it.">Tap to hop, hold to climb. See how far you get before the tunnel closes in.</p>
 
-        <a class="play-cta" href="/play/">
+        <a class="play-cta web-cta" href="/play/">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
           Play in your browser
         </a>
-        <p class="badges-label">or get the app</p>
+        <a class="play-cta app-cta" href="/get/?utm_source=flytunl&amp;utm_campaign=home_hero">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3h2v10.2l3.6-3.6 1.4 1.4-6 6-6-6 1.4-1.4 3.6 3.6zM5 19h14v2H5z"/></svg>
+          Get the free app
+        </a>
+        <a class="alt-play" href="/play/">or play in your browser</a>
+        <p class="badges-label web-cta">or get the app</p>
 
-        <div class="badges">
+        <div class="badges web-cta">
           <a class="badge" href="https://apps.apple.com/us/app/tunl-cave-flyer/id6789721765" target="_blank" rel="noopener">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.47 2.28-1.23 3.1-.82.9-2.17 1.6-3.28 1.5-.14-1.1.44-2.28 1.16-3.02.83-.86 2.27-1.5 3.35-1.58zM20.5 17.02c-.56 1.3-.83 1.88-1.55 3.02-1.01 1.6-2.44 3.6-4.2 3.61-1.57.02-1.97-1.02-4.1-1.01-2.13.01-2.57 1.03-4.14 1.02-1.77-.02-3.12-1.82-4.13-3.42C-.02 17.4-.3 12.02 1.68 9.06c1-1.5 2.6-2.38 4.1-2.38 1.53 0 2.5 1.03 3.77 1.03 1.23 0 1.97-1.03 3.74-1.03 1.34 0 2.76.73 3.77 2-3.31 1.82-2.77 6.55.44 7.85z"/></svg>
             <span class="platform">App Store</span>
@@ -707,7 +726,7 @@
     <div class="feelbox">
       <canvas id="feelCanvas" height="340" aria-hidden="true"></canvas>
       <div class="controls">
-        <div class="control" id="feelHold"><span class="k">HOLD</span><span class="d">Thrust upward</span></div>
+        <div class="control" id="feelHold"><span class="k">TAP / HOLD</span><span class="d">Hop up, or keep climbing</span></div>
         <div class="control" id="feelFall"><span class="k">RELEASE</span><span class="d">Gravity pulls you down</span></div>
         <div class="control" id="feelDodge"><span class="k">DODGE</span><span class="d">Stalactites, mines, cannons, walls</span></div>
       </div>
@@ -717,7 +736,7 @@
   <section class="section chapters">
     <article class="chapter">
       <figure class="ch-shot">
-        <img src="/media-15.0/ch-share.jpg" alt="TUNL debriefing screen - check your rank, the whole world flies the same cave" width="960" height="444" loading="lazy">
+        <img src="/media-18.4/ch-share.jpg" alt="TUNL debriefing screen - check your rank, the whole world flies the same cave" width="960" height="444" loading="lazy">
       </figure>
       <div class="ch-text">
         <span class="ch-no">1</span>
@@ -729,7 +748,7 @@
 
     <article class="chapter">
       <figure class="ch-shot">
-        <img src="/media-15.0/ch-ghost.jpg" alt="TUNL gameplay - hold to climb, let go to fall, one touch is the whole game" width="960" height="444" loading="lazy">
+        <img src="/media-18.4/ch-ghost.jpg" alt="TUNL gameplay - tap to hop, hold to climb, one touch is the whole game" width="960" height="444" loading="lazy">
       </figure>
       <div class="ch-text">
         <span class="ch-no">2</span>
@@ -741,7 +760,7 @@
 
     <article class="chapter">
       <figure class="ch-shot">
-        <img src="/media-15.0/ch-ships.jpg" alt="TUNL title screen - one cave, every player, every day" width="960" height="444" loading="lazy">
+        <img src="/media-18.4/ch-ships.jpg" alt="TUNL title screen - one cave, every player, every day" width="960" height="444" loading="lazy">
       </figure>
       <div class="ch-text">
         <span class="ch-no">3</span>
@@ -753,7 +772,7 @@
 
     <article class="chapter">
       <figure class="ch-shot">
-        <img src="/media-15.0/ch-deep.jpg" alt="TUNL power-ups - shields, ammo, magnets and more, going deeper" width="960" height="444" loading="lazy">
+        <img src="/media-18.4/ch-deep.jpg" alt="TUNL star - fill the meter and smash through everything in your way" width="960" height="444" loading="lazy">
       </figure>
       <div class="ch-text">
         <span class="ch-no">4</span>
@@ -876,12 +895,12 @@
       <div class="rule"></div>
     </div>
     <div class="gallery" id="gallery">
-      <figure><img src="/shots/15.0/en/01.webp" alt="TUNL title screen - one cave, every player, every day" loading="lazy" tabindex="0" role="button"></figure>
-      <figure><img src="/shots/15.0/en/02.webp" alt="TUNL approach - every run takes off over the city at dusk and dives into the rock" loading="lazy" tabindex="0" role="button"></figure>
-      <figure><img src="/shots/15.0/en/03.webp" alt="TUNL gameplay - hold to climb, let go to fall, one touch is the whole game" loading="lazy" tabindex="0" role="button"></figure>
-      <figure><img src="/shots/15.0/en/04.webp" alt="TUNL warp ring - fly through for a pure-speed rush" loading="lazy" tabindex="0" role="button"></figure>
-      <figure><img src="/shots/15.0/en/05.webp" alt="TUNL power-ups - shields, ammo, magnets and more, going deeper" loading="lazy" tabindex="0" role="button"></figure>
-      <figure><img src="/shots/15.0/en/06.webp" alt="TUNL debriefing screen - check your rank, the whole world flies the same cave" loading="lazy" tabindex="0" role="button"></figure>
+      <figure><img src="/shots/18.4/en/01.webp" alt="TUNL title screen - one cave, every player, every day" loading="lazy" tabindex="0" role="button"></figure>
+      <figure><img src="/shots/18.4/en/02.webp" alt="TUNL approach - every run takes off over the city at dusk and dives into the rock" loading="lazy" tabindex="0" role="button"></figure>
+      <figure><img src="/shots/18.4/en/03.webp" alt="TUNL gameplay - tap to hop, hold to climb, one touch is the whole game" loading="lazy" tabindex="0" role="button"></figure>
+      <figure><img src="/shots/18.4/en/04.webp" alt="TUNL star - fill the meter and smash through everything in your way" loading="lazy" tabindex="0" role="button"></figure>
+      <figure><img src="/shots/18.4/en/05.webp" alt="TUNL power-ups - shields, lasers, magnets and more, going deeper" loading="lazy" tabindex="0" role="button"></figure>
+      <figure><img src="/shots/18.4/en/06.webp" alt="TUNL debriefing screen - check your rank, the whole world flies the same cave" loading="lazy" tabindex="0" role="button"></figure>
     </div>
   </section>
 
@@ -894,10 +913,15 @@
       <span class="sep">&middot;</span>
       <span>PLANET <b class="t-planet"></b></span>
     </a>
-    <a class="play-cta" href="/play/">
+    <a class="play-cta web-cta" href="/play/">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
       Play in your browser
     </a>
+    <a class="play-cta app-cta" href="/get/?utm_source=flytunl&amp;utm_campaign=home_closer">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3h2v10.2l3.6-3.6 1.4 1.4-6 6-6-6 1.4-1.4 3.6 3.6zM5 19h14v2H5z"/></svg>
+      Get the free app
+    </a>
+    <a class="alt-play" href="/play/">or play in your browser</a>
   </section>
 
   <!-- site-chrome:foot -->

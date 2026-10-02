@@ -10,7 +10,6 @@
  "dedb09f": "TUNL tek bir kişi tarafından yapılıyor ve her mesajı onu düzeltebilecek kişi okuyor.",
  "ba58242": "Oyunu oynamak",
  "ad118c3": "Nasıl oynarım?",
- "a59c9b2": "Yükselmek için ekranın herhangi bir yerinde basılı tut (veya Boşluk ya da klavyede yukarı ok), düşmek için bırak. Kontrol şemasının tamamı bu. <a href=\"/how-to-play/\">Nasıl oynanır rehberi</a> skorlamayı, sekiz jetonun tamamını, her tehlikeyi ve skorunu yükselten stratejiyi kapsar.",
  "cb489b3": "Oyun çok zor geliyor. Bir tavsiyen var mı?",
  "2b6beaa": "Her koşu, tehlike içermeyen güvenli bir mağara bölümüyle başlar ve koşunun tamamı için iki gövde çiziğin vardır, bu yüzden dokunduğun ilk duvar koşuyu bitirmez. İçinde bulunduğun virajın yerine bir sonraki virajı düşün ve altın jetonları al: koridoru genişletirler. <a href=\"/how-to-play/\">Rehberde</a> strateji hakkında bir bölüm var.",
  "e1b58e1": "Mağara gerçekten herkes için aynı mı?",
@@ -50,5 +49,6 @@
  "d1cf96f": "TUNL 16 dilde mevcuttur. Kendi dilinde bir satır tuhaf okunuyorsa <a href=\"mailto:info@flytunl.ch\">bana söyle</a>, düzelteceğim.",
  "af0dbac": "Burada bulamadın mı? <a href=\"mailto:info@flytunl.ch\">Bana yaz</a>. Bir makale için logolar, ekran görüntüleri ve oyunun açıklaması için <a href=\"/press/\">basın kitine</a>, TUNL'ı kimin ve neden yaptığı için <a href=\"/about/\">Hakkında</a> sayfasına bak.",
  "ceae810": "TUNL hakkında sık sorulan sorulara yanıtlar: nasıl oynanır, neden zor, gemiler nasıl açılır, ilerlemen nerede saklanır, reklamları kaldırma, satın alımları geri yükleme, sıralamalar ve gizlilik, artı geliştiriciyle nasıl iletişime geçileceği.",
- "4fe0e3e": "Destek &middot; TUNL 17.0 için 23 Eylül 2026 tarihinde güncellendi"
+ "4fe0e3e": "Destek &middot; TUNL 17.0 için 23 Eylül 2026 tarihinde güncellendi",
+ "4759f87": "Kısa bir sıçrama için ekranın herhangi bir yerine dokun (ya da Boşluk, ya da klavyedeki yukarı ok), yükselmeye devam etmek için basılı tut ve düşmek için bırak. Tüm kontrol şeması bu. <a href=\"/how-to-play/\">Oynanış rehberi</a> puanlamayı, dokuz jetonun hepsini, her tehlikeyi, yıldızı ve puanını yükselten stratejiyi anlatır."
 }

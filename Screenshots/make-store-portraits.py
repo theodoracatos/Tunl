@@ -45,7 +45,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
-SRC_DIR = os.path.join(HERE, "iOS_15.0")
+SRC_DIR = os.path.join(HERE, "iOS_18.4")
 W, H = 1320, 2868
 
 VOID = (6, 5, 12)
@@ -77,148 +77,148 @@ FONTS = {  # locale -> (path, ttc index, layout engine, direction, headline px)
 }
 
 # Per-slide zoom region in capture pixels: (centre x, centre y, width). Height
-# follows from the panel aspect. Tuned against the six 2026-09-19 captures -
+# follows from the panel aspect. Re-tuned 2026-10-02 against the six 18.4 captures -
 # re-check them if the raw shots are replaced.
 ZOOM = [
     (1699, 575, 950),    # title: the ship in its selector ring
-    (560, 850, 900),     # approach: the ship over the dusk skyline
-    (700, 750, 900),     # flight: ship, shield ring, spike + coin
-    (2263, 740, 950),    # portal: the warp hoop hanging in the corridor
-    (1000, 830, 950),    # deep: tight corridor, coin line, rock island
+    (520, 600, 760),     # approach: the ship over the dusk skyline
+    (680, 560, 900),     # flight: ship, shield ring, crystals + coin
+    (720, 880, 950),     # star: the starred ship smashing through
+    (1010, 560, 1300),   # deep: shield ring, crystals, the console
     (620, 470, 1300),    # debriefing: score, rail, reward chips
 ]
 # The 9:16 Play canvas has a wider, shorter zoom panel, so a few regions need
 # re-centring to keep their subject (ring, score, WORLD header) inside it.
-ZOOM_COMPACT = {0: (1699, 600, 1250), 1: (420, 560, 640), 3: (2263, 740, 1250), 4: (1050, 830, 1250), 5: (700, 430, 1500)}
+ZOOM_COMPACT = {0: (1699, 600, 1250), 1: (470, 600, 800), 3: (800, 860, 1250), 4: (1050, 600, 1350), 5: (700, 430, 1500)}
 ACCENT = [1, 1, 0, 1, 1, 1]   # which headline line is rose
 
 COPY = {
     "en": [
         (["One cave.", "Every player.", "Every day."], "A brand-new world every day"),
         (["Take off at dusk.", "Dive into the rock."], "Every run starts high over the city"),
-        (["Hold to climb.", "Let go to fall."], "One touch. That's the whole game."),
-        (["Thread the ring.", "Warp the cave."], "Fly through the hoop for pure speed"),
-        (["Shields up.", "Go deeper."], "Shields, ammo, magnets and more"),
+        (["Tap to hop.", "Hold to climb."], "One touch. That's the whole game."),
+        (["Fill the meter.", "Become a star."], "Smash through everything in your way"),
+        (["Shields up.", "Go deeper."], "Shields, lasers, magnets and more"),
         (["Crash.", "Check your rank.", "Go again."], "The whole world flies the same cave"),
     ],
     "de": [
         (["Eine Höhle.", "Alle Spieler.", "Jeden Tag."], "Jeden Tag eine brandneue Welt"),
         (["Start in der Dämmerung.", "Rein in den Fels."], "Jeder Flug beginnt über der Stadt"),
-        (["Halten zum Steigen.", "Loslassen zum Fallen."], "Ein Finger. Mehr braucht es nicht."),
-        (["Triff den Ring.", "Warp durch die Höhle."], "Durch den Reif zu purem Tempo"),
-        (["Schilde hoch.", "Tiefer rein."], "Schilde, Munition, Magnete und mehr"),
+        (["Tippen zum Hüpfen.", "Halten zum Steigen."], "Ein Finger. Mehr braucht es nicht."),
+        (["Anzeige füllen.", "Werde zum Stern."], "Zerschmettere alles, was im Weg ist"),
+        (["Schilde hoch.", "Tiefer rein."], "Schilde, Laser, Magnete und mehr"),
         (["Crash.", "Rang checken.", "Nochmal."], "Die ganze Welt fliegt dieselbe Höhle"),
     ],
     "fr": [
         (["Une grotte.", "Tous les joueurs.", "Chaque jour."], "Un monde tout neuf chaque jour"),
         (["Décolle au crépuscule.", "Plonge dans la roche."], "Chaque vol démarre au-dessus de la ville"),
-        (["Maintiens pour monter.", "Relâche pour tomber."], "Un doigt. C'est tout le jeu."),
-        (["Vise l'anneau.", "Warp dans la grotte."], "Traverse l'anneau à pleine vitesse"),
-        (["Boucliers levés.", "Va plus loin."], "Boucliers, munitions, aimants et plus"),
+        (["Touche pour sauter.", "Maintiens pour monter."], "Un doigt. C'est tout le jeu."),
+        (["Remplis la jauge.", "Deviens une étoile."], "Fracasse tout ce qui te barre la route"),
+        (["Boucliers levés.", "Va plus loin."], "Boucliers, lasers, aimants et plus"),
         (["Crash.", "Vois ton rang.", "Rejoue."], "Le monde entier vole dans la même grotte"),
     ],
     "it": [
         (["Una grotta.", "Tutti i giocatori.", "Ogni giorno."], "Un mondo nuovo ogni giorno"),
         (["Decolla al tramonto.", "Tuffati nella roccia."], "Ogni volo parte sopra la città"),
-        (["Tieni per salire.", "Lascia per scendere."], "Un dito. Tutto qui."),
-        (["Centra l'anello.", "Warp nella grotta."], "Attraversa l'anello a tutta velocità"),
-        (["Scudi attivi.", "Vai più a fondo."], "Scudi, munizioni, magneti e altro"),
+        (["Tocca per un balzo.", "Tieni per salire."], "Un dito. Tutto qui."),
+        (["Riempi l'indicatore.", "Diventa una stella."], "Frantuma tutto ciò che ti sbarra la strada"),
+        (["Scudi attivi.", "Vai più a fondo."], "Scudi, laser, magneti e altro"),
         (["Schianto.", "Guarda la classifica.", "Riprova."], "Tutto il mondo vola nella stessa grotta"),
     ],
     "es": [
         (["Una cueva.", "Todos los jugadores.", "Cada día."], "Un mundo nuevo cada día"),
         (["Despega al anochecer.", "Métete en la roca."], "Cada vuelo empieza sobre la ciudad"),
-        (["Mantén para subir.", "Suelta para caer."], "Un dedo. Así de simple."),
-        (["Atraviesa el aro.", "Warp en la cueva."], "Cruza el anillo a toda velocidad"),
-        (["Escudos arriba.", "Más profundo."], "Escudos, munición, imanes y más"),
+        (["Toca para saltar.", "Mantén para subir."], "Un dedo. Así de simple."),
+        (["Llena el medidor.", "Conviértete en estrella."], "Destroza todo lo que se cruce"),
+        (["Escudos arriba.", "Más profundo."], "Escudos, láseres, imanes y más"),
         (["Choca.", "Mira tu ranking.", "Otra vez."], "Todo el mundo vuela la misma cueva"),
     ],
     "pt-BR": [
         (["Uma caverna.", "Todos os jogadores.", "Todo dia."], "Um mundo novo todo dia"),
         (["Decole no crepúsculo.", "Entre na rocha."], "Todo voo começa sobre a cidade"),
-        (["Segure para subir.", "Solte para cair."], "Um toque. É o jogo inteiro."),
-        (["Acerte o anel.", "Warp na caverna."], "Atravesse o anel a toda velocidade"),
-        (["Escudos ativos.", "Vá mais fundo."], "Escudos, munição, ímãs e mais"),
+        (["Toque para saltar.", "Segure para subir."], "Um toque. É o jogo inteiro."),
+        (["Encha o medidor.", "Vire uma estrela."], "Despedace tudo no seu caminho"),
+        (["Escudos ativos.", "Vá mais fundo."], "Escudos, lasers, ímãs e mais"),
         (["Bateu.", "Veja seu ranking.", "Jogue de novo."], "O mundo inteiro voa na mesma caverna"),
     ],
     "ja": [
         (["洞窟はひとつ。", "世界中で同じ。", "毎日新しく。"], "毎日まったく新しい世界"),
         (["夕暮れに離陸。", "岩へ飛び込め。"], "すべての飛行は街の上から始まる"),
-        (["押して上昇。", "離して降下。"], "指一本。それだけのゲーム。"),
-        (["リングを通れ。", "洞窟をワープ。"], "リングをくぐって一気に加速"),
-        (["シールド全開。", "もっと奥へ。"], "シールド、弾薬、マグネットなど"),
+        (["タップで跳ねる。", "長押しで上昇。"], "指一本。それだけのゲーム。"),
+        (["メーターを満たせ。", "スターになれ。"], "行く手のすべてを打ち砕け"),
+        (["シールド全開。", "もっと奥へ。"], "シールド、レーザー、マグネットなど"),
         (["墜落。", "ランクを確認。", "もう一回。"], "世界中が同じ洞窟を飛ぶ"),
     ],
     "ko": [
         (["동굴 하나.", "모든 플레이어.", "매일."], "매일 완전히 새로운 세계"),
         (["황혼에 이륙.", "바위 속으로."], "모든 비행은 도시 위에서 시작된다"),
-        (["누르면 상승.", "떼면 하강."], "손가락 하나면 충분하다"),
-        (["고리를 통과하라.", "동굴을 워프."], "고리를 지나 폭발적인 가속"),
-        (["실드 가동.", "더 깊이."], "실드, 탄약, 자석 그리고 더"),
+        (["탭하면 점프.", "누르면 상승."], "손가락 하나면 충분하다"),
+        (["게이지를 채워라.", "스타가 되어라."], "앞을 막는 모든 것을 부숴라"),
+        (["실드 가동.", "더 깊이."], "실드, 레이저, 자석 그리고 더"),
         (["추락.", "랭킹 확인.", "다시 도전."], "전 세계가 같은 동굴을 난다"),
     ],
     "zh": [
         (["一個洞窟。", "所有玩家。", "每一天。"], "每天一個全新世界"),
         (["黃昏起飛。", "衝進岩壁。"], "每一趟飛行都從城市上空開始"),
-        (["按住上升。", "放開下降。"], "一根手指，就是整個遊戲"),
-        (["穿過光環。", "傳送穿越洞窟。"], "穿越光環，瞬間加速"),
-        (["護盾啟動。", "飛得更深。"], "護盾、彈藥、磁鐵等等"),
+        (["點一下輕跳。", "按住上升。"], "一根手指，就是整個遊戲"),
+        (["填滿量表。", "化身星星。"], "擊碎擋路的一切"),
+        (["護盾啟動。", "飛得更深。"], "護盾、雷射、磁鐵等等"),
         (["墜毀。", "查看排名。", "再飛一次。"], "全世界飛同一個洞窟"),
     ],
     "ru": [
         (["Одна пещера.", "Все игроки.", "Каждый день."], "Каждый день новый мир"),
         (["Взлёт в сумерках.", "Нырок в скалу."], "Каждый полёт начинается над городом"),
-        (["Держи - взлетай.", "Отпусти - падай."], "Один палец. Вот и вся игра."),
-        (["Пройди сквозь кольцо.", "Варп по пещере."], "Сквозь кольцо на полной скорости"),
-        (["Щиты подняты.", "Глубже."], "Щиты, патроны, магниты и не только"),
+        (["Коснись - прыжок.", "Держи - взлетай."], "Один палец. Вот и вся игра."),
+        (["Заполни шкалу.", "Стань звездой."], "Круши всё на своём пути"),
+        (["Щиты подняты.", "Глубже."], "Щиты, лазеры, магниты и не только"),
         (["Разбился.", "Глянь рейтинг.", "Ещё раз."], "Весь мир летит по одной пещере"),
     ],
     "el": [
         (["Μία σπηλιά.", "Κάθε παίκτης.", "Κάθε μέρα."], "Κάθε μέρα ένας ολοκαίνουργιος κόσμος"),
         (["Απογείωση στο σούρουπο.", "Βουτιά στον βράχο."], "Κάθε πτήση ξεκινά πάνω από την πόλη"),
-        (["Κράτα για άνοδο.", "Άφησε για πτώση."], "Ένα δάχτυλο. Αυτό είναι όλο."),
-        (["Πέρνα τον κρίκο.", "Warp στη σπηλιά."], "Μέσα από τον κρίκο με τέρμα ταχύτητα"),
-        (["Ασπίδες πάνω.", "Πιο βαθιά."], "Ασπίδες, πυρομαχικά, μαγνήτες και άλλα"),
+        (["Πάτα για άλμα.", "Κράτα για άνοδο."], "Ένα δάχτυλο. Αυτό είναι όλο."),
+        (["Γέμισε τον μετρητή.", "Γίνε αστέρι."], "Σπάσε ό,τι βρεθεί μπροστά σου"),
+        (["Ασπίδες πάνω.", "Πιο βαθιά."], "Ασπίδες, λέιζερ, μαγνήτες και άλλα"),
         (["Συντριβή.", "Δες τη θέση σου.", "Ξανά."], "Όλος ο κόσμος πετά στην ίδια σπηλιά"),
     ],
     "ar": [
         (["كهف واحد.", "كل اللاعبين.", "كل يوم."], "عالم جديد كليًا كل يوم"),
         (["أقلع عند الغسق.", "انطلق داخل الصخر."], "كل رحلة تبدأ فوق المدينة"),
-        (["اضغط للصعود.", "اترك للهبوط."], "إصبع واحد. هذه هي اللعبة كلها."),
-        (["اعبر الحلقة.", "انطلق عبر الكهف."], "اعبر الحلقة بسرعة خاطفة"),
-        (["الدروع جاهزة.", "تعمّق أكثر."], "دروع وذخيرة ومغناطيس والمزيد"),
+        (["انقر للقفز.", "اضغط للصعود."], "إصبع واحد. هذه هي اللعبة كلها."),
+        (["املأ العداد.", "كن نجمة."], "حطّم كل ما يعترض طريقك"),
+        (["الدروع جاهزة.", "تعمّق أكثر."], "دروع وليزر ومغناطيس والمزيد"),
         (["تحطمت.", "شاهد ترتيبك.", "حاول مجددًا."], "العالم كله يطير في الكهف نفسه"),
     ],
     "tr": [
         (["Tek mağara.", "Tüm oyuncular.", "Her gün."], "Her gün yepyeni bir dünya"),
         (["Alacakaranlıkta kalk.", "Kayanın içine dal."], "Her uçuş şehrin üstünde başlar"),
-        (["Basılı tut, yüksel.", "Bırak, düş."], "Tek parmak. Oyunun hepsi bu."),
-        (["Halkayı yakala.", "Mağarada warp."], "Halkadan geç, tam gaz ilerle"),
-        (["Kalkanlar açık.", "Daha derine."], "Kalkan, cephane, mıknatıs ve fazlası"),
+        (["Dokun, sıçra.", "Basılı tut, yüksel."], "Tek parmak. Oyunun hepsi bu."),
+        (["Göstergeyi doldur.", "Yıldız ol."], "Önündeki her şeyi parçala"),
+        (["Kalkanlar açık.", "Daha derine."], "Kalkan, lazer, mıknatıs ve fazlası"),
         (["Çarptın.", "Sıralamana bak.", "Tekrar uç."], "Tüm dünya aynı mağarada uçuyor"),
     ],
     "id": [
         (["Satu gua.", "Semua pemain.", "Setiap hari."], "Dunia baru setiap hari"),
         (["Lepas landas saat senja.", "Menukik ke batu."], "Tiap penerbangan dimulai di atas kota"),
-        (["Tahan untuk naik.", "Lepas untuk turun."], "Satu jari. Itu seluruh gamenya."),
-        (["Tembus cincin.", "Warp di gua."], "Tembus cincin dengan kecepatan penuh"),
-        (["Perisai aktif.", "Terbang lebih dalam."], "Perisai, amunisi, magnet, dan lainnya"),
+        (["Ketuk untuk lompat.", "Tahan untuk naik."], "Satu jari. Itu seluruh gamenya."),
+        (["Isi meternya.", "Jadilah bintang."], "Hancurkan semua yang menghalangi"),
+        (["Perisai aktif.", "Terbang lebih dalam."], "Perisai, laser, magnet, dan lainnya"),
         (["Tabrakan.", "Cek peringkatmu.", "Coba lagi."], "Seluruh dunia terbang di gua yang sama"),
     ],
     "pl": [
         (["Jedna jaskinia.", "Wszyscy gracze.", "Każdego dnia."], "Każdego dnia zupełnie nowy świat"),
         (["Start o zmierzchu.", "Nurkuj w skałę."], "Każdy lot zaczyna się nad miastem"),
-        (["Trzymaj, by wznosić.", "Puść, by opadać."], "Jeden palec. To cała gra."),
-        (["Wleć w pierścień.", "Warp przez jaskinię."], "Przez pierścień na pełnej prędkości"),
-        (["Tarcze w górę.", "Leć głębiej."], "Tarcze, amunicja, magnesy i więcej"),
+        (["Stuknij, by skoczyć.", "Trzymaj, by wznosić."], "Jeden palec. To cała gra."),
+        (["Napełnij wskaźnik.", "Zostań gwiazdą."], "Roztrzaskaj wszystko na drodze"),
+        (["Tarcze w górę.", "Leć głębiej."], "Tarcze, lasery, magnesy i więcej"),
         (["Rozbity.", "Sprawdź ranking.", "Leć jeszcze raz."], "Cały świat lata w tej samej jaskini"),
     ],
     "hi": [
         (["एक गुफा।", "हर खिलाड़ी।", "हर दिन।"], "हर दिन एक नई दुनिया"),
         (["शाम को उड़ान भरें।", "चट्टान में गोता लगाएं।"], "हर उड़ान शहर के ऊपर से शुरू होती है"),
-        (["दबाएं, ऊपर जाएं।", "छोड़ें, नीचे आएं।"], "एक उंगली। बस यही पूरा खेल है।"),
-        (["रिंग से गुज़रें।", "गुफा में वार्प।"], "रिंग से गुज़रें, पूरी रफ़्तार से"),
-        (["शील्ड चालू।", "और गहराई में।"], "शील्ड, गोला-बारूद, मैग्नेट और बहुत कुछ"),
+        (["टैप करें, उछलें।", "दबाएं, ऊपर जाएं।"], "एक उंगली। बस यही पूरा खेल है।"),
+        (["मीटर भरें।", "तारा बनें।"], "रास्ते की हर चीज़ चूर करें"),
+        (["शील्ड चालू।", "और गहराई में।"], "शील्ड, लेज़र, मैग्नेट और बहुत कुछ"),
         (["टकरा गए।", "अपनी रैंक देखें।", "फिर से उड़ें।"], "पूरी दुनिया एक ही गुफा में उड़ती है"),
     ],
 }

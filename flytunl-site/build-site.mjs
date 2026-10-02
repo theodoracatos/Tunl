@@ -91,8 +91,8 @@ async function build() {
   // structural injections (anchors that exist in home.src.html)
   tpl = tpl.replace('aria-label="Main"', 'aria-label="{{aria.main}}"');
   tpl = tpl.replace('<html lang="en">', '<html lang="{{HTMLLANG}}"{{DIR}}>');
-  // Localized store screenshots: the 15.0 portrait frames carry a headline baked into
-  // the image, and Screenshots/iOS_15.0/<locale>/ has a set per language, so a German
+  // Localized store screenshots: the 18.4 portrait frames carry a headline baked into
+  // the image, and Screenshots/iOS_18.4/<locale>/ has a set per language, so a German
   // page shows German frames instead of English ones. home.src.html names the English
   // path (it has to stay a valid standalone page); every language swaps the directory.
   // NOTE the directory is /shots/, not /Screenshots/: "Screenshots" is itself a
@@ -100,7 +100,7 @@ async function build() {
   // wherever it appears - including inside a URL - so the ja page shipped
   // src="/スクリーンショット/12.1/01.webp" for as long as that path existed. The render
   // check at the end of this file now fails the build on that class of breakage.
-  tpl = tpl.split('/shots/15.0/en/').join('/shots/15.0/{{SHOTLANG}}/');
+  tpl = tpl.split('/shots/18.4/en/').join('/shots/18.4/{{SHOTLANG}}/');
 
   if (!tpl.includes('<meta property="og:type" content="website">')) {
     throw new Error('anchor <meta property="og:type"...> not found in home.src.html');

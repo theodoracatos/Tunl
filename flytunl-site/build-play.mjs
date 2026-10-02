@@ -182,7 +182,7 @@ const FIREBASE_HEAD = gaHead(null);
 // Injected into <head> of the served /play page only (never the repo tunl.html or
 // the app builds). Link-preview cards for shared runs, canonical URL, theme colour.
 // The og:image is the marketing feature graphic already at the site root.
-const HEAD_EXTRA = `<meta name="description" content="Fly today's cave. Every player on Earth gets the same one. Hold to climb, release to fall, and see how deep you can go.">
+const HEAD_EXTRA = `<meta name="description" content="Fly today's cave. Every player on Earth gets the same one. Tap to hop, hold to climb, and see how deep you can go.">
 <meta name="author" content="Theodoracatos">
 <meta name="copyright" content="Copyright (c) 2026 Theodoracatos. All rights reserved.">
 <meta name="theme-color" content="#04040a">
@@ -190,12 +190,12 @@ const HEAD_EXTRA = `<meta name="description" content="Fly today's cave. Every pl
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="TUNL">
 <meta property="og:title" content="TUNL">
-<meta property="og:description" content="A daily hold-to-thrust cave flyer. Same cave for everyone, every day. Beat the run I just sent you.">
+<meta property="og:description" content="A daily one-button cave flyer. Same cave for everyone, every day. Beat the run I just sent you.">
 <meta property="og:url" content="https://flytunl.ch/play/">
 <meta property="og:image" content="https://flytunl.ch/feature-graphic-1024x500.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="TUNL">
-<meta name="twitter:description" content="A daily hold-to-thrust cave flyer. Same cave for everyone, every day.">
+<meta name="twitter:description" content="A daily one-button cave flyer. Same cave for everyone, every day.">
 <meta name="twitter:image" content="https://flytunl.ch/feature-graphic-1024x500.png">` + CF_BEACON + ADS_HEAD + FIREBASE_HEAD;
 
 async function build() {

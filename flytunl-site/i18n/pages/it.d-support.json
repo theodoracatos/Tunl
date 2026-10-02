@@ -10,7 +10,6 @@
  "dedb09f": "TUNL è realizzato da una sola persona, e ogni messaggio viene letto da chi può risolverlo.",
  "ba58242": "Giocare",
  "ad118c3": "Come si gioca?",
- "a59c9b2": "Tieni premuto in un punto qualsiasi dello schermo (oppure Spazio, o la freccia su sulla tastiera) per salire, e rilascia per scendere. Questo è l'intero schema di controllo. La <a href=\"/how-to-play/\">guida come si gioca</a> copre il punteggio, tutte e otto le monete, ogni pericolo e la strategia che fa salire il tuo punteggio.",
  "cb489b3": "Il gioco sembra troppo difficile. Qualche consiglio?",
  "2b6beaa": "Ogni partita inizia con un tratto di grotta sicuro senza pericoli, e hai due graffi allo scafo per tutta la partita, quindi la prima parete che tocchi non la finirà. Pensa una curva avanti invece di reagire alla curva in cui sei, e prendi le monete d'oro: allargano il corridoio. La <a href=\"/how-to-play/\">guida</a> ha una sezione sulla strategia.",
  "e1b58e1": "La grotta è davvero la stessa per tutti?",
@@ -50,5 +49,6 @@
  "d1cf96f": "TUNL è disponibile in 16 lingue. Se una frase suona strana nella tua, <a href=\"mailto:info@flytunl.ch\">dimmelo</a> e la correggerò.",
  "af0dbac": "Non l'hai trovato? <a href=\"mailto:info@flytunl.ch\">Scrivimi</a>. Per loghi, screenshot e una descrizione del gioco per un articolo, vedi il <a href=\"/press/\">press kit</a>, e per chi fa TUNL e perché, vedi <a href=\"/about/\">Informazioni</a>.",
  "ceae810": "Risposte alle domande comuni su TUNL: come si gioca, perché è difficile, come si sbloccano le navi, dove viene salvato il tuo progresso, rimuovere le pubblicità, ripristinare gli acquisti, classifiche e privacy, più come contattare lo sviluppatore.",
- "4fe0e3e": "Supporto &middot; aggiornato il 23 settembre 2026 per TUNL 17.0"
+ "4fe0e3e": "Supporto &middot; aggiornato il 23 settembre 2026 per TUNL 17.0",
+ "4759f87": "Tocca un punto qualsiasi dello schermo (o Spazio, o la freccia su della tastiera) per un breve balzo, tieni premuto per continuare a salire e rilascia per cadere. È tutto lo schema di controllo. La <a href=\"/how-to-play/\">guida al gioco</a> spiega il punteggio, tutte le nove monete, ogni pericolo, la stella e la strategia che alza il tuo punteggio."
 }
