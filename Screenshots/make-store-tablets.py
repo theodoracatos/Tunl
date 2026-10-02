@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""TUNL 15.0 Google Play TABLET screenshots (7" and 10" slots), 1920x1080.
+"""TUNL 18.4 Google Play TABLET screenshots (7" and 10" slots), 1920x1080.
 
 The phone set (make-store-portraits.py) is portrait; Play's tablet slots want
 16:9 landscape, and TUNL is landscape-only anyway, so here the raw capture is the
@@ -11,8 +11,8 @@ Tablet slots exist only on the DEFAULT (en-US) Play listing - the 14 translation
 inherit them - so this writes one English set. It replaces the 12.x frames (Courier
 caption under a small inset), which were the last stale images on the listing.
 
-Inputs : Screenshots/iOS_15.0/capture-*.png (same six raw captures, same order).
-Output : Screenshots/iOS_15.0/en/play-tablet-16x9/0N.png (1920x1080). The same six
+Inputs : Screenshots/iOS_18.4/capture-*.png (same six raw captures, same order).
+Output : Screenshots/iOS_18.4/en/play-tablet-16x9/0N.png (1920x1080). The same six
          files go into BOTH the 7" and the 10" slot (both accept 1920x1080).
 
 Run: python3 Screenshots/make-store-tablets.py
