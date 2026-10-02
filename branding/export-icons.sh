@@ -34,6 +34,18 @@ im.putalpha(m); im.save('$2')"
 echo "iOS app icon (Assets.xcassets/AppIcon.appiconset, linked via ASSETCATALOG_COMPILER_APPICON_NAME):"
 rgb 1024 Tunl/Tunl/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
 
+echo "iOS 18 dark + tinted app icons (AppIcon.appiconset appearances; older iOS ignores them):"
+# Dark: the launch logo (aura + ship, no ground), transparent - iOS lays its own dark ground.
+rsvg-convert -w 1024 -h 1024 "$LOGO" -o Tunl/Tunl/Assets.xcassets/AppIcon.appiconset/AppIcon-1024-dark.png
+echo "  Tunl/Tunl/Assets.xcassets/AppIcon.appiconset/AppIcon-1024-dark.png (1024x1024, RGBA)"
+# Tinted: the same picture as opaque greyscale on black; iOS maps luminance onto the tint.
+python3 -c "
+from PIL import Image
+im=Image.open('Tunl/Tunl/Assets.xcassets/AppIcon.appiconset/AppIcon-1024-dark.png').convert('RGBA')
+bg=Image.new('RGBA',im.size,(0,0,0,255)); bg.alpha_composite(im)
+bg.convert('L').save('Tunl/Tunl/Assets.xcassets/AppIcon.appiconset/AppIcon-1024-tinted.png')"
+echo "  Tunl/Tunl/Assets.xcassets/AppIcon.appiconset/AppIcon-1024-tinted.png (1024x1024, greyscale)"
+
 echo "Android launcher (manifest: android:icon=@mipmap/ic_launcher, android:roundIcon=@mipmap/ic_launcher_round):"
 for d in "mdpi 48" "hdpi 72" "xhdpi 96" "xxhdpi 144" "xxxhdpi 192"; do
   set -- $d
@@ -61,8 +73,14 @@ rgb 192 branding/web/favicon-192.png
 rgb 180 branding/web/apple-touch-icon-180.png
 rgb 32  branding/web/favicon-32.png
 rgb 16  branding/web/favicon-16.png
-cp "$MARK" branding/web/favicon.svg
-echo "  branding/web/favicon.svg (copied master)"
+# favicon.svg wraps a 256px raster: the master embeds the game-rendered ship at full
+# icon resolution (~1 MB), far too heavy for a tab icon.
+rgb 256 "$TMP/fav256.png"
+python3 -c "
+import base64
+b=base64.b64encode(open('$TMP/fav256.png','rb').read()).decode()
+open('branding/web/favicon.svg','w').write('<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"256\" height=\"256\" viewBox=\"0 0 256 256\"><image width=\"256\" height=\"256\" href=\"data:image/png;base64,'+b+'\"/></svg>')"
+echo "  branding/web/favicon.svg (256px raster wrapper)"
 
 echo "Web favicons (flytunl-site/site - deployed; linked from every page head + site.webmanifest):"
 rgb 512 flytunl-site/site/favicon-512.png
@@ -70,8 +88,8 @@ rgb 192 flytunl-site/site/favicon-192.png
 rgb 180 flytunl-site/site/apple-touch-icon-180.png
 rgb 32  flytunl-site/site/favicon-32.png
 rgb 16  flytunl-site/site/favicon-16.png
-cp "$MARK" flytunl-site/site/favicon.svg
-echo "  flytunl-site/site/favicon.svg (copied master)"
+cp branding/web/favicon.svg flytunl-site/site/favicon.svg
+echo "  flytunl-site/site/favicon.svg (same wrapper)"
 
 echo "Feature graphic PNG (og:image / twitter:image on the site):"
 rsvg-convert -w 1024 -h 500 -b '#04040e' "$FEAT" -o "$TMP/f.png"

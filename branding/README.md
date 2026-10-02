@@ -1,39 +1,52 @@
 # TUNL brand assets
 
-The icon identity is one motif: the player ship. The exact in-game sprite
-(`SHIP_OUTLINE` / `SHIP_FACETS` / `drawShip()` in `src/draw.js` - the faceted
-K5 "Facette + Licht" hull shipped in 12.0) sits centred, in a ~30-degree climb
-because the game verb is "hold = climb", on the dark cave ground with a soft
-blue aura and its own twin nacelle plumes. One shape, so the silhouette still
-reads at a 16px favicon - no coin, no tunnel-ring, no particle field.
+The icon identity is one motif: the player ship. Since 2026-10-02 that is the
+F-14 exactly as it flies (`drawShip3D()` in `src/draw.js`, roll
+`SHIP3D_ROLL_BASE`, wings folded fully back as in a warp - variant D of the
+icon concept, https://claude.ai/artifact/UA3oHiakB3ipBVmTEWoV4k), in a
+~30-degree climb because the game verb is "hold = climb", on the dark cave
+ground with a soft blue aura and twin nacelle plumes. One shape, so the
+silhouette still reads at a 16px favicon - no coin, no tunnel-ring, no
+particle field.
 
-## The ship block is generated - `gen-ship-glyph.mjs`
+## The ship block is rendered by the game - `render-ship-mark.mjs`
 
-Every master carries the SAME hull, so hand-editing 14 facet polygons in four
-SVG files is how they drift out of sync with the game (which is exactly what
-happened at 12.0: the masters still held the pre-12.0 needle - nose 1.72r,
-span 0.92r, smooth white fill - long after the game stopped drawing it).
-
-`branding/gen-ship-glyph.mjs` mirrors the geometry and the facet tone maths
-from `src/draw.js` and writes the ship into each master between its
-`BEGIN/END generated ship` markers. Everything outside the markers
-(background, aura, placement transform) stays hand-authored per file.
+Every master carries the SAME ship. Copied geometry drifted twice (the pre-12.0
+needle, then the SR-71 after the F-14 shipped), and the 3D model has no vector
+twin anyway, so the ship is no longer copied at all: `render-ship-mark.mjs`
+loads `src/*.js` (tunl.html order, minus `main.js` / `ads-web.js`) in headless
+Chrome, lets `drawShip3D()` paint it and embeds the PNG between each master's
+`BEGIN/END generated ship` markers, in ship-local px (r = 130) inside the
+master's own transform. Everything outside the markers (background, aura,
+placement transform) stays hand-authored per file. Each target's bitmap
+resolution matches its largest export, so nothing is upscaled.
 
 ```
-node branding/gen-ship-glyph.mjs --list    # the four masters it writes
-node branding/gen-ship-glyph.mjs --write   # rewrite them in place
-node branding/gen-ship-glyph.mjs --r=130   # print one fragment to stdout
-bash branding/export-icons.sh              # then push the rasters everywhere
+node branding/render-ship-mark.mjs --list     # the four masters it writes
+node branding/render-ship-mark.mjs --write    # re-render them in place
+node branding/render-ship-mark.mjs --png=x.png --res=2   # ship layer only
+bash branding/export-icons.sh                 # then push the rasters everywhere
 ```
 
-Two deliberate deviations from the in-game render, both for icon legibility:
-the shadow-side facet tones are damped (`darkMix`, default 0.62) because a
-facet mixed 54% toward near-black merges into the `#04040e` icon ground and
-the lower wing drops out of the silhouette at favicon size; and the animated
-spine running lights are left out, since a logo is one frame and four chasing
-dots read as dirt on the hull. The plumes ARE the game's (`drawThrustPlume()`
-tints them with the skin glow, and PEARL's glow is already the cool white-blue
-the old hand-picked single cone was reaching for).
+Deviations from the in-game frame, all for the icon: the plume is a short
+teardrop (1.7r) instead of `drawThrustPlume()`'s 5r, which runs off any icon;
+running lights and strobes are off (`fx` false), since a logo is one frame.
+
+The masters are large (the launch logo embeds a ~2 MB PNG); `favicon.svg` is
+therefore NOT a copy of `icon-mark.svg` but a 256px raster wrapper written by
+`export-icons.sh`.
+
+`--site` renders the flytunl.ch ship section the same way, but top-down like the
+hangar (`drawShip()`): chip silhouettes from `SHIP_OUTLINE` and one portrait per
+skin into `flytunl-site/site/media-ships/` (named by skin index - `build-site.mjs`
+translates English words anywhere in the template, ship names included).
+
+iOS 18 dark and tinted app icons are written by `export-icons.sh` from
+`ios-launch-logo.svg` (dark: transparent; tinted: greyscale on black) and listed
+as luminosity appearances in `AppIcon.appiconset/Contents.json`.
+
+`gen-ship-glyph.mjs` is the retired vector generator (old SR-71 hull, damped
+shadow tones). Its `--write` refuses and nothing imports it any more.
 
 The wordmark ("TUNL", with the U drawn as a portal/gem) is a separate asset
 and unchanged by the icon direction; the two are meant to lock up together
@@ -45,8 +58,8 @@ and unchanged by the icon direction; the two are meant to lock up together
   iOS, Android's legacy launcher icon, the Play Store listing icon, and
   favicons. No text.
 - `icon-adaptive-foreground.svg` — same ship, transparent background, shrunk
-  so the sprite plus its plumes sits inside Android's 66dp adaptive-icon
-  safe zone. Pairs with the `tunlBackground` color (`#04040A`) as the
+  so the hull sits inside Android's 66dp adaptive-icon safe zone (the fading
+  plume tails reach past it and are cut by the launcher mask). Pairs with the `tunlBackground` color (`#04040A`) as the
   background layer.
 - `ios-launch-logo.svg` — the ship mark with no background rect (transparent),
   for the iOS `LaunchScreen.storyboard`, which lays it on the
@@ -141,14 +154,13 @@ parallel copy plus the wordmark rasters:
 `gen-v11-achievement-icons.py`). The other 18 were uploaded to App Store Connect without
 their generator ever being committed, and were recovered from Apple's CDN on 2026-09-14.
 
-- **The 7 `ship_*` now have a recipe**: `game-center/gen-ship-achievement-icons.mjs`. It
-  takes the hull from `gen-ship-glyph.mjs` (so from `src/draw.js`), not a copy, because
-  these are the only achievement icons that can drift - the hull already changed once.
-  It has NOT been run for the shipped icons: the PNGs in this folder are still the live
-  originals. Its background is recovered from them (corner mix toward navy 0.745, exact
-  for 5 of 7 ships; NOVA and SOLARIS land ~22-24 levels darker in the corners), but the
-  output is not pixel-identical. Once it is run for real, upload its output to BOTH
-  stores, or the repo and the stores disagree.
+- **The 7 `ship_*` have a recipe**: `game-center/gen-ship-achievement-icons.mjs`. Since
+  2026-10-02 it draws the F-14 hangar portrait with the game's own `drawShip()` (via
+  `render-ship-mark.mjs`, nothing copied), in the 30-deg climb, on the background
+  recovered from the old live icons (corner mix toward navy 0.745). **It was run for real
+  on 2026-10-02**: the PNGs in `achievement-icons/` are its output (`--write` emits SVGs
+  into the gitignored `svg/`, then rasterise and flatten to RGB). Until they are uploaded
+  to BOTH stores (ASC Game Center + Play Games), the repo and the stores disagree.
 - **The other 11 stay as artifacts without a recipe**: `first_flight`, `ace_pilot`,
   `master_fleet`, `ghost_hunter`, `new_legend`, `on_fire`, `score_1000/10000/100000`,
   `streak_7/30`. Bespoke motifs with nothing to drift against; a variant means redrawing.

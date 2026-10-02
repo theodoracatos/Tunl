@@ -1,5 +1,9 @@
 // TUNL brand ship glyph generator.
 //
+// RETIRED for the brand masters on 2026-10-02: they now show the F-14 rendered by the
+// game itself (branding/render-ship-mark.mjs). This file still holds the old SR-71
+// geometry; nothing imports it any more (kept for reference).
+//
 // The icon identity is the player ship, so the branding masters have to carry the
 // SAME hull the game draws - which since 12.0 is the faceted K5 "Facette + Licht"
 // ship (src/draw.js SHIP_OUTLINE / SHIP_FACETS / drawShip). The old masters still
@@ -223,7 +227,10 @@ if (!_isMain) {
 } else if (argv.includes('--list')) {
     for (const t of TARGETS) console.log(t.file);
 } else if (argv.includes('--write')) {
-    writeTargets();
+    // Since 2026-10-02 the masters carry the F-14 rendered by render-ship-mark.mjs; this
+    // generator still holds the old SR-71 and would find no markers of its own anyway.
+    console.error('The brand masters are rendered by branding/render-ship-mark.mjs now.');
+    process.exit(1);
 } else {
     const opt = {};
     for (const a of argv) {

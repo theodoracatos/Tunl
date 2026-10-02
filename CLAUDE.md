@@ -138,7 +138,7 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 - Flight uses the 3D view (`SHIP_VIEW_3D`, roll 60 deg); hangar, shop and share card stay top-down.
 - The hull is an F-14 (2026-09-22); `SHIP3D_SWEEP_MAX` is capped by the hitbox fill, not by realism.
 - Wing sweep is three states: cruise between the stops, a warp folds fully back, a blue coin swings fully forward. Top-down views always draw full sweep.
-- Brand marks (`branding/gen-ship-glyph.mjs`, icon, logos) still show the old SR-71 by the user's choice - don't regenerate by reflex.
+- Brand marks (icon, launch logo, Play graphic, favicons) are the 3D F-14 in the warp pose, rendered from `src/draw.js` by `branding/render-ship-mark.mjs` (2026-10-02); `gen-ship-glyph.mjs` is the retired SR-71 generator.
 
 ### Visuals, typography, HUD -> `docs/agents/visuals.md`
 - Fonts via `FONT_UI` / `FONT_NUM` only; no Courier. Test layout on **WebKit**, not only Chrome.

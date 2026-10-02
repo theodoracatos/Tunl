@@ -58,3 +58,6 @@ flytunl-site/site/el/
 # The generator script is tracked; its raw captures and rendered frames are not -
 # regenerate with: python3 Screenshots/make-store-portraits.py
 Screenshots/iOS_12.0/
+
+# gen-ship-achievement-icons.mjs intermediates (the PNGs in achievement-icons/ are the artifacts)
+branding/game-center/svg/

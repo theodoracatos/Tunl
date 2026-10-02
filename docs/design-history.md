@@ -2320,3 +2320,29 @@ is a tap target, so accidental clicks risk the AdMob account). Deferred: Remove 
 (nothing to remove for players who see no interstitial), mediation (cents at this volume).
 Also found: the `MIN_REAL_RUN_SCORE` doc claimed no death before `SAFE_START_WX`; walls kill
 from the rock mouth on. The doc was corrected; the floor itself stays.
+
+## Brand marks move to the F-14 (2026-10-02)
+
+The app icon, launch logo, Play feature graphic and favicons showed the SR-71 for ten days
+after the F-14 hull shipped (user's call on 2026-09-22). On 2026-10-02 the user asked for a
+new logo "that looks like the new plane", concept first. The concept page
+(https://claude.ai/artifact/UA3oHiakB3ipBVmTEWoV4k) rendered four variants with the game's
+own draw code on the old icon's ground: A top-down swept (drawShip), B 3D cruise, C top-down
+with spread wings, D 3D with the wings folded back as in a warp. The user picked **D**, the
+short icon plume, the concept's ship size and the full scope (icon, launch logo, favicons,
+feature graphic, homepage chips, ship achievement icons, iOS 18 dark/tinted variants).
+
+Pipeline decision: the 3D model has no SVG twin, and the vector generator's copied geometry
+had already gone stale once, so `branding/render-ship-mark.mjs` renders the ship from
+`src/*.js` in headless Chrome and embeds it as a PNG in the SVG masters. Trade: the masters
+grow to 0.1-2 MB and `favicon.svg` became a 256px raster wrapper. Placement changes: icon
+and launch logo pivot (560,470) scale 2.0 (concept size); adaptive foreground scale 0.62 so
+the hull stays within 105 of the 132 px safe radius; feature graphic pulled in to (800,240)
+scale 1.20, since at the old placement the F-14's nose ran off the right edge.
+
+Phase 3, same day: the flytunl.ch ship chips and portraits and the 7 ship-unlock
+achievement icons were moved to the F-14 too, but TOP-DOWN (`drawShip`, the hangar view):
+both are portraits of a ship you own, the icon is a picture of the flight. The achievement
+icons keep the old live family's 30-deg climb and hue-washed ground; the hull grew to r=150
+because the F-14 is slimmer than the SR-71 was. iOS 18 dark/tinted app icons were added
+from the launch logo (no ground / greyscale on black).

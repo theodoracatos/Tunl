@@ -25,21 +25,22 @@ orange-red belongs to ON FIRE alone. Exhaust leaves the nacelles at `SHIP_NOZZLE
 (`constants.js`), shared by the plume, the on-fire cone and `update.js`'s thruster
 particles. The share card's `_shipGlyph` (`share.js`) carries a copy of the outline.
 
-**The brand marks are NOT the flying hull right now (user's call, 2026-09-22).**
-`branding/gen-ship-glyph.mjs` carries its own copy of the old SR-71 `SHIP_OUTLINE` /
-`SHIP_FACETS`, and the app icon, launch logo, Play graphic and the homepage ship chips
-(`flytunl-site/home.src.html`) still show it: the user kept icon and logo for now. Do not
-rerun the generator by reflex after a hull change; when the marks are moved to the F-14,
-port the new outline and facets into the generator first.
-
-**Historically the brand marks were generated from this same geometry.** `branding/gen-ship-glyph.mjs`
-mirrors `SHIP_OUTLINE` / `SHIP_FACETS` and the facet tone maths into the four SVG masters
-(between `BEGIN/END generated ship` markers); `branding/export-icons.sh` pushes the rasters
-to iOS, Android, the Play icon and the site. **Run both after any hull change** -
-hand-maintained copies once kept showing an old hull everywhere. The homepage ship chips
-(`flytunl-site/home.src.html`) carry a flat silhouette of the same outline. Deliberate
-deviations for favicon legibility: damped shadow-side tones, no running lights. See
-`branding/README.md`.
+**The brand marks are the flying F-14, rendered by the game itself (2026-10-02).** The
+user picked variant D of the icon concept (https://claude.ai/artifact/UA3oHiakB3ipBVmTEWoV4k):
+`drawShip3D` at `SHIP3D_ROLL_BASE`, wings folded fully back (`shipSweep` 1, the warp pose),
+PEARL, a 30-deg climb, plus a short icon plume (the game's 5r plume runs off any icon).
+`branding/render-ship-mark.mjs` loads `src/*.js` (tunl.html order, minus main/ads) in
+headless Chrome and embeds the ship as a PNG between the four SVG masters' `BEGIN/END
+generated ship` markers; `branding/export-icons.sh` pushes the rasters to iOS, Android, the
+Play icon and the site. **Run both after any hull or 3D-model change** - no geometry is
+copied, so nothing can go stale, but the PNG layer only changes when re-rendered.
+`branding/gen-ship-glyph.mjs` (the old vector generator) still holds the SR-71; its
+`--write` refuses and nothing imports it any more. The same script also renders, top-down
+with `drawShip()` like the hangar, the flytunl.ch ship chips and portraits (`--site`:
+`flytunl-site/home.src.html`, `flytunl-site/site/media-ships/`) and, through
+`game-center/gen-ship-achievement-icons.mjs`, the 7 ship-unlock achievement icons.
+iOS 18 dark/tinted app icons come from `ios-launch-logo.svg` in `export-icons.sh`.
+See `branding/README.md`.
 
 **Rock roughness is switched off** (`ROCK_ROUGHNESS_MAX` = 0, `draw.js`), and
 `_wallJagged` / `_stalOutline`'s `jAmp` **return early on a zero amplitude** - they used to
@@ -96,10 +97,8 @@ the flat hull everywhere. Study: https://claude.ai/artifact/Q9gDK8SdVrCYm9rU9biZ
 - Cost: roughly twice the flat hull's fills, no `shadowBlur`. If a weak device needs it,
   cache the hull per roll/sweep bucket in an offscreen canvas.
 
-**Still top-down, deliberately:** the brand marks (`branding/gen-ship-glyph.mjs`, app icon,
-launch logo, Play graphic, the homepage chips) and `share.js`'s `_shipGlyph`. They are
-portraits of the ship, not pictures of the flight, and the generator's facet-tone maths has
-no 3D twin. The swing-wing outer panel means the in-flight planform is no longer exactly
+**Still top-down, deliberately:** `share.js`'s `_shipGlyph` (a portrait of the ship, not a
+picture of the flight). The brand marks moved to the 3D flight view on 2026-10-02 (above). The swing-wing outer panel means the in-flight planform is no longer exactly
 `SHIP_OUTLINE`; if the marks are ever regenerated, decide then whether they follow.
 
 
