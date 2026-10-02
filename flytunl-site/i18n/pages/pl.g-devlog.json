@@ -2,8 +2,6 @@
  "4d37816": "Devlog TUNL - Notatki o budowaniu, dostrajaniu i balansowaniu gry o lataniu w jaskini",
  "4e22ab4": "Devlog TUNL",
  "d999ee4": "Notatki o tym, jak jednoprzyciskowa gra o lataniu w jaskini jest budowana, dostrajana i utrzymywana w uczciwości. Napisane przez jedyną osobę, która ją tworzy, z pozostawionymi liczbami.",
- "e7a5a00": "Devlog &middot; 6 wpisów",
- "12be719": "<a class=\"post\" href=\"/devlog/run-pacing/\"> <span class=\"when\">20 września 2026</span>",
  "05ac6c3": "Sektory po siedem sekund: jak TUNL nadaje tempo lotowi",
  "c91dfec": "Zastąpienie stosu krzywych trudności planem: sektory, gęstość w kształcie zęba piły, rysy na kadłubie, i co powiedzieli symulowani gracze przed i po.",
  "c5bcd58": "</a> <a class=\"post\" href=\"/devlog/same-ship-every-screen/\"> <span class=\"when\">20 września 2026</span>",
@@ -25,5 +23,11 @@
  "d0593e6": "TUNL składa kilka niezwykłych obietnic: jaskinia identyczna dla każdego gracza danego dnia, statek latający tak samo na każdym ekranie, oraz trudność mierzona, a nie zgadywana. Każdą obietnicę łatwo złożyć i trudno dotrzymać, a większość ciekawej pracy w grze polega właśnie na jej dotrzymywaniu. Te wpisy to miejsce, gdzie zapisuję, co się popsuło, co zmierzyłem i co postanowiłem.",
  "e7c9396": "Jeśli jesteś tu bardziej dla gry niż dla inżynierii, <a href=\"/how-to-play/\">przewodnik jak grać</a> obejmuje zasady, <a href=\"/ships/\">strona statków</a> obejmuje skład, a <a href=\"/changelog/\">lista zmian</a> wymienia, co zmieniło się w każdej wersji.",
  "232e36c": "<a class=\"cta\" href=\"/play/\">Zagraj w dzisiejszą jaskinię</a>",
- "0a21855": "Devlog TUNL: jak jaskinia dnia jest generowana z daty, jak lot ma nadane tempo w sektorach, jak fizyka pozostaje uczciwa między ekranami, jak dostrojono ciąg, i jak statek jest rysowany w 3D."
+ "0a21855": "Devlog TUNL: jak jaskinia dnia jest generowana z daty, jak lot ma nadane tempo w sektorach, jak fizyka pozostaje uczciwa między ekranami, jak dostrojono ciąg, i jak statek jest rysowany w 3D.",
+ "66ae088": "Devlog &middot; 2 października 2026 &middot; <a href=\"/devlog/\">wszystkie wpisy</a>",
+ "348b570": "<a class=\"post\" href=\"/devlog/tap-to-fly/\"> <span class=\"when\">2 października 2026</span>",
+ "7b4bd26": "</a> <a class=\"post\" href=\"/devlog/the-star/\"> <span class=\"when\">2 października 2026</span>",
+ "12ab331": "</a> <a class=\"post\" href=\"/devlog/laser/\"> <span class=\"when\">2 października 2026</span>",
+ "e8a0072": "</a> <a class=\"post\" href=\"/devlog/run-pacing/\"> <span class=\"when\">20 września 2026</span>",
+ "08ba104": "Devlog &middot; 9 wpisów"
 }

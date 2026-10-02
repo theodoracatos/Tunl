@@ -2,8 +2,6 @@
  "4d37816": "Devlog TUNL - Catatan tentang membangun, menyetel, dan menyeimbangkan game terbang gua",
  "4e22ab4": "Devlog TUNL",
  "d999ee4": "Catatan tentang bagaimana game terbang gua satu tombol dibangun, disetel, dan dijaga tetap adil. Ditulis oleh satu-satunya orang yang membuatnya, dengan angka-angkanya disertakan.",
- "e7a5a00": "Devlog &middot; 6 postingan",
- "12be719": "<a class=\"post\" href=\"/devlog/run-pacing/\"> <span class=\"when\">20 September 2026</span>",
  "05ac6c3": "Sektor Tujuh Detik: Bagaimana TUNL Mengatur Tempo Run",
  "c91dfec": "Mengganti setumpuk kurva kesulitan dengan sebuah rencana: sektor, kepadatan gigi gergaji, goresan lambung, dan apa yang dikatakan pemain simulasi sebelum dan sesudahnya.",
  "c5bcd58": "</a> <a class=\"post\" href=\"/devlog/same-ship-every-screen/\"> <span class=\"when\">20 September 2026</span>",
@@ -25,5 +23,11 @@
  "d0593e6": "TUNL membuat beberapa janji yang tidak biasa: gua yang sama untuk setiap pemain pada hari tertentu, kapal yang terbang sama di setiap layar, dan kesulitan yang diukur, bukan ditebak. Setiap janji mudah diucapkan dan sulit dipenuhi, dan sebagian besar pekerjaan menarik dalam game ini adalah memenuhinya. Postingan-postingan ini adalah tempat saya mencatat apa yang rusak, apa yang saya ukur, dan apa yang saya putuskan.",
  "e7c9396": "Jika kamu di sini untuk game-nya daripada rekayasanya, <a href=\"/how-to-play/\">panduan cara bermain</a> mencakup aturan, <a href=\"/ships/\">halaman kapal</a> mencakup daftarnya, dan <a href=\"/changelog/\">changelog</a> mencantumkan apa yang berubah di setiap versi.",
  "232e36c": "<a class=\"cta\" href=\"/play/\">Mainkan gua hari ini</a>",
- "0a21855": "Devlog TUNL: bagaimana gua harian dihasilkan dari sebuah tanggal, bagaimana sebuah run diatur temponya dalam sektor, bagaimana fisika tetap adil di berbagai layar, bagaimana dorongan disetel, dan bagaimana kapal digambar dalam 3D."
+ "0a21855": "Devlog TUNL: bagaimana gua harian dihasilkan dari sebuah tanggal, bagaimana sebuah run diatur temponya dalam sektor, bagaimana fisika tetap adil di berbagai layar, bagaimana dorongan disetel, dan bagaimana kapal digambar dalam 3D.",
+ "66ae088": "Devlog &middot; 2 Oktober 2026 &middot; <a href=\"/devlog/\">semua postingan</a>",
+ "348b570": "<a class=\"post\" href=\"/devlog/tap-to-fly/\"> <span class=\"when\">2 Oktober 2026</span>",
+ "7b4bd26": "</a> <a class=\"post\" href=\"/devlog/the-star/\"> <span class=\"when\">2 Oktober 2026</span>",
+ "12ab331": "</a> <a class=\"post\" href=\"/devlog/laser/\"> <span class=\"when\">2 Oktober 2026</span>",
+ "e8a0072": "</a> <a class=\"post\" href=\"/devlog/run-pacing/\"> <span class=\"when\">20 September 2026</span>",
+ "08ba104": "Devlog &middot; 9 postingan"
 }

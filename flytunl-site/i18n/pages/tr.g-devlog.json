@@ -2,8 +2,6 @@
  "4d37816": "TUNL Geliştirici Günlüğü - Bir mağara uçuş oyunu yapmak, ayarlamak ve dengelemek üzerine notlar",
  "4e22ab4": "TUNL Geliştirici Günlüğü",
  "d999ee4": "Tek düğmeli bir mağara uçuş oyununun nasıl yapıldığı, ayarlandığı ve adil tutulduğu üzerine notlar. Onu yapan tek kişi tarafından, sayılar da dahil olacak şekilde yazıldı.",
- "e7a5a00": "Geliştirici günlüğü &middot; 6 yazı",
- "12be719": "<a class=\"post\" href=\"/devlog/run-pacing/\"> <span class=\"when\">20 Eylül 2026</span>",
  "05ac6c3": "Yedi Saniyelik Sektörler: TUNL bir koşunun temposunu nasıl ayarlıyor",
  "c91dfec": "Bir yığın zorluk eğrisini bir planla değiştirmek: sektörler, testere dişi yoğunluk, gövde çizikleri, ve simüle edilmiş oyuncuların öncesinde ve sonrasında söyledikleri.",
  "c5bcd58": "</a> <a class=\"post\" href=\"/devlog/same-ship-every-screen/\"> <span class=\"when\">20 Eylül 2026</span>",
@@ -25,5 +23,11 @@
  "d0593e6": "TUNL birkaç alışılmadık söz veriyor: belirli bir günde her oyuncu için aynı olan bir mağara, her ekranda aynı şekilde uçan bir gemi, ve tahmin edilmek yerine ölçülen bir zorluk. Her söz söylemesi kolay, tutması zor, ve oyundaki ilginç işin çoğu onu tutmakla ilgili. Bu yazılar, neyin bozulduğunu, neyi ölçtüğümü ve neye karar verdiğimi yazdığım yer.",
  "e7c9396": "Buraya mühendislikten çok oyun için geldiysen, <a href=\"/how-to-play/\">nasıl oynanır rehberi</a> kuralları, <a href=\"/ships/\">gemiler sayfası</a> kadroyu kapsar, ve <a href=\"/changelog/\">değişiklik günlüğü</a> her sürümde nelerin değiştiğini listeler.",
  "232e36c": "<a class=\"cta\" href=\"/play/\">Bugünün mağarasını oyna</a>",
- "0a21855": "TUNL geliştirici günlüğü: günlük mağara bir tarihten nasıl üretiliyor, bir koşu sektörlerle nasıl temposu ayarlanıyor, fizik ekranlar arasında nasıl adil kalıyor, itiş nasıl ayarlandı, ve gemi 3D olarak nasıl çiziliyor."
+ "0a21855": "TUNL geliştirici günlüğü: günlük mağara bir tarihten nasıl üretiliyor, bir koşu sektörlerle nasıl temposu ayarlanıyor, fizik ekranlar arasında nasıl adil kalıyor, itiş nasıl ayarlandı, ve gemi 3D olarak nasıl çiziliyor.",
+ "66ae088": "Geliştirici günlüğü &middot; 2 Ekim 2026 &middot; <a href=\"/devlog/\">tüm yazılar</a>",
+ "348b570": "<a class=\"post\" href=\"/devlog/tap-to-fly/\"> <span class=\"when\">2 Ekim 2026</span>",
+ "7b4bd26": "</a> <a class=\"post\" href=\"/devlog/the-star/\"> <span class=\"when\">2 Ekim 2026</span>",
+ "12ab331": "</a> <a class=\"post\" href=\"/devlog/laser/\"> <span class=\"when\">2 Ekim 2026</span>",
+ "e8a0072": "</a> <a class=\"post\" href=\"/devlog/run-pacing/\"> <span class=\"when\">20 Eylül 2026</span>",
+ "08ba104": "Geliştirici günlüğü &middot; 9 yazı"
 }

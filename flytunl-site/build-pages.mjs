@@ -50,7 +50,8 @@ const PLAYSTORE = 'https://play.google.com/store/apps/details?id=com.theodoracat
 
 const PAGES = ['how-to-play', 'ships', 'devlog', 'changelog', 'about', 'support', 'press', 'privacy', 'impressum',
   'devlog/daily-cave', 'devlog/first-two-months', 'devlog/run-pacing',
-  'devlog/same-ship-every-screen', 'devlog/three-quarter-ship', 'devlog/thrust-retune'];
+  'devlog/same-ship-every-screen', 'devlog/three-quarter-ship', 'devlog/thrust-retune',
+  'devlog/tap-to-fly', 'devlog/the-star', 'devlog/laser'];
 const PAGE_SET = new Set(PAGES.map(p => `/${p}/`));
 
 const rd = (f) => readFileSync(f, 'utf8');
@@ -414,7 +415,8 @@ const today = new Date().toISOString().slice(0, 10);
 const PRI = { '': ['weekly', 1.0], 'play': ['daily', 0.9], 'how-to-play': ['monthly', 0.8], 'ships': ['monthly', 0.8],
   'devlog': ['weekly', 0.7], 'devlog/run-pacing': ['yearly', 0.7], 'devlog/same-ship-every-screen': ['yearly', 0.7],
   'devlog/thrust-retune': ['yearly', 0.7], 'devlog/three-quarter-ship': ['yearly', 0.7],
-  'devlog/first-two-months': ['yearly', 0.7], 'devlog/daily-cave': ['yearly', 0.8], 'changelog': ['monthly', 0.6],
+  'devlog/first-two-months': ['yearly', 0.7], 'devlog/daily-cave': ['yearly', 0.8],
+  'devlog/tap-to-fly': ['yearly', 0.7], 'devlog/the-star': ['yearly', 0.7], 'devlog/laser': ['yearly', 0.7], 'changelog': ['monthly', 0.6],
   'about': ['yearly', 0.5], 'support': ['monthly', 0.5], 'press': ['monthly', 0.4], 'privacy': ['yearly', 0.3],
   'impressum': ['yearly', 0.2] };
 const urlFor = (l, page) => ORIGIN + (l === 'en' ? '' : '/' + l) + '/' + (page ? page + '/' : '');

@@ -2,8 +2,6 @@
  "4d37816": "Devlog do TUNL - Notas sobre construir, ajustar e equilibrar um cave flyer",
  "4e22ab4": "Devlog do TUNL",
  "d999ee4": "Notas sobre como um cave flyer de um botão é construído, ajustado e mantido justo. Escritas pela única pessoa que o faz, com os números incluídos.",
- "e7a5a00": "Devlog &middot; 6 posts",
- "12be719": "<a class=\"post\" href=\"/devlog/run-pacing/\"> <span class=\"when\">20 de setembro de 2026</span>",
  "05ac6c3": "Setores de sete segundos: como o TUNL marca o ritmo de uma partida",
  "c91dfec": "Substituindo um monte de curvas de dificuldade por um plano: setores, densidade em dente de serra, arranhões no casco, e o que jogadores simulados disseram antes e depois.",
  "c5bcd58": "</a> <a class=\"post\" href=\"/devlog/same-ship-every-screen/\"> <span class=\"when\">20 de setembro de 2026</span>",
@@ -25,5 +23,11 @@
  "d0593e6": "O TUNL faz algumas promessas incomuns: uma caverna idêntica para todo jogador num determinado dia, uma nave que voa igual em qualquer tela, e uma dificuldade medida em vez de chutada. Cada promessa é fácil de enunciar e difícil de manter, e a maior parte do trabalho interessante no jogo é mantê-la. Estes posts são onde anoto o que quebrou, o que medi, e o que decidi.",
  "e7c9396": "Se você está aqui pelo jogo mais do que pela engenharia, o <a href=\"/how-to-play/\">guia de como jogar</a> cobre as regras, a <a href=\"/ships/\">página de naves</a> cobre o elenco, e o <a href=\"/changelog/\">changelog</a> lista o que mudou em cada versão.",
  "232e36c": "<a class=\"cta\" href=\"/play/\">Jogue a caverna de hoje</a>",
- "0a21855": "O devlog do TUNL: como a caverna diária é gerada a partir de uma data, como uma partida é ritmada em setores, como a física permanece justa entre telas, como o impulso foi ajustado, e como a nave é desenhada em 3D."
+ "0a21855": "O devlog do TUNL: como a caverna diária é gerada a partir de uma data, como uma partida é ritmada em setores, como a física permanece justa entre telas, como o impulso foi ajustado, e como a nave é desenhada em 3D.",
+ "66ae088": "Devlog &middot; 2 de outubro de 2026 &middot; <a href=\"/devlog/\">todos os posts</a>",
+ "348b570": "<a class=\"post\" href=\"/devlog/tap-to-fly/\"> <span class=\"when\">2 de outubro de 2026</span>",
+ "7b4bd26": "</a> <a class=\"post\" href=\"/devlog/the-star/\"> <span class=\"when\">2 de outubro de 2026</span>",
+ "12ab331": "</a> <a class=\"post\" href=\"/devlog/laser/\"> <span class=\"when\">2 de outubro de 2026</span>",
+ "e8a0072": "</a> <a class=\"post\" href=\"/devlog/run-pacing/\"> <span class=\"when\">20 de setembro de 2026</span>",
+ "08ba104": "Devlog &middot; 9 posts"
 }

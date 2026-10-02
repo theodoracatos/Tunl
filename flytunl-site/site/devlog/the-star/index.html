@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Google AdSense (site verification + ad serving) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4882203470005029"
+     crossorigin="anonymous"></script>
+<title>A Star You Have to Earn: Tuning TUNL's Star by Duty Cycle</title>
+<meta name="description" content="How the star in TUNL is earned by collecting, why it was tuned by the share of a run spent as a star rather than by a coin count, and why it is a reward for deep runs.">
+<link rel="canonical" href="https://flytunl.ch/devlog/the-star/">
+<!-- site-chrome:alt -->
+<link rel="alternate" hreflang="en" href="https://flytunl.ch/devlog/the-star/">
+<link rel="alternate" hreflang="de" href="https://flytunl.ch/de/devlog/the-star/">
+<link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/devlog/the-star/">
+<link rel="alternate" hreflang="it" href="https://flytunl.ch/it/devlog/the-star/">
+<link rel="alternate" hreflang="es" href="https://flytunl.ch/es/devlog/the-star/">
+<link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/devlog/the-star/">
+<link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/devlog/the-star/">
+<link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/devlog/the-star/">
+<link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/devlog/the-star/">
+<link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/devlog/the-star/">
+<link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/devlog/the-star/">
+<link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/devlog/the-star/">
+<link rel="alternate" hreflang="id" href="https://flytunl.ch/id/devlog/the-star/">
+<link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/devlog/the-star/">
+<link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/devlog/the-star/">
+<link rel="alternate" hreflang="el" href="https://flytunl.ch/el/devlog/the-star/">
+<link rel="alternate" hreflang="x-default" href="https://flytunl.ch/devlog/the-star/">
+<!-- /site-chrome:alt -->
+<meta property="og:type" content="article">
+<meta property="og:title" content="A Star You Have to Earn: Tuning TUNL's Star by Duty Cycle">
+<meta property="og:description" content="How the star in TUNL is earned by collecting, why it was tuned by the share of a run spent as a star rather than by a coin count, and why it is a reward for deep runs.">
+<meta property="og:url" content="https://flytunl.ch/devlog/the-star/">
+<meta property="og:image" content="https://flytunl.ch/feature-graphic-1024x500.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png">
+<link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#04040a">
+<!-- site-chrome:head -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="/day.js?v=20260921a"></script>
+<!-- /site-chrome:head -->
+<link rel="stylesheet" href="/site.css?v=20260923a">
+<style>
+  * { box-sizing:border-box; }
+  body {
+    color:#ddd;
+    font-family:var(--tunl-ui);
+    line-height:1.7;
+    margin:0;
+    padding: 0 20px 80px;
+  }
+  main { max-width:var(--page-w, 1120px); margin:0 auto; }
+  .brand { display:inline-flex; align-items:center; text-decoration:none; margin-bottom:28px; }
+  .brand img { height:28px; width:auto; }
+  h1 { color:var(--sc-accent); font-size:30px; letter-spacing:1px; margin-bottom:10px; line-height:1.25; }
+  .lead { color:#aaa; font-size:17px; margin-top:0; margin-bottom:8px; }
+  .meta { color:#666; font-size:13px; margin-bottom:34px; }
+  h2 { color:var(--sc-accent); font-size:21px; margin-top:44px; margin-bottom:12px; line-height:1.3; }
+  h3 { color:#fff; font-size:16px; margin-top:28px; margin-bottom:8px; }
+  p, li { color:#ccc; font-size:15.5px; }
+  ul, ol { padding-left:22px; }
+  li { margin-bottom:10px; }
+  a { color:var(--sc-accent); }
+  strong { color:#fff; }
+  em { color:#ddd; }
+  code {
+    font-family:var(--tunl-mono);
+    font-size:13.5px; color:var(--sc-accent);
+    background:#12121c; border-radius:4px; padding:1px 5px;
+  }
+  pre {
+    background:#0d0d16; border:1px solid #222; border-radius:10px;
+    padding:16px; overflow-x:auto; margin:18px 0;
+  }
+  pre code { background:none; padding:0; color:#cfe8ff; font-size:13px; line-height:1.6; }
+  .note {
+    background:#0d0d16; border:1px solid #222; border-left:3px solid var(--sc-accent);
+    border-radius:0 10px 10px 0; padding:14px 18px; margin:22px 0;
+  }
+  .note p { margin:0; font-size:14.5px; color:#bbb; }
+  .wrap { overflow-x:auto; margin:18px 0; }
+  table { width:100%; border-collapse:collapse; font-size:14.5px; min-width:480px; }
+  th, td { text-align:left; padding:9px 12px; border-bottom:1px solid #222; vertical-align:top; }
+  th { color:var(--sc-accent); font-weight:600; }
+  td { color:#ccc; }
+  td:first-child { white-space:nowrap; }
+  .cta {
+    display:inline-block; background:var(--sc-accent); color:#05050c; font-weight:700;
+    text-decoration:none; padding:12px 24px; border-radius:10px; margin-top:8px;
+  }
+  .cta:hover { background:color-mix(in srgb, var(--sc-accent) 75%, #fff); }
+  .post { display:block; background:#0d0d16; border:1px solid #222; border-radius:12px;
+    padding:18px 20px; margin:16px 0; text-decoration:none; }
+  .post:hover { border-color:var(--sc-accent); }
+  .post h3 { color:var(--sc-accent); font-size:18px; margin:0 0 6px; }
+  .post p { margin:0; color:#bbb; font-size:14.5px; }
+  .post .when { color:#666; font-size:12.5px; margin-bottom:6px; display:block; }
+  .card { background:#0d0d16; border:1px solid #222; border-radius:10px; padding:20px; margin:22px 0; }
+  .card p { margin:8px 0; }
+  .swatch { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:8px; vertical-align:middle; }
+  footer {
+    margin-top:56px; color:#666; font-size:13px; line-height:1.9;
+    border-top:1px solid #222; padding-top:16px;
+  }
+  footer a { color:#888; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "A Star You Have to Earn: Tuning a Reward by Duty Cycle",
+  "description": "How TUNL's star power-up was tuned by duty cycle with simulated players, and why it never touches the daily cave.",
+  "author": {
+    "@type": "Person",
+    "name": "Theodoracatos"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "TUNL"
+  },
+  "datePublished": "2026-10-02",
+  "mainEntityOfPage": "https://flytunl.ch/devlog/the-star/",
+  "image": "https://flytunl.ch/feature-graphic-1024x500.png"
+}
+</script>
+<!-- Cloudflare Web Analytics (cookieless, no consent banner needed) -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "7783839e84374212b7d76f25e1fb8e87"}'></script>
+</head>
+<body>
+  <!-- site-chrome:nav -->
+  <header class="sitenav">
+    <a class="sn-brand" href="/"><img src="/wordmark.svg" alt="TUNL"></a>
+    <nav class="sn-links" aria-label="Main">
+      <a href="/how-to-play/">How to play</a>
+      <a href="/ships/">Ships</a>
+      <a href="/devlog/" aria-current="page">Devlog</a>
+      <a href="/changelog/">Changelog</a>
+    </nav>
+    <span class="sn-gap"></span>
+    <a class="sn-ver" href="/changelog/">18.5</a>
+    <a class="sn-cta" href="/play/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>Play now</a>
+    <details class="sn-more">
+      <summary aria-label="Menu">&#9776;</summary>
+      <div class="sn-sheet">
+        <a href="/how-to-play/">How to play</a>
+        <a href="/ships/">Ships</a>
+        <a href="/devlog/" aria-current="page">Devlog</a>
+        <a href="/changelog/">Changelog</a>
+        <a href="/about/">About</a>
+        <a href="/support/">Support</a>
+        <a href="/press/">Press</a>
+        <a href="/privacy/">Privacy Policy</a>
+        <a href="/impressum/">Legal notice</a>
+      </div>
+    </details>
+  </header>
+  <!-- /site-chrome:nav -->
+<main>
+  <h1>A Star You Have to Earn: Tuning a Reward by Duty Cycle</h1>
+  <p class="lead">For a few seconds the ship becomes a star: everything it flies into breaks.
+  The hard part was not building that. It was deciding how often a player should get it, and
+  measuring the answer instead of guessing it.</p>
+  <p class="meta">Devlog &middot; 2 October 2026 &middot; <a href="/devlog/">all posts</a></p>
+
+  <p>The idea is the one everyone knows from Mario. You fly into a crystal and it shatters. A
+  mine bursts, a cannon shell breaks, a whole boulder island falls apart, and each one pays
+  points. The wall can no longer kill you, it just holds you in. Your shield is not spent. The
+  speed does not change, which is what separates the star from the warp portal: the warp races
+  you past everything, the star clears it.</p>
+
+  <h2>Earned by collecting</h2>
+
+  <p>The one firm requirement was that the star has to be earned. It lives in a vertical meter at
+  the bottom-left of the screen that works like a tank. Every good coin adds one, a gold coin in
+  a chicane adds two, and flying through a warp portal adds one to three depending on how cleanly
+  you hit it. A good coin that scrolls past you uncollected takes one back out, and touching a
+  poison or drain coin takes two. The tank never goes below zero, and it only starts counting
+  after the safe opening flight.</p>
+
+  <p>That rule rewards a particular kind of play: not just surviving, but taking the coin lines
+  through the cave. When the tank is full the ship charges for a moment, then becomes a star for
+  3.5 seconds. The next star in the same run costs twice as much, and the one after that twice as
+  much again.</p>
+
+  <h2>Why not just count coins?</h2>
+
+  <p>The tempting way to tune a reward like this is to pick a number of coins that feels right.
+  I measured the coins first: across twenty daily caves, a player meets roughly one good coin per
+  second, six to eight per sector, and that rate barely changes with depth. So "a star every
+  eight coins" sounds like a star every eight seconds. It is nothing of the kind, because nobody
+  collects every coin, and because a star changes how long the run lasts.</p>
+
+  <p>The number that matters is the <strong>duty cycle</strong>: the share of a run a player
+  actually spends as a star, and what that does to their best score. I measured it the same way
+  I measured the <a href="/devlog/run-pacing/">sector plan</a>. A planning pilot plays the real
+  game at five skill tiers, twelve days with eight runs each, and every run is played twice: once
+  plain, once with the star. The two weakest tiers end their runs around score 30, which is where
+  real players' median runs sit, so they stand in for the people actually playing.</p>
+
+  <div class="wrap">
+  <table>
+    <tr><th>Variant</th><th>Strongest tier: share of the run as a star</th><th>Strongest tier: day's best</th></tr>
+    <tr><td>First concept: 8 coins, each next star 1.5x, 4 s</td><td>12.2%</td><td>+40%</td></tr>
+    <tr><td>Cheaper: 5-6 coins, counted from the start</td><td colspan="2">strong players' median run nearly doubled</td></tr>
+    <tr><td>Chosen: 8 coins, each next star 2x, 3 s</td><td>about 9%</td><td>+23%</td></tr>
+    <tr><td>Shipped: same, but 3.5 s</td><td>about 10%</td><td>not re-measured</td></tr>
+  </table>
+  </div>
+
+  <p>The effect is almost all survival. The points from smashing things come to about a tenth of
+  a percent of the score. What a star really buys is a few seconds in which the walls stop
+  killing you, deep in a run where the walls are what kills you.</p>
+
+  <h2>A reward for deep runs, on purpose</h2>
+
+  <p>The table hides the most important result: the tiers that play like today's real players
+  <strong>never fill the tank in any variant I measured</strong>. Their runs end before it can.
+  Making the star reachable for them meant counting from the very start and charging five or six
+  coins, and that nearly doubled the median run of strong players, which would rewrite the leaderboard.</p>
+
+  <p>So the star is a reward for deep runs, by design. If you have seen it, you were already
+  flying well. That decision had consequences. There is no daily mission for it, because a
+  mission most players cannot complete is a broken slot in the day. There is no achievement for
+  it either, for a duller reason: Game Center allows 1,000 points of achievements per game, TUNL
+  already uses exactly 1,000, and the points of a live achievement cannot be changed.</p>
+
+  <div class="note"><p><strong>The star never touches the daily cave.</strong> Every player flies
+  the same cave on a given day (<a href="/devlog/daily-cave/">how that works</a>), so a feature
+  that draws one extra random number forks it. The star draws none and places nothing. Whatever it
+  breaks leaves through the same paths a bullet, a bomb or the laser already use, and the cave
+  test still produces a byte-identical cave for every day.</p></div>
+
+  <h2>Making it unmistakable</h2>
+
+  <p>The first build worked and was easy to miss. The fixes followed the game's existing rules
+  about light. The star takes the ship's own colour instead of cycling through a rainbow, because
+  in TUNL colour means something: cyan is the corridor, red is danger, gold is a reward. The hull
+  gets a contour of light along its edges and small four-point glints at the nose, wingtips and
+  tail. A round glowing aura was tried and dropped: it made the ship look like a ball, and it
+  promised more reach than the hitbox has.</p>
+
+  <p>A wash of the ship's light comes in from the left edge of the screen, the side behind the
+  ship, never ahead of it, so it never hides what is coming. The score turns the ship's colour.
+  And every smash gets weight: a white flash, more shards, a harder shake and a 40-millisecond
+  hit-stop, at most once in a short window so a chain of hits never stutters.</p>
+
+  <h2>Its own music, generated in code</h2>
+
+  <p>The sound took longer than the picture. The star's pad has no beat, because a star can start
+  at any moment and a pulse would land off the music's beat. Then I tried pausing the music for an
+  excerpt of an epic stock track, and the same day a silent star. Neither felt right. What stayed
+  is a short piece generated in code: supersaw chords, a sub bass, claps and a plucked hook, two
+  bars in D major at 140 beats per minute, in the key and tempo of the main track. While a star
+  runs, the main track is held on the bar it reached and picks up on that bar afterwards.</p>
+
+  <p>Two traps here. The concept page where I compared the candidates matched their loudness on a
+  phone speaker only, and in the game the kick ran 10 dB too loud on headphones, so every level
+  is now measured by an offline render in the game's real audio chain, in both bands. And the
+  slow-time and warp effects bend the main music's pitch, so the star's music had to bend too:
+  it is rendered once into a loop when the run starts, which can then be slowed and sped up like
+  any recording.</p>
+
+  <p>If you want to see one, the meter is in the bottom-left corner of
+  <a href="/play/">today's cave</a>. You will need to get deep.</p>
+
+  <p><a class="cta" href="/play/">Play today's cave</a></p>
+
+
+  <!-- site-chrome:foot -->
+  <footer class="sitefoot">
+    <div class="sf-inner">
+      <div class="sf-cols">
+        <div class="sf-col">
+          <h4>Play TUNL</h4>
+          <a href="/play/">Play in your browser</a>
+          <a href="https://apps.apple.com/us/app/tunl-cave-flyer/id6789721765" target="_blank" rel="noopener">App Store</a>
+          <a href="https://play.google.com/store/apps/details?id=com.theodoracatos.tunl" target="_blank" rel="noopener">Google Play</a>
+        </div>
+        <div class="sf-col">
+          <h4>Learn the cave</h4>
+          <a href="/how-to-play/">How to play</a>
+          <a href="/ships/">Ships</a>
+          <a href="/devlog/">Devlog</a>
+          <a href="/changelog/">Changelog</a>
+        </div>
+        <div class="sf-col">
+          <h4>The project</h4>
+          <a href="/about/">About</a>
+          <a href="/support/">Support</a>
+          <a href="/press/">Press</a>
+          <a href="/privacy/">Privacy Policy</a>
+          <a href="/impressum/">Legal notice</a>
+        </div>
+      </div>
+      <p class="sf-legal">&copy; 2026 Theodoracatos. All rights reserved.<br><span class="langsw"><label for="langsel">Language:</label> <select id="langsel" aria-label="Language"><option value="/devlog/the-star/" data-home="/" selected>English</option><option value="/de/devlog/the-star/" data-home="/de/">Deutsch</option><option value="/fr/devlog/the-star/" data-home="/fr/">Français</option><option value="/it/devlog/the-star/" data-home="/it/">Italiano</option><option value="/es/devlog/the-star/" data-home="/es/">Español</option><option value="/pt/devlog/the-star/" data-home="/pt/">Português</option><option value="/ja/devlog/the-star/" data-home="/ja/">日本語</option><option value="/ko/devlog/the-star/" data-home="/ko/">한국어</option><option value="/zh/devlog/the-star/" data-home="/zh/">繁體中文</option><option value="/ru/devlog/the-star/" data-home="/ru/">Русский</option><option value="/ar/devlog/the-star/" data-home="/ar/">العربية</option><option value="/tr/devlog/the-star/" data-home="/tr/">Türkçe</option><option value="/id/devlog/the-star/" data-home="/id/">Bahasa Indonesia</option><option value="/pl/devlog/the-star/" data-home="/pl/">Polski</option><option value="/hi/devlog/the-star/" data-home="/hi/">हिन्दी</option><option value="/el/devlog/the-star/" data-home="/el/">Ελληνικά</option></select></span></p>
+    </div>
+  </footer>
+  <script>(function(){var s=document.getElementById('langsel');if(!s)return;s.addEventListener('change',function(){try{localStorage.setItem('tunl_site_lang',s.options[s.selectedIndex].getAttribute('data-home'));}catch(e){}location.href=s.value;});})();</script>
+  <!-- /site-chrome:foot -->
+</main>
+</body>
+</html>

@@ -2,8 +2,6 @@
  "4d37816": "TUNL Devlog - Notizen zum Bauen, Feinabstimmen und Balancieren eines Höhlenfliegers",
  "4e22ab4": "TUNL Devlog",
  "d999ee4": "Notizen dazu, wie ein Ein-Knopf-Höhlenflieger gebaut, abgestimmt und fair gehalten wird. Geschrieben von der einen Person, die ihn macht, mit den Zahlen drin.",
- "e7a5a00": "Devlog &middot; 6 Beiträge",
- "12be719": "<a class=\"post\" href=\"/devlog/run-pacing/\"> <span class=\"when\">20. September 2026</span>",
  "05ac6c3": "Sieben-Sekunden-Sektoren: Wie TUNL einen Lauf taktet",
  "c91dfec": "Wie ein Haufen Schwierigkeitskurven durch einen Plan ersetzt wurde: Sektoren, Sägezahn-Dichte, Rumpfkratzer, und was simulierte Spieler davor und danach sagten.",
  "c5bcd58": "</a> <a class=\"post\" href=\"/devlog/same-ship-every-screen/\"> <span class=\"when\">20. September 2026</span>",
@@ -25,5 +23,11 @@
  "d0593e6": "TUNL hat ein paar ungewöhnliche Versprechen: eine Höhle, die an einem bestimmten Tag für jeden Spieler dieselbe ist, ein Schiff, das auf jedem Bildschirm gleich fliegt, und eine Schwierigkeit, die gemessen statt geraten wird. Jedes Versprechen ist leicht auszusprechen und schwer einzuhalten, und der meiste interessante Aufwand im Spiel steckt darin, es einzuhalten. In diesen Beiträgen schreibe ich auf, was kaputtging, was ich gemessen habe, und was ich entschieden habe.",
  "e7c9396": "Wenn du eher wegen des Spiels als wegen der Technik hier bist: Der <a href=\"/how-to-play/\">So spielst du TUNL-Guide</a> behandelt die Regeln, die <a href=\"/ships/\">Schiffsseite</a> das Aufgebot, und das <a href=\"/changelog/\">Changelog</a> listet, was sich in jeder Version geändert hat.",
  "232e36c": "<a class=\"cta\" href=\"/play/\">Spiele die heutige Höhle</a>",
- "0a21855": "Der TUNL-Devlog: wie die Tageshöhle aus einem Datum erzeugt wird, wie ein Lauf in Sektoren getaktet ist, wie die Physik über Bildschirme hinweg fair bleibt, wie der Schub abgestimmt wurde, und wie das Schiff in 3D gezeichnet wird."
+ "0a21855": "Der TUNL-Devlog: wie die Tageshöhle aus einem Datum erzeugt wird, wie ein Lauf in Sektoren getaktet ist, wie die Physik über Bildschirme hinweg fair bleibt, wie der Schub abgestimmt wurde, und wie das Schiff in 3D gezeichnet wird.",
+ "66ae088": "Devlog &middot; 2. Oktober 2026 &middot; <a href=\"/devlog/\">alle Beiträge</a>",
+ "348b570": "<a class=\"post\" href=\"/devlog/tap-to-fly/\"> <span class=\"when\">2. Oktober 2026</span>",
+ "7b4bd26": "</a> <a class=\"post\" href=\"/devlog/the-star/\"> <span class=\"when\">2. Oktober 2026</span>",
+ "12ab331": "</a> <a class=\"post\" href=\"/devlog/laser/\"> <span class=\"when\">2. Oktober 2026</span>",
+ "e8a0072": "</a> <a class=\"post\" href=\"/devlog/run-pacing/\"> <span class=\"when\">20. September 2026</span>",
+ "08ba104": "Devlog &middot; 9 Beiträge"
 }

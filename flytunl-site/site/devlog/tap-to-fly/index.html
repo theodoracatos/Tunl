@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Google AdSense (site verification + ad serving) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4882203470005029"
+     crossorigin="anonymous"></script>
+<title>Every Press Is a Hop: Teaching TUNL's One Button</title>
+<meta name="description" content="Why TUNL switched from hold-to-climb to a hop on every press, how a tap circle shows the beat without flying the ship, and why the city now waits for the first tap.">
+<link rel="canonical" href="https://flytunl.ch/devlog/tap-to-fly/">
+<!-- site-chrome:alt -->
+<link rel="alternate" hreflang="en" href="https://flytunl.ch/devlog/tap-to-fly/">
+<link rel="alternate" hreflang="de" href="https://flytunl.ch/de/devlog/tap-to-fly/">
+<link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/devlog/tap-to-fly/">
+<link rel="alternate" hreflang="it" href="https://flytunl.ch/it/devlog/tap-to-fly/">
+<link rel="alternate" hreflang="es" href="https://flytunl.ch/es/devlog/tap-to-fly/">
+<link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/devlog/tap-to-fly/">
+<link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/devlog/tap-to-fly/">
+<link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/devlog/tap-to-fly/">
+<link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/devlog/tap-to-fly/">
+<link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/devlog/tap-to-fly/">
+<link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/devlog/tap-to-fly/">
+<link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/devlog/tap-to-fly/">
+<link rel="alternate" hreflang="id" href="https://flytunl.ch/id/devlog/tap-to-fly/">
+<link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/devlog/tap-to-fly/">
+<link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/devlog/tap-to-fly/">
+<link rel="alternate" hreflang="el" href="https://flytunl.ch/el/devlog/tap-to-fly/">
+<link rel="alternate" hreflang="x-default" href="https://flytunl.ch/devlog/tap-to-fly/">
+<!-- /site-chrome:alt -->
+<meta property="og:type" content="article">
+<meta property="og:title" content="Every Press Is a Hop: Teaching TUNL's One Button">
+<meta property="og:description" content="Why TUNL switched from hold-to-climb to a hop on every press, how a tap circle shows the beat without flying the ship, and why the city now waits for the first tap.">
+<meta property="og:url" content="https://flytunl.ch/devlog/tap-to-fly/">
+<meta property="og:image" content="https://flytunl.ch/feature-graphic-1024x500.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png">
+<link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#04040a">
+<!-- site-chrome:head -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="/day.js?v=20260921a"></script>
+<!-- /site-chrome:head -->
+<link rel="stylesheet" href="/site.css?v=20260923a">
+<style>
+  * { box-sizing:border-box; }
+  body {
+    color:#ddd;
+    font-family:var(--tunl-ui);
+    line-height:1.7;
+    margin:0;
+    padding: 0 20px 80px;
+  }
+  main { max-width:var(--page-w, 1120px); margin:0 auto; }
+  .brand { display:inline-flex; align-items:center; text-decoration:none; margin-bottom:28px; }
+  .brand img { height:28px; width:auto; }
+  h1 { color:var(--sc-accent); font-size:30px; letter-spacing:1px; margin-bottom:10px; line-height:1.25; }
+  .lead { color:#aaa; font-size:17px; margin-top:0; margin-bottom:8px; }
+  .meta { color:#666; font-size:13px; margin-bottom:34px; }
+  h2 { color:var(--sc-accent); font-size:21px; margin-top:44px; margin-bottom:12px; line-height:1.3; }
+  h3 { color:#fff; font-size:16px; margin-top:28px; margin-bottom:8px; }
+  p, li { color:#ccc; font-size:15.5px; }
+  ul, ol { padding-left:22px; }
+  li { margin-bottom:10px; }
+  a { color:var(--sc-accent); }
+  strong { color:#fff; }
+  em { color:#ddd; }
+  code {
+    font-family:var(--tunl-mono);
+    font-size:13.5px; color:var(--sc-accent);
+    background:#12121c; border-radius:4px; padding:1px 5px;
+  }
+  pre {
+    background:#0d0d16; border:1px solid #222; border-radius:10px;
+    padding:16px; overflow-x:auto; margin:18px 0;
+  }
+  pre code { background:none; padding:0; color:#cfe8ff; font-size:13px; line-height:1.6; }
+  .note {
+    background:#0d0d16; border:1px solid #222; border-left:3px solid var(--sc-accent);
+    border-radius:0 10px 10px 0; padding:14px 18px; margin:22px 0;
+  }
+  .note p { margin:0; font-size:14.5px; color:#bbb; }
+  .wrap { overflow-x:auto; margin:18px 0; }
+  table { width:100%; border-collapse:collapse; font-size:14.5px; min-width:480px; }
+  th, td { text-align:left; padding:9px 12px; border-bottom:1px solid #222; vertical-align:top; }
+  th { color:var(--sc-accent); font-weight:600; }
+  td { color:#ccc; }
+  td:first-child { white-space:nowrap; }
+  .cta {
+    display:inline-block; background:var(--sc-accent); color:#05050c; font-weight:700;
+    text-decoration:none; padding:12px 24px; border-radius:10px; margin-top:8px;
+  }
+  .cta:hover { background:color-mix(in srgb, var(--sc-accent) 75%, #fff); }
+  .post { display:block; background:#0d0d16; border:1px solid #222; border-radius:12px;
+    padding:18px 20px; margin:16px 0; text-decoration:none; }
+  .post:hover { border-color:var(--sc-accent); }
+  .post h3 { color:var(--sc-accent); font-size:18px; margin:0 0 6px; }
+  .post p { margin:0; color:#bbb; font-size:14.5px; }
+  .post .when { color:#666; font-size:12.5px; margin-bottom:6px; display:block; }
+  .card { background:#0d0d16; border:1px solid #222; border-radius:10px; padding:20px; margin:22px 0; }
+  .card p { margin:8px 0; }
+  .swatch { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:8px; vertical-align:middle; }
+  footer {
+    margin-top:56px; color:#666; font-size:13px; line-height:1.9;
+    border-top:1px solid #222; padding-top:16px;
+  }
+  footer a { color:#888; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Every Press Is a Hop: Teaching a One-Button Game",
+  "description": "How TUNL made every press a hop, and taught the beat with a tap circle that never flies the ship.",
+  "author": {
+    "@type": "Person",
+    "name": "Theodoracatos"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "TUNL"
+  },
+  "datePublished": "2026-10-02",
+  "mainEntityOfPage": "https://flytunl.ch/devlog/tap-to-fly/",
+  "image": "https://flytunl.ch/feature-graphic-1024x500.png"
+}
+</script>
+<!-- Cloudflare Web Analytics (cookieless, no consent banner needed) -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "7783839e84374212b7d76f25e1fb8e87"}'></script>
+</head>
+<body>
+  <!-- site-chrome:nav -->
+  <header class="sitenav">
+    <a class="sn-brand" href="/"><img src="/wordmark.svg" alt="TUNL"></a>
+    <nav class="sn-links" aria-label="Main">
+      <a href="/how-to-play/">How to play</a>
+      <a href="/ships/">Ships</a>
+      <a href="/devlog/" aria-current="page">Devlog</a>
+      <a href="/changelog/">Changelog</a>
+    </nav>
+    <span class="sn-gap"></span>
+    <a class="sn-ver" href="/changelog/">18.5</a>
+    <a class="sn-cta" href="/play/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>Play now</a>
+    <details class="sn-more">
+      <summary aria-label="Menu">&#9776;</summary>
+      <div class="sn-sheet">
+        <a href="/how-to-play/">How to play</a>
+        <a href="/ships/">Ships</a>
+        <a href="/devlog/" aria-current="page">Devlog</a>
+        <a href="/changelog/">Changelog</a>
+        <a href="/about/">About</a>
+        <a href="/support/">Support</a>
+        <a href="/press/">Press</a>
+        <a href="/privacy/">Privacy Policy</a>
+        <a href="/impressum/">Legal notice</a>
+      </div>
+    </details>
+  </header>
+  <!-- /site-chrome:nav -->
+<main>
+  <h1>Every Press Is a Hop: Teaching a One-Button Game</h1>
+  <p class="lead">TUNL has one control, and for its first eighteen versions most new players
+  never found out how it worked. This is how the control changed, and how a small circle
+  learned to show the beat without ever flying the ship.</p>
+  <p class="meta">Devlog &middot; 2 October 2026 &middot; <a href="/devlog/">all posts</a></p>
+
+  <p>The original rule was hold to climb, release to fall. Thrust is an acceleration that
+  builds while you hold, gravity takes over when you let go, and the skill is in the rhythm
+  between the two. Experienced players liked it. The trouble was everyone else.</p>
+
+  <h2>What the first runs said</h2>
+
+  <p>A small landing page records how each first run ends. Of the first 25 players it saw, 22
+  died exactly where a run with no input at all dies: the ship glides level for a moment,
+  sinks, and touches the floor. They were not making mistakes. They were not playing. A later
+  sample of 48 first runs was blunter still: about a third of the players never pressed
+  anything.</p>
+
+  <p>"Hold" is an odd instruction for a phone game. Most one-button games are tap games, and a
+  player who taps a hold game gets a twitch so small it looks like nothing happened. So they
+  stop, and the cave keeps coming.</p>
+
+  <h2>A press is a hop</h2>
+
+  <p>The fix keeps both styles. <strong>Every press now starts a short burst of thrust</strong>
+  (<code>TAP_BURST_SEC</code>, 0.15 seconds), and holding longer keeps thrusting exactly as before.
+  A tap is a hop. Holding still works, it is just never needed. There is no switch at a score
+  and no mode: every run, every player, every platform.</p>
+
+  <p>Before shipping it I replayed the daily caves with two bots. One plays the old way, holding
+  and releasing. It scored the same with the burst as without, so nobody who had learned the
+  game lost anything. The other only taps, and it reached 100 points on 90% of the days.</p>
+
+  <div class="note"><p><strong>The burst ends inside the frame.</strong> A burst of 0.15 seconds
+  almost never ends on a frame boundary. Rounding it to the nearest frame put the top of a hop
+  about 11 pixels off at 24 frames per second, and a different amount at 60 or 120. So the
+  frame is split at the instant the burst ends and each part is integrated on its own. A test
+  checks the top of a hop against the exact solution at seven refresh rates, for the same
+  reason the physics is <a href="/devlog/same-ship-every-screen/">frame-rate independent</a> in the
+  first place.</p></div>
+
+  <h2>A circle that shows the beat</h2>
+
+  <p>A hop is easier to discover than a hold, but it does not tell you <em>when</em>. So while
+  your best score is still below 233, a circle sits next to the ship over the opening flight
+  and shows when to tap. It looks like the floating touch button on an iPhone: a white dot in
+  two soft rings. It brightens as a tap comes due and presses in when it is time. A tap on the
+  beat draws a small check mark. The first version used a pointing finger, which at that size
+  read as a white tombstone.</p>
+
+  <p>The important rule is that <strong>only your own tap moves the ship</strong>. The circle is
+  a metronome, not an autopilot. Behind it is a planner that runs the real physics forward from
+  the ship's current state: a tap is due when a hop started now would top out on the route
+  instead of above it. Because it is recomputed every frame, a missed tap or an extra one needs
+  no special case. The route itself runs through the middle of the tunnel mouth and then
+  through the opening coins.</p>
+
+  <p>A late tap slows time to a quarter until you press, but only after your first tap of the
+  run, so the circle never freezes the game before you have even tried. The score is distance
+  flown, not time, so slow motion changes nothing on the leaderboard.</p>
+
+  <p>I did consider guiding players further, past the safe opening. I decided against it. The
+  planner knows nothing about stalactites or mines, and guidance plus slow motion past that
+  point would be close to an autopilot on a shared daily leaderboard.</p>
+
+  <h2>The city waits</h2>
+
+  <p>The circle helped the players who pressed. It did nothing for the third who never pressed
+  at all. Every run opens over a city at dusk before the ship enters the cave, and a run starts
+  with a short level glide before gravity sets in. For those players the glide simply ran out
+  over the city, and they sank into the tunnel mouth with a score of 5.</p>
+
+  <p>So on a tutorial run the city now waits. After the launch, the ship hovers and the camera
+  holds until the first press, with the circle and the words TAP TO FLY beside it. Nothing about
+  the cave changes, because the city lies before the cave's first metre and the score only
+  starts in the tunnel.</p>
+
+  <p>The music waits too. While the city holds, the track repeats the second bar of its intro,
+  the steady one just before the beat comes in, and the first press hands back to the track at
+  the same point of that bar. My first attempt looped both intro bars and dropped about 9 dB at
+  every wrap, which sounded like the music stalling. The repeat is now a short loop whose end is
+  crossfaded into the audio just before the bar, so each wrap sounds like the track's own change
+  from bar one to bar two.</p>
+
+  <h2>A practice flight, once</h2>
+
+  <p>The last piece is a short practice flight over the city. After the first press, a row of
+  light beads shows a line to follow: flat at first, which is the hover rhythm, then gentle
+  waves. A bead you pass close enough lights up. The tunnel comes once six of the last eight
+  are lit, or after a time cap either way.</p>
+
+  <p>In its first version it ran on every tutorial run, which in practice meant every run of
+  almost every new player. When I simulated it, a retry took more than twice as long to reach
+  the cave as before, even with perfect taps, and a pilot tapping just 0.15 seconds off the
+  circle sat out the full 30-second cap before every attempt. That is a tutorial turning into a
+  waiting room. Now a practice flight you pass is never shown again on that device, and the cap
+  is 12 seconds for the players who have not passed it yet.</p>
+
+  <h2>How I know it works</h2>
+
+  <p>The simulation suite has a pilot that taps only when the circle says so. It flies the
+  whole opening into the cave without touching a wall, in 29 taps, staying about 15 pixels from
+  the route on average. Other checks cover the hop at seven refresh rates, the city's wait, the
+  practice flight being stored only after a pass and never after a timeout, and the circle
+  disappearing once a player's best passes 233.</p>
+
+  <p>What no simulation can tell me is how the circle feels under a real thumb. That is the
+  part I am watching in the first-run data now. If you are new to the game, the circle is
+  waiting for you in <a href="/play/">today's cave</a>; the
+  <a href="/how-to-play/">how-to-play guide</a> has the rest of the rules.</p>
+
+  <p><a class="cta" href="/play/">Play today's cave</a></p>
+
+
+  <!-- site-chrome:foot -->
+  <footer class="sitefoot">
+    <div class="sf-inner">
+      <div class="sf-cols">
+        <div class="sf-col">
+          <h4>Play TUNL</h4>
+          <a href="/play/">Play in your browser</a>
+          <a href="https://apps.apple.com/us/app/tunl-cave-flyer/id6789721765" target="_blank" rel="noopener">App Store</a>
+          <a href="https://play.google.com/store/apps/details?id=com.theodoracatos.tunl" target="_blank" rel="noopener">Google Play</a>
+        </div>
+        <div class="sf-col">
+          <h4>Learn the cave</h4>
+          <a href="/how-to-play/">How to play</a>
+          <a href="/ships/">Ships</a>
+          <a href="/devlog/">Devlog</a>
+          <a href="/changelog/">Changelog</a>
+        </div>
+        <div class="sf-col">
+          <h4>The project</h4>
+          <a href="/about/">About</a>
+          <a href="/support/">Support</a>
+          <a href="/press/">Press</a>
+          <a href="/privacy/">Privacy Policy</a>
+          <a href="/impressum/">Legal notice</a>
+        </div>
+      </div>
+      <p class="sf-legal">&copy; 2026 Theodoracatos. All rights reserved.<br><span class="langsw"><label for="langsel">Language:</label> <select id="langsel" aria-label="Language"><option value="/devlog/tap-to-fly/" data-home="/" selected>English</option><option value="/de/devlog/tap-to-fly/" data-home="/de/">Deutsch</option><option value="/fr/devlog/tap-to-fly/" data-home="/fr/">Français</option><option value="/it/devlog/tap-to-fly/" data-home="/it/">Italiano</option><option value="/es/devlog/tap-to-fly/" data-home="/es/">Español</option><option value="/pt/devlog/tap-to-fly/" data-home="/pt/">Português</option><option value="/ja/devlog/tap-to-fly/" data-home="/ja/">日本語</option><option value="/ko/devlog/tap-to-fly/" data-home="/ko/">한국어</option><option value="/zh/devlog/tap-to-fly/" data-home="/zh/">繁體中文</option><option value="/ru/devlog/tap-to-fly/" data-home="/ru/">Русский</option><option value="/ar/devlog/tap-to-fly/" data-home="/ar/">العربية</option><option value="/tr/devlog/tap-to-fly/" data-home="/tr/">Türkçe</option><option value="/id/devlog/tap-to-fly/" data-home="/id/">Bahasa Indonesia</option><option value="/pl/devlog/tap-to-fly/" data-home="/pl/">Polski</option><option value="/hi/devlog/tap-to-fly/" data-home="/hi/">हिन्दी</option><option value="/el/devlog/tap-to-fly/" data-home="/el/">Ελληνικά</option></select></span></p>
+    </div>
+  </footer>
+  <script>(function(){var s=document.getElementById('langsel');if(!s)return;s.addEventListener('change',function(){try{localStorage.setItem('tunl_site_lang',s.options[s.selectedIndex].getAttribute('data-home'));}catch(e){}location.href=s.value;});})();</script>
+  <!-- /site-chrome:foot -->
+</main>
+</body>
+</html>
