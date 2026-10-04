@@ -1,0 +1,93 @@
+{
+ "_note": "ASO pass 2026-10-04 (audit: memory project_store_aso_audit_2026-10-04). ASC name/subtitle (30) live on appInfoLocalizations, keywords (100) on the version localization. Keywords: single words, comma, no space, no word already in name or subtitle of the same locale. en-GB and es-MX are NEW locales (CH/DE/AT/UK index en-GB; US indexes es-MX). Storefront table: developer.apple.com/help/app-store-connect/reference/app-store-localizations",
+ "en-US": {
+  "name": "TUNL: Cave Flyer Arcade",
+  "subtitle": "Tap & Fly: One Cave Every Day",
+  "keywords": "copter,helicopter,classic,tunnel,endless,flappy,button,finger,jet,plane,retro,gravity,reflex,hold"
+ },
+ "en-GB": {
+  "name": "TUNL: Cave Flyer Arcade",
+  "subtitle": "Tap & Fly: One Cave Every Day",
+  "keywords": "copter,helicopter,classic,tunnel,endless,flappy,button,finger,jet,plane,retro,gravity,reflex,hold"
+ },
+ "es-MX": {
+  "name": "TUNL: Vuelo en la Cueva",
+  "subtitle": "Toca y vuela: una cueva al día",
+  "keywords": "skill,hold,climb,neon,space,ship,runner,daily,challenge,crystal,laser,star,helicoptero,tunel"
+ },
+ "de-DE": {
+  "name": "TUNL: Höhlenflug Arcade",
+  "subtitle": "Tippen, fliegen, jeden Tag neu",
+  "keywords": "höhle,helikopter,copter,tunnel,jet,flugzeug,flappy,ein,knopf,finger,endlos,geschick,reflex,klassisch"
+ },
+ "fr-FR": {
+  "name": "TUNL : Vol en Grotte Arcade",
+  "subtitle": "Tape pour voler, chaque jour",
+  "keywords": "hélicoptère,copter,tunnel,caverne,avion,jet,flappy,un,bouton,doigt,sans,fin,réflexe,classique"
+ },
+ "it": {
+  "name": "TUNL: Volo nella Grotta",
+  "subtitle": "Tocca e vola: una grotta al dì",
+  "keywords": "elicottero,copter,tunnel,caverna,aereo,jet,flappy,un,tasto,dito,infinito,riflessi,classico,retro"
+ },
+ "es-ES": {
+  "name": "TUNL: Vuelo en la Cueva",
+  "subtitle": "Toca y vuela: una cueva al día",
+  "keywords": "helicóptero,copter,túnel,caverna,avión,jet,flappy,un,botón,dedo,infinito,reflejos,clásico,retro"
+ },
+ "pt-BR": {
+  "name": "TUNL: Voo na Caverna Arcade",
+  "subtitle": "Toque e voe: caverna diária",
+  "keywords": "helicóptero,copter,túnel,gruta,avião,jato,flappy,um,botão,dedo,infinito,reflexo,clássico,retro"
+ },
+ "ja": {
+  "name": "TUNL: 洞窟フライト",
+  "subtitle": "タップで飛べ。毎日ひとつの洞窟",
+  "keywords": "ヘリコプター,ヘリ,コプター,トンネル,ジェット,飛行機,ワンタップ,片手,エンドレス,反射神経,レトロ,クラシック,アーケード,暇つぶし,シンプル,スマホゲーム"
+ },
+ "ko": {
+  "name": "TUNL: 동굴 비행 아케이드",
+  "subtitle": "탭해서 날아라, 매일 새 동굴",
+  "keywords": "헬리콥터,헬기,콥터,터널,제트기,비행기,원터치,한손,무한,반사신경,레트로,클래식,간단한,중독성,킬링타임,게임"
+ },
+ "zh-Hant": {
+  "name": "TUNL：洞穴飛行街機",
+  "subtitle": "點一下就飛，每天一座新洞穴",
+  "keywords": "直升機,直升机,隧道,噴射機,飛機,一鍵,單手,無盡,反應,復古,經典,洞窟,簡單,小遊戲,休閒,打發時間"
+ },
+ "ru": {
+  "name": "TUNL: Полёт в пещере",
+  "subtitle": "Тапни и лети. Пещера дня",
+  "keywords": "вертолет,коптер,туннель,самолет,джет,флаппи,одно,касание,палец,бесконечная,реакция,ретро,аркада"
+ },
+ "ar-SA": {
+  "name": "TUNL: طيران الكهف",
+  "subtitle": "انقر وطِر: كهف جديد كل يوم",
+  "keywords": "هليكوبتر,مروحية,نفق,طائرة,نفاثة,لمسة,واحدة,زر,لانهائي,رد الفعل,كلاسيكي,أركيد"
+ },
+ "tr": {
+  "name": "TUNL: Mağara Uçuşu Arcade",
+  "subtitle": "Dokun, uç: her gün yeni mağara",
+  "keywords": "helikopter,kopter,tünel,uçak,jet,flappy,tek,dokunuş,tuş,parmak,sonsuz,refleks,klasik,retro"
+ },
+ "id": {
+  "name": "TUNL: Terbang di Gua",
+  "subtitle": "Ketuk & terbang, gua tiap hari",
+  "keywords": "helikopter,kopter,terowongan,pesawat,jet,flappy,satu,tombol,jari,tanpa,akhir,refleks,klasik,arcade"
+ },
+ "pl": {
+  "name": "TUNL: Lot przez Jaskinię",
+  "subtitle": "Stuknij i leć: jaskinia dnia",
+  "keywords": "helikopter,kopter,tunel,samolot,odrzutowiec,flappy,jeden,przycisk,palec,bez,końca,refleks,arcade"
+ },
+ "hi": {
+  "name": "TUNL: गुफा उड़ान आर्केड",
+  "subtitle": "टैप करो, उड़ो: रोज़ नई गुफा",
+  "keywords": "हेलिकॉप्टर,कॉप्टर,सुरंग,जेट,विमान,एक,बटन,उंगली,अंतहीन,रिफ्लेक्स,क्लासिक,रेट्रो"
+ },
+ "el": {
+  "name": "TUNL: Πτήση στη Σπηλιά",
+  "subtitle": "Πάτα, πέτα: μια σπηλιά τη μέρα",
+  "keywords": "ελικόπτερο,κόπτερ,τούνελ,αεροπλάνο,τζετ,flappy,ένα,κουμπί,δάχτυλο,ατελείωτο,κλασικό,ρετρό,arcade"
+ }
+}
