@@ -2346,3 +2346,21 @@ both are portraits of a ship you own, the icon is a picture of the flight. The a
 icons keep the old live family's 30-deg climb and hue-washed ground; the hull grew to r=150
 because the F-14 is slimmer than the SR-71 was. iOS 18 dark/tinted app icons were added
 from the launch logo (no ground / greyscale on black).
+
+## Hull: spaceship tried and rejected, F-14 refined (2026-10-04)
+
+"Das Flugzeug gefaellt mir nicht so - es sieht irgendwie nicht so realistisch aus." Concept
+rounds (https://claude.ai/artifact/HpnG145UKjUABeqbeveMau): real swing-wingers (Tornado, MiG-23,
+B-1B) were "zu schlank"; bulky jets and a faceted spaceship followed; the spaceship's wings were
+fixed twice (box slabs -> bevelled plates, glued look -> cover draw rule, root corner -> a root
+disc tangent to both edges). It was then built into the whole game (flight, top-down, paint,
+marks, site text, achievement icons) - and rejected on sight: "das gefaellt mir ueberhaupt nicht -
+lieber nochmals zurueck zu F-14 und Verbesserungen machen". All of it is in `git stash`
+"spaceship hull 2026-10-04" (+ `.git/spaceship-share-glyph.patch`).
+
+The craft lessons were applied to the F-14 instead (https://claude.ai/artifact/1FHHdTBZkrhJSwaVQr26xS):
+B = bevels, round root, cover rule; C = B + less wedge + bulkier. Tailless and small-fin
+variants of C were shown on request; the user picked plain C (full fins, tailerons kept) for
+the flight model only, and asked for a better store icon next. Lesson: show the change in the
+real game early - two concept pages looked fine and the built spaceship did not.
+

@@ -103,8 +103,9 @@ const PR      = W  * 0.018;
 // Ship exhaust nozzles in PR units (draw.js drawShip's nacelles and the 3D model's). Shared
 // by the thrust plume and on-fire cone (draw.js) and the thruster particles (update.js), so
 // exhaust always leaves the nacelles whatever the hull geometry does. The F-14 hull
-// (2026-09-22) puts them close together beside the beaver tail (the SR-71 had them at 0.50).
-const SHIP_NOZZLE_X = -0.98, SHIP_NOZZLE_Y = 0.20;
+// (2026-09-22) puts them close together beside the beaver tail (the SR-71 had them at 0.50);
+// 0.20 -> 0.216 with the bulkier nacelles of 2026-10-04.
+const SHIP_NOZZLE_X = -0.98, SHIP_NOZZLE_Y = 0.216;
 
 // 3/4 SIDE VIEW (2026-09-19, variant D of the view study:
 // https://claude.ai/artifact/Q9gDK8SdVrCYm9rU9biZdJ). The flying ship (player, ghost,
@@ -141,10 +142,11 @@ const SHIP3D_FIN_SCALE = 1.0;   // fin height, x the model's F-14 proportion
 // left. They used to track the scroll speed, which spread them through the whole slow
 // opening - the ship read as a trainer, not a fighter (user, 2026-09-22).
 // SHIP3D_SWEEP_MAX is a hitbox trade, not taste: the panels spread at a 20 deg leading
-// edge, so 34 takes them to 54 deg. The real F-14's 68 deg (48 here) pulls the tips in so
-// far that the swept ship fills only ~0.51 r of the circle in flight against
-// test-collision.js's 0.60 - you would die before the wing touched. 34 holds ~0.60.
-const SHIP3D_SWEEP_MAX    = 34;    // degrees of outer-panel sweep (20 -> 54 deg leading edge)
+// edge. The real F-14's 68 deg (48 here) pulls the tips in so far that the swept ship fills
+// less of the circle than test-collision.js's 0.60 - you would die before the wing touched.
+// It sat at 34 (54 deg) from an older, narrower panel; with the delta panels of 2026-09-23 the
+// fill holds to 44 (64 deg, 0.61 r), measured 2026-10-04 and used since.
+const SHIP3D_SWEEP_MAX    = 44;    // degrees of outer-panel sweep (20 -> 64 deg leading edge)
 const SHIP3D_SWEEP_CRUISE = 0.46;  // normal flight, as a fraction of SHIP3D_SWEEP_MAX (0 = spread, 1 = folded)
 const SHIP3D_SWEEP_WARP_EASE = 0.55;  // last fraction of a warp over which the wings glide back to cruise
 // Barrel roll on flying through the warp portal (2026-09-19): one full 360 deg turn about

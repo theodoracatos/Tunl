@@ -25,7 +25,7 @@ orange-red belongs to ON FIRE alone. Exhaust leaves the nacelles at `SHIP_NOZZLE
 (`constants.js`), shared by the plume, the on-fire cone and `update.js`'s thruster
 particles. The share card's `_shipGlyph` (`share.js`) carries a copy of the outline.
 
-**The brand marks are the flying F-14, rendered by the game itself (2026-10-02).** The
+**The app icon is the F-14 flying through the warp ring, wings spread (2026-10-04, variant F of https://claude.ai/artifact/QgSggVzFEnSKw6Wswfzi2S; `ICON_POSE` in `render-ship-mark.mjs`, masters `icon-mark.svg` / `icon-mark-dark.svg` / `icon-adaptive-foreground.svg`). The launch logo and feature graphic keep the 10-02 warp pose below.** **The brand marks are the flying F-14, rendered by the game itself (2026-10-02).** The
 user picked variant D of the icon concept (https://claude.ai/artifact/UA3oHiakB3ipBVmTEWoV4k):
 `drawShip3D` at `SHIP3D_ROLL_BASE`, wings folded fully back (`shipSweep` 1, the warp pose),
 PEARL, a 30-deg climb, plus a short icon plume (the game's 5r plume runs off any icon).
@@ -46,6 +46,36 @@ See `branding/README.md`.
 `_wallJagged` / `_stalOutline`'s `jAmp` **return early on a zero amplitude** - they used to
 compute thousands of sines per frame and multiply them by 0. The result is bit-identical at
 any non-zero roughness, so raising the constant still behaves as before.
+
+## F-14 refinement (2026-10-04)
+
+The user found the F-14 unrealistic; slim real swing-wingers and a spaceship were built and
+rejected (the spaceship in full - kept in `git stash` "spaceship hull 2026-10-04"), and the user
+picked **variant C** of https://claude.ai/artifact/1FHHdTBZkrhJSwaVQr26xS for the FLIGHT model
+only ("der Rest kann gleich bleiben"): top-down views, share card, site and brand marks still
+show the 09-23 F-14.
+
+- **Bevelled plates, no box slabs:** glove, outer panels, tailerons and beaver tail have a sharp
+  outline and a raised flat core. Slabs showed their vertical side walls as light/dark strips
+  along every edge at roll 67.
+- **Round wing root:** the outer panel's root is a disc (`RHO` 0.17) round `SHIP3D_PIVOT`, both
+  panel edges tangent to it; the glove is the convex hull of its old outline and that disc
+  a hair larger. `test-collision.js` checks the root is a disc and stays inside the glove at
+  every sweep (a straight root fails the first check; the bigger glove alone hides the corner).
+- **`cover` draw rule:** a glove face is drawn after every panel face on its side
+  (`_ship3dProject`); depth order put the near panel's root over the glove. `test-sim.js`
+  checks it at the flown rolls, the barrel roll and all sweeps (mutation: 30/30 wrong).
+- **Less wedge:** radome and forward body back to slimmer widths, glove leading edge from
+  0.62 r (~70 deg; the 09-23 wedge was ~77, the real jet 68). This partly undoes the user's
+  own 09-23 "mehr Dreiecksform" call - it was their pick this time.
+- **Bulkier:** centre body x1.20 wide, x1.14 deep; nacelles x1.20; fins/nozzles a touch further
+  out (`SHIP_NOZZLE_Y` 0.20 -> 0.216).
+- **`SHIP3D_SWEEP_MAX` 34 -> 44** (20 -> 64 deg): the fill holds 0.61 r. The 34 predated the
+  09-23 delta panels; the old F-14 would have held 44 too (0.615 r).
+- **Cost:** 242 -> 336 faces (bevels); about half are culled per frame. Not measured on a
+  weak device.
+- **Known mismatch:** the top-down `SHIP_OUTLINE` is still the 09-23 planform (narrower body,
+  wedge glove, 34 deg sweep), and the paint rim in flight is that outline under the squash.
 
 ## 3/4 side view in flight (2026-09-19, `SHIP_VIEW_3D`)
 

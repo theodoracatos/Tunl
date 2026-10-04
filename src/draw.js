@@ -1276,50 +1276,92 @@ function drawShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
 // screen-up like the facets above. Ported from the F-14 concept study (2026-09-22,
 // https://claude.ai/artifact/83BUEJDUKVSVMjS6HVtUUE). Drawn in the caller's pitch-rotated
 // frame, so shipPitch works exactly as it does for drawShip.
+// Refined 2026-10-04 (variant C of https://claude.ai/artifact/1FHHdTBZkrhJSwaVQr26xS, after
+// the user found the hull unrealistic and rejected a spaceship): glove, outer panels,
+// tailerons and beaver tail are BEVELLED PLATES (sharp outline, raised flat core) - box slabs
+// showed their side walls as light/dark strips at roll 67. The outer panel's root is a DISC
+// round SHIP3D_PIVOT with both panel edges tangent to it, and the glove holds the same disc a
+// hair larger, so no root corner swings out of the glove at any sweep; the glove is drawn
+// over its panel (`cover`, _ship3dProject). The forward body is back to the slimmer widths
+// (glove from 0.62 r, ~70 deg against the 09-23 wedge's 77; the real jet has 68) and the
+// centre body and nacelles are bulkier.
 // Fin points carry the z of their root as a 4th value so SHIP3D_FIN_SCALE stretches the
-// fins without fattening the body.
+// fins without fattening the body. Self-contained: test-collision.js runs it in a vm with
+// only the SHIP_NOZZLE_* / SHIP3D_PIVOT constants.
 function _ship3dFaces() {
     const F = [];
-    const add = (p, kind, ref, fin) => F.push({ p, kind, ref, fin: !!fin });
+    const add = (p, kind, ref, fin) => { const f = { p, kind, ref, fin: !!fin }; F.push(f); return f; };
+    const cen = Ps => [0, 1, 2].map(j => Ps.reduce((s, q) => s + q[j], 0) / Ps.length);
     const finBox = (Q, ny, nz) => {
         const l = Math.hypot(ny, nz), oy = ny / l * 0.012, oz = nz / l * 0.012;
         const A = Q.map(q => [q[0], q[1] + oy, q[2] + oz, q[3]]), B = Q.map(q => [q[0], q[1] - oy, q[2] - oz, q[3]]);
-        const ref = [0, 1, 2].map(k => Q.reduce((s, q) => s + q[k], 0) / 4).concat(Q[0][3]);
+        const ref = cen(Q).concat(Q[0][3]);
         add(A, 'hull', ref, true); add(B, 'hull', ref, true);
         for (let k = 0; k < 4; k++) { const k2 = (k + 1) % 4; add([A[k], A[k2], B[k2], B[k]], 'hull', ref, true); }
     };
-    // Thin slab around a 3D mid-surface polygon (glove, wing panels, tailerons, beaver
-    // tail); `swing` (= side) marks the outer wing panels that turn about SHIP3D_PIVOT.
-    const slab = (pts, t, swing) => {
-        const up = pts.map(q => [q[0], q[1], q[2] + t]), dn = pts.map(q => [q[0], q[1], q[2] - t]);
-        const ref = [0, 1, 2].map(k => pts.reduce((s, q) => s + q[k], 0) / pts.length);
-        const fs = [up, dn];
-        for (let k = 0; k < pts.length; k++) { const k2 = (k + 1) % pts.length; fs.push([up[k], up[k2], dn[k2], dn[k]]); }
-        for (const f of fs) { add(f, 'hull', ref); if (swing) F[F.length - 1].swing = swing; }
+    // Convex hull (CCW) and a sampled disc, for the glove and panel outlines.
+    const hull2 = pts => {
+        const p = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+        const cr = (O, a, b) => (a[0] - O[0]) * (b[1] - O[1]) - (a[1] - O[1]) * (b[0] - O[0]);
+        const lo = [], up = [];
+        for (const q of p) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+        for (const q of p.slice().reverse()) { while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+        return lo.slice(0, -1).concat(up.slice(0, -1));
     };
+    const disc = (c, r) => Array.from({ length: 24 }, (_, k) => [c[0] + r * Math.cos(k / 24 * 2 * Math.PI), c[1] + r * Math.sin(k / 24 * 2 * Math.PI)]);
+    // Bevelled plate: outline on the mid-surface z(x, y), its core pulled toward the spine
+    // segment A-B by k and raised/lowered by t(x, y); each face oriented against its own
+    // mid-surface patch.
+    const bevel = (outline, A, B, k, zf, tf) => {
+        const v = [B[0] - A[0], B[1] - A[1]], L2 = v[0] * v[0] + v[1] * v[1] || 1;
+        const near = X => { const u = Math.max(0, Math.min(1, ((X[0] - A[0]) * v[0] + (X[1] - A[1]) * v[1]) / L2)); return [A[0] + v[0] * u, A[1] + v[1] * u]; };
+        const O = outline.map(X => [X[0], X[1], zf(X[0], X[1])]);
+        const Im = outline.map(X => { const Q = near(X), x = Q[0] + (X[0] - Q[0]) * (1 - k), y = Q[1] + (X[1] - Q[1]) * (1 - k); return [x, y, zf(x, y)]; });
+        const out = [], n = O.length;
+        for (const sg of [1, -1]) {
+            const I = Im.map(q => [q[0], q[1], q[2] + sg * tf(q[0], q[1])]);
+            for (let i = 0; i < n; i++) { const j = (i + 1) % n; out.push(add([O[i], O[j], I[j], I[i]], 'hull', cen([O[i], O[j], Im[j], Im[i]]))); }
+            out.push(add(I, 'hull', cen(Im)));
+        }
+        return out;
+    };
+    const B = 1.20, BZ = 1.14;   // bulk: centre body width and depth
     // Fuselage: hexagonal section lofted along x - slim radome and tandem cockpit, then
     // the wide flat centre body ("pancake") tapering into the beaver tail
     const ring = ([x, w, zt, zb]) => [[x,w,0],[x,0.5*w,zt],[x,-0.5*w,zt],[x,-w,0],[x,-0.5*w,zb],[x,0.5*w,zb]];
-    const st = [[1.40,0.006,-0.004,-0.016],[1.24,0.070,0.032,-0.046],[1.05,0.122,0.060,-0.058],[0.85,0.142,0.080,-0.064],
-                [0.60,0.150,0.084,-0.068],[0.35,0.152,0.082,-0.068],[0.00,0.150,0.078,-0.060],[-0.40,0.138,0.068,-0.050],
-                [-0.72,0.096,0.046,-0.034]];
+    const st = [[1.40,0.006,-0.004,-0.016],[1.24,0.048,0.032,-0.046],[1.05,0.092,0.060,-0.058],[0.85,0.120,0.080,-0.064],
+                [0.60,0.140,0.084,-0.068],[0.35,0.152,0.082,-0.068],[0.00,0.150,0.078,-0.060],[-0.40,0.138,0.068,-0.050],
+                [-0.72,0.096,0.046,-0.034]].map((s, i) => i >= 3 ? [s[0], s[1] * B, s[2] * BZ, s[3] * BZ] : s);
     for (let i = 0; i < st.length - 1; i++) {
         const a = ring(st[i]), b = ring(st[i + 1]), xm = (st[i][0] + st[i + 1][0]) / 2;
         for (let k = 0; k < 6; k++) { const k2 = (k + 1) % 6; add([a[k], a[k2], b[k2], b[k]], 'hull', [xm, 0, 0.01]); }
     }
+    const bodyW = x => { for (let i = 0; i < st.length - 1; i++) if (x <= st[i][0] && x >= st[i + 1][0]) return st[i][1] + (st[i + 1][1] - st[i][1]) * (st[i][0] - x) / (st[i][0] - st[i + 1][0]); return st[st.length - 1][1]; };
     // Beaver tail: the flat paddle between the nozzles
-    slab([[-0.72,0.092,0.006],[-0.99,0.084,0.004],[-1.07,0.050,0.002],[-1.07,-0.050,0.002],[-0.99,-0.084,0.004],[-0.72,-0.092,0.006]], 0.010);
+    bevel([[-0.72,0.092*B],[-0.99,0.084*B],[-1.07,0.050*B],[-1.07,-0.050*B],[-0.99,-0.084*B],[-0.72,-0.092*B]], [-0.72, 0], [-1.07, 0], 0.5, () => 0.004, () => 0.010);
     // Tandem canopy
-    const cF = [1.04,0,0.062], t1 = [0.88,0,0.190], t2 = [0.60,0,0.184], cR = [0.40,0,0.092];
-    const cL = [0.74,0.078,0.108], cRt = [0.74,-0.078,0.108], cref = [0.74,0,0.07];
+    const cF = [1.04,0,0.062*BZ], t1 = [0.88,0,0.190*BZ], t2 = [0.60,0,0.184*BZ], cR = [0.40,0,0.092*BZ];
+    const cL = [0.74,0.078,0.108*BZ], cRt = [0.74,-0.078,0.108*BZ], cref = [0.74,0,0.07];
     [[cF,t1,cL],[cF,cRt,t1],[t1,t2,cL],[t1,cRt,t2],[t2,cR,cL],[t2,cRt,cR]].forEach(p => add(p, 'glass', cref));
+
+    // Glove and outer panel outlines, side +1 (see the header)
+    const P = SHIP3D_PIVOT, RHO = 0.17, gz = 0.068 * BZ, pz = 0.060 * BZ;
+    const gy0 = bodyW(0.62) - 0.005;
+    const gloveO = hull2([[0.62, gy0],[0.02,0.33],[-0.10,0.39],[-0.46,0.39],[-0.70,0.28],[-0.70, bodyW(-0.70) - 0.01]].concat(disc(P, RHO + 0.012)));
+    const panelO = hull2(disc(P, RHO).concat([[-0.275, 0.95], [-0.385, 0.945]]));
+    const outB = (x, y) => Math.max(0, Math.min(1, (Math.hypot(x - P[0], Math.abs(y) - P[1]) - 0.1) / 0.6));
+    F.plan = { glove: gloveO, panel: panelO };   // planform pieces, side +1 (test-collision.js)
+    F.tip = [-0.330, 0.9475, pz];                // wingtip strobe, spread
     for (const s of [-1, 1]) {
+        const m = O => (s > 0 ? O : O.slice().reverse()).map(q => [q[0], s * q[1]]);
         // Nacelle: no box and no blunt face (user's call, 2026-09-22). The pod starts as a
         // slim fairing tucked against the fuselage side and swells outward and aft into the
         // engine, round all the way (c 0.586 ~ regular octagon); the intake is only a dark
         // sliver at its tip. Section = rectangle chamfered by c, pulled `inset` inboard.
+        // 20 % fatter since 2026-10-04.
         const cy = s * SHIP_NOZZLE_Y, cz = -0.010;
         const sec = (x, hw, hh, c, inset, drop) => {
+            hw *= 1.2; hh *= 1.2;
             const u = [[hw,-hh*(1-c)],[hw,hh*(1-c)],[hw*(1-c),hh],[-hw*(1-c),hh],[-hw,hh*(1-c)],[-hw,-hh*(1-c)],[-hw*(1-c),-hh],[hw*(1-c),-hh]];
             return u.map(([dy, dz]) => [x, cy - s * inset + dy, cz - (drop || 0) + dz]);
         };
@@ -1332,20 +1374,20 @@ function _ship3dFaces() {
         }
         add(sec(...nst[0]), 'dark', [0.9, cy, cz]);
         add(sec(...nst[nst.length - 1]), 'hot', [-0.5, cy, cz]);
-        // Glove: the fixed inboard wing, 68 deg leading edge from the canopy to the pivot
-        // box, shoulder-mounted on top of the nacelles
-        slab([[0.80,0.145],[0.02,0.33],[-0.10,0.39],[-0.46,0.39],[-0.70,0.28],[-0.70,0.145]].map(q => [q[0], s * q[1], 0.068]), 0.012);
-        // Outer wing panel: long and slender, 20 deg leading edge spread, sitting a hair
-        // under the glove so it slides beneath it when swept. Tip at 0.95 r so the brake
-        // (swung forward past spread) still stays inside the circle.
-        slab([[-0.05,0.34],[-0.275,0.95],[-0.385,0.945],[-0.56,0.34]].map(q => [q[0], s * q[1], 0.060]), 0.010, s);
+        // Glove: shoulder-mounted on top of the nacelles, thicker than the panel it holds
+        for (const f of bevel(m(gloveO), [0.42, s * gy0], [P[0], s * P[1]], 0.55, () => gz,
+            (x, y) => 0.026 - 0.008 * Math.max(0, Math.min(1, (Math.abs(y) - 0.15) / 0.35)))) f.cover = s;
+        // Outer panel: 20 deg leading edge spread, tip at 0.95 r so the brake (swung forward
+        // past spread) still stays inside the circle; thins toward the tip.
+        for (const f of bevel(m(panelO), [P[0], s * P[1]], [-0.33, s * 0.945], 0.55, () => pz, (x, y) => 0.016 - 0.010 * outB(x, y))) f.swing = s;
         // All-moving tailerons on the nacelle flanks, a little anhedral
-        slab([[-0.60,0.25,-0.010],[-0.92,0.60,-0.040],[-1.05,0.60,-0.040],[-1.00,0.25,-0.010]].map(q => [q[0], s * q[1], q[2]]), 0.009);
+        const tl = [[-0.60,0.25],[-0.92,0.60],[-1.05,0.60],[-1.00,0.25]].map(q => [q[0], s * q[1] * 1.04]);
+        bevel(s > 0 ? tl : tl.slice().reverse(), [-0.80, s * 0.25], [-0.98, s * 0.60], 0.5, (x, y) => -0.010 - 0.030 * (Math.abs(y) - 0.25) / 0.35, () => 0.009);
         // Twin fins on the nacelles, canted 5 deg OUTWARD
-        const zb = 0.068, zt = 0.44, yb = s * 0.21, yt = s * 0.24;
+        const zb = 0.068 * BZ, zt = 0.44, yb = s * 0.21 * 1.08, yt = s * 0.24 * 1.08;
         finBox([[-0.42,yb,zb,zb],[-0.90,yb,zb,zb],[-0.98,yt,zt,zb],[-0.80,yt,zt,zb]], zt - zb, -(yt - yb));
         // Ventral fins under the nacelles, canted outward
-        const vb = -0.082, vt = -0.19, vyb = s * 0.21, vyt = s * 0.25;
+        const vb = -0.082 * BZ, vt = -0.19, vyb = s * 0.21, vyt = s * 0.25;
         finBox([[-0.56,vyb,vb,vb],[-0.86,vyb,vb,vb],[-0.89,vyt,vt,vb],[-0.72,vyt,vt,vb]], vt - vb, -(vyt - vyb));
     }
     return F;
@@ -1353,7 +1395,8 @@ function _ship3dFaces() {
 function _buildShip3D(finScale, centerDeg) {
     const bodyK = 1 + (finScale - 1) * 0.35;
     const sz = (q, fin) => fin && q[3] !== undefined ? [q[0], q[1], q[3] * bodyK + (q[2] - q[3]) * finScale] : [q[0], q[1], q[2] * bodyK];
-    const faces = _ship3dFaces().map(f => ({ p: f.p.map(q => sz(q, f.fin)), ref: sz(f.ref, f.fin), kind: f.kind, swing: f.swing || 0 }));
+    const raw = _ship3dFaces();
+    const faces = raw.map(f => ({ p: f.p.map(q => sz(q, f.fin)), ref: sz(f.ref, f.fin), kind: f.kind, swing: f.swing || 0, cover: f.cover || 0 }));
     // Centre the ink on the hitbox at the base roll: a z shift of dz moves the top edge
     // by -dz*cos and the bottom edge by +dz*cos.
     const ca = Math.cos(centerDeg * Math.PI / 180), sa = Math.sin(centerDeg * Math.PI / 180);
@@ -1373,12 +1416,13 @@ function _buildShip3D(finScale, centerDeg) {
         if (nx * (c[0] - f.ref[0]) + ny * (c[1] - f.ref[1]) + nz * (c[2] - f.ref[2]) < 0) { nx = -nx; ny = -ny; nz = -nz; }
         f.n = [nx, ny, nz];
     }
-    return { faces, dz };
+    // tip: the wingtip strobe point (side +1, spread); plan: the glove and panel outlines
+    return { faces, dz, tip: [raw.tip[0], raw.tip[1], raw.tip[2] * bodyK - dz], plan: raw.plan };
 }
-const _SHIP3D = SHIP_VIEW_3D ? _buildShip3D(SHIP3D_FIN_SCALE, SHIP3D_ROLL_BASE) : null;
 // Pivot of the swinging outer wing panel (x, |y|): the F-14's glove box, well inboard,
-// so almost the whole wing swings.
+// so almost the whole wing swings; the centre of the panel's root disc (_ship3dFaces).
 const SHIP3D_PIVOT = [-0.16, 0.36];
+const _SHIP3D = SHIP_VIEW_3D ? _buildShip3D(SHIP3D_FIN_SCALE, SHIP3D_ROLL_BASE) : null;
 // Rotate a model point of the outer panel on side s about the pivot, in the wing plane.
 function _swingPt(q, s, c, sn) {
     const dx = q[0] - SHIP3D_PIVOT[0], dy = q[1] - s * SHIP3D_PIVOT[1];
@@ -1492,8 +1536,14 @@ function _ship3dProject(x, y, r) {
         let depth = 0;
         for (const q of p) depth += q[2] * sp - q[1] * cp;
         const P = p.map(q => [x + q[0] * r, y - (q[2] * cp + q[1] * sp) * r]);
-        vis.push({ p, P, kind: f.kind, d: 0.74 * su + 0.60 * nT + 0.12 * sx, depth: depth / p.length });
+        vis.push({ p, P, kind: f.kind, d: 0.74 * su + 0.60 * nT + 0.12 * sx, depth: depth / p.length, swing: f.swing, cover: f.cover });
     }
+    // The glove hides its panel's root (the panel is thinner and slides into it): a glove
+    // face is drawn after every panel face on its side, whatever the depths say. Plain depth
+    // order drew the near panel's root over the glove and the wing looked stuck on (2026-10-04).
+    let swA = -9, swB = -9;
+    for (const v of vis) if (v.swing) { if (v.swing > 0) swA = Math.max(swA, v.depth); else swB = Math.max(swB, v.depth); }
+    for (const v of vis) if (v.cover) v.depth = Math.max(v.depth, (v.cover > 0 ? swA : swB) + 1e-3);
     vis.sort((p, q) => p.depth - q.depth);
     return vis;
 }
@@ -1616,7 +1666,7 @@ function drawShip3D(x, y, r, color, sr, sg, sb, blur, fx, lv) {
 function _ship3dTip(s, x, y, r) {
     const a = shipRollDeg() * Math.PI / 180, cp = Math.cos(a), sp = Math.sin(a);
     const sw = shipSweep * SHIP3D_SWEEP_MAX * Math.PI / 180;
-    const tip = _swingPt([-0.330, s * 0.945, 0.060 - _SHIP3D.dz], s, Math.cos(sw), s * Math.sin(sw));
+    const T = _SHIP3D.tip, tip = _swingPt([T[0], s * T[1], T[2]], s, Math.cos(sw), s * Math.sin(sw));
     const ty = tip[1], tz = tip[2];
     return [x + r * tip[0], y - (tz * cp + ty * sp) * r, tz * sp - ty * cp >= -0.05];
 }

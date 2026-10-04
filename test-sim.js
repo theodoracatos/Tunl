@@ -718,6 +718,31 @@ function touchCoin(type, setup) {
     check(`after the warp they ease back to cruise (sweep ${r.after.toFixed(2)})`, near(r.after, r.cruiseK));
 }
 
+// ── Swing wing draw order: the glove covers its panel's root ──────────────
+// docs/agents/ship-render.md "F-14 hull". Plain depth order drew the near panel's root over
+// the glove and the wing looked stuck on (2026-10-04). On the real projection.
+{
+    const g = quietCave(true);
+    const r = g(`(() => {
+        let bad = 0, pairs = 0;
+        for (const roll of [SHIP3D_ROLL_BASE - SHIP3D_ROLL_AMP, SHIP3D_ROLL_BASE, SHIP3D_ROLL_BASE + SHIP3D_ROLL_AMP, 250, 290]) {
+            for (const sw of [0, SHIP3D_SWEEP_CRUISE, 1]) {
+                shipRoll = roll; shipBarrelT = -1; shipSweep = sw; shipPitch = 0;
+                const vis = _ship3dProject(0, 0, 10);
+                for (const s of [-1, 1]) {
+                    const lastPanel = vis.reduce((m, v, i) => v.swing === s ? i : m, -1);
+                    const firstGlove = vis.findIndex(v => v.cover === s);
+                    if (lastPanel < 0 || firstGlove < 0) continue;
+                    pairs++;
+                    if (firstGlove < lastPanel) bad++;
+                }
+            }
+        }
+        return { bad, pairs };
+    })()`);
+    check(`each glove is drawn over its own panel at every flown roll and sweep (${r.pairs} cases, ${r.bad} wrong)`, r.pairs >= 10 && r.bad === 0);
+}
+
     const empty = pick(0), half = pick(1), full = pick(2);
     check('a kit gives an empty hull back exactly one scratch and pays its points',
         empty.hull === 1 && empty.gain === empty.pts && empty.left === 0);

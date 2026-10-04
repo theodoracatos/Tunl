@@ -27,13 +27,18 @@ const POSE = { sweep: 1, roll: null, jet: 1.7, blur: 26 };
 // Drawn area in ship-local px at r = 130 (nose +x): nose 1.40r, icon plume ~2.7r aft of
 // the pivot, wings and the 1.5r glow above and below. The masters rotate this box.
 const BOX = { x0: -420, x1: 240, y0: -230, y1: 230 };
+// The app icon (2026-10-04, variant F of https://claude.ai/artifact/QgSggVzFEnSKw6Wswfzi2S):
+// the ship flies through the warp ring with its wings SPREAD (user's call) and a longer plume.
+// The spread wings and the plume need a bigger box. Launch logo and feature graphic keep POSE.
+const ICON_POSE = { sweep: 0, jet: 2.6, box: { x0: -500, x1: 240, y0: -240, y1: 240 } };
 
 // res = bitmap px per ship-local px. Each master's own scale times its largest raster
 // (launch logo @3x = 1.5x its viewBox), so nothing is upscaled on export.
 const TARGETS = [
-    { file: 'branding/icon-mark.svg',               res: 2.0 * 1.0 },
+    { file: 'branding/icon-mark.svg',               res: 2.3 * 1.0, pose: ICON_POSE },
+    { file: 'branding/icon-mark-dark.svg',          res: 2.3 * 1.0, pose: ICON_POSE },
     { file: 'branding/ios-launch-logo.svg',         res: 2.0 * 1.5 },
-    { file: 'branding/icon-adaptive-foreground.svg', res: 0.62 * 1.0 },
+    { file: 'branding/icon-adaptive-foreground.svg', res: 0.76 * 1.0, pose: ICON_POSE },
     { file: 'branding/feature-graphic.svg',         res: 1.20 * 1.0 },
 ];
 const BEGIN = '<!-- BEGIN generated ship: branding/render-ship-mark.mjs';
@@ -114,7 +119,7 @@ export async function renderAll(jobs) {
             const p = encodeURIComponent(JSON.stringify({ ...POSE, box: BOX, ...job }));
             // Async on purpose: the page is served from this same event loop.
             const r = await new Promise((ok, no) => execFile(chrome,
-                ['--headless=new', '--disable-gpu', '--virtual-time-budget=5000', '--dump-dom',
+                ['--headless=new', '--disable-gpu', '--virtual-time-budget=20000', '--dump-dom',
                  `http://127.0.0.1:${port}/harness.html#${p}`],
                 { maxBuffer: 256 << 20 }, (e, so) => e ? no(e) : ok(so)));
             const err = r.match(/<pre id="err">([^<]*)/);
@@ -129,8 +134,8 @@ export async function renderAll(jobs) {
 }
 
 // The <image> sits inside the master's ship transform, in ship-local px.
-const fragment = uri => `${BEGIN} (do not hand-edit; F-14, drawShip3D) -->
-  <image x="${BOX.x0}" y="${BOX.y0}" width="${BOX.x1 - BOX.x0}" height="${BOX.y1 - BOX.y0}" preserveAspectRatio="none" href="${uri}"/>
+const fragment = (uri, box) => `${BEGIN} (do not hand-edit; F-14, drawShip3D) -->
+  <image x="${box.x0}" y="${box.y0}" width="${box.x1 - box.x0}" height="${box.y1 - box.y0}" preserveAspectRatio="none" href="${uri}"/>
   ${END}`;
 
 // flytunl.ch ship section (flytunl-site/home.src.html): every chip carries the flat
@@ -182,12 +187,15 @@ if (!_isMain) {
 } else if (argv.includes('--list')) {
     for (const t of TARGETS) console.log(t.file);
 } else if (argv.includes('--write')) {
-    const uris = (await renderAll(TARGETS.map(t => ({ res: t.res })))).map(o => o.png);
-    TARGETS.forEach((t, i) => {
+    // --only=icon-mark,icon-adaptive-foreground writes just those masters
+    const only = (argv.find(a => a.startsWith('--only=')) || '').slice(7).split(',').filter(Boolean);
+    const todo = TARGETS.filter(t => !only.length || only.some(o => t.file.includes(o)));
+    const uris = (await renderAll(todo.map(t => ({ res: t.res, ...(t.pose || {}) })))).map(o => o.png);
+    todo.forEach((t, i) => {
         const f = join(ROOT, t.file), src = readFileSync(f, 'utf8');
         const a = src.indexOf('<!-- BEGIN generated ship'), b = src.indexOf(END);
         if (a < 0 || b < 0) throw new Error(t.file + ': BEGIN/END markers missing');
-        writeFileSync(f, src.slice(0, a) + fragment(uris[i]) + src.slice(b + END.length));
+        writeFileSync(f, src.slice(0, a) + fragment(uris[i], (t.pose && t.pose.box) || BOX) + src.slice(b + END.length));
         console.log(`wrote ${t.file} (${Math.round(uris[i].length / 1024)} KB ship layer)`);
     });
 } else if (argv.includes('--site')) {

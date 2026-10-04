@@ -1,14 +1,15 @@
 #!/bin/bash
 # Regenerate every applied TUNL icon/favicon from the branding masters and
 # wire them into iOS, Android and the flytunl.ch site.
-# Masters: branding/icon-mark.svg (full-bleed), branding/icon-adaptive-foreground.svg,
-#          branding/feature-graphic.svg
+# Masters: branding/icon-mark.svg (full-bleed), branding/icon-mark-dark.svg (no ground),
+#          branding/icon-adaptive-foreground.svg, branding/feature-graphic.svg
 set -euo pipefail
 cd "$(dirname "$0")/.."
 MARK=branding/icon-mark.svg
 FG=branding/icon-adaptive-foreground.svg
 FEAT=branding/feature-graphic.svg
 LOGO=branding/ios-launch-logo.svg
+DARK=branding/icon-mark-dark.svg
 TMP=$(mktemp -d)
 
 # render MARK at size $1 to $2, flattened to opaque RGB on #04040e (no alpha)
@@ -35,8 +36,10 @@ echo "iOS app icon (Assets.xcassets/AppIcon.appiconset, linked via ASSETCATALOG_
 rgb 1024 Tunl/Tunl/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
 
 echo "iOS 18 dark + tinted app icons (AppIcon.appiconset appearances; older iOS ignores them):"
-# Dark: the launch logo (aura + ship, no ground), transparent - iOS lays its own dark ground.
-rsvg-convert -w 1024 -h 1024 "$LOGO" -o Tunl/Tunl/Assets.xcassets/AppIcon.appiconset/AppIcon-1024-dark.png
+# Dark: the app icon without its ground (icon-mark-dark.svg: aura, warp ring, ship),
+# transparent - iOS lays its own dark ground. (It was the launch logo until the warp-ring
+# icon of 2026-10-04, which the launch logo does not carry.)
+rsvg-convert -w 1024 -h 1024 "$DARK" -o Tunl/Tunl/Assets.xcassets/AppIcon.appiconset/AppIcon-1024-dark.png
 echo "  Tunl/Tunl/Assets.xcassets/AppIcon.appiconset/AppIcon-1024-dark.png (1024x1024, RGBA)"
 # Tinted: the same picture as opaque greyscale on black; iOS maps luminance onto the tint.
 python3 -c "

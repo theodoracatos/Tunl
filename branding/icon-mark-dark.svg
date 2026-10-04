@@ -1,18 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <!-- ============================================================
-       TUNL app-icon master - "Warp ring" (2026-10-04, variant F of the icon
-       study https://claude.ai/artifact/QgSggVzFEnSKw6Wswfzi2S, wings spread
-       by the user's call): the player F-14 as it flies (drawShip3D, roll
-       SHIP3D_ROLL_BASE, wings SPREAD) passing through the violet warp ring
-       every player knows. The ring's far half is drawn behind the ship, its
-       near half over it, as in the game. A ring is a shape that still reads
-       at 29 px. Replaces "S1 / Solo" (lone ship in a blue aura, 2026-10-02).
+  <!-- iOS 18 DARK (and, greyscaled, TINTED) app icon: icon-mark.svg without
+       its ground - iOS lays its own dark ground behind it. Same warp-ring
+       composition. Written by branding/export-icons.sh.
        The ship block is a PNG RENDERED BY THE GAME CODE (XML comments cannot
        contain a double hyphen, so: run branding/render-ship-mark.mjs with the
        write flag) after any change to the in-game hull, then
        branding/export-icons.sh. Everything else here (background, aura, ring,
        placement) is hand-authored.
-       ============================================================ -->
+       -->
   <defs>
     <radialGradient id="bgGrd" cx="50%" cy="50%" r="78%">
       <stop offset="0%"   stop-color="#1b1046"/>
@@ -25,7 +20,7 @@
     </radialGradient>
     <filter id="ringGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>
   </defs>
-  <rect width="1024" height="1024" fill="url(#bgGrd)"/>
+
   <circle cx="520" cy="512" r="420" fill="url(#aura)"/>
   <!-- warp ring, far half (behind the ship) -->
   <g transform="translate(520,512) rotate(-10.3)" fill="none" stroke-linecap="round">

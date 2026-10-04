@@ -1,13 +1,19 @@
 # TUNL brand assets
 
-The icon identity is one motif: the player ship. Since 2026-10-02 that is the
-F-14 exactly as it flies (`drawShip3D()` in `src/draw.js`, roll
-`SHIP3D_ROLL_BASE`, wings folded fully back as in a warp - variant D of the
-icon concept, https://claude.ai/artifact/UA3oHiakB3ipBVmTEWoV4k), in a
-~30-degree climb because the game verb is "hold = climb", on the dark cave
-ground with a soft blue aura and twin nacelle plumes. One shape, so the
-silhouette still reads at a 16px favicon - no coin, no tunnel-ring, no
-particle field.
+**App icon (since 2026-10-04): the warp ring.** The player F-14 as it flies
+(`drawShip3D()`, roll `SHIP3D_ROLL_BASE`, wings SPREAD - the user's call) passing
+through the violet warp ring every player knows: the ring's far half behind the
+ship, its near half over it. Variant F of the icon study
+https://claude.ai/artifact/QgSggVzFEnSKw6Wswfzi2S, chosen because a ring still
+reads at 29 px and says "game" at a glance; the lone white ship before it read as
+a thin streak in the store search. Masters: `icon-mark.svg`, `icon-mark-dark.svg`
+(iOS 18 dark/tinted), `icon-adaptive-foreground.svg`; the pose lives in
+`render-ship-mark.mjs` `ICON_POSE`.
+
+**Launch logo, Play feature graphic** keep the 2026-10-02 motif: the F-14 with its
+wings folded fully back as in a warp (variant D of
+https://claude.ai/artifact/UA3oHiakB3ipBVmTEWoV4k), in a ~30-degree climb, soft blue
+aura, twin plumes.
 
 ## The ship block is rendered by the game - `render-ship-mark.mjs`
 
@@ -23,7 +29,7 @@ resolution matches its largest export, so nothing is upscaled.
 
 ```
 node branding/render-ship-mark.mjs --list     # the four masters it writes
-node branding/render-ship-mark.mjs --write    # re-render them in place
+node branding/render-ship-mark.mjs --write    # re-render them in place (--only=icon-mark,... for some)
 node branding/render-ship-mark.mjs --png=x.png --res=2   # ship layer only
 bash branding/export-icons.sh                 # then push the rasters everywhere
 ```
@@ -54,11 +60,13 @@ and unchanged by the icon direction; the two are meant to lock up together
 
 ## Masters (edit these, everything else is exported from them)
 
-- `icon-mark.svg` — the ship mark, full-bleed square. App icon source for
+- `icon-mark.svg` - the app icon (warp ring + ship), full-bleed square. Source for
   iOS, Android's legacy launcher icon, the Play Store listing icon, and
   favicons. No text.
-- `icon-adaptive-foreground.svg` — same ship, transparent background, shrunk
-  so the hull sits inside Android's 66dp adaptive-icon safe zone (the fading
+- `icon-mark-dark.svg` - the same without its ground, for the iOS 18 dark icon
+  (and, greyscaled, the tinted one) in `export-icons.sh`.
+- `icon-adaptive-foreground.svg` - same ring and ship, transparent background, shrunk
+  so they sit inside Android's 66dp adaptive-icon safe zone (the fading
   plume tails reach past it and are cut by the launcher mask). Pairs with the `tunlBackground` color (`#04040A`) as the
   background layer.
 - `ios-launch-logo.svg` — the ship mark with no background rect (transparent),

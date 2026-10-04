@@ -180,6 +180,26 @@ function check(name, cond) {
     check(`3D hull stays inside the PR circle at every roll and sweep (worst ${worst.toFixed(2)} r)`, worst <= 1.0);
     check(`3D nose never reaches past the flat hull's 1.40 r (${nose.toFixed(2)} r)`, nose <= 1.4001);
     check(`3D hull still fills most of the circle while flying (worst ${cover.toFixed(2)} r)`, cover >= 0.60);
+    // No corner at the wing root at any sweep (2026-10-04): the outer panel's root is a disc
+    // round SHIP3D_PIVOT inside the glove; a straight root swings a corner out of the glove
+    // when folding. Every panel outline point near the pivot has to stay inside the glove.
+    const P = vm.runInContext('SHIP3D_PIVOT', s3), glove = M.plan.glove, panel = M.plan.panel;
+    const inside = (q, o) => o.every((A, i) => { const B = o[(i + 1) % o.length]; return (B[0] - A[0]) * (q[1] - A[1]) - (B[1] - A[1]) * (q[0] - A[0]) >= -1e-9; });
+    const rg = Math.max(...glove.map(q => Math.hypot(q[0] - P[0], q[1] - P[1])).filter(d => d < 0.3));
+    let outCorner = 0;
+    for (const sw of [0, 0.25, 0.5, 0.75, 1]) {
+        const a = sw * num('SHIP3D_SWEEP_MAX') * Math.PI / 180;
+        for (const q of panel) {
+            if (Math.hypot(q[0] - P[0], q[1] - P[1]) > rg + 0.02) continue;
+            if (!inside(s3._swingPt([q[0], q[1], 0], 1, Math.cos(a), Math.sin(a)), glove)) outCorner++;
+        }
+    }
+    check(`the outer panel's root stays inside the glove at every sweep (${outCorner} root points outside)`, outCorner === 0);
+    // ... and that root is ROUND: every panel outline point off the tip lies on one circle round
+    // the pivot, so the leading edge meets the glove in a fillet, never a corner.
+    const dists = panel.filter(q => q[1] < 0.9).map(q => Math.hypot(q[0] - P[0], q[1] - P[1]));
+    const spread = Math.max(...dists) - Math.min(...dists);
+    check(`the outer panel's root is a disc round the pivot (radius spread ${spread.toFixed(3)} r)`, dists.length >= 8 && spread < 0.005);
 }
 
 // ── Flat top-down hull (hangar, hero, shop, share card; the SHIP_VIEW_3D=false flight) ──
