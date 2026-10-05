@@ -48,7 +48,7 @@
  "8240929": "Comment le vaisseau est dessiné",
  "9ba6d4b": "La coque est une silhouette fine, de style F-14, découpée en facettes plates éclairées d'en haut : la moitié supérieure est mélangée vers le blanc, l'inférieure vers le presque-noir, le tout à partir de la couleur propre du vaisseau. Le panache du moteur est teinté dans la couleur du vaisseau aussi, donc le rouge-orangé reste réservé à la postcombustion <strong>EN FEU</strong> qui s'allume quand tu bats le record du jour.",
  "675155d": "Depuis la version 15.0, le vaisseau en vol est montré en <strong>vue de trois quarts de côté</strong> plutôt que vu droit du dessus, ce qui convient à un jeu où la gravité tire vers le bas et où les stalactites pendent du plafond. Quelques éléments bougent dessus :",
- "761f2d5": "Les <strong>ailes se replient vers l'arrière</strong> à mesure que la grotte accélère, largement déployées au départ lent et repliées à pleine vitesse, comme un chasseur à géométrie variable.",
+ "e614f4d": "Les <strong>ailes pivotent</strong> comme sur un chasseur à géométrie variable : à moitié repliées en vol normal, entièrement repliées pendant un warp, et entièrement déployées tant qu'une pièce bleue ralentit le temps.",
  "e7cd1ce": "La coque <strong>s'incline de quelques degrés avec ta montée</strong> : monter tourne le dos vers toi, descendre tourne le ventre. C'est une seconde lecture de ta vitesse verticale.",
  "bf1350e": "Une <strong>pièce bleue</strong> projette les ailes vers l'avant comme un aérofrein, et elles se replient à mesure que le temps redevient normal.",
  "3637e17": "Traverser l'anneau warp te donne un <strong>tonneau</strong> complet.",

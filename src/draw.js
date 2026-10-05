@@ -969,7 +969,8 @@ function drawCoin(x, y, type, wx, scale = 1) {
 // ── Draw helpers ──────────────────────────────────────────────────────
 
 // ── Ship (K5 "Facette + Licht", 12.0; F-14 hull 2026-09-22) ─────────────
-// Grumman F-14 planform (wings spread), cut into flat facets lit from above, plus a few
+// The F-14's planform, generated from the 3D model with the wings folded (tools/gen-ship-topdown.js),
+// cut into flat facets lit from above, plus a few
 // emissive details in the skin's own glow colour. See docs/agents/ship-render.md.
 //
 // Envelope (do not grow it): span +-0.98r, nose +1.40r. The span sits just inside
@@ -977,34 +978,33 @@ function drawCoin(x, y, type, wx, scale = 1) {
 // visibly touched), and the nose was cut from 1.72r because everything ahead of
 // update.js's forward collision probe (+0.7*PR) visibly slid through rock.
 //
-// Facet points are in r units for the TOP half (y <= 0); the bottom half is the
-// same list mirrored. top/bot are tone() amounts: >0 mixes toward white, <0 toward
-// near-black, so every skin keeps its own paint and only the lighting is shared.
-// The planform is the 3D model's (_ship3dFaces) seen from above, with the outer panels
-// SWEPT to the speed position (user's call, 2026-09-22: the hangar portrait should read as
-// speed, not as a parked jet). The panel points are the spread ones turned SHIP3D_SWEEP_MAX
-// about SHIP3D_PIVOT, so hangar and flight show the same aircraft at full pace; the panel
-// root tucks under the glove exactly as it does in 3D. The nacelles and fins are drawn on
-// top in drawShip.
-// Keep the facet ORDER: paint.js's WINGTIPS pattern fills facets 1, 5 and 6 by index.
+// BEGIN generated top-down hull: tools/gen-ship-topdown.js (do not hand-edit)
+// The 3D model (_ship3dFaces) seen from above with the outer panels folded to
+// SHIP3D_SWEEP_MAX. Facets are disjoint (the seam pass strokes every outline); top/bot are
+// tone() amounts. Keep the facet ORDER: paint.js's WINGTIPS pattern fills 1, 5 and 6.
 const SHIP_OUTLINE = (() => {
-    const top = [[1.40,0],[1.22,-0.068],[1.02,-0.118],[0.80,-0.145],[0.02,-0.33],
-                 [-0.058,-0.405],[-0.585,-0.785],[-0.674,-0.719],[-0.554,-0.347],
-                 [-0.649,-0.303],[-0.92,-0.60],[-1.05,-0.60],[-1.00,-0.25],
-                 [-0.99,-0.074],[-1.07,-0.044],[-1.07,0]];
+    const top = [[1.4,0],[1.361,-0.018],[1.052,-0.09],[0.857,-0.144],[0.689,-0.162],[0.62,-0.204],
+                 [0.5,-0.252],[0.407,-0.27],[-0.082,-0.525],[-0.112,-0.537],[-0.166,-0.54],
+                 [-0.649,-0.705],[-0.655,-0.705],[-0.655,-0.699],[-0.706,-0.651],
+                 [-0.727,-0.621],[-0.487,-0.42],[-0.481,-0.408],[-0.484,-0.396],
+                 [-0.505,-0.381],[-0.625,-0.318],[-0.643,-0.315],[-0.664,-0.33],
+                 [-0.919,-0.624],[-1.051,-0.624],[-1.003,-0.27],[-1,-0.261],[-0.985,-0.258],
+                 [-0.979,-0.246],[-0.979,-0.147],[-0.856,-0.138],[-0.844,-0.132],
+                 [-0.841,-0.12],[-0.844,-0.111],[-0.856,-0.105],[-0.991,-0.102],
+                 [-1.021,-0.087],[-1.069,-0.06],[-1.069,0]];
     return top.concat(top.slice(1, -1).reverse().map(p => [p[0], -p[1]]));
 })();
 const SHIP_FACETS = [
-    { p: [[1.40,0],[1.22,-0.045],[1.02,-0.075],[1.02,0]],                              top: 0.46, bot: -0.04 }, // nose cone
-    { p: [[-0.649,-0.303],[-0.92,-0.60],[-1.05,-0.60],[-1.00,-0.25],[-0.72,-0.25]],    top: -0.08, bot: -0.54 }, // taileron
-    { p: [[1.02,0],[1.02,-0.118],[0.80,-0.145],[-0.72,-0.148],[-0.99,-0.084],[-1.07,-0.050],[-1.07,0]], top: 0.30, bot: -0.20 }, // fuselage + beaver tail
-    { p: [[0.80,-0.145],[0.02,-0.33],[-0.10,-0.39],[-0.46,-0.39],[-0.70,-0.28],[-0.70,-0.148]], top: 0.16, bot: -0.32 }, // glove
-    { p: [[0.80,-0.145],[0.02,-0.33],[-0.04,-0.30],[0.66,-0.155]],                     top: 0.26, bot: -0.22 }, // glove leading edge
-    // Swept outer panel: only the part outside the glove, since the panel slides UNDER the
-    // glove when it folds (z 0.060 against the glove's 0.068 in the 3D model).
-    { p: [[-0.058,-0.405],[-0.585,-0.785],[-0.674,-0.719],[-0.554,-0.347],[-0.46,-0.39],[-0.10,-0.39]], top: 0.06, bot: -0.40 }, // outer wing
-    { p: [[-0.058,-0.405],[-0.585,-0.785],[-0.616,-0.762],[-0.105,-0.399]],            top: 0.26, bot: -0.22 }, // wing leading edge
+    { p: [[1.4,0],[1.394,-0.009],[1.247,-0.048],[1.019,-0.099],[1.019,-0.006]], top: 0.46, bot: -0.04 }, // nose cone
+    { p: [[-1,-0.261],[-0.979,-0.261],[-0.979,-0.285],[-0.97,-0.288],[-0.82,-0.3],[-0.64,-0.303],[-0.919,-0.624],[-1.051,-0.624]], top: -0.08, bot: -0.54 }, // taileron
+    { p: [[1.019,0],[1.016,-0.102],[0.857,-0.144],[0.698,-0.159],[0.62,-0.204],[0.5,-0.252],[0.431,-0.267],[0.419,-0.264],[0.44,-0.252],[0.605,-0.168],[0.365,-0.183],[-0.043,-0.18],[-0.376,-0.168],[-0.7,-0.12],[-0.7,-0.282],[-0.658,-0.303],[-0.82,-0.3],[-0.979,-0.285],[-0.979,-0.261],[-0.991,-0.261],[-0.979,-0.246],[-0.979,-0.147],[-0.856,-0.138],[-0.844,-0.132],[-0.844,-0.111],[-0.856,-0.105],[-0.991,-0.102],[-1.069,-0.06],[-1.069,-0.006]], top: 0.3, bot: -0.2 }, // fuselage, nacelle deck, beaver tail
+    { p: [[-0.7,-0.12],[-0.376,-0.168],[0.218,-0.183],[0.365,-0.183],[0.575,-0.168],[0.605,-0.171],[-0.082,-0.525],[-0.112,-0.537],[-0.163,-0.543],[-0.208,-0.537],[-0.238,-0.525],[-0.7,-0.282]], top: 0.16, bot: -0.32 }, // glove
+    { p: [[0.575,-0.168],[0.605,-0.171],[-0.082,-0.525],[-0.112,-0.537],[-0.175,-0.54],[0.533,-0.171]], top: 0.26, bot: -0.22 }, // glove leading edge
+    { p: [[-0.472,-0.402],[-0.238,-0.525],[-0.208,-0.537],[-0.166,-0.543],[-0.655,-0.705],[-0.727,-0.621],[-0.616,-0.531]], top: 0.06, bot: -0.4 }, // outer wing (outside the glove)
+    { p: [[-0.226,-0.528],[-0.208,-0.537],[-0.166,-0.543],[-0.649,-0.705],[-0.673,-0.684],[-0.673,-0.678]], top: 0.26, bot: -0.22 }, // wing leading edge
 ];
+const SHIP_TOPDOWN = {"le":[[1.4,0],[1.361,-0.018],[1.052,-0.09],[0.857,-0.144],[0.689,-0.162],[0.62,-0.204],[0.5,-0.252],[0.407,-0.27],[-0.082,-0.525],[-0.112,-0.537],[-0.166,-0.54],[-0.649,-0.705]],"intake":[[0.584,-0.193],[0.315,-0.332],[0.329,-0.359],[0.598,-0.22]],"seamY":0.177,"fin":[0.227,0.259],"tip":[-0.69,0.665]};
+// END generated top-down hull
 
 const _SHIP_DARK = [6, 8, 16], _SHIP_WHITE = [255, 255, 255];
 const _shipToneCache = new Map();
@@ -1141,13 +1141,9 @@ function drawShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
     ctx.strokeStyle = `rgba(255,255,255,${0.42 * edgeA})`;
     ctx.lineWidth   = Math.max(r * 0.028, 0.6);
     ctx.stroke();
+    // Lit leading edge, nose to folded wing tip (SHIP_TOPDOWN.le, generated with the outline)
     ctx.beginPath();
-    ctx.moveTo(x + r*1.40, y);
-    ctx.lineTo(x + r*1.02, y - r*0.118);
-    ctx.lineTo(x + r*0.80, y - r*0.145);
-    ctx.lineTo(x + r*0.02, y - r*0.33);
-    ctx.lineTo(x - r*0.058, y - r*0.405);
-    ctx.lineTo(x - r*0.585, y - r*0.785);
+    SHIP_TOPDOWN.le.forEach(([px, qy], i) => (i ? ctx.lineTo : ctx.moveTo).call(ctx, x + r*px, y + r*qy));
     ctx.strokeStyle = `rgba(255,255,255,${Math.min(0.55 * edgeA, 0.85)})`;
     ctx.lineWidth   = Math.max(r * 0.035, 0.7);
     ctx.lineCap     = 'round';
@@ -1177,8 +1173,8 @@ function drawShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
         const cy = y + s * r * SHIP_NOZZLE_Y;
         // Tunnel seam: where the fuselage meets the nacelle deck
         ctx.beginPath();
-        ctx.moveTo(x + r*0.62, y + s * r*0.156);
-        ctx.lineTo(x - r*0.86, y + s * r*0.156);
+        ctx.moveTo(x + r*0.62, y + s * r*SHIP_TOPDOWN.seamY);
+        ctx.lineTo(x - r*0.86, y + s * r*SHIP_TOPDOWN.seamY);
         ctx.strokeStyle = s < 0 ? 'rgba(255,255,255,0.13)' : 'rgba(0,0,0,0.16)';
         ctx.lineWidth   = lw;
         ctx.stroke();
@@ -1186,10 +1182,7 @@ function drawShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
         // leading edge, between the fuselage side and that edge. It has to sit INSIDE the
         // silhouette - this pass is not clipped to the hull.
         ctx.beginPath();
-        ctx.moveTo(x + r*0.660, y + s * r*0.168);
-        ctx.lineTo(x + r*0.380, y + s * r*0.238);
-        ctx.lineTo(x + r*0.320, y + s * r*0.226);
-        ctx.lineTo(x + r*0.610, y + s * r*0.158);
+        SHIP_TOPDOWN.intake.forEach(([px, qy], i) => (i ? ctx.lineTo : ctx.moveTo).call(ctx, x + r*px, y - s * r*qy));
         ctx.closePath();
         ctx.fillStyle = T.podSh;
         ctx.fill();
@@ -1203,7 +1196,7 @@ function drawShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
         ctx.fillStyle = ng;
         ctx.fill();
         // Fin: root on the nacelle deck, tip leaning 0.03r outboard
-        const fy0 = y + s * r * 0.21, fy1 = y + s * r * 0.24;
+        const fy0 = y + s * r * SHIP_TOPDOWN.fin[0], fy1 = y + s * r * SHIP_TOPDOWN.fin[1];
         ctx.beginPath();
         ctx.moveTo(x - r*0.42, fy0); ctx.lineTo(x - r*0.90, fy0);
         ctx.lineTo(x - r*0.98, fy1); ctx.lineTo(x - r*0.80, fy1); ctx.closePath();
@@ -1250,7 +1243,7 @@ function drawShip(x, y, r, color, sr, sg, sb, blur, fx, lv) {
     // gradient at r*0.16 just smeared the wingtip - same reasoning as drawShip3D's).
     const flash = ((now * 0.85) % 1) < 0.07;
     for (const s of [-1, 1]) {
-        const lx = x - r*0.630, ly = y + s * r * 0.752;
+        const lx = x + r*SHIP_TOPDOWN.tip[0], ly = y + s * r * SHIP_TOPDOWN.tip[1];
         if (flash) {
             const sg2 = ctx.createRadialGradient(lx, ly, 0, lx, ly, r*0.14);
             sg2.addColorStop(0,   'rgba(255,255,255,0.80)');

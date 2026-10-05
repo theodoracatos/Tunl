@@ -48,7 +48,7 @@
  "8240929": "Como a nave é desenhada",
  "9ba6d4b": "O casco é uma silhueta esguia, estilo F-14, cortada em facetas planas iluminadas de cima: a metade superior é misturada em direção ao branco, a de baixo em direção ao quase-preto, tudo a partir da cor própria da nave. O jato do motor também é tingido na cor da nave, então o vermelho-alaranjado fica reservado para a pós-combustão <strong>EM CHAMAS</strong>, que acende quando você bate o recorde de hoje.",
  "675155d": "Desde a versão 15.0, a nave em voo é mostrada numa <strong>vista lateral de três quartos</strong> em vez de direto de cima, o que combina com um jogo em que a gravidade puxa para baixo e as estalactites pendem do teto. Algumas coisas se movem nela:",
- "761f2d5": "As <strong>asas se recolhem para trás</strong> conforme a caverna acelera, bem abertas no início lento e recolhidas no ritmo máximo, como um caça de asa variável.",
+ "e614f4d": "As <strong>asas giram</strong> como num caça de asa variável: a meio caminho no voo normal, totalmente recolhidas durante um warp e totalmente abertas enquanto uma moeda azul desacelera o tempo.",
  "e7cd1ce": "O casco <strong>rola alguns graus com sua subida</strong>: subir vira as costas para você, descer vira a barriga. É uma segunda leitura da sua velocidade vertical.",
  "bf1350e": "Uma <strong>moeda azul</strong> joga as asas para frente como um freio aerodinâmico, e elas se recolhem conforme o tempo volta ao normal.",
  "3637e17": "Voar pelo anel de warp te dá um <strong>parafuso</strong> completo.",

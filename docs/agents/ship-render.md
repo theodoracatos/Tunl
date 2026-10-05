@@ -74,8 +74,18 @@ show the 09-23 F-14.
   09-23 delta panels; the old F-14 would have held 44 too (0.615 r).
 - **Cost:** 242 -> 336 faces (bevels); about half are culled per frame. Not measured on a
   weak device.
-- **Known mismatch:** the top-down `SHIP_OUTLINE` is still the 09-23 planform (narrower body,
-  wedge glove, 34 deg sweep), and the paint rim in flight is that outline under the squash.
+- **The top-down hull is GENERATED from the 3D model** (2026-10-05, `tools/gen-ship-topdown.js`):
+  `SHIP_OUTLINE`, `SHIP_FACETS` and `SHIP_TOPDOWN` (lit leading edge, intake slot, tunnel seam,
+  fins, folded tip strobe) sit between `BEGIN/END generated top-down hull` markers in draw.js,
+  and the script also rewrites `share.js`'s outline copy. Every face is rasterised at
+  `SHIP3D_SWEEP_MAX`, slits under ~0.03 r are closed, and the facets are DISJOINT (nose,
+  taileron, fuselage, glove, outer wing) plus two leading-edge bands - the seam pass strokes
+  every outline, so overlapping facets drew hidden edges through the hull. Facet order is
+  kept (WINGTIPS fills 1/5/6). **Re-run it after any 3D hull change**, then npm test. Folded
+  to 44 deg the top-down span is 0.70 r (0.79 at the old 34).
+- Launch logo, Play feature graphic, the flytunl.ch ship chips/portraits and the feel-strip
+  ship were re-rendered with the refined hull the same day; the 7 ship achievement icons in
+  the stores still show the 09-23 top-down hull (re-render + upload only if wanted).
 
 ## 3/4 side view in flight (2026-09-19, `SHIP_VIEW_3D`)
 

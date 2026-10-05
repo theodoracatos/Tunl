@@ -137,6 +137,7 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 - Envelope: span +-0.98r, nose +1.40r - do not grow it. `PR` untouched.
 - Flight uses the 3D view (`SHIP_VIEW_3D`, roll 60 deg); hangar, shop and share card stay top-down.
 - The hull is an F-14 (2026-09-22; flight model refined 2026-10-04: bevelled wings, round wing root + glove-over-panel draw rule, less wedge, bulkier); `SHIP3D_SWEEP_MAX` is capped by the hitbox fill, not by realism.
+- The top-down hull (`SHIP_OUTLINE`/`SHIP_FACETS`/`SHIP_TOPDOWN` + share.js copy) is generated from the 3D model by `tools/gen-ship-topdown.js` - never hand-edit; re-run after any 3D hull change.
 - Wing sweep is three states: cruise between the stops, a warp folds fully back, a blue coin swings fully forward. Top-down views always draw full sweep.
 - Brand marks are the 3D F-14 rendered from `src/draw.js` by `branding/render-ship-mark.mjs`: the app icon/favicons fly it through the warp ring with wings spread (2026-10-04), launch logo and Play graphic keep the warp pose (2026-10-02); `gen-ship-glyph.mjs` is the retired SR-71 generator.
 
