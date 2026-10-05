@@ -10,7 +10,12 @@ a thin streak in the store search. Masters: `icon-mark.svg`, `icon-mark-dark.svg
 (iOS 18 dark/tinted), `icon-adaptive-foreground.svg`; the pose lives in
 `render-ship-mark.mjs` `ICON_POSE`.
 
-**Launch logo, Play feature graphic** keep the 2026-10-02 motif: the F-14 with its
+**iOS launch logo (since 2026-10-05)** shows the same warp-ring picture without a ground,
+shrunk and nudged right inside its square with a shorter plume (`LAUNCH_POSE`), because the
+square floats on the dark launch screen and a plume running off its edge showed a hard cut.
+Android 12+ shows the adaptive icon as its splash anyway.
+
+**Play feature graphic** keeps the 2026-10-02 motif: the F-14 with its
 wings folded fully back as in a warp (variant D of
 https://claude.ai/artifact/UA3oHiakB3ipBVmTEWoV4k), in a ~30-degree climb, soft blue
 aura, twin plumes.
@@ -69,7 +74,7 @@ and unchanged by the icon direction; the two are meant to lock up together
   so they sit inside Android's 66dp adaptive-icon safe zone (the fading
   plume tails reach past it and are cut by the launcher mask). Pairs with the `tunlBackground` color (`#04040A`) as the
   background layer.
-- `ios-launch-logo.svg` — the ship mark with no background rect (transparent),
+- `ios-launch-logo.svg` - the warp-ring icon with no background rect (transparent),
   for the iOS `LaunchScreen.storyboard`, which lays it on the
   `LaunchBackground` color (`#04040A`) itself. Matches the Android 12 system
   splash, which shows the same ship glyph on the same color.

@@ -29,15 +29,18 @@ const POSE = { sweep: 1, roll: null, jet: 1.7, blur: 26 };
 const BOX = { x0: -420, x1: 240, y0: -230, y1: 230 };
 // The app icon (2026-10-04, variant F of https://claude.ai/artifact/QgSggVzFEnSKw6Wswfzi2S):
 // the ship flies through the warp ring with its wings SPREAD (user's call) and a longer plume.
-// The spread wings and the plume need a bigger box. Launch logo and feature graphic keep POSE.
+// The spread wings and the plume need a bigger box. The iOS launch logo follows the icon (2026-10-05);
+// the feature graphic keeps POSE.
 const ICON_POSE = { sweep: 0, jet: 2.6, box: { x0: -500, x1: 240, y0: -240, y1: 240 } };
+// The launch logo floats on the dark launch screen, so its plumes must end inside the square.
+const LAUNCH_POSE = { ...ICON_POSE, jet: 1.6 };
 
 // res = bitmap px per ship-local px. Each master's own scale times its largest raster
 // (launch logo @3x = 1.5x its viewBox), so nothing is upscaled on export.
 const TARGETS = [
     { file: 'branding/icon-mark.svg',               res: 2.3 * 1.0, pose: ICON_POSE },
     { file: 'branding/icon-mark-dark.svg',          res: 2.3 * 1.0, pose: ICON_POSE },
-    { file: 'branding/ios-launch-logo.svg',         res: 2.0 * 1.5 },
+    { file: 'branding/ios-launch-logo.svg',         res: 2.3 * 1.5, pose: LAUNCH_POSE },
     { file: 'branding/icon-adaptive-foreground.svg', res: 0.76 * 1.0, pose: ICON_POSE },
     { file: 'branding/feature-graphic.svg',         res: 1.20 * 1.0 },
 ];
