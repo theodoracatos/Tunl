@@ -36,9 +36,17 @@ mission and three stats wraps to a second chip row) and gives up height rather t
 drawn through; the band picks the **fewest rows** that hold every frame it has, so a run
 that died in S0 gets two big frames instead of a half-empty strip.
 
-**The footer is never conditional.** Tagline, `flytunl.ch/play` and a QR on every card - a
+**The footer is never conditional.** Tagline, `flytunl.ch/get` and a QR on every card - a
 card forwarded as a bare image must still lead back to the game. The header carries the
 **date** for the same reason.
+
+**Printed address vs. QR (2026-10-03, user's call).** The printed address is `/get` (store
+hand-off: iPhone -> App Store, Android -> Play, desktop -> both buttons) - someone typing a
+URL off a picture carries no `?d`/`?s` anyway, so the install is the useful target. The QR
+and `shareRunText()` keep the **challenge** link (`/play/?d&s&r`, which the installed app
+also opens): don't move them to `/get`, that would drop the same-cave duel and strand
+desktop recipients on two store buttons. The QR stays because it is the only way from a
+forwarded image back to that link (second screen, long-press in Photos, stories).
 
 The **QR** is a self-contained encoder in `share.js` (byte mode, ECC M, versions 1-9,
 `test-share.js` proves it by reversing the placement and checking the Reed-Solomon

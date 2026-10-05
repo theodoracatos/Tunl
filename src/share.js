@@ -810,7 +810,10 @@ function _shareCardCanvas(portrait) {
     _cardFit(g, T.shareTagline, L, P.tagY, textR - L, F, 18);
     g.font = F(P.urlSz, true);
     g.fillStyle = 'rgba(200,220,255,0.95)';
-    _cardFit(g, SHARE_URL.replace(/^https:\/\//, '') + '/play', L, P.urlY, textR - L, F, P.urlSz, true);
+    // The printed address is for typing, and a typed URL carries no ?d/?s anyway, so it
+    // goes to the store hand-off (/get: iPhone -> App Store, Android -> Play, desktop ->
+    // both). The QR above keeps the challenge link: same cave, score to beat.
+    _cardFit(g, SHARE_URL.replace(/^https:\/\//, '') + '/get', L, P.urlY, textR - L, F, P.urlSz, true);
 
     return c;
 }
