@@ -85,7 +85,7 @@ show the 09-23 F-14.
   to 44 deg the top-down span is 0.70 r (0.79 at the old 34).
 - Launch logo, Play feature graphic, the flytunl.ch ship chips/portraits and the feel-strip
   ship were re-rendered with the refined hull the same day; the 7 ship achievement icons in
-  the stores still show the 09-23 top-down hull (re-render + upload only if wanted).
+  the stores still show the 09-23 top-down hull (user, 2026-10-05: leave them, the difference is small - do not re-propose).
 
 ## 3/4 side view in flight (2026-09-19, `SHIP_VIEW_3D`)
 
