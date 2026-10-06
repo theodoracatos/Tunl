@@ -25,7 +25,7 @@ orange-red belongs to ON FIRE alone. Exhaust leaves the nacelles at `SHIP_NOZZLE
 (`constants.js`), shared by the plume, the on-fire cone and `update.js`'s thruster
 particles. The share card's `_shipGlyph` (`share.js`) carries a copy of the outline.
 
-**The app icon is the F-14 flying through the warp ring, wings spread (2026-10-04, variant F of https://claude.ai/artifact/QgSggVzFEnSKw6Wswfzi2S; `ICON_POSE` in `render-ship-mark.mjs`, masters `icon-mark.svg` / `icon-mark-dark.svg` / `icon-adaptive-foreground.svg`). The iOS launch logo shows the same warp-ring picture since 2026-10-05 (no ground, shrunk inside its square, shorter plume `LAUNCH_POSE` so nothing is cut at the square's edge on the dark launch screen). The feature graphic keeps the 10-02 warp pose below.** **The brand marks are the flying F-14, rendered by the game itself (2026-10-02).** The
+**The app icon is "Steigflug" (2026-10-06, variant D4 of icon study III, https://claude.ai/artifact/RJVt2BxGgH4Cn7GzMexR6q): the F-14 in AMBER, roll 82, wings spread, climbing big and gold on a bright violet ground (`ICON_POSE` in `render-ship-mark.mjs`, masters `icon-mark.svg` / `icon-mark-dark.svg` / `icon-adaptive-foreground.svg` / `icon-adaptive-background.svg`). It replaced the warp-ring icon of 10-04, which measured among the darkest, least colourful icons of its App Store search field. The iOS launch logo shows the same picture without its ground (shorter plume `LAUNCH_POSE`, nothing cut at the square's edge on the dark launch screen). The feature graphic keeps the 10-02 warp pose below.** **The brand marks are the flying F-14, rendered by the game itself (2026-10-02).** The
 user picked variant D of the icon concept (https://claude.ai/artifact/UA3oHiakB3ipBVmTEWoV4k):
 `drawShip3D` at `SHIP3D_ROLL_BASE`, wings folded fully back (`shipSweep` 1, the warp pose),
 PEARL, a 30-deg climb, plus a short icon plume (the game's 5r plume runs off any icon).
@@ -39,7 +39,7 @@ copied, so nothing can go stale, but the PNG layer only changes when re-rendered
 with `drawShip()` like the hangar, the flytunl.ch ship chips and portraits (`--site`:
 `flytunl-site/home.src.html`, `flytunl-site/site/media-ships/`) and, through
 `game-center/gen-ship-achievement-icons.mjs`, the 7 ship-unlock achievement icons.
-iOS 18 dark/tinted app icons come from `ios-launch-logo.svg` in `export-icons.sh`.
+iOS 18 dark/tinted app icons come from `icon-mark-dark.svg` in `export-icons.sh`.
 See `branding/README.md`.
 
 **Rock roughness is switched off** (`ROCK_ROUGHNESS_MAX` = 0, `draw.js`), and

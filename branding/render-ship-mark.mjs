@@ -27,21 +27,22 @@ const POSE = { sweep: 1, roll: null, jet: 1.7, blur: 26 };
 // Drawn area in ship-local px at r = 130 (nose +x): nose 1.40r, icon plume ~2.7r aft of
 // the pivot, wings and the 1.5r glow above and below. The masters rotate this box.
 const BOX = { x0: -420, x1: 240, y0: -230, y1: 230 };
-// The app icon (2026-10-04, variant F of https://claude.ai/artifact/QgSggVzFEnSKw6Wswfzi2S):
-// the ship flies through the warp ring with its wings SPREAD (user's call) and a longer plume.
-// The spread wings and the plume need a bigger box. The iOS launch logo follows the icon (2026-10-05);
-// the feature graphic keeps POSE.
-const ICON_POSE = { sweep: 0, jet: 2.6, box: { x0: -500, x1: 240, y0: -240, y1: 240 } };
+// The app icon (2026-10-06, "Steigflug", variant D4 of icon study III,
+// https://claude.ai/artifact/RJVt2BxGgH4Cn7GzMexR6q): the ship in AMBER (skin 1), roll 82 (close
+// to top-down, the boldest silhouette), wings SPREAD, a long plume that runs off the icon's
+// edge. The long plume needs a bigger box. The iOS launch logo follows the icon; the feature
+// graphic keeps POSE.
+const ICON_POSE = { sweep: 0, roll: 82, skin: 1, jet: 3.4, box: { x0: -640, x1: 240, y0: -250, y1: 250 } };
 // The launch logo floats on the dark launch screen, so its plumes must end inside the square.
 const LAUNCH_POSE = { ...ICON_POSE, jet: 1.6 };
 
 // res = bitmap px per ship-local px. Each master's own scale times its largest raster
 // (launch logo @3x = 1.5x its viewBox), so nothing is upscaled on export.
 const TARGETS = [
-    { file: 'branding/icon-mark.svg',               res: 2.3 * 1.0, pose: ICON_POSE },
-    { file: 'branding/icon-mark-dark.svg',          res: 2.3 * 1.0, pose: ICON_POSE },
-    { file: 'branding/ios-launch-logo.svg',         res: 2.3 * 1.5, pose: LAUNCH_POSE },
-    { file: 'branding/icon-adaptive-foreground.svg', res: 0.76 * 1.0, pose: ICON_POSE },
+    { file: 'branding/icon-mark.svg',               res: 2.35 * 1.0, pose: ICON_POSE },
+    { file: 'branding/icon-mark-dark.svg',          res: 2.35 * 1.0, pose: ICON_POSE },
+    { file: 'branding/ios-launch-logo.svg',         res: 2.35 * 0.86 * 1.5, pose: LAUNCH_POSE },
+    { file: 'branding/icon-adaptive-foreground.svg', res: 2.35 * 0.29 * 1.0, pose: ICON_POSE },
     { file: 'branding/feature-graphic.svg',         res: 1.20 * 1.0 },
 ];
 const BEGIN = '<!-- BEGIN generated ship: branding/render-ship-mark.mjs';

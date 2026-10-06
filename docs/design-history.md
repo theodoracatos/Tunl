@@ -2377,3 +2377,23 @@ long (nose 0.97 r) and fill only 0.55 r fully swept (0.75 r at every sweep reach
 warp - the fold only happens inside the hazard-immune warp, a point to remember if the 0.60 fill
 rule ever binds again). The user kept the current hull and asked only for the wedge to go: the
 glove leading edge running to the canopy is part of the wing, so glove + panel read as one arrow.
+
+
+## App icon "Steigflug": light on, gold on violet (2026-10-06)
+
+The user asked for an icon that "die Leute zum Download anregt", with a deep analysis of what is
+current and attractive (https://claude.ai/artifact/9ikbnZkGhJeYvT3JKixMYA). Measured: the top 15
+App Store results for nine of TUNL's search terms (107 games, TUNL removed), every icon at 64 px.
+The warp-ring icon of 2026-10-04 sat at the 7th percentile for colourfulness and the 12th for
+saturation, with 54 % near-black pixels (field median 3 %, hits with 50k+ ratings under 1 %); a
+white jet on black also filed it visually among the grey flight sims of "helicopter game".
+Published A/B tests point the same way (Supersonic: an icon showing the mechanic +15 to +30 %,
+brighter high-contrast ground +3 to +8 %; one subject, exaggerated). Four directions on a lit
+violet ground: A the warp ring in orange, B a crystal cave throat (recommended), C a coin trail,
+D a hero crop. The user picked D; round 2 (https://claude.ai/artifact/RJVt2BxGgH4Cn7GzMexR6q)
+fixed its faults (nose at the edge and cut by Android's mask, hard stripes and thin speed lines
+reading as noise at 40 px) and offered D1 pure, D2 with cave ceiling and floor crystals
+(recommended), D3 tunnel rings into a light, D4 a steeper climb. The user took D4 in AMBER
+(PEARL measured at the 39th percentile, AMBER at the 73rd) and asked for the splash to follow.
+Android's adaptive icon got its own violet background layer instead of the `tunlBackground`
+colour. Next: a Play store listing experiment of the old against the new icon.

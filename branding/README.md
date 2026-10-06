@@ -1,19 +1,22 @@
 # TUNL brand assets
 
-**App icon (since 2026-10-04): the warp ring.** The player F-14 as it flies
-(`drawShip3D()`, roll `SHIP3D_ROLL_BASE`, wings SPREAD - the user's call) passing
-through the violet warp ring every player knows: the ring's far half behind the
-ship, its near half over it. Variant F of the icon study
-https://claude.ai/artifact/QgSggVzFEnSKw6Wswfzi2S, chosen because a ring still
-reads at 29 px and says "game" at a glance; the lone white ship before it read as
-a thin streak in the store search. Masters: `icon-mark.svg`, `icon-mark-dark.svg`
-(iOS 18 dark/tinted), `icon-adaptive-foreground.svg`; the pose lives in
-`render-ship-mark.mjs` `ICON_POSE`.
+**App icon (since 2026-10-06): "Steigflug".** The player F-14 in AMBER, big, climbing at
+34 deg on a bright violet ground with 12 soft rays, a light halo behind the hull and a long
+plume running off the edge (`drawShip3D()`, roll 82, wings SPREAD; pose `ICON_POSE` in
+`render-ship-mark.mjs`). Variant D4 of icon study III
+(https://claude.ai/artifact/9ikbnZkGhJeYvT3JKixMYA, round 2
+https://claude.ai/artifact/RJVt2BxGgH4Cn7GzMexR6q), the user's pick. The study measured the
+top App Store hits for TUNL's search terms (107 games): the warp-ring icon of 2026-10-04 was
+among the darkest and least colourful in that field (colourfulness 7th percentile, 54 %
+near-black pixels); Steigflug sits in the top third. Gold on violet is the strongest
+complementary pair the ship palette has. Masters: `icon-mark.svg`, `icon-mark-dark.svg`
+(iOS 18 dark/tinted), `icon-adaptive-foreground.svg` + `icon-adaptive-background.svg`
+(Android).
 
-**iOS launch logo (since 2026-10-05)** shows the same warp-ring picture without a ground,
-shrunk and nudged right inside its square with a shorter plume (`LAUNCH_POSE`), because the
-square floats on the dark launch screen and a plume running off its edge showed a hard cut.
-Android 12+ shows the adaptive icon as its splash anyway.
+**iOS launch logo (since 2026-10-06)** shows the Steigflug picture without its ground (ship,
+violet glow) on the dark launch screen, shrunk and centred on ship and plume, with a shorter
+plume (`LAUNCH_POSE`) so nothing is cut at the square's edge. Android 12+ shows the adaptive
+icon (violet circle) as its splash.
 
 **Play feature graphic** keeps the 2026-10-02 motif: the F-14 with its
 wings folded fully back as in a warp (variant D of
@@ -65,19 +68,22 @@ and unchanged by the icon direction; the two are meant to lock up together
 
 ## Masters (edit these, everything else is exported from them)
 
-- `icon-mark.svg` - the app icon (warp ring + ship), full-bleed square. Source for
+- `icon-mark.svg` - the app icon (Steigflug: violet ground, rays, AMBER ship), full-bleed square. Source for
   iOS, Android's legacy launcher icon, the Play Store listing icon, and
   favicons. No text.
 - `icon-mark-dark.svg` - the same without its ground, for the iOS 18 dark icon
   (and, greyscaled, the tinted one) in `export-icons.sh`.
-- `icon-adaptive-foreground.svg` - same ring and ship, transparent background, shrunk
-  so they sit inside Android's 66dp adaptive-icon safe zone (the fading
-  plume tails reach past it and are cut by the launcher mask). Pairs with the `tunlBackground` color (`#04040A`) as the
-  background layer.
-- `ios-launch-logo.svg` - the warp-ring icon with no background rect (transparent),
+- `icon-adaptive-foreground.svg` - ship and streaks, transparent background, shrunk
+  so the hull sits inside Android's 66dp adaptive-icon safe zone (the fading
+  plume tails reach past it and are cut by the launcher mask).
+- `icon-adaptive-background.svg` - the violet ground, rays and halo under the same
+  transform as the foreground (hand-authored, no ship block); exported to
+  `drawable-xxxhdpi/ic_launcher_background.png`, which `ic_launcher.xml` /
+  `ic_launcher_round.xml` use as the background layer (was the `tunlBackground`
+  colour until 2026-10-06; that colour still paints the window and the splash ground).
+- `ios-launch-logo.svg` - the Steigflug picture with no ground (transparent),
   for the iOS `LaunchScreen.storyboard`, which lays it on the
-  `LaunchBackground` color (`#04040A`) itself. Matches the Android 12 system
-  splash, which shows the same ship glyph on the same color.
+  `LaunchBackground` color (`#04040A`) itself.
 - `wordmark.svg` — "TUNL" for dark backgrounds (site header, splash, dark
   listing sections).
 - `wordmark-light.svg` — same wordmark, navy letterforms, for white/light

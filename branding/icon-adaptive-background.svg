@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="432" height="432" viewBox="0 0 432 432">
+  <!-- Android adaptive-icon BACKGROUND layer (2026-10-06): the violet ground,
+       rays and halo of icon-mark.svg, under the same transform as
+       icon-adaptive-foreground.svg so rays and halo stay centred on the ship.
+       Hand-authored, no generated block. Exported to
+       drawable-xxxhdpi/ic_launcher_background.png by export-icons.sh. -->
+  <defs>
+    <radialGradient id="bgGrd" gradientUnits="userSpaceOnUse" cx="520" cy="500" r="820">
+      <stop offset="0"   stop-color="#9b55ff"/>
+      <stop offset="0.5" stop-color="#6d23e6"/>
+      <stop offset="1"   stop-color="#3b0d9e"/>
+    </radialGradient>
+    <radialGradient id="halo" gradientUnits="userSpaceOnUse" cx="560" cy="470" r="470">
+      <stop offset="0"    stop-color="#ffe1ff" stop-opacity="0.71"/>
+      <stop offset="0.35" stop-color="#dca0ff" stop-opacity="0.34"/>
+      <stop offset="1"    stop-color="#a050ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <g transform="translate(216,216) scale(0.29) translate(-540,-550)">
+  <rect x="-400" y="-400" width="1824" height="1824" fill="url(#bgGrd)"/>
+  <!-- 12 soft rays from behind the ship, 7 % white -->
+  <g fill="#ffffff" fill-opacity="0.07">
+    <polygon points="500,560 2300,797 2177,1255"/>
+    <polygon points="500,560 1940,1665 1605,2000"/>
+    <polygon points="500,560 1195,2237 737,2360"/>
+    <polygon points="500,560 263,2360 -195,2237"/>
+    <polygon points="500,560 -605,2000 -940,1665"/>
+    <polygon points="500,560 -1177,1255 -1300,797"/>
+    <polygon points="500,560 -1300,323 -1177,-135"/>
+    <polygon points="500,560 -940,-545 -605,-880"/>
+    <polygon points="500,560 -195,-1117 263,-1240"/>
+    <polygon points="500,560 737,-1240 1195,-1117"/>
+    <polygon points="500,560 1605,-880 1940,-545"/>
+    <polygon points="500,560 2177,-135 2300,323"/>
+  </g>
+  <rect x="-400" y="-400" width="1824" height="1824" fill="url(#halo)"/>
+  </g>
+</svg>

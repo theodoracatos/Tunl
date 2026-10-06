@@ -2,11 +2,13 @@
 # Regenerate every applied TUNL icon/favicon from the branding masters and
 # wire them into iOS, Android and the flytunl.ch site.
 # Masters: branding/icon-mark.svg (full-bleed), branding/icon-mark-dark.svg (no ground),
-#          branding/icon-adaptive-foreground.svg, branding/feature-graphic.svg
+#          branding/icon-adaptive-foreground.svg + icon-adaptive-background.svg,
+#          branding/feature-graphic.svg
 set -euo pipefail
 cd "$(dirname "$0")/.."
 MARK=branding/icon-mark.svg
 FG=branding/icon-adaptive-foreground.svg
+BG=branding/icon-adaptive-background.svg
 FEAT=branding/feature-graphic.svg
 LOGO=branding/ios-launch-logo.svg
 DARK=branding/icon-mark-dark.svg
@@ -36,9 +38,8 @@ echo "iOS app icon (Assets.xcassets/AppIcon.appiconset, linked via ASSETCATALOG_
 rgb 1024 Tunl/Tunl/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
 
 echo "iOS 18 dark + tinted app icons (AppIcon.appiconset appearances; older iOS ignores them):"
-# Dark: the app icon without its ground (icon-mark-dark.svg: aura, warp ring, ship),
-# transparent - iOS lays its own dark ground. (It was the launch logo until the warp-ring
-# icon of 2026-10-04, which the launch logo does not carry.)
+# Dark: the app icon without its ground (icon-mark-dark.svg: violet glow, streaks, ship),
+# transparent - iOS lays its own dark ground.
 rsvg-convert -w 1024 -h 1024 "$DARK" -o Tunl/Tunl/Assets.xcassets/AppIcon.appiconset/AppIcon-1024-dark.png
 echo "  Tunl/Tunl/Assets.xcassets/AppIcon.appiconset/AppIcon-1024-dark.png (1024x1024, RGBA)"
 # Tinted: the same picture as opaque greyscale on black; iOS maps luminance onto the tint.
@@ -66,6 +67,11 @@ done
 echo "Android adaptive-icon foreground (RGBA; ic_launcher.xml + ic_launcher_round.xml reference @drawable/ic_launcher_foreground):"
 rsvg-convert -w 432 -h 432 "$FG" -o Tunl.Android/app/src/main/res/drawable-xxxhdpi/ic_launcher_foreground.png
 echo "  Tunl.Android/app/src/main/res/drawable-xxxhdpi/ic_launcher_foreground.png (432x432)"
+
+echo "Android adaptive-icon background (since 2026-10-06 the violet ground, was the tunlBackground colour):"
+rsvg-convert -w 432 -h 432 "$BG" -o "$TMP/bg.png"
+python3 -c "from PIL import Image; Image.open('$TMP/bg.png').convert('RGB').save('Tunl.Android/app/src/main/res/drawable-xxxhdpi/ic_launcher_background.png')"
+echo "  Tunl.Android/app/src/main/res/drawable-xxxhdpi/ic_launcher_background.png (432x432)"
 
 echo "Play Store listing icon:"
 rgb 512 Screenshots/Android/play_icon_512.png
