@@ -67,6 +67,10 @@ cls -1 $FTP_REMOTE_DIR/ > /dev/null
 cache flush
 mirror --reverse --verbose --no-perms \
   site/ $FTP_REMOTE_DIR/
+# A second pass picks up the odd file a single 550 dropped mid-run (2026-10-06: one Greek
+# page); everything the first pass uploaded is already newer remotely and is skipped.
+mirror --reverse --verbose --no-perms \
+  site/ $FTP_REMOTE_DIR/
 bye
 LFTP_UPLOAD
 
