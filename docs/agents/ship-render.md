@@ -58,6 +58,11 @@ show the 09-23 F-14.
 - **Bevelled plates, no box slabs:** glove, outer panels, tailerons and beaver tail have a sharp
   outline and a raised flat core. Slabs showed their vertical side walls as light/dark strips
   along every edge at roll 67.
+- **No aft glove wedge (2026-10-06):** the glove runs from the canopy (`GX`) to the wing root and
+  ends just behind it, straight back to the body - glove and outer panel read as ONE arrow-shaped
+  wing reaching to the canopy. The old outline tapered back to -0.70 r and made each side a
+  rhombus (user). A real-F-14-proportion hull (3-view numbers) was built the same day and not
+  taken: span-capped, it shrinks the ship to 1.88 r long.
 - **Round wing root:** the outer panel's root is a disc (`RHO` 0.17) round `SHIP3D_PIVOT`, both
   panel edges tangent to it; the glove is the convex hull of its old outline and that disc
   a hair larger. `test-collision.js` checks the root is a disc and stays inside the glove at
@@ -117,7 +122,8 @@ the flat hull everywhere. Study: https://claude.ai/artifact/Q9gDK8SdVrCYm9rU9biZ
   the ship spread through the whole slow opening (user, 2026-09-22); `SHIP3D_SWEEP_SPD_LO/HI`
   and `SHIP3D_BRAKE_DEG` went with it. `test-sim.js` holds all of it on the real update loop.
   Panel chord: widened twice on 2026-09-23, ending as a DELTA (root 0.51 r, tip 0.11 r,
-  user asked for "mehr Dreieckform"). Swept, the panel still clears the glove - that is the
+  user asked for "mehr Dreieckform"). Tip chord 0.11 -> 0.19 r on 2026-10-06 (user: wings "zu klein"; span kept at
+  0.95 r, only the trailing tip moved aft, so the swept span and the hitbox fill are unchanged). Swept, the panel still clears the glove - that is the
   ceiling, so render a swept ship before going deeper; a long-chord panel vanishes under it.
   The root trailing edge stops at -0.56 r, just inside the glove edge at that span.
 - **The portal grants a barrel roll** (`SHIP3D_BARREL_SEC`, set in `triggerWarp`): one full

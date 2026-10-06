@@ -2364,3 +2364,16 @@ variants of C were shown on request; the user picked plain C (full fins, tailero
 the flight model only, and asked for a better store icon next. Lesson: show the change in the
 real game early - two concept pages looked fine and the built spaceship did not.
 
+
+## Wings: wider tips, no aft glove wedge, real-proportion F-14 not taken (2026-10-06)
+
+The user found the swing wings "zu klein". The outer panel's trailing tip moved aft (tip chord
+0.11 -> 0.19 r, span unchanged at 0.95 r). Then each side read as a rhombus: the glove was the
+convex hull of the canopy point, the root disc and a wedge tapering back to -0.70 r. Variants
+rendered in the game's own renderer: B (tips 0.29 r), C (B without the wedge), D (C with a short
+glove from 0.30 r), and a hull built from the F-14 3-view numbers (length/span 0.98, sweep
+20/68, tailerons 32'8.5"). The real proportions, span-capped at 0.98 r, shrink the ship to 1.88 r
+long (nose 0.97 r) and fill only 0.55 r fully swept (0.75 r at every sweep reachable outside a
+warp - the fold only happens inside the hazard-immune warp, a point to remember if the 0.60 fill
+rule ever binds again). The user kept the current hull and asked only for the wedge to go: the
+glove leading edge running to the canopy is part of the wing, so glove + panel read as one arrow.
