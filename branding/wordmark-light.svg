@@ -9,6 +9,9 @@
     <linearGradient id="letterGrd" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#1c2550"/><stop offset="100%" stop-color="#050614"/>
     </linearGradient>
+    <linearGradient id="uGrd" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="200">
+      <stop offset="0%" stop-color="#1c2550"/><stop offset="100%" stop-color="#050614"/>
+    </linearGradient>
     <!-- Gem-in-U treatment, ported from the title screen's current buildUPath()/
          gem rendering in src/draw.js: the old ring-portal U (this file's
          previous version) is what that code's own comments call "the old
@@ -38,7 +41,6 @@
     <filter id="gemGlow" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="5"/></filter>
     <filter id="sparkGlow" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="1.4"/></filter>
     <filter id="letterGlow" x="-60%" y="-60%" width="220%" height="220%"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#0a0f2a" flood-opacity="0.25"/></filter>
-    <clipPath id="uclip"><path d="M 190 -4 L 190 124 Q 190 200 270 200 Q 350 200 350 124 L 350 -4 L 350 -44 L 190 -44 Z"/></clipPath>
   </defs>
   <g transform="translate(60,60)">
     <g filter="url(#letterGlow)">
@@ -47,33 +49,31 @@
       <path d="M570,0 H604 V166 H710 V200 H570 Z" fill="url(#letterGrd)"/>
     </g>
     
-  <g clip-path="url(#uclip)">
-    <circle cx="270" cy="102" r="108" fill="url(#gemAura)"/>
-    <!-- 8-ray sparkle burst: 4 long cardinal rays + 4 short diagonal rays,
-         same construction as the in-game coin/gem rays, static instead of
-         spinning since this is a still asset. -->
-    <g transform="translate(270,102)" filter="url(#sparkGlow)">
-      <path d="M 0,-40.5 L 0,-75 M 40.5,0 L 75,0 M 0,40.5 L 0,75 M -40.5,0 L -75,0"
-            fill="none" stroke="#7a6cdc" stroke-width="4.4" stroke-linecap="round" opacity="0.75"/>
-      <path d="M 28.6,-28.6 L 36,-36 M 28.6,28.6 L 36,36 M -28.6,28.6 L -36,36 M -28.6,-28.6 L -36,-36"
-            fill="none" stroke="#7a6cdc" stroke-width="2.6" stroke-linecap="round" opacity="0.35"/>
+  <!-- Gem sized and placed like the title screen's (gemR = 0.19 x counter width, centre at
+       0.52 of the U's inner height, rays to 2.5 / 1.7 gemR at mid pulse), drawn unclipped as in
+       the game: a hard clip reads as a window, not a light. -->
+  <g>
+    <circle cx="270" cy="86.3" r="86" fill="url(#gemAura)"/>
+    <g transform="translate(270,86.3)" filter="url(#sparkGlow)">
+      <path d="M 0,-32.3 L 0,-52.3 M 32.3,0 L 52.3,0 M 0,32.3 L 0,52.3 M -32.3,0 L -52.3,0"
+            fill="none" stroke="#becdff" stroke-width="3.9" stroke-linecap="round" opacity="0.85"/>
+      <path d="M 22.8,-22.8 L 25.2,-25.2 M 22.8,22.8 L 25.2,25.2 M -22.8,22.8 L -25.2,25.2 M -22.8,-22.8 L -25.2,-25.2"
+            fill="none" stroke="#becdff" stroke-width="2.2" stroke-linecap="round" opacity="0.40"/>
     </g>
-    <g transform="translate(270,102)">
-      <!-- Faceted gem: purple top-half fading to cyan bottom-half, same split
-           the old rings used, so the swap still reads as the same mark. Blurred
-           duplicate behind the crisp fill for the glow (icon-mark's coin uses
-           the same trick - filtering the crisp shape directly blurs the facets
-           away instead of just adding a halo). -->
-      <path d="M 0,-40.5 L 27,0 L 0,40.5 L -27,0 Z" fill="url(#gemGrd)" opacity="0.5" filter="url(#gemGlow)"/>
-      <path d="M 0,-40.5 L 27,0 L 0,40.5 L -27,0 Z" fill="url(#gemGrd)"/>
-      <path d="M 0,-40.5 L 27,0 L 0,0 Z" fill="#ffffff" opacity="0.35"/>
-      <circle cx="0" cy="0" r="6.6" fill="#ffffff"/>
+    <g transform="translate(270,86.3)">
+      <path d="M 0,-32.3 L 21.5,0 L 0,32.3 L -21.5,0 Z" fill="url(#gemGrd)" opacity="0.5" filter="url(#gemGlow)"/>
+      <path d="M 0,-32.3 L 21.5,0 L 0,32.3 L -21.5,0 Z" fill="url(#gemGrd)"/>
+      <path d="M 0,-32.3 L 21.5,0 L 0,0 Z" fill="#ffffff" opacity="0.35"/>
+      <circle cx="0" cy="0" r="5.3" fill="#ffffff"/>
     </g>
   </g>
-  <!-- Top ends land exactly on T/N/L's cap height (y=0) with a butt cap, not
-       round: a round cap adds a lineWidth/2 bump past the path's own endpoint,
-       which pushed the U visibly above the other three letters. -->
-  <path d="M 190 0 L 190 124 Q 190 200 270 200 Q 350 200 350 124 L 350 0" fill="none" stroke="url(#letterGrd)" stroke-width="34" stroke-linecap="butt" stroke-linejoin="round" filter="url(#letterGlow)"/>
+  <!-- The U channel exactly as the title screen's buildUPath() (src/draw.js) builds it at
+       capH 200: a centreline stroked at the T stem width (34; the game uses 0.20 capH, its
+       font's stem), outer ink box x 173..367, so the outer edges sit on cap height and on the
+       baseline like T/N/L (the old round-bottom path had its centreline on the baseline and
+       hung half a stroke below it); chamfered corners min(0.30 x inner width, 1.6 x stroke);
+       butt caps at the open top. -->
+  <path d="M 190 0 L 190 135 L 238 183 L 302 183 L 350 135 L 350 0" fill="none" stroke="url(#uGrd)" stroke-width="34" stroke-linecap="butt" stroke-linejoin="miter" filter="url(#letterGlow)"/>
 
   <!-- Accent underline beneath the wordmark, matching the title screen's
        fade-in/fade-out gradient bar under TUNL. -->

@@ -2403,4 +2403,5 @@ Same day: the Play feature graphic moved to the Steigflug look too (violet groun
 "nicht perfekt": the SVG U was a round-bottomed stroke with its centreline on the baseline, so it
 hung half a stroke below T/N/L, and its gem and rays were about 1.4x the game's, reading as a
 crosshair. Rebuilt from the title screen's `buildUPath()` (chamfered channel, outer edge on the
-baseline, stroke = the SVG font's T stem) and the game's gem sizes. `wordmark*.svg` keep the old U.
+baseline, stroke = the SVG font's T stem) and the game's gem sizes. `wordmark.svg` / `wordmark-light.svg`
+(site header, /play splash, press kit SVGs and PNGs) got the same U right after.

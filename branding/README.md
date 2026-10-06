@@ -21,8 +21,9 @@ icon (violet circle) as its splash.
 **Play feature graphic (since 2026-10-06)** widens the Steigflug icon to 1024x500: violet
 ground, rays and halo, the AMBER F-14 in `ICON_POSE` climbing on the right, the TUNL wordmark
 on the left, the centre clear for Play's video play button. Its wordmark U follows the title
-screen's `buildUPath()` (chamfered channel on the baseline, gem at in-game size); the separate
-`wordmark*.svg` files still carry the older round U that hangs half a stroke below the baseline.
+screen's `buildUPath()` (chamfered channel on the baseline, gem at in-game size);
+`wordmark.svg` / `wordmark-light.svg` carry the same U since the same day (`wordmark-onwhite.svg`
+is the retired ring-portal U and is used nowhere).
 
 ## The ship block is rendered by the game - `render-ship-mark.mjs`
 
@@ -92,7 +93,7 @@ and unchanged by the icon direction; the two are meant to lock up together
 - `feature-graphic.svg` - 1024x500 Play Store feature graphic (Steigflug look, see
   above): ground, rays, halo and streaks hand-authored, ship block generated. The
   wordmark is inlined as vector with `fw_`-prefixed IDs; its U is the title screen's
-  `buildUPath()` geometry (not the round U of `wordmark.svg`).
+  `buildUPath()` geometry, like `wordmark.svg`.
 
 ## `game-center/` — App Store Connect Game Center art
 
