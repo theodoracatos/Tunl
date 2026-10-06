@@ -135,7 +135,7 @@ script flattens onto `#04040e`; do the same for any manual export.
 and `android:roundIcon` at `@mipmap/ic_launcher_round`; both `mipmap-anydpi-v26`
 adaptive XMLs point at `@drawable/ic_launcher_foreground` + `@color/tunlBackground`:
 - `Tunl.Android/app/src/main/res/mipmap-*/ic_launcher.png` — legacy square (5 densities)
-- `Tunl.Android/app/src/main/res/mipmap-*/ic_launcher_round.png` — legacy round, for API 23-25 (5 densities)
+- `Tunl.Android/app/src/main/res/mipmap-*/ic_launcher_round.png` — legacy round, for API 24-25 (5 densities)
 - `Tunl.Android/app/src/main/res/drawable-xxxhdpi/ic_launcher_foreground.png` — adaptive-icon foreground
 - `Screenshots/Android/play_icon_512.png` — Play Store listing icon
 
