@@ -104,6 +104,16 @@ Not picked (left unmarked): countdown ring, star-sparkle trail, prey highlight o
 banner, afterimages. Advised against: growing the hull (envelope rule), tinting the background
 (depth light never bright).
 
+## Haptics (2026-10-06)
+
+A star was silent in the hand apart from its smashes (user: "zurzeit ist es stumm"). Now
+(`frenzyHaptic`, constants.js `FRENZY_HAPTIC_BEAT_SEC` doc): the charge taps medium, then light at
+two thirds and one third left; the star starts heavy and pulses light in quarters of 140 BPM, in
+8ths through `FRENZY_WARN_SEC`; grinding along the wall ticks light at most every
+`FRENZY_GRIND_TICK_SEC`; the end taps medium. Apps only - the web has no bridge. The pulse clock
+pauses in a warp with the star. `test-sim.js` records the bridge on the real update loop
+(mutation-checked: no pulse -> fails).
+
 ## Not done
 
 - Daily missions: deliberately not added. Real-player tiers never fill a star, so a "1 star"

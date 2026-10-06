@@ -1234,6 +1234,27 @@ function fzCoin(g, type, ahead = 0, arr = 'coins') {
         charging && g('frenzyTime') > g('FRENZY_SEC') - 0.1 && g('runFrenzies') === 1 && g('frenzyMeter') === 0
         && g('frenzyCost') === Math.round(g('FRENZY_FIRST_COST * FRENZY_COST_MUL')));
 
+    // the star vibrates (constants.js FRENZY_HAPTIC_BEAT_SEC doc; user 2026-10-06: it was silent):
+    // charge medium + two light taps, start heavy, light pulses in quarters then 8ths in the
+    // warning, end medium. On the real update loop with a recording haptic bridge.
+    {
+        const hz = fzCave(`_hz = []; window.webkit.messageHandlers.haptic = { postMessage(m) { _hz.push([m, gtime, frenzyTime, frenzyChargeT]); } };
+                           frenzyMeter = frenzyCost;`);
+        const ev = hz(`(() => { for (let i = 0; i < 60 * 6 && !(runFrenzies && frenzyTime === 0); i++) {
+            stalactites.length = 0; mines.length = 0; boulders.length = 0; cannonShots.length = 0; coins.length = 0; frenzyGrindTickT = 9; ${FZ_HOLD} } return _hz; })()`);   // no smash, coin or wall-grind taps in the count
+        hz('window.webkit.messageHandlers.haptic = { postMessage() {} }');
+        const beat = hz('FRENZY_HAPTIC_BEAT_SEC'), warn = hz('FRENZY_WARN_SEC');
+        const iStart = ev.findIndex(e => e[0] === 'heavy'), iEnd = ev.length - 1;
+        const charge = ev.slice(0, iStart).map(e => e[0]).join(',');
+        const pulses = ev.slice(iStart + 1, iEnd).filter(e => e[0] === 'light');
+        const gaps = (arr) => arr.slice(1).map((e, i) => e[1] - arr[i][1]);
+        const calm = gaps(pulses.filter(e => e[2] > warn)), late = gaps(pulses.filter(e => e[2] <= warn));
+        const near = (a, t) => a.length > 0 && a.every(x => Math.abs(x - t) < 0.04);
+        check(`a star vibrates: charge ${charge}, start heavy, ${pulses.length} pulses (${calm.length + 1} calm, ${late.length + 1} in the warning), end ${ev[iEnd] && ev[iEnd][0]}`,
+            charge === 'medium,light,light' && iStart > 0 && ev[iEnd][0] === 'medium' && ev[iEnd][2] === 0
+            && near(calm, beat) && near(late, beat / 2) && pulses.length >= 8);
+    }
+
     // inside a star every hazard shatters and pays; the shield and the hull are untouched
     const smash = (setup, label) => {
         const s = fzCave(`frenzyTime = 2; shieldCount = 1; ${setup}`);

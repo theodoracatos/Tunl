@@ -371,8 +371,12 @@ function update(dt) {
     // grants HIT_INVULN_SEC like a warp's, for the same reason: collision solidifies
     // with a hazard possibly right on the ship.
     frenzyGrindT = Math.max(0, frenzyGrindT - dt);
+    frenzyGrindTickT = Math.max(0, frenzyGrindTickT - dt);
     if (frenzyChargeT > 0) {
+        const wasC = frenzyChargeT;
         frenzyChargeT = Math.max(0, frenzyChargeT - dt);
+        // The charge tightens in the hand: a light tap at two thirds and one third left.
+        for (const k of [2 / 3, 1 / 3]) if (wasC > FRENZY_CHARGE_SEC * k && frenzyChargeT <= FRENZY_CHARGE_SEC * k) frenzyHaptic('light');
         if (frenzyChargeT <= 0) { if (warpTime > 0) frenzyPending = true; else frenzyBegin(); }
     } else if (frenzyTime > 0) {
         frenzyLoopDuck(warpTime > 0);
@@ -380,7 +384,15 @@ function update(dt) {
             const was = frenzyTime;
             frenzyTime = Math.max(0, frenzyTime - dt);
             if (was > FRENZY_WARN_SEC && frenzyTime <= FRENZY_WARN_SEC) frenzyLoopWarn();
+            // The star's pulse (constants.js FRENZY_HAPTIC_BEAT_SEC): quarters, 8ths in the warning.
+            frenzyBeatT -= dt;
+            if (frenzyTime > 0 && frenzyBeatT <= 0) {
+                frenzyHaptic('light');
+                frenzyBeatT += frenzyTime <= FRENZY_WARN_SEC ? FRENZY_HAPTIC_BEAT_SEC / 2 : FRENZY_HAPTIC_BEAT_SEC;
+                if (frenzyBeatT <= 0) frenzyBeatT = FRENZY_HAPTIC_BEAT_SEC / 2;   // a long frame never machine-guns
+            }
             if (frenzyTime <= 0) {
+                frenzyHaptic('medium');
                 invulnT = Math.max(invulnT, HIT_INVULN_SEC);
                 frenzyLoopOff(); frenzyGrind(false);
                 // The held play track comes back. After the baked star music it carries the running
@@ -720,6 +732,7 @@ function update(dt) {
                 // A star grinds along the rock: sparks where hull meets wall (constants.js FRENZY_* doc).
                 if (frenzyTime > 0 && Math.random() < 0.7) burst(PX + dx, py - cPR < b.top ? b.top : b.bot, 2, 30, 55);
                 frenzyGrindT = frenzyTime > 0 ? 0.08 : 0;
+                if (frenzyTime > 0 && frenzyGrindTickT <= 0) { frenzyHaptic('light'); frenzyGrindTickT = FRENZY_GRIND_TICK_SEC; }
                 clampShipToWall(b.top, b.bot, cPR); break;
             }
             // Flight plan: wall mistakes cost a scratch, not the run (constants.js HULL_SCRATCHES).

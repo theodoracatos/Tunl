@@ -1430,6 +1430,14 @@ const FRENZY_IMPACT_SEC       = 0.18;   // the white flash at a smash
 // own light does not pump in 16ths (read as glare): its contour breathes in quarters and the
 // glints step in 8ths.
 const FRENZY_TREM_HZ          = 140 / 60 * 4;
+// Haptics (apps only - the web has no bridge, so frenzyHaptic() is a no-op there). A star used
+// to be silent in the hand apart from its smashes (user, 2026-10-06: "zurzeit ist es stumm").
+// The charge taps medium, then light on its last two thirds; the star starts heavy, pulses light
+// in quarters of the same 140 BPM while it runs and in 8ths through FRENZY_WARN_SEC (the end
+// coming, like the audio's end motif), grinding along the wall ticks light at most every
+// FRENZY_GRIND_TICK_SEC, and the end taps medium. Smashes keep their own light/heavy.
+const FRENZY_HAPTIC_BEAT_SEC  = 60 / 140;
+const FRENZY_GRIND_TICK_SEC   = 0.12;
 // The ship during a star (user's pick 2026-09-28, concept A + D): a contour light that follows
 // the live silhouette, reaching FRENZY_CONTOUR_W past the hull, and four-point glints popping
 // at nose, wingtips and tail in turn, one per 8th, each FRENZY_GLINT_SEC long and up to

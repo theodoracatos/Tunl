@@ -1691,6 +1691,12 @@ function frenzyFill(n) {
     if (was < ready && frenzyMeter >= ready && frenzyMeter < frenzyCost) sfxFrenzyReady();
 }
 
+// The star's vibration (constants.js FRENZY_HAPTIC_BEAT_SEC doc). Apps only: without the
+// native bridge (the web) this does nothing.
+function frenzyHaptic(kind) {
+    window.webkit?.messageHandlers?.haptic?.postMessage(kind);
+}
+
 // A full meter charges for FRENZY_CHARGE_SEC (the riser), then frenzyBegin() lights the star.
 // Inside a warp it waits for the warp's end instead (frenzyPending).
 function frenzyTryStart() {
@@ -1699,6 +1705,7 @@ function frenzyTryStart() {
     frenzyPending = false;
     frenzyChargeT = FRENZY_CHARGE_SEC;
     sfxFrenzyCharge(FRENZY_CHARGE_SEC);
+    frenzyHaptic('medium');
 }
 
 function frenzyBegin() {
@@ -1709,6 +1716,8 @@ function frenzyBegin() {
     frenzyHits = 0;
     runFrenzies++;
     frenzyStartT = gtime;
+    frenzyBeatT = FRENZY_HAPTIC_BEAT_SEC; frenzyGrindTickT = 0;
+    frenzyHaptic('heavy');
     bgmSetFrenzy(true);   // first: the star's music decides whether the pad plays and the fanfare ducks (audio.js)
     sfxFrenzyStart();
     frenzyLoopOn();
@@ -1726,7 +1735,7 @@ function frenzySmash(kind, sx, y) {
     frenzyImpacts.push({ x: sx, y, t: gtime });
     if (CRYSTAL_STALS) burstCrystalShards(sx, y, crystalShardHue(), 12);
     if (gtime - frenzyLastStopT >= FRENZY_HITSTOP_GAP) { frenzyHitStopT = FRENZY_HITSTOP_SEC; frenzyLastStopT = gtime; }
-    window.webkit?.messageHandlers?.haptic?.postMessage(kind === 'stal' ? 'light' : 'heavy');
+    frenzyHaptic(kind === 'stal' ? 'light' : 'heavy');
 }
 
 // ── Bomb explosion ────────────────────────────────────────────────────
