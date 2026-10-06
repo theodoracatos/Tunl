@@ -61,10 +61,11 @@ set net:max-retries 3
 set ftp:use-site-chmod false
 # Hostfactory (2026-10-06): the FIRST TLS data connection of a session fails (SSL_connect error,
 # reported as 550) and the mirror aborts on it. Burn it on a throwaway listing, then drop the
-# cached failure before mirroring.
+# cached failure before mirroring. One connection only: every extra --parallel session hits
+# the same first-connection failure and loses the directory it was given.
 cls -1 $FTP_REMOTE_DIR/ > /dev/null
 cache flush
-mirror --reverse --verbose --parallel=4 --no-perms \
+mirror --reverse --verbose --no-perms \
   site/ $FTP_REMOTE_DIR/
 bye
 LFTP_UPLOAD
