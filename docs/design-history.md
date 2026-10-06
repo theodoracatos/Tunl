@@ -2397,3 +2397,10 @@ reading as noise at 40 px) and offered D1 pure, D2 with cave ceiling and floor c
 (PEARL measured at the 39th percentile, AMBER at the 73rd) and asked for the splash to follow.
 Android's adaptive icon got its own violet background layer instead of the `tunlBackground`
 colour. Next: a Play store listing experiment of the old against the new icon.
+
+Same day: the Play feature graphic moved to the Steigflug look too (violet ground, AMBER ship in
+`ICON_POSE`, wordmark left, centre clear for Play's video button). The user found the wordmark's U
+"nicht perfekt": the SVG U was a round-bottomed stroke with its centreline on the baseline, so it
+hung half a stroke below T/N/L, and its gem and rays were about 1.4x the game's, reading as a
+crosshair. Rebuilt from the title screen's `buildUPath()` (chamfered channel, outer edge on the
+baseline, stroke = the SVG font's T stem) and the game's gem sizes. `wordmark*.svg` keep the old U.

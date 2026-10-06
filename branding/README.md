@@ -18,10 +18,11 @@ violet glow) on the dark launch screen, shrunk and centred on ship and plume, wi
 plume (`LAUNCH_POSE`) so nothing is cut at the square's edge. Android 12+ shows the adaptive
 icon (violet circle) as its splash.
 
-**Play feature graphic** keeps the 2026-10-02 motif: the F-14 with its
-wings folded fully back as in a warp (variant D of
-https://claude.ai/artifact/UA3oHiakB3ipBVmTEWoV4k), in a ~30-degree climb, soft blue
-aura, twin plumes.
+**Play feature graphic (since 2026-10-06)** widens the Steigflug icon to 1024x500: violet
+ground, rays and halo, the AMBER F-14 in `ICON_POSE` climbing on the right, the TUNL wordmark
+on the left, the centre clear for Play's video play button. Its wordmark U follows the title
+screen's `buildUPath()` (chamfered channel on the baseline, gem at in-game size); the separate
+`wordmark*.svg` files still carry the older round U that hangs half a stroke below the baseline.
 
 ## The ship block is rendered by the game - `render-ship-mark.mjs`
 
@@ -88,11 +89,10 @@ and unchanged by the icon direction; the two are meant to lock up together
   listing sections).
 - `wordmark-light.svg` — same wordmark, navy letterforms, for white/light
   backgrounds (press kit, light site sections).
-- `feature-graphic.svg` — 1024×500 Play Store feature graphic: ship mark +
-  wordmark + the corridor's own top/bottom wave lines as texture. The wordmark
-  is inlined as vector (kept in sync with `wordmark.svg` / the in-game title
-  screen), `fw_`-prefixed IDs; it used to be a ~270KB embedded PNG of the
-  retired ring-portal U.
+- `feature-graphic.svg` - 1024x500 Play Store feature graphic (Steigflug look, see
+  above): ground, rays, halo and streaks hand-authored, ship block generated. The
+  wordmark is inlined as vector with `fw_`-prefixed IDs; its U is the title screen's
+  `buildUPath()` geometry (not the round U of `wordmark.svg`).
 
 ## `game-center/` — App Store Connect Game Center art
 

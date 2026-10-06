@@ -30,8 +30,8 @@ const BOX = { x0: -420, x1: 240, y0: -230, y1: 230 };
 // The app icon (2026-10-06, "Steigflug", variant D4 of icon study III,
 // https://claude.ai/artifact/RJVt2BxGgH4Cn7GzMexR6q): the ship in AMBER (skin 1), roll 82 (close
 // to top-down, the boldest silhouette), wings SPREAD, a long plume that runs off the icon's
-// edge. The long plume needs a bigger box. The iOS launch logo follows the icon; the feature
-// graphic keeps POSE.
+// edge. The long plume needs a bigger box. The iOS launch logo and the Play feature graphic
+// follow the icon.
 const ICON_POSE = { sweep: 0, roll: 82, skin: 1, jet: 3.4, box: { x0: -640, x1: 240, y0: -250, y1: 250 } };
 // The launch logo floats on the dark launch screen, so its plumes must end inside the square.
 const LAUNCH_POSE = { ...ICON_POSE, jet: 1.6 };
@@ -43,7 +43,7 @@ const TARGETS = [
     { file: 'branding/icon-mark-dark.svg',          res: 2.35 * 1.0, pose: ICON_POSE },
     { file: 'branding/ios-launch-logo.svg',         res: 2.35 * 0.86 * 1.5, pose: LAUNCH_POSE },
     { file: 'branding/icon-adaptive-foreground.svg', res: 2.35 * 0.29 * 1.0, pose: ICON_POSE },
-    { file: 'branding/feature-graphic.svg',         res: 1.20 * 1.0 },
+    { file: 'branding/feature-graphic.svg',         res: 1.25 * 1.0, pose: ICON_POSE },
 ];
 const BEGIN = '<!-- BEGIN generated ship: branding/render-ship-mark.mjs';
 const END   = '<!-- END generated ship -->';
