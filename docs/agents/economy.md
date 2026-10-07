@@ -75,6 +75,15 @@ the forced interstitial, not a video the player actively taps):
   loads the three units in parallel. Before, one "No ad to show" greyed the continue ring
   and the shard row for the whole session, and a no-fill answer takes up to a minute, so
   the serial iOS start held the shard unit back behind the continue unit.
+- **Android: never call `WebView.pauseTimers()` where an ad can be up** (2026-10-07,
+  `MainActivity.kt`, `onStop`/`onStart` only). It is global to the process, the GMA SDK draws
+  its creatives in in-process WebViews, and the translucent `AdActivity` only *pauses*
+  MainActivity - pausing timers in `onPause` froze every Android ad mid-countdown with no
+  close button from 2026-07-13 to 18.6.4. Test ad changes on the emulator
+  (`reference_android_emulator` memory): show the ad and check the countdown moves.
+- **Android Play Games sign-in needs the app-signing-key SHA-1** on a Play Console credential;
+  the upload key alone fails every Play install with `DEVELOPER_ERROR`. Sign-in at launch is
+  automatic only; the manual `signIn()` runs from the leaderboard tap.
 
 ## Ship unlock economy
 

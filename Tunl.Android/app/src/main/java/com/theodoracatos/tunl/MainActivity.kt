@@ -226,7 +226,7 @@ class MainActivity : ComponentActivity() {
                 when (handler) {
                     "gameCenter" -> when (body.optString("action")) {
                         "submit" -> submitScore(body.optInt("score"))
-                        "show" -> showLeaderboard()
+                        "show" -> showLeaderboardOrSignIn()
                         "achievement" -> unlockAchievement(body.optString("id"))
                     }
                     "iap" -> when (body.optString("action")) {
@@ -492,16 +492,30 @@ class MainActivity : ComponentActivity() {
         // WebView timers (rAF, setInterval) and the page's AudioContext keep
         // running through Activity.onPause unless explicitly paused here --
         // iOS gets this for free from UIScene backgrounding WKWebView with it;
-        // plain Android WebView does not.
+        // plain Android WebView does not. onPause() is per-WebView.
         webView.onPause()
-        webView.pauseTimers()
         super.onPause()
+    }
+
+    // pauseTimers() is global: it freezes every WebView in the process, and the
+    // GMA SDK renders its interstitial/rewarded creatives in in-process WebViews.
+    // The ad's AdActivity is translucent, so showing it pauses (never stops) this
+    // Activity - pausing timers in onPause froze the ad's countdown and its close
+    // button never appeared (a friend's report, reproduced on an emulator
+    // 2026-10-07). onStop only fires on real backgrounding.
+    override fun onStop() {
+        webView.pauseTimers()
+        super.onStop()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        webView.resumeTimers()
     }
 
     override fun onResume() {
         super.onResume()
         webView.onResume()
-        webView.resumeTimers()
         // Refresh the daily-reminder schedule (src/notify.js) so "played today" and
         // the language stay current and an active player keeps getting bumped past
         // tonight's nudge. No-ops until the page has defined the hook.
@@ -567,19 +581,14 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // Play Games v2 signs a player with a Play Games profile in automatically at
+    // launch; this only reads that result. No manual signIn() here: on a device
+    // without one it opened Google's account sheet on every single launch. A player
+    // who is not signed in gets the manual sign-in from the leaderboard tap instead
+    // (showLeaderboardOrSignIn), which chains into onPlayGamesReady() as well.
     private fun signIntoPlayGames() {
-        val signInClient = PlayGames.getGamesSignInClient(this)
-        signInClient.isAuthenticated.addOnCompleteListener { task ->
-            val authenticated = task.isSuccessful && task.result.isAuthenticated
-            if (authenticated) {
-                onPlayGamesReady()
-            } else {
-                // Chain off the sign-in itself: without this, a player who was not yet
-                // authenticated at launch never reaches onPlayGamesReady() at all.
-                signInClient.signIn().addOnCompleteListener { signIn ->
-                    if (signIn.isSuccessful && signIn.result.isAuthenticated) onPlayGamesReady()
-                }
-            }
+        PlayGames.getGamesSignInClient(this).isAuthenticated.addOnCompleteListener { task ->
+            if (task.isSuccessful && task.result.isAuthenticated) onPlayGamesReady()
         }
     }
 
@@ -733,6 +742,29 @@ class MainActivity : ComponentActivity() {
             }
         }
         startActivity(Intent.createChooser(intent, null))
+    }
+
+    // A tap on the title's leaderboard icon. The icon renders whenever the bridge
+    // exists, signed in or not, and getLeaderboardIntent fails with
+    // SIGN_IN_REQUIRED for a player who is not - which used to only reach a log
+    // line, so the tap did nothing. A user-initiated tap is where Play Games v2
+    // wants the manual signIn(), so sign in first and open the board on success.
+    private fun showLeaderboardOrSignIn() {
+        val signInClient = PlayGames.getGamesSignInClient(this)
+        signInClient.isAuthenticated.addOnCompleteListener { task ->
+            if (task.isSuccessful && task.result.isAuthenticated) {
+                showLeaderboard()
+                return@addOnCompleteListener
+            }
+            signInClient.signIn().addOnCompleteListener { signIn ->
+                if (signIn.isSuccessful && signIn.result.isAuthenticated) {
+                    onPlayGamesReady()
+                    showLeaderboard()
+                } else {
+                    Log.w("TunlPlayGames", "Leaderboard tap: sign-in failed or declined")
+                }
+            }
+        }
     }
 
     private fun showLeaderboard() {

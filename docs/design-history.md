@@ -2405,3 +2405,19 @@ hung half a stroke below T/N/L, and its gem and rays were about 1.4x the game's,
 crosshair. Rebuilt from the title screen's `buildUPath()` (chamfered channel, outer edge on the
 baseline, stroke = the SVG font's T stem) and the game's gem sizes. `wordmark.svg` / `wordmark-light.svg`
 (site header, /play splash, press kit SVGs and PNGs) got the same U right after.
+
+## Android: frozen ads, dead leaderboard, no launch sign-in (2026-10-07)
+
+A friend's Samsung showed an ad that "hung in the middle" with a countdown that never moved and
+no X, and a leaderboard icon that did nothing. The user has no Android device; an emulator
+(`reference_android_emulator` memory) reproduced both. The ad: `MainActivity.onPause` called
+`WebView.pauseTimers()` (added 2026-07-13 against background timers), which is process-global and
+froze the ad's own in-process WebView the moment the translucent `AdActivity` paused the game.
+Moved to `onStop`/`onStart`; rewarded and interstitial then ran, closed and paid, also with an
+emulated punch-hole cutout on the X side. The leaderboard: the Play Store build failed Play Games
+sign-in with `DEVELOPER_ERROR` because the only Play Console credential carried the upload key's
+SHA-1, not the app signing key's, so no Android player was ever signed in; and a tap without
+sign-in only logged. The tap now runs the manual `signIn()` and opens the board on success. The
+launch-time manual `signIn()` was dropped (it opened Google's account sheet on every launch without
+a profile); launch keeps the automatic v2 sign-in only. GMA SDK 23.6.0 -> 25.5.0 (it logged itself
+as out of date; no API in use changed). Shipped as Android-only 18.6.4.
