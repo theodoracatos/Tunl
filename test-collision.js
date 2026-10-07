@@ -217,6 +217,22 @@ function check(name, cond) {
     const glyph = g ? vm.runInNewContext(g[1] + ' pts') : [];
     check('share card glyph is the same outline as SHIP_OUTLINE',
         glyph.length === outline.length && glyph.every((p, i) => p[0] === outline[i][0] && p[1] === outline[i][1]));
+
+    // tools/gen-ship-topdown.js output. The base facets (all but the two lit leading-edge
+    // bands, which lie on top of glove and wing) are disjoint and fill the half outline: a
+    // broken trace once left the fuselage facet a nose-to-x -0.64 wedge (0.58 of the area),
+    // which drew a diagonal seam through body and glove. And drawShip does not clip the
+    // intake slot, so it has to lie inside the outline (it stuck out of both wings until
+    // 2026-10-07).
+    const blk = drawSrc.slice(drawSrc.indexOf('\n', drawSrc.indexOf('BEGIN generated top-down hull')) + 1,
+        drawSrc.lastIndexOf('\n', drawSrc.indexOf('END generated top-down hull')));
+    const gen = {}; vm.runInNewContext(blk.replace(/^const /gm, 'this.'), gen);
+    const area = p => Math.abs(p.reduce((s, q, i) => { const n = p[(i + 1) % p.length]; return s + q[0] * n[1] - n[0] * q[1]; }, 0)) / 2;
+    const fill = [0, 1, 2, 3, 5].reduce((s, i) => s + area(gen.SHIP_FACETS[i].p), 0) / area(outline.filter(q => q[1] <= 0));
+    check(`top-down facets fill the half outline once, no gap, no overlap (${fill.toFixed(3)})`, Math.abs(fill - 1) < 0.02);
+    const inside = (x, y) => { let ins = false; for (let i = 0, j = outline.length - 1; i < outline.length; j = i++) {
+        const a = outline[i], b = outline[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) ins = !ins; } return ins; };
+    check('top-down intake slot lies inside the outline', gen.SHIP_TOPDOWN.intake.every(q => inside(q[0], q[1])));
 }
 
 if (failed) {

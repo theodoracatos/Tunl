@@ -59,18 +59,39 @@ const xcut = (A, f) => A.map((a, k) => a && f(X0 + ((k % NX) + 0.5) * RES) ? 1 :
 // filled when the region touches the axis (the facet closes along the spine).
 function trace(G) {
     const at = (i, j) => j < 0 ? (i >= 0 && i < NX && G[i]) : (i >= 0 && j < NY && i < NX && G[j * NX + i]);
-    const next = new Map(), key = (i, j) => i + ',' + j;
+    const out = new Map(), key = (i, j) => i + ',' + j;
+    const edge = (i0, j0, i1, j1) => { const k = key(i0, j0); if (!out.has(k)) out.set(k, []); out.get(k).push([i1, j1]); };
     for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
         if (!at(i, j)) continue;
-        if (!at(i, j - 1)) next.set(key(i, j), [i + 1, j]);
-        if (!at(i + 1, j)) next.set(key(i + 1, j), [i + 1, j + 1]);
-        if (!at(i, j + 1)) next.set(key(i + 1, j + 1), [i, j + 1]);
-        if (!at(i - 1, j)) next.set(key(i, j + 1), [i, j]);
+        if (!at(i, j - 1)) edge(i, j, i + 1, j);
+        if (!at(i + 1, j)) edge(i + 1, j, i + 1, j + 1);
+        if (!at(i, j + 1)) edge(i + 1, j + 1, i, j + 1);
+        if (!at(i - 1, j)) edge(i, j + 1, i, j);
     }
-    let best = []; const seen = new Set();
-    for (const k0 of next.keys()) { if (seen.has(k0)) continue; const loop = []; let k = k0;
-        while (!seen.has(k) && next.has(k)) { seen.add(k); loop.push(k.split(',').map(Number)); const n = next.get(k); k = key(n[0], n[1]); }
-        if (loop.length > best.length) best = loop; }
+    // Edges are consumed, not vertices: where two cells touch only at a corner, that vertex
+    // has two edges in and two out and is passed twice, and the walk takes the same-side turn
+    // there so the region stays one loop. A region on the axis has an OPEN boundary (the
+    // spine run is implied), so it is walked from its head. Before 2026-10-07 one edge per
+    // vertex was kept and a vertex ended the walk on its second visit: the fuselage facet
+    // lost everything aft of a pinch at its taileron root and closed in a diagonal from the
+    // nose to x -0.64, drawing a seam through the body and the glove.
+    const inDeg = new Map();
+    for (const e of out.values()) for (const n of e) inDeg.set(key(n[0], n[1]), (inDeg.get(key(n[0], n[1])) || 0) + 1);
+    const heads = [...out.keys()].filter(k => out.get(k).length > (inDeg.get(k) || 0));
+    let best = [];
+    for (const k0 of heads.concat([...out.keys()])) {
+        if (!out.get(k0).length) continue;
+        const loop = []; let k = k0, d = null;
+        while (out.has(k) && out.get(k).length) {
+            const c = k.split(',').map(Number), es = out.get(k);
+            let pick = 0;
+            if (d && es.length > 1) es.forEach((n, m) => { const t = d[0] * (n[1] - c[1]) - d[1] * (n[0] - c[0]),
+                tb = d[0] * (es[pick][1] - c[1]) - d[1] * (es[pick][0] - c[0]); if (t > tb) pick = m; });
+            const n = es.splice(pick, 1)[0];
+            loop.push(c); d = [n[0] - c[0], n[1] - c[1]]; k = key(n[0], n[1]);
+        }
+        if (loop.length > best.length) best = loop;
+    }
     return best.map(([i, j]) => [X0 + i * RES, j * RES]);
 }
 const dp = (P, eps) => { if (P.length < 3) return P; let dm = 0, idx = 0; const A = P[0], Bq = P[P.length - 1], L = Math.hypot(Bq[0] - A[0], Bq[1] - A[1]) || 1e-9;
@@ -108,16 +129,20 @@ const outlineTop = (() => { const o = ring(ALL); let i0 = 0; o.forEach((q, i) =>
     r[0] = [1.40, 0]; r.push([r[r.length - 1][0], 0]); return r; })();
 const facets = [
     ['nose cone', ring(nose), 0.46, -0.04], ['taileron', ring(tailF), -0.08, -0.54], ['fuselage, nacelle deck, beaver tail', ring(fuse), 0.30, -0.20],
-    ['glove', ring(gloveF), 0.16, -0.32], ['glove leading edge', ring(gloveLE), 0.26, -0.22], ['outer wing (outside the glove)', ring(wingF), 0.06, -0.40],
+    ['glove', ring(gloveF), 0.16, -0.32], ['glove leading edge', ring(gloveLE), 0.26, -0.22], ['outer wing (outside the glove)', ring(wingF), 0.16, -0.32],
     ['wing leading edge', ring(wingLE), 0.26, -0.22],
 ];
 // Details for drawShip: the lit leading edge (nose to wing tip), the intake slot just inside
 // the glove leading edge, the tunnel seam (body edge), the fins and the folded tip strobe.
 const tipI = outlineTop.reduce((m, q, i) => q[1] < outlineTop[m][1] ? i : m, 0);
 const le = outlineTop.slice(0, tipI + 1);
-const Lg = [gNext[0] - gRoot[0], gNext[1] - gRoot[1]], lgl = Math.hypot(...Lg), ux = Lg[0] / lgl, uy = Lg[1] / lgl, inx = uy, iny = -ux;   // inward = aft
-const at = (u, d) => [r3(gRoot[0] + ux * lgl * u + inx * d), -r3(gRoot[1] + uy * lgl * u + iny * d)];
-const intake = [at(0.06, 0.012), at(0.45, 0.012), at(0.45, 0.042), at(0.06, 0.042)];
+// Intake: the nacelle lip that juts out ahead of the glove (hull outside the body and the
+// glove, forward of the wing root), eroded 0.009 r so the dark slot sits INSIDE the
+// silhouette - drawShip does not clip it. It used to be a fixed 0.03 r strip laid along the
+// glove leading edge on its outer side, which ran past the end of the lip and stuck out of
+// the hull on both sides (2026-10-07).
+const lip = morph(xcut(op(op(ALL, BODY, (a, b) => a && !b), GLOVE, (a, b) => a && !b), x => x > gNext[0] && x < 1.02), false, 3);
+const intake = ring(lip);
 const bodyW = x => { for (let i = 0; i < st.length - 1; i++) if (x <= st[i][0] && x >= st[i + 1][0]) return st[i][1] + (st[i + 1][1] - st[i][1]) * (st[i][0] - x) / (st[i][0] - st[i + 1][0]); return 0; };
 const finM = src.match(/const zb = 0\.068 \* BZ, zt = 0\.44, yb = s \* ([0-9.]+) \* ([0-9.]+), yt = s \* ([0-9.]+) \* ([0-9.]+);/);
 const fin = [r3(finM[1] * finM[2]), r3(finM[3] * finM[4])];

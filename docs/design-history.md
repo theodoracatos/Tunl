@@ -2440,3 +2440,20 @@ it as the scores added up. It now shows `lifetimeScore` (every run's final score
 floor, since every score is at least its distance - and no player's number drops. The label stays
 `T.flown` (no string change); `DIST_ACHIEVEMENTS` still count distance. `test-sim.js` section 12
 guards the sum, the continue and the lift.
+
+## Top-down hull: three generator faults behind the "strange" title ship (2026-10-07)
+
+The user found the title hero (top-down `drawShip`) odd next to the refined flight model. The
+outline itself matched the 3D model (a re-run of `tools/gen-ship-topdown.js` gave no diff); the
+facets did not. (1) `trace()` stored one boundary edge per raster vertex and stopped on a
+vertex's second visit, so at a corner-touch pinch near the taileron root the fuselage facet
+lost everything aft and closed in a diagonal from the nose to x -0.64: 0.58 of the half outline
+was covered, the rest showed the base fill, and the diagonal drew a seam through body and glove.
+Edges are now consumed instead, with a consistent turn at pinches and open (spine) boundaries
+walked from their head. (2) The intake slot was a fixed 0.03 r strip laid on the outer side of
+the glove leading edge; past the end of the nacelle lip it lay outside the hull on both sides.
+It is now the lip itself (hull outside body and glove, ahead of the wing root) eroded 0.009 r.
+(3) Glove and outer wing had different tones, so the glove's round rear - the root disc it holds
+- read as a grey "D" on the shadow side; both are flat plates and now share the glove's tone, as
+they shade alike in 3D. With the full fuselage facet the lower body takes the shadow tone the K5
+lighting always meant (top half toward white, bottom toward dark).

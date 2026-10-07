@@ -88,6 +88,13 @@ show the 09-23 F-14.
   every outline, so overlapping facets drew hidden edges through the hull. Facet order is
   kept (WINGTIPS fills 1/5/6). **Re-run it after any 3D hull change**, then npm test. Folded
   to 44 deg the top-down span is 0.70 r (0.79 at the old 34).
+- **Top-down traps fixed 2026-10-07** (the title hero "looked strange"): `trace()` kept one edge
+  per raster vertex, so a corner-touch pinch cut the fuselage facet to a nose-to-x -0.64 wedge
+  and a diagonal seam ran through body and glove; the intake slot was a fixed strip on the
+  OUTER side of the glove leading edge and stuck out of both wings. The slot is now the nacelle
+  lip ahead of the glove, eroded inside the hull. Glove and outer wing share one tone (both
+  flat plates, as in 3D), so the glove's round rear (the root disc) is a seam, not a grey "D".
+  `test-collision.js` checks the base facets fill the half outline once and the slot is inside.
 - Launch logo, Play feature graphic, the flytunl.ch ship chips/portraits and the feel-strip
   ship were re-rendered with the refined hull the same day; the 7 ship achievement icons in
   the stores still show the 09-23 top-down hull (user, 2026-10-05: leave them, the difference is small - do not re-propose).
