@@ -1784,5 +1784,41 @@ const FAKE_AC = `(() => {
     g('delete window.webkit.messageHandlers.ads;');
 }
 
+// ── 12. Title FLOWN figure = every run's score summed (state.js lifetimeScore) ──
+// Catches: the title showing distance again (no coin/graze bonus), a run banked twice
+// across a rewarded continue, and an early player's figure dropping when the display
+// moved from lifetimeDist to lifetimeScore (2026-10-07).
+{
+    // Seeded like a player from before lifetimeScore existed: distance 10 000, score sum 500.
+    const g = boot(956, 440, { tunnel_best: '400', tunnel_lifetime_dist: '600000', tunnel_lifetime_score: '500' });
+    const lift = g('({ sum: lifetimeScore, saved: localStorage.getItem("tunnel_lifetime_score") })');
+    check(`an older, smaller score sum is lifted to the distance figure once (${lift.sum})`,
+        lift.sum === 10000 && lift.saved === '10000');
+    const r = g(`(() => {
+        const runs = [[12345.6, 77], [3000, 0], [98765.4, 230]];
+        let want = lifetimeScore;
+        for (const [sx, bonus] of runs) {
+            startPlay(); scrollX = sx; bonusScore = bonus; score = Math.floor(sx / 60) + bonus;
+            shieldCount = 0; invulnT = 0; rewardedAdReady = false; die(true);
+            want += Math.floor(sx / 60) + bonus;
+        }
+        // A rewarded continue: the offer banks nothing, the run counts once at its real end.
+        startPlay(); scrollX = 5000; score = 900; shieldCount = 0; invulnT = 0;
+        rewardedAdReady = true; continuesUsedThisRun = 0; die(true);
+        const pending = continueOfferPending, atOffer = lifetimeScore;
+        grantRevive(); scrollX = 8000; score = 1200; rewardedAdReady = false; shieldCount = 0; invulnT = 0; die(true);
+        want += 1200;
+        const texts = [];
+        ctx.fillText = s => texts.push(String(s));
+        titleScreen(); titleT = 10; drawTitleScreen();
+        delete ctx.fillText;
+        return { sum: lifetimeScore, want, pending, offerFree: atOffer === want - 1200, texts };
+    })()`);
+    check(`every run's score is added once, a continued run included (${r.sum} of ${r.want})`,
+        r.pending && r.offerFree && r.sum === r.want);
+    check('the title FLOWN figure shows that score sum',
+        r.texts.includes(Math.floor(r.want).toLocaleString()));
+}
+
 if (failed) { console.log(`\n${failed} check(s) failed.`); process.exit(1); }
 console.log('\nThe real game runs headless and every simulated rule holds.');

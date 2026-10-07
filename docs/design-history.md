@@ -2429,3 +2429,14 @@ the title's `bgStr`, which `drawWorld()` writes to the page body: the canvas was
 out (18.6.3's launch-time `signIn()` could cover the Activity first). Reproduced by loading
 behind `View.GONE` (W = H = 0, body rgb(19,18,24)); MainActivity now loads the URL only once the
 WebView has a non-zero size (`loadWhenSized`), which fixed the same forced case.
+
+## Title FLOWN figure: summed score, not distance (2026-10-07)
+
+The title's stat plate showed `lifetimeDist / 60` under FLOWN since 2026-09-08: raw distance,
+no coin or graze bonus, so it always read below the sum of the player's scores. The user meant
+it as the scores added up. It now shows `lifetimeScore` (every run's final score, banked once in
+`commitDeath()`; a rewarded continue banks nothing at the offer). `lifetimeScore` only started on
+2026-09-18, so `state.js` lifts it once to the distance figure when it sits below it - an honest
+floor, since every score is at least its distance - and no player's number drops. The label stays
+`T.flown` (no string change); `DIST_ACHIEVEMENTS` still count distance. `test-sim.js` section 12
+guards the sum, the continue and the lift.

@@ -45,9 +45,10 @@ try {
 let best          = parseInt(localStorage.getItem('tunnel_best')    || '0');
 let bestSX        = parseInt(localStorage.getItem('tunnel_best_sx') || '0');
 // Lifetime distance flown, in world-px, summed across every run ever (banked in
-// commitDeath). Never spent, never resets - a slow progression counter shown on
-// the title screen under REKORD. Displayed as lifetimeDist/60, the same "distance"
-// unit the live score uses (score = floor(scrollX/60) + bonus).
+// commitDeath). Never spent, never resets - backs DIST_ACHIEVEMENTS (constants.js),
+// counted as lifetimeDist/60, the same "distance" unit the live score uses
+// (score = floor(scrollX/60) + bonus). The title screen showed it under REKORD until
+// 2026-10-07; it now shows lifetimeScore below.
 let lifetimeDist  = parseFloat(localStorage.getItem('tunnel_lifetime_dist') || '0') || 0;
 // Lifetime runs played, summed across every run ever started (incremented in
 // lifecycle.js startPlay(), same "every started run counts" definition as the
@@ -67,6 +68,16 @@ let lifetimeNearMisses = parseInt(localStorage.getItem('tunnel_lifetime_near_mis
 // across runs it stays honestly reachable through sustained play instead, same pattern
 // as lifetimeDist/lifetimeNearMisses above.
 let lifetimeScore = parseFloat(localStorage.getItem('tunnel_lifetime_score') || '0') || 0;
+// Also the title screen's FLOWN figure (since 2026-10-07; it showed lifetimeDist / 60
+// before). This total only started on 2026-09-18, ten days after lifetimeDist, so an
+// early player's sum can sit below the distance figure they were already shown. Every
+// run's score is at least its distance (score = floor(scrollX / 60) + bonus), so the
+// distance figure is an honest floor: lift to it once, and the number never drops.
+// After the lift each run adds score >= distance, so this never fires again.
+if (lifetimeScore < Math.floor(lifetimeDist / 60)) {
+    lifetimeScore = Math.floor(lifetimeDist / 60);
+    localStorage.setItem('tunnel_lifetime_score', String(lifetimeScore));
+}
 let runsWithoutPB = parseInt(localStorage.getItem('tunnel_no_pb')   || '0');
 let top5 = _savedLastDay === _initToday ? JSON.parse(localStorage.getItem('tunnel_top5') || '[]') : [];
 let dailyBest = _savedLastDay === _initToday ? parseInt(localStorage.getItem('tunnel_daily_best') || '0') : 0;

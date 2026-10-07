@@ -1268,8 +1268,8 @@ function commitDeath() {
     }
     localStorage.setItem('tunnel_no_pb', runsWithoutPB);
     // Lifetime distance: raw world-px flown this run, added to the all-time total
-    // (state.js lifetimeDist, shown on the title screen). Pure distance, not score -
-    // no coin/near-miss bonus - so it's "how far have I actually flown".
+    // (state.js lifetimeDist, backs DIST_ACHIEVEMENTS). Pure distance, not score -
+    // no coin/near-miss bonus. The title screen's FLOWN figure is lifetimeScore below.
     if (scrollX > 0) {
         const _distBefore = Math.floor((lifetimeDist) / 60);
         lifetimeDist += scrollX;
