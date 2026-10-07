@@ -6,6 +6,9 @@ Rules, constants and traps for this area. CLAUDE.md keeps a one-line version of 
 `W` capped at 956 (iPhone 17 Pro Max landscape width) **on every platform** for leaderboard
 fairness (`fairness.md`); `H` capped at 600 (520 Android app, 440 web) for consistent
 difficulty. Wider devices letterbox. H also drives `_FEEL_SCALE`.
+`W`/`H` are frozen from `innerWidth`/`innerHeight` at script load: a page loaded into a 0x0
+WebView never recovers (0x0 canvas, a flat `bgStr` screen). Android loads only once the
+WebView is laid out (`MainActivity.loadWhenSized`); keep any new native load path behind it.
 
 ## Physics constants
 `GRAVITY` / `THRUST` / `MAX_VY` in `constants.js`, quoted at `_H_REF` and scaled by

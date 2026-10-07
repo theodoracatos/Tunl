@@ -65,12 +65,32 @@ class MainActivity : ComponentActivity() {
     // Fires when an App Link is tapped while the app is already running -
     // launchMode="singleTask" (manifest) routes it here instead of spawning a
     // second instance. A cold start's own intent is instead picked up by
-    // gameUrl(intent) at the loadUrl call in onCreate.
+    // gameUrl(intent) at the loadWhenSized call in onCreate.
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         val query = deepLinkQuery(intent) ?: return
-        webView.loadUrl("$gameBaseUrl?$query")
+        loadWhenSized("$gameBaseUrl?$query")
+    }
+
+    // src/constants.js freezes W/H from innerWidth/innerHeight at script load. A page
+    // that loads into a WebView that has not been laid out yet (the Activity covered
+    // before its first layout, as 18.6.3's launch-time Play Games sign-in could do)
+    // gets W = H = 0: a 0x0 canvas over the body's flat background colour, for the
+    // rest of the session. Reproduced 2026-10-07 by loading behind View.GONE.
+    private fun loadWhenSized(url: String) {
+        if (webView.width > 0 && webView.height > 0) {
+            webView.loadUrl(url)
+            return
+        }
+        webView.addOnLayoutChangeListener(object : View.OnLayoutChangeListener {
+            override fun onLayoutChange(v: View, l: Int, t: Int, r: Int, b: Int,
+                                        ol: Int, ot: Int, or: Int, ob: Int) {
+                if (r - l <= 0 || b - t <= 0) return
+                v.removeOnLayoutChangeListener(this)
+                webView.loadUrl(url)
+            }
+        })
     }
 
     // True between ads.onWillPresent and ads.onDidDismiss. While set, the app
@@ -468,7 +488,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        webView.loadUrl(gameUrl(intent))
+        loadWhenSized(gameUrl(intent))
 
         // Android's system/gesture back button has no iOS equivalent (no hardware
         // back button exists there). Without this, back always exits the app

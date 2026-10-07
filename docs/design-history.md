@@ -2421,3 +2421,11 @@ sign-in only logged. The tap now runs the manual `signIn()` and opens the board 
 launch-time manual `signIn()` was dropped (it opened Google's account sheet on every launch without
 a profile); launch keeps the automatic v2 sign-in only. GMA SDK 23.6.0 -> 25.5.0 (it logged itself
 as out of date; no API in use changed). Shipped as Android-only 18.6.4.
+
+Same day, a flat dark screen: on a fresh Play install of 18.6.3, the first launch with a
+successful Play Games sign-in stayed a uniform rgb(19,18,24) until the app was killed. That is
+the title's `bgStr`, which `drawWorld()` writes to the page body: the canvas was 0x0. `W`/`H` are
+`const`s from `innerWidth`/`innerHeight`, and the page had loaded before the WebView was laid
+out (18.6.3's launch-time `signIn()` could cover the Activity first). Reproduced by loading
+behind `View.GONE` (W = H = 0, body rgb(19,18,24)); MainActivity now loads the URL only once the
+WebView has a non-zero size (`loadWhenSized`), which fixed the same forced case.
