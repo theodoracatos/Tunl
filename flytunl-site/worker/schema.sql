@@ -42,3 +42,36 @@ CREATE TABLE IF NOT EXISTS referrals (
 );
 
 CREATE INDEX IF NOT EXISTS idx_referrals_referrer_claimed ON referrals (referrer, claimed);
+
+-- The challenge link (POST /c, GET /c/<id>, POST /c/<id>/run, POST /c/inbox,
+-- src/index.js "Challenge link"; client: src/web.js). One row per shared
+-- challenge. `owner` is the sender's plain player id and never leaves the
+-- worker (same anonymity rule as scores.pid).
+CREATE TABLE IF NOT EXISTS challenges (
+  id      TEXT    PRIMARY KEY,   -- 10 chars base62, client-generated
+  owner   TEXT    NOT NULL,      -- sender's webPlayerId()
+  parent  TEXT,                  -- the challenge this one answers (REMATCH), or NULL
+  day     INTEGER NOT NULL,      -- YYYYMMDD of the cave (may be a past day via ?d)
+  score   INTEGER NOT NULL,
+  ghost   TEXT,                  -- URL-safe base64 ghost track, NULL if too long or invalid
+  src     TEXT    NOT NULL,      -- 'web' | 'ios' | 'android'
+  created INTEGER NOT NULL,      -- YYYYMMDD (UTC) of creation, for pruning and stats
+  ts      INTEGER NOT NULL       -- epoch ms
+);
+CREATE INDEX IF NOT EXISTS idx_challenges_owner   ON challenges (owner, created);
+CREATE INDEX IF NOT EXISTS idx_challenges_created ON challenges (created);
+
+-- One row per (challenge, recipient). Best score wins, like scores.
+CREATE TABLE IF NOT EXISTS challenge_runs (
+  cid     TEXT    NOT NULL,
+  pid     TEXT    NOT NULL,
+  best    INTEGER NOT NULL,
+  beat    INTEGER NOT NULL DEFAULT 0,  -- 1 once best > challenges.score (never flips back)
+  is_new  INTEGER NOT NULL DEFAULT 0,  -- 1 if this was the recipient's first-ever run (first insert only)
+  seen    INTEGER NOT NULL DEFAULT 0,  -- 1 once the owner's inbox has reported it
+  created INTEGER NOT NULL,            -- YYYYMMDD (UTC)
+  ts      INTEGER NOT NULL,
+  PRIMARY KEY (cid, pid)
+);
+CREATE INDEX IF NOT EXISTS idx_challenge_runs_created ON challenge_runs (created);
+CREATE INDEX IF NOT EXISTS idx_challenge_runs_seen    ON challenge_runs (seen, cid);

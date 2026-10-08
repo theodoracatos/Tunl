@@ -9,6 +9,8 @@
 //    GET  /r?d=<day>&id=<id> -> { rank, total, best, rivals } for one player on one day
 //    POST /s   { d, s, p, id, tok } -> records the score, returns { rank, total, best, rivals }
 //    POST /ga  { cid, sid, dl, dt } -> relays one page_view to GA4
+//    POST /c, GET /c/<id>, POST /c/<id>/run, POST /c/inbox, GET /c/stats
+//              -> the challenge link (see that section)
 //
 //  `rivals` (added for the client's rival-death-dots feature, see src/state.js
 //  rivalDeaths doc) is up to 20 other players' scores for that day, numbers only -
@@ -38,6 +40,11 @@ const ORIGIN = 'https://flytunl.ch';
 // or GET /clicks below) was already exempt before this existed, since the
 // check only ever fires when `origin` is truthy.
 const ALLOWED_ORIGINS = new Set([ORIGIN, 'https://appassets.androidplatform.net', 'null']);
+// The CORS answer names the caller's own origin when it is one of the above
+// (withCors below). Until 2026-10-08 every answer said https://flytunl.ch, so
+// a fetch() from either app's WebView passed this origin check and was then
+// refused by the WebView's own CORS check: the referral calls from the apps
+// never got their answer, and the challenge link would not have either.
 const SCORE_MAX = 50000;          // ~2 h of flawless play; anything above is junk
 const TOKEN_MIN_AGE_MS = 8000;    // a real run cannot be shorter than this
 const TOKEN_MAX_AGE_MS = 900000;  // 15 min
@@ -55,6 +62,15 @@ const REFERRAL_MIN_SCORE = 25;
 const ID_RE = /^[a-z0-9-]{4,64}$/i;
 
 const enc = new TextEncoder();
+
+// Re-labels a finished response for the caller's origin (see ALLOWED_ORIGINS).
+function withCors(res, origin) {
+  if (!origin || !ALLOWED_ORIGINS.has(origin) || !res.headers.has('access-control-allow-origin')) return res;
+  const h = new Headers(res.headers);
+  h.set('access-control-allow-origin', origin);
+  h.append('vary', 'Origin');
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
+}
 
 function cors(extra) {
   return {
@@ -271,8 +287,12 @@ async function handleReferralClaim(request, db) {
 // tt_run2 were sent from 2026-09-25 on but only allowed here on 2026-09-27: until then
 // they were answered 400 and never reached GA. tt_press / tt_cave (2026-10-01): the first
 // run's first press and the ship reaching the cave, each with ms since the run started.
+// share_open / challenge_open / challenge_run (2026-10-08): the challenge link (src/web.js
+// "Challenge link"): a share sent (link or card, answering a challenge or not), a challenge
+// link opened, a run flown against one.
 const GA_EVENTS = new Set(['page_view', 'run_start', 'run_end', 'pitch_open', 'store_click',
-  'tt_ready', 'tt_dead', 'tt_run2', 'tt_press', 'tt_cave']);
+  'tt_ready', 'tt_dead', 'tt_run2', 'tt_press', 'tt_cave',
+  'share_open', 'challenge_open', 'challenge_run']);
 
 // What killed a run (src/state.js deathWhat), sent with run_end and tt_dead since 2026-10-01.
 // An allowlist like GA_EVENTS: anything else is dropped, never forwarded as free text.
@@ -358,6 +378,18 @@ async function handleGA(request, measurementId, apiSecret) {
   // 1 = the card opened by itself at the first death, 0 = from the continue ring.
   if (en === 'pitch_open') params.auto = clampInt(body.auto, 0, 1, 0);
 
+  if (en === 'share_open') {
+    const kind = String(body.kind || '');
+    if (kind === 'link' || kind === 'card') params.kind = kind;
+    params.reply = clampInt(body.reply, 0, 1, 0);
+  }
+  if (en === 'challenge_open') {
+    for (const k of ['ok', 'past', 'mine']) params[k] = clampInt(body[k], 0, 1, 0);
+  }
+  if (en === 'challenge_run') {
+    for (const k of ['beat', 'is_new']) params[k] = clampInt(body[k], 0, 1, 0);
+  }
+
   if (en === 'store_click') {
     const store = String(body.store || '');
     if (store === 'ios' || store === 'android') params.store = store;
@@ -385,99 +417,297 @@ async function handleGA(request, measurementId, apiSecret) {
   return json({ ok: true });
 }
 
+// ── Challenge link ───────────────────────────────────────────────────
+// A shared run names a challenge (?c=<id>, src/share.js shareRunUrl): one row in
+// `challenges` with the sender's score and ghost, so the link stays short and the
+// recipient still races the ghost (src/web.js "Challenge link"). The id is made by
+// the client (10 chars base62) so the share sheet never waits for this worker.
+//   POST /c            { id, owner, d, s, p, g?, parent?, src, tok } -> { ok } | 409 taken
+//   GET  /c/<id>?me=   -> { d, s, g, plays, beats, mine }; `owner` never leaves the worker
+//   POST /c/<id>/run   { pid, s, p, isNew, tok } -> { plays, beats, best } | { self }
+//   POST /c/inbox      { id } -> { items: [{ c, s, plays, beats, top, newPlays, newBeats }] }
+//   GET  /c/stats?key=<REPORT_KEY>&since=<YYYYMMDD> -> per creation day, see handleChallengeStats
+// Same anonymity rule as scores.pid: an owner is a random per-install id, never shown,
+// and no name is stored anywhere. Same light anti-abuse as /s: token, score/play-time
+// plausibility, a floor between one player's writes, plus a daily cap per owner.
+const CHALLENGE_ID_RE = /^[0-9A-Za-z]{10}$/;
+const PID_RE = /^[0-9a-f-]{8,64}$/i;          // the same id rule /s uses
+const CHALLENGE_SRC = new Set(['web', 'ios', 'android']);
+// The client's GHOST_MAX_SAMPLES (src/constants.js): one byte per sample, so a
+// longer decoded ghost is junk. Base64 of that is 5336 chars; the cap leaves slack.
+const CHALLENGE_GHOST_MAX_BYTES = 4000;
+const CHALLENGE_GHOST_MAX_B64 = 5400;
+const CHALLENGE_DAY_MAX = 100;               // challenges one owner may create per day
+const CHALLENGE_PRUNE_DAYS = PRUNE_DAYS;     // a link older than this falls back to ?d + ?s
+const DAY_MIN = 20250101;                    // the oldest cave a ?d link may name (src/web.js)
+
+// The ghost as stored, or null: a ghost that is not URL-safe base64 or decodes past
+// CHALLENGE_GHOST_MAX_BYTES is dropped and the challenge kept without it. Its length is
+// deliberately NOT tied to the score: drain coins can push bonusScore below zero, so a
+// real run's score can sit under its distance (one ghost byte per distance point).
+function challengeGhost(g) {
+  if (typeof g !== 'string' || !g || g.length > CHALLENGE_GHOST_MAX_B64) return null;
+  if (!/^[A-Za-z0-9_-]+$/.test(g)) return null;
+  const bytes = Math.floor(g.length * 3 / 4);
+  return bytes >= 2 && bytes <= CHALLENGE_GHOST_MAX_BYTES ? g : null;
+}
+
+function plausible(score, play) {
+  // score can grow at most ~10-12 pts/s (distance + combo/near-miss bonus); same slack as /s
+  return Number.isFinite(score) && score >= 1 && score <= SCORE_MAX && score <= play * 12 + 25;
+}
+
+async function handleChallengeCreate(request, db, secret) {
+  const body = await request.json().catch(() => null);
+  if (!body) return json({ error: 'body' }, 400);
+  const id = String(body.id || '');
+  const owner = String(body.owner || '');
+  const parent = body.parent == null ? null : String(body.parent);
+  const day = +body.d;
+  const score = Math.floor(+body.s);
+  const play = Math.max(0, Math.floor(+body.p || 0));
+  const src = String(body.src || '');
+  if (!CHALLENGE_ID_RE.test(id) || (parent !== null && !CHALLENGE_ID_RE.test(parent))) return json({ error: 'id' }, 400);
+  if (!PID_RE.test(owner)) return json({ error: 'owner' }, 400);
+  if (!Number.isInteger(day) || day < DAY_MIN || day > todayInt()) return json({ error: 'day' }, 400);
+  if (!CHALLENGE_SRC.has(src)) return json({ error: 'src' }, 400);
+  if (!plausible(score, play)) return json({ error: 'implausible' }, 422);
+  if (!await verifyToken(secret, body.tok)) return json({ error: 'token' }, 401);
+
+  const today = todayInt();
+  const mine = await db.prepare(
+    'SELECT COUNT(*) AS c, MAX(ts) AS last FROM challenges WHERE owner = ?1 AND created = ?2'
+  ).bind(owner, today).first();
+  if (mine && mine.last && Date.now() - mine.last < SUBMIT_FLOOR_MS) return json({ error: 'too_soon' }, 429);
+  if (mine && mine.c >= CHALLENGE_DAY_MAX) return json({ error: 'daily_cap' }, 429);
+
+  const res = await db.prepare(
+    'INSERT INTO challenges (id, owner, parent, day, score, ghost, src, created, ts) ' +
+    'VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9) ON CONFLICT(id) DO NOTHING'
+  ).bind(id, owner, parent, day, score, challengeGhost(body.g), src, today, Date.now()).run();
+  if (!(res.meta && res.meta.changes)) return json({ error: 'taken' }, 409);
+  return json({ ok: true });
+}
+
+async function challengeTally(db, cid) {
+  const t = await db.prepare(
+    'SELECT COUNT(*) AS plays, COALESCE(SUM(beat), 0) AS beats, MAX(best) AS top FROM challenge_runs WHERE cid = ?1'
+  ).bind(cid).first();
+  return { plays: (t && t.plays) || 0, beats: (t && t.beats) || 0, top: (t && t.top) || 0 };
+}
+
+async function handleChallengeGet(url, db, id) {
+  const row = await db.prepare('SELECT owner, day, score, ghost FROM challenges WHERE id = ?1').bind(id).first();
+  if (!row) return json({ error: 'not_found' }, 404);
+  const t = await challengeTally(db, id);
+  const me = url.searchParams.get('me') || '';
+  return json({ d: row.day, s: row.score, g: row.ghost || null, plays: t.plays, beats: t.beats, mine: !!me && me === row.owner });
+}
+
+async function handleChallengeRun(request, db, secret, id) {
+  const body = await request.json().catch(() => null);
+  if (!body) return json({ error: 'body' }, 400);
+  const pid = String(body.pid || '');
+  const score = Math.floor(+body.s);
+  const play = Math.max(0, Math.floor(+body.p || 0));
+  if (!PID_RE.test(pid)) return json({ error: 'pid' }, 400);
+  if (!plausible(score, play)) return json({ error: 'implausible' }, 422);
+  if (!await verifyToken(secret, body.tok)) return json({ error: 'token' }, 401);
+  const ch = await db.prepare('SELECT owner, score FROM challenges WHERE id = ?1').bind(id).first();
+  if (!ch) return json({ error: 'not_found' }, 404);
+  if (ch.owner === pid) return json({ self: true });   // the sender flying their own link
+
+  const prev = await db.prepare('SELECT ts FROM challenge_runs WHERE cid = ?1 AND pid = ?2').bind(id, pid).first();
+  if (!(prev && Date.now() - prev.ts < SUBMIT_FLOOR_MS)) {
+    // Best score wins, like scores. `beat` only ever flips 0 -> 1, and that flip marks
+    // the row unseen again so the sender hears "beat you" even after "flew it";
+    // `is_new` is written by the first insert only.
+    const beat = score > ch.score ? 1 : 0;
+    await db.prepare(
+      'INSERT INTO challenge_runs (cid, pid, best, beat, is_new, seen, created, ts) VALUES (?1, ?2, ?3, ?4, ?5, 0, ?6, ?7) ' +
+      'ON CONFLICT(cid, pid) DO UPDATE SET best = MAX(best, excluded.best), ' +
+      'seen = CASE WHEN excluded.beat > beat THEN 0 ELSE seen END, beat = MAX(beat, excluded.beat), ts = excluded.ts'
+    ).bind(id, pid, score, beat, body.isNew ? 1 : 0, todayInt(), Date.now()).run();
+  }
+  const t = await challengeTally(db, id);
+  const mine = await db.prepare('SELECT best FROM challenge_runs WHERE cid = ?1 AND pid = ?2').bind(id, pid).first();
+  return json({ plays: t.plays, beats: t.beats, best: mine ? mine.best : score });
+}
+
+// Called once at boot (src/web.js checkChallengeInbox) by every player. Marks every
+// unseen run on this owner's challenges seen and reports exactly those, in one
+// statement (UPDATE ... RETURNING), so a run landing in between is never lost.
+async function handleChallengeInbox(request, db) {
+  const body = await request.json().catch(() => null);
+  const id = String(body?.id || '');
+  if (!PID_RE.test(id)) return json({ error: 'id' }, 400);
+  const res = await db.prepare(
+    'UPDATE challenge_runs SET seen = 1 WHERE seen = 0 AND cid IN (SELECT id FROM challenges WHERE owner = ?1) ' +
+    'RETURNING cid, beat'
+  ).bind(id).all();
+  const fresh = new Map();
+  for (const r of (res && res.results) || []) {
+    const f = fresh.get(r.cid) || { newPlays: 0, newBeats: 0 };
+    f.newPlays++; if (r.beat) f.newBeats++;
+    fresh.set(r.cid, f);
+  }
+  const items = [];
+  for (const [cid, f] of fresh) {
+    const ch = await db.prepare('SELECT score FROM challenges WHERE id = ?1').bind(cid).first();
+    const t = await challengeTally(db, cid);
+    items.push({ c: cid, s: ch ? ch.score : 0, plays: t.plays, beats: t.beats, top: t.top, newPlays: f.newPlays, newBeats: f.newBeats });
+  }
+  return json({ items });
+}
+
+// GET /c/stats?key=<REPORT_KEY>[&since=<YYYYMMDD>] - the developer's own numbers, gated
+// like /clicks. Per creation day: challenges, senders (distinct owners), replies
+// (challenges with a parent), opens (distinct recipient runs), new_players (of those,
+// the recipient's first run ever), beats. K-factor = new_players / senders over 7 days.
+async function handleChallengeStats(url, db, reportKey) {
+  if (!reportKey || !eq(url.searchParams.get('key') || '', reportKey)) return json({ error: 'auth' }, 401);
+  const sinceParam = +url.searchParams.get('since');
+  const since = Number.isInteger(sinceParam) && sinceParam >= DAY_MIN ? sinceParam : 0;
+  const a = await db.prepare(
+    'SELECT created AS day, COUNT(*) AS challenges, COUNT(DISTINCT owner) AS senders, ' +
+    'SUM(CASE WHEN parent IS NULL THEN 0 ELSE 1 END) AS replies FROM challenges WHERE created >= ?1 GROUP BY created'
+  ).bind(since).all();
+  const b = await db.prepare(
+    'SELECT created AS day, COUNT(*) AS opens, SUM(is_new) AS new_players, SUM(beat) AS beats ' +
+    'FROM challenge_runs WHERE created >= ?1 GROUP BY created'
+  ).bind(since).all();
+  const days = new Map();
+  const row = d => days.get(d) || { day: d, challenges: 0, senders: 0, replies: 0, opens: 0, new_players: 0, beats: 0 };
+  for (const r of (a && a.results) || []) days.set(r.day, Object.assign(row(r.day), { challenges: r.challenges, senders: r.senders, replies: r.replies || 0 }));
+  for (const r of (b && b.results) || []) days.set(r.day, Object.assign(row(r.day), { opens: r.opens, new_players: r.new_players || 0, beats: r.beats || 0 }));
+  return json({ since, rows: [...days.values()].sort((x, y) => x.day - y.day) });
+}
+
 export default {
   async fetch(request, env) {
-    if (request.method === 'OPTIONS') return new Response(null, { headers: cors() });
-
-    // Only serve the game's own origins (see ALLOWED_ORIGINS doc comment).
-    const origin = request.headers.get('origin');
-    if (origin && !ALLOWED_ORIGINS.has(origin)) return json({ error: 'origin' }, 403);
-
-    const url = new URL(request.url);
-    const db = env.DB;
-    const secret = env.TOKEN_SECRET;
-
-    try {
-      if (request.method === 'GET' && url.pathname.startsWith('/go/')) {
-        return await handleGo(url, db);
-      }
-
-      if (request.method === 'POST' && url.pathname === '/ga') {
-        return await handleGA(request, env.GA_MEASUREMENT_ID, env.GA_API_SECRET);
-      }
-
-      if (request.method === 'POST' && url.pathname === '/referral') {
-        return await handleReferral(request, db);
-      }
-
-      if (request.method === 'POST' && url.pathname === '/referral/claim') {
-        return await handleReferralClaim(request, db);
-      }
-
-      if (request.method === 'GET' && url.pathname === '/clicks') {
-        return await handleClicks(url, db, env.REPORT_KEY);
-      }
-
-      if (request.method === 'GET' && url.pathname === '/t') {
-        return json({ t: await issueToken(secret) });
-      }
-
-      if (request.method === 'GET' && url.pathname === '/r') {
-        const day = +url.searchParams.get('d');
-        const id = url.searchParams.get('id') || '';
-        if (!Number.isInteger(day) || day < 20250101 || !/^[0-9a-f-]{8,64}$/i.test(id)) return json({ error: 'params' }, 400);
-        return json(await rankFor(db, day, id));
-      }
-
-      if (request.method === 'POST' && url.pathname === '/s') {
-        const body = await request.json().catch(() => null);
-        if (!body) return json({ error: 'body' }, 400);
-
-        const day = +body.d;
-        let score = Math.floor(+body.s);
-        const play = Math.max(0, Math.floor(+body.p || 0));
-        const id = String(body.id || '');
-
-        if (day !== todayInt()) return json({ rank: null, total: 0, best: null }); // past-day replay: not recorded
-        if (!/^[0-9a-f-]{8,64}$/i.test(id)) return json({ error: 'id' }, 400);
-        if (!Number.isFinite(score) || score <= 0) return json({ error: 'score' }, 400);
-        if (!await verifyToken(secret, body.tok)) return json({ error: 'token' }, 401);
-        // score can grow at most ~10-12 pts/s (distance + combo/near-miss bonus); allow slack
-        if (score > play * 12 + 25) return json({ error: 'implausible' }, 422);
-
-        score = Math.min(score, SCORE_MAX);
-
-        const prev = await db.prepare('SELECT score, ts FROM scores WHERE day = ?1 AND pid = ?2').bind(day, id).first();
-        if (prev && Date.now() - prev.ts < SUBMIT_FLOOR_MS) return json(await rankFor(db, day, id)); // too soon; just echo rank
-
-        await db.prepare(
-          'INSERT INTO scores (day, pid, score, ts) VALUES (?1, ?2, ?3, ?4) ' +
-          'ON CONFLICT(day, pid) DO UPDATE SET score = MAX(score, excluded.score), ts = excluded.ts'
-        ).bind(day, id, score, Date.now()).run();
-
-        return json(await rankFor(db, day, id));
-      }
-    } catch (e) {
-      return json({ error: 'server' }, 500);
-    }
-
-    return json({ error: 'not_found' }, 404);
+    return withCors(await route(request, env), request.headers.get('origin'));
   },
 
   async scheduled(event, env) {
-    const d = new Date(Date.now() - PRUNE_DAYS * 86400000);
-    const cutoff = d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
-    await env.DB.prepare('DELETE FROM scores WHERE day < ?1').bind(cutoff).run();
-
-    const clickD = new Date(Date.now() - CLICK_PRUNE_DAYS * 86400000);
-    const clickCutoff = clickD.getUTCFullYear() * 10000 + (clickD.getUTCMonth() + 1) * 100 + clickD.getUTCDate();
-    await env.DB.prepare('DELETE FROM clicks WHERE day < ?1').bind(clickCutoff).run();
-
-    const refD = new Date(Date.now() - REFERRAL_PRUNE_DAYS * 86400000);
-    const refCutoff = refD.getUTCFullYear() * 10000 + (refD.getUTCMonth() + 1) * 100 + refD.getUTCDate();
-    // claimed = 1 only: an unclaimed row is a reward the referrer hasn't
-    // collected yet, and must never age out from under them, however long
-    // that takes - see handleReferralClaim, which has no expiry of its own.
-    await env.DB.prepare('DELETE FROM referrals WHERE day < ?1 AND claimed = 1').bind(refCutoff).run();
+    return prune(env);
   },
 };
+
+async function route(request, env) {
+  if (request.method === 'OPTIONS') return new Response(null, { headers: cors() });
+
+  // Only serve the game's own origins (see ALLOWED_ORIGINS doc comment).
+  const origin = request.headers.get('origin');
+  if (origin && !ALLOWED_ORIGINS.has(origin)) return json({ error: 'origin' }, 403);
+
+  const url = new URL(request.url);
+  const db = env.DB;
+  const secret = env.TOKEN_SECRET;
+
+  try {
+    if (request.method === 'GET' && url.pathname.startsWith('/go/')) {
+      return await handleGo(url, db);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/ga') {
+      return await handleGA(request, env.GA_MEASUREMENT_ID, env.GA_API_SECRET);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/referral') {
+      return await handleReferral(request, db);
+    }
+
+    if (request.method === 'POST' && url.pathname === '/referral/claim') {
+      return await handleReferralClaim(request, db);
+    }
+
+    if (request.method === 'GET' && url.pathname === '/clicks') {
+      return await handleClicks(url, db, env.REPORT_KEY);
+    }
+
+    if (url.pathname === '/c' && request.method === 'POST') {
+      return await handleChallengeCreate(request, db, secret);
+    }
+    // /c/inbox and /c/stats before /c/<id>: neither is a 10-char id, but the order
+    // keeps that from ever mattering.
+    if (url.pathname === '/c/inbox' && request.method === 'POST') {
+      return await handleChallengeInbox(request, db);
+    }
+    if (url.pathname === '/c/stats' && request.method === 'GET') {
+      return await handleChallengeStats(url, db, env.REPORT_KEY);
+    }
+    const cm = url.pathname.match(/^\/c\/([0-9A-Za-z]{10})(\/run)?$/);
+    if (cm && !cm[2] && request.method === 'GET') return await handleChallengeGet(url, db, cm[1]);
+    if (cm && cm[2] && request.method === 'POST') return await handleChallengeRun(request, db, secret, cm[1]);
+
+    if (request.method === 'GET' && url.pathname === '/t') {
+      return json({ t: await issueToken(secret) });
+    }
+
+    if (request.method === 'GET' && url.pathname === '/r') {
+      const day = +url.searchParams.get('d');
+      const id = url.searchParams.get('id') || '';
+      if (!Number.isInteger(day) || day < 20250101 || !/^[0-9a-f-]{8,64}$/i.test(id)) return json({ error: 'params' }, 400);
+      return json(await rankFor(db, day, id));
+    }
+
+    if (request.method === 'POST' && url.pathname === '/s') {
+      const body = await request.json().catch(() => null);
+      if (!body) return json({ error: 'body' }, 400);
+
+      const day = +body.d;
+      let score = Math.floor(+body.s);
+      const play = Math.max(0, Math.floor(+body.p || 0));
+      const id = String(body.id || '');
+
+      if (day !== todayInt()) return json({ rank: null, total: 0, best: null }); // past-day replay: not recorded
+      if (!/^[0-9a-f-]{8,64}$/i.test(id)) return json({ error: 'id' }, 400);
+      if (!Number.isFinite(score) || score <= 0) return json({ error: 'score' }, 400);
+      if (!await verifyToken(secret, body.tok)) return json({ error: 'token' }, 401);
+      // score can grow at most ~10-12 pts/s (distance + combo/near-miss bonus); allow slack
+      if (score > play * 12 + 25) return json({ error: 'implausible' }, 422);
+
+      score = Math.min(score, SCORE_MAX);
+
+      const prev = await db.prepare('SELECT score, ts FROM scores WHERE day = ?1 AND pid = ?2').bind(day, id).first();
+      if (prev && Date.now() - prev.ts < SUBMIT_FLOOR_MS) return json(await rankFor(db, day, id)); // too soon; just echo rank
+
+      await db.prepare(
+        'INSERT INTO scores (day, pid, score, ts) VALUES (?1, ?2, ?3, ?4) ' +
+        'ON CONFLICT(day, pid) DO UPDATE SET score = MAX(score, excluded.score), ts = excluded.ts'
+      ).bind(day, id, score, Date.now()).run();
+
+      return json(await rankFor(db, day, id));
+    }
+  } catch (e) {
+    return json({ error: 'server' }, 500);
+  }
+
+  return json({ error: 'not_found' }, 404);
+}
+
+async function prune(env) {
+  const d = new Date(Date.now() - PRUNE_DAYS * 86400000);
+  const cutoff = d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
+  await env.DB.prepare('DELETE FROM scores WHERE day < ?1').bind(cutoff).run();
+
+  const clickD = new Date(Date.now() - CLICK_PRUNE_DAYS * 86400000);
+  const clickCutoff = clickD.getUTCFullYear() * 10000 + (clickD.getUTCMonth() + 1) * 100 + clickD.getUTCDate();
+  await env.DB.prepare('DELETE FROM clicks WHERE day < ?1').bind(clickCutoff).run();
+
+  const refD = new Date(Date.now() - REFERRAL_PRUNE_DAYS * 86400000);
+  const refCutoff = refD.getUTCFullYear() * 10000 + (refD.getUTCMonth() + 1) * 100 + refD.getUTCDate();
+  // claimed = 1 only: an unclaimed row is a reward the referrer hasn't
+  // collected yet, and must never age out from under them, however long
+  // that takes - see handleReferralClaim, which has no expiry of its own.
+  await env.DB.prepare('DELETE FROM referrals WHERE day < ?1 AND claimed = 1').bind(refCutoff).run();
+
+  // Challenges age out with the daily board: a link older than this falls back to
+  // ?d + ?s. Runs go with their challenge, and by their own date.
+  const chD = new Date(Date.now() - CHALLENGE_PRUNE_DAYS * 86400000);
+  const chCutoff = chD.getUTCFullYear() * 10000 + (chD.getUTCMonth() + 1) * 100 + chD.getUTCDate();
+  await env.DB.prepare('DELETE FROM challenges WHERE created < ?1').bind(chCutoff).run();
+  await env.DB.prepare(
+    'DELETE FROM challenge_runs WHERE created < ?1 OR cid NOT IN (SELECT id FROM challenges)'
+  ).bind(chCutoff).run();
+}
