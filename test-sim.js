@@ -1812,12 +1812,15 @@ const FAKE_AC = `(() => {
         ctx.fillText = s => texts.push(String(s));
         titleScreen(); titleT = 10; drawTitleScreen();
         delete ctx.fillText;
-        return { sum: lifetimeScore, want, pending, offerFree: atOffer === want - 1200, texts };
+        return { sum: lifetimeScore, want, pending, offerFree: atOffer === want - 1200, texts,
+                 lblTotal: T.lifetimeTotal, lblFlown: T.flown };
     })()`);
     check(`every run's score is added once, a continued run included (${r.sum} of ${r.want})`,
         r.pending && r.offerFree && r.sum === r.want);
-    check('the title FLOWN figure shows that score sum',
+    check('the title total figure shows that score sum',
         r.texts.includes(Math.floor(r.want).toLocaleString()));
+    check('the title labels it as a score total, not as distance flown',
+        !!r.lblTotal && r.texts.includes(r.lblTotal) && !r.texts.includes(r.lblFlown));
 }
 
 if (failed) { console.log(`\n${failed} check(s) failed.`); process.exit(1); }

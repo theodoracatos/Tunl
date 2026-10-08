@@ -4403,12 +4403,13 @@ function drawTitleScreen() {
         // lifetime score (state.js lifetimeScore, every run's score summed in commitDeath;
         // the raw distance lifetimeDist until 2026-10-07) side by side,
         // split by a hairline in the day's own rock colour. Replaces two plain
-        // "LABEL  123" text lines. FLOWN stays subordinate - smaller, dimmer number - so
+        // "LABEL  123" text lines. The total (T.lifetimeTotal, labelled FLOWN until
+        // 2026-10-08) stays subordinate - smaller, dimmer number - so
         // REKORD is still the one headline stat the "Dock & Drawer" audit kept on screen.
         const accent  = lerpClr(getTheme().wallBase, [255, 255, 255], 0.35);
         const hasFlown = lifetimeScore > 0;
         const cells = [{ lbl: T.allTime, val: best.toLocaleString(), big: true }];
-        if (hasFlown) cells.push({ lbl: T.flown, val: Math.floor(lifetimeScore).toLocaleString(), big: false });
+        if (hasFlown) cells.push({ lbl: T.lifetimeTotal, val: Math.floor(lifetimeScore).toLocaleString(), big: false });
 
         let lblFsz = FS * 0.016, bigFsz = FS * 0.046, smlFsz = FS * 0.034;
         const setLbl = () => { ctx.font = `bold ${lblFsz}px ${FONT_UI}`; try { ctx.letterSpacing = `${lblFsz * 0.22}px`; } catch (e) {} };

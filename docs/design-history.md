@@ -2441,6 +2441,11 @@ floor, since every score is at least its distance - and no player's number drops
 `T.flown` (no string change); `DIST_ACHIEVEMENTS` still count distance. `test-sim.js` section 12
 guards the sum, the continue and the lift.
 
+2026-10-08: the label followed. FLOWN over a score read wrong, so the title uses its own key
+`T.lifetimeTotal` (PUNKTE GESAMT / TOTAL SCORE, all 16 languages). `T.flown` stays on the death
+screen and the share card, where it does label the run's distance band. Section 12 checks the
+title draws the new label and not `T.flown`.
+
 ## Top-down hull: three generator faults behind the "strange" title ship (2026-10-07)
 
 The user found the title hero (top-down `drawShip`) odd next to the refined flight model. The
