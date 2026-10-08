@@ -52,7 +52,11 @@ echo "Building localized guide pages ..."
 node build-pages.mjs
 
 echo "Uploading site/ to $FTP_HOST$FTP_REMOTE_DIR ..."
-lftp -u "$FTP_USER,$FTP_PASSWORD" "ftp://$FTP_HOST" <<LFTP_UPLOAD
+# The login goes through stdin and the environment, never the command line: an argument
+# shows in every process listing while the upload runs (2026-10-08, the new password
+# surfaced in a session's pgrep). LFTP_PASSWORD is set for this one lftp process only.
+LFTP_PASSWORD="$FTP_PASSWORD" lftp <<LFTP_UPLOAD
+open --env-password -u "$FTP_USER" "ftp://$FTP_HOST"
 set ftp:ssl-force true
 set ftp:ssl-protect-data true
 set ssl:verify-certificate no
