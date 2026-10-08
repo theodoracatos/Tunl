@@ -1,7 +1,10 @@
 <resources>
+    <!-- Android 12+ draws its own splash (the adaptive app icon on a solid colour); the colour is
+         the night violet's middle so it matches the launch window behind it. -->
     <style name="Theme.Tunl" parent="android:Theme.Black.NoTitleBar.Fullscreen">
         <item name="android:windowBackground">@drawable/splash_background</item>
         <item name="android:statusBarColor">@color/tunlBackground</item>
         <item name="android:navigationBarColor">@color/tunlBackground</item>
+        <item name="android:windowSplashScreenBackground">@color/tunlSplash</item>
     </style>
 </resources>

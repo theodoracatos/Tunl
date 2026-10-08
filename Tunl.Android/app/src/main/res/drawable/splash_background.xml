@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launch window (2026-10-08, "Nachtviolett", the user's pick): the app icon's violet in the
+     centre, near black at the edge, so the start keeps the brand colour and still runs into the
+     dark title screen. Same look as the iOS launch screen (LaunchGradient + LaunchLogo). Shown
+     before Android 12 and between the system splash and the game's first frame. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="470dp"
+                android:startColor="#2A1258"
+                android:centerColor="#160A33"
+                android:endColor="#07050F" />
+        </shape>
+    </item>
+    <item android:width="140dp" android:height="140dp" android:gravity="center"
+        android:drawable="@drawable/splash_logo" />
+</layer-list>
