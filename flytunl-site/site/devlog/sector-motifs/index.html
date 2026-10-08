@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Google AdSense (site verification + ad serving) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4882203470005029"
+     crossorigin="anonymous"></script>
+<title>Same Cave, a Different Mix: Sector Motifs and a Second Soundtrack</title>
+<meta name="description" content="How TUNL got more variety from sector 4 on without new hazards: sector motifs drawn from the daily seed, a second soundtrack that takes over on the beat, and how both were measured so nothing below score 233 changed.">
+<link rel="canonical" href="https://flytunl.ch/devlog/sector-motifs/">
+<!-- site-chrome:alt -->
+<link rel="alternate" hreflang="en" href="https://flytunl.ch/devlog/sector-motifs/">
+<link rel="alternate" hreflang="de" href="https://flytunl.ch/de/devlog/sector-motifs/">
+<link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/devlog/sector-motifs/">
+<link rel="alternate" hreflang="it" href="https://flytunl.ch/it/devlog/sector-motifs/">
+<link rel="alternate" hreflang="es" href="https://flytunl.ch/es/devlog/sector-motifs/">
+<link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/devlog/sector-motifs/">
+<link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/devlog/sector-motifs/">
+<link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/devlog/sector-motifs/">
+<link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/devlog/sector-motifs/">
+<link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/devlog/sector-motifs/">
+<link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/devlog/sector-motifs/">
+<link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/devlog/sector-motifs/">
+<link rel="alternate" hreflang="id" href="https://flytunl.ch/id/devlog/sector-motifs/">
+<link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/devlog/sector-motifs/">
+<link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/devlog/sector-motifs/">
+<link rel="alternate" hreflang="el" href="https://flytunl.ch/el/devlog/sector-motifs/">
+<link rel="alternate" hreflang="x-default" href="https://flytunl.ch/devlog/sector-motifs/">
+<!-- /site-chrome:alt -->
+<meta property="og:type" content="article">
+<meta property="og:title" content="Same Cave, a Different Mix: Sector Motifs and a Second Soundtrack">
+<meta property="og:description" content="How TUNL got more variety from sector 4 on without new hazards: sector motifs drawn from the daily seed, a second soundtrack that takes over on the beat, and how both were measured so nothing below score 233 changed.">
+<meta property="og:url" content="https://flytunl.ch/devlog/sector-motifs/">
+<meta property="og:image" content="https://flytunl.ch/feature-graphic-1024x500.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png">
+<link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#04040a">
+<!-- site-chrome:head -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="/day.js?v=20260921a"></script>
+<!-- /site-chrome:head -->
+<link rel="stylesheet" href="/site.css?v=20260923a">
+<style>
+  * { box-sizing:border-box; }
+  body {
+    color:#ddd;
+    font-family:var(--tunl-ui);
+    line-height:1.7;
+    margin:0;
+    padding: 0 20px 80px;
+  }
+  main { max-width:var(--page-w, 1120px); margin:0 auto; }
+  .brand { display:inline-flex; align-items:center; text-decoration:none; margin-bottom:28px; }
+  .brand img { height:28px; width:auto; }
+  h1 { color:var(--sc-accent); font-size:30px; letter-spacing:1px; margin-bottom:10px; line-height:1.25; }
+  .lead { color:#aaa; font-size:17px; margin-top:0; margin-bottom:8px; }
+  .meta { color:#666; font-size:13px; margin-bottom:34px; }
+  h2 { color:var(--sc-accent); font-size:21px; margin-top:44px; margin-bottom:12px; line-height:1.3; }
+  h3 { color:#fff; font-size:16px; margin-top:28px; margin-bottom:8px; }
+  p, li { color:#ccc; font-size:15.5px; }
+  ul, ol { padding-left:22px; }
+  li { margin-bottom:10px; }
+  a { color:var(--sc-accent); }
+  strong { color:#fff; }
+  em { color:#ddd; }
+  code {
+    font-family:var(--tunl-mono);
+    font-size:13.5px; color:var(--sc-accent);
+    background:#12121c; border-radius:4px; padding:1px 5px;
+  }
+  pre {
+    background:#0d0d16; border:1px solid #222; border-radius:10px;
+    padding:16px; overflow-x:auto; margin:18px 0;
+  }
+  pre code { background:none; padding:0; color:#cfe8ff; font-size:13px; line-height:1.6; }
+  .note {
+    background:#0d0d16; border:1px solid #222; border-left:3px solid var(--sc-accent);
+    border-radius:0 10px 10px 0; padding:14px 18px; margin:22px 0;
+  }
+  .note p { margin:0; font-size:14.5px; color:#bbb; }
+  .wrap { overflow-x:auto; margin:18px 0; }
+  table { width:100%; border-collapse:collapse; font-size:14.5px; min-width:480px; }
+  th, td { text-align:left; padding:9px 12px; border-bottom:1px solid #222; vertical-align:top; }
+  th { color:var(--sc-accent); font-weight:600; }
+  td { color:#ccc; }
+  td:first-child { white-space:nowrap; }
+  .cta {
+    display:inline-block; background:var(--sc-accent); color:#05050c; font-weight:700;
+    text-decoration:none; padding:12px 24px; border-radius:10px; margin-top:8px;
+  }
+  .cta:hover { background:color-mix(in srgb, var(--sc-accent) 75%, #fff); }
+  .post { display:block; background:#0d0d16; border:1px solid #222; border-radius:12px;
+    padding:18px 20px; margin:16px 0; text-decoration:none; }
+  .post:hover { border-color:var(--sc-accent); }
+  .post h3 { color:var(--sc-accent); font-size:18px; margin:0 0 6px; }
+  .post p { margin:0; color:#bbb; font-size:14.5px; }
+  .post .when { color:#666; font-size:12.5px; margin-bottom:6px; display:block; }
+  .card { background:#0d0d16; border:1px solid #222; border-radius:10px; padding:20px; margin:22px 0; }
+  .card p { margin:8px 0; }
+  .swatch { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:8px; vertical-align:middle; }
+  footer {
+    margin-top:56px; color:#666; font-size:13px; line-height:1.9;
+    border-top:1px solid #222; padding-top:16px;
+  }
+  footer a { color:#888; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Same Cave, a Different Mix: Sector Motifs and a Second Soundtrack",
+  "description": "How TUNL got more variety from sector 4 on without new hazards: sector motifs drawn from the daily seed, a second soundtrack that takes over on the beat, and how both were measured so nothing below score 233 changed.",
+  "author": {
+    "@type": "Person",
+    "name": "Theodoracatos"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "TUNL"
+  },
+  "datePublished": "2026-10-09",
+  "mainEntityOfPage": "https://flytunl.ch/devlog/sector-motifs/",
+  "image": "https://flytunl.ch/feature-graphic-1024x500.png"
+}
+</script>
+<!-- Cloudflare Web Analytics (cookieless, no consent banner needed) -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "7783839e84374212b7d76f25e1fb8e87"}'></script>
+</head>
+<body>
+  <!-- site-chrome:nav -->
+  <header class="sitenav">
+    <a class="sn-brand" href="/"><img src="/wordmark.svg" alt="TUNL"></a>
+    <nav class="sn-links" aria-label="Main">
+      <a href="/how-to-play/">How to play</a>
+      <a href="/ships/">Ships</a>
+      <a href="/devlog/" aria-current="page">Devlog</a>
+      <a href="/changelog/">Changelog</a>
+    </nav>
+    <span class="sn-gap"></span>
+    <a class="sn-ver" href="/changelog/">19.0</a>
+    <a class="sn-cta" href="/play/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>Play now</a>
+    <details class="sn-more">
+      <summary aria-label="Menu">&#9776;</summary>
+      <div class="sn-sheet">
+        <a href="/how-to-play/">How to play</a>
+        <a href="/ships/">Ships</a>
+        <a href="/devlog/" aria-current="page">Devlog</a>
+        <a href="/changelog/">Changelog</a>
+        <a href="/about/">About</a>
+        <a href="/support/">Support</a>
+        <a href="/press/">Press</a>
+        <a href="/privacy/">Privacy Policy</a>
+        <a href="/impressum/">Legal notice</a>
+      </div>
+    </details>
+  </header>
+  <!-- /site-chrome:nav -->
+<main>
+  <h1>Same Cave, a Different Mix: Sector Motifs and a Second Soundtrack</h1>
+  <p class="lead">I love this game, and I have flown it more than anyone. That is exactly the
+  problem: it had started to feel the same every time. Version 19.0 adds variety from sector 4
+  on, without a single new hazard and without making the start any harder.</p>
+  <p class="meta">Devlog &middot; 9 October 2026 &middot; <a href="/devlog/">all posts</a></p>
+  <p>Before changing anything I wrote down why it felt samey, straight from the code. Every run
+  opens with the same 28 seconds, because the first sectors are the lesson. After that, every
+  sector was the same recipe: a little of everything, a little denser each time. The music was one
+  27-second loop that played two and a half times in every good run. And the daily cave already
+  had four hidden day types that nudged the densities, but nobody could tell them apart.</p>
+  <h2>A motif per sector</h2>
+  <p>From sector 4 (score 252) every sector now draws a <strong>motif</strong>: a different mix of
+  the hazards that already exist. A crystal forest is dense with crystals and pairs, with fewer
+  mines and no cannons. A minefield is the opposite. A gold vein thins the hazards and pours out
+  coins. A boulder field brings more rock islands, a cannon alley more cannons, a rockfall more
+  falling crystals, and a dark stretch turns the lights off except around your ship. About half of
+  the sectors stay mixed, the way they were, so that a motif has something to stand out against.</p>
+  <p>The sector sign names it, for example SECTOR 6 &middot; MINEFIELD. The title screen names
+  the day type, and that day type makes its own motif come up twice as often.</p>
+  <div class="note"><p><strong>Still one cave for everyone.</strong> The motif of a sector is
+  computed from the date and the sector number, nothing else. It draws no random numbers and
+  depends on no screen size, so every player on Earth flies the same sequence, and the cave test
+  still builds an identical cave on six device sizes (<a href="/devlog/daily-cave/">how the daily
+  cave works</a>).</p></div>
+  <h2>Different, not harder</h2>
+  <p>Two rules came first. Nothing below score 233 may get harder, because that is where almost
+  every real run ends, and a test now checks that every number below sector 4 is unchanged. And a
+  motif changes the mix, not the pressure. That second rule needed measuring. The same simulated
+  pilot I use for <a href="/devlog/same-ship-every-screen/">screen fairness</a> flew 40 days of
+  caves, 8 runs per skill tier, once with motifs and once without, on the same days and seeds.</p>
+  <p>The first version was too kind. Each motif made its own hazard denser and the others much
+  thinner, and in sum that made strong runs about 10% longer. It also raised the coin supply by
+  11%, through a coupling I had forgotten: fewer crystals let more coin candidates through, which
+  would have made the star cheaper. So a motif is now mostly the normal mix with one hazard turned
+  up, and each motif corrects its own coins.</p>
+  <div class="wrap">
+  <table>
+    <tr><th>Measured, with vs. without motifs</th><th>Result</th></tr>
+    <tr><td>Strong pilots: score</td><td>&times;0.996</td></tr>
+    <tr><td>Strongest pilots: score</td><td>&times;1.02</td></tr>
+    <tr><td>Coins from sector 4 on</td><td>+5%, nearly all from the gold vein</td></tr>
+    <tr><td>Hardest motif</td><td>crystal forest</td></tr>
+  </table>
+  </div>
+  <h2>A second soundtrack, on the beat</h2>
+  <p>From sector 4 the music changes to a second track by the same composer. The two tracks have
+  different tempos, 140 and about 87 beats per minute, so they can never play at the same time
+  without sounding like a mistake. My first hand-over overlapped them for about a second, and it
+  did not survive the first listen. Now the main track waits for the start of its next two-bar
+  phrase, sinks into a closing filter over its last bar and stops exactly on the line. The new
+  track starts on its first beat, muffled, and opens up over half a bar, like coming up out of the
+  dark. When a run ends in the deep, the music collapses and the second track plays its real
+  ending, starting on its last hits.</p>
+  <h2>And the first thing you see</h2>
+  <p>The launch screen of the apps was black. It now glows in night violet, the colour of the app
+  icon, fading to black at the edges so it runs into the dark title without a flash.</p>
+  <p>If you usually stop around sector 3, nothing has changed for you. If you get further, the
+  cave is no longer the same cave twice.</p>
+  <p><a class="cta" href="/play/">Play today's cave</a></p>
+  <!-- site-chrome:foot -->
+  <footer class="sitefoot">
+    <div class="sf-inner">
+      <div class="sf-cols">
+        <div class="sf-col">
+          <h4>Play TUNL</h4>
+          <a href="/play/">Play in your browser</a>
+          <a href="https://apps.apple.com/us/app/tunl-cave-flyer/id6789721765" target="_blank" rel="noopener">App Store</a>
+          <a href="https://play.google.com/store/apps/details?id=com.theodoracatos.tunl" target="_blank" rel="noopener">Google Play</a>
+        </div>
+        <div class="sf-col">
+          <h4>Learn the cave</h4>
+          <a href="/how-to-play/">How to play</a>
+          <a href="/ships/">Ships</a>
+          <a href="/devlog/">Devlog</a>
+          <a href="/changelog/">Changelog</a>
+        </div>
+        <div class="sf-col">
+          <h4>The project</h4>
+          <a href="/about/">About</a>
+          <a href="/support/">Support</a>
+          <a href="/press/">Press</a>
+          <a href="/privacy/">Privacy Policy</a>
+          <a href="/impressum/">Legal notice</a>
+        </div>
+      </div>
+      <p class="sf-legal">&copy; 2026 Theodoracatos. All rights reserved.<br><span class="langsw"><label for="langsel">Language:</label> <select id="langsel" aria-label="Language"><option value="/devlog/sector-motifs/" data-home="/" selected>English</option><option value="/de/devlog/sector-motifs/" data-home="/de/">Deutsch</option><option value="/fr/devlog/sector-motifs/" data-home="/fr/">Français</option><option value="/it/devlog/sector-motifs/" data-home="/it/">Italiano</option><option value="/es/devlog/sector-motifs/" data-home="/es/">Español</option><option value="/pt/devlog/sector-motifs/" data-home="/pt/">Português</option><option value="/ja/devlog/sector-motifs/" data-home="/ja/">日本語</option><option value="/ko/devlog/sector-motifs/" data-home="/ko/">한국어</option><option value="/zh/devlog/sector-motifs/" data-home="/zh/">繁體中文</option><option value="/ru/devlog/sector-motifs/" data-home="/ru/">Русский</option><option value="/ar/devlog/sector-motifs/" data-home="/ar/">العربية</option><option value="/tr/devlog/sector-motifs/" data-home="/tr/">Türkçe</option><option value="/id/devlog/sector-motifs/" data-home="/id/">Bahasa Indonesia</option><option value="/pl/devlog/sector-motifs/" data-home="/pl/">Polski</option><option value="/hi/devlog/sector-motifs/" data-home="/hi/">हिन्दी</option><option value="/el/devlog/sector-motifs/" data-home="/el/">Ελληνικά</option></select></span></p>
+    </div>
+  </footer>
+  <script>(function(){var s=document.getElementById('langsel');if(!s)return;s.addEventListener('change',function(){try{localStorage.setItem('tunl_site_lang',s.options[s.selectedIndex].getAttribute('data-home'));}catch(e){}location.href=s.value;});})();</script>
+  <!-- /site-chrome:foot -->
+</main>
+</body>
+</html>
