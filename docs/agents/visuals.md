@@ -30,6 +30,12 @@ Study: https://claude.ai/artifact/QPvLrDmGiU6przXNwXLV9y
   blurred copy of the whole line well below the text, cut off hard (the approach banner's
   glint, iPhone 2026-09-29; Chrome looks right). Put the glow on a solid-colour pass instead.
   Headless WebKit reproduces it: Playwright's `webkit` (global install) on a staged frame.
+- **The title's hero stage keeps clear of the left column** (apps, 2026-10-08): `heroR`
+  grows with H while the stage sits at `W * 0.60`, so a screen tall for its width (iPhone
+  Duo 951x669 / 678x466, SE 667x375) put the left chevron into the stat plate. Where it
+  would, the stage slides right toward the rail, then the ring shrinks
+  (`titleColRight`, `drawTitleScreen`). 956x440 and 874x402 are unchanged; check those
+  two plus the Duo sizes after any title-layout change.
 - **Title screen accent = the day's `wallBase`**, same rule as the debriefing (logo halo, the
   U, underline, world line, ALL SHIPS pill, rail rims). Hero ring and ship keep the SKIN
   colour; the planet line is neutral (logo > world > planet). Deliberately NOT done: a PLAY

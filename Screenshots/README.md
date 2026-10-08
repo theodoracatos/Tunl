@@ -80,6 +80,23 @@ paths near the bottom are version-pinned and get edited per release. `make-portr
 are the equivalents for the portrait App Preview video. All three read raw
 captures from the Desktop and need Pillow + rsvg-convert.
 
+## iPhone Duo screenshots (19.0)
+
+The Duo takes two sets, one per display. `capture.mjs` takes the CSS viewport as a
+second argument: `951x669` gives the inner display's 2853x2007, `678x466` the outer's
+2034x1398 (`Screenshots/iOS_19.0/duo-inner/`, `duo-outer/`). `make-store-duo.py` frames
+them in all 16 locales: inner LANDSCAPE (unfolded, the App Store lays out like an iPad;
+headline + the full capture, drawn at target size), outer PORTRAIT 1398x2034 (folded it
+is a plain iPhone, whose search card needs portrait; the iPhone frame without the zoom
+panel, which the 1.45 aspect has no room for). Copy and palette come from
+`make-store-portraits.py`. `TUNL_SCENES=01_title` limits a capture to named scenes.
+
+Two capture traps hit 2026-10-08: the profile dir persists, so Chrome served a cached
+`src/*.js` (the script now disables the cache), and uncached, Python's `http.server`
+drops connections past its 5-deep listen queue, so scripts silently fail to load - serve
+with a larger `request_queue_size` (a `ThreadingHTTPServer` subclass). Capture from a
+clean worktree when another session has uncommitted work in the main tree.
+
 ## Play tablet screenshots (7" and 10" slots)
 
 `make-store-tablets.py` builds the 16:9 (1920x1080) tablet frames into

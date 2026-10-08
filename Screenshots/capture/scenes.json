@@ -22,7 +22,7 @@
  {
   "name": "05_deep",
   "day": "20260918",
-  "js": "(()=>{ __tunl.freeze(); startPlay(); const onScreen=(a,f)=>a.filter(o=>{const sx=(o.wx!==undefined?o.wx:0)-scrollX; return sx>-20&&sx<W+40&&(!f||f(o,sx));}).length; const wallsIn=()=>{const b=boundsAt(scrollX+PX); return b.top>H*0.03 && b.bot<H*0.97;}; const r=__tunl.run(12000, ()=>{ if(score>430) shieldCount=Math.max(shieldCount,2); return score>=680 && milestoneFlash<=0 && levelIntroT<=0 && notifs.length===0 && wallsIn() && bulletAmmo<=0 && onScreen(stalactites,(o,sx)=>sx>PX-60)>=4; }); draw(); return JSON.stringify({score, ok:r.ok, shieldCount}); })()"
+  "js": "(()=>{ __tunl.freeze(); startPlay(); const onScreen=(a,f)=>a.filter(o=>{const sx=(o.wx!==undefined?o.wx:0)-scrollX; return sx>-20&&sx<W+40&&(!f||f(o,sx));}).length; const wallsIn=()=>{const b=boundsAt(scrollX+PX); return b.top>H*0.03 && b.bot<H*0.97;}; const r=__tunl.run(12000, ()=>{ if(score>430) shieldCount=Math.max(shieldCount,2); return score>=680 && milestoneFlash<=0 && levelIntroT<=0 && notifs.length===0 && wallsIn() && bulletAmmo<=0 && parts.length<12 && onScreen(stalactites,(o,sx)=>sx>PX-60)>=4; }); draw(); return JSON.stringify({score, ok:r.ok, shieldCount}); })()"
  },
  {
   "name": "06_debrief",

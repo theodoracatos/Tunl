@@ -23,7 +23,9 @@
 //     toLocaleString() does not print German thousands separators.
 //
 // Needs a server on the repo root: python3 -m http.server 8787
-// Run: node Screenshots/capture/capture.mjs Screenshots/iOS_<version>
+// Run: node Screenshots/capture/capture.mjs Screenshots/iOS_<version> [WxH]
+// WxH is the CSS viewport (default 956x440, the iPhone 17 Pro Max; x3 = the store
+// raster). iPhone Duo (2026-10-08): 951x669 inner -> 2853x2007, 678x466 outer -> 2034x1398.
 import { launch, Session } from './cdp.mjs';
 import { setTimeout as sleep } from 'node:timers/promises';
 import fs from 'node:fs';
@@ -31,12 +33,16 @@ import path from 'node:path';
 
 const AUTOPILOT = fs.readFileSync(new URL('./autopilot.js', import.meta.url), 'utf8');
 const OUT = process.argv[2] || '/tmp/tunl-shots';
+const [VW, VH] = (process.argv[3] || '956x440').split('x').map(Number);
 fs.mkdirSync(OUT, { recursive: true });
 
 const { proc, wsUrl } = await launch();
 const s = await Session.attach(wsUrl);
 await s.send('Page.enable'); await s.send('Runtime.enable');
-await s.send('Emulation.setDeviceMetricsOverride', { width: 956, height: 440, deviceScaleFactor: 3, mobile: false });
+// The profile dir persists between runs, so without this Chrome can serve a cached
+// src/*.js and the capture shows yesterday's code (hit 2026-10-08).
+await s.send('Network.enable'); await s.send('Network.setCacheDisabled', { cacheDisabled: true });
+await s.send('Emulation.setDeviceMetricsOverride', { width: VW, height: VH, deviceScaleFactor: 3, mobile: false });
 await s.send('Emulation.setLocaleOverride', { locale: 'en-US' });
 await s.send('Page.addScriptToEvaluateOnNewDocument', {
   source: `
@@ -60,7 +66,13 @@ await s.send('Page.addScriptToEvaluateOnNewDocument', {
 
 async function load(day) {
   await s.send('Page.navigate', { url: `http://localhost:8787/tunl.html?d=${day}` });
-  await sleep(2600);
+  // Wait for the last script (main.js) to have run rather than a fixed delay: with the
+  // cache off, 19 uncached scripts (fonts.js alone is ~1 MB of base64) can take longer.
+  for (let t = 0; t < 60; t++) {
+    await sleep(500);
+    if (await s.eval(`typeof getTheme === 'function' && typeof phase !== 'undefined' && document.readyState === 'complete'`)) break;
+  }
+  await sleep(1200);
   await s.eval(AUTOPILOT);
   await s.eval(`document.fonts.ready.then(()=>1)`);
   return s.eval(`JSON.stringify({W,H,theme:getTheme().name,phase})`);
@@ -74,7 +86,9 @@ async function shot(name) {
 }
 
 // ---------------------------------------------------------------- scenes
-const scenes = JSON.parse(fs.readFileSync(new URL('./scenes.json', import.meta.url), 'utf8'));
+const ONLY = process.env.TUNL_SCENES ? process.env.TUNL_SCENES.split(',') : null;   // e.g. 01_title
+const scenes = JSON.parse(fs.readFileSync(new URL('./scenes.json', import.meta.url), 'utf8'))
+  .filter(sc => !ONLY || ONLY.includes(sc.name));
 for (const sc of scenes) {
   console.log(sc.name, await load(sc.day));
   const r = await s.eval(sc.js);
