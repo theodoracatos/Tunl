@@ -1231,6 +1231,9 @@ function makeCannon(wx) {
     // stream depend on how many offsets got rejected - the same failure mode called
     // out on makeMine, and one the retry loop made much more likely to bite.
     const isTop = rngCannon() < 0.5;
+    // A sector motif without cannons (world.js SECTOR_MOTIFS) drops it after the draw above,
+    // so the stream stays where it would have been.
+    if (motifSuppresses(wx, 'cannon')) return null;
     for (const off of CANNON_RETRY_OFFSETS) {
         const cx = wx + off;
         let clear = true;
@@ -1458,6 +1461,7 @@ function boulderSpan(bo, lx0, lx1) {
 }
 
 function makeBoulder(wx) {
+    if (motifSuppresses(wx, 'boulder')) return null;   // sector motif (world.js SECTOR_MOTIFS)
     for (const off of BOULDER_RETRY_OFFSETS) {
         const b = _makeBoulderAt(wx + off);
         if (b) return b;

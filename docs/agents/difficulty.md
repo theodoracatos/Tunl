@@ -157,3 +157,37 @@ the master kill switch for all of it.**
   corridor shape already forces the player. Same count/speed. **Watch in playtest for a
   "the game is cheating" read** - cut it if it feels unfair.
 - **Boulders**: see `hazards.md` -> Boulders.
+
+## Sector motifs and the day type (2026-10-08, variety concept A + C)
+
+From `MOTIF_FROM_SECTOR` (S4) each sector draws a **motif**: a different *mix* of the existing
+hazards, never a new hazard and never more of everything (`world.js` `SECTOR_MOTIFS`,
+`sectorMotif`, `motifFactor`). About half the sectors stay `mixed` (today's recipe) so a motif
+stands out. The motif's name joins the "SECTOR n" notif ("SECTOR 6 · MINEFIELD", i18n
+`motif*`); `mixed` stays unnamed. Concept and the user's picks:
+https://claude.ai/artifact/NAo9YoDCyADcWXiCfFCEcy
+
+- **Nothing below S4 moves** (score < 233 rule). `test-math.js` pins it to S4 itself, not to
+  the constant, and compares every spacing with the kill-switched value.
+- **Factors are density multipliers inside each spacing function, at the placement wx, before
+  the px floor** - the floors and the retry budgets they protect hold in every motif. Chicane
+  odds keep their 0.62 cap. A factor of 0 (cannons, boulders) keeps the cadence and drops the
+  object in `makeCannon`/`makeBoulder` **after** their rng draws, so the streams stay aligned.
+- **Rules of the draw** (`sectorMotif`, pure function of `_deepDay`, `_dayArchetype` and the
+  sector, memoised): a motif never follows itself; gold at most once in `MOTIF_GOLD_GAP`; at
+  most `MOTIF_MIXED_RUN` mixed in a row; each motif only from its `from` sector; a hazard's own
+  introduction sector (`MOTIF_INTRO`) never thins it; mines never below 0.5 (they end runs).
+- **`coin` corrects the stalactite veto.** Fewer crystals let more coin candidates through
+  `coinBlockedByStal`, so a thin-crystal motif needs `coin < 1` to keep the coin supply (and
+  with it the star's duty cycle). Measure coins per motif after any factor change.
+- **Retune by the measured death rate per sector and tier, never by eye.** The bench is a pilot
+  run with motifs on vs `_motifsOn = false` on the same days and seeds (the
+  `tools/device-fair-sim.js` pilot), depth-controlled per motif (observed deaths over the
+  motifs-off rate of the same sector). Numbers: `design-history.md` "Sector motifs".
+- **`dark`** is the one motif with a visual (`draw.js` `drawMotifDark`, `visuals.md`): an
+  experiment at half weight from S6. The pilot cannot see it, so its density cut is a guess -
+  take it out of `SECTOR_MOTIFS` if a device test reads it as unfair.
+- **Day type** (concept C): `DAY_ARCHETYPES` entries carry a `name` (shown on the title,
+  "TODAY: MINE BELT", `visuals.md`) and a `motif` whose draw weight doubles on that day.
+  Classic biases nothing. The archetype's own density nudges are unchanged.
+- **`_motifsOn`** is the kill switch for all of it (the title line stays).

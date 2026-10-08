@@ -2496,3 +2496,48 @@ sharing into a loop. Decisions and what the code changed against the spec:
   rest.
 - **Not built:** phase 4 (a preview image per challenge) needs the flytunl.ch DNS zone at
   Cloudflare; iOS deferred deep links (the web pitch tells iPhones to tap the link again).
+
+## Sector motifs, depth music, day type (2026-10-08)
+
+The user (as developer) found the game getting boring. Concept page with picks in its db:
+https://claude.ai/artifact/NAo9YoDCyADcWXiCfFCEcy. Picked: A sector motifs (all seven, incl. the
+dark stretch), B depth music (with their own file, `the_mountain_motivational`, instead of a
+generated track), C day type named on the title; D (a Kür mission) and E (a fork) later; the motif
+name shown in the sector notif. Rules now in `difficulty.md` / `audio.md` / `visuals.md`.
+
+- **Bench.** `tools/frenzy-sim.js` turned out unusable for this: since the tap tutor its pilot
+  waited over the city forever (fixed: `best >= TUTOR_BEST_MAX`), and its bang-bang controller
+  dies on the walls in S1-S2 at every tier (already at the commit that added it; not fixed). Used
+  instead: the `tools/device-fair-sim.js` pilot (ignores coins), expert + pro, 40 days x 8 runs,
+  motifs on vs `_motifsOn = false`, same days and seeds; per motif depth-controlled (observed
+  deaths / the motifs-off death rate of the same sector). Beginner/average die before S4 and are
+  identical.
+- **First cut** (motif = featured hazard up, all others well down): the motifs measured as
+  pressure x0.65-0.78 by object count and made skilled runs ~10% longer (expert median 579 -> 638
+  on 20 days). Cause: the thinned side hazards. Fix: a motif is now "mixed plus a featured
+  hazard"; only crystal forest, mine field and gold vein thin the others clearly.
+- **Coins follow the stalactite veto.** Fewer crystals let more coin candidates through, so the
+  first cut also raised the coin supply in S4-S12 by 11% (rockfall x1.9) - a cheaper star.
+  Per-motif `coin` factors bring it to +5%, nearly all of it the gold vein's on purpose.
+- **Final** (paired score ratio on vs off, day bootstrap 95%): expert x0.996 [0.96-1.04], pro
+  x1.020 [0.97-1.07]; medians 448 -> 460 and 752 -> 760. Per motif (noisy, about +-15%): crystal
+  forest x1.30 (the hard one; a softer cut measured x1.27 but forked the cave across devices on
+  2026-09-13 in test-cave.js and was reverted), boulder field x1.03, mine field x0.87, gold vein
+  x0.88, cannon alley x0.86, rockfall x0.80, dark x1.00 (the pilot cannot see the darkness). Retune by this bench, not by the object counts.
+- **Depth music.** The loop's own start is its quiet build; entering there measured a 5 dB drop
+  at S4, so the hand-over enters at bar 13 (the body). Level: the depth master is brighter, so
+  the trim splits full band (-1.5 dB) and phone band (+1.3 dB). Rendered offline through the real
+  `audio.js` chain in headless Chrome (OfflineAudioContext with `suspend()` for the mid-run calls),
+  not heard on a device.
+- **Hand-over, second version** (the user: "die Musikübergänge sind noch nicht perfekt"). The
+  first overlapped both tempos for ~1 s (a lead-in under Nebula plus Nebula fading under the new
+  downbeat), landed on any Nebula bar line (Nebula alternates a loud and a soft bar, so half the
+  lines were inside a cell), and the death ending faded in over its first hit. Now: the start of
+  a two-bar cell, Nebula sinks into a lowpass over its last bar and ends on the line, the depth
+  track starts on its downbeat out of the same lowpass, and the ending starts on its hit after
+  the collapse. Rendered alternatives (hard cut on the one; only the last chord) on the review
+  page; the user picked these two by ear (A "Abtauchen", X "Ende auf dem Schlag").
+- **Dark stretch.** Drawn under the wall rims it was invisible (the void is near black from S4);
+  it now dims the rims and crystals too, never the free hazards, coins or ship. Not device-tested.
+- **Found, not fixed:** `test-cave.js` flown to wx 75000 on 8 days shows small cross-device
+  differences on 5 of them already at the previous HEAD (the test stops at 30000).

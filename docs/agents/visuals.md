@@ -41,6 +41,14 @@ Study: https://claude.ai/artifact/QPvLrDmGiU6przXNwXLV9y
   colour; the planet line is neutral (logo > world > planet). Deliberately NOT done: a PLAY
   button (tapping anywhere starts) and rail text labels (no room at 667x375).
 
+- **Day type line** (2026-10-08, variety concept C): under the planet line, the same size one
+  step dimmer, "TODAY: MINE BELT" (`DAY_ARCHETYPES` `name`). The REKORD plate and the challenge
+  banner anchor to it. Checked at 667x375, 956x440 and 951x669 in Chrome, not yet on WebKit.
+- **Dark stretch** (sector motif `dark`, `drawMotifDark`, `MOTIF_DARK_*`): a radial darkness
+  drawn after the wall rims, under every free hazard, coin and the ship, centred a little ahead
+  of the ship. Under the rims it was invisible (the void is near black from S4). Same "never
+  bright ahead" spirit as the depth light: it only takes light away. Not device-tested.
+
 ## HUD instrument, web frame (2026-09-16 design pass, proposals 3, 4, 6)
 
 - **HUD** (`drawHUD`, constants.js `HUD_SPARK_*`): under the live score a thin record rail

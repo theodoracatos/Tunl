@@ -71,6 +71,22 @@ a "Knallfrosch" twice. Method, metrics and traps: `reference_audio_method` memor
   `onboarding.md`): a separate crossfaded buffer of bar 2, swapped in and out at the same sample; the
   track's buffer is never altered. Every node or loop change rebases `_bgmOff0`/`_bgmT0` first, or
   `_bgmPos()`/`_bgmBarNow()` lose their place.
+- **Depth music** (2026-10-08, variety concept B; `audio.js` "Depth music", `DEPTH_*`): from
+  `DEPTH_MUSIC_FROM` (S4) the bed hands over to `the_mountain_motivational` (the user's file,
+  same Pixabay composer). **The two tempos never play beats at once** (140 vs 86.7 BPM; the
+  first version overlapped them for ~1 s and the user heard it): the line is the start of
+  Nebula's next two-bar cell (`DEPTH_CELL_BARS`, at least `DEPTH_RUNWAY` away), Nebula sinks into
+  a closing lowpass over its last bar and ends on the line, and the depth track starts ON the line
+  at `DEPTH_ENTRY` (the downbeat where its body starts; entering at the loop start measured a 5 dB
+  drop) and opens out of the same lowpass (`DEPTH_IN_*`). It stays to the end of the run; a new
+  run starts on Nebula again. Its loop is 28 bars, crossfaded like Nebula's. Death: after the
+  collapse the song's ending starts on its own hit (`DEPTH_OUTRO_START`), no fade-in (a fade-in
+  swallowed the hit). Variants rendered for the user's ear: https://claude.ai/artifact/KppjaBcp5pobeoWaVWvZkP `DEPTH_TRIM` sits
+  between the full-band and phone-band level match (the depth master is brighter). Decoded only
+  once a run reaches `DEPTH_LOAD_FROM`. A third file in `audio/`: Xcode lists it in the Copy
+  Files phase, `build-play.mjs` copies its `.web.m4a`, gradle takes `audio/*.mp3`. Every bed
+  source feeds `_bgmIn` (the playing track's trim); `_bgmBarNow` and the star's hold use the
+  playing track's grid (`_bgmT()`). Rendered offline in the real chain, not ear-checked on a device.
 - **A star can pause the music** (`bgmSetFrenzy`, `_fzMusGen`, rule in `frenzy.md`): the play
   track is held on its bar (`_bgmBarNow`, `BGM_BAR`) and resumes there while the star's own
   generated music plays. No third music file: an mp3 excerpt was tried and removed. The

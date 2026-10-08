@@ -1787,6 +1787,36 @@ function _portalBand(p, sx, alpha, front) {
 
 let _lastBgStr = '';
 
+// Sector motif 'dark' (world.js SECTOR_MOTIFS, variety concept A, an experiment): the cave goes
+// dark but for a pool of light carried by the ship. Drawn over the void, the wall fill, the
+// crystals and the wall rims, UNDER mines, cannons, shots, rocks, coins and the ship - so every
+// free hazard reads at full strength and the rims and crystals keep at least 1 - MOTIF_DARK_ALPHA
+// of their light at the far edge. Under the rims it was invisible: from S4 the void is near
+// black already (depth light), so only dimming the rims reads as darkness (2026-10-08 shots).
+// The pool sits a little ahead of the ship (hazards come from the right). Eases in and out over MOTIF_DARK_EASE seconds of game time around the
+// sector boundary the ship crosses. Draw-only: no gameplay value moves, same on every device.
+// Unproven on a device: if it reads as unfair, take 'dark' out of SECTOR_MOTIFS (its weight).
+const MOTIF_DARK_ALPHA = 0.70;   // darkness at the screen's far edge
+const MOTIF_DARK_EASE  = 0.6;
+let _motifDarkVis = 0, _motifDarkT = 0;
+function drawMotifDark() {
+    const live = (phase === 'play' || phase === 'dead') && approachLeft <= 0;
+    const want = live && sectorMotifAt(scrollX + PX).id === 'dark' ? 1 : 0;
+    const dt = Math.min(Math.max(gtime - _motifDarkT, 0), 0.1);
+    _motifDarkT = gtime;
+    if (!live) { _motifDarkVis = 0; return; }
+    _motifDarkVis = want > _motifDarkVis ? Math.min(want, _motifDarkVis + dt / MOTIF_DARK_EASE)
+                                         : Math.max(want, _motifDarkVis - dt / MOTIF_DARK_EASE);
+    if (_motifDarkVis <= 0.003) return;
+    const e = _motifDarkVis * _motifDarkVis * (3 - 2 * _motifDarkVis);
+    const cx = PX + W * 0.12, cy = py;
+    const g = ctx.createRadialGradient(cx, cy, W * 0.07, cx, cy, W * 0.62);
+    g.addColorStop(0,    'rgba(0,0,0,0)');
+    g.addColorStop(0.35, `rgba(0,0,0,${(MOTIF_DARK_ALPHA * 0.55 * e).toFixed(3)})`);
+    g.addColorStop(1,    `rgba(0,0,0,${(MOTIF_DARK_ALPHA * e).toFixed(3)})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(-20, -20, W + 40, H + 40);
+}
 
 function drawWorld() {
     const ox = shake > 0 ? (Math.random()-0.5)*shake : 0;
@@ -2099,6 +2129,7 @@ function drawWorld() {
         }
     };
     strokeEdges(edgeClr, 2);
+    drawMotifDark();
 
     // Death markers - rings etched into the wall at each death spot. y is resolved
     // live from the current corridor so the ring swings with the wave and stays stuck
@@ -4370,6 +4401,28 @@ function drawTitleScreen() {
         planetInkBottom = planetBaselineY + (pm.actualBoundingBoxDescent || planetFsz * 0.5);
         ctx.fillText(planetLine, titleX, planetBaselineY);
         titleColRight = Math.max(titleColRight, titleX + pm.width / 2);
+
+        // Day type (world.js DAY_ARCHETYPES, variety concept C 2026-10-08): "TODAY: MINE BELT".
+        // Same size as the planet line, a step dimmer, so logo > world > planet > day. The REKORD
+        // plate and the challenge banner anchor to the last line of this group, so they follow it.
+        const dayLine = `${T.today}: ${T[DAY_ARCHETYPES[_dayArchetype].name]}`;
+        let dayFsz = planetFsz;
+        ctx.font = `${dayFsz}px ${FONT_UI}`;
+        if (LAND) {
+            const dayAvailHalfW = Math.min(titleX - 24, W - titleX - 24);
+            const dayW = ctx.measureText(dayLine).width;
+            if (dayW / 2 > dayAvailHalfW) {
+                dayFsz = Math.max(dayFsz * (dayAvailHalfW * 2) / dayW, FS * 0.012);
+                ctx.font = `${dayFsz}px ${FONT_UI}`;
+            }
+        }
+        ctx.fillStyle = `rgba(206,214,234,${a * 0.66})`;
+        const dm = ctx.measureText(dayLine);
+        planetBaselineY = Math.max(planetBaselineY + dayFsz * 1.45,
+                                   planetInkBottom + colGap + (dm.actualBoundingBoxAscent || dayFsz * 0.5));
+        planetInkBottom = planetBaselineY + (dm.actualBoundingBoxDescent || dayFsz * 0.5);
+        ctx.fillText(dayLine, titleX, planetBaselineY);
+        titleColRight = Math.max(titleColRight, titleX + dm.width / 2);
         ctx.shadowBlur  = 0;
     }
 

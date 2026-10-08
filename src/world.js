@@ -204,14 +204,16 @@ function deepChamberAt(wx) {
 // they never pile onto everything else once scrollSpd is uncapped.
 function fallSpacing(wx = scrollX) {
     const p2 = prog2At(wx);
-    return Math.max(lerp(3400, 2000, Math.min(p2, 1)) - 350 * Math.max(p2 - 1, 0), 1800);
+    // The sector motif divides AFTER the floor: a rockfall sector is meant to beat it, and
+    // thins the standing crystals that would otherwise pile up with the falls.
+    return Math.max(lerp(3400, 2000, Math.min(p2, 1)) - 350 * Math.max(p2 - 1, 0), 1800) / Math.max(motifFactor(wx, 'fall'), 0.05);
 }
 
 // Boulders (systems.js makeBoulder/maintainBoulders): a deep-only routing
 // obstacle from world-x 84000 (~score 1400). Rare - closer to a cannon's cadence
 // than a mine's - so it reads as "commit up or down now", not a dodge-fest.
 function boulderSpacing(wx = scrollX) {
-    return Math.max(3400 - 250 * Math.max(prog2At(wx) - 1.75, 0), 2400);
+    return Math.max((3400 - 250 * Math.max(prog2At(wx) - 1.75, 0)) / _motifDensity(wx, 'boulder'), 2400);
 }
 
 // Warp portal ring (systems.js makePortal/maintainPortals): a reward set-piece,
@@ -411,12 +413,99 @@ function warpScrollFactor() {
 // no-op baseline; the other three each push one knob further and pull
 // another back so a day reads as a distinct "flavor", not just harder
 // or easier across the board.
+// Since 2026-10-08 (variety concept C, "Tageslage") the day type is named on the title
+// screen (i18n key `name`) and doubles the draw weight of its sector motif from
+// MOTIF_FROM_SECTOR on (`motif`, see SECTOR_MOTIFS below). Classic biases nothing.
 const DAY_ARCHETYPES = [
-    { stal: 1,    coin: 1,    mine: 1,    chic: 1    }, // Classic
-    { stal: 0.85, coin: 1,    mine: 1,    chic: 1.35 }, // Chicane Day
-    { stal: 1,    coin: 1,    mine: 0.75, chic: 1    }, // Mine Gauntlet
-    { stal: 1.15, coin: 0.72, mine: 1.15, chic: 0.8  }, // Coin Rush
+    { stal: 1,    coin: 1,    mine: 1,    chic: 1,    name: 'dayBalanced', motif: null      }, // Classic
+    { stal: 0.85, coin: 1,    mine: 1,    chic: 1.35, name: 'dayZigzag',   motif: 'crystal' }, // Chicane Day
+    { stal: 1,    coin: 1,    mine: 0.75, chic: 1,    name: 'dayMineBelt', motif: 'mines'   }, // Mine Gauntlet
+    { stal: 1.15, coin: 0.72, mine: 1.15, chic: 0.8,  name: 'dayGoldRush', motif: 'gold'    }, // Coin Rush
 ];
+
+// ── Sector motifs (2026-10-08, variety concept A) ─────────────────────
+// From MOTIF_FROM_SECTOR (S4, score ~252) each sector draws a motif: a different MIX of the
+// hazards that already exist, not more of them - one hazard gets denser, the others thin
+// out. Roughly half the sectors stay 'mixed' (today's recipe) so a motif has something to
+// stand out against. Below MOTIF_FROM_SECTOR every factor is exactly 1: nothing a real
+// player's typical run meets changes (CLAUDE.md "never make score < 233 harder").
+// Concept + the user's picks: https://claude.ai/artifact/NAo9YoDCyADcWXiCfFCEcy
+//
+// Factors are DENSITY multipliers (spacing is divided by them, chicane odds multiplied),
+// applied inside each spacing function at the PLACEMENT wx, before its px floor - the floors
+// and the retry-offset budgets they protect (MINE_RETRY_OFFSETS, CANNON_RETRY_OFFSETS, the
+// boulder array order) hold in every motif. A factor of 0 (cannon, boulder) does not touch
+// the cursor: make*() returns null after its usual rng draws, so the streams stay aligned.
+// `coin` also corrects for the stalactite veto: fewer crystals let more coin candidates
+// through (coinBlockedByStal), so a thin-crystal motif needs coin < 1 to keep the supply,
+// and the star's duty cycle, where it was (measured, design-history "Sector motifs").
+// Mines never go below 0.5 (they are what guarantees every run ends). A hazard's own
+// introduction sector never thins it (MOTIF_INTRO). Missing keys are 1.
+// The pick is a pure function of the day (_deepHash) and the sector index: no rng() stream,
+// identical on every device and in the ghost. `_motifsOn` is the kill switch.
+// Retune by the measured death rate per sector and tier (feedback memory "progression design
+// goals"), never by eye - first measurement in docs/design-history.md "Sector motifs".
+let _motifsOn = true;
+const MOTIF_FROM_SECTOR = 4;
+const SECTOR_MOTIFS = [
+    { id: 'mixed',                           from: 4, w: 0 },
+    { id: 'crystal',  name: 'motifCrystal',  from: 4, w: 1, stal: 1.45, chic: 1.8, mine: 0.5, cannon: 0, boulder: 0, fall: 0.6, coin: 1.35 },
+    { id: 'mines',    name: 'motifMines',    from: 4, w: 1, stal: 0.7, chic: 0.5, mine: 2.0, cannon: 0.6, boulder: 0.6, fall: 0.6, coin: 0.85 },
+    { id: 'gold',     name: 'motifGold',     from: 4, w: 1, stal: 0.75, chic: 0.6, mine: 0.7, cannon: 0.5, boulder: 0, fall: 0.5, coin: 1.6 },
+    { id: 'rocks',    name: 'motifRocks',    from: 5, w: 1, stal: 1.0, chic: 1.0, mine: 0.9, cannon: 1.0, boulder: 1.45, fall: 0.8 },
+    { id: 'cannons',  name: 'motifCannons',  from: 7, w: 1, stal: 1.0, chic: 1.0, mine: 1.0, cannon: 2.5, boulder: 0, fall: 1.0 },
+    { id: 'rockfall', name: 'motifRockfall', from: 8, w: 1, stal: 0.85, chic: 0.6, mine: 1.0, cannon: 0.8, boulder: 0, fall: 2.5, coin: 0.6 },
+    // Dark stretch: the cave goes dark but for the ship's light (draw.js drawMotifDark),
+    // every hazard a quarter thinner to pay for the reading. An experiment (concept page):
+    // half weight, and only from S6, after every hazard but the falling crystal is known.
+    { id: 'dark',     name: 'motifDark',     from: 6, w: 0.5, stal: 0.75, chic: 0.75, mine: 0.75, cannon: 0.75, boulder: 0.75, fall: 0.75, coin: 0.8 },
+];
+// The sector that introduces a hazard (constants.js *_START_WX) never thins it.
+const MOTIF_INTRO = { boulder: 4, chic: 5, cannon: 6, fall: 7 };
+const MOTIF_GOLD_GAP   = 4;   // at most one gold vein in any MOTIF_GOLD_GAP sectors
+const MOTIF_MIXED_RUN  = 2;   // at most this many 'mixed' sectors in a row
+const MOTIF_NONE = SECTOR_MOTIFS[0];
+let _motifDay = -1, _motifArch = -1, _motifSeq = [];
+// Motif of sector k for today. Built forward from MOTIF_FROM_SECTOR and memoised per day,
+// because each pick looks at the ones before it (no repeat, gold gap, mixed run).
+function sectorMotif(k) {
+    if (!_motifsOn || !(k >= MOTIF_FROM_SECTOR)) return MOTIF_NONE;
+    k = Math.min(k, 2000);
+    if (_motifDay !== _deepDay || _motifArch !== _dayArchetype) { _motifDay = _deepDay; _motifArch = _dayArchetype; _motifSeq = []; }
+    const bias = DAY_ARCHETYPES[_dayArchetype].motif;
+    for (let s = MOTIF_FROM_SECTOR + _motifSeq.length; s <= k; s++) {
+        const i = s - MOTIF_FROM_SECTOR, prev = _motifSeq[i - 1];
+        let mixedRun = 0, goldNear = false;
+        for (let j = i - 1; j >= 0 && _motifSeq[j] === MOTIF_NONE; j--) mixedRun++;
+        for (let j = Math.max(0, i - MOTIF_GOLD_GAP + 1); j < i; j++) if (_motifSeq[j].id === 'gold') goldNear = true;
+        const pool = [];
+        let wSum = 0;
+        for (const m of SECTOR_MOTIFS) {
+            if (m === MOTIF_NONE || s < m.from || m === prev || (m.id === 'gold' && goldNear)) continue;
+            const w = m.w * (m.id === bias ? 2 : 1);
+            pool.push([m, w]); wSum += w;
+        }
+        // 'mixed' weighs as much as all eligible motifs together: about every second sector.
+        if (mixedRun < MOTIF_MIXED_RUN) { pool.unshift([MOTIF_NONE, wSum]); wSum *= 2; }
+        let r = _deepHash(0x5000 + s) * wSum, pick = pool[pool.length - 1][0];
+        for (const [m, w] of pool) { if (r < w) { pick = m; break; } r -= w; }
+        _motifSeq.push(pick);
+    }
+    return _motifSeq[k - MOTIF_FROM_SECTOR];
+}
+function sectorMotifAt(wx) { return sectorMotif(sectorAt(wx)); }
+// Density factor of hazard `kind` at placement wx (1 = today's recipe).
+function motifFactor(wx, kind) {
+    if (!_motifsOn) return 1;
+    const k = sectorAt(wx), m = sectorMotif(k);
+    if (m === MOTIF_NONE) return 1;
+    const f = m[kind] === undefined ? 1 : m[kind];
+    return MOTIF_INTRO[kind] === k ? Math.max(f, 1) : f;
+}
+// For the cadence of a hazard a motif can switch off (cannon, boulder): 0 keeps today's
+// cadence and makeCannon/makeBoulder drop the object instead (motifSuppresses).
+function _motifDensity(wx, kind) { const f = motifFactor(wx, kind); return f > 0 ? f : 1; }
+function motifSuppresses(wx, kind) { return motifFactor(wx, kind) === 0; }
 // ── Difficulty curves, sampled at a WORLD POSITION ───────────────────
 // Every one of these takes the wx being placed, defaulting to the player's own
 // scrollX for the handful of callers that legitimately mean "here, now".
@@ -457,7 +546,7 @@ function coinSpacing(wx = scrollX) {
     const k    = sectorAt(wx);
     let rate   = k === 0 ? COIN_RATE_SAFE : Math.max(COIN_RATE_EARLY * Math.pow(COIN_DECAY, Math.max(k - 3, 0)), COIN_RATE_FLOOR);
     if (k >= 1 && sectorPhase(wx) < SECTOR_BREATHER_FRAC) rate *= COIN_BREATHER_MULT;
-    return Math.max(worldPxForSec(1 / rate, wx) * DAY_ARCHETYPES[_dayArchetype].coin, 175);
+    return Math.max(worldPxForSec(1 / rate, wx) * DAY_ARCHETYPES[_dayArchetype].coin / motifFactor(wx, 'coin'), 175);
 }
 
 // Sector sawtooth: each sector opens with a short breather at reduced density, then
@@ -490,7 +579,7 @@ const STAL_RATE_S1      = 2.0;
 const STAL_GROWTH       = 1.14;
 const STAL_GROWTH_LATE  = 1.08;
 function stalSpacing(wx = scrollX) {
-    return Math.max(worldPxForSec(1 / sectorRate(wx, STAL_RATE_S1, STAL_GROWTH, 1, STAL_GROWTH_LATE), wx) * DAY_ARCHETYPES[_dayArchetype].stal, 50);
+    return Math.max(worldPxForSec(1 / sectorRate(wx, STAL_RATE_S1, STAL_GROWTH, 1, STAL_GROWTH_LATE), wx) * DAY_ARCHETYPES[_dayArchetype].stal / motifFactor(wx, 'stal'), 50);
 }
 function stalLenFrac(wx = scrollX) { return Math.min(lerp(lerp(0.46, 0.64, hazProgAt(wx)), 0.76, hazProg2At(wx)), 0.80); }
 // Mines per reference second from their first sector. Floor 200 is load-bearing
@@ -499,19 +588,19 @@ const MINE_RATE_S3      = 0.28;
 const MINE_GROWTH       = 1.2;
 const MINE_GROWTH_LATE  = 1.1;
 function mineSpacing(wx = scrollX) {
-    return Math.max(worldPxForSec(1 / sectorRate(wx, MINE_RATE_S3, MINE_GROWTH, sectorAt(MINE_START_WX), MINE_GROWTH_LATE), wx) * DAY_ARCHETYPES[_dayArchetype].mine, 200);
+    return Math.max(worldPxForSec(1 / sectorRate(wx, MINE_RATE_S3, MINE_GROWTH, sectorAt(MINE_START_WX), MINE_GROWTH_LATE), wx) * DAY_ARCHETYPES[_dayArchetype].mine / motifFactor(wx, 'mine'), 200);
 }
 // Chicane odds, same story - rolled per placement, not per player position. Fades in
 // over CHICANE_FADE_WX after CHICANE_START_WX so paired spikes don't switch on at full odds.
 function chicaneProb(wx = scrollX) {
     const fadeIn = (wx - CHICANE_START_WX) / CHICANE_FADE_WX;
-    return Math.min(lerp(0.24, 0.42, prog2At(wx)) * DAY_ARCHETYPES[_dayArchetype].chic, 0.62) * Math.min(Math.max(fadeIn, 0), 1);
+    return Math.min(lerp(0.24, 0.42, prog2At(wx)) * DAY_ARCHETYPES[_dayArchetype].chic * motifFactor(wx, 'chic'), 0.62) * Math.min(Math.max(fadeIn, 0), 1);
 }
 // Cannons: rare on purpose, so the spacing floor stays far above every other
 // obstacle's (stalSpacing/coinSpacing/mineSpacing all bottom out well under
 // 1000) even at max difficulty -- this should read as an occasional set-piece
 // ambush, not a recurring hazard type.
-function cannonSpacing(wx = scrollX) { return Math.max(lerp(lerp(4200, 2400, hazProgAt(wx)), 1500, hazProg2At(wx)), 1200); }
+function cannonSpacing(wx = scrollX) { return Math.max(lerp(lerp(4200, 2400, hazProgAt(wx)), 1500, hazProg2At(wx)) / _motifDensity(wx, 'cannon'), 1200); }
 
 // Milestone spacing (50/100/etc. step added to milestoneNext each time one fires --
 // see update.js). Widens in stages so milestones stay a frequent early-game reward but

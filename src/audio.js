@@ -30,6 +30,11 @@ let _bfVoices = [];
 let _bgmBuf = null, _bgmNode = null, _bgmGain = null, _bgmFlt = null;
 let _bgmLift = null, _bgmShelf = null;  // sector intensity (bgmSetSector)
 let _bgmOutroBuf = null, _outroNode = null, _outroGain = null;  // the track's own ending, played on death
+// Depth music ("Depth music" below): _bgmBuf / _bgmOutroBuf are the buffers of _bgmTrack, the
+// track the bed plays now; both tracks keep their own so a new run goes back to Nebula. Every
+// bed source feeds _bgmIn, the playing track's level trim, in front of _bgmGain.
+let _bgmTrack = 'nebula', _nebBuf = null, _nebOutroBuf = null, _depthBuf = null, _depthOutroBuf = null;
+let _depthLoading = false, _bgmIn = null;
 let _bgmLoading = false, _titleBgmLoading = false; // in-flight guards for the lazy loaders
 let _bgmActive = false, _bgmPending = false;
 // Where the current _bgmNode was started (context time, offset into _bgmBuf), and the bar a
@@ -142,6 +147,61 @@ const BGM_OUTRO_FADE_IN    = 0.60;
 const TITLE_BGM_LOOP_START = 18.0,  TITLE_BGM_LOOP_END = 114.0;
 const TITLE_BGM_LOOP_XFADE = 4.0;
 
+// ── Depth music (2026-10-08, variety concept B, the user's pick and file) ─────────────────
+// From DEPTH_MUSIC_FROM (S4, the first sector motif) the bed changes to a second track by the
+// same composer, the_mountain_motivational (Pixabay "the_mountain", 97s, 86.7 BPM, F major like
+// Nebula's own pitch set). Nebula's 27s loop played two and a half times in every run to S10;
+// a run that reaches the motifs now hears where it is. Below S4 nothing changes.
+// The hand-over (second version, 2026-10-08, after the user heard the first: "noch nicht
+// perfekt"). Tempos differ (140 vs 86.7 BPM), so the two tracks must never play beats at the same
+// time; the first version overlapped them for about a second (a 0.35s lead-in under Nebula plus a
+// 0.6s fade of Nebula under the downbeat) and landed on any Nebula bar line, often inside one of
+// its two-bar cells (Nebula alternates a loud and a soft bar). Now:
+//  - the line is the start of Nebula's next two-bar cell (DEPTH_CELL_BARS), at least
+//    DEPTH_RUNWAY away;
+//  - over the bar before it Nebula sinks into a closing lowpass (DEPTH_OUT_HZ) and steps down
+//    DEPTH_OUT_DB, and ends on the line with a DEPTH_TAIL fade - nothing of it under the new beat;
+//  - the depth track starts ON the line at DEPTH_ENTRY, the downbeat where its full body starts
+//    (bar 13 of the loop; the loop's own start is the quieter build, and entering there measured
+//    a 5 dB drop at S4; its kick lands 15-25 ms after the grid line), and rises out of the same
+//    lowpass over DEPTH_IN_SEC: down into the cave, up into the new track.
+// The loop runs on from there and wraps as usual. Bar grid: low-band onsets, downbeat at 12.034.
+// Loop: 28 bars, 12.034 / 89.572 (77.5s), the best bar-grid pair of a seam search (4s window
+// correlation 0.57 before / 0.86 after the seam, chroma 1.00), crossfaded half a bar like
+// Nebula's. The song's real ending follows the loop end, so death plays on from there.
+// Level: the loops measured -11.0 / -13.5 LUFS full band and -18.0 / -17.7 above 400 Hz (the
+// depth master is brighter), so DEPTH_TRIM is +1 dB, between the two: full band -1.5 dB, phone
+// band +1.3 dB against Nebula at BGM_GAIN. Decoded only once a run reaches DEPTH_LOAD_FROM
+// (most runs end before S4 and never pay for 90s of decoded stereo); a run that reaches S4
+// before it is ready stays on Nebula until the next sector.
+const DEPTH_MUSIC_FROM  = 4;
+const DEPTH_LOAD_FROM   = 2;
+const DEPTH_BAR         = 4 * 60 / 86.67;
+const DEPTH_LOOP_START  = 12.034, DEPTH_LOOP_END = 12.034 + 28 * DEPTH_BAR;
+const DEPTH_LOOP_XFADE  = DEPTH_BAR / 2;
+const DEPTH_ENTRY       = DEPTH_LOOP_START + 13 * DEPTH_BAR;
+const DEPTH_CELL_BARS   = 2;      // the hand-over lands on the start of a Nebula two-bar cell
+const DEPTH_RUNWAY      = BGM_BAR; // at least this much Nebula before the line (its filter-out bar)
+const DEPTH_OUT_HZ      = 420;    // where Nebula's lowpass closes to on the line
+const DEPTH_OUT_DB      = 6;      // and how far it steps down meanwhile
+const DEPTH_TAIL        = 0.06;   // Nebula's last fade, on the line
+const DEPTH_IN_HZ       = 420;    // the depth track's lowpass at its first downbeat...
+const DEPTH_IN_SEC      = DEPTH_BAR / 2;   // ...open again after half a bar
+// Death in the depth track: the collapse (DEATH_MUSIC_SEC) runs out first, then the song's ending
+// starts ON its hit at DEPTH_OUTRO_START (low-band onset 89.557, just past the loop end), with no
+// fade-in: the first version faded in over the hit and the ending began limp.
+const DEPTH_OUTRO_START = 89.54;
+const DEPTH_OUTRO_DELAY = 0.45;
+const DEPTH_OUTRO_FADE  = 0.015;
+const DEPTH_TRIM        = 1.122;  // +1 dB, see above
+const _BGM_TRACKS = {
+    nebula: { ls: BGM_LOOP_START,   le: BGM_LOOP_END,   bar: BGM_BAR,   trim: 1,          entry: 0,
+              outroDelay: BGM_OUTRO_DELAY,   outroFade: BGM_OUTRO_FADE_IN },
+    depth:  { ls: DEPTH_LOOP_START, le: DEPTH_LOOP_END, bar: DEPTH_BAR, trim: DEPTH_TRIM, entry: DEPTH_ENTRY,
+              outroDelay: DEPTH_OUTRO_DELAY, outroFade: DEPTH_OUTRO_FADE },
+};
+function _bgmT() { return _BGM_TRACKS[_bgmTrack]; }
+
 function _startBgMusic() {
     _stopBgmOutro();
     if (!musicOn) return;
@@ -181,23 +241,28 @@ function _playBgmBuffer(offset) {
         _bgmShelf = _ac.createBiquadFilter();
         _bgmShelf.type = 'highshelf'; _bgmShelf.frequency.value = MUSIC_SECTOR_SHELF_HZ;
         _bgmGain.connect(_bgmLift); _bgmLift.connect(_bgmShelf); _bgmShelf.connect(_bgmFlt); _bgmFlt.connect(_musicBus);
+        _bgmIn = _ac.createGain(); _bgmIn.connect(_bgmGain);
         _applySectorIntensity(true);
         const t = _ac.currentTime;
         _bgmGain.gain.setValueAtTime(0.0001, t);
         _bgmGain.gain.linearRampToValueAtTime(BGM_GAIN, t + MUSIC_FADE_SEC);
     }
     _bgmOpenFilter();
+    const tr = _bgmT();
+    _bgmIn.gain.cancelScheduledValues(_ac.currentTime);
+    _bgmIn.gain.setValueAtTime(tr.trim, _ac.currentTime);
     _bgmNode = _ac.createBufferSource();
     _bgmNode.buffer = _bgmBuf;
     _bgmNode.loop = true;
     // Skip the lead-in and the fade-out on every pass after the first - see the
     // BGM_LOOP_START doc block.
-    if (_bgmBuf.duration > BGM_LOOP_START + 1) {
-        _bgmNode.loopStart = BGM_LOOP_START;
-        _bgmNode.loopEnd   = Math.min(BGM_LOOP_END, _bgmBuf.duration);
+    if (_bgmBuf.duration > tr.ls + 1) {
+        _bgmNode.loopStart = tr.ls;
+        _bgmNode.loopEnd   = Math.min(tr.le, _bgmBuf.duration);
     }
-    _bgmNode.connect(_bgmGain);
-    _bgmOff0 = offset || 0; _bgmT0 = _ac.currentTime;
+    _bgmNode.connect(_bgmIn);
+    // A fresh start of the depth track (a revive in the deep) enters where the S4 hand-over does.
+    _bgmOff0 = offset === undefined ? tr.entry : offset; _bgmT0 = _ac.currentTime;
     _bgmNode.start(0, _bgmOff0);
 }
 
@@ -247,7 +312,7 @@ function _bgmFilePos() { return _bgmPos() + (_bgmHoldOn ? BGM_INTRO_LOOP[0] : 0)
 function _bgmSource(buf, loopStart, loopEnd) {
     const n = _ac.createBufferSource();
     n.buffer = buf; n.loop = true; n.loopStart = loopStart; n.loopEnd = loopEnd;
-    n.connect(_bgmGain);
+    n.connect(_bgmIn);
     return n;
 }
 // `abandon`: a new run is starting; drop the hold without handing back (the run starts its own bed).
@@ -270,7 +335,7 @@ function bgmIntroHold(on, abandon) {
 // Called every frame the city waits: once the track is inside bar 2, swap to the repeat of it at
 // the same sample. Without a decodable buffer (tests, odd platforms) the bed plays on.
 function bgmIntroHoldTick() {
-    if (!_bgmIntroHold || _bgmHoldOn || !_ac || !_bgmNode || !_bgmBuf || !_bgmGain) return;
+    if (!_bgmIntroHold || _bgmHoldOn || !_ac || !_bgmNode || !_bgmBuf || !_bgmGain || _bgmTrack !== 'nebula') return;
     const t = _ac.currentTime, ts = t + 0.03;
     const pos = _bgmPos() + (ts - t), a = BGM_INTRO_LOOP[0], b = BGM_INTRO_LOOP[1];
     if (pos < a || pos > b - BGM_INTRO_XF - 0.005) return;   // not in bar 2 yet, or already past it
@@ -295,11 +360,11 @@ function bgmIntroBeatIn(period) {
 // time from the node's start, so a slow sag or a warp surge since then leaves it off by
 // the difference; snapping to the bar keeps the resume on the grid either way.
 function _bgmBarNow() {
-    const end = Math.min(BGM_LOOP_END, _bgmBuf.duration), len = end - BGM_LOOP_START;
+    const tr = _bgmT(), end = Math.min(tr.le, _bgmBuf.duration), len = end - tr.ls;
     let p = _bgmOff0 + (_ac.currentTime - _bgmT0);
-    if (p >= end) p = BGM_LOOP_START + (p - BGM_LOOP_START) % len;
-    const bar = BGM_LOOP_START + Math.round((p - BGM_LOOP_START) / BGM_BAR) * BGM_BAR;
-    return bar >= end - 0.01 ? BGM_LOOP_START : Math.max(0, bar);
+    if (p >= end) p = tr.ls + (p - tr.ls) % len;
+    const bar = tr.ls + Math.round((p - tr.ls) / tr.bar) * tr.bar;
+    return bar >= end - 0.01 ? tr.ls : Math.max(0, bar);
 }
 
 // Snaps the play-music lowpass back open (the death sweep leaves it closed down at
@@ -360,6 +425,67 @@ function _applySectorIntensity(now, glide) {
 function bgmSetSector(k, now) {
     _bgmSectorK = k;
     _applySectorIntensity(now);
+    if (k >= DEPTH_LOAD_FROM) _loadDepthBuffer();
+    _bgmFollowDepth(now);
+}
+
+// Which track the run's sector asks for, and the switch (see "Depth music" above). A run start
+// (`now`, k = 0) goes back to Nebula outright: no bed is sounding then. Mid-run the change to the
+// depth track lands on Nebula's next bar line; while a star holds the bed (bgmSetFrenzy) the
+// held place moves to the depth track's entry, so the star hands back into it.
+function _bgmFollowDepth(now) {
+    const want = _bgmSectorK >= DEPTH_MUSIC_FROM && _depthBuf ? 'depth' : 'nebula';
+    if (want === _bgmTrack) return;
+    if (want === 'nebula' && !now) return;   // the depth track stays to the end of the run
+    const sounding = !now && _ac && _bgmNode && _bgmActive && !_bgmHoldOn;
+    const from = _bgmNode;
+    _bgmTrack = want;
+    _bgmBuf = want === 'depth' ? _depthBuf : _nebBuf;
+    _bgmOutroBuf = want === 'depth' ? _depthOutroBuf : _nebOutroBuf;
+    if (_bgmHeldAt >= 0) _bgmHeldAt = _bgmT().entry;
+    if (sounding) _bgmCrossToDepth(from);
+}
+function _bgmCrossToDepth(from) {
+    const t = _ac.currentTime, neb = _BGM_TRACKS.nebula, cell = neb.bar * DEPTH_CELL_BARS;
+    // The start of Nebula's next two-bar cell, at least DEPTH_RUNWAY away (rate 1; a slow sag or
+    // warp surge in progress shifts it by the difference, which the filter bar covers).
+    let p = _bgmOff0 + (t - _bgmT0);
+    const len = neb.le - neb.ls;
+    if (p >= neb.le) p = neb.ls + (p - neb.ls) % len;
+    let toLine = cell - ((((p - neb.ls) % cell) + cell) % cell);
+    if (toLine < DEPTH_RUNWAY) toLine += cell;
+    const line = t + toLine, sink = Math.max(t, line - DEPTH_RUNWAY);
+    // Nebula sinks into a closing lowpass over its last bar and ends on the line.
+    const lvl = _bgmIn.gain.value;
+    const out = _ac.createGain(), lp = _ac.createBiquadFilter();
+    lp.type = 'lowpass'; lp.Q.value = 0.7;
+    lp.frequency.setValueAtTime(20000, t);
+    lp.frequency.setValueAtTime(20000, sink);
+    lp.frequency.exponentialRampToValueAtTime(DEPTH_OUT_HZ, line);
+    out.gain.setValueAtTime(lvl, t);
+    out.gain.setValueAtTime(lvl, sink);
+    out.gain.linearRampToValueAtTime(lvl * Math.pow(10, -DEPTH_OUT_DB / 20), line);
+    out.gain.linearRampToValueAtTime(0.0001, line + DEPTH_TAIL);
+    lp.connect(out); out.connect(_bgmGain);
+    try { from.disconnect(); } catch (e) {}
+    from.connect(lp);
+    from.onended = () => { try { out.disconnect(); lp.disconnect(); } catch (e) {} };
+    try { from.stop(line + DEPTH_TAIL + 0.03); } catch (e) {}
+    // The depth track starts on the line, on its downbeat, out of the same lowpass.
+    const tr = _bgmT();
+    _bgmIn.gain.cancelScheduledValues(t);
+    _bgmIn.gain.setValueAtTime(tr.trim, t);
+    const n = _bgmSource(_bgmBuf, tr.ls, Math.min(tr.le, _bgmBuf.duration));
+    const lpIn = _ac.createBiquadFilter();
+    lpIn.type = 'lowpass'; lpIn.Q.value = 0.7;
+    lpIn.frequency.setValueAtTime(DEPTH_IN_HZ, t);
+    lpIn.frequency.setValueAtTime(DEPTH_IN_HZ, line);
+    lpIn.frequency.exponentialRampToValueAtTime(20000, line + DEPTH_IN_SEC);
+    try { n.disconnect(); } catch (e) {}
+    n.connect(lpIn); lpIn.connect(_bgmIn);
+    n.start(line, tr.entry);
+    _musRateCarry(n.playbackRate, from.playbackRate.value);
+    _bgmNode = n; _bgmOff0 = tr.entry; _bgmT0 = line;
 }
 
 // Death (update.js die()). Used to be a 50ms ramp to silence - the music simply stopped,
@@ -410,15 +536,16 @@ function _playBgmOutro() {
     const t = _ac.currentTime;
     _outroGain = _ac.createGain();
     _outroGain.gain.setValueAtTime(0.0001, t);
-    _outroGain.gain.setValueAtTime(0.0001, t + BGM_OUTRO_DELAY);
-    _outroGain.gain.linearRampToValueAtTime(BGM_GAIN, t + BGM_OUTRO_DELAY + BGM_OUTRO_FADE_IN);
+    const tr = _bgmT();
+    _outroGain.gain.setValueAtTime(0.0001, t + tr.outroDelay);
+    _outroGain.gain.linearRampToValueAtTime(BGM_GAIN * tr.trim, t + tr.outroDelay + tr.outroFade);
     _outroGain.connect(_musicBus);
     _outroNode = _ac.createBufferSource();
     _outroNode.buffer = _bgmOutroBuf;
     _outroNode.connect(_outroGain);
     const n = _outroNode, g = _outroGain;
     n.onended = () => { try { g.disconnect(); } catch (e) {} if (_outroNode === n) { _outroNode = null; _outroGain = null; } };
-    n.start(t + BGM_OUTRO_DELAY);
+    n.start(t + tr.outroDelay);
 }
 
 function _stopBgmOutro(fade) {
@@ -689,9 +816,9 @@ function _bakeBgmLoop(buf, loopStart, loopEnd, xfade) {
 }
 
 // The ending as its own small buffer, so the full decode can be dropped.
-function _sliceOutro(buf) {
+function _sliceOutro(buf, from) {
     try {
-        const sr = buf.sampleRate, a = Math.round(BGM_OUTRO_START * sr);
+        const sr = buf.sampleRate, a = Math.round(from * sr);
         if (buf.length <= a + sr) return null;
         const out = _ac.createBuffer(buf.numberOfChannels, buf.length - a, sr);
         for (let c = 0; c < buf.numberOfChannels; c++) out.getChannelData(c).set(buf.getChannelData(c).subarray(a));
@@ -700,7 +827,7 @@ function _sliceOutro(buf) {
 }
 
 function _loadBgmBuffer() {
-    if (!_ac || _bgmBuf || _bgmLoading) return;
+    if (!_ac || _nebBuf || _bgmLoading) return;
     _bgmLoading = true;
     const ctx = _ac;
     fetch(_bgmUrl('the_mountain'))
@@ -709,13 +836,35 @@ function _loadBgmBuffer() {
         .then(buf => {
             _bgmLoading = false;
             if (_ac !== ctx) return;   // context rebuilt mid-load; revive path reloads
-            _bgmBuf = _bakeBgmLoop(buf, BGM_LOOP_START, BGM_LOOP_END, BGM_LOOP_XFADE);
-            _bgmOutroBuf = _sliceOutro(buf);
+            _nebBuf = _bakeBgmLoop(buf, BGM_LOOP_START, BGM_LOOP_END, BGM_LOOP_XFADE);
+            _nebOutroBuf = _sliceOutro(buf, BGM_OUTRO_START);
+            if (_bgmTrack === 'nebula') { _bgmBuf = _nebBuf; _bgmOutroBuf = _nebOutroBuf; }
             if (_bgmPending && _bgmActive) { _bgmPending = false; _playBgmBuffer(); }
         })
         .catch(err => {
             _bgmLoading = false;
             console.error('[audio]', _bgmUrl('the_mountain'), 'load/decode failed:', err);
+        });
+}
+
+// The depth track ("Depth music"), once per context, when a run first reaches DEPTH_LOAD_FROM.
+// Its ending is the material right after the loop end, so death plays straight on from there.
+function _loadDepthBuffer() {
+    if (!_ac || _depthBuf || _depthLoading || !musicOn) return;
+    _depthLoading = true;
+    const ctx = _ac;
+    fetch(_bgmUrl('the_mountain_motivational'))
+        .then(r => r.arrayBuffer())
+        .then(ab => ctx.decodeAudioData(ab))
+        .then(buf => {
+            _depthLoading = false;
+            if (_ac !== ctx) return;
+            _depthBuf = _bakeBgmLoop(buf, DEPTH_LOOP_START, DEPTH_LOOP_END, DEPTH_LOOP_XFADE);
+            _depthOutroBuf = _sliceOutro(buf, DEPTH_OUTRO_START);
+        })
+        .catch(err => {
+            _depthLoading = false;
+            console.error('[audio]', _bgmUrl('the_mountain_motivational'), 'load/decode failed:', err);
         });
 }
 
@@ -771,10 +920,11 @@ function _reviveAudioContext() {
     _ac = null; _master = null; _musicBus = null; _outGain = null; _limiter = null; _musicLvl = null; _fxLvl = null;
     _bgmLift = null; _bgmShelf = null;
     _bgmFlt = null; _titleBgmFlt = null; _bgmBuf = null; _bgmOutroBuf = null; _outroNode = null; _outroGain = null; _bgmNode = null; _bgmGain = null;
+    _bgmIn = null; _nebBuf = null; _nebOutroBuf = null; _depthBuf = null; _depthOutroBuf = null; _bgmTrack = 'nebula';
     _titleBgmBuf = null; _titleBgmNode = null; _titleBgmGain = null;
     // Any decode still in flight belongs to the context just closed and will drop itself
     // on the _ac !== ctx check; clear the guards so the fresh context can load again.
-    _bgmLoading = false; _titleBgmLoading = false;
+    _bgmLoading = false; _titleBgmLoading = false; _depthLoading = false;
     _fzMus = null; _bgmHeldAt = -1;   // the star's music too
     _mNode = null; _mGain = null; _mOsc = null;  // magnet shimmer belonged to the closed context
     _lzGain = null; _lzSrc = [];   // laser hum too

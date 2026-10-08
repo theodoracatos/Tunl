@@ -104,6 +104,7 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 - `scrollSpd()` never plateaus. Don't re-add a cap.
 - Corridor width uses its own slower clock (`gapProgAt`); don't merge back into `_prog`. Wave frequencies stay on `_prog`.
 - Deep-run variety (`_deepVarietyOn` kill switch): the morph never adds wiggle energy, frequencies untouched, the speed pulse is surge-only.
+- Sector motifs from S4 (`SECTOR_MOTIFS`, `_motifsOn` kill switch): a different mix of existing hazards, factors before the px floors, pure function of day + sector; the day type is named on the title and biases the draw. Retune by measured death rate per motif, never by eye.
 
 ### Hazards -> `docs/agents/hazards.md`
 - Stalactites are **crystals** (`CRYSTAL_STALS`); main crystal on the axis at full length, one blitted sprite per spike. Triangle-circle collision, never AABB.
@@ -133,6 +134,7 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 - **Judge by offline render, never by ear** (`reference_audio_method` memory).
 - Soft-clip `WaveShaper` limiter, never a `DynamicsCompressor`. Keep the loudness hierarchy: warnings > rare rewards > routine pickups > thrust bed.
 - Loops use baked `loopStart`/`loopEnd`; never re-encode the files to fix a seam. Spool-up stays below ~700 Hz.
+- From S4 the bed hands over to the depth track (`DEPTH_*`, on Nebula's bar line); a new run starts on Nebula. Per-track loop grid and trim (`_bgmT()`, `_bgmIn`).
 
 ### Ship rendering -> `docs/agents/ship-render.md`
 - Envelope: span +-0.98r, nose +1.40r - do not grow it. `PR` untouched.

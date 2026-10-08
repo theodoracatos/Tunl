@@ -17,6 +17,7 @@
 		BB000B000000000000000001 /* the_mountain.mp3 in Audio */ = {isa = PBXBuildFile; fileRef = BB000A000000000000000001 /* the_mountain.mp3 */; };
 		BB000E000000000000000001 /* src in Resources */ = {isa = PBXBuildFile; fileRef = BB000D000000000000000001 /* src */; };
 		BB0010000000000000000001 /* the_mountain_documentary.mp3 in Audio */ = {isa = PBXBuildFile; fileRef = BB000F000000000000000001 /* the_mountain_documentary.mp3 */; };
+		BB00A1000000000000000001 /* the_mountain_motivational.mp3 in Audio */ = {isa = PBXBuildFile; fileRef = BB00A0000000000000000001 /* the_mountain_motivational.mp3 */; };
 		BB0012000000000000000001 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BB0011000000000000000001 /* LaunchScreen.storyboard */; };
 		CC0003000000000000000001 /* GameKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CC0002000000000000000001 /* GameKit.framework */; };
 		DD0002000000000000000001 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD0001000000000000000001 /* StoreKit.framework */; };
@@ -37,6 +38,7 @@
 			files = (
 				BB000B000000000000000001 /* the_mountain.mp3 in Audio */,
 				BB0010000000000000000001 /* the_mountain_documentary.mp3 in Audio */,
+				BB00A1000000000000000001 /* the_mountain_motivational.mp3 in Audio */,
 			);
 			name = Audio;
 			runOnlyForDeploymentPostprocessing = 0;
@@ -55,6 +57,7 @@
 		BB000C000000000000000001 /* TUNL.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TUNL.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB000D000000000000000001 /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = ../src; sourceTree = "<group>"; };
 		BB000F000000000000000001 /* the_mountain_documentary.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = the_mountain_documentary.mp3; path = ../audio/the_mountain_documentary.mp3; sourceTree = "<group>"; };
+		BB00A0000000000000000001 /* the_mountain_motivational.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = the_mountain_motivational.mp3; path = ../audio/the_mountain_motivational.mp3; sourceTree = "<group>"; };
 		BB0011000000000000000001 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		CC0001000000000000000001 /* Tunl.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Tunl.entitlements; sourceTree = "<group>"; };
 		CC0002000000000000000001 /* GameKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GameKit.framework; path = System/Library/Frameworks/GameKit.framework; sourceTree = SDKROOT; };
@@ -126,6 +129,7 @@
 				BB0008000000000000000001 /* tunl.html */,
 				BB000A000000000000000001 /* the_mountain.mp3 */,
 				BB000F000000000000000001 /* the_mountain_documentary.mp3 */,
+				BB00A0000000000000000001 /* the_mountain_motivational.mp3 */,
 				BB000D000000000000000001 /* src */,
 			);
 			name = "Game Files";

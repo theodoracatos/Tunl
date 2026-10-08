@@ -531,7 +531,10 @@ function update(dt) {
         const sec = sectorAt(scrollX + PX);
         if (sec > lastSectorShown) {
             lastSectorShown = sec;
-            pushNotif(PX + PR * 3, py - H * 0.12, 1.6, `${T.sector} ${sec}`, [170, 150, 255]);
+            // A sector motif (world.js SECTOR_MOTIFS) is named with it: "SECTOR 6 · MINEFIELD".
+            const motif = sectorMotif(sec);
+            pushNotif(PX + PR * 3, py - H * 0.12, motif.name ? 2.2 : 1.6,
+                motif.name ? `${T.sector} ${sec} · ${T[motif.name]}` : `${T.sector} ${sec}`, [170, 150, 255]);
             bgmSetSector(sec);   // intensity step: audio.js "Music follows the flight plan"
         }
     }

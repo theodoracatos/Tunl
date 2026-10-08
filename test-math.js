@@ -69,6 +69,10 @@ function makeWorld(innerWidth, innerHeight) {
         this.POWERUP_MIN_GAP_SEC = POWERUP_MIN_GAP_SEC; this.POWERUP_GAP_EARLY_MULT = POWERUP_GAP_EARLY_MULT;
         this.DEEP_APEX_WX = DEEP_APEX_WX;
         this.gapProgAt = gapProgAt; this.GAP_EASY_WX = GAP_EASY_WX; this.GAP_RAMP_WX = GAP_RAMP_WX;
+        this.setMotifs = function(on) { _motifsOn = on; };
+        this.sectorMotif = sectorMotif; this.motifFactor = motifFactor; this.SECTOR_MOTIFS = SECTOR_MOTIFS;
+        this.MOTIF_FROM_SECTOR = MOTIF_FROM_SECTOR; this.MOTIF_INTRO = MOTIF_INTRO;
+        this.MOTIF_GOLD_GAP = MOTIF_GOLD_GAP; this.MOTIF_MIXED_RUN = MOTIF_MIXED_RUN; this.DAY_ARCHETYPES = DAY_ARCHETYPES;
     `, sandbox, { filename: 'export' });
     return sandbox;
 }
@@ -171,6 +175,7 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
 // ── Flight plan: sectors + densities as rates (constants.js SECTOR_SEC, world.js) ──
 {
     const w = makeWorld(600, 600);
+    w.setMotifs(false);   // the base curves; the sector motifs on top have their own block below
     const at = (fn, wx) => { w.scrollX = wx; w.refreshWave(); return w[fn](wx); };
     // Sectors: SECTOR_SEC reference seconds each, sector 1 starting exactly where the
     // walls turn lethal, boundaries strictly increasing, each ~7s at the reference speed.
@@ -404,6 +409,7 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
     // Sampled at fixed world-x, not relative to D: fallSpacing is a function of
     // _prog2 alone, and D - 40000 would go negative regardless of exactly where
     // DEEP_VARIETY_WX sits (9000 as of 12.0, was 30000).
+    w.setMotifs(false);   // the base cadence; motifs are checked in "Sector motifs"
     const fsAt = (wx) => { w.scrollX = wx; w.refreshWave(); return w.fallSpacing(); };
     check('fallSpacing tightens from a rare set-piece to a floored deep cadence',
         fsAt(14000) > fsAt(54000) && fsAt(54000) > fsAt(254000) && fsAt(5_000_000) >= 1800);
@@ -631,6 +637,99 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
             // the helper mirrors, and its constants are shared, not duplicated.
         }
     }
+}
+
+// ── Sector motifs (world.js SECTOR_MOTIFS, variety concept 2026-10-08) ──────────
+// A pure function of day, day type and sector: nothing below MOTIF_FROM_SECTOR moves, the draw
+// rules hold on every day, the floors hold inside every motif, and the kill switch restores
+// today's recipe. All through the real functions.
+{
+    const w = makeWorld(956, 440);
+    const KINDS = ['stal', 'chic', 'mine', 'boulder', 'cannon', 'fall', 'coin'];
+    const SPACINGS = ['stalSpacing', 'mineSpacing', 'coinSpacing', 'cannonSpacing', 'boulderSpacing', 'fallSpacing', 'chicaneProb'];
+    // Pinned to S4 (score ~252), not read from MOTIF_FROM_SECTOR: the claim is "score < 233
+    // untouched", and moving the constant earlier must fail here.
+    const firstWx = w.sectorStartWx(4);
+    const days = Array.from({ length: 120 }, (_, i) => 20260101 + Math.floor(i / 28) * 100 + (i % 28) + 1);
+    const spacingsAt = wx => SPACINGS.map(fn => w[fn](wx));
+
+    // Below MOTIF_FROM_SECTOR: every factor is exactly 1 and every spacing equals the
+    // kill-switched value, on every day and day type.
+    let earlyOk = true;
+    for (const d of days.slice(0, 40)) for (let a = 0; a < w.DAY_ARCHETYPES.length; a++) {
+        w.setDeepDay(d); w.setDayArchetype(a);
+        for (let wx = 0; wx < firstWx; wx += 397) {
+            w.setMotifs(true);
+            const on = spacingsAt(wx), f = KINDS.map(k => w.motifFactor(wx, k));
+            w.setMotifs(false);
+            const off = spacingsAt(wx);
+            if (f.some(x => x !== 1) || on.some((x, i) => x !== off[i])) earlyOk = false;
+        }
+    }
+    check('no motif touches anything below sector 4 (score < 233 untouched)', earlyOk);
+
+    // Draw rules over many days and every day type.
+    w.setMotifs(true);
+    const ids = w.SECTOR_MOTIFS.map(m => m.id), share = {}, biasShare = {};
+    let repeatOk = true, goldOk = true, mixedOk = true, fromOk = true, total = 0;
+    for (const d of days) for (let a = 0; a < w.DAY_ARCHETYPES.length; a++) {
+        w.setDeepDay(d); w.setDayArchetype(a);
+        const seq = [];
+        for (let k = w.MOTIF_FROM_SECTOR; k < 40; k++) seq.push(w.sectorMotif(k));
+        seq.forEach((m, i) => {
+            const k = i + w.MOTIF_FROM_SECTOR;
+            share[m.id] = (share[m.id] || 0) + 1; total++;
+            const bias = w.DAY_ARCHETYPES[a].motif;
+            if (bias) { biasShare[a] = biasShare[a] || { hit: 0, n: 0 }; biasShare[a].n++; if (m.id === bias) biasShare[a].hit++; }
+            if (k < m.from) fromOk = false;
+            if (i > 0 && m.id !== 'mixed' && seq[i - 1] === m) repeatOk = false;
+            if (m.id === 'gold' && seq.slice(Math.max(0, i - w.MOTIF_GOLD_GAP + 1), i).some(p => p.id === 'gold')) goldOk = false;
+            if (i >= w.MOTIF_MIXED_RUN && seq.slice(i - w.MOTIF_MIXED_RUN, i + 1).every(p => p.id === 'mixed')) mixedOk = false;
+        });
+        // Memoised per day: asking again, or out of order, gives the same answer.
+        if (w.sectorMotif(17) !== seq[17 - w.MOTIF_FROM_SECTOR]) repeatOk = false;
+    }
+    const mixedPct = 100 * share.mixed / total;
+    check(`motif draw rules hold on ${days.length} days x ${w.DAY_ARCHETYPES.length} day types: no motif twice in a row, `
+        + `gold at most once in ${w.MOTIF_GOLD_GAP}, at most ${w.MOTIF_MIXED_RUN} mixed in a row, none before its sector`,
+        repeatOk && goldOk && mixedOk && fromOk);
+    check(`about half the sectors stay mixed and every motif occurs (mixed ${mixedPct.toFixed(0)}%)`,
+        mixedPct > 38 && mixedPct < 58 && ids.every(id => share[id] > 0));
+    // The day type's own motif comes up more often than an unbiased one does on a Classic day.
+    w.setDayArchetype(0);
+    const classic = {};
+    for (const d of days) { w.setDeepDay(d); for (let k = w.MOTIF_FROM_SECTOR; k < 40; k++) { const id = w.sectorMotif(k).id; classic[id] = (classic[id] || 0) + 1; } }
+    const nClassic = days.length * (40 - w.MOTIF_FROM_SECTOR);
+    let biasOk = true;
+    for (const [a, s] of Object.entries(biasShare)) {
+        const id = w.DAY_ARCHETYPES[a].motif;
+        if (!(s.hit / s.n > 1.4 * (classic[id] || 0) / nClassic)) biasOk = false;
+    }
+    check('a day type draws its own motif clearly more often than a Classic day does', biasOk);
+
+    // Intro sectors never thin their hazard; mines never below half; floors hold in every motif.
+    let introOk = true, mineOk = true, floorOk = true;
+    for (const d of days.slice(0, 60)) for (let a = 0; a < w.DAY_ARCHETYPES.length; a++) {
+        w.setDeepDay(d); w.setDayArchetype(a);
+        for (const [kind, k] of Object.entries(w.MOTIF_INTRO)) {
+            const s0 = w.sectorStartWx(k), s1 = w.sectorStartWx(k + 1);
+            for (let wx = s0 + 1; wx < s1; wx += 500) if (w.motifFactor(wx, kind) < 1) introOk = false;
+        }
+        for (let wx = firstWx; wx < 400000; wx += 1733) {
+            if (w.motifFactor(wx, 'mine') < 0.5) mineOk = false;
+            if (w.stalSpacing(wx) < 50 || w.mineSpacing(wx) < 200 || w.coinSpacing(wx) < 175
+                || w.cannonSpacing(wx) < 1200 || w.boulderSpacing(wx) < 2400 || w.chicaneProb(wx) > 0.62) floorOk = false;
+        }
+    }
+    check('a hazard\'s introduction sector never thins it, and mines never drop below half', introOk && mineOk);
+    check('every motif keeps the spacing floors (stal 50, mine 200, coin 175, cannon 1200, boulder 2400, chicane odds 0.62)', floorOk);
+
+    // Kill switch: today's recipe everywhere.
+    w.setMotifs(false);
+    let offOk = true;
+    for (let wx = firstWx; wx < 200000; wx += 911) if (KINDS.some(k => w.motifFactor(wx, k) !== 1) || w.sectorMotif(w.sectorAt(wx)).id !== 'mixed') offOk = false;
+    check('_motifsOn = false restores today\'s recipe at every depth', offOk);
+    w.setMotifs(true); w.setDayArchetype(0);
 }
 
 if (failed) {

@@ -1358,6 +1358,7 @@ const FAKE_AC = `(() => {
         { get: (o, k) => (k in o ? o[k] : () => node()) });
     _master = node(); _musicBus = node();
     musicOn = true; fxOn = true;
+    _depthLoading = true;   // no fetch of the depth track in the sandbox (audio.js _loadDepthBuffer)
     _bgmBuf = { duration: BGM_LOOP_END }; _bgmOutroBuf = { duration: 10 };
     _bgmActive = true; _playBgmBuffer();
 })()`;
@@ -1922,6 +1923,44 @@ const FAKE_AC = `(() => {
     check('the share text without a challenge uses the tagline',
         own(`(() => { startPlay(); scrollX = 9000; score = 150; shieldCount = 0; invulnT = 0; rewardedAdReady = false; die(true);
             return shareRunText().split('\\n')[3] === T.shareTagline && challengeResult === null; })()`));
+}
+
+// ── 14. Sector motifs and the depth music (world.js SECTOR_MOTIFS, audio.js "Depth music") ──
+// Catches: the motif's name missing from the "SECTOR n" notif, the dark stretch never drawing,
+// the bed not handing over at S4 or not landing on Nebula's bar line, a new run staying on the
+// depth track, and a star's hold resuming Nebula's place inside the depth track.
+{
+    const probe = boot();
+    const k = probe(`(() => { for (let k = 4; k < 14; k++) if (sectorMotif(k).name) return k; return -1; })()`);
+    const g = flyTo(probe(`sectorStartWx(${k})`));
+    const want = g(`T.sector + ' ${k} · ' + T[sectorMotif(${k}).name]`);
+    check(`the first named motif sector of the pinned day (S${k}) announces itself: "${want}"`,
+        k >= 4 && g(`notifs.some(n => n.text === ${JSON.stringify(want)})`));
+    const dark = g(`(() => {
+        sectorMotif = k => k >= 4 ? SECTOR_MOTIFS.find(m => m.id === 'dark') : SECTOR_MOTIFS[0];
+        for (let i = 0; i < 90; i++) { shieldCount = 9; hullScratches = HULL_SCRATCHES; _pilot(); update(1 / 60); draw(); }
+        return _motifDarkVis;
+    })()`);
+    check(`a dark-stretch sector darkens the cave around the ship (${dark.toFixed(2)})`, dark === 1);
+
+    const SETUP = `${FAKE_AC}; _nebBuf = _bgmBuf; _nebOutroBuf = _bgmOutroBuf;
+        _depthBuf = { duration: DEPTH_LOOP_END }; _depthOutroBuf = { duration: 7 };`;
+    const a = fzCave(`${SETUP}; neb0 = _bgmNode; _ac.currentTime = 30; bgmSetSector(4);`);
+    const hand = a(`({ track: _bgmTrack, off: _bgmNode.started[1], land: _bgmNode.started[0],
+        nebStopped: neb0.stopped === true, outro: _bgmOutroBuf === _depthOutroBuf })`);
+    const nebCells = (hand.land - a('BGM_LOOP_START')) / (a('BGM_BAR') * a('DEPTH_CELL_BARS'));
+    check(`at S4 the depth track starts on its entry downbeat at the start of a Nebula two-bar cell, at least a bar away (cell ${nebCells.toFixed(3)})`,
+        hand.track === 'depth' && Math.abs(hand.off - a('DEPTH_ENTRY')) < 1e-9 && hand.nebStopped && hand.outro
+        && Math.abs(nebCells - Math.round(nebCells)) < 1e-6 && hand.land >= 30 + a('DEPTH_RUNWAY') - 1e-9);
+    check('a new run starts on Nebula again', a(`(() => { bgmSetSector(0, true); return _bgmTrack === 'nebula' && _bgmBuf === _nebBuf && _bgmOutroBuf === _nebOutroBuf; })()`));
+
+    const h = fzCave(`${SETUP}; _fzMusGen = (t, dest) => ({ t0: t, stop() {} }); _ac.currentTime = 20; frenzyMeter = frenzyCost;`);
+    h(`for (let i = 0; i < 120 && frenzyTime === 0; i++) { ${FZ_HOLD} }`);
+    h('bgmSetSector(4);');
+    h(`_ac.currentTime = 24; for (let i = 0; i < 600 && frenzyTime > 0; i++) { ${FZ_HOLD} }`);
+    const back = h(`({ track: _bgmTrack, at: _bgmNode && _bgmNode.started[1] })`);
+    check(`S4 reached during a star: the star hands back into the depth track's entry (${JSON.stringify(back)})`,
+        back.track === 'depth' && Math.abs(back.at - h('DEPTH_ENTRY')) < 1e-9);
 }
 
 if (failed) { console.log(`\n${failed} check(s) failed.`); process.exit(1); }
