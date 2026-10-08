@@ -117,6 +117,12 @@ a model, not players.
 - Reading: survival time is about W-independent, points per second are not (world-px per
   second scale with W). Only a change that gives every width the same world per second AND
   the same lookahead time can be fair at every tier: drawing the world at scale W/956 on a
-  narrower screen (game logic at W 956, H scaled by 956/W). Taller logic screens measured
-  about fair (956x466, Duo inner 951x669). Not built - a rendering change for its own release.
+  narrower screen (game logic at W 956, H scaled by 956/W). Not built - a rendering change
+  for its own release.
+- **That zoom, measured as its logic screens** (678x440 -> 956x620, SE 667x375 -> 956x538,
+  Duo outer 678x466 -> 956x657): beginner x1.13-1.17, average x0.95-0.97, expert x0.77-0.91.
+  It closes most of the gap, but a taller logic screen still helps beginners and costs
+  experts - the height residual. Only one fixed logic size (956x440 on every device, scaled
+  to fit) is equal by construction; that letterboxes tall screens, against the 19.0 call to
+  fill the Duo.
 
