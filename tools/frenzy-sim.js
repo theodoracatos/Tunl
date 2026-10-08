@@ -280,6 +280,8 @@ this.runOne = function (tierName, seed, starOn, maxSec) {
     const P = TIERS[tierName];
     _rs = seed; _plan = { f: 0, coin: null }; _tick = 0; _q = []; _lastToggle = 0; _simT = 0;
     shieldCount = 0; rewardedAdReady = false;
+    // A pilot past the tap tutor (approach.js): no waiting city, no practice flight.
+    best = Math.max(best, TUTOR_BEST_MAX);
     startPlay();
     starReset(starOn);
     let frames = 0; const dt = 1 / 60, maxF = maxSec * 60;
