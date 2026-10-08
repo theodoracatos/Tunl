@@ -386,7 +386,13 @@ function onDown(e) {
         // comes back to the same screen afterwards and can still hit PLAY AGAIN.
         if (_shareBtnRect && inRect(cx, cy, _shareBtnRect)) {
             sfxUiTap();
-            shareRun();
+            shareRun('link');
+            window.webkit?.messageHandlers?.haptic?.postMessage('light');
+            return;
+        }
+        if (_cardBtnRect && inRect(cx, cy, _cardBtnRect)) {
+            sfxUiTap();
+            shareRun('card');
             window.webkit?.messageHandlers?.haptic?.postMessage('light');
             return;
         }

@@ -1852,6 +1852,10 @@ const NOTIF_STREAK_MIN = 3;
 // opened the app to fly is annoyed by it - it never blocks a tap, the run starts
 // through it.
 const DAY_GRANT_SEC = 4.5;
+// How long the challenge inbox card (web.js checkChallengeInbox, draw.js) tells a sender
+// that someone flew their challenge. It waits out the arrival card above, sits in the
+// same slot and, like it, never blocks a tap.
+const CHALLENGE_INBOX_SEC = 5;
 
 // ── Daily missions ────────────────────────────────────────────────────
 // Three short daily challenges, picked deterministically from the calendar day (see

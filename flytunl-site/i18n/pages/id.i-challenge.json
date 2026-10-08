@@ -1,0 +1,3 @@
+{
+ "6d5a29c": "Membagikan tantangan (tombol BAGIKAN atau KARTU setelah permainan) juga menyimpan skor permainan itu, tanggal guanya, dan jalur yang kamu terbangi - deretan ketinggian, tidak lebih - dengan ID tantangan acak, agar teman yang membuka tautannya bisa berlomba melawannya. Saat teman memainkannya, skor terbaiknya di tantangan itu dan apakah itu permainan pertamanya disimpan bersama pengenal acaknya. Pengenalmu tidak pernah ditampilkan kepada siapa pun. Tantangan dan hasilnya dihapus setelah 45 hari."
+}

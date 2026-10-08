@@ -115,7 +115,8 @@ Rebuilt 2026-09-13: the old screen was *systemless* (13 font sizes, 39 hand-mixe
    pulses in the day accent, never cycles the hue wheel.
 3. **Left-aligned to two column rules** (L = the run, RX = the world); numbers sharing a
    column are right-aligned to R so they form a column instead of drifting with digit count.
-4. **Buttons inside the card**, PLAY AGAIN filled in the day colour, MENU/SHARE as quiet ghosts.
+4. **Buttons inside the card**, PLAY AGAIN filled in the day colour, SHARE a gold ghost, CARD
+   and MENU quiet ghosts (CARD since 2026-10-08, `share.md` "Share text and challenge link").
 5. **The score gets a scale.** The rail runs to the all-time best, or, when the run is
    nowhere near it, to the next milestone (`milestoneStep()`) - the common case, since the
    median real run is short. Whatever the rail doesn't name, the right column or stats line does.

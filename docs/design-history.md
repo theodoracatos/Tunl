@@ -2462,3 +2462,37 @@ It is now the lip itself (hull outside body and glove, ahead of the wing root) e
 - read as a grey "D" on the shadow side; both are flat plates and now share the glove's tone, as
 they shade alike in 3D. With the full fuselage facet the lower body takes the shadow tone the K5
 lighting always meant (top half toward white, bottom toward dark).
+
+## Share text and challenge link (2026-10-08)
+
+The user's spec "TUNL: Share-Text und Challenge-Link" (phases 1-3, all into 19.0) turned
+sharing into a loop. Decisions and what the code changed against the spec:
+
+- **Link first (D1).** SHARE sends text + link, no picture; the card moved to a new CARD
+  button. Rejected: keeping image + text on SHARE - some share targets keep only the image and
+  lose the link (WebKit bug 251500, the iOS UIActivityViewController forum thread). Wordle
+  shared only text.
+- **The ghost left the link for good.** Since 2026-09-21 the shared link carried no ghost
+  (too long for chats and the QR); share.md said the fix was server-side. It is: `?c` names a
+  worker row with the ghost. `?d` and `?s` stay (D2): the cave is fixed at script load and the
+  banner needs the score at once, so the worker being down costs only the ghost.
+  `SHARE_GHOST_MAX_B64` and `shareRunUrl(compact)` are gone; the desktop copy lost its `?g`.
+- **Ids made on the device (D3)**, so the share sheet never waits on the network; an
+  outbox retries uploads at the next boot. No names on the server (D4).
+- **REMATCH is always offered to a recipient (D6)**, past `SHARE_MIN_SCORE`.
+- **Five-line text with a sector bar**, Wordle-style. The combo left the text.
+- **Deviations from the spec, by the code:** the title banner also shows when the worker is
+  unreachable (the spec's "today's behaviour" for a dead worker): it reads only the link's own
+  `?s`, so it is honest without the worker, and only the ghost is missing. The sender's own
+  link is recognised from its `?r` before the worker answers. `challengeInbox` wording avoids
+  plural forms per language ("{beats} besser als du", "battu par {beats}"). A run that newly
+  beats a challenge is reported to the sender a second time, as a beat. Worker tests run on a
+  real SQLite (`node:sqlite`) rather than a hand-written mock.
+- **Found on the way:** the worker answered CORS with `https://flytunl.ch` for every origin,
+  so the apps' WebViews refused every reply - referral claims from the apps never arrived.
+  It now answers each allowed origin with itself. And the worker refuses a token younger
+  than 8 s while the web fetched its token at the moment of death, so a session's first
+  leaderboard submit was refused; `startPlay()` now prefetches it and submits wait out the
+  rest.
+- **Not built:** phase 4 (a preview image per challenge) needs the flytunl.ch DNS zone at
+  Cloudflare; iOS deferred deep links (the web pitch tells iPhones to tap the link again).

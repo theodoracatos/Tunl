@@ -4328,6 +4328,9 @@ function drawTitleScreen() {
     const levelY = Math.max(LAND ? H * 0.395 - 11 : H/2 - H*0.038,
                             ulY + 1.5 + colGap + (ctx.measureText(levelLine).actualBoundingBoxAscent || levelFsz * 0.5));
     ctx.fillText(levelLine, titleX, levelY);
+    // Right ink edge of the left column (logo, world, planet, stat plate), so the hero
+    // stage below can keep its chevrons clear of it (Hero ship stage, iPhone Duo).
+    let titleColRight = Math.max(titleX + logoW / 2, titleX + ctx.measureText(levelLine).width / 2);
     const levelInkBottom = levelY + (ctx.measureText(levelLine).actualBoundingBoxDescent || levelFsz * 0.5);
     ctx.shadowBlur = 0;
 
@@ -4366,6 +4369,7 @@ function drawTitleScreen() {
                                    levelInkBottom + colGap + (pm.actualBoundingBoxAscent || planetFsz * 0.5));
         planetInkBottom = planetBaselineY + (pm.actualBoundingBoxDescent || planetFsz * 0.5);
         ctx.fillText(planetLine, titleX, planetBaselineY);
+        titleColRight = Math.max(titleColRight, titleX + pm.width / 2);
         ctx.shadowBlur  = 0;
     }
 
@@ -4389,6 +4393,7 @@ function drawTitleScreen() {
     // shards and stardust all still exist, they just live one tap away now
     // (inside the ALL SHIPS sheet below) instead of competing with the logo for
     // the same screen (Cockpit-Kritik observations 2 and 5).
+    let titleLeftBottom = planetInkBottom;   // the challenge banner below starts under this
     if (best > 0) {
         // Sat at a flat 0.70H (below the in-scene idle ship at PX/py ~ 0.5H),
         // but that pulled it so far from the planet line above that the two no
@@ -4435,6 +4440,7 @@ function drawTitleScreen() {
         const lblY = Math.max(rekordY + FS * 0.002, planetInkBottom + colGap * 1.6 + lblAsc);
         const valY = lblY + FS * 0.034;
         let cx = titleX - totalW / 2;
+        titleColRight = Math.max(titleColRight, titleX + totalW / 2);
         ctx.textAlign = 'center';
         cells.forEach((c, i) => {
             const mid = cx + widths[i] / 2;
@@ -4462,6 +4468,61 @@ function drawTitleScreen() {
             }
         });
         try { ctx.letterSpacing = '0px'; } catch (e) {}
+        titleLeftBottom = valY + bigFsz * 0.45;
+    }
+
+    // ── Challenge banner (web.js challengeActive, 2026-10-08) ───────────
+    // Opened on a friend's challenge link: say so before the first run, in the left
+    // column under the stats - the score to beat, that it is the same cave with their
+    // ghost in it, and for a past day's link which day's cave this is. Not a control
+    // hint (visuals/onboarding: no title-screen control hint): it names the opponent,
+    // not the input. Day accent edge like the rest of the title; shrinks to the column.
+    if (challengeActive()) {
+        const acc  = lerpClr(getTheme().wallBase, [255, 255, 255], 0.35);
+        const past = _tunlActiveDayInt() !== _tunlTodayInt();
+        let dateTxt = '';
+        if (past) {
+            try {
+                dateTxt = _tunlActiveDate().toLocaleDateString(activeLang, { day: 'numeric', month: 'short', timeZone: 'UTC' });
+            } catch (e) { dateTxt = String(_tunlActiveDayInt()); }
+        }
+        const lines = [
+            { t: T.challengeBanner.replace('{n}', webParamGhostScore.toLocaleString()), fs: FS * 0.026, bold: true, c: rgb(acc, a * 0.98) },
+            { t: T.challengeSub, fs: FS * 0.018, bold: false, c: `rgba(220,228,248,${a * 0.88})` },
+        ];
+        if (past) lines.push({ t: T.challengePastDay.replace('{date}', dateTxt), fs: FS * 0.016, bold: false, c: `rgba(175,190,225,${a * 0.80})` });
+        const padH = FS * 0.022, padV = FS * 0.016, gapL = FS * 0.010;
+        const availW = (LAND ? Math.min(titleX, W * 0.46 - titleX) * 2 - 32 : W - 48) - padH * 2;
+        const setF = ln => { ctx.font = `${ln.bold ? 'bold ' : ''}${ln.fs}px ${FONT_UI}`; };
+        let textW = 0;
+        for (const ln of lines) { setF(ln); textW = Math.max(textW, ctx.measureText(ln.t).width); }
+        if (textW > availW) {
+            const k = Math.max(0.6, availW / textW);
+            for (const ln of lines) ln.fs *= k;
+            textW = Math.min(textW * k, availW);
+        }
+        const bw = textW + padH * 2;
+        const bh = padV * 2 + lines.reduce((h, ln) => h + ln.fs, 0) + gapL * (lines.length - 1);
+        const bx = titleX - bw / 2;
+        // Under the stats, and never into the bottom edge on a short screen.
+        const by = Math.min(titleLeftBottom + colGap * 3, H * 0.94 - bh);
+        ctx.save();
+        ctx.globalAlpha = a;
+        drawMenuPanel(bx, by, bw, bh, 10);
+        ctx.strokeStyle = rgb(acc, a * (0.45 + 0.15 * Math.sin(gtime * 2)));
+        ctx.lineWidth   = 1.5;
+        ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 10); ctx.stroke();
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'alphabetic';
+        let ly = by + padV;
+        for (const ln of lines) {
+            setF(ln);
+            ly += ln.fs * 0.82;
+            ctx.fillStyle = ln.c;
+            ctx.fillText(ln.t, titleX, ly, availW);
+            ly += ln.fs * 0.18 + gapL;
+        }
+        ctx.restore();
     }
 
     // ── Hero ship stage ─────────────────────────────────────────────────
@@ -4469,14 +4530,31 @@ function drawTitleScreen() {
     // entirely now that neither the stat block nor the ship grid live here by
     // default (Cockpit-Kritik observation 6: that gap used to sit empty on wide
     // devices while the right column was crammed; it's the whole stage now).
-    const shipStageX = LAND ? W * 0.60 : W / 2;
+    let shipStageX = LAND ? W * 0.60 : W / 2;
     // Web build: H*0.53, parked to sit centred on a desktop letterbox. App: H*0.50
     // (was 0.58) so the dock - ship, name, ALL SHIPS pill stacked under it - fits
     // above the bottom edge on a 375pt-tall iPhone 12 mini / SE. At 0.58 the name
     // alone already sat at 336 of 375, which is what forced the pill up to the rail's
     // first icon, above the logo and nowhere near the ship it opens.
     const dockY      = LAND ? (isWeb() ? H * 0.53 : H * 0.50) : H * 0.50;
-    const heroR       = LAND ? Math.min(H * 0.16, UI_H * 0.15) : H * 0.12;
+    let heroR         = LAND ? Math.min(H * 0.16, UI_H * 0.15) : H * 0.12;
+    // heroR grows with H but the stage sits at a fixed W fraction, so a tall screen for
+    // its width (iPhone Duo 951x669 and 678x466, iPhone SE 667x375) pushed the left
+    // chevron into the stat plate and world line (2026-10-08). Where it would reach the
+    // left column, slide the stage right toward the icon rail first, and only shrink the
+    // ring when even that space is too narrow. Never fires where the two already clear
+    // (956x440, 874x402 render as before). The chevron tip reaches chevGap + 0.5 chevR.
+    // Apps only, like every shared layout change: the web title is left as it was.
+    if (LAND && !isWeb()) {
+        const reach = 2.3 + 0.55 * 0.5;
+        const margin = FS * 0.02;
+        const lo = titleColRight + margin;
+        const hi = W - Math.max(W * 0.06, 46) - SAFE_R - 27 - margin;   // the rail's left edge (iconR <= 27)
+        if (shipStageX - heroR * reach < lo) {
+            heroR = Math.min(heroR, (hi - lo) / (2 * reach));
+            shipStageX = Math.min(Math.max(shipStageX, lo + heroR * reach), hi - heroR * reach);
+        }
+    }
     // Ship, ring, pips and chevrons sit heroR*0.30 above the dock anchor while the
     // name and ALL SHIPS pill stay put, so the ring no longer crowds the name/button
     // below it (app dock rework). Extended to web (2026-09-14, on request) once the
@@ -5908,6 +5986,34 @@ function drawTitleScreen() {
         ctx.restore();
     }
 
+    // ── Challenge inbox card (web.js checkChallengeInbox, 2026-10-08) ────
+    // Someone flew a challenge this player sent. Same slot and panel as the arrival card
+    // above, after it has gone; one line, never blocks a tap.
+    if (challengeInboxT > 0 && challengeInbox && dayGrantT <= 0 && !showSettings && !showShop
+        && !showMissions && !showShipPicker && !showCurrencyInfo && !showStardustPath) {
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const ga  = a * Math.min(1, (CHALLENGE_INBOX_SEC - challengeInboxT) * 4, challengeInboxT * 2);
+        const txt = T.challengeInbox.replace('{plays}', challengeInbox.plays).replace('{beats}', challengeInbox.beats);
+        let fs = FS * 0.022;
+        ctx.font = `bold ${fs}px ${FONT_UI}`;
+        const padV = H * 0.026, padH = W * 0.030, maxW = W * 0.70;
+        let tw = ctx.measureText(txt).width;
+        if (tw > maxW - padH * 2) { fs *= (maxW - padH * 2) / tw; ctx.font = `bold ${fs}px ${FONT_UI}`; tw = ctx.measureText(txt).width; }
+        const cardW = tw + padH * 2, cardH = fs + padV * 2;
+        const cardX = W / 2 - cardW / 2, cardY = H * 0.045;
+        const acc = lerpClr(getTheme().wallBase, [255, 255, 255], 0.35);
+        ctx.globalAlpha = ga;
+        drawMenuPanel(cardX, cardY, cardW, cardH, 12);
+        ctx.strokeStyle = rgb(acc, 0.55);
+        ctx.lineWidth   = 1.5;
+        ctx.beginPath(); ctx.roundRect(cardX, cardY, cardW, cardH, 12); ctx.stroke();
+        ctx.fillStyle = 'rgba(236,242,255,0.96)';
+        ctx.fillText(txt, W / 2, cardY + cardH / 2);
+        ctx.restore();
+    }
+
     // ── Daily-reminder opt-in card (src/notify.js) ───────────────────────
     // One-time, shown on the first title screen of any day after the day the app
     // was first opened (state.js showNotifPrompt). Modal-style over the title, but
@@ -5915,7 +6021,7 @@ function drawTitleScreen() {
     _notifPromptYesRect = null; _notifPromptNoRect = null;
     // Waits out the arrival card above (dayGrantT): both land on the first title
     // screen of a new day, and two cards at once is one card too many.
-    if (showNotifPrompt && dayGrantT <= 0
+    if (showNotifPrompt && dayGrantT <= 0 && !(challengeInboxT > 0)
         && window._tunlHasNotifBridge && window._tunlHasNotifBridge()
         && !showSettings && !showShop && !showMissions && !showShipPicker && !showCurrencyInfo
         && !showStardustPath) {
@@ -6328,6 +6434,15 @@ function drawDeathScreen() {
     // Reward chips, wrapping inside the left column.
     const rewards = [];
     if (recordChip) rewards.push(recordChip);
+    // The answer to a friend's challenge (web.js challengeRunDone): BEATEN +n in the
+    // positive green, n SHORT in a cool neutral, and once the worker has counted at
+    // least two answers, how the field did.
+    if (challengeResult && challengeActive()) {
+        const cr = challengeResult;
+        let t = (cr.beat ? T.challengeBeat : T.challengeShort).replace('{n}', cr.delta.toLocaleString());
+        if (cr.plays >= 2) t += '  ·  ' + T.challengeTally.replace('{beats}', cr.beats).replace('{plays}', cr.plays);
+        rewards.push({ t: t, c: cr.beat ? [120, 255, 150] : [175, 190, 225] });
+    }
     if (skinUnlockIdx >= 0) {
         rewards.push({ t: `${SKINS[skinUnlockIdx].name} ${T.unlocked}`, c: SKINS[skinUnlockIdx].shadow });
     } else if (skinMasteryUpIdx >= 0) {
@@ -6632,7 +6747,7 @@ function drawDeathScreen() {
     // is that the row sits inside the panel and that PLAY AGAIN is filled rather than
     // being a third equally-weighted outline. SHARE only appears on a run worth showing
     // someone (share.js shareWorthy) and only where there is somewhere to send it.
-    _shareBtnRect = null;
+    _shareBtnRect = null; _cardBtnRect = null;
     if (deadT > 0.95) {
         const b    = Math.min(1, (deadT - 0.95) * 6);
         const bh   = bhBtn;
@@ -6664,16 +6779,28 @@ function drawDeathScreen() {
         sh(0);
         btnLabel(T.playAgain, bx + pw / 2, byT + bh / 2, pw * 0.84, `rgba(8,10,20,${b * 0.95})`, DS_TXT);
 
-        // SHARE -- gold ghost, the game's reward language.
+        // SHARE -- gold ghost, the game's reward language. It sends the text with the
+        // challenge link (share.js shareRun, "link first"); CARD beside it sends the
+        // picture, as quiet as HOME. A recipient answering a challenge sees REMATCH here.
         if (shareWorthy() && shareAvailable()) {
+            const copied = k => _shareCopiedT > 0 && _shareCopiedKind === k;
+            const reply  = typeof challengeActive === 'function' && challengeActive();
             bx -= gw + gap;
             _shareBtnRect = { x: bx, y: byT, w: gw, h: bh };
             sh(0);
             ctx.strokeStyle = `rgba(255,205,80,${b * 0.55})`;
             ctx.lineWidth   = 1.5;
             ctx.beginPath(); ctx.roundRect(bx, byT, gw, bh, 8); ctx.stroke();
-            btnLabel(_shareCopiedT > 0 ? T.linkCopied : T.share, bx + gw / 2, byT + bh / 2,
+            btnLabel(copied('link') ? T.linkCopied : (reply ? T.challengeReply : T.share), bx + gw / 2, byT + bh / 2,
                      gw * 0.84, `rgba(255,222,130,${b * 0.95})`, DS_TXT);
+
+            bx -= gw + gap;
+            _cardBtnRect = { x: bx, y: byT, w: gw, h: bh };
+            ctx.strokeStyle = `rgba(255,255,255,${b * 0.16})`;
+            ctx.lineWidth   = 1;
+            ctx.beginPath(); ctx.roundRect(bx, byT, gw, bh, 8); ctx.stroke();
+            btnLabel(copied('card') ? T.linkCopied : T.card, bx + gw / 2, byT + bh / 2,
+                     gw * 0.84, `rgba(168,180,212,${b * 0.90})`, DS_TXT);
         }
 
         // HOME -- quiet ghost.
@@ -7002,6 +7129,9 @@ function drawWebContinuePromo() {
     // Everything the app has that this browser tab does not, one glyph each.
     const perks = [['bell', T.webPerkReminder], ['drop', T.webPerkPaint], ['heart', T.webPerkRevive]];
     const only = webStoreOnly();
+    // On an iPhone opened on a challenge link: the install cannot carry the link into the
+    // app (no deferred deep link on iOS, challenge spec phase 3), so say what to do.
+    if (only === 'ios' && challengeActive()) perks.push(['link', T.challengeAfterInstall]);
 
     // ── fit ───────────────────────────────────────────────────────────────────
     // The card is sized by its CONTENT, then the type is scaled down until that
@@ -7120,6 +7250,14 @@ function drawWebContinuePromo() {
             ctx.moveTo(cx, cy - s * 0.9);
             ctx.arc(cx, oy, r, -Math.PI / 2 + 1.023, -Math.PI / 2 - 1.023 + Math.PI * 2);
             ctx.closePath();
+        } else if (kind === 'link') {
+            // Two chain links, the usual "link" sign: rounded bars crossing on a diagonal.
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(-Math.PI / 4);
+            ctx.roundRect(-s * 0.95, -s * 0.30, s * 1.15, s * 0.60, s * 0.30);
+            ctx.roundRect(-s * 0.20, -s * 0.30, s * 1.15, s * 0.60, s * 0.30);
+            ctx.restore();
         } else {
             ctx.moveTo(cx, cy + s * 0.75);
             ctx.bezierCurveTo(cx - s * 1.1, cy, cx - s * 0.6, cy - s * 0.9, cx, cy - s * 0.35);

@@ -1,0 +1,3 @@
+{
+ "6d5a29c": "Bir meydan okumayı paylaştığında (bir turdan sonra PAYLAS veya KART düğmesi), o turun skoru, mağarasının tarihi ve uçtuğun rota - yalnızca bir yükseklik dizisi, başka bir şey değil - rastgele bir meydan okuma kimliğiyle kaydedilir; böylece bağlantıyı açan bir arkadaşın onunla yarışabilir. Bir arkadaşın meydan okumayı oynadığında, oradaki en iyi skoru ve bunun ilk turu olup olmadığı rastgele tanımlayıcısıyla birlikte kaydedilir. Senin tanımlayıcın hiç kimseye gösterilmez. Meydan okumalar ve sonuçları 45 gün sonra silinir."
+}

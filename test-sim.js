@@ -57,13 +57,13 @@ class PinnedDate extends Date {
     static now() { return SIM_NOW; }
 }
 
-function boot(innerWidth = 956, innerHeight = 440, seed = {}) {
+function boot(innerWidth = 956, innerHeight = 440, seed = {}, search = '') {
     const ctx = fakeContext();
     const canvas = () => ({ getContext: () => ctx, width: 0, height: 0, style: {}, addEventListener() {},
         getBoundingClientRect: () => ({ left: 0, top: 0, width: innerWidth, height: innerHeight }),
         toDataURL: () => 'data:image/png;base64,', toBlob() {} });
     const store = { ...seed };
-    const location = { search: '', href: 'app://tunl/', hostname: '', pathname: '/', hash: '' };
+    const location = { search, href: 'app://tunl/' + search, hostname: '', pathname: '/', hash: '' };
     const navigator = { language: 'en', languages: ['en'], userAgent: 'node', vibrate() {} };
     const sb = {
         // The iOS message-handler bridge makes isWeb() false: this suite runs the APP.
@@ -246,9 +246,12 @@ function quietCave(deep = false) {
     const g = quietCave(true);
     check('precondition: at this depth the corridor wall is on screen, not the screen edge',
         g('(b => b.top > PR * 3 && b.bot < H - PR * 3)(boundsAt(scrollX + PX))'));
-    g('{ const _b = boundsAt(scrollX + PX); py = _b.top - 2; } update(1 / 60);');
+    g('runHitSectors = []; { const _b = boundsAt(scrollX + PX); py = _b.top - 2; } update(1 / 60);');
     check('a wall contact with scratches left spends one and keeps the run alive',
         g('phase') === 'play' && g('hullScratches') === g('HULL_SCRATCHES') - 1 && g('wallGraceT') > 0);
+    // Catches: the share text's sector bar (share.js shareSectorBar) losing the scratch.
+    check(`the scratch is noted in the sector it happened in (runHitSectors ${g('JSON.stringify(runHitSectors)')})`,
+        g('JSON.stringify(runHitSectors) === JSON.stringify([sectorAt(scrollX)])') && g('runHitSectors.length') === 1);
     g('wallGraceT = 0; hullScratches = 0; { const _b = boundsAt(scrollX + PX); py = _b.top - 2; } update(1 / 60);');
     check('a wall contact with no scratches left is fatal', g('phase') === 'dead');
 }
@@ -1821,6 +1824,104 @@ const FAKE_AC = `(() => {
         r.texts.includes(Math.floor(r.want).toLocaleString()));
     check('the title labels it as a score total, not as distance flown',
         !!r.lblTotal && r.texts.includes(r.lblTotal) && !r.texts.includes(r.lblFlown));
+}
+
+// ── 13. The challenge link (web.js "Challenge link", share.js, state.js applyFriendGhost) ──
+// Catches: a parser that takes a malformed ?c or drops an old link form, the ?g path and
+// the server path decoding a ghost differently, a ghost recorded on the tallest screen
+// leaving the corridor on the shortest, and the recipient's result / REMATCH / parent
+// chain breaking.
+{
+    // Link parsing, old and new forms side by side.
+    const P1 = '3f2504e0-4f89-41d3-9a0c-0305e82c3301';
+    const parse = q => boot(956, 440, {}, q)('({ c: webParamChallenge, d: webParamDay, s: webParamGhostScore, r: webParamReferrer, g: webParamGhost })');
+    check('a 10-char ?c is taken', parse('?c=AbCdEfGhIj').c === 'AbCdEfGhIj');
+    check('a 9-char ?c is ignored', parse('?c=AbCdEfGhI').c === null);
+    check('an 11-char ?c is ignored', parse('?c=AbCdEfGhIjK').c === null);
+    check('a ?c with a dash is ignored', parse('?c=AbCdE-GhIj').c === null);
+    const old = parse('?d=20260901&s=412&g=AAECAw&r=' + P1);
+    check('an old link (8-digit ?d, ?g, dashed ?r, no ?c) still parses',
+        old.d === 20260901 && old.s === 412 && old.g === 'AAECAw' && old.r === P1 && old.c === null);
+
+    // One decoder for both ghost sources: ?g and the worker's g give the same bytes.
+    const track = Array.from({ length: 50 }, (_, i) => (i * 37) % 256);
+    const b64 = Buffer.from(track).toString('base64');
+    const url = b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const viaLink = boot(956, 440, {}, '?g=' + url + '&s=123')('Array.from(_webGhostPlay || [])');
+    const gs = boot();
+    const viaServer = gs(`applyFriendGhost(${JSON.stringify(url)}, 123) && Array.from(_webGhostPlay)`);
+    const viaStd = boot()(`applyFriendGhost(${JSON.stringify(b64)}, 123) && Array.from(_webGhostPlay)`);
+    check('applyFriendGhost: ?g link and server ghost give the same bytes',
+        JSON.stringify(viaLink) === JSON.stringify(track) && JSON.stringify(viaServer) === JSON.stringify(track)
+        && JSON.stringify(viaStd) === JSON.stringify(track));
+    check('applyFriendGhost: the ghost becomes the chase target with its score', gs('ghostScore') === 123 && gs('ghostPlay.length') === 50);
+    check('applyFriendGhost: junk is refused and the local ghost kept', gs('applyFriendGhost("@@@", 5)') === false && gs('ghostScore') === 123);
+    gs('startPlay(); phase = "play"');
+    check('a ghost arriving mid-run waits for the next run',
+        gs(`(() => { const before = ghostPlay; applyFriendGhost(${JSON.stringify(url.slice(0, 20))}, 9); return ghostPlay === before && _webGhostScore === 9; })()`));
+
+    // A ghost flown on the tallest app screen (H 670) stays inside the corridor on the web's
+    // shortest (H 440): the track is stored as a fraction of H and the corridor is H-derived.
+    // Sampled on three caves via ?d.
+    for (const day of [20260921, 20260915, 20260903]) {
+        const tall = boot(956, 670, {}, '?d=' + day);
+        tall(AUTOPILOT);
+        tall('startPlay()');
+        tall(`for (let i = 0; i < 200000 && (scrollX < 12000 || approachLeft > 0 || startRamp < 1); i++) {
+            shieldCount = 9; hullScratches = HULL_SCRATCHES; _pilot(); update(1 / 60);
+            if (phase !== 'play') throw new Error('run ended at wx ' + scrollX);
+        }`);
+        const rec = tall('({ g: ghostEncode(ghostTrack), H: H })');
+        const short = boot(956, 440, {}, '?d=' + day);
+        const out = short(`(() => {
+            startPlay();   // the day's cave variety is seeded here, as for a real recipient
+            applyFriendGhost(${JSON.stringify(rec.g)}, 1);
+            const gp = _webGhostPlay;
+            let worst = Infinity, n = 0;
+            for (let i = 0; i < gp.length; i++) {
+                const wx = i * GHOST_STEP + PX, y = gp[i] / 255 * H;
+                if (wx < SAFE_START_WX) continue;          // the walls sit at the screen edges there
+                const b = boundsBase(wx);
+                worst = Math.min(worst, y - b.top, b.bot - y); n++;
+            }
+            return { worst, n, H };
+        })()`);
+        check(`a ghost recorded at H ${rec.H} stays inside the corridor at H ${out.H} (${day}, ${out.n} samples, closest ${out.worst.toFixed(1)}px)`,
+            rec.H === 670 && out.H === 440 && out.n > 100 && out.worst > 0);
+    }
+
+    // The recipient: banner state, result, REMATCH text, parent.
+    const SENDER = 'aaaaaaaa-1111-4111-8111-111111111111';
+    const packed = Buffer.from(SENDER.replace(/-/g, ''), 'hex').toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const rc = boot(956, 440, { tunnel_best: '50' }, '?d=hx&s=100&c=AbCdEfGhIj&r=' + packed);
+    check('a friend\'s challenge is active from the link alone', rc('challengeActive()') === true);
+    const res = rc(`(() => {
+        startPlay(); scrollX = 9000; score = 150; shieldCount = 0; invulnT = 0; rewardedAdReady = false; die(true);
+        draw();
+        const worthy = shareWorthy();
+        const text = shareRunText();
+        const id = challengeEnsure();
+        const box = JSON.parse(localStorage.getItem('tunnel_challenge_outbox') || '[]');
+        return { result: challengeResult, worthy, text, id, url: shareRunUrl(), box, won: T.shareReplyWon };
+    })()`);
+    check(`the result against the challenge is BEATEN +50 (${JSON.stringify(res.result)})`,
+        res.result && res.result.beat === true && res.result.delta === 50);
+    check('the share text answers with the rematch line', res.text.split('\n')[3] === res.won.replace('{n}', '50'));
+    check('REMATCH is offered even when the run would not be share-worthy on its own', res.worthy === true);
+    check('the rematch is a new challenge whose parent is the one answered',
+        /^[0-9A-Za-z]{10}$/.test(res.id) && res.id !== 'AbCdEfGhIj' && res.url.indexOf('&c=' + res.id) > 0
+        && res.box.length === 1 && res.box[0].parent === 'AbCdEfGhIj' && res.box[0].s === 150 && res.box[0].src === 'ios');
+    check('one id per run: a second share reuses it', rc('challengeEnsure()') === res.id);
+    check('a new run starts without a challenge id or result', rc('startPlay(); runChallengeId === null && challengeResult === null'));
+    const short = rc(`(() => { scrollX = 3000; score = 60; shieldCount = 0; invulnT = 0; rewardedAdReady = false; die(true); return challengeResult; })()`);
+    check(`a run that falls short reads 40 SHORT (${JSON.stringify(short)})`, short && short.beat === false && short.delta === 40);
+
+    // The sender opening their own link: no banner, no result.
+    const own = boot(956, 440, { tunnel_web_id: SENDER }, '?d=hx&s=100&c=AbCdEfGhIj&r=' + packed);
+    check('the sender\'s own link is not a challenge to them', own('challengeActive()') === false);
+    check('the share text without a challenge uses the tagline',
+        own(`(() => { startPlay(); scrollX = 9000; score = 150; shieldCount = 0; invulnT = 0; rewardedAdReady = false; die(true);
+            return shareRunText().split('\\n')[3] === T.shareTagline && challengeResult === null; })()`));
 }
 
 if (failed) { console.log(`\n${failed} check(s) failed.`); process.exit(1); }

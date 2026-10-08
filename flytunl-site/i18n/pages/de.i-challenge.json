@@ -1,0 +1,3 @@
+{
+ "6d5a29c": "Wenn du eine Herausforderung teilst (die Schaltfläche TEILEN oder KARTE nach einem Lauf), werden zusätzlich der Score dieses Laufs, das Datum seiner Höhle und die Flugbahn, die du geflogen bist - eine Reihe von Höhenwerten, sonst nichts - unter einer zufälligen Herausforderungs-ID gespeichert, damit ein Freund, der den Link öffnet, gegen sie fliegen kann. Fliegt ein Freund sie, werden sein bester Score darauf und ob es sein erster Lauf war mit seiner zufälligen Kennung gespeichert. Deine Kennung wird niemandem angezeigt. Herausforderungen und ihre Ergebnisse werden nach 45 Tagen gelöscht."
+}

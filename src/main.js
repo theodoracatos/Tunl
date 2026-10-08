@@ -167,9 +167,10 @@ function _syncWebCta() {
     // panel content.
     const _panelOpen = showShop || showShipPicker || showSettings || showMissions || showCurrencyInfo || appOnlyKey;
     const show = isWeb() && phase === 'title' && !_portraitCovered && !_panelOpen;
-    // The pill sits top-centre, where the day's arrival card is drawn (dayGrantT):
-    // it waits the card out. The legal links do not.
-    const showCta = show && dayGrantT <= 0;
+    // The pill sits top-centre, where the day's arrival card (dayGrantT) and the
+    // challenge inbox card (challengeInboxT) are drawn: it waits them out. The legal
+    // links do not.
+    const showCta = show && dayGrantT <= 0 && !(challengeInboxT > 0);
     if (showCta && _ctaLbl && typeof T !== 'undefined' && T.getApp && _ctaLangShown !== T.getApp) {
         _ctaLbl.textContent = T.getApp;
         _ctaLangShown = T.getApp;
@@ -300,6 +301,10 @@ _initAC();
 // this player referred who has since played (web.js checkReferralReward).
 // Not gated on isWeb() - see that function's doc comment.
 if (typeof checkReferralReward === 'function') checkReferralReward();
+// The challenge link (web.js "Challenge link"), same platform rule: the ghost of the
+// challenge this page was opened on, who flew this player's own challenges, and any
+// challenge an earlier session could not upload.
+if (typeof challengeFetch === 'function') { challengeFetch(); checkChallengeInbox(); challengeFlushOutbox(); }
 titleScreen();
 _updatePortraitGate();
 // Hold the first frame until the bundled typefaces (fonts.js) are usable, capped at

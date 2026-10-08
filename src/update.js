@@ -156,6 +156,8 @@ function update(dt) {
         // The day's arrival card fades itself out (constants.js DAY_GRANT_SEC). `dayGrant`
         // itself stays for the death screen's chip on the first run of the day.
         if (dayGrantT > 0) dayGrantT = Math.max(0, dayGrantT - dt);
+        // The challenge inbox card waits for the arrival card, then runs its own clock.
+        else if (challengeInboxT > 0) challengeInboxT = Math.max(0, challengeInboxT - dt);
         scrollX += 110 * dt;
         refreshWave();
         const { top: _tTop, bot: _tBot } = boundsAt(scrollX + PX);
@@ -1014,6 +1016,7 @@ function update(dt) {
 // no blink). It counts as a hit for the No-Hit achievement like every other absorbed collision.
 function hullScratch(top, bot, r) {
     hullScratches--;
+    markRunSector(runHitSectors);
     hudHullHitT = gtime;   // the HUD plate breaks (draw.js drawEnergyConsole)
     runHitCount++;
     wallGraceT = WALL_GRACE_SEC;
@@ -1072,6 +1075,13 @@ function trackGraze(o, inZone) {
     window.webkit?.messageHandlers?.haptic?.postMessage('light');
 }
 
+// Notes the sector the ship is in for the share text's bar (state.js runHitSectors doc).
+// Statistics only: sectorAt() reads the flight-plan table, never rng().
+function markRunSector(list) {
+    const k = sectorAt(Math.max(0, scrollX));
+    if (list.indexOf(k) < 0) list.push(k);
+}
+
 function die(bypassShield = false) {
     if (DEV_INVINCIBLE) return false;
     // "No-Hit Run" (constants.js NO_HIT_ACH_ID doc): counts every real collision this
@@ -1084,6 +1094,7 @@ function die(bypassShield = false) {
     if (invulnT > 0) return false;
     if (!bypassShield && shieldCount > 0) {
         shieldCount--;
+        markRunSector(runHitSectors);
         shieldFlash = 1.0; shake = 10;
         burst(PX, py, 26);
         // Push to corridor center so the next frame passes collision
@@ -1114,7 +1125,7 @@ function die(bypassShield = false) {
     bgmSetWarp(false);
     phase = 'dead'; deadT = 0; flashA = 1.0; shake = 14; holding = false; tapBurstT = 0;
     _shareCopiedT = 0;
-    _homeBtnRect = null; _playBtnRect = null; _shareBtnRect = null; _continueBtnRect = null; _shardsChipRect = null;
+    _homeBtnRect = null; _playBtnRect = null; _shareBtnRect = null; _cardBtnRect = null; _continueBtnRect = null; _shardsChipRect = null;
     _promoAppleBtnRect = null; _promoPlayBtnRect = null;
     // Impact feedback fires now, unconditionally -- a hit should always feel like a
     // hit, whether or not a rewarded continue ends up saving the run a moment later
@@ -1317,6 +1328,10 @@ function commitDeath() {
         if (typeof webSubmitScore === 'function') {
             const _nowMs = (typeof performance !== 'undefined' ? performance.now() : Date.now());
             webSubmitScore(score, (_nowMs - _webRunStartMs) / 1000);
+            // Challenge link (web.js challengeRunDone): this run against the challenge the
+            // page was opened on. totalRuns already counts this run (startPlay), so 1 means
+            // it was the player's first.
+            challengeRunDone(score, (_nowMs - _webRunStartMs) / 1000, totalRuns === 1);
         }
     }
     // Bank this run's collected coins into the persistent shard balance, capped per day so
@@ -1467,6 +1482,8 @@ function grantRevive() {
     continueOfferPending = false;
     continueAdPending = false;
     continuesUsedThisRun++;
+    // scrollX is still where the run died: that sector reads as a crash survived.
+    markRunSector(runReviveSectors);
     // The run goes on, so its frozen death frame is not the last scene any more.
     dropDeathScene();
     const b = boundsAt(scrollX + PX);

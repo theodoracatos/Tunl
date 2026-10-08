@@ -1,0 +1,3 @@
+{
+ "6d5a29c": "Compartir un reto (el botón COMPARTIR o TARJETA tras una partida) guarda además la puntuación de esa partida, la fecha de su cueva y la trayectoria que volaste - una serie de alturas, nada más - con un ID de reto aleatorio, para que un amigo que abra el enlace pueda competir contra ella. Cuando un amigo lo juega, se guardan su mejor puntuación en él y si era su primera partida, junto con su identificador aleatorio. Tu identificador nunca se muestra a nadie. Los retos y sus resultados se eliminan después de 45 días."
+}

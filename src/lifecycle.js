@@ -201,6 +201,10 @@ function startPlay() {
     // Web leaderboard: wall-clock start of this run, read at death for the
     // score/play-time sanity check. Harmless (unused) in the app builds.
     _webRunStartMs = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    // Challenge link (web.js): a new run is a new challenge to share, its own result
+    // against an incoming one is not known yet, and the worker's token ages during the run.
+    runChallengeId = null; challengeResult = null;
+    webPrefetchToken();
     // Web analytics: half of the /play funnel (loaded -> actually played). The
     // global is defined only by the snippet build-play.mjs injects into the web
     // head, so this is inert in the iOS/Android builds by construction - see
@@ -230,6 +234,7 @@ function startPlay() {
     invulnT = 0; wallGraceT = 0; deathCause = null; deathWhat = null;
     frenzyMeter = 0; frenzyCost = FRENZY_FIRST_COST; frenzyTime = 0; frenzyPending = false; frenzyHits = 0;
     runFrenzies = 0; runFrenzySmashes = 0; frenzyStartT = -9; frenzyChargeT = 0; frenzyGrindT = 0;
+    runHitSectors = []; runReviveSectors = [];   // share.js shareSectorBar
     frenzyHitStopT = 0; frenzyLastStopT = -9; frenzyImpacts = []; frenzyBeatT = 0; frenzyGrindTickT = 0;
     frenzyLoopOff(true); frenzyGrind(false); bgmSetFrenzy(false);
     continuesUsedThisRun = 0; continueOfferPending = false; continueAdPending = false;

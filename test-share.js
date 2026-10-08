@@ -145,7 +145,7 @@ function structure(q) {
     check('dark module is set', m[n - 8][8] === 1);
 }
 
-// The real payloads: shareRunUrl(true) is the link without the ghost. These are the
+// The real payloads: shareRunUrl() is the link without the ghost. These are the
 // exact shapes the card encodes, at both ends of the plausible length range.
 const cases = [
     'flytunl.ch',
@@ -162,6 +162,22 @@ for (const t of cases) {
     console.log(`  ok  ${String(t.length).padStart(3)} chars -> version ${q.ver} (${q.n}x${q.n} modules)`);
 }
 
+// The longest challenge link the card can carry (2026-10-08): three-char ?d, seven-digit
+// ?s, the 10-char ?c and the 22-char packed ?r - 78 chars, which must still fit version 5
+// (byte mode, ECC M: 84 bytes), so the card needs no bigger QR than before ?c.
+{
+    const longest = 'https://flytunl.ch/play/?d=zzz&s=9999999&c=AbCdEfGhIj&r=' + 'A'.repeat(22);
+    check('longest challenge link is 78 chars', longest.length === 78, String(longest.length));
+    const q = _qrMatrix(longest);
+    check('longest challenge link encodes', !!q);
+    if (q) {
+        structure(q);
+        decode(q, longest);
+        check('longest challenge link fits version 5', q.ver <= 5, 'v' + q.ver);
+        console.log(`  ok  ${longest.length} chars (longest ?c link) -> version ${q.ver}`);
+    }
+}
+
 // Too long for version 9 must return null rather than a broken matrix.
 check('over-long payload is refused', _qrMatrix('x'.repeat(181)) === null);
 // Anything past one byte per character is refused rather than silently mangled. The
@@ -169,8 +185,64 @@ check('over-long payload is refused', _qrMatrix('x'.repeat(181)) === null);
 // byte mode is ISO-8859-1, so the guard sits at charCode 255, not at 127.
 check('multi-byte payload is refused', _qrMatrix('https://flytunl.ch/中') === null);
 
+// ── Share text (share.js "Share text (pure)" block) ───────────────────
+// The real shareSectorBar / shareTextFor, sliced out between their banner and the QR
+// banner the same way as the QR block above, run against every real i18n table.
+{
+    const ta = src.indexOf('// ── Share text (pure)');
+    const tb = src.indexOf('// ── QR code');
+    if (ta < 0 || tb < 0 || tb <= ta) {
+        console.error('FAIL: could not slice the share text block out of src/share.js (banners moved?)');
+        process.exit(1);
+    }
+    const tx = {};
+    new Function('exports', src.slice(ta, tb) + '\nObject.assign(exports, { shareSectorBar, shareTextFor, SHARE_CELL, SHARE_BAR_SECTORS });')(tx);
+    const { shareSectorBar, shareTextFor, SHARE_CELL: C, SHARE_BAR_SECTORS: N } = tx;
+    const cells = bar => Array.from(bar.split(' ')[0]);   // one code point per cell
+
+    const r0 = shareSectorBar({ crashSector: 0, stars: 0 });
+    check('crash in S0: boom + nine unreached', r0 === C.crash + C.todo.repeat(N - 1), r0);
+    const r12 = shareSectorBar({ crashSector: 12, stars: 0 });
+    check('crash in S12: ten cells + " 🔥3"', cells(r12).length === N && r12.endsWith(' \u{1F525}3'), r12);
+    check('crash in S12: no crash cell inside the bar', cells(r12).indexOf(C.crash) < 0, r12);
+    const rv = shareSectorBar({ crashSector: 5, hitSectors: [2, 3], reviveSectors: [3], stars: 0 });
+    check('revive outranks a hit in the same sector', cells(rv)[3] === C.revive && cells(rv)[2] === C.hit, rv);
+    check('clean before, crash at, unreached after', cells(rv)[0] === C.clean && cells(rv)[5] === C.crash
+        && cells(rv)[6] === C.todo, rv);
+    check('one star: " ⭐"', shareSectorBar({ crashSector: 2, stars: 1 }).endsWith(' ⭐'));
+    check('three stars: " ⭐3"', shareSectorBar({ crashSector: 2, stars: 3 }).endsWith(' ⭐' + '3'));
+
+    // Every real i18n table, plain and as a rematch either way.
+    const vm = require('vm');
+    const sb = { localStorage: { getItem: () => null, setItem: () => {} }, navigator: { language: 'en' } };
+    vm.createContext(sb);
+    vm.runInContext(fs.readFileSync(__dirname + '/src/i18n.js', 'utf8'), sb);
+    vm.runInContext('this.__L = LANGS; this.__O = LANG_ORDER;', sb);
+    const url = 'https://flytunl.ch/play/?d=hx&s=1284&c=k7Qm2xA9pZ&r=' + 'A'.repeat(22);
+    const run = { levelNum: 646, worldName: 'Silent Hollow', score: 1284, newBest: true, rank: 312,
+                  crashSector: 8, hitSectors: [3, 5], reviveSectors: [6], stars: 2, url };
+    for (const code of sb.__O) {
+        const T = sb.__L[code];
+        for (const reply of [null, { beat: true, delta: 212 }, { beat: false, delta: 40 }]) {
+            const txt = shareTextFor(Object.assign({}, run, { reply }), T, code);
+            const lines = txt.split('\n');
+            const tag = `${code}${reply ? (reply.beat ? ' won' : ' lost') : ''}`;
+            check(`${tag}: five lines`, lines.length === 5, String(lines.length));
+            check(`${tag}: line 5 is the url`, lines[4] === url, lines[4]);
+            check(`${tag}: no undefined`, txt.indexOf('undefined') < 0);
+            check(`${tag}: no {n} left`, txt.indexOf('{n}') < 0);
+            check(`${tag}: line 1 names the world`, lines[0] === 'TUNL 646 · Silent Hollow', lines[0]);
+            check(`${tag}: rtl mark only for ar`, (lines[2].charAt(0) === '‎') === (code === 'ar'));
+            if (reply) check(`${tag}: delta in the call`, /212|40|٢١٢|٤٠/.test(lines[3]), lines[3]);
+        }
+    }
+    const plain = shareTextFor(Object.assign({}, run, { newBest: false, rank: 0 }), sb.__L.en, 'en').split('\n');
+    check('no record, no rank: line 2 is the bare score', plain[1] === '1,284', plain[1]);
+    console.log('  ok  share text: bar cases + ' + sb.__O.length + ' languages');
+}
+
 if (failures) {
     console.error(`\n${failures} check(s) failed`);
     process.exit(1);
 }
-console.log('\ntest-share.js: all QR checks passed');
+console.log('\ntest-share.js: all QR and share text checks passed');

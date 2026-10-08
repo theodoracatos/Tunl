@@ -48,11 +48,30 @@ function isAndroidApp() {
 // the store. No 'noopener' feature: with it window.open returns null even when it
 // worked. flytunl-site/tt/tt-tail.js overrides window.open for the two store URLs (its
 // own counted hand-off) and returns a stub, so nothing navigates twice there.
+//
+// A Play link from a challenge or referral link carries it into the install as Play's
+// install referrer (challenge spec phase 3): MainActivity.kt reads it on the app's first
+// start and opens the same challenge, and the referral still credits its sender. The App
+// Store has no such channel; the web pitch tells iPhones to tap the link again instead.
 function openStoreLink(url) {
+    if (url === PLAY_STORE_URL) url = playStoreUrlWithReferrer(url);
     let w = null;
     try { w = window.open(url, '_blank'); } catch (e) {}
     if (w) { try { w.opener = null; } catch (e) {} return; }
     location.href = url;
+}
+
+// The keys MainActivity.kt accepts from an install referrer, filled from this page's own
+// link: c, d (YYYYMMDD), s and r (the plain UUID). Nothing is added for a page opened
+// without a challenge or referral, so a plain install keeps the bare listing URL.
+function playStoreUrlWithReferrer(url) {
+    const q = [];
+    if (webParamChallenge) q.push('c=' + webParamChallenge);
+    if (webParamDay) q.push('d=' + webParamDay);
+    if (webParamGhostScore > 0) q.push('s=' + webParamGhostScore);
+    if (webParamReferrer) q.push('r=' + encodeURIComponent(webParamReferrer));
+    if (!webParamChallenge && !webParamReferrer) return url;
+    return url + '&referrer=' + encodeURIComponent(q.join('&'));
 }
 
 // Which store this browser's device installs from: 'android', 'ios', or '' when it
@@ -108,6 +127,10 @@ function _tunlActiveDayInt() {
 //   ?g=<base64>  a friend's ghost track to race (decoded via constants.js
 //                ghostDecode at use site).
 //   ?s=<int>     the score that ghost reached, for the "GHOST -N" readout.
+//   ?c=<id>      a challenge (2026-10-08): 10 chars base62 naming the worker row
+//                that holds the sender's ghost (see "Challenge link" below). ?d
+//                and ?s still act at once without it; the ghost arrives a beat
+//                later. Anything but exactly 10 base62 chars is ignored.
 //   ?r=<id>      whoever shared this link, credits them a referral reward once
 //                this player clears their own first real run. share.js
 //                shareRunUrl() writes webPlayerId()'s UUID base64url-packed
@@ -124,6 +147,7 @@ let webParamDay = 0;         // int YYYYMMDD, or 0 meaning "today"
 let webParamGhost = null;    // raw base64 string, or null
 let webParamGhostScore = 0;  // int, or 0 if absent
 let webParamReferrer = null; // full UUID string (unpacked if arrived packed), or null
+let webParamChallenge = null; // 10-char challenge id, or null
 
 // Epoch for the compact ?d= day-offset encoding. Never move this once links using
 // it are live - it would silently repoint every already-shared short link at the
@@ -193,6 +217,9 @@ function _uuidUnpack(packed) {
     if (r && /^[a-z0-9-]{4,64}$/i.test(r)) {
         webParamReferrer = /^[0-9a-f-]{36}$/i.test(r) ? r : (_uuidUnpack(r) || r);
     }
+
+    const c = q.get('c');
+    if (c && /^[0-9A-Za-z]{10}$/.test(c)) webParamChallenge = c;
 })();
 
 // ── Web daily leaderboard ───────────────────────────────────────────
@@ -230,6 +257,24 @@ function _webLbToken() {
         .catch(() => null);
 }
 
+// A token the worker will accept: it refuses one younger than TOKEN_MIN_AGE_MS (8 s,
+// "a real run cannot be shorter"), so a token fetched at the moment of death was
+// refused on a session's first submit. lifecycle.js startPlay() prefetches one
+// (webPrefetchToken) so it has aged by the death; a run shorter than that waits out
+// the rest here. The age is measured on this clock from when the fetch returned,
+// which is never earlier than the worker's own issue time.
+const WEB_TOKEN_MIN_AGE_MS = 8500;
+function _webLbTokenAged() {
+    return _webLbToken().then(tok => {
+        if (!tok) return null;
+        const wait = WEB_TOKEN_MIN_AGE_MS - (Date.now() - _webLbTokTs);
+        return wait > 0 ? new Promise(res => setTimeout(() => res(tok), wait)) : tok;
+    });
+}
+function webPrefetchToken() {
+    if (_referralOn()) _webLbToken();
+}
+
 // Feed a leaderboard response into the same state the native world-rank path
 // uses (main.js _tunlNativeUpdate) - the death-screen rank column and the
 // climbed/dropped delta then work on web unchanged.
@@ -263,7 +308,7 @@ function webSubmitScore(score, playSec) {
     const now = new Date();
     const todayInt = now.getUTCFullYear() * 10000 + (now.getUTCMonth() + 1) * 100 + now.getUTCDate();
     if (_tunlActiveDayInt() !== todayInt) return;
-    _webLbToken().then(tok => {
+    _webLbTokenAged().then(tok => {
         if (!tok) return;
         return fetch(WEB_LEADERBOARD_API + '/s', {
             method: 'POST',
@@ -285,7 +330,8 @@ function webSubmitScore(score, playSec) {
 // platform, and web.js's own deep-link parsing above reads ?r= the same way
 // everywhere. The worker's ALLOWED_ORIGINS (flytunl-site/worker/src/index.js)
 // accepts requests from the native WebView origins as well as the open web
-// for exactly this reason.
+// for exactly this reason, and since 2026-10-08 also answers each with its own
+// origin (withCors there) - before that the WebViews dropped every reply.
 function _referralOn() {
     return !!WEB_LEADERBOARD_API && typeof fetch === 'function';
 }
@@ -328,5 +374,230 @@ function checkReferralReward() {
         shards += n * REFERRAL_REWARD;
         localStorage.setItem('tunnel_shards', shards);
         sfxMissionDone();
+    }).catch(() => {});
+}
+
+// ── Challenge link ───────────────────────────────────────────────────
+// The share loop's other half (2026-10-08, challenge spec phase 2). A share names a
+// challenge (?c=, share.js shareRunUrl) whose worker row (POST /c) holds the sender's
+// score and ghost; the recipient's game fetches it (GET /c/<id>), races that ghost,
+// sees BEATEN +n / n SHORT on the death screen, reports the run (POST /c/<id>/run) and
+// can answer with a REMATCH, a new challenge whose parent is this one. The sender
+// learns about it at their next boot (POST /c/inbox, title card).
+//
+// Not isWeb()-gated, like the referral above: a challenge is sent and received on all
+// three targets, and the link parses the same everywhere. Every call is best-effort:
+// with the worker down a recipient gets ?d + ?s exactly as before, never an error.
+function _challengeOn() {
+    return !!WEB_LEADERBOARD_API && typeof fetch === 'function';
+}
+
+// 10 chars of base62 from crypto.getRandomValues. Bytes from 248 up are thrown away
+// (248 = 4 * 62), so every character is equally likely: 62^10 ids, a collision is
+// the worker's 409 and simply means that share goes without a ghost.
+const CHALLENGE_ID_LEN = 10;
+const _B62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+function newChallengeId() {
+    let id = '';
+    const buf = new Uint8Array(16);
+    while (id.length < CHALLENGE_ID_LEN) {
+        try { crypto.getRandomValues(buf); }
+        catch (e) { for (let i = 0; i < buf.length; i++) buf[i] = Math.floor(Math.random() * 256); }
+        for (let i = 0; i < buf.length && id.length < CHALLENGE_ID_LEN; i++) {
+            if (buf[i] < 248) id += _B62[buf[i] % 62];
+        }
+    }
+    return id;
+}
+
+// Which build sent a challenge, for the worker's stats.
+function _challengeSrc() {
+    return isWeb() ? 'web' : (isAndroidApp() ? 'android' : 'ios');
+}
+
+// ── Sender ──
+// One id per run (share.js shareRunUrl reads it): SHARE then CARD send the same
+// challenge. Reset by lifecycle.js startPlay().
+let runChallengeId = null;
+// Unsent POST /c bodies (offline, 5xx), retried at the next boot: at most
+// CHALLENGE_OUTBOX_MAX, none older than CHALLENGE_OUTBOX_MS. Every body is queued
+// BEFORE it is sent and dropped once the worker answered, so a page closed straight
+// after the share sheet still delivers the challenge on the next launch.
+const CHALLENGE_OUTBOX_MAX = 5;
+const CHALLENGE_OUTBOX_MS = 86400000;
+// The worker keeps at most this many base64 characters of ghost (GHOST_MAX_SAMPLES
+// bytes, constants.js, is 5336 in base64); a longer one goes without a ghost.
+const CHALLENGE_GHOST_MAX_B64 = 5400;
+
+function _challengeOutbox() {
+    try {
+        const v = JSON.parse(localStorage.getItem('tunnel_challenge_outbox') || '[]');
+        return Array.isArray(v) ? v.filter(b => b && b.id && Date.now() - (b.at || 0) < CHALLENGE_OUTBOX_MS) : [];
+    } catch (e) { return []; }
+}
+function _challengeOutboxSave(list) {
+    try { localStorage.setItem('tunnel_challenge_outbox', JSON.stringify(list.slice(-CHALLENGE_OUTBOX_MAX))); } catch (e) {}
+}
+function _challengeOutboxDrop(id) {
+    _challengeOutboxSave(_challengeOutbox().filter(b => b.id !== id));
+}
+
+// Sends one queued challenge. A fresh token each time (the queued one would be stale);
+// 2xx and 4xx both end it (a 409 is a taken id, a 4xx will not get better by retrying),
+// only a network error or 5xx keeps it for the next boot.
+function _challengeSend(body) {
+    return _webLbTokenAged().then(tok => {
+        if (!tok) return;
+        const b = Object.assign({}, body, { tok });
+        delete b.at;
+        return fetch(WEB_LEADERBOARD_API + '/c', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(b),
+            keepalive: true,
+        }).then(r => { if (r.status < 500) _challengeOutboxDrop(body.id); });
+    }).catch(() => {});
+}
+
+// Called by share.js shareRun() before it builds the text: makes this run's challenge
+// id, queues the upload and sends it alongside the share sheet (no waiting before the
+// sheet opens, so a browser keeps the tap's user activation for navigator.share).
+function challengeEnsure() {
+    if (runChallengeId || !_challengeOn() || !(score > 0)) return runChallengeId;
+    runChallengeId = newChallengeId();
+    let g = null;
+    try {
+        if (typeof ghostTrack !== 'undefined' && ghostTrack && ghostTrack.length > 1) {
+            const enc = ghostEncode(ghostTrack).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+            if (enc.length <= CHALLENGE_GHOST_MAX_B64) g = enc;
+        }
+    } catch (e) { g = null; }
+    const nowMs = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    const body = {
+        id: runChallengeId, owner: webPlayerId(), d: _tunlActiveDayInt(), s: score | 0,
+        p: Math.round((nowMs - _webRunStartMs) / 1000), src: _challengeSrc(), at: Date.now(),
+    };
+    if (g) body.g = g;
+    if (challengeActive()) body.parent = webParamChallenge;
+    const box = _challengeOutbox(); box.push(body); _challengeOutboxSave(box);
+    _challengeSend(body);
+    return runChallengeId;
+}
+
+// Boot (main.js): retry whatever an earlier session could not send.
+function challengeFlushOutbox() {
+    if (!_challengeOn()) return;
+    const box = _challengeOutbox();
+    _challengeOutboxSave(box);   // drops the expired ones
+    box.forEach(_challengeSend);
+}
+
+// share_open analytics (share.js shareRun): which button, and whether it answered a challenge.
+function challengeShareEvent(kind) {
+    const p = { kind: kind, reply: challengeActive() ? 1 : 0 };
+    appEvent('share_open', p);
+    if (window._tunlGA) window._tunlGA('share_open', p);
+}
+
+// ── Recipient ──
+// The challenge this page was opened on: { mine, ghost, past, plays, beats } once the
+// worker answered (null until then, or for good when it never does).
+let challengeIn = null;
+// This run's result against it, for the death-screen chip (draw.js): { beat, delta,
+// plays, beats }. Set in commitDeath (challengeRunDone), cleared by startPlay.
+let challengeResult = null;
+const CHALLENGE_FETCH_MS = 2500;
+
+// A challenge someone ELSE sent, with a score to beat. The link's own ?r is the
+// sender's id, so a sender opening their own link is told apart before the worker
+// answers; the worker's `mine` covers a sender on another device of the same id.
+function challengeActive() {
+    if (!webParamChallenge || !(webParamGhostScore > 0)) return false;
+    if (webParamReferrer && webParamReferrer === webPlayerId()) return false;
+    return !(challengeIn && challengeIn.mine);
+}
+
+// Boot (main.js): fetch the challenge's ghost. A ghost recorded on another cave (the
+// row's day is not the link's day) is ignored; banner and score stay from the link.
+function challengeFetch() {
+    if (!_challengeOn() || !webParamChallenge) return;
+    const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timer = ctl ? setTimeout(() => ctl.abort(), CHALLENGE_FETCH_MS) : 0;
+    const ev = (ok, past, mine) => {
+        const p = { ok: ok, past: past, mine: mine };
+        appEvent('challenge_open', p);
+        if (window._tunlGA) window._tunlGA('challenge_open', p);
+    };
+    const past = _tunlActiveDayInt() !== _tunlTodayInt() ? 1 : 0;
+    fetch(WEB_LEADERBOARD_API + '/c/' + webParamChallenge + '?me=' + encodeURIComponent(webPlayerId()),
+          ctl ? { signal: ctl.signal } : {})
+        .then(r => r.ok ? r.json() : null)
+        .then(j => {
+            clearTimeout(timer);
+            if (!j) { ev(0, past, 0); return; }
+            challengeIn = { mine: !!j.mine, ghost: false, past: past, plays: j.plays | 0, beats: j.beats | 0 };
+            ev(1, past, j.mine ? 1 : 0);
+            if (j.mine || +j.d !== _tunlActiveDayInt() || !j.g) return;
+            challengeIn.ghost = applyFriendGhost(j.g, webParamGhostScore);
+        })
+        .catch(() => { clearTimeout(timer); ev(0, past, 0); });
+}
+
+function _tunlTodayInt() {
+    const now = new Date();
+    return now.getUTCFullYear() * 10000 + (now.getUTCMonth() + 1) * 100 + now.getUTCDate();
+}
+
+// commitDeath (update.js): the run's result against the challenge, shown at once from
+// the link's score, then reported; the worker's plays/beats complete the chip.
+// isNew: this was the player's first run ever (lifecycle.js startPlay counts it first).
+function challengeRunDone(runScore, playSec, isNew) {
+    if (!challengeActive() || !(runScore > 0)) { challengeResult = null; return; }
+    const beat = runScore > webParamGhostScore;
+    challengeResult = { beat: beat, delta: beat ? runScore - webParamGhostScore : Math.max(1, webParamGhostScore - runScore),
+                        plays: 0, beats: 0 };
+    const p = { beat: beat ? 1 : 0, is_new: isNew ? 1 : 0 };
+    appEvent('challenge_run', p);
+    if (window._tunlGA) window._tunlGA('challenge_run', p);
+    if (!_challengeOn()) return;
+    const res = challengeResult;
+    _webLbTokenAged().then(tok => {
+        if (!tok) return;
+        return fetch(WEB_LEADERBOARD_API + '/c/' + webParamChallenge + '/run', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ pid: webPlayerId(), s: runScore | 0, p: Math.round(playSec || 0), isNew: isNew ? 1 : 0, tok }),
+            keepalive: true,
+        }).then(r => r.json()).then(j => {
+            if (j && !j.self && res === challengeResult) { res.plays = j.plays | 0; res.beats = j.beats | 0; }
+        });
+    }).catch(() => {});
+}
+
+// share.js shareRunText(): a rematch says how the answer went (shareReplyWon/Lost).
+function challengeReplyDelta() {
+    return (challengeActive() && challengeResult) ? { beat: challengeResult.beat, delta: challengeResult.delta } : null;
+}
+
+// ── Sender's inbox ──
+// Boot (main.js): who flew this player's challenges since the last check. The worker
+// reports each recipient's run once (`seen`), so this never repeats a message. Shown
+// on the title as a card (draw.js, CHALLENGE_INBOX_SEC) once the day's arrival card
+// has gone; purely informative - the rematch itself goes back through the chat.
+let challengeInbox = null;   // { plays, beats } or null
+let challengeInboxT = 0;
+function checkChallengeInbox() {
+    if (!_challengeOn()) return;
+    fetch(WEB_LEADERBOARD_API + '/c/inbox', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: webPlayerId() }),
+    }).then(r => r.json()).then(j => {
+        const items = j && Array.isArray(j.items) ? j.items : [];
+        let plays = 0, beats = 0;
+        for (const it of items) { plays += it.newPlays | 0; beats += it.newBeats | 0; }
+        if (plays <= 0) return;
+        challengeInbox = { plays: plays, beats: beats };
+        challengeInboxT = CHALLENGE_INBOX_SEC;
     }).catch(() => {});
 }

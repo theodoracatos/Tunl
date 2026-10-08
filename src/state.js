@@ -369,15 +369,16 @@ let planetsFlown = parseInt(localStorage.getItem('tunnel_planets_flown') || '0')
 // nowhere else -- see the Stardust doc comment in constants.js for why SOLARIS is priced
 // in this instead of shards.
 let stardust = parseInt(localStorage.getItem('tunnel_stardust') || '0');
-let _homeBtnRect = null, _playBtnRect = null, _shareBtnRect = null;
+let _homeBtnRect = null, _playBtnRect = null, _shareBtnRect = null, _cardBtnRect = null;
 let _continueBtnRect = null;
 // Death-screen shards-ad chip (draw.js reward chips, constants.js SHARDS_AD_REWARD), null when not drawn.
 let _shardsChipRect = null;
 // Web app-pitch store buttons (draw.js drawWebContinuePromo), null while it is not up.
 let _promoAppleBtnRect = null, _promoPlayBtnRect = null;
-// >0 while the death-screen SHARE button should read "link copied" instead of
-// "share" - set by share.js's desktop clipboard fallback, decayed in update.js.
-let _shareCopiedT = 0;
+// >0 while the death-screen SHARE (or CARD) button should read "link copied" instead
+// of its label - set by share.js's desktop clipboard fallback, decayed in update.js.
+// _shareCopiedKind says which of the two buttons was tapped ('link' | 'card').
+let _shareCopiedT = 0, _shareCopiedKind = 'link';
 let showSettings = false;
 let _settingsBtnRect = null;
 let _settingsPanelRect = null;
@@ -441,25 +442,32 @@ try {
     }
 } catch (e) { ghostPlay = null; ghostScore = 0; }
 
-// Web build: a friend's ghost carried in on a ?g= share link (src/web.js
-// webParamGhost, base64; constants.js ghostDecode). Overrides today's local
-// best as the chase target, and lifecycle.js re-applies it past the daily
-// rollover. _webGhostScore stays 0 until the share link also carries it.
+// A friend's ghost to race: carried in on an old ?g= share link (src/web.js
+// webParamGhost) or fetched for a ?c= challenge (web.js challengeFetch). Both go
+// through applyFriendGhost, so the two paths decode identically (test-sim.js checks).
+// Overrides today's local best as the chase target, and lifecycle.js startPlay()
+// re-applies it past the daily rollover. Arriving during a run, it waits for the next
+// one (startPlay picks _webGhostPlay up) rather than appearing mid-flight.
 let _webGhostPlay = null, _webGhostScore = 0;
-if (typeof webParamGhost !== 'undefined' && webParamGhost) {
+function applyFriendGhost(b64, ghostPts) {
     try {
-        // Reverse share.js shareRunUrl's URL-safe base64 (also tolerates a plain
-        // standard-base64 link from an older client): - _ back to + /, re-pad to 4.
-        let _b64 = webParamGhost.replace(/-/g, '+').replace(/_/g, '/');
+        // Reverse share.js's URL-safe base64 (also tolerates plain standard base64 from
+        // an older client): - _ back to + /, re-pad to 4.
+        let _b64 = String(b64).replace(/-/g, '+').replace(/_/g, '/');
         while (_b64.length % 4) _b64 += '=';
         const _wg = ghostDecode(_b64);
-        if (_wg && _wg.length) {
-            _webGhostScore = (typeof webParamGhostScore !== 'undefined' ? webParamGhostScore : 0) | 0;
-            _webGhostPlay = _wg;
+        if (!_wg || !_wg.length) return false;
+        _webGhostScore = ghostPts | 0;
+        _webGhostPlay = _wg;
+        if (typeof phase === 'undefined' || phase !== 'play') {
             ghostPlay = _wg;
             ghostScore = _webGhostScore;
         }
-    } catch (e) { /* malformed link param - keep the local ghost */ }
+        return true;
+    } catch (e) { return false; }   // malformed: keep the local ghost
+}
+if (typeof webParamGhost !== 'undefined' && webParamGhost) {
+    applyFriendGhost(webParamGhost, typeof webParamGhostScore !== 'undefined' ? webParamGhostScore : 0);
 }
 
 let ghostTrack;   // this run's recording, one byte per GHOST_STEP of scrollX
@@ -523,6 +531,11 @@ let laserTime = 0, laserTimeMax = 0, laserEndX = 0;
 // end, this star's smash count (the ping ladder), and the run's totals for missions.
 let frenzyMeter = 0, frenzyCost = 0, frenzyTime = 0, frenzyPending = false, frenzyHits = 0;
 let runFrenzies = 0, runFrenzySmashes = 0;
+// The run's sector story for the share text's bar (share.js shareSectorBar): the sectors
+// (constants.js sectorAt(scrollX)) where the hull lost a scratch or a shield took a hit,
+// and where a rewarded continue picked the run up again. Pure statistics, reset in
+// startPlay(): nothing placed, no rng() read, no spawner ever looks at them.
+let runHitSectors = [], runReviveSectors = [];
 let frenzyStartT = -9;   // gtime the current star began (draw.js start ring)
 let frenzyGrindT = 0;    // > 0 while a star grinds along the wall (sparks, grind sound)
 let frenzyChargeT = 0;   // > 0 between a full meter and the star (FRENZY_CHARGE_SEC)

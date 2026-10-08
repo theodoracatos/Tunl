@@ -19,13 +19,6 @@
 // This is the only place the public URL is written down in this repo.
 const SHARE_URL = 'https://flytunl.ch';
 
-// Cap on the base64 ghost carried in a web share link (shareRunUrl below). The
-// ghost is roughly one byte per point of score, so this is about 1100 score
-// points of run - longer runs still share, just without the ghost (?d cave +
-// ?s score keep the link a real challenge). Holds the whole URL well under what
-// chat apps and browsers accept.
-const SHARE_GHOST_MAX_B64 = 1500;
-
 // The card's two cuts live in _shareCardCanvas below (landscape 1200x630 for the
 // desktop copy, portrait 1080x1350 for a share sheet); the old single SHARE_W/SHARE_H
 // pair is gone with them.
@@ -62,6 +55,9 @@ function shareWorthy() {
     // today's bar is the shareable one, and today's bar resets every morning, so this
     // keeps offering without ever becoming the nag the web branch above accepts.
     if (score < SHARE_MIN_SCORE) return false;
+    // A run answering a friend's challenge always offers REMATCH (challenge spec D6):
+    // the answer is the loop itself, whatever the run was worth on its own.
+    if (typeof challengeActive === 'function' && challengeActive() && challengeResult) return true;
     if (newBest || newDailyBest || score >= 200) return true;
     const bar = dailyBest || best;
     return bar > 0 && score >= bar * SHARE_NEAR_BEST;
@@ -330,16 +326,75 @@ function drawRunProfile(g, x0, y0, w, h, opts) {
     }
 }
 
+// ── Share text (pure) ─────────────────────────────────────────────────
+// The text a share sends (2026-10-08, challenge spec phase 1): five lines in a fixed
+// order, so a TUNL share is recognisable in a chat at a glance, the way "Wordle 196"
+// and its grid were. No globals in this section - shareRunText() below gathers the
+// values from the game state and test-share.js loads this block on its own, between
+// this banner and the QR banner.
+//
+//   TUNL 646 · Silent Hollow          world number and name
+//   1,284 🏆 · 🌍 #312                score, all-time record, world rank
+//   🟪🟪🟪🟨🟪🟨🟥🟪💥⬛ ⭐2            the run, one cell per sector
+//   Same tunnel for everyone ...      the call (or the rematch line)
+//   https://flytunl.ch/play/?d=...    the challenge link
+//
+// One cell per sector S0..S9, the sectors the flight plan uses to bring something new;
+// a run that died deeper adds " 🔥N" (sectors past S9). Every emoji here is Unicode 12
+// or older (the coloured squares are Emoji 12.0): iOS 13+, Android 10+.
+const SHARE_BAR_SECTORS = 10;
+const SHARE_CELL = {
+    clean:  '\u{1F7EA}',   // purple square: flown clean
+    hit:    '\u{1F7E8}',   // yellow square: lost a hull scratch or a shield here
+    revive: '\u{1F7E5}',   // red square: crashed here and flew on with a continue
+    crash:  '\u{1F4A5}',   // collision: where the run ended
+    todo:   '⬛',      // black square: not reached
+};
+
+// run: { crashSector, hitSectors, reviveSectors, stars }
+function shareSectorBar(run) {
+    const hit = run.hitSectors || [], rev = run.reviveSectors || [];
+    const crash = Math.max(0, run.crashSector | 0);
+    let bar = '';
+    for (let i = 0; i < SHARE_BAR_SECTORS; i++) {
+        if (i > crash)                bar += SHARE_CELL.todo;
+        else if (i === crash)         bar += SHARE_CELL.crash;
+        else if (rev.indexOf(i) >= 0) bar += SHARE_CELL.revive;
+        else if (hit.indexOf(i) >= 0) bar += SHARE_CELL.hit;
+        else                          bar += SHARE_CELL.clean;
+    }
+    if (crash >= SHARE_BAR_SECTORS) bar += ' \u{1F525}' + (crash - SHARE_BAR_SECTORS + 1);
+    if (run.stars > 0) bar += ' ⭐' + (run.stars > 1 ? run.stars : '');
+    return bar;
+}
+
+// run: { levelNum, worldName, score, newBest, rank, crashSector, hitSectors,
+//        reviveSectors, stars, url, reply?: { beat, delta } }
+// T: one i18n table (shareTagline, shareReplyWon, shareReplyLost). locale: its code.
+function shareTextFor(run, T, locale) {
+    const fmt = n => { try { return Number(n).toLocaleString(locale); } catch (e) { return String(n); } };
+    let l2 = fmt(run.score);
+    if (run.newBest) l2 += ' \u{1F3C6}';
+    if (run.rank > 0) l2 += ' · \u{1F30D} #' + fmt(run.rank);
+    // A right-to-left chat would otherwise lay the bar out from the right; the
+    // left-to-right mark keeps S0 first.
+    const rtl = /^(ar|he|fa|ur)/.test(locale || '') ? '‎' : '';
+    const cta = run.reply
+        ? (run.reply.beat ? T.shareReplyWon : T.shareReplyLost).split('{n}').join(fmt(run.reply.delta))
+        : T.shareTagline;
+    return [`TUNL ${run.levelNum} · ${run.worldName}`, l2, rtl + shareSectorBar(run), cta, run.url].join('\n');
+}
+
 // ── QR code ───────────────────────────────────────────────────────────
 // A QR on the card, because the card keeps landing somewhere a URL cannot be
 // tapped: a phone held out to a friend, a screenshot in a story, a frame of a
 // TikTok clip. Byte mode, error correction level M, versions 1-9 - the payload
-// is shareRunUrl(true) (the link WITHOUT the ghost, see there), which runs about
-// 85 characters and lands on version 5 or 6, i.e. 37-41 modules. At the card's
-// 104pt that is ~2.8pt per module, which scans off a screen at arm's length; the
-// portrait cut gives it 200pt and scans from across a room. Carrying the ghost
-// would push it past version 40 and make it unscannable at any size the card can
-// afford, which is the whole reason for the compact variant.
+// is shareRunUrl() (the challenge link, no ghost - see there), at most 78
+// characters with ?c, which fits version 5 (37 modules; test-share.js checks the
+// longest one). At the card's 104pt that is ~2.8pt per module, which scans off a
+// screen at arm's length; the portrait cut gives it 200pt and scans from across a
+// room. Carrying the ghost would push it past version 40 and make it unscannable at
+// any size the card can afford, which is why the ghost travels by ?c instead.
 //
 // Self-contained rather than a library (no build step, no CDN in the apps) and
 // kept here rather than in a 19th src file, since nothing but the card wants it.
@@ -799,7 +854,7 @@ function _shareCardCanvas(portrait) {
     g.fillStyle = 'rgba(255,255,255,0.08)';
     g.fillRect(L, P.footHair, R - L, 1);
 
-    const qrTxt = shareRunUrl(true);
+    const qrTxt = shareRunUrl();
     const hasQR = _cardQR(g, qrTxt, R - P.qr, P.qrY, P.qr);
     const textR = hasQR ? R - P.qr - 30 : R;
 
@@ -948,8 +1003,8 @@ function _cardChips(g, items, x, y, maxW, h, rows, F) {
 // player's web.js webPlayerId()) so a friend who plays credits them a shard
 // reward the moment that friend clears their own first real run - see web.js
 // submitReferral()/checkReferralReward(). The link also deep-links straight
-// back into the run just flown: same cave (?d), the sender's ghost to race
-// (?g), and their score so the recipient's ghost readout is right (?s).
+// back into the run just flown: same cave (?d), the sender's challenge with
+// their ghost to race (?c), and their score for the banner and readout (?s).
 //
 // EVERY target builds the same link (2026-09-20). Until then a native app
 // share pointed at bare /play/?r= on the theory that "the app has no in-app
@@ -962,11 +1017,15 @@ function _cardChips(g, items, x, y, maxW, h, rows, F) {
 // everyone today, beat me") the link then could not make good on: the
 // recipient got an invitation to a duel with no cave, no score and no ghost.
 //
-// `compact` drops the ghost only. It is what the card's QR encodes: a ghost is
-// up to SHARE_GHOST_MAX_B64 characters, which pushes a QR past 40 versions of
-// module count and makes it unscannable at card size, while ?d + ?s still
-// carry the actual challenge.
-function shareRunUrl(compact) {
+// The challenge link (2026-10-08): no ghost in the link any more, on any target. A
+// ghost is up to GHOST_MAX_SAMPLES bytes, chat clients mangle or truncate a link that
+// long and a QR cannot carry it, so the ghost travels by the worker instead: ?c= names
+// a challenge whose row holds it (web.js "Challenge link"). ?d and ?s stay in the link
+// because the cave has to be known synchronously at script load (world.js fixes
+// WORLD_NAME and the seeds then) and the score makes the banner instant; if the worker
+// is down, d + s are still the whole duel minus the ghost. The ?g parser in web.js
+// stays for links shared before this date.
+function shareRunUrl() {
     // Packed to 22 chars instead of the 36-char UUID (_uuidPack, web.js) - the
     // link is display/tap-only, webPlayerId() itself and what's sent to the
     // leaderboard worker both stay the plain UUID.
@@ -977,60 +1036,62 @@ function shareRunUrl(compact) {
     // handful of chars instead of 8.
     let u = SHARE_URL.replace(/\/+$/, '') + '/play/?d=' + _dayIntToOffset(_tunlActiveDayInt()).toString(36);
     if (score > 0) u += '&s=' + Math.min(score | 0, 9999999);
-    try {
-        if (!compact && typeof ghostTrack !== 'undefined' && ghostTrack && ghostTrack.length > 1) {
-            const enc = ghostEncode(ghostTrack);
-            if (enc.length <= SHARE_GHOST_MAX_B64) {
-                // URL-safe base64, padding stripped: no %2B/%2F/%3D noise, and immune
-                // to chat clients that "URL-safe normalise" links. state.js reverses it.
-                u += '&g=' + enc.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-            }
-        }
-    } catch (e) { /* the ghost is optional in the link; ?d + ?s still challenge */ }
+    if (typeof runChallengeId !== 'undefined' && runChallengeId) u += '&c=' + runChallengeId;
     return u + '&' + r;
 }
 
+// The game-state half of the share text; shareTextFor() above does the formatting.
 function shareRunText() {
-    const planet = WEEKDAY_PALETTES[weekdayIndex(_tunlActiveDate())].planet;
-    const lines = [
-        `TUNL · ${T.level} ${LEVEL_NUM}: ${WORLD_NAME.toUpperCase()} · ${planet.toUpperCase()}`,
-        `${score}${runMaxCombo > 1 ? `  (x${runMaxCombo} ${T.combo})` : ''}`,
-    ];
-    if (worldRank !== null && worldRank > 0) {
-        lines.push(worldRankTotal > 0
-            ? `${T.worldRank} #${worldRank.toLocaleString()} / ${worldRankTotal.toLocaleString()}`
-            : `${T.worldRank} #${worldRank.toLocaleString()}`);
-    }
-    // The line that makes the card worth sending: it tells the recipient the cave is
-    // the same one for them today, which is the only reason a stranger's score means
-    // anything. Without it this is just a screenshot of a number.
-    lines.push(T.shareTagline);
-    // Compact: the ghost pushes this link past 1000 chars on a good run, which
-    // chat clients mangle or truncate. The card's QR already drops it for the
-    // same reason; ?d + ?s still hand the recipient the same cave and a score
-    // to beat.
-    lines.push(shareRunUrl(true));
-    return lines.join('\n');
+    const reply = (typeof challengeReplyDelta === 'function') ? challengeReplyDelta() : null;
+    return shareTextFor({
+        levelNum:      LEVEL_NUM,
+        worldName:     WORLD_NAME,
+        score:         score,
+        newBest:       newBest,
+        rank:          (worldRank !== null && worldRank > 0) ? worldRank : 0,
+        crashSector:   sectorAt(Math.max(0, scrollX)),
+        hitSectors:    runHitSectors,
+        reviveSectors: runReviveSectors,
+        stars:         runFrenzies,
+        url:           shareRunUrl(),
+        reply:         reply,
+    }, T, activeLang);
 }
 
-function shareRun() {
-    // Which cut goes out (2026-09-20). A share SHEET feeds chats, stories and feeds,
-    // all of which are vertical -- the 1200x630 card lands there as a thin band whose
-    // score renders at a third of its size. The landscape cut stays for the desktop
-    // copy, where a card gets dropped into a channel and read beside text. The
-    // link-preview proportion is not lost either way: an unfurled LINK is drawn from
-    // the site's own og:image, never from this PNG.
+// kind 'link' (the SHARE button) or 'card' (the CARD button).
+//
+// LINK FIRST (2026-10-08, challenge spec D1). SHARE sends the text with the link and no
+// picture. Image plus text through a share sheet depends on the target: some apps keep
+// only the image and drop the text, which is the link, the one part that brings a
+// recipient back (WebKit bug 251500, the iOS UIActivityViewController forum thread).
+// A chat still shows a picture: the link unfurls from /play/'s og:image. Both native
+// bridges already send plain text when the image is '' (GameView.swift presentShare,
+// MainActivity.kt shareRun), so this needed no native change. The card stays one tap
+// away on CARD, for stories, feeds and saving.
+//
+// Which cut goes out for the card (2026-09-20). A share SHEET feeds chats, stories and
+// feeds, all of which are vertical -- the 1200x630 card lands there as a thin band whose
+// score renders at a third of its size. The landscape cut stays for the desktop copy,
+// where a card gets dropped into a channel and read beside text.
+function shareRun(kind) {
+    const wantCard = kind === 'card';
+    // One challenge per run, created before the text is built so the link carries its
+    // id; the upload runs alongside the share sheet (web.js challengeEnsure).
+    if (typeof challengeEnsure === 'function') challengeEnsure();
     const sheet = !!(window.webkit?.messageHandlers?.share)
                || (typeof navigator !== 'undefined' && !!navigator.share);
     let card = null, dataUrl = '';
-    try {
-        card = _shareCardCanvas(sheet);
-        dataUrl = card.toDataURL('image/png');
-    } catch (e) {
-        // A card that fails to render must not block the share -- fall back to text.
-        card = null; dataUrl = '';
+    if (wantCard) {
+        try {
+            card = _shareCardCanvas(sheet);
+            dataUrl = card.toDataURL('image/png');
+        } catch (e) {
+            // A card that fails to render must not block the share -- fall back to text.
+            card = null; dataUrl = '';
+        }
     }
     const text = shareRunText();
+    if (typeof challengeShareEvent === 'function') challengeShareEvent(wantCard ? 'card' : 'link');
 
     if (window.webkit?.messageHandlers?.share) {
         window.webkit.messageHandlers.share.postMessage({ action: 'run', text, image: dataUrl });
@@ -1049,24 +1110,24 @@ function shareRun() {
         }
         return;
     }
-    // Desktop browser: no share sheet, so the card is copied instead of sent. Both the
-    // image and the link go on the clipboard where ClipboardItem allows it (Ctrl+V into
-    // a chat then pastes the card, and a plain-text paste still gets the link); older
-    // browsers keep the link-only behaviour. The ClipboardItem value is a PROMISE for
-    // the blob rather than an awaited one: toBlob is async, and awaiting it first loses
-    // the user gesture the clipboard write needs.
+    // Desktop browser: no share sheet, so the share is copied instead of sent. SHARE
+    // copies the whole five-line text; CARD copies the card and the link where
+    // ClipboardItem allows it (Ctrl+V into a chat then pastes the card, and a plain-text
+    // paste still gets the link). The ClipboardItem value is a PROMISE for the blob
+    // rather than an awaited one: toBlob is async, and awaiting it first loses the user
+    // gesture the clipboard write needs.
     if (!navigator.clipboard) return;
-    const link = shareRunUrl();
-    const ok   = () => { _shareCopiedT = 1.8; };
+    const plain = wantCard ? shareRunUrl() : text;
+    const ok    = () => { _shareCopiedT = 1.8; _shareCopiedKind = wantCard ? 'card' : 'link'; };
     const copyText = () => {
-        if (navigator.clipboard.writeText) navigator.clipboard.writeText(link).then(ok).catch(() => {});
+        if (navigator.clipboard.writeText) navigator.clipboard.writeText(plain).then(ok).catch(() => {});
     };
     if (card && navigator.clipboard.write && typeof ClipboardItem !== 'undefined') {
         try {
             const png = new Promise(res => card.toBlob(res, 'image/png'));
             navigator.clipboard.write([new ClipboardItem({
                 'image/png':  png,
-                'text/plain': new Blob([link], { type: 'text/plain' }),
+                'text/plain': new Blob([plain], { type: 'text/plain' }),
             })]).then(ok).catch(copyText);
             return;
         } catch (e) { /* no ClipboardItem support for these types */ }

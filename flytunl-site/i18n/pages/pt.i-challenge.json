@@ -1,0 +1,3 @@
+{
+ "6d5a29c": "Compartilhar um desafio (o botão COMPARTILHAR ou CARTÃO depois de uma partida) também salva a pontuação dessa partida, a data da sua caverna e a trajetória que você voou - uma sequência de alturas, nada mais - com um ID de desafio aleatório, para que um amigo que abrir o link possa competir com ela. Quando um amigo joga o desafio, a melhor pontuação dele nele e se foi a primeira partida dele são salvas com o identificador aleatório dele. Seu identificador nunca é mostrado a ninguém. Os desafios e seus resultados são apagados após 45 dias."
+}
