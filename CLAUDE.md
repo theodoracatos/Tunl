@@ -85,7 +85,8 @@ Outside `src/`: `branding/` -> ship-render; native ad/IAP code -> economy.
 ## Topic rules and where the detail lives
 
 ### Physics and canvas -> `docs/agents/physics.md`
-- W capped at 956 on every platform, H at 600 (520 Android app, 440 web): leaderboard fairness.
+- W capped at 956 on every platform, H at 670 (iOS app, fills the iPhone Duo; 520 Android app, 440 web): leaderboard fairness.
+- iPhone Duo fold/unfold resizes the app live: iOS fit-scales the canvas, pauses a run, reloads at the next safe point (`main.js` "Fold / unfold").
 - **THRUST has been walked back twice on player feedback** - read the tuning history before touching it. Thrust is an acceleration ramp, not an impulse; **every press is a hop** (`TAP_BURST_SEC`, 2026-09-29), holding keeps thrusting. The burst ends inside the frame - `test-sim.js` guards it.
 - **Trapezoid integration** in `update.js` (`py += (vyPrev + vy) * 0.5 * dt`) - do not revert; `test-sim.js` guards it.
 - **GRAVITY/THRUST/MAX_VY scale by `_FEEL_SCALE = H / _H_REF`** on every device. New vertical-motion code stays ratio-based - never compare `vy` against an unscaled px/s literal.
@@ -138,7 +139,7 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 - Flight uses the 3D view (`SHIP_VIEW_3D`, roll 60 deg); hangar, shop and share card stay top-down.
 - The hull is an F-14 (2026-09-22; flight model refined 2026-10-04: bevelled wings, round wing root + glove-over-panel draw rule, less wedge, bulkier); `SHIP3D_SWEEP_MAX` is capped by the hitbox fill, not by realism.
 - The top-down hull (`SHIP_OUTLINE`/`SHIP_FACETS`/`SHIP_TOPDOWN` + share.js copy) is generated from the 3D model by `tools/gen-ship-topdown.js` - never hand-edit; re-run after any 3D hull change.
-- Wing sweep is three states: cruise between the stops, a warp folds fully back, a blue coin swings fully forward. Top-down views always draw full sweep.
+- Wing sweep is three states: cruise between the stops, a warp folds fully back, a blue coin swings fully forward. Top-down views draw one fixed sweep, `SHIP_TOPDOWN_SWEEP` (slightly spread since 2026-10-08).
 - Brand marks are the 3D F-14 rendered from `src/draw.js` by `branding/render-ship-mark.mjs`: the app icon, favicons and iOS launch logo show it in AMBER climbing on bright violet ("Steigflug", 2026-10-06), the Play feature graphic shows the same with the wordmark; `gen-ship-glyph.mjs` is the retired SR-71 generator.
 
 ### Visuals, typography, HUD -> `docs/agents/visuals.md`

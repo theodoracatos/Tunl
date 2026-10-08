@@ -24,14 +24,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         .landscape
     }
 
-    // Because Portrait isn't in the supported orientation list above, UIKit
-    // never animates a rotation directly between LandscapeLeft and
-    // LandscapeRight (it needs an intermediate orientation to notice the
-    // change) - a long-standing system limitation. If the device is picked
-    // up already flipped 180 degrees, or flipped while flat, the game would
-    // stay upside down. Watch the accelerometer-driven device orientation
-    // ourselves and flip the window manually to match.
-    private var lastLandscapeOrientation: UIDeviceOrientation = .landscapeLeft
+    // Until 18.6.3 an observer here flipped the window by 180 degrees on every
+    // landscape change, for a UIKit that would not rotate directly between
+    // LandscapeLeft and LandscapeRight. UIKit does rotate itself (iOS 27 sims,
+    // 2026-10-07), so the toggle rotated a second time and left the game upside
+    // down after turning the phone through portrait. A state-derived flip was tried
+    // for 19.0 and failed on the iPhone Duo: unfolded, its device orientation is 90
+    // degrees from the interface's (held landscape it reports portrait), so no rule
+    // built on UIDevice.orientation can tell when the window is wrong. Leave the
+    // rotation to UIKit; .landscape above allows both sides.
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Analytics-only: no Firebase Auth/Firestore/Crashlytics wired up. This
@@ -53,10 +54,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // denied; AdsManager.start() grants it for non-EEA users and lets the UMP
         // SDK forward the EEA consent-form choice.
         Analytics.setAnalyticsCollectionEnabled(true)
-
-        UIDevice.current.beginGeneratingDeviceOrientationNotifications()
-        NotificationCenter.default.addObserver(self, selector: #selector(deviceOrientationDidChange),
-                                                name: UIDevice.orientationDidChangeNotification, object: nil)
         return true
     }
 
@@ -75,18 +72,5 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
               let url = userActivity.webpageURL else { return false }
         DeepLinkRouter.shared.handle(url)
         return true
-    }
-
-    @objc private func deviceOrientationDidChange() {
-        let orientation = UIDevice.current.orientation
-        guard orientation == .landscapeLeft || orientation == .landscapeRight,
-              orientation != lastLandscapeOrientation else { return }
-        lastLandscapeOrientation = orientation
-
-        guard let window = UIApplication.shared.connectedScenes
-            .compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first else { return }
-        UIView.animate(withDuration: 0.3) {
-            window.transform = window.transform.isIdentity ? CGAffineTransform(rotationAngle: .pi) : .identity
-        }
     }
 }

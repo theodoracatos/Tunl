@@ -6,9 +6,9 @@ import StoreKit
 import FirebaseAnalytics
 
 // Dynamic Island/notch clearance for the title screen's icon rail (CLAUDE.md
-// Concept A). TunlApp.swift's .ignoresSafeArea() (plus its manual window-transform
-// rotation trick for LandscapeLeft/Right, rather than a real interface-orientation
-// change) leaves WebKit's own CSS env(safe-area-inset-*) with nothing to report --
+// Concept A). TunlApp.swift's .ignoresSafeArea() (and, until 19.0, a manual
+// window-transform rotation for LandscapeLeft/Right) leaves WebKit's own CSS
+// env(safe-area-inset-*) with nothing to report --
 // confirmed via an on-screen debug readout, always 0 even with viewport-fit=cover
 // set. UIKit's safeAreaInsets on the webview itself stays correct across both, so
 // that's what gets pushed into JS instead, through safeAreaInsetsDidChange (fires

@@ -186,6 +186,9 @@ function titleScreen() {
 }
 
 function startPlay() {
+    // iPhone Duo: folded or unfolded since load - reload at the new size instead of
+    // flying another run at the old one (main.js "Fold / unfold"; iOS app only).
+    if (typeof _resizeReloadIfSafe === 'function' && _resizeReloadIfSafe(true)) return;
     thrustOff();
     onFireLoopOff();
     magnetLoopOff();

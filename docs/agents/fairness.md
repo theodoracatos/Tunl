@@ -76,8 +76,9 @@ Two independent fairness axes:
   "Screen-independent feel". Fair by construction; `test-math.js` guards it.
 - **Horizontal** (how fast the cave scrolls past): `scrollSpd()` multiplies by `W/600` and
   obstacle spacing is fixed in world-x, so reaction time per obstacle is `~ 1/W`. Hence **W
-  is capped at 956** (a no-op on iOS, clamps large Android devices). Small phones get
-  slightly *more* reaction time - the acceptable direction.
+  is capped at 956** (a no-op on iOS, clamps large Android devices). In theory small phones
+  get slightly *more* reaction time - but measured (see "Screen sizes" below) narrow phones
+  score *less*, not more; open.
 - Lookahead *time* (`W*0.78 / scrollSpd`) is W-independent - same seconds of visual
   warning everywhere. Good.
 - **Known residual, not addressed:** `PR` is W-derived while the corridor is H-derived, so
@@ -86,4 +87,21 @@ Two independent fairness axes:
 
 Measured before/after numbers for both breakages: `docs/design-history.md` ->
 "Cross-device fairness".
+
+## Screen sizes (pilot measurement, 2026-10-08)
+`tools/device-fair-sim.js` flies a screen-independent pilot model (seconds, corridor
+fractions, ship radii; it calls the game's own hit tests) on the same days and seeds at
+several viewports and reports each size's paired score ratio vs 956x440 with a day-bootstrap
+95% interval. Run it before changing a W/H cap or any W- or H-derived size. Result at e811313
+(12 days x 8 runs; beginner tuned to the real median run):
+
+- **iPhone Duo unfolded** (951x669; also 951x600 and 951x520): beginners about +15% (they hit
+  the opening walls less), average and expert players 9-16% *less*. A taller corridor did not
+  turn into points, so the iOS H cap was raised to fill the Duo (user's call, 19.0).
+- **iPhone Duo folded** (678x466) and **iPhone SE** (667x375): 20-33% less at every tier.
+- **iPhone 18 Pro** (874x402): already up to 16% under the Pro Max reference.
+
+So the leaderboard likely favours the widest phones a little (the W-derived `PR`/`MINE_R`
+residual above, and `scrollSpd()`'s W/600 term); not chased. The pilot ignores coins and
+power-ups - it is a model, not players.
 

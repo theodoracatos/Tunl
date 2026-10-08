@@ -6,7 +6,7 @@
 // it exists so a build can identify itself: window.TUNL_VERSION for a DevTools check,
 // and build-play.mjs stamps it into /play as <meta name="tunl:version"> so the live
 // web build's version is greppable without diffing the bundle.
-const TUNL_VERSION = '18.6.3';
+const TUNL_VERSION = '19.0';
 if (typeof window !== 'undefined') window.TUNL_VERSION = TUNL_VERSION;
 
 const cv  = document.getElementById('c');
@@ -39,13 +39,21 @@ const _WEB = (typeof isWeb === 'function' && isWeb());
 // keeps a tablet's corridor from being a physically much wider (easier) tunnel than the
 // phone it was balanced against. The _FEEL_SCALE block already normalizes the *feel*
 // across heights - this cap is about corridor size / difficulty, not feel.
+//
+// iOS: 670 since 19.0, so the unfolded iPhone Duo (951x669 landscape) fills its inner
+// display edge to edge as Apple asks (it was 600, which left bars above and below).
+// Measured before the change (2026-10-08, pilot model calling the game's own hit tests,
+// 12 days x 3 tiers, docs/agents/fairness.md "Screen sizes"): the Duo's inner display
+// scores like the 956x440 reference or lower at every tier but the opening-wall
+// beginner, whether H is 520, 600 or 669 - a taller corridor did not turn into points.
+// No other iPhone is taller than 440 in landscape, so this only moves the Duo.
 const _ANDROID_APP = (typeof isAndroidApp === 'function' && isAndroidApp());
 const W  = Math.min(window.innerWidth, 956);
 const H  = _WEB ? Math.min(window.innerHeight, 440)
          : _ANDROID_APP ? Math.min(window.innerHeight, 520)
-         : Math.min(window.innerHeight, 600);
+         : Math.min(window.innerHeight, 670);
 // UI_H/FS drive text AND UI element sizing (ship icons, spacing) -- deliberately NOT the
-// real H 1:1: H is capped at 600 for corridor-difficulty reasons (CLAUDE.md) but virtually
+// real H 1:1: H is capped per platform for corridor-difficulty reasons (CLAUDE.md) but virtually
 // never gets near that cap on an actual landscape phone (~400-450pt tall, vs. desktop
 // windows that easily clear 600), so sizing everything off plain H makes every label,
 // perk, and mission line noticeably smaller on the exact devices most players actually
@@ -89,9 +97,9 @@ if (_RASTER_SCALE !== 1) {
 // from native (GameView.swift's TunlWebView.onSafeAreaChange, via the existing
 // _tunlNativeUpdate bridge in main.js) rather than read from CSS env(safe-area-
 // inset-*) here -- confirmed by an on-screen debug readout that env() always
-// resolves to 0 in this app's WKWebView (TunlApp.swift's .ignoresSafeArea() plus
-// its manual window-transform rotation trick for LandscapeLeft/Right leave WebKit's
-// own safe-area plumbing with nothing to report), while UIKit's safeAreaInsets on
+// resolves to 0 in this app's WKWebView (TunlApp.swift's .ignoresSafeArea(), and
+// until 19.0 a manual window-transform rotation, leave WebKit's own safe-area
+// plumbing with nothing to report), while UIKit's safeAreaInsets on
 // the webview itself stays correct across both. Both left AND right are tracked,
 // not just whichever edge the island happens to sit on at load -- rotating 180°
 // mid-session swaps which edge is unsafe without changing W/H at all (same
@@ -148,6 +156,11 @@ const SHIP3D_FIN_SCALE = 1.0;   // fin height, x the model's F-14 proportion
 // fill holds to 44 (64 deg, 0.61 r), measured 2026-10-04 and used since.
 const SHIP3D_SWEEP_MAX    = 44;    // degrees of outer-panel sweep (20 -> 64 deg leading edge)
 const SHIP3D_SWEEP_CRUISE = 0.46;  // normal flight, as a fraction of SHIP3D_SWEEP_MAX (0 = spread, 1 = folded)
+// Top-down hull (hangar, title hero, shop, share card, flytunl.ch chips): the outer panels
+// at this fraction of SHIP3D_SWEEP_MAX, baked in by tools/gen-ship-topdown.js. Full sweep
+// (1) until 2026-10-08; slightly spread since, on the user's call ("das Flugzeug mit ein
+// bisschen gespreizten Fluegeln zeigen").
+const SHIP_TOPDOWN_SWEEP = 0.70;
 const SHIP3D_SWEEP_WARP_EASE = 0.55;  // last fraction of a warp over which the wings glide back to cruise
 // Barrel roll on flying through the warp portal (2026-09-19): one full 360 deg turn about
 // the long axis, eased in and out, on top of the normal roll. The warp makes the player

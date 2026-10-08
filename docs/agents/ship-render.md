@@ -220,8 +220,10 @@ in the real renderer: https://claude.ai/artifact/83BUEJDUKVSVMjS6HVtUUE
 - **Copy:** the flytunl.ch ships page described the hull as "SR-71-style"; the paragraph
   now says F-14 in all 15 languages (key rehashed in `flytunl-site/i18n/pages/*.b-ships.json`).
 - **Sweep states** (2026-09-22, two passes): see the swing-wing rule above - the wings no
-  longer follow the speed at all. The TOP-DOWN hull stays drawn at full sweep whatever the
-  flight is doing; it is the portrait of the ship at speed.
+  longer follow the speed at all. The TOP-DOWN hull is drawn at one fixed sweep whatever the
+  flight is doing: full sweep until 2026-10-08, then `SHIP_TOPDOWN_SWEEP` (slightly spread, user's
+  call: the folded portrait looked too narrow on the title). Change it in `constants.js`, re-run
+  `tools/gen-ship-topdown.js --write` and `branding/render-ship-mark.mjs --site`.
 - **Test bug fixed on the way:** `test-collision.js` read `s3.SHIP3D_BRAKE_DEG`, but a
   top-level `const` run in a vm is not a context property - the brake sweep was `NaN`,
   drawn as spread, and never checked. The SR-71 hull actually reached 1.02 r under the brake

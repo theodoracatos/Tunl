@@ -7,12 +7,12 @@
 //
 // Why: the flat hull was hand-drawn and drifted from the 3D model every time the hull
 // changed (docs/agents/ship-render.md). Here the planform IS the 3D model seen from above
-// with the outer panels folded to SHIP3D_SWEEP_MAX (the top-down views always draw full
-// sweep): every face is rasterised, slits under ~0.03 r are closed, and the result is cut
+// with the outer panels at SHIP_TOPDOWN_SWEEP of SHIP3D_SWEEP_MAX (one fixed sweep for every
+// top-down view): every face is rasterised, slits under ~0.03 r are closed, and the result is cut
 // into DISJOINT facets (nose, taileron, fuselage, glove, outer wing) plus two lit
 // leading-edge bands. Disjoint matters: drawShip strokes every facet outline as a seam, so
 // a facet hidden under another would draw its edge through the hull.
-// Re-run after any change to _ship3dFaces, SHIP3D_PIVOT or SHIP3D_SWEEP_MAX, then npm test
+// Re-run after any change to _ship3dFaces, SHIP3D_PIVOT, SHIP3D_SWEEP_MAX or SHIP_TOPDOWN_SWEEP, then npm test
 // (test-collision.js holds the envelope and the share.js copy).
 'use strict';
 const fs = require('fs'), path = require('path'), vm = require('vm');
@@ -24,7 +24,7 @@ const num = n => Number(cs.match(new RegExp(n + '\\s*=\\s*(-?[0-9.]+)'))[1]);
 const c = { Math }; vm.createContext(c);
 vm.runInContext(`const SHIP_NOZZLE_X=${num('SHIP_NOZZLE_X')},SHIP_NOZZLE_Y=${num('SHIP_NOZZLE_Y')};` + src.match(/const SHIP3D_PIVOT = \[[^\]]*\];/)[0]
     + fnSrc('_ship3dFaces') + fnSrc('_swingPt') + ';this.F=_ship3dFaces();this.sp=_swingPt;this.P=SHIP3D_PIVOT;', c);
-const F = c.F, SW = num('SHIP3D_SWEEP_MAX') * Math.PI / 180, cw = Math.cos(SW), sw = Math.sin(SW);
+const F = c.F, SW = num('SHIP3D_SWEEP_MAX') * num('SHIP_TOPDOWN_SWEEP') * Math.PI / 180, cw = Math.cos(SW), sw = Math.sin(SW);
 const fold = q => c.sp([q[0], q[1], 0], 1, cw, sw);
 
 // Polygons on side +1 (y >= 0), xy only
@@ -153,9 +153,9 @@ const lit = pts => '[' + pts.map(q => `[${q[0]},${q[1]}]`).join(',') + ']';
 const wrap = (s, ind) => s.replace(/\],\[/g, '],\n' + ind + '[').split('\n').reduce((acc, part) => { const l = acc[acc.length - 1];
     if (l !== undefined && (l + part).length < 110) acc[acc.length - 1] = l + part.trimStart(); else acc.push(part); return acc; }, []).join('\n');
 const block = `// BEGIN generated top-down hull: tools/gen-ship-topdown.js (do not hand-edit)
-// The 3D model (_ship3dFaces) seen from above with the outer panels folded to
-// SHIP3D_SWEEP_MAX. Facets are disjoint (the seam pass strokes every outline); top/bot are
-// tone() amounts. Keep the facet ORDER: paint.js's WINGTIPS pattern fills 1, 5 and 6.
+// The 3D model (_ship3dFaces) seen from above with the outer panels at SHIP_TOPDOWN_SWEEP
+// of SHIP3D_SWEEP_MAX. Facets are disjoint (the seam pass strokes every outline); top/bot
+// are tone() amounts. Keep the facet ORDER: paint.js's WINGTIPS pattern fills 1, 5 and 6.
 const SHIP_OUTLINE = (() => {
     const top = ${wrap(lit(outlineTop), '                 ')};
     return top.concat(top.slice(1, -1).reverse().map(p => [p[0], -p[1]]));

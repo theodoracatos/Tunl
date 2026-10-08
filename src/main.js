@@ -241,6 +241,58 @@ if (isWeb()) {
     window.addEventListener('orientationchange', _reloadAfterRotate);
 }
 
+// ── Fold / unfold (iOS app only) ────────────────────────────────────
+// The iPhone Duo resizes the app live when it is folded or unfolded (outer and inner
+// display), and W/H are frozen at load (constants.js, physics.md "Canvas size"). So:
+// - the canvas is at once CSS-scaled to fit the new window (input maps through
+//   getBoundingClientRect, gameplay coordinates are untouched - a display zoom, no
+//   difficulty change);
+// - a run in progress is paused through the interruption pause (input.js
+//   pauseForInterrupt: the cave is covered, no grace window afterwards), held until the
+//   resize has settled, then resumes through the READY countdown - folding takes both
+//   hands, a hold-to-thrust ship would fall meanwhile;
+// - the page reloads at the new size at the next point where nothing is lost: at once
+//   on the bare title screen, else when the player is back on it or starts the next run
+//   (startPlay, lifecycle.js). The rest of the run is flown at the size it started on.
+// Android keeps its own load path (MainActivity.loadWhenSized) and the web its rotation
+// reload above; neither reaches this.
+let _resizeReloadPending = false;
+function _resizeReloadIfSafe(atRunStart) {
+    if (!_resizeReloadPending) return false;
+    const panelOpen = showShop || showShipPicker || showSettings || showMissions || showCurrencyInfo
+                   || showPaint || showStardustPath;
+    if (!atRunStart && (phase !== 'title' || panelOpen)) return false;
+    location.reload();
+    return true;
+}
+if (!isWeb() && !isAndroidApp()) {
+    const _bootW = window.innerWidth, _bootH = window.innerHeight;
+    let _settleT = 0;
+    const _fitCanvas = () => {
+        const s = Math.min(window.innerWidth / W, window.innerHeight / H);
+        cv.style.width  = (W * s) + 'px';
+        cv.style.height = (H * s) + 'px';
+    };
+    window.addEventListener('resize', () => {
+        if (Math.abs(window.innerWidth - _bootW) < 4 && Math.abs(window.innerHeight - _bootH) < 4) {
+            // Back at the boot size (unfolded and folded again): nothing to reload.
+            _resizeReloadPending = false;
+            cv.style.width = W + 'px'; cv.style.height = H + 'px';
+            return;
+        }
+        _fitCanvas();
+        _resizeReloadPending = true;
+        if (phase === 'play') _suppressInput();
+        clearTimeout(_settleT);
+        _settleT = setTimeout(() => {
+            if (interruptPaused && !document.hidden) _pageBack();
+            _resizeReloadIfSafe(false);
+        }, 700);
+    });
+    // Panels closed, or the death screen's HOME button: the bare title screen is back.
+    setInterval(() => _resizeReloadIfSafe(false), 500);
+}
+
 // GameView.swift disables WKWebView's "user action required for playback"
 // policy, so audio can start immediately without waiting for the first tap.
 _initAC();
