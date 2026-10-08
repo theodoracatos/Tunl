@@ -103,7 +103,12 @@ html.ios a.android, html.android a.ios { display:none; }
         return def;
     }
     var src = param('utm_source', 'get'), camp = param('utm_campaign', 'get');
-    var refQ = 'referrer=' + encodeURIComponent('utm_source=' + src + '&utm_campaign=' + camp);
+    // A challenge or referral link sent through /get (c, d, s, r - the game's own link
+    // keys) rides into the Play install as its referrer; the app opens that challenge on
+    // its first start (MainActivity.kt "Install referrer"). The App Store has no channel.
+    var refRaw = 'utm_source=' + src + '&utm_campaign=' + camp;
+    ['c', 'd', 's', 'r'].forEach(function (k) { var v = param(k, ''); if (v) refRaw += '&' + k + '=' + v; });
+    var refQ = 'referrer=' + encodeURIComponent(refRaw);
     var PLAY_HTTPS = 'https://play.google.com/store/apps/details?id=' + PKG + '&' + refQ;
     var PLAY_MARKET = 'market://details?id=' + PKG + '&' + refQ;
     var PLAY_INTENT = 'intent://details?id=' + PKG + '&' + refQ + '#Intent;scheme=market;package=com.android.vending;S.browser_fallback_url='

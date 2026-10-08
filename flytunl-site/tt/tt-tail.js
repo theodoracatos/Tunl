@@ -213,7 +213,9 @@
     var _open = window.open, OPENED = { closed: false };
     window.open = function (url) {
         if (url === APP_STORE_URL) { openStore('ios'); return OPENED; }
-        if (url === PLAY_STORE_URL) { openStore('android'); return OPENED; }
+        // A prefix match: the game appends &referrer= to a Play link opened from a
+        // challenge or referral link (src/web.js playStoreUrlWithReferrer).
+        if (typeof url === 'string' && url.indexOf(PLAY_STORE_URL) === 0) { openStore('android'); return OPENED; }
         return _open.apply(window, arguments);
     };
     // The title-screen pill (#cta) links straight to the listings with target=_blank.

@@ -83,6 +83,9 @@ dependencies {
     implementation 'androidx.webkit:webkit:1.12.1'
     implementation 'com.google.android.gms:play-services-games-v2:20.1.2'
     implementation 'com.google.android.play:review-ktx:2.0.2'
+    // Play Install Referrer: opens a challenge link on the first start after an install
+    // from it (MainActivity.kt startGame). Google's own API, no attribution SDK.
+    implementation 'com.android.installreferrer:installreferrer:2.2'
     implementation 'com.android.billingclient:billing-ktx:9.1.0'
     implementation 'com.google.android.gms:play-services-ads:25.5.0'
     implementation 'com.google.android.ump:user-messaging-platform:4.0.0'

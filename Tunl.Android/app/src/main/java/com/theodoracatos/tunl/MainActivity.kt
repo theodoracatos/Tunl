@@ -2,6 +2,7 @@ package com.theodoracatos.tunl
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
@@ -28,6 +29,8 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
+import com.android.installreferrer.api.InstallReferrerClient
+import com.android.installreferrer.api.InstallReferrerStateListener
 import com.google.android.gms.games.PlayGames
 import com.google.android.gms.games.leaderboard.LeaderboardVariant
 import com.google.android.play.core.review.ReviewManagerFactory
@@ -42,6 +45,15 @@ class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
 
     private val gameBaseUrl = "https://appassets.androidplatform.net/assets/tunl.html"
+
+    companion object {
+        // Native-only settings, apart from the page's own localStorage.
+        private const val PREFS_NATIVE = "tunl_native"
+        // Set once the install referrer has been read (startGame): first start only.
+        private const val PREF_REFERRER_READ = "install_referrer_read"
+        // How long the very first start waits for Play's install referrer answer.
+        private const val REFERRER_WAIT_MS = 1500L
+    }
 
     // Extracts a deep-link query string from an App Link intent (AndroidManifest's
     // autoVerify intent-filter, flytunl.ch/play/... - a friend's shared run, see
@@ -60,6 +72,72 @@ class MainActivity : ComponentActivity() {
     private fun gameUrl(intent: Intent?): String {
         val query = deepLinkQuery(intent)
         return if (query != null) "$gameBaseUrl?$query" else gameBaseUrl
+    }
+
+    // Install referrer (2026-10-08, challenge spec phase 3): a player who opened a
+    // challenge in the browser and installed from its Play button gets that challenge
+    // on the app's very first start. The web build appends it to the Play link as the
+    // install referrer (src/web.js playStoreUrlWithReferrer, flytunl.ch/get the same),
+    // and this reads it back once, via Play's own Install Referrer API - no third-party
+    // SDK. Only the game's link keys are kept (c, d, s, r); anything else, such as the
+    // utm_source=google-play of an organic install, is dropped. A start through an App
+    // Link already carries its own query and skips this. The first start waits at most
+    // REFERRER_WAIT_MS for the answer, so a slow Play service never holds the game.
+    private fun startGame(intent: Intent?) {
+        val prefs = getSharedPreferences(PREFS_NATIVE, Context.MODE_PRIVATE)
+        if (deepLinkQuery(intent) != null || prefs.getBoolean(PREF_REFERRER_READ, false)) {
+            loadWhenSized(gameUrl(intent))
+            return
+        }
+        prefs.edit().putBoolean(PREF_REFERRER_READ, true).apply()
+        var started = false
+        val start = { query: String? ->
+            runOnUiThread {
+                if (!started) {
+                    started = true
+                    loadWhenSized(if (query != null) "$gameBaseUrl?$query" else gameBaseUrl)
+                }
+            }
+        }
+        try {
+            val client = InstallReferrerClient.newBuilder(this).build()
+            client.startConnection(object : InstallReferrerStateListener {
+                override fun onInstallReferrerSetupFinished(responseCode: Int) {
+                    var query: String? = null
+                    if (responseCode == InstallReferrerClient.InstallReferrerResponse.OK) {
+                        try {
+                            query = referrerQuery(client.installReferrer.installReferrer)
+                        } catch (e: Exception) {
+                            Log.w("TunlReferrer", "Could not read the install referrer", e)
+                        }
+                    }
+                    try { client.endConnection() } catch (e: Exception) { /* already closed */ }
+                    start(query)
+                }
+                override fun onInstallReferrerServiceDisconnected() { start(null) }
+            })
+        } catch (e: Exception) {
+            Log.w("TunlReferrer", "Install referrer unavailable", e)
+            start(null)
+        }
+        webView.postDelayed({ start(null) }, REFERRER_WAIT_MS)
+    }
+
+    // The game's own link keys out of a raw install referrer, re-encoded as a query
+    // string, or null when none of them is there. Same shapes src/web.js accepts.
+    private fun referrerQuery(raw: String?): String? {
+        if (raw.isNullOrEmpty()) return null
+        val uri = Uri.parse("https://flytunl.ch/play/?$raw")
+        val keep = mapOf(
+            "c" to Regex("^[0-9A-Za-z]{10}$"),
+            "d" to Regex("^[0-9a-z]{1,8}$", RegexOption.IGNORE_CASE),
+            "s" to Regex("^\\d{1,7}$"),
+            "r" to Regex("^[A-Za-z0-9_-]{4,64}$"),
+        )
+        val parts = keep.mapNotNull { (k, re) ->
+            uri.getQueryParameter(k)?.takeIf { re.matches(it) }?.let { "$k=${Uri.encode(it)}" }
+        }
+        return if (parts.isEmpty()) null else parts.joinToString("&")
     }
 
     // Fires when an App Link is tapped while the app is already running -
@@ -488,7 +566,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        loadWhenSized(gameUrl(intent))
+        startGame(intent)
 
         // Android's system/gesture back button has no iOS equivalent (no hardware
         // back button exists there). Without this, back always exits the app
