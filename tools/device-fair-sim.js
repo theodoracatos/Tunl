@@ -17,6 +17,7 @@
 //
 // Usage: node tools/device-fair-sim.js [days=12] [runsPerDay=8] [sizes=874x402,951x669,678x466,667x375]
 //        [tiers=beginner,average,expert]   - each size x tier runs as its own process, in parallel.
+//        FAIR_SUBST='[[from, to], ...]' replaces source text on the non-reference sizes (ablation).
 // Traps: best < TUTOR_BEST_MAX turns the tap tutor on (the pilot's hold does nothing), so every
 // run seeds best = 300; a bang-bang controller with a reaction delay must lead by that delay
 // (the kd + delay term) or it oscillates into the walls and every tier dies alike at ~15.
@@ -150,6 +151,17 @@ function worker(innerWidth, innerHeight, tier, days, runsPerDay) {
     const FILES = [...fs.readFileSync(path.join(ROOT, 'tunl.html'), 'utf8')
         .matchAll(/<script src="(src\/[^"]+\.js)"><\/script>/g)].map(m => m[1]).filter(f => f !== 'src/main.js');
     SRC = FILES.map(f => [f, fs.readFileSync(path.join(ROOT, f), 'utf8')]);
+    // Ablation (FAIR_SUBST): a JSON list of [from, to] source replacements applied to every
+    // size but the reference, e.g. '[["const PR      = W  * 0.018","const PR = 956 * 0.018"]]'
+    // gives a narrow screen the reference hitbox, so one W-derived factor can be tested alone.
+    // A replacement that matches nothing is an error, not a silent no-op.
+    if (process.env.FAIR_SUBST && `${innerWidth}x${innerHeight}` !== REF) {
+        for (const [from, to] of JSON.parse(process.env.FAIR_SUBST)) {
+            let hit = 0;
+            SRC = SRC.map(([f, code]) => { if (code.includes(from)) { hit++; code = code.split(from).join(to); } return [f, code]; });
+            if (!hit) throw new Error('FAIR_SUBST matched nothing: ' + from);
+        }
+    }
     const T = TIERS[tier];
     const out = [];
     for (let d = 0; d < days; d++) {

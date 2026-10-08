@@ -78,7 +78,8 @@ Two independent fairness axes:
   obstacle spacing is fixed in world-x, so reaction time per obstacle is `~ 1/W`. Hence **W
   is capped at 956** (a no-op on iOS, clamps large Android devices). In theory small phones
   get slightly *more* reaction time - but measured (see "Screen sizes" below) narrow phones
-  score *less*, not more; open.
+  score *less*, roughly in proportion to W: the pilot survives about as long on every width,
+  and a narrow screen covers fewer world-px per second.
 - Lookahead *time* (`W*0.78 / scrollSpd`) is W-independent - same seconds of visual
   warning everywhere. Good.
 - **Known residual, not addressed:** `PR` is W-derived while the corridor is H-derived, so
@@ -101,7 +102,21 @@ several viewports and reports each size's paired score ratio vs 956x440 with a d
 - **iPhone Duo folded** (678x466) and **iPhone SE** (667x375): 20-33% less at every tier.
 - **iPhone 18 Pro** (874x402): already up to 16% under the Pro Max reference.
 
-So the leaderboard likely favours the widest phones a little (the W-derived `PR`/`MINE_R`
-residual above, and `scrollSpd()`'s W/600 term); not chased. The pilot ignores coins and
-power-ups - it is a model, not players.
+So the leaderboard favours the widest phones. The pilot ignores coins and power-ups - it is
+a model, not players.
+
+**Cause, measured 2026-10-08** (8 days x 6 runs; `FAIR_SUBST` ablation in the tool):
+- **Width, not height.** 678x440 x0.74/0.77/0.74 and 800x440 x0.81/0.84/0.82
+  (beginner/average/expert); 956x375 and 956x466 stay within about +-10% and change sign by
+  tier. The deficit tracks W/956 (0.71, 0.84).
+- **Scrolling at the reference world speed** on 678x440 (`scrollSpd` x956/600): x1.33 / 1.09
+  / 0.77. Beginners overshoot, average players come out even, experts still lose - with the
+  world faster on the same narrow screen, their lookahead time (`W*0.78 / scrollSpd`) shrinks.
+- **No effect alone:** `PR` (x0.67-0.78, the bigger reference hull is a bit worse), mine and
+  shot radii, cannon/falling-stalactite leads. `PX` at its reference helps beginners only.
+- Reading: survival time is about W-independent, points per second are not (world-px per
+  second scale with W). Only a change that gives every width the same world per second AND
+  the same lookahead time can be fair at every tier: drawing the world at scale W/956 on a
+  narrower screen (game logic at W 956, H scaled by 956/W). Taller logic screens measured
+  about fair (956x466, Duo inner 951x669). Not built - a rendering change for its own release.
 
