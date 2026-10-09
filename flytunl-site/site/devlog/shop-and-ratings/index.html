@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Google AdSense (site verification + ad serving) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4882203470005029"
+     crossorigin="anonymous"></script>
+<title>A Shop You Can Read, and a Better Moment to Ask</title>
+<meta name="description" content="Why TUNL's shop showed no prices, how version 19.2 rebuilt it as three cards with the store's own price, and why the rating request now waits for a calm title screen.">
+<link rel="canonical" href="https://flytunl.ch/devlog/shop-and-ratings/">
+<!-- site-chrome:alt -->
+<link rel="alternate" hreflang="en" href="https://flytunl.ch/devlog/shop-and-ratings/">
+<link rel="alternate" hreflang="de" href="https://flytunl.ch/de/devlog/shop-and-ratings/">
+<link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/devlog/shop-and-ratings/">
+<link rel="alternate" hreflang="it" href="https://flytunl.ch/it/devlog/shop-and-ratings/">
+<link rel="alternate" hreflang="es" href="https://flytunl.ch/es/devlog/shop-and-ratings/">
+<link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/devlog/shop-and-ratings/">
+<link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/devlog/shop-and-ratings/">
+<link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/devlog/shop-and-ratings/">
+<link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/devlog/shop-and-ratings/">
+<link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/devlog/shop-and-ratings/">
+<link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/devlog/shop-and-ratings/">
+<link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/devlog/shop-and-ratings/">
+<link rel="alternate" hreflang="id" href="https://flytunl.ch/id/devlog/shop-and-ratings/">
+<link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/devlog/shop-and-ratings/">
+<link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/devlog/shop-and-ratings/">
+<link rel="alternate" hreflang="el" href="https://flytunl.ch/el/devlog/shop-and-ratings/">
+<link rel="alternate" hreflang="x-default" href="https://flytunl.ch/devlog/shop-and-ratings/">
+<!-- /site-chrome:alt -->
+<meta property="og:type" content="article">
+<meta property="og:title" content="A Shop You Can Read, and a Better Moment to Ask">
+<meta property="og:description" content="Why TUNL's shop showed no prices, how version 19.2 rebuilt it as three cards with the store's own price, and why the rating request now waits for a calm title screen.">
+<meta property="og:url" content="https://flytunl.ch/devlog/shop-and-ratings/">
+<meta property="og:image" content="https://flytunl.ch/feature-graphic-1024x500.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png">
+<link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#04040a">
+<!-- site-chrome:head -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="/day.js?v=20260921a"></script>
+<!-- /site-chrome:head -->
+<link rel="stylesheet" href="/site.css?v=20260923a">
+<style>
+  * { box-sizing:border-box; }
+  body {
+    color:#ddd;
+    font-family:var(--tunl-ui);
+    line-height:1.7;
+    margin:0;
+    padding: 0 20px 80px;
+  }
+  main { max-width:var(--page-w, 1120px); margin:0 auto; }
+  .brand { display:inline-flex; align-items:center; text-decoration:none; margin-bottom:28px; }
+  .brand img { height:28px; width:auto; }
+  h1 { color:var(--sc-accent); font-size:30px; letter-spacing:1px; margin-bottom:10px; line-height:1.25; }
+  .lead { color:#aaa; font-size:17px; margin-top:0; margin-bottom:8px; }
+  .meta { color:#666; font-size:13px; margin-bottom:34px; }
+  h2 { color:var(--sc-accent); font-size:21px; margin-top:44px; margin-bottom:12px; line-height:1.3; }
+  h3 { color:#fff; font-size:16px; margin-top:28px; margin-bottom:8px; }
+  p, li { color:#ccc; font-size:15.5px; }
+  ul, ol { padding-left:22px; }
+  li { margin-bottom:10px; }
+  a { color:var(--sc-accent); }
+  strong { color:#fff; }
+  em { color:#ddd; }
+  code {
+    font-family:var(--tunl-mono);
+    font-size:13.5px; color:var(--sc-accent);
+    background:#12121c; border-radius:4px; padding:1px 5px;
+  }
+  pre {
+    background:#0d0d16; border:1px solid #222; border-radius:10px;
+    padding:16px; overflow-x:auto; margin:18px 0;
+  }
+  pre code { background:none; padding:0; color:#cfe8ff; font-size:13px; line-height:1.6; }
+  .note {
+    background:#0d0d16; border:1px solid #222; border-left:3px solid var(--sc-accent);
+    border-radius:0 10px 10px 0; padding:14px 18px; margin:22px 0;
+  }
+  .note p { margin:0; font-size:14.5px; color:#bbb; }
+  .wrap { overflow-x:auto; margin:18px 0; }
+  table { width:100%; border-collapse:collapse; font-size:14.5px; min-width:480px; }
+  th, td { text-align:left; padding:9px 12px; border-bottom:1px solid #222; vertical-align:top; }
+  th { color:var(--sc-accent); font-weight:600; }
+  td { color:#ccc; }
+  td:first-child { white-space:nowrap; }
+  .cta {
+    display:inline-block; background:var(--sc-accent); color:#05050c; font-weight:700;
+    text-decoration:none; padding:12px 24px; border-radius:10px; margin-top:8px;
+  }
+  .cta:hover { background:color-mix(in srgb, var(--sc-accent) 75%, #fff); }
+  .post { display:block; background:#0d0d16; border:1px solid #222; border-radius:12px;
+    padding:18px 20px; margin:16px 0; text-decoration:none; }
+  .post:hover { border-color:var(--sc-accent); }
+  .post h3 { color:var(--sc-accent); font-size:18px; margin:0 0 6px; }
+  .post p { margin:0; color:#bbb; font-size:14.5px; }
+  .post .when { color:#666; font-size:12.5px; margin-bottom:6px; display:block; }
+  .card { background:#0d0d16; border:1px solid #222; border-radius:10px; padding:20px; margin:22px 0; }
+  .card p { margin:8px 0; }
+  .swatch { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:8px; vertical-align:middle; }
+  footer {
+    margin-top:56px; color:#666; font-size:13px; line-height:1.9;
+    border-top:1px solid #222; padding-top:16px;
+  }
+  footer a { color:#888; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "A Shop You Can Read, and a Better Moment to Ask",
+  "description": "Why TUNL's shop showed no prices, how version 19.2 rebuilt it as three cards with the store's own price, and why the rating request now waits for a calm title screen.",
+  "author": {
+    "@type": "Person",
+    "name": "Theodoracatos"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "TUNL"
+  },
+  "datePublished": "2026-10-09",
+  "mainEntityOfPage": "https://flytunl.ch/devlog/shop-and-ratings/",
+  "image": "https://flytunl.ch/feature-graphic-1024x500.png"
+}
+</script>
+<!-- Cloudflare Web Analytics (cookieless, no consent banner needed) -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "7783839e84374212b7d76f25e1fb8e87"}'></script>
+</head>
+<body>
+  <!-- site-chrome:nav -->
+  <header class="sitenav">
+    <a class="sn-brand" href="/"><img src="/wordmark.svg" alt="TUNL"></a>
+    <nav class="sn-links" aria-label="Main">
+      <a href="/how-to-play/">How to play</a>
+      <a href="/ships/">Ships</a>
+      <a href="/devlog/" aria-current="page">Devlog</a>
+      <a href="/changelog/">Changelog</a>
+    </nav>
+    <span class="sn-gap"></span>
+    <a class="sn-ver" href="/changelog/">19.2</a>
+    <a class="sn-cta" href="/play/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>Play now</a>
+    <details class="sn-more">
+      <summary aria-label="Menu">&#9776;</summary>
+      <div class="sn-sheet">
+        <a href="/how-to-play/">How to play</a>
+        <a href="/ships/">Ships</a>
+        <a href="/devlog/" aria-current="page">Devlog</a>
+        <a href="/changelog/">Changelog</a>
+        <a href="/about/">About</a>
+        <a href="/support/">Support</a>
+        <a href="/press/">Press</a>
+        <a href="/privacy/">Privacy Policy</a>
+        <a href="/impressum/">Legal notice</a>
+      </div>
+    </details>
+  </header>
+  <!-- /site-chrome:nav -->
+<main>
+  <h1>A Shop You Can Read, and a Better Moment to Ask</h1>
+  <p class="lead">Version 19.2 changes two things that have nothing to do with flying and
+  everything to do with whether TUNL can keep going: the shop and the rating request.</p>
+  <p class="meta">Devlog &middot; 9 October 2026 &middot; <a href="/devlog/">all posts</a></p>
+  <h2>The shop said nothing</h2>
+  <p>The old shop was four outlined buttons in a narrow column: REMOVE ADS, UNLOCK ALL SHIPS,
+  PAINT MASTER and RESTORE PURCHASE, all the same size. It never showed a price. To find out what
+  something cost, you had to tap it and wait for the store's purchase sheet. It never showed what
+  you would get either, in a game that can draw every ship and every paint.</p>
+  <p>Next to it, the SHIPS sheet showed real ships, their prices in shards and how many days each
+  one was still away. Compared with that, the shop looked like a settings menu.</p>
+  <h2>Three cards</h2>
+  <p>The shop is now three cards side by side, one per product, which suits a landscape screen.
+  Each card has a picture drawn by the game itself, the name, one line about what it does, one
+  line about what it is worth to you, and the price as the button. Restore purchase is a small
+  link at the top, which is all Apple asks for.</p>
+  <div class="note"><p><strong>The price comes from the store, never from the game.</strong> TUNL
+  uses five regional price levels, so the same product costs different amounts in different
+  countries. The apps now ask the App Store or Google Play for the local price at launch and pass
+  that exact text to the shop. If the store has not answered yet, the button just says BUY.</p></div>
+  <p>The value line is computed from your own save, not written by hand. On ALL SHIPS it says how
+  many flight days the last ship is still away, the same number the SHIPS sheet shows under it. On
+  PAINT MASTER it adds up the shard prices of the paints you do not own yet. Once you own
+  something, its card stays, keeps its picture and says YOURS, instead of fading to grey text.</p>
+  <p>The SHIPS sheet also got a small gold ALL NOW chip with the price, because that is where you
+  see the wait.</p>
+  <h2>Asking for a rating, but not over the death screen</h2>
+  <p>TUNL has 11 ratings on the App Store, all from Switzerland, and had none on Google Play when
+  I last counted. The system rating sheet was already built in, but it only appeared after a
+  record of 100 points or more, from the third day you played, and it appeared over the death
+  screen, covering the record it was meant to celebrate.</p>
+  <p>Now three moments can ask: a new record, a newly unlocked ship and a 7-day streak. None of
+  them asks on the spot. The moment is remembered, and the sheet appears only once the title
+  screen has been calm for a moment, with no card or menu open. The limits stay as they were: at
+  least three days played and at most one request every 90 days. Apple and Google add their own
+  limits on top.</p>
+  <div class="note"><p><strong>What I deliberately did not do:</strong> no shards or paints for
+  a rating, and no "Do you like TUNL?" question first that only sends happy players on. Both
+  stores forbid that, and it would make the stars mean less.</p></div>
+  <p>There is also a quiet RATE button in the settings, next to HOW IT WORKS. It opens the
+  store's review page, and only when you tap it.</p>
+  <h2>Measured from now on</h2>
+  <p>Until now I could not tell how often the shop was opened or how often the rating sheet was
+  even requested. Both are now counted, the same way as the other game events. In a few weeks I
+  will know whether the new shop is used more, and whether the rating limits are too strict.</p>
+  <p>If TUNL gives you a good run, a few words in the store help other pilots find the tunnel.</p>
+  <p><a class="cta" href="/play/">Play today's cave</a></p>
+  <!-- site-chrome:foot -->
+  <footer class="sitefoot">
+    <div class="sf-inner">
+      <div class="sf-cols">
+        <div class="sf-col">
+          <h4>Play TUNL</h4>
+          <a href="/play/">Play in your browser</a>
+          <a href="https://apps.apple.com/us/app/tunl-cave-flyer/id6789721765" target="_blank" rel="noopener">App Store</a>
+          <a href="https://play.google.com/store/apps/details?id=com.theodoracatos.tunl" target="_blank" rel="noopener">Google Play</a>
+        </div>
+        <div class="sf-col">
+          <h4>Learn the cave</h4>
+          <a href="/how-to-play/">How to play</a>
+          <a href="/ships/">Ships</a>
+          <a href="/devlog/">Devlog</a>
+          <a href="/changelog/">Changelog</a>
+        </div>
+        <div class="sf-col">
+          <h4>The project</h4>
+          <a href="/about/">About</a>
+          <a href="/support/">Support</a>
+          <a href="/press/">Press</a>
+          <a href="/privacy/">Privacy Policy</a>
+          <a href="/impressum/">Legal notice</a>
+        </div>
+      </div>
+      <p class="sf-legal">&copy; 2026 Theodoracatos. All rights reserved.<br><span class="langsw"><label for="langsel">Language:</label> <select id="langsel" aria-label="Language"><option value="/devlog/shop-and-ratings/" data-home="/" selected>English</option><option value="/de/devlog/shop-and-ratings/" data-home="/de/">Deutsch</option><option value="/fr/devlog/shop-and-ratings/" data-home="/fr/">Français</option><option value="/it/devlog/shop-and-ratings/" data-home="/it/">Italiano</option><option value="/es/devlog/shop-and-ratings/" data-home="/es/">Español</option><option value="/pt/devlog/shop-and-ratings/" data-home="/pt/">Português</option><option value="/ja/devlog/shop-and-ratings/" data-home="/ja/">日本語</option><option value="/ko/devlog/shop-and-ratings/" data-home="/ko/">한국어</option><option value="/zh/devlog/shop-and-ratings/" data-home="/zh/">繁體中文</option><option value="/ru/devlog/shop-and-ratings/" data-home="/ru/">Русский</option><option value="/ar/devlog/shop-and-ratings/" data-home="/ar/">العربية</option><option value="/tr/devlog/shop-and-ratings/" data-home="/tr/">Türkçe</option><option value="/id/devlog/shop-and-ratings/" data-home="/id/">Bahasa Indonesia</option><option value="/pl/devlog/shop-and-ratings/" data-home="/pl/">Polski</option><option value="/hi/devlog/shop-and-ratings/" data-home="/hi/">हिन्दी</option><option value="/el/devlog/shop-and-ratings/" data-home="/el/">Ελληνικά</option></select></span></p>
+    </div>
+  </footer>
+  <script>(function(){var s=document.getElementById('langsel');if(!s)return;s.addEventListener('change',function(){try{localStorage.setItem('tunl_site_lang',s.options[s.selectedIndex].getAttribute('data-home'));}catch(e){}location.href=s.value;});})();</script>
+  <!-- /site-chrome:foot -->
+</main>
+</body>
+</html>
