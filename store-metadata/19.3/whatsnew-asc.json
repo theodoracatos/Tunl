@@ -1,0 +1,21 @@
+{
+ "_note": "19.3 = one bug fix: after a rewarded continue past S4 the depth track plays on instead of Nebula (1e56ca5). Same text on both stores. Werbetexte: copy 19.2's (evergreen; ASC does not carry it over).",
+ "en-US": "A fix for deep runs: when a short video gives you a second life, the music of the deep cave now plays on. Before, it fell back to the first track for a while.\n\nThe dark sounds the way it should again. See you down there.",
+ "en-GB": "A fix for deep runs: when a short video gives you a second life, the music of the deep cave now plays on. Before, it fell back to the first track for a while.\n\nThe dark sounds the way it should again. See you down there.",
+ "es-MX": "Una corrección para los vuelos profundos: cuando un vídeo corto te da una segunda vida, la música de la cueva profunda ahora sigue sonando. Antes regresaba un rato a la primera pista.\n\nLa oscuridad vuelve a sonar como debe. Nos vemos allá abajo.",
+ "de-DE": "Ein Fix für tiefe Flüge: Wenn dir ein kurzes Video ein zweites Leben schenkt, läuft jetzt die Musik der tiefen Höhle weiter. Bisher sprang sie eine Weile zum ersten Lied zurück.\n\nDie Dunkelheit klingt wieder so, wie sie soll. Wir sehen uns da unten.",
+ "fr-FR": "Un correctif pour les vols profonds : quand une courte vidéo te donne une seconde vie, la musique de la grotte profonde continue maintenant. Avant, elle revenait un moment au premier morceau.\n\nL'obscurité sonne de nouveau comme elle doit. On se retrouve en bas.",
+ "it": "Una correzione per i voli in profondità: quando un breve video ti dà una seconda vita, la musica della grotta profonda ora continua. Prima tornava per un po' al primo brano.\n\nIl buio suona di nuovo come deve. Ci vediamo laggiù.",
+ "es-ES": "Una corrección para los vuelos profundos: cuando un vídeo corto te da una segunda vida, la música de la cueva profunda ahora sigue sonando. Antes volvía un rato a la primera pista.\n\nLa oscuridad vuelve a sonar como debe. Nos vemos allá abajo.",
+ "pt-BR": "Uma correção para voos profundos: quando um vídeo curto te dá uma segunda vida, a música da caverna profunda agora continua. Antes, ela voltava por um tempo para a primeira faixa.\n\nA escuridão volta a soar como deve. Nos vemos lá embaixo.",
+ "ja": "深部フライトの修正です。短い動画でもう一度飛べるとき、深い洞窟の音楽がそのまま流れ続けるようになりました。以前はしばらく最初の曲に戻っていました。\n\n闇が、また闇らしく響きます。深みで会いましょう。",
+ "ko": "깊은 비행을 위한 수정입니다. 짧은 영상으로 두 번째 기회를 얻으면 이제 깊은 동굴의 음악이 그대로 이어집니다. 이전에는 잠시 첫 번째 곡으로 돌아갔습니다.\n\n어둠이 다시 제 소리를 냅니다. 깊은 곳에서 만나요.",
+ "zh-Hant": "深處飛行的修正：看一段短片再飛一次時，深處洞穴的音樂現在會繼續播放。之前會暫時跳回第一首曲子。\n\n黑暗又恢復了它該有的聲音。深處見。",
+ "ru": "Исправление для глубоких полётов: когда короткое видео даёт тебе вторую жизнь, музыка глубокой пещеры теперь играет дальше. Раньше на время возвращалась первая мелодия.\n\nТьма снова звучит так, как должна. Увидимся в глубине.",
+ "ar-SA": "إصلاح للرحلات العميقة: عندما يمنحك مقطع قصير حياة ثانية، تستمر الآن موسيقى الكهف العميق. في السابق كانت تعود لفترة إلى المقطوعة الأولى.\n\nالظلام يبدو من جديد كما يجب. نلتقي في الأعماق.",
+ "tr": "Derin uçuşlar için bir düzeltme: Kısa bir video sana ikinci bir can verdiğinde, derin mağaranın müziği artık kaldığı yerden devam ediyor. Önceden bir süre ilk parçaya dönüyordu.\n\nKaranlık yine olması gerektiği gibi duyuluyor. Aşağıda görüşürüz.",
+ "id": "Perbaikan untuk penerbangan dalam: saat video singkat memberimu nyawa kedua, musik gua dalam kini terus berlanjut. Sebelumnya musik sempat kembali ke lagu pertama.\n\nKegelapan kembali terdengar sebagaimana mestinya. Sampai jumpa di bawah sana.",
+ "pl": "Poprawka dla głębokich lotów: gdy krótki filmik daje ci drugie życie, muzyka głębokiej jaskini gra teraz dalej. Wcześniej na chwilę wracał pierwszy utwór.\n\nMrok znów brzmi tak, jak powinien. Do zobaczenia w głębi.",
+ "hi": "गहरी उड़ानों के लिए एक सुधार: जब कोई छोटा वीडियो आपको दूसरा मौका देता है, तो अब गहरी गुफा का संगीत चलता रहता है। पहले वह कुछ देर के लिए पहले गाने पर लौट जाता था।\n\nअँधेरा फिर से वैसा ही सुनाई देता है जैसा उसे देना चाहिए। गहराई में मिलते हैं।",
+ "el": "Μια διόρθωση για τις βαθιές πτήσεις: όταν ένα σύντομο βίντεο σού δίνει δεύτερη ζωή, η μουσική της βαθιάς σπηλιάς συνεχίζει πλέον να παίζει. Πριν, γύριζε για λίγο στο πρώτο κομμάτι.\n\nΤο σκοτάδι ακούγεται ξανά όπως πρέπει. Τα λέμε εκεί κάτω."
+}
