@@ -163,6 +163,11 @@ function onDown(e) {
                 window.webkit?.messageHandlers?.iap?.postMessage({ action: 'purchase', product: 'unlock_all_ships' });
                 return;
             }
+            if (_unlockAllPaintsBtnRect && inRect(cx, cy, _unlockAllPaintsBtnRect)) {
+                sfxUiTap();
+                window.webkit?.messageHandlers?.iap?.postMessage({ action: 'purchase', product: 'unlock_all_paints' });
+                return;
+            }
             if (_restoreBtnRect && inRect(cx, cy, _restoreBtnRect)) {
                 sfxUiTap();
                 window.webkit?.messageHandlers?.iap?.postMessage({ action: 'restore' });

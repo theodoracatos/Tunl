@@ -5059,11 +5059,12 @@ function drawTitleScreen() {
         }
 
         // PAINT pill (Hangar paint, constants.js PAINT_*): top-right of the card, in the
-        // flown ship's glow. Hidden until the first paid ship is owned.
+        // flown ship's glow. Hidden until the first paid ship is owned, or the Lackiermeister
+        // IAP is (a buyer must reach what they paid for).
         // Web: the Lackiererei is app-only, so the pill is drawn greyed out and its tap
         // opens the "in the app" sheet (input.js); same gate and place as in the apps.
         _paintBtnRect = null;
-        if (unlockedSkins & (1 << LIVERY_GATE_SKIN)) {
+        if ((unlockedSkins & (1 << LIVERY_GATE_SKIN)) || allPaintsOwned) {
             const [pr, pg, pb] = isWeb() ? [150, 158, 180] : SKINS[activeSkin].shadow;
             const _pk = isWeb() ? 0.45 : 1;
             ctx.font = `bold ${FS * 0.020}px ${FONT_UI}`;
@@ -5536,7 +5537,7 @@ function drawTitleScreen() {
         }
     }
 
-    // Shop panel - Remove Ads + Unlock All Ships + Restore Purchase, split out of
+    // Shop panel - Remove Ads + Unlock All Ships + Lackiermeister + Restore Purchase, split out of
     // the settings panel above so that panel isn't stretched by IAP UI most players
     // never touch. Same nominal-height-then-scale-down pattern as the settings panel,
     // just for the IAP section instead of the whole settings stack.
@@ -5551,14 +5552,15 @@ function drawTitleScreen() {
         const nPadBottom = H * 0.040;
         const nTitleH    = H * 0.070;
         const nIapBtnH   = H * 0.085;
-        const nShipsGap   = H * 0.022;   // gap above the Unlock All Ships row
+        const nShipsGap   = H * 0.022;   // gap above the Unlock All Ships and Lackiermeister rows
         const nRestoreGap = H * 0.022;
         const nRestoreH   = H * 0.062;   // matched to nPrivacyBtnH in the settings panel -- 0.032 read as a squashed sliver
 
         // Restore Purchase stays hidden only once there's nothing left either
         // product could restore -- unlike the old remove-ads-only check, "owns one"
         // isn't enough to hide it anymore.
-        const nBodyH = nIapBtnH + nShipsGap + nIapBtnH + ((removeAdsOwned && allShipsOwned) ? 0 : nRestoreGap + nRestoreH);
+        const allIapOwned = removeAdsOwned && allShipsOwned && allPaintsOwned;
+        const nBodyH = nIapBtnH + (nShipsGap + nIapBtnH) * 2 + (allIapOwned ? 0 : nRestoreGap + nRestoreH);
         const nPanH = nPadTop + nTitleH + nBodyH + nPadBottom;
 
         const panHCap = H * 0.94;
@@ -5593,6 +5595,7 @@ function drawTitleScreen() {
 
         _removeAdsBtnRect = null;
         _unlockAllShipsBtnRect = null;
+        _unlockAllPaintsBtnRect = null;
         _restoreBtnRect = null;
         if (removeAdsOwned) {
             ctx.font      = `${FS * 0.020}px ${FONT_UI}`;
@@ -5651,7 +5654,41 @@ function drawTitleScreen() {
             y += iapBtnH;
         }
 
-        if (!(removeAdsOwned && allShipsOwned)) {
+        // Lackiermeister: every paint part for sale in the Lackiererei (state.js
+        // allPaintsOwned). Two lines, the name over what it buys, in a paint-pink tint so
+        // it reads as the third product, not a second ships button.
+        y += shipsGap;
+        if (allPaintsOwned) {
+            ctx.font      = `${FS * 0.020}px ${FONT_UI}`;
+            ctx.fillStyle = 'rgba(230,160,235,0.80)';
+            ctx.fillText(T.allPaintsOwned, W / 2, y + iapBtnH / 2);
+            y += iapBtnH;
+        } else {
+            const pbw = panW * 0.78, pby = y;
+            const pbx = W / 2 - pbw / 2;
+            ctx.fillStyle = 'rgba(15,18,40,0.72)';
+            ctx.beginPath(); ctx.roundRect(pbx, pby, pbw, iapBtnH, 7); ctx.fill();
+            ctx.strokeStyle = 'rgba(235,130,245,0.55)';
+            ctx.lineWidth   = 1;
+            ctx.beginPath(); ctx.roundRect(pbx, pby, pbw, iapBtnH, 7); ctx.stroke();
+            const availW = pbw * 0.88;
+            let nameFsz = FS * 0.021;
+            ctx.font = `${nameFsz}px ${FONT_UI}`;
+            const nameW = ctx.measureText(T.paintMaster).width;
+            if (nameW > availW) { nameFsz = Math.max(nameFsz * availW / nameW, FS * 0.014); ctx.font = `${nameFsz}px ${FONT_UI}`; }
+            ctx.fillStyle = 'rgba(245,175,250,0.95)';
+            ctx.fillText(T.paintMaster, W / 2, pby + iapBtnH * 0.36);
+            let subFsz = FS * 0.0145;
+            ctx.font = `${subFsz}px ${FONT_UI}`;
+            const subW = ctx.measureText(T.paintMasterSub).width;
+            if (subW > availW) { subFsz = Math.max(subFsz * availW / subW, FS * 0.010); ctx.font = `${subFsz}px ${FONT_UI}`; }
+            ctx.fillStyle = 'rgba(210,185,225,0.75)';
+            ctx.fillText(T.paintMasterSub, W / 2, pby + iapBtnH * 0.70);
+            _unlockAllPaintsBtnRect = { x: pbx, y: pby, w: pbw, h: iapBtnH };
+            y += iapBtnH;
+        }
+
+        if (!allIapOwned) {
             y += restoreGap;
             const rbw = panW * 0.78, rby = y;
             const rbx = W / 2 - rbw / 2;

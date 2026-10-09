@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
 // from local cache alone, so a fresh install signed into the same Google
 // account stays unlocked.
 //
-// Two products share this one manager (generalized from a single-product
+// Three products share this one manager (generalized from a single-product
 // "Remove Ads" design when UNLOCK_ALL_SHIPS_PRODUCT_ID was added): ownership
 // is a Set rather than a single Bool, and every function takes/reports a
 // productId instead of assuming which one. removeAdsOwned below is a readable
@@ -40,7 +40,8 @@ class BillingManager(context: Context) {
     companion object {
         const val REMOVE_ADS_PRODUCT_ID = "remove_ads"
         const val UNLOCK_ALL_SHIPS_PRODUCT_ID = "unlock_all_ships"
-        val ALL_PRODUCT_IDS = listOf(REMOVE_ADS_PRODUCT_ID, UNLOCK_ALL_SHIPS_PRODUCT_ID)
+        const val UNLOCK_ALL_PAINTS_PRODUCT_ID = "unlock_all_paints"   // Lackiermeister (state.js allPaintsOwned)
+        val ALL_PRODUCT_IDS = listOf(REMOVE_ADS_PRODUCT_ID, UNLOCK_ALL_SHIPS_PRODUCT_ID, UNLOCK_ALL_PAINTS_PRODUCT_ID)
         private const val TAG = "TunlBilling"
     }
 

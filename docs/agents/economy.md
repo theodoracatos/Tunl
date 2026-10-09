@@ -162,6 +162,16 @@ or darken the ship's own hue, so all six read as one ship. Rules, each load-bear
   old set (1240) was done in ~15. Old finishes migrate once (`PAINT_LEGACY`): owners get the
   parts, ships keep their look.
 
+**Lackiermeister IAP (2026-10-09, user's picks: real money, $4.99 tier 1, earned parts stay
+earned)**: non-consumable `unlock_all_paints`, the third shop row. An entitlement flag
+(`allPaintsOwned`, key `tunnel_all_paints`) read live by `paintPartOwned()` for every part
+**for sale**, current and future - **never written into `paintOwned`**, so a refund or a
+restore on a new device is exact, and **earned parts (`earn`) still wait for their stat**.
+It also opens the PAINT pill without `LIVERY_GATE_SKIN`, so a buyer reaches what they paid
+for. Like the ships IAP it touches no currency. App-only like the whole Lackiererei.
+`test-sim.js` guards ownership, the load-time kit check, the pill, the shop row in every
+language and the product id.
+
 **Unlock All Ships IAP**: non-consumable `unlock_all_ships` (next to `remove_ads`) that
 force-unlocks every ship, current and future (`allShipsOwned` in `state.js`, **re-applied
 on every load**, never a snapshot). Priced above Remove Ads because it skips up to a year of

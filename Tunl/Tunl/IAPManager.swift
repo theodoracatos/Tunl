@@ -4,7 +4,7 @@ import StoreKit
 // truth (re-derived from Transaction.currentEntitlements), not just cached
 // locally, so a fresh install on the same Apple ID stays unlocked.
 //
-// Two products share this one manager (generalized from a single-product
+// Three products share this one manager (generalized from a single-product
 // "Remove Ads" design when unlockAllShipsProductID was added): ownedProductIDs
 // is a Set rather than a single Bool, and every function takes/reports a
 // productID instead of assuming which one. removeAdsOwned/allShipsOwned below
@@ -14,7 +14,8 @@ final class IAPManager {
 
     static let removeAdsProductID     = "remove_ads"
     static let unlockAllShipsProductID = "unlock_all_ships"
-    static let allProductIDs = [removeAdsProductID, unlockAllShipsProductID]
+    static let unlockAllPaintsProductID = "unlock_all_paints"   // Lackiermeister (state.js allPaintsOwned)
+    static let allProductIDs = [removeAdsProductID, unlockAllShipsProductID, unlockAllPaintsProductID]
 
     private(set) var ownedProductIDs: Set<String> = []
     var removeAdsOwned: Bool  { ownedProductIDs.contains(Self.removeAdsProductID) }

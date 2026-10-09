@@ -469,7 +469,8 @@ class MainActivity : ComponentActivity() {
         // ownership changes into the page via window._tunlNativeUpdate.
         billing.onUpdate = { owned ->
             val json = "{\"removeAdsOwned\":${owned.contains(BillingManager.REMOVE_ADS_PRODUCT_ID)}," +
-                "\"allShipsOwned\":${owned.contains(BillingManager.UNLOCK_ALL_SHIPS_PRODUCT_ID)}}"
+                "\"allShipsOwned\":${owned.contains(BillingManager.UNLOCK_ALL_SHIPS_PRODUCT_ID)}," +
+                "\"allPaintsOwned\":${owned.contains(BillingManager.UNLOCK_ALL_PAINTS_PRODUCT_ID)}}"
             runJs("window._tunlNativeUpdate && window._tunlNativeUpdate($json)")
         }
         billing.start()

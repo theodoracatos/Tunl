@@ -43,6 +43,21 @@
       "productID" : "unlock_all_ships",
       "referenceName" : "Unlock All Ships",
       "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "internalID" : "C4B81F27",
+      "localizations" : [
+        {
+          "description" : "Unlocks every paint part for sale in the hangar, including future ones",
+          "displayName" : "Paint Master",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "unlock_all_paints",
+      "referenceName" : "Paint Master",
+      "type" : "NonConsumable"
     }
   ],
   "settings" : {

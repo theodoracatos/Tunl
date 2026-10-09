@@ -1049,6 +1049,64 @@ function touchCoin(type, setup) {
         paints.comet[0] === false && paints.comet[1] === true
         && paints.eclipse[0] === false && paints.eclipse[1] === true
         && paints.bought === false && paints.shards === 99999);
+
+    // Lackiermeister IAP (state.js allPaintsOwned): every part for sale reads as owned, the
+    // earned ones still wait for their stat, nothing is written into paintOwned, a kit
+    // wearing a paid part survives the load, and the PAINT pill opens without a paid ship.
+    const kitSeed = JSON.stringify([{ c: 4, p: 7, pc: 3, m: 5, fx: 5 }]);
+    const pm = boot(956, 440, { tunnel_all_paints: '1', tunnel_paint_owned: JSON.stringify({ c: 0, p: 0, m: 0, fx: 0 }), tunnel_ship_paint: kitSeed });
+    const master = pm(`(() => {
+        const r = { sale: true, earned: false };
+        for (const s of PAINT_SLOTS) s.list.forEach((part, i) => {
+            if (part.earn) r.earned = r.earned || paintPartOwned(s.key, i);
+            else r.sale = r.sale && paintPartOwned(s.key, i);
+        });
+        r.mask = paintOwned.c | paintOwned.p | paintOwned.m | paintOwned.fx;
+        r.kit = shipPaint[0];
+        phase = 'title'; titleT = 10; appOnlyKey = null; showPaint = false; showShipPicker = true;
+        unlockedSkins = 1;
+        drawTitleScreen();
+        const b = _paintBtnRect;
+        if (b) onDown({ clientX: b.x + b.w / 2, clientY: b.y + b.h / 2, pointerId: 1 });
+        r.pill = !!b && showPaint;
+        showPaint = false; showShipPicker = false;
+        showShop = true; drawTitleScreen();
+        r.btn = _unlockAllPaintsBtnRect;
+        showShop = false;
+        return r;
+    })()`);
+    check('Lackiermeister owns every part for sale, never an earned one, and writes nothing into paintOwned',
+        master.sale && !master.earned && master.mask === 0);
+    check('Lackiermeister: a kit of paid parts survives the load, the PAINT pill opens without a paid ship, the shop shows it owned',
+        master.kit.c === 4 && master.kit.p === 7 && master.kit.m === 5 && master.kit.fx === 5 && master.pill && master.btn === null);
+
+    const np = boot(956, 440, { tunnel_ship_paint: kitSeed });
+    const plain = np(`(() => {
+        const r = { kit: shipPaint[0], fits: [] };
+        const sent = [];
+        window.webkit.messageHandlers.iap = { postMessage: m => sent.push(m) };
+        phase = 'title'; titleT = 10; dayGrantT = 0;
+        for (const code of LANG_ORDER) {
+            setLang(code);
+            showShop = true; drawTitleScreen();
+            const p = _shopPanelRect, b = _unlockAllPaintsBtnRect, s = _unlockAllShipsBtnRect, q = _restoreBtnRect;
+            if (!(p && b && q && p.y >= 0 && p.y + p.h <= H && b.y >= s.y + s.h && q.y >= b.y + b.h
+                  && b.y + b.h <= p.y + p.h)) r.fits.push(code);
+        }
+        setLang('en'); drawTitleScreen();
+        const b = _unlockAllPaintsBtnRect;
+        onDown({ clientX: b.x + b.w / 2, clientY: b.y + b.h / 2, pointerId: 1 });
+        r.sent = sent;
+        showShop = false;
+        delete window.webkit.messageHandlers.iap;
+        return r;
+    })()`);
+    check('without Lackiermeister a kit of unbought paid parts falls back to FACTORY',
+        plain.kit.c === 0 && plain.kit.p === 0 && plain.kit.m === 0 && plain.kit.fx === 0);
+    check('the shop draws the Lackiermeister row between ships and restore in every language',
+        plain.fits.length === 0 || (console.log('   off-panel:', plain.fits.join(',')), false));
+    check('a tap on the Lackiermeister row asks the native store for unlock_all_paints',
+        plain.sent.length === 1 && plain.sent[0].action === 'purchase' && plain.sent[0].product === 'unlock_all_paints');
 }
 
 // ── Approach wind: the swell is timed to the mouth ─────────────────────────

@@ -23,6 +23,13 @@ window._tunlNativeUpdate = function (state) {
             localStorage.setItem('tunnel_skins', unlockedSkins);
         }
     }
+    // Lackiermeister IAP (state.js's allPaintsOwned doc comment). paintPartOwned() reads the
+    // flag live, so the Paint sheet shows every part for sale as owned from the next frame.
+    if (typeof state.allPaintsOwned === 'boolean') {
+        if (state.allPaintsOwned && !allPaintsOwned) sfxUiPurchaseSuccess();
+        allPaintsOwned = state.allPaintsOwned;
+        localStorage.setItem('tunnel_all_paints', allPaintsOwned ? '1' : '0');
+    }
     // Pushed once per launch after AdsManager's consent-info update resolves
     // (see AdsManager.kt/.swift) - not persisted, see state.js's declaration.
     if (typeof state.privacyOptionsRequired === 'boolean') {

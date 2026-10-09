@@ -3123,7 +3123,7 @@ function sfxUiDenied() {
 }
 
 // Purchase/restore actually completed (main.js's _tunlNativeUpdate, on the
-// removeAdsOwned/allShipsOwned false->true transition only -- never on every launch's
+// removeAdsOwned/allShipsOwned/allPaintsOwned false->true transition only -- never on every launch's
 // entitlement sync). The one moment JS knows real money changed hands, so it earns a
 // small fanfare rather than another sfxUiTap: a warm major-triad climb, no boom layer
 // (this is a reward, not sfxBomb's charge-then-detonate).

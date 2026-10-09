@@ -184,6 +184,11 @@ if (allShipsOwned) unlockedSkins = (1 << SKINS.length) - 1;
 // per ship (shipPaint, index-aligned with SKINS). A part is bought ONCE for the hangar and
 // combined freely on every ship. Separate keys from ships on purpose - Unlock All Ships
 // never touches these.
+// Lackiermeister IAP (non-consumable `unlock_all_paints`, IAPManager.swift/BillingManager.kt):
+// an entitlement flag like allShipsOwned, read live by paintPartOwned() and never written
+// into paintOwned, so it covers parts added later and a refund takes it away cleanly.
+// Every part for sale; earned parts stay earned (docs/agents/economy.md).
+let allPaintsOwned = localStorage.getItem('tunnel_all_paints') === '1';
 const _PAINT_KEYS = ['c', 'p', 'pc', 'm', 'fx'];
 function _paintOwnKey(slot) { return slot === 'pc' ? 'c' : slot; }
 function _paintList(slot) { return slot === 'p' ? PAINT_PATTERNS : slot === 'm' ? PAINT_MATERIALS : slot === 'fx' ? PAINT_EFFECTS : PAINT_COLORS; }
@@ -229,7 +234,7 @@ shipPaint = shipPaint.map(_paintKit);
 for (const k of shipPaint) {
     for (const s of _PAINT_KEYS) {
         const part = _paintList(s)[k[s]];
-        if (part.cost && !part.earn && !(paintOwned[_paintOwnKey(s)] & (1 << k[s]))) k[s] = 0;
+        if (part.cost && !part.earn && !allPaintsOwned && !(paintOwned[_paintOwnKey(s)] & (1 << k[s]))) k[s] = 0;
     }
 }
 // Earned parts (constants.js PAINT_* `earn`): read live from monotonic stats, never stored.
@@ -244,7 +249,7 @@ function paintPartOwned(slot, i) {
     const part = _paintList(slot)[i];
     if (!part) return false;
     if (part.earn) return paintEarnMet(part);
-    if (!part.cost) return true;
+    if (!part.cost || allPaintsOwned) return true;
     return !!(paintOwned[_paintOwnKey(slot)] & (1 << i));
 }
 // The kit a ship flies, or 0 for plain FACTORY (callers treat any falsy value as factory).
@@ -421,6 +426,7 @@ let _shipNextBtnRect = null;
 let _langBtnRects = [];
 let _removeAdsBtnRect = null;
 let _unlockAllShipsBtnRect = null;
+let _unlockAllPaintsBtnRect = null;
 let _restoreBtnRect = null;
 let _privacyChoicesBtnRect = null;
 // ── Ghost run (constants.js GHOST_STEP / ghostEncode) ─────────────────

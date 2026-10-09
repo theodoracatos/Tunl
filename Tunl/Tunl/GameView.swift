@@ -164,7 +164,7 @@ struct GameView: UIViewRepresentable {
         override init() {
             super.init()
             iap.onUpdate = { [weak self] owned in
-                let json = "{\"removeAdsOwned\":\(owned.contains(IAPManager.removeAdsProductID)),\"allShipsOwned\":\(owned.contains(IAPManager.unlockAllShipsProductID))}"
+                let json = "{\"removeAdsOwned\":\(owned.contains(IAPManager.removeAdsProductID)),\"allShipsOwned\":\(owned.contains(IAPManager.unlockAllShipsProductID)),\"allPaintsOwned\":\(owned.contains(IAPManager.unlockAllPaintsProductID))}"
                 DispatchQueue.main.async {
                     self?.webView?.evaluateJavaScript("window._tunlNativeUpdate && window._tunlNativeUpdate(\(json))")
                 }
