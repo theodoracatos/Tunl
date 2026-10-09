@@ -13,12 +13,13 @@
         accent colour - links, rules, buttons, the sticky bar - so flytunl.ch
         changes colour once a day on its own, the same way the game's title
         screen, world and debriefing all take the day's rock.
-     2. Fills every `.today` strip in the page with WORLD n - NAME - PLANET.
+     2. Fills every `.today` strip in the page with WORLD n - NAME - PLANET - DAY TYPE.
      3. Steps the page background darker as you scroll (the "descent").
 
    The four tables below MIRROR src/world.js (WORLD_ADJ, WORLD_NOUN, the
    _worldTable shuffle, _worldDayIdx) and src/constants.js (WEEKDAY_PALETTES'
-   planet and wallBase columns). build-site.mjs re-reads src/ on every build
+   planet and wallBase columns), and dayTypeOf() mirrors the archetype draw in
+   src/world.js seedDailyVariety(). build-site.mjs re-reads src/ on every build
    and FAILS the build if they have drifted - a stale mirror would have the
    site announce a different cave than the one the game generates that day.
 
@@ -41,6 +42,26 @@
   ];
   var PLANET = ['Ceres','Mars','Luna','Io','Ianthe','Pallas','Rhodia'];   /* Monday first, like weekdayIndex() */
   var WALL = [[150,178,210],[255,148,72],[222,222,234],[112,255,206],[182,122,255],[196,228,96],[255,122,176]];
+
+  /* Index into src/world.js DAY_ARCHETYPES for a YYYYMMDD day: the hash chain of
+     seedDailyVariety() up to its archetype draw (two wave jitters come first).
+     build-site.mjs runs this and the game's function over every day of a few years
+     and fails on any difference. The names are localized at build time from
+     src/i18n.js into each strip's data-types (BALANCED|ZIGZAG|...). */
+  function dayTypeOf(dayInt) {
+    var h = Math.imul(dayInt ^ 0x9e3779b9, 0x45d9f3b) >>> 0;
+    h = Math.imul(h ^ (h >>> 16), 0x45d9f3b) >>> 0;
+    h = (h ^ (h >>> 16)) >>> 0;
+    h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0;
+    var draw = function () {
+      h = Math.imul(h ^ (h >>> 15), 1 | h);
+      h = (h + Math.imul(h ^ (h >>> 7), 61 | h)) ^ h;
+      h = (h ^ (h >>> 14)) >>> 0;
+      return h / 4294967296;
+    };
+    draw(); draw();
+    return Math.floor(draw() * 4);
+  }
 
   var day = null;
 
@@ -78,6 +99,7 @@
       levelNum: Math.max(1, idx + 1),
       name:     name,
       planet:   PLANET[wd],
+      type:     dayTypeOf(now.getUTCFullYear() * 10000 + (now.getUTCMonth() + 1) * 100 + now.getUTCDate()),
       rgb:      c,
       color:    'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'
     };
@@ -98,6 +120,8 @@
         st.querySelector('.t-no').textContent     = day.levelNum;
         st.querySelector('.t-name').textContent   = day.name.toUpperCase();
         st.querySelector('.t-planet').textContent = day.planet.toUpperCase();
+        var ty = st.querySelector('.t-type');
+        if (ty) ty.textContent = (ty.getAttribute('data-types') || '').split('|')[day.type] || '';
         st.hidden = false;
       } catch (e) {}
     }

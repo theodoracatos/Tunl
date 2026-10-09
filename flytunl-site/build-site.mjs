@@ -20,6 +20,7 @@
 
 import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { htmlLang, dirAttr } from './lang-meta.mjs';
@@ -48,14 +49,20 @@ async function build() {
   // and WEEKDAY_PALETTES' planet + wallBase columns (src/constants.js). Re-read
   // them here and fail the build the moment they diverge - a silently stale mirror
   // would have the site announce a different cave than the game generates that day.
-  assertDayTablesInSync(await readFile(path.join(SITE, 'day.js'), 'utf8'), constantsSrc,
-                        await readFile(path.join(here, '..', 'src', 'world.js'), 'utf8'));
+  const worldSrc = await readFile(path.join(here, '..', 'src', 'world.js'), 'utf8');
+  const daySrc   = await readFile(path.join(SITE, 'day.js'), 'utf8');
+  assertDayTablesInSync(daySrc, constantsSrc, worldSrc);
+  const dayTypeKeys = assertDayTypeInSync(daySrc, worldSrc);
 
   const raw = JSON.parse(await readFile(I18N, 'utf8'));
   const LANGS = raw._langs;                 // ["en","de",...]
   const NAMES = raw._langNames;
   const strings = {};
   for (const [k, v] of Object.entries(raw)) if (!k.startsWith('_')) strings[k] = v;
+
+  // The day type names on the "today" strip (data-types="BALANCED|ZIGZAG|..."), in
+  // DAY_ARCHETYPES order, taken from the game's own src/i18n.js - not translated twice.
+  strings['today.types'] = await dayTypeNames(dayTypeKeys, LANGS);
 
   // path for a language: en -> "/", de -> "/de/"
   const langPath = (l) => (l === 'en' ? '/' : `/${l}/`);
@@ -261,6 +268,67 @@ const LANG_JS = `<script>
 })();
 </script>`;
 
+
+// ---- day type on the strip -------------------------------------------
+// The game names the day's archetype on its title ("TODAY: MINE BELT", world.js
+// DAY_ARCHETYPES, drawn in seedDailyVariety()). site/day.js carries dayTypeOf(), a
+// mirror of that draw. Run BOTH real functions - the game's lifted out of world.js -
+// over several years of days and fail on any difference. Returns the archetypes'
+// i18n keys in order.
+function assertDayTypeInSync(daySrc, worldSrc) {
+  // A function's source up to its closing brace (`close`: that brace at its indent).
+  const body = (src, name, close) => {
+    const at = src.indexOf(`function ${name}(`);
+    const end = at < 0 ? -1 : src.indexOf(close, at);
+    if (end < 0) throw new Error(`[build-site] function ${name} not found`);
+    return src.slice(at, end + close.length);
+  };
+  const arch = worldSrc.match(/const DAY_ARCHETYPES = \[([\s\S]*?)\n\];/);
+  if (!arch) throw new Error('[build-site] DAY_ARCHETYPES not found');
+  const keys = [...arch[1].matchAll(/name:\s*'([^']*)'/g)].map(m => m[1]);
+
+  const ctx = vm.createContext({ DAY_ARCHETYPES: keys.map(() => ({})) });
+  vm.runInContext(
+    'var _wavePhase1, _wavePhase2, _waveJitterA, _waveJitterF, _dayArchetype, _deepDay;\n'
+    + body(worldSrc, 'seedDailyVariety', '\n}') + '\n' + body(daySrc, 'dayTypeOf', '\n  }') + '\n'
+    + 'this.game = function (d) { seedDailyVariety(d); return _dayArchetype; };\n'
+    + 'this.site = dayTypeOf;', ctx);
+  const seen = new Set();
+  for (let t = Date.UTC(2025, 0, 1); t < Date.UTC(2031, 0, 1); t += 86400000) {
+    const d = new Date(t);
+    const dayInt = d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
+    const g = ctx.game(dayInt), s = ctx.site(dayInt);
+    if (g !== s) {
+      throw new Error(`[build-site] site/day.js dayTypeOf(${dayInt}) = ${s}, the game draws ${g}.\n`
+        + '  Mirror src/world.js seedDailyVariety() in site/day.js, then rebuild.');
+    }
+    seen.add(g);
+  }
+  if (seen.size !== keys.length) {
+    throw new Error(`[build-site] day types drawn: ${seen.size}, DAY_ARCHETYPES has ${keys.length}`);
+  }
+  return keys;
+}
+
+// The archetypes' names per site language, joined by '|' for data-types.
+async function dayTypeNames(keys, langs) {
+  const file = path.join(here, '..', 'src', 'i18n.js');
+  const ctx = vm.createContext({
+    localStorage: { getItem: () => null, setItem: () => {} },
+    navigator: { language: 'en' },
+  });
+  vm.runInContext(await readFile(file, 'utf8') + '\nthis.__LANGS = LANGS;', ctx, { filename: file });
+  const out = {};
+  for (const l of langs) {
+    const T = ctx.__LANGS[l];
+    if (!T) throw new Error(`[build-site] src/i18n.js has no language "${l}"`);
+    out[l] = keys.map(k => {
+      if (!T[k] || T[k].includes('|')) throw new Error(`[build-site] src/i18n.js ${l}.${k} missing or has '|'`);
+      return T[k];
+    }).join('|');
+  }
+  return out;
+}
 
 // ---- day-strip table mirror check -----------------------------------
 // See the call site in build(). Compares the literal tables in site/day.js
