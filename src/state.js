@@ -390,6 +390,9 @@ let _settingsPanelRect = null;
 let _leaderboardBtnRect = null;
 let _challengeBtnRect = null;
 let showShop = false;
+// A rating ask waiting for a calm title: '' | 'record' | 'week' | 'ship' (update.js
+// queueReviewAsk / flushReviewAsk, constants.js REVIEW_TITLE_CALM_SEC). Session-only.
+let reviewPending = '';
 let _shopBtnRect = null;
 let _shopPanelRect = null;
 // "HOW IT WORKS" row at the bottom of the Settings panel, opening a one-screen
@@ -401,6 +404,8 @@ let _shopPanelRect = null;
 // open) rather than a forced hint, so it doesn't repeat the removed title-screen hint.
 let showCurrencyInfo = false;
 let _settingsGuideBtnRect = null;
+// "★ RATE" beside it (apps only): opens the store's review form (the "review" bridge, action 'write').
+let _settingsRateBtnRect = null;
 let _currencyInfoPanelRect = null;
 // Its stardust half: a tap opens the stardust path on top of it (draw.js, input.js).
 let _hiwStardustRect = null;
@@ -428,6 +433,28 @@ let _removeAdsBtnRect = null;
 let _unlockAllShipsBtnRect = null;
 let _unlockAllPaintsBtnRect = null;
 let _restoreBtnRect = null;
+// The ALL SHIPS sheet's "all now" chip (top-left, mirror of the PAINT pill): opens the shop
+// over the sheet. Apps only, hidden once every ship is owned.
+let _shipsShopBtnRect = null;
+// Where the open shop was opened from ('title' | 'ships'), sent with the shop's app events.
+let shopSrc = 'title';
+// Store prices, product id -> the store's own localized string (StoreKit displayPrice / Play
+// formattedPrice), pushed by the native layer through _tunlNativeUpdate({iapPrices}). Never a
+// number: the five regional price tiers mean only the store knows what this player pays. The
+// last known set is kept so the shop shows a price offline; a product without one reads BUY.
+let iapPrices = {};
+try { iapPrices = JSON.parse(localStorage.getItem('tunnel_iap_prices') || '{}') || {}; } catch (e) { iapPrices = {}; }
+function setIapPrices(p) {
+    if (!p || typeof p !== 'object') return;
+    const next = {};
+    for (const id of ['remove_ads', 'unlock_all_ships', 'unlock_all_paints']) {
+        const v = p[id];
+        if (typeof v === 'string' && v.length > 0 && v.length <= 20) next[id] = v;
+    }
+    if (!Object.keys(next).length) return;
+    iapPrices = next;
+    try { localStorage.setItem('tunnel_iap_prices', JSON.stringify(next)); } catch (e) { /* ignore */ }
+}
 let _privacyChoicesBtnRect = null;
 // ── Ghost run (constants.js GHOST_STEP / ghostEncode) ─────────────────
 // ghostPlay is today's best run, replayed as a translucent ship alongside the player.

@@ -1272,9 +1272,10 @@ const CONTINUE_EARLY_DECLINE_SEC = 0.4;
 
 // ── Store rating prompt ─────────────────────────────────────────────
 // Native review sheet (SKStoreReviewController on iOS, Play In-App Review on
-// Android - see the "review" bridge, update.js maybeRequestReview()). Fired on a
-// run that is good news (new all-time best, or today's best), the same "this was
-// worth celebrating, not a nag" gate shareWorthy() (share.js) already uses.
+// Android - see the "review" bridge, update.js maybeRequestReview()). Asked after
+// good news (new all-time best, or today's best), the same "this was worth
+// celebrating, not a nag" gate shareWorthy() (share.js) already uses, and since
+// 2026-10-09 also after a new ship or a completed week (REVIEW_TITLE_CALM_SEC below).
 //
 // **Retuned 2026-09-14; do not put the old gate back.** It used to be
 // `newBest && best > 0 && score >= CONTINUE_MIN_SCORE`, which was simultaneously
@@ -1307,6 +1308,14 @@ const REVIEW_MIN_SCORE = 100;
 // single session for a player who keeps beating their own record, not to
 // approach either store's real ceiling.
 const REVIEW_COOLDOWN_MS = 90 * 24 * 60 * 60 * 1000;
+// The ask waits for a calm title (2026-10-09 rating concept, user's picks R1-R5:
+// https://claude.ai/artifact/Ubnf1p8wT8sHZkuZDpE4xr). Three moments queue it - a beaten
+// record (the gate above), a ship just unlocked, a completed 7-day streak - and none fires it
+// on the spot: over the death screen it covered the record it was meant to celebrate. It
+// fires once the title has shown this long with no card or panel over it (update.js
+// flushReviewAsk). Same stardust gate and cooldown for every moment; each ask is logged as
+// appEvent review_ask {why, sent} (sent 0 = held back by REVIEW_MIN_STARDUST).
+const REVIEW_TITLE_CALM_SEC = 1.2;
 // The existing gap between a fatal hit and the death screen becoming tappable
 // (input.js's onDown gate, draw.js's button fade-in). Reused, not extended, as
 // the continue offer's own window (update.js's phase==='dead' branch, draw.js

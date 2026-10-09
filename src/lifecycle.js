@@ -104,6 +104,8 @@ function dayRollover() {
     // -only: a fresh launch later the same day shows nothing, because nothing happened.
     dayGrant = { dust: STARDUST_PER_DAY + (weekDone ? 1 : 0), bonus: weekDone, crate: crate, grace: graceUsed, streak: streak };
     dayGrantT = DAY_GRANT_SEC;
+    // A completed week queues a rating ask; it waits until this arrival card is gone.
+    if (weekDone) queueReviewAsk('week');
     // Reuses the mission-complete chime rather than adding a sound: this sits at the
     // same level of the loudness hierarchy (a rare reward, above a routine pickup) and
     // audio.js already proved that mix. On the very first launch of a day the
@@ -138,6 +140,7 @@ function titleScreen() {
     phase = 'title'; py = H / 2; vy = 0; holding = false; tapBurstT = 0; scrollX = 0; approachLeft = 0;
     score = 0; newBest = false; newDailyBest = false;
     parts = []; thrustParts = []; deadT = 0; titleT = 0; flashA = 0; shake = 0; trailY = [];
+    _reviewCalmT = 0;   // a waiting rating ask counts its calm from this title (update.js)
     skinFx = []; skinFxT = 0; shipPitch = 0; shipRoll = SHIP3D_ROLL_BASE; shipRollV = 0; shipSweep = SHIP3D_SWEEP_CRUISE; shipBarrelT = -1;
     _seedSpawnStreams(_tunlActiveDayInt());
     stalactites = []; nextStalWx = 420; nextFallWx = 99999;

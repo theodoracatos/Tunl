@@ -1089,9 +1089,12 @@ function touchCoin(type, setup) {
         for (const code of LANG_ORDER) {
             setLang(code);
             showShop = true; drawTitleScreen();
-            const p = _shopPanelRect, b = _unlockAllPaintsBtnRect, s = _unlockAllShipsBtnRect, q = _restoreBtnRect;
-            if (!(p && b && q && p.y >= 0 && p.y + p.h <= H && b.y >= s.y + s.h && q.y >= b.y + b.h
-                  && b.y + b.h <= p.y + p.h)) r.fits.push(code);
+            // Three cards side by side inside the panel, restore link in the header above them.
+            const p = _shopPanelRect, a = _removeAdsBtnRect, s = _unlockAllShipsBtnRect, b = _unlockAllPaintsBtnRect, q = _restoreBtnRect;
+            const inP = c => c.x >= p.x && c.x + c.w <= p.x + p.w && c.y >= p.y && c.y + c.h <= p.y + p.h;
+            if (!(p && a && s && b && q && p.y >= 0 && p.y + p.h <= H && inP(a) && inP(s) && inP(b)
+                  && a.x + a.w <= s.x && s.x + s.w <= b.x && a.y === s.y && s.y === b.y
+                  && q.x >= p.x && q.x + q.w <= p.x + p.w && q.y + q.h / 2 < a.y)) r.fits.push(code);
         }
         setLang('en'); drawTitleScreen();
         const b = _unlockAllPaintsBtnRect;
@@ -1103,10 +1106,125 @@ function touchCoin(type, setup) {
     })()`);
     check('without Lackiermeister a kit of unbought paid parts falls back to FACTORY',
         plain.kit.c === 0 && plain.kit.p === 0 && plain.kit.m === 0 && plain.kit.fx === 0);
-    check('the shop draws the Lackiermeister row between ships and restore in every language',
+    check('the shop draws three cards side by side and restore in its header, in every language',
         plain.fits.length === 0 || (console.log('   off-panel:', plain.fits.join(',')), false));
     check('a tap on the Lackiermeister row asks the native store for unlock_all_paints',
         plain.sent.length === 1 && plain.sent[0].action === 'purchase' && plain.sent[0].product === 'unlock_all_paints');
+
+    // Shop concept 2026-10-09 (S1 prices, S3 value line, S4 owned, S6 chip, S7 events), all
+    // through the real draw and onDown: what the card says comes from the store's string and
+    // the player's own state, and every tap is logged with where the shop was opened from.
+    const sp = boot(956, 440, { tunnel_stardust: '1' });
+    const shop = sp(`(() => {
+        const r = {};
+        const sent = [], events = [];
+        window.webkit.messageHandlers.iap = { postMessage: m => sent.push(m) };
+        window.webkit.messageHandlers.ads = { postMessage: m => { if (m.action === 'event') events.push(m); } };
+        phase = 'title'; titleT = 10; dayGrantT = 0; appOnlyKey = null;
+        const drawn = () => { const t = []; ctx.fillText = x => t.push(String(x)); drawTitleScreen(); delete ctx.fillText; return t; };
+        setIapPrices({ unlock_all_ships: 'CHF 10.00', remove_ads: 42, bogus: 'x' });
+        r.kept = JSON.stringify(iapPrices);
+        unlockedSkins = 1; allShipsOwned = false; removeAdsOwned = false; allPaintsOwned = false;
+        // Opened from the ALL SHIPS sheet's chip.
+        showShipPicker = true; drawn();
+        const c = _shipsShopBtnRect;
+        if (c) onDown({ clientX: c.x + c.w / 2, clientY: c.y + c.h / 2, pointerId: 1 });
+        r.chipOpens = !!c && showShop && shopSrc === 'ships';
+        let t = drawn();
+        r.price = t.includes('CHF 10.00');
+        r.buy = t.filter(x => x === T.shopBuy).length;
+        const last = SKINS[SKINS.length - 1].stardustGate;
+        r.wait = t.includes(T.shopWithout.replace('{when}', T.inDays.replace('{n}', last - stardust)));
+        stardust = last - 1; t = drawn();
+        r.tomorrow = t.includes(T.shopWithout.replace('{when}', T.tomorrow));
+        const b = _unlockAllShipsBtnRect;
+        onDown({ clientX: b.x + b.w / 2, clientY: b.y + b.h / 2, pointerId: 1 });
+        r.sent = sent.slice();
+        r.events = events.map(e => e.name + ':' + (e.params.product || '') + ':' + e.params.src);
+        // Owned: the card stays, says so, and is no longer a button.
+        allShipsOwned = true; unlockedSkins = (1 << SKINS.length) - 1; t = drawn();
+        r.owned = _unlockAllShipsBtnRect === null && t.includes(T.shopOwned) && t.includes(T.shopFuture) && !t.includes('CHF 10.00');
+        showShop = false; t = drawn();
+        r.chipGone = _shipsShopBtnRect === null;
+        showShipPicker = false;
+        delete window.webkit.messageHandlers.iap; delete window.webkit.messageHandlers.ads;
+        return r;
+    })()`);
+    check('the shop keeps only valid store price strings (state.js setIapPrices)',
+        shop.kept === JSON.stringify({ unlock_all_ships: 'CHF 10.00' }));
+    check('the ALL SHIPS chip opens the shop and marks it as opened from there',
+        shop.chipOpens && shop.chipGone);
+    check('a card shows the store price, or BUY without one',
+        shop.price && shop.buy === 2);
+    check('the ships card says how many flight days the purchase saves, tomorrow on the eve',
+        shop.wait && shop.tomorrow);
+    check('a card tap buys that product and logs shop_open and iap_tap with the source',
+        shop.sent.length === 1 && shop.sent[0].product === 'unlock_all_ships'
+        && shop.events.join() === 'shop_open::ships,iap_tap:unlock_all_ships:ships');
+    check('an owned card keeps its place, reads as yours and is no longer a button',
+        shop.owned);
+
+    // Rating asks (2026-10-09 concept R1-R5, update.js queueReviewAsk / flushReviewAsk): the
+    // moment queues, a calm title fires, every ask is logged, the cooldown and the stardust
+    // gate hold, the strongest moment wins, and Settings' RATE row opens the store form.
+    // Real die(), titleScreen(), update() and dayRollover() throughout.
+    const _dayInt = n => { const d = new Date(SIM_NOW - n * 86400000); return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate(); };
+    const rv = boot(956, 440, { tunnel_stardust: '5', tunnel_best: '150', tunnel_lastday: String(_dayInt(0)) });
+    const rate = rv(`(() => {
+        const asks = [], events = [];
+        window.webkit.messageHandlers.review = { postMessage: m => asks.push(m.action) };
+        window.webkit.messageHandlers.ads = { postMessage: m => { if (m.action === 'event' && m.name === 'review_ask') events.push(m.params.why + ':' + m.params.sent); } };
+        const calm = (sec) => { for (let i = 0; i < sec * 60; i++) update(1 / 60); };
+        const run = (sx, sc) => { rewardedAdReady = false; startPlay(); scrollX = sx; score = sc; shieldCount = 0; invulnT = 0; die(true); };
+        const toTitle = () => { titleScreen(); dayGrantT = 0; challengeInboxT = 0; showNotifPrompt = false; appOnlyKey = null; };
+        const r = {};
+        run(12000, 200);
+        r.atDeath = asks.length; r.queued = reviewPending;
+        toTitle(); showSettings = true; calm(2);
+        r.underPanel = asks.length;
+        showSettings = false; calm(0.1);
+        r.early = asks.length;
+        calm(REVIEW_TITLE_CALM_SEC);
+        r.fired = asks.join(); r.ev1 = events.join();
+        run(30000, 600); toTitle(); calm(REVIEW_TITLE_CALM_SEC + 0.5);
+        r.cool = asks.length;
+        localStorage.removeItem('tunnel_review_last_ts');
+        stardust = 1; unlockedSkins = 1; shards = 99999;
+        run(40000, 900);
+        r.ship = reviewPending;
+        toTitle(); calm(REVIEW_TITLE_CALM_SEC + 0.5);
+        r.gated = asks.length; r.ev2 = events.join();
+        showSettings = true; drawTitleScreen();
+        const b = _settingsRateBtnRect;
+        if (b) onDown({ clientX: b.x + b.w / 2, clientY: b.y + b.h / 2, pointerId: 1 });
+        r.write = asks.slice(-1)[0];
+        showSettings = false;
+        return r;
+    })()`);
+    check('a record queues the rating ask instead of covering the death screen',
+        rate.atDeath === 0 && rate.queued === 'record');
+    check('the ask waits for a calm title: no panel open, REVIEW_TITLE_CALM_SEC on screen',
+        rate.underPanel === 0 && rate.early === 0 && rate.fired === 'request');
+    check('each ask is logged as review_ask with its moment, and the cooldown holds',
+        rate.ev1 === 'record:1' && rate.cool === 1);
+    check('a new ship outranks the record, and below REVIEW_MIN_STARDUST it is only logged',
+        rate.ship === 'ship' && rate.gated === 1 && rate.ev2 === 'record:1,ship:0');
+    check("Settings' RATE row asks native for the store's review form",
+        rate.write === 'write');
+    const wk = boot(956, 440, { tunnel_lastday: String(_dayInt(1)), tunnel_streak: '6', tunnel_stardust: '6' });
+    const weekAsk = wk(`(() => {
+        const asks = [];
+        window.webkit.messageHandlers.review = { postMessage: m => asks.push(m.action) };
+        titleScreen(); challengeInboxT = 0; showNotifPrompt = false;
+        const r = { queued: reviewPending, card: dayGrantT > 0 };
+        for (let i = 0; i < 60; i++) update(1 / 60);
+        r.underCard = asks.length;
+        for (let i = 0; i < 60 * 30 && !asks.length; i++) update(1 / 60);
+        r.after = asks.join(); r.cardGone = dayGrantT === 0;
+        return r;
+    })()`);
+    check('a completed week queues the ask and it waits until the arrival card is gone',
+        weekAsk.queued === 'week' && weekAsk.card && weekAsk.underCard === 0 && weekAsk.after === 'request' && weekAsk.cardGone);
 }
 
 // ── Approach wind: the swell is timed to the mouth ─────────────────────────

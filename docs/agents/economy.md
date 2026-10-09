@@ -180,6 +180,44 @@ product-ID-keyed in `IAPManager.swift` / `BillingManager.kt` (mirror each other)
 **Shards and stardust are untouched** - an entitlement flag, not a currency grant.
 `Configuration.storekit` is for local testing only.
 
+**The shop (2026-10-09, layout A of the concept page, user's picks:
+https://claude.ai/artifact/Ubnf1p8wT8sHZkuZDpE4xr).** Three cards side by side (`draw.js`
+showShop, `_shopCards`): a drawn picture (`drawShip`, no sprites), the name, one line of use,
+one value line, the price as the button; the whole card is the tap target. Rules:
+- **The price is the store's own string, never a number in code.** StoreKit `displayPrice` /
+  Play `formattedPrice` (the offer Play picks for the country) are pushed as
+  `_tunlNativeUpdate({iapPrices})` (`IAPManager.loadPrices`, `BillingManager.prices`, re-pushed
+  on Android's `onPageFinished`), validated and cached by `setIapPrices` (`state.js`). The five
+  regional tiers mean only the store knows what this player pays. No price yet reads `T.shopBuy`.
+- **The value line is read live, never a fixed claim**: ships = the furthest locked ship's
+  stardust wait ("in N days", the ALL SHIPS sheet's own wording), shards once every gate is met;
+  paints = the shard price of the parts for sale not yet bought; owned = "future ones included".
+  No percentages (marketing rule).
+- **Owned cards stay** with their picture and an outlined `T.shopOwned` instead of a price, and
+  are no longer a button. Restore is a text link in the header (a 44px target); once all three
+  are owned it becomes the thank-you line.
+- **Entry points**: the title rail icon and the ALL SHIPS sheet's gold "all now" chip (top-left,
+  apps only, while a ship is locked). `shopSrc` records which.
+- **Events** (`appEvent`): `shop_open {src}`, `iap_tap {product, src}`, `iap_restore {src}`, and
+  `iap_owned {product, in_shop}` on the false->true ownership change in `main.js` (in_shop 0 =
+  a restore on a new install or a promoted IAP). Read these before changing the shop again.
+- Not built (user left it to Claude): a discounted "everything" bundle - a fourth store product
+  in five tiers on both stores, only worth it once `iap_tap` shows the shop is used.
+
+**Rating asks (2026-10-09, same concept page, user's picks R1-R5).** The system review sheet
+(`maybeRequestReview`, `update.js`) is **queued at the moment and fired on a calm title**
+(`queueReviewAsk` / `flushReviewAsk`, `REVIEW_TITLE_CALM_SEC` of no card or panel in a row):
+- Moments: a record of `REVIEW_MIN_SCORE`+ (all-time or today's), a ship unlocked at death, a
+  completed 7-day streak (`dayRollover`). The strongest waiting one wins (ship > week > record).
+  It used to fire inside `commitDeath`, over the death screen's own record celebration.
+- Same `REVIEW_MIN_STARDUST` gate and `REVIEW_COOLDOWN_MS` for every moment. `review_ask
+  {why, sent}` logs each ask (`sent` 0 = held back by the stardust gate; cooldown skips log
+  nothing). Read it before loosening any gate (concept item R6, not built).
+- Settings has a quiet "★ RATE" row beside HOW IT WORKS (apps only): the "review" bridge with
+  action `write` opens the store's review form (App Store `?action=write-review`, the Play
+  listing); logged as `review_link`. **Never bind the system sheet to a button, never reward a
+  rating, never ask "do you like TUNL?" first** - both stores forbid it.
+
 ## Possible future features
 
 - Multiple difficulty modes

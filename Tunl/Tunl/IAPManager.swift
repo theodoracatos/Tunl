@@ -21,6 +21,9 @@ final class IAPManager {
     var removeAdsOwned: Bool  { ownedProductIDs.contains(Self.removeAdsProductID) }
     var allShipsOwned: Bool  { ownedProductIDs.contains(Self.unlockAllShipsProductID) }
     var onUpdate: ((Set<String>) -> Void)?
+    // The store's localized price per product (Product.displayPrice), for the shop's price
+    // buttons (src/state.js iapPrices). Only the store knows which regional tier applies.
+    var onPrices: (([String: String]) -> Void)?
 
     private var updatesTask: Task<Void, Never>?
     private var intentsTask: Task<Void, Never>?
@@ -51,6 +54,13 @@ final class IAPManager {
             await handle(result)
         }
         onUpdate?(ownedProductIDs)
+    }
+
+    func loadPrices() async {
+        guard let products = try? await Product.products(for: Self.allProductIDs) else { return }
+        var prices: [String: String] = [:]
+        for product in products { prices[product.id] = product.displayPrice }
+        if !prices.isEmpty { onPrices?(prices) }
     }
 
     func purchase(productID: String) async {

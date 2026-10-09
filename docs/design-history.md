@@ -2541,3 +2541,28 @@ name shown in the sector notif. Rules now in `difficulty.md` / `audio.md` / `vis
   it now dims the rims and crystals too, never the free hazards, coins or ship. Not device-tested.
 - **Found, not fixed:** `test-cave.js` flown to wx 75000 on 8 days shows small cross-device
   differences on 5 of them already at the previous HEAD (the test stops at 30000).
+
+## Shop: three cards with store prices (2026-10-09)
+
+The user: the shop "sieht nicht so gut aus". The old panel was four outlined text buttons
+stacked in a 340px column: no price (only the store sheet showed it), no picture, no reason to
+buy, restore as heavy as a product, a bought product reduced to grey text, and no event to
+measure any of it. Concept page with three layouts (A three cards, B a personalised hero plus
+a list, C the old list with thumbnails): https://claude.ai/artifact/Ubnf1p8wT8sHZkuZDpE4xr.
+The user picked A and the items S1-S5 and S7, and left S6 (entry points) and S8 (bundle) to
+Claude: S6 built as the ALL SHIPS chip only (the Lackiererei hint skipped), S8 not built (a new
+store product in five tiers on two stores before any shop traffic is measured). Layout checked
+at 956x440, 667x375 and 956x670 in Chromium and WebKit and in fr/ru/ja/ar/hi/el; not on a
+device, and the native price push is compiled but not seen with real store products.
+
+## Rating asks: queued moments, calm title, a RATE row (2026-10-09)
+
+Ratings stood at 11 (all Switzerland) on iOS and 0 on Play. The sheet only fired on a record of
+100+ after 3 days played, inside `commitDeath` - over the death screen - and nothing logged
+whether it ever fired. The user picked R1-R5 on the concept page: log every ask, add the
+moments "ship unlocked" and "7-day streak", move the record ask off the death screen to the
+next calm title, and add a "★ RATE" link in Settings. Not built: R6 (loosen the gates; wait for
+`review_ask` data) and R7 (answer store reviews; no code). The first build counted calm from
+the title's appearance, so closing a panel after a while fired the sheet at once; the test
+caught it and the calm now restarts whenever anything is open.
+

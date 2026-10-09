@@ -360,6 +360,7 @@ class MainActivity : ComponentActivity() {
                     }
                     "review" -> when (body.optString("action")) {
                         "request" -> requestInAppReview()
+                        "write" -> openStoreReviewPage()
                     }
                 }
             }
@@ -393,14 +394,26 @@ class MainActivity : ComponentActivity() {
     }
 
     // Play In-App Review (src/update.js maybeRequestReview -> the "review" bridge above).
-    // JS already gates this to a new all-time best + score floor + a 90-day local
-    // cooldown, so it's called at most a few times a year at most - no extra
+    // JS already gates this (a calm title after a record, a new ship or a week streak, a
+    // stardust floor and a 90-day local cooldown), so it's called a few times a year at most - no extra
     // throttling needed here. Mirrors GameView.swift's AppStore.requestReview: fetch
     // a fresh ReviewInfo, then hand it straight to launchReviewFlow. The API never
     // reports whether the sheet actually showed or how the player answered (Play
     // itself decides per its own internal quota, same spirit as the 3-per-365-day
     // ceiling on iOS) - both listeners are fire-and-forget by design, the game flow
     // never branches on the result.
+    // The Settings panel's "★ RATE" row (action "write", 2026-10-09): a tap the player makes,
+    // so it opens the Play listing, where the review form is. The Play app if present, the web
+    // page otherwise. Never the in-app review flow above - that one is not a button.
+    private fun openStoreReviewPage() {
+        val market = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName"))
+        try {
+            startActivity(market)
+        } catch (e: android.content.ActivityNotFoundException) {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$packageName")))
+        }
+    }
+
     private fun requestInAppReview() {
         val manager = ReviewManagerFactory.create(this)
         manager.requestReviewFlow().addOnCompleteListener { request ->
@@ -473,6 +486,8 @@ class MainActivity : ComponentActivity() {
                 "\"allPaintsOwned\":${owned.contains(BillingManager.UNLOCK_ALL_PAINTS_PRODUCT_ID)}}"
             runJs("window._tunlNativeUpdate && window._tunlNativeUpdate($json)")
         }
+        // Mirrors the iOS Coordinator's iap.onPrices: the shop's price buttons.
+        billing.onPrices = { pushPrices(it) }
         billing.start()
 
         // Mirrors the iOS Coordinator's ads.onWillPresent/onDidDismiss closures,
@@ -564,6 +579,8 @@ class MainActivity : ComponentActivity() {
             override fun onPageFinished(view: WebView, url: String?) {
                 if (!supportsDocumentStart) view.evaluateJavascript(nativeShimJs, null)
                 ads.start()
+                // The price query can finish before the page exists; push the last set again.
+                if (billing.prices.isNotEmpty()) pushPrices(billing.prices)
             }
         }
 
@@ -619,6 +636,13 @@ class MainActivity : ComponentActivity() {
         // the language stay current and an active player keeps getting bumped past
         // tonight's nudge. No-ops until the page has defined the hook.
         runJs("window._tunlReminderReschedule && window._tunlReminderReschedule()")
+    }
+
+    // JSONObject, not string building: a price is store-formatted text (currency signs,
+    // non-breaking spaces), not a number.
+    private fun pushPrices(prices: Map<String, String>) {
+        val json = JSONObject().put("iapPrices", JSONObject(prices as Map<*, *>)).toString()
+        runJs("window._tunlNativeUpdate && window._tunlNativeUpdate($json)")
     }
 
     // billing/ads callbacks are async SDK calls that can land after the user

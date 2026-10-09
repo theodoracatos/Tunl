@@ -52,6 +52,13 @@ class BillingManager(context: Context) {
 
     var onUpdate: ((Set<String>) -> Unit)? = null
 
+    // The store's localized price per product (formattedPrice of the offer Play picks for this
+    // country), for the shop's price buttons (src/state.js iapPrices). Kept so MainActivity can
+    // re-push it once the page has loaded: the query can finish before the WebView does.
+    var prices: Map<String, String> = emptyMap()
+        private set
+    var onPrices: ((Map<String, String>) -> Unit)? = null
+
     private val productDetails = mutableMapOf<String, ProductDetails>()
     private val scope = CoroutineScope(Dispatchers.Main)
 
@@ -118,6 +125,13 @@ class BillingManager(context: Context) {
         val result = billingClient.queryProductDetails(params)
         if (result.billingResult.responseCode == BillingResponseCode.OK) {
             result.productDetailsList?.forEach { productDetails[it.productId] = it }
+            val found = productDetails.mapNotNull { (id, details) ->
+                details.oneTimePurchaseOfferDetailsList?.firstOrNull()?.formattedPrice?.let { id to it }
+            }.toMap()
+            if (found.isNotEmpty()) {
+                prices = found
+                onPrices?.invoke(found)
+            }
             ALL_PRODUCT_IDS.forEach { id ->
                 if (!productDetails.containsKey(id)) {
                     Log.w(TAG, "No product found for id $id - check it's configured in Play Console")

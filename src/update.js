@@ -158,6 +158,7 @@ function update(dt) {
         if (dayGrantT > 0) dayGrantT = Math.max(0, dayGrantT - dt);
         // The challenge inbox card waits for the arrival card, then runs its own clock.
         else if (challengeInboxT > 0) challengeInboxT = Math.max(0, challengeInboxT - dt);
+        flushReviewAsk(dt);
         scrollX += 110 * dt;
         refreshWave();
         const { top: _tTop, bot: _tBot } = boundsAt(scrollX + PX);
@@ -1178,15 +1179,14 @@ function continueOfferLost(how) {
     appEvent('ad_result', { format: 'continue', granted: 0, how: how, early: continueOfferEarly ? 1 : 0 });
 }
 
-// Store rating prompt (constants.js REVIEW_MIN_SCORE/REVIEW_COOLDOWN_MS doc block).
-// Called from commitDeath() once both record flags are known. Two independent
-// halves, and both are load-bearing (constants.js REVIEW_MIN_STARDUST doc block
-// has the measured argument for why the old single-condition gate produced zero
-// Play ratings):
-//  - `goodNews` is the MOMENT: a beaten record, all-time or today's. Today's
-//    best is included so an engaged player who is nowhere near their all-time
-//    best still has a reachable celebration to be asked on - that cohort was
-//    unreachable before, which is the half that mattered.
+// Store rating prompt (constants.js REVIEW_* doc blocks). Two independent halves,
+// and both are load-bearing (constants.js REVIEW_MIN_STARDUST doc block has the
+// measured argument for why the old single-condition gate produced zero Play ratings):
+//  - the MOMENT, queued where it happens and fired on the next calm title
+//    (REVIEW_TITLE_CALM_SEC): a beaten record of REVIEW_MIN_SCORE or more, all-time or
+//    today's (commitDeath), a ship just unlocked (commitDeath), a completed 7-day
+//    streak (lifecycle.js dayRollover). Today's best is included so an engaged player
+//    who is nowhere near their all-time best still has a reachable celebration.
 //  - `stardust` is the COMMITMENT: calendar days this player has opened the
 //    game. It replaces the old `hadPriorBest` check outright rather than sitting
 //    next to it - returning on REVIEW_MIN_STARDUST separate days already implies
@@ -1195,13 +1195,33 @@ function continueOfferLost(how) {
 // The cooldown lives in localStorage rather than being re-derived from
 // `best`/`stardust` so it survives independently of either -- a player who never
 // beats a record again should still only ever see this once.
-function maybeRequestReview(runScore, goodNews) {
-    if (!goodNews || runScore < REVIEW_MIN_SCORE) return;
-    if (stardust < REVIEW_MIN_STARDUST) return;
+// Queue a moment; the strongest one waiting wins (a new ship over a streak over a record).
+const _REVIEW_RANK = { record: 1, week: 2, ship: 3 };
+function queueReviewAsk(why) {
+    if (isWeb()) return;
+    if (!reviewPending || _REVIEW_RANK[why] > _REVIEW_RANK[reviewPending]) reviewPending = why;
+}
+// Fired from the title branch of update(): only once the title has had nothing over it
+// (no arrival card, challenge card or panel) for REVIEW_TITLE_CALM_SEC in a row, so
+// closing a panel never drops the sheet straight onto the player's next tap.
+let _reviewCalmT = 0;
+function flushReviewAsk(dt) {
+    const busy = dayGrantT > 0 || challengeInboxT > 0 || appOnlyKey || showNotifPrompt
+        || showSettings || showShop || showMissions || showShipPicker || showCurrencyInfo || showStardustPath;
+    _reviewCalmT = busy ? 0 : _reviewCalmT + dt;
+    if (reviewPending && _reviewCalmT >= REVIEW_TITLE_CALM_SEC) maybeRequestReview(reviewPending);
+}
+function maybeRequestReview(why) {
+    reviewPending = '';
+    if (stardust < REVIEW_MIN_STARDUST) {
+        appEvent('review_ask', { why: why, sent: 0, stardust: stardust, best: best });
+        return;
+    }
     let lastAskMs = 0;
     try { lastAskMs = parseInt(localStorage.getItem('tunnel_review_last_ts') || '0'); } catch (e) { /* ignore */ }
     if (Date.now() - lastAskMs < REVIEW_COOLDOWN_MS) return;
     try { localStorage.setItem('tunnel_review_last_ts', String(Date.now())); } catch (e) { /* ignore */ }
+    appEvent('review_ask', { why: why, sent: 1, stardust: stardust, best: best });
     window.webkit?.messageHandlers?.review?.postMessage({ action: 'request' });
 }
 
@@ -1259,7 +1279,8 @@ function commitDeath() {
     if (newDailyBest) { dailyBest = score; localStorage.setItem('tunnel_daily_best', dailyBest); }
     // Rating prompt: deliberately sits AFTER newDailyBest is resolved, since a
     // daily best is half of what now counts as a moment worth asking on.
-    maybeRequestReview(score, newBest || newDailyBest);
+    // Queued, not fired: it goes out on the next calm title (flushReviewAsk).
+    if ((newBest || newDailyBest) && score >= REVIEW_MIN_SCORE) queueReviewAsk('record');
     // Ghost: today's best run becomes the thing the next run races. Keyed to the day the
     // run was actually played (recomputed here, not read from state.js's page-load
     // _initToday) so a session left open across UTC midnight can't file a run under the
@@ -1381,6 +1402,8 @@ function commitDeath() {
     if (skinUnlockIdx >= 0) {
         localStorage.setItem('tunnel_skins', unlockedSkins);
         window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'achievement', id: SHIP_ACHIEVEMENTS[skinUnlockIdx] });
+        // A new ship is the strongest moment the game has: days banked, shards saved.
+        queueReviewAsk('ship');
     }
     // Ship mastery: did flying this run's ship cross a new XP threshold (constants.js
     // MASTERY_XP_THRESHOLDS)? Compared against the level snapshotted at startPlay() since

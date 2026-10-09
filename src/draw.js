@@ -5092,6 +5092,38 @@ function drawTitleScreen() {
             _paintBtnRect = { x: pillX - padT, y: pillY - padT, w: pillW + padT * 2, h: pillH + padT * 2 };
         }
 
+        // "All now" chip (shop concept S6): top-left, the PAINT pill's mirror, in the ships
+        // product's gold, with the store price when known. This sheet is where a player reads
+        // "in N days" under the locked ships, so the shortcut sits next to the wait. Apps only
+        // (web has no IAP bridge) and only while a ship is still locked.
+        _shipsShopBtnRect = null;
+        const _paidMask = (1 << SKINS.length) - 2;
+        if (!isWeb() && !allShipsOwned && (unlockedSkins & _paidMask) !== _paidMask) {
+            const price = iapPrices.unlock_all_ships;
+            const txt = price ? `${T.shopAllNow} · ${price}` : T.shopAllNow;
+            const pillH = Math.max(H * 0.058, FS * 0.040);
+            const pillX = shipPanX + H * 0.035;
+            const pillY = shipPanY + H * 0.035;
+            ctx.font = `bold ${FS * 0.032}px ${FONT_UI}`;
+            const maxW = W / 2 - ctx.measureText(T.ships).width / 2 - FS * 0.02 - pillX - pillH * 0.9;
+            const fsz = _shopFitFont(txt, FS * 0.018, FS * 0.011, maxW, true);
+            ctx.font = `bold ${fsz}px ${FONT_UI}`;
+            const pillW = ctx.measureText(txt).width + pillH * 0.9;
+            ctx.beginPath(); ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2);
+            ctx.fillStyle   = 'rgba(255,200,90,0.12)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,200,90,0.65)';
+            ctx.lineWidth   = 1.5;
+            ctx.stroke();
+            ctx.textAlign    = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle    = 'rgba(255,220,140,0.95)';
+            ctx.fillText(txt, pillX + pillW / 2, pillY + pillH / 2 + 1);
+            ctx.textBaseline = 'alphabetic';
+            const padT = Math.max(0, (44 - pillH) / 2);
+            _shipsShopBtnRect = { x: pillX - padT, y: pillY - padT, w: pillW + padT * 2, h: pillH + padT * 2 };
+        }
+
         const gridCX    = W / 2;
         // rowY2 sat close enough to the panel's own bottom edge that row 2's
         // name/cost/perk text nearly touched it (direct feedback) -- moved up
@@ -5513,10 +5545,22 @@ function drawTitleScreen() {
         // hazards explainer). Same pill treatment as the privacy row, neutral
         // slate rather than the notif row's green since it's an action, not a
         // toggle. Tapped in input.js.
+        // Apps only: the row shares its width with "★ RATE" (2026-10-09 rating concept R5), a
+        // quiet link to the store's review form. The player taps it themselves, which both
+        // stores allow; the system review sheet is never bound to a button.
         {
             y += sectionGap;
-            const gbw = panW * 0.78, gby = y;
-            const gbx = W / 2 - gbw / 2;
+            const rowW = panW * 0.78, rowX = W / 2 - rowW / 2;
+            _settingsRateBtnRect = null;
+            let rateW = 0;
+            const rLabel = `★ ${T.rateApp}`;
+            if (!isWeb()) {
+                ctx.font = `${FS * 0.019}px ${FONT_UI}`;
+                rateW = Math.min(rowW * 0.40, Math.max(guideBtnH * 2, ctx.measureText(rLabel).width + guideBtnH * 0.9));
+            }
+            const rGap = rateW ? rowW * 0.03 : 0;
+            const gbw = rowW - rateW - rGap, gby = y;
+            const gbx = rowX;
             ctx.fillStyle = 'rgba(15,18,40,0.72)';
             ctx.beginPath(); ctx.roundRect(gbx, gby, gbw, guideBtnH, 7); ctx.fill();
             ctx.strokeStyle = 'rgba(120,140,200,0.50)';
@@ -5531,178 +5575,105 @@ function drawTitleScreen() {
                 ctx.font = `${gFs}px ${FONT_UI}`;
             }
             ctx.fillStyle = 'rgba(190,200,240,0.90)';
-            ctx.fillText(gLabel, W / 2, gby + guideBtnH / 2);
+            ctx.fillText(gLabel, gbx + gbw / 2, gby + guideBtnH / 2);
             _settingsGuideBtnRect = { x: gbx, y: gby, w: gbw, h: guideBtnH };
+            if (rateW) {
+                const rbx = gbx + gbw + rGap;
+                ctx.fillStyle = 'rgba(15,18,40,0.72)';
+                ctx.beginPath(); ctx.roundRect(rbx, gby, rateW, guideBtnH, 7); ctx.fill();
+                ctx.strokeStyle = 'rgba(255,200,90,0.55)';
+                ctx.lineWidth   = 1;
+                ctx.beginPath(); ctx.roundRect(rbx, gby, rateW, guideBtnH, 7); ctx.stroke();
+                let rFs = FS * 0.019;
+                ctx.font = `${rFs}px ${FONT_UI}`;
+                const rLabelW = ctx.measureText(rLabel).width;
+                if (rLabelW > rateW * 0.88) {
+                    rFs = Math.max(rFs * rateW * 0.88 / rLabelW, FS * 0.012);
+                    ctx.font = `${rFs}px ${FONT_UI}`;
+                }
+                ctx.fillStyle = 'rgba(255,220,140,0.95)';
+                ctx.fillText(rLabel, rbx + rateW / 2, gby + guideBtnH / 2);
+                _settingsRateBtnRect = { x: rbx, y: gby, w: rateW, h: guideBtnH };
+            }
             y += guideBtnH;
         }
     }
 
-    // Shop panel - Remove Ads + Unlock All Ships + Lackiermeister + Restore Purchase, split out of
-    // the settings panel above so that panel isn't stretched by IAP UI most players
-    // never touch. Same nominal-height-then-scale-down pattern as the settings panel,
-    // just for the IAP section instead of the whole settings stack.
+    // Shop (2026-10-09, layout A of the shop concept, user's picks:
+    // https://claude.ai/artifact/Ubnf1p8wT8sHZkuZDpE4xr). Remove Ads, Unlock All Ships and
+    // Lackiermeister side by side, one card each: a drawn picture of what it buys, the name,
+    // one line of use, one line of value read live from the player's own state, and the
+    // store's own price as the button (state.js iapPrices). The whole card is the tap target.
+    // An owned card keeps its picture and says so instead of fading to grey text. Restore is
+    // a text link in the header: Apple wants it findable, not a fourth product.
+    // Apps only: web has no IAP bridge, so its greyed shop icon opens the "in the app"
+    // sheet (drawAppOnlySheet) and this panel never opens there.
     if (showShop) {
         drawMenuBackdrop();
 
-        // Apps only: web has no IAP bridge, so its greyed shop icon opens the "in the
-        // app" sheet (drawAppOnlySheet) and this panel never opens there.
-        const panW = Math.min(W * 0.56, 340);
-
-        const nPadTop    = H * 0.060;
-        const nPadBottom = H * 0.040;
-        const nTitleH    = H * 0.070;
-        const nIapBtnH   = H * 0.085;
-        const nShipsGap   = H * 0.022;   // gap above the Unlock All Ships and Lackiermeister rows
-        const nRestoreGap = H * 0.022;
-        const nRestoreH   = H * 0.062;   // matched to nPrivacyBtnH in the settings panel -- 0.032 read as a squashed sliver
-
-        // Restore Purchase stays hidden only once there's nothing left either
-        // product could restore -- unlike the old remove-ads-only check, "owns one"
-        // isn't enough to hide it anymore.
-        const allIapOwned = removeAdsOwned && allShipsOwned && allPaintsOwned;
-        const nBodyH = nIapBtnH + (nShipsGap + nIapBtnH) * 2 + (allIapOwned ? 0 : nRestoreGap + nRestoreH);
-        const nPanH = nPadTop + nTitleH + nBodyH + nPadBottom;
-
-        const panHCap = H * 0.94;
-        const shopScale = Math.min(1, panHCap / nPanH);
-
-        const padTop    = nPadTop    * shopScale;
-        const titleH    = nTitleH    * shopScale;
-        const iapBtnH   = nIapBtnH   * shopScale;
-        const shipsGap   = nShipsGap   * shopScale;
-        const restoreGap = nRestoreGap * shopScale;
-        const restoreH   = nRestoreH   * shopScale;
-        const panH = nPanH * shopScale;
-
+        // Landscape is the point: the panel takes the width and keeps the mockup's
+        // proportion, so a tall screen (iPhone Duo) gets the same card, not a stretched one.
+        const panW = Math.min(W * 0.90, 900);
+        const panH = Math.min(H * 0.90, panW * 0.48);
         const panX = W / 2 - panW / 2;
-        const panY = Math.max(H * 0.02, Math.min(H * 0.98 - panH, H / 2 - panH / 2));
+        const panY = H / 2 - panH / 2;
         _shopPanelRect = { x: panX, y: panY, w: panW, h: panH };
-
         drawMenuPanel(panX, panY, panW, panH, 12);
 
-        ctx.textAlign    = 'center';
-        ctx.textBaseline = 'middle';
+        const padX = panW * 0.028;
+        const headH = panH * 0.15;
+        const allIapOwned = removeAdsOwned && allShipsOwned && allPaintsOwned;
 
-        let y = panY + padTop;
-
+        // Header: title left; restore link right, or a thank-you once all three are owned
+        // (nothing left a restore could bring back).
+        const headBase = panY + headH * 0.70;
+        ctx.textAlign    = 'left';
+        ctx.textBaseline = 'alphabetic';
         ctx.font        = `bold ${FS * 0.030}px ${FONT_UI}`;
         ctx.fillStyle   = 'rgba(165,190,255,0.95)';
         ctx.shadowColor = 'rgba(0,0,0,0.90)';
         ctx.shadowBlur  = 5;
-        ctx.fillText(T.shop, W / 2, y + titleH / 2 - FS * 0.013); // see T.missions title note
+        ctx.fillText(T.shop, panX + padX, headBase);
         ctx.shadowBlur  = 0;
-        y += titleH;
-
-        _removeAdsBtnRect = null;
-        _unlockAllShipsBtnRect = null;
-        _unlockAllPaintsBtnRect = null;
+        const titleW = ctx.measureText(T.shop).width;
         _restoreBtnRect = null;
-        if (removeAdsOwned) {
-            ctx.font      = `${FS * 0.020}px ${FONT_UI}`;
-            ctx.fillStyle = 'rgba(120,200,150,0.75)';
-            ctx.fillText(T.adsRemoved, W / 2, y + iapBtnH / 2);
-            y += iapBtnH;
-        } else {
-            const abw = panW * 0.78, aby = y;
-            const abx = W / 2 - abw / 2;
-            ctx.fillStyle = 'rgba(15,18,40,0.72)';
-            ctx.beginPath(); ctx.roundRect(abx, aby, abw, iapBtnH, 7); ctx.fill();
-            ctx.strokeStyle = 'rgba(90,160,255,0.55)';
-            ctx.lineWidth   = 1;
-            ctx.beginPath(); ctx.roundRect(abx, aby, abw, iapBtnH, 7); ctx.stroke();
-            ctx.font      = `${FS * 0.023}px ${FONT_UI}`;
-            ctx.fillStyle = 'rgba(150,200,255,0.90)';
-            ctx.fillText(T.removeAds, W / 2, aby + iapBtnH / 2);
-            _removeAdsBtnRect = { x: abx, y: aby, w: abw, h: iapBtnH };
-            y += iapBtnH;
-        }
-
-        // Unlock All Ships: the real-money shortcut past the shard+stardust
-        // grind (constants.js Stardust block) -- same button treatment as
-        // Remove Ads, gold-tinted instead of blue so it reads as the "ships"
-        // product at a glance, matching the shard/skin-grid gold accent used
-        // everywhere else ship-unlock-related.
-        y += shipsGap;
-        if (allShipsOwned) {
-            ctx.font      = `${FS * 0.020}px ${FONT_UI}`;
-            ctx.fillStyle = 'rgba(220,190,120,0.80)';
-            ctx.fillText(T.allShipsOwned, W / 2, y + iapBtnH / 2);
-            y += iapBtnH;
-        } else {
-            const sbw = panW * 0.78, sby = y;
-            const sbx = W / 2 - sbw / 2;
-            ctx.fillStyle = 'rgba(15,18,40,0.72)';
-            ctx.beginPath(); ctx.roundRect(sbx, sby, sbw, iapBtnH, 7); ctx.fill();
-            ctx.strokeStyle = 'rgba(255,200,90,0.55)';
-            ctx.lineWidth   = 1;
-            ctx.beginPath(); ctx.roundRect(sbx, sby, sbw, iapBtnH, 7); ctx.stroke();
-            // Shrink-to-fit, same pattern as the death screen's drawFitLine --
-            // the longest translation (French, "DEBLOQUER TOUS LES VAISSEAUX")
-            // is longer than Remove Ads' longest (German, 18 chars vs. 28), so a
-            // flat font size here either clips French or leaves English cramped.
-            let shipsFsz = FS * 0.023;
-            ctx.font = `${shipsFsz}px ${FONT_UI}`;
-            const shipsTextW = ctx.measureText(T.unlockAllShips).width;
-            const shipsAvailW = sbw * 0.88; // small margin inside the button's own border
-            if (shipsTextW > shipsAvailW) {
-                shipsFsz = Math.max(shipsFsz * shipsAvailW / shipsTextW, FS * 0.014);
-                ctx.font = `${shipsFsz}px ${FONT_UI}`;
+        {
+            const txt  = allIapOwned ? T.shopThanks : T.restorePurchases;
+            const maxW = panW - padX * 3 - titleW;
+            let fsz = FS * 0.017;
+            ctx.font = `${fsz}px ${FONT_UI}`;
+            const w0 = ctx.measureText(txt).width;
+            if (w0 > maxW) { fsz = Math.max(fsz * maxW / w0, FS * 0.011); ctx.font = `${fsz}px ${FONT_UI}`; }
+            const tw = ctx.measureText(txt).width;
+            const tx = panX + panW - padX - tw;
+            ctx.fillStyle = allIapOwned ? 'rgba(127,214,160,0.85)' : 'rgba(180,200,240,0.78)';
+            ctx.fillText(txt, tx, headBase);
+            if (!allIapOwned) {
+                ctx.fillRect(tx, headBase + fsz * 0.22, tw, Math.max(1, fsz * 0.07));
+                // Thumb-sized target around a slim link (the cards are hit-tested first).
+                const hitH = Math.max(44, fsz * 2.4);
+                _restoreBtnRect = { x: tx - 8, y: headBase - fsz * 0.35 - hitH / 2, w: tw + 16, h: hitH };
             }
-            ctx.fillStyle = 'rgba(255,220,140,0.92)';
-            ctx.fillText(T.unlockAllShips, W / 2, sby + iapBtnH / 2);
-            _unlockAllShipsBtnRect = { x: sbx, y: sby, w: sbw, h: iapBtnH };
-            y += iapBtnH;
         }
 
-        // Lackiermeister: every paint part for sale in the Lackiererei (state.js
-        // allPaintsOwned). Two lines, the name over what it buys, in a paint-pink tint so
-        // it reads as the third product, not a second ships button.
-        y += shipsGap;
-        if (allPaintsOwned) {
-            ctx.font      = `${FS * 0.020}px ${FONT_UI}`;
-            ctx.fillStyle = 'rgba(230,160,235,0.80)';
-            ctx.fillText(T.allPaintsOwned, W / 2, y + iapBtnH / 2);
-            y += iapBtnH;
-        } else {
-            const pbw = panW * 0.78, pby = y;
-            const pbx = W / 2 - pbw / 2;
-            ctx.fillStyle = 'rgba(15,18,40,0.72)';
-            ctx.beginPath(); ctx.roundRect(pbx, pby, pbw, iapBtnH, 7); ctx.fill();
-            ctx.strokeStyle = 'rgba(235,130,245,0.55)';
-            ctx.lineWidth   = 1;
-            ctx.beginPath(); ctx.roundRect(pbx, pby, pbw, iapBtnH, 7); ctx.stroke();
-            const availW = pbw * 0.88;
-            let nameFsz = FS * 0.021;
-            ctx.font = `${nameFsz}px ${FONT_UI}`;
-            const nameW = ctx.measureText(T.paintMaster).width;
-            if (nameW > availW) { nameFsz = Math.max(nameFsz * availW / nameW, FS * 0.014); ctx.font = `${nameFsz}px ${FONT_UI}`; }
-            ctx.fillStyle = 'rgba(245,175,250,0.95)';
-            ctx.fillText(T.paintMaster, W / 2, pby + iapBtnH * 0.36);
-            let subFsz = FS * 0.0145;
-            ctx.font = `${subFsz}px ${FONT_UI}`;
-            const subW = ctx.measureText(T.paintMasterSub).width;
-            if (subW > availW) { subFsz = Math.max(subFsz * availW / subW, FS * 0.010); ctx.font = `${subFsz}px ${FONT_UI}`; }
-            ctx.fillStyle = 'rgba(210,185,225,0.75)';
-            ctx.fillText(T.paintMasterSub, W / 2, pby + iapBtnH * 0.70);
-            _unlockAllPaintsBtnRect = { x: pbx, y: pby, w: pbw, h: iapBtnH };
-            y += iapBtnH;
-        }
-
-        if (!allIapOwned) {
-            y += restoreGap;
-            const rbw = panW * 0.78, rby = y;
-            const rbx = W / 2 - rbw / 2;
-            ctx.fillStyle = 'rgba(15,18,40,0.72)';
-            ctx.beginPath(); ctx.roundRect(rbx, rby, rbw, restoreH, 7); ctx.fill();
-            ctx.strokeStyle = 'rgba(90,120,160,0.50)';
-            ctx.lineWidth   = 1;
-            ctx.beginPath(); ctx.roundRect(rbx, rby, rbw, restoreH, 7); ctx.stroke();
-            ctx.font      = `${FS * 0.019}px ${FONT_UI}`;
-            ctx.fillStyle = 'rgba(180,200,240,0.92)';
-            ctx.fillText(T.restorePurchases, W / 2, rby + restoreH / 2);
-            _restoreBtnRect = { x: rbx, y: rby, w: rbw, h: restoreH };
-            y += restoreH;
-        }
+        const cardsY = panY + headH;
+        const cardsH = panY + panH - panH * 0.055 - cardsY;
+        const gap    = panW * 0.02;
+        const cardW  = (panW - padX * 2 - gap * 2) / 3;
+        const cards = [
+            { id: 'remove_ads',        owned: removeAdsOwned, c: [143, 188, 255], vis: _shopVisAds,
+              name: T.removeAds,     line: T.shopAdsLine,    value: T.shopAdsNote },
+            { id: 'unlock_all_ships',  owned: allShipsOwned,  c: [255, 200,  90], vis: _shopVisShips,
+              name: T.shopShipsName, line: T.shopShipsLine.replace('{a}', SKINS[1].name).replace('{b}', SKINS[SKINS.length - 1].name),
+              value: _shopShipsValue() },
+            { id: 'unlock_all_paints', owned: allPaintsOwned, c: [235, 130, 245], vis: _shopVisPaint,
+              name: T.paintMaster,   line: T.paintMasterSub, value: _shopPaintValue() },
+        ];
+        const rects = _shopCards(cards, panX + padX, cardsY, cardW, cardsH, gap);
+        _removeAdsBtnRect       = cards[0].owned ? null : rects[0];
+        _unlockAllShipsBtnRect  = cards[1].owned ? null : rects[1];
+        _unlockAllPaintsBtnRect = cards[2].owned ? null : rects[2];
+        ctx.textAlign = 'center';
     }
 
     // HOW IT WORKS, opened from the Settings panel's row (_settingsGuideBtnRect) and drawn
@@ -7020,6 +6991,201 @@ function drawReviveCountdown() {
     ctx.fillText(T.ready, PX, py - PR * 3.2);
     ctx.shadowBlur   = 0;
     ctx.restore();
+}
+
+// ── Shop cards (the showShop block in drawTitleScreen) ─────────────────
+// Value lines, read live: what the purchase saves this player right now.
+// Ships: the furthest locked ship's stardust gate is the wait, the same "in N days" the ALL
+// SHIPS sheet shows under it; with every gate met only shards are missing, so their sum.
+function _shopShipsValue() {
+    if (allShipsOwned) return T.shopFuture;
+    let left = 0, cost = 0, any = false;
+    for (let i = 1; i < SKINS.length; i++) {
+        if (unlockedSkins & (1 << i)) continue;
+        any = true;
+        if (SKINS[i].stardustGate) left = Math.max(left, SKINS[i].stardustGate - stardust);
+        cost += SKINS[i].cost || 0;
+    }
+    if (!any) return T.shopFuture;
+    if (left > 0) return T.shopWithout.replace('{when}', left <= 1 ? T.tomorrow : T.inDays.replace('{n}', left));
+    return T.shopWorth.replace('{n}', cost);
+}
+// Paints: the shard price of every part for sale not yet bought ('pc' shares the colour list).
+function _shopPaintValue() {
+    let n = 0;
+    for (const s of PAINT_SLOTS) {
+        if (s.key === 'pc') continue;
+        s.list.forEach((part, i) => { if (part.cost && !part.earn && !paintPartOwned(s.key, i)) n += part.cost; });
+    }
+    return n > 0 ? T.shopWorth.replace('{n}', n) : T.shopFuture;
+}
+
+// Shrink a single line to fit maxW, never below minF. Returns the font size used.
+function _shopFitFont(text, fsz, minF, maxW, bold) {
+    ctx.font = `${bold ? 'bold ' : ''}${fsz}px ${FONT_UI}`;
+    const w = ctx.measureText(text).width;
+    return w > maxW ? Math.max(fsz * maxW / w, minF) : fsz;
+}
+
+// Three cards in a row. Font sizes are the smallest any card needs, so names, lines, values
+// and buttons sit on the same baselines in every card. Returns each card's rect.
+function _shopCards(cards, x0, y, w, h, gap) {
+    const pad  = w * 0.055;
+    const tw   = w - pad * 2;
+    let nameF = FS * 0.022, lineF = FS * 0.0165, valF = FS * 0.0135, ctaF = FS * 0.024;
+    for (const cd of cards) {
+        nameF = Math.min(nameF, _shopFitFont(cd.name, FS * 0.022, FS * 0.012, tw, true));
+        valF  = Math.min(valF,  _shopFitFont(cd.value, FS * 0.0135, FS * 0.009, tw, true));
+        const label = cd.owned ? T.shopOwned : (iapPrices[cd.id] || T.shopBuy);
+        ctaF  = Math.min(ctaF, _shopFitFont(label, FS * 0.024, FS * 0.012, tw * 0.86, true));
+        // The use line wraps to two lines at most; a longer translation shrinks instead.
+        let f = FS * 0.0165;
+        ctx.font = `${f}px ${FONT_UI}`;
+        while (_wrapLines(cd.line, tw).length > 2 && f > FS * 0.010) { f *= 0.92; ctx.font = `${f}px ${FONT_UI}`; }
+        lineF = Math.min(lineF, f);
+    }
+    // Bottom up: button, value, two reserved use lines, name; the picture takes the rest.
+    const ctaH    = h * 0.15;
+    const ctaY    = y + h - pad - ctaH;
+    const valBase = ctaY - pad * 0.95;
+    const line2   = valBase - valF * 1.55;
+    const line1   = line2 - lineF * 1.25;
+    const nameB   = line1 - lineF * 1.30;
+    const visH    = Math.max(h * 0.25, nameB - nameF * 1.05 - pad * 0.4 - y);
+    const rects = [];
+    cards.forEach((cd, k) => {
+        const x = x0 + k * (w + gap);
+        const [r, g, b] = cd.c;
+        const cx = x + w / 2;
+        ctx.save();
+        ctx.beginPath(); ctx.roundRect(x, y, w, h, 9);
+        ctx.fillStyle = 'rgba(15,18,40,0.72)';
+        ctx.fill();
+        ctx.clip();
+        const glow = ctx.createRadialGradient(cx, y + visH * 0.6, 0, cx, y + visH * 0.6, w * 0.6);
+        glow.addColorStop(0, `rgba(${r},${g},${b},0.20)`);
+        glow.addColorStop(1, `rgba(${r},${g},${b},0)`);
+        ctx.fillStyle = glow;
+        ctx.fillRect(x, y, w, h);
+        cd.vis(x, y, w, visH);
+        ctx.restore();
+
+        ctx.beginPath(); ctx.roundRect(x, y, w, h, 9);
+        ctx.strokeStyle = `rgba(${r},${g},${b},${cd.owned ? 0.28 : 0.55})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'alphabetic';
+        ctx.shadowColor  = 'rgba(0,0,0,0.85)';
+        ctx.shadowBlur   = 4;
+        ctx.font      = `bold ${nameF}px ${FONT_UI}`;
+        ctx.fillStyle = `rgba(${r},${g},${b},0.97)`;
+        ctx.fillText(cd.name, cx, nameB);
+        ctx.font      = `${lineF}px ${FONT_UI}`;
+        ctx.fillStyle = 'rgba(222,226,245,0.86)';
+        const lines = _wrapLines(cd.line, tw).slice(0, 2);
+        lines.forEach((ln, i) => ctx.fillText(ln, cx, line1 + i * lineF * 1.25));
+        ctx.font      = `bold ${valF}px ${FONT_UI}`;
+        ctx.fillStyle = `rgba(${r},${g},${b},0.72)`;
+        ctx.fillText(cd.value, cx, valBase);
+        ctx.shadowBlur = 0;
+
+        // The button: the price filled in the product's colour, or an outlined "yours".
+        ctx.beginPath(); ctx.roundRect(x + pad, ctaY, w - pad * 2, ctaH, 7);
+        ctx.textBaseline = 'middle';
+        if (cd.owned) {
+            ctx.strokeStyle = `rgba(${r},${g},${b},0.60)`;
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+            ctx.font      = `bold ${ctaF * 0.8}px ${FONT_UI}`;
+            ctx.fillStyle = `rgba(${r},${g},${b},0.95)`;
+            ctx.fillText(T.shopOwned, cx, ctaY + ctaH / 2 + 1);
+        } else {
+            ctx.fillStyle = `rgba(${r},${g},${b},0.94)`;
+            ctx.fill();
+            ctx.font      = `bold ${ctaF}px ${FONT_UI}`;
+            ctx.fillStyle = '#0d0f22';
+            ctx.fillText(iapPrices[cd.id] || T.shopBuy, cx, ctaY + ctaH / 2 + 1);
+        }
+        ctx.textBaseline = 'alphabetic';
+        rects.push({ x: x, y: y, w: w, h: h });
+    });
+    return rects;
+}
+
+// Remove Ads: the flown ship through an empty cave, an "AD" tag struck out behind it.
+// The jag pattern is fixed (no rng: draw-only, same picture every frame).
+const _SHOP_JAG = [0.10, 0.55, 0.20, 0.80, 0.35, 0.95, 0.15, 0.70, 0.30, 0.85, 0.05];
+function _shopVisAds(x, y, w, h) {
+    const rock = lerpClr(getTheme().wallBase, [24, 26, 50], 0.62);
+    ctx.fillStyle = rgb(rock, 1);
+    const n = _SHOP_JAG.length - 1;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    for (let i = 0; i <= n; i++) ctx.lineTo(x + w * i / n, y + h * (0.10 + 0.13 * _SHOP_JAG[i]));
+    ctx.lineTo(x + w, y); ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x, y + h);
+    for (let i = 0; i <= n; i++) ctx.lineTo(x + w * i / n, y + h * (0.90 - 0.13 * _SHOP_JAG[n - i]));
+    ctx.lineTo(x + w, y + h); ctx.closePath(); ctx.fill();
+
+    const tx = x + w * 0.20, ty = y + h * 0.52, tw = w * 0.17, th = h * 0.20;
+    ctx.save();
+    ctx.globalAlpha = 0.6;
+    ctx.strokeStyle = 'rgb(143,188,255)';
+    ctx.lineWidth = Math.max(1, w * 0.006);
+    ctx.setLineDash([3, 2]);
+    ctx.strokeRect(tx - tw / 2, ty - th / 2, tw, th);
+    ctx.setLineDash([]);
+    ctx.font = `bold ${th * 0.55}px ${FONT_UI}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgb(143,188,255)';
+    ctx.fillText('AD', tx, ty + 1);
+    ctx.strokeStyle = 'rgb(255,138,138)';
+    ctx.lineWidth = Math.max(1.5, w * 0.009);
+    ctx.beginPath(); ctx.moveTo(tx - tw * 0.62, ty + th * 0.62); ctx.lineTo(tx + tw * 0.62, ty - th * 0.62); ctx.stroke();
+    ctx.globalAlpha = 0.35;
+    ctx.setLineDash([2, 3]);
+    ctx.beginPath(); ctx.moveTo(tx + tw * 0.75, ty); ctx.lineTo(x + w * 0.46, ty); ctx.stroke();
+    ctx.restore();
+
+    const s = SKINS[activeSkin];
+    const r = Math.min(w * 0.15, h * 0.24);
+    ctx.save();
+    drawShip(x + w * 0.66, y + h * 0.52, r, s.color, s.shadow[0], s.shadow[1], s.shadow[2], 10, true, paintOf(activeSkin));
+    ctx.restore();
+}
+
+// Unlock All Ships: a formation of the paid ships, AMBER in front. Factory paint, they are
+// the catalogue, not the player's hangar.
+const _SHOP_FLEET = [[7, 0.25, 0.28, 0.75], [5, 0.76, 0.26, 0.75], [4, 0.30, 0.74, 0.88], [3, 0.71, 0.74, 0.88], [1, 0.50, 0.50, 1]];
+function _shopVisShips(x, y, w, h) {
+    for (const [i, fx, fy, a] of _SHOP_FLEET) {
+        const s = SKINS[i];
+        const r = a === 1 ? Math.min(w * 0.15, h * 0.24) : Math.min(w * 0.11, h * 0.17);
+        ctx.save();
+        ctx.globalAlpha = a;
+        drawShip(x + w * fx, y + h * fy, r, s.color, s.shadow[0], s.shadow[1], s.shadow[2], 8, true, 0);
+        ctx.restore();
+    }
+}
+
+// Lackiermeister: three ships in kits only the paint shop sells (all parts for sale, none earned).
+const _SHOP_PAINT_DEMO = [
+    { skin: 3, kit: { c: 3, p: 2, pc: 2, m: 5, fx: 0 }, fx: 0.29, fy: 0.29, a: 0.88 },
+    { skin: 1, kit: { c: 7, p: 6, pc: 1, m: 2, fx: 0 }, fx: 0.71, fy: 0.73, a: 0.88 },
+    { skin: 0, kit: { c: 4, p: 5, pc: 1, m: 3, fx: 0 }, fx: 0.52, fy: 0.50, a: 1 },
+];
+function _shopVisPaint(x, y, w, h) {
+    for (const d of _SHOP_PAINT_DEMO) {
+        const s = SKINS[d.skin];
+        const r = d.a === 1 ? Math.min(w * 0.16, h * 0.25) : Math.min(w * 0.13, h * 0.20);
+        ctx.save();
+        ctx.globalAlpha = d.a;
+        drawShip(x + w * d.fx, y + h * d.fy, r, s.color, s.shadow[0], s.shadow[1], s.shadow[2], 8, true, d.kit);
+        ctx.restore();
+    }
 }
 
 // Greedy wrap at whatever font is currently set on ctx. Tokenises CJK/fullwidth

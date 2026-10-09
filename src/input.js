@@ -148,28 +148,34 @@ function onDown(e) {
             if (_settingsGuideBtnRect && inRect(cx, cy, _settingsGuideBtnRect)) {
                 showCurrencyInfo = true; sfxUiTap(); return;
             }
+            // "★ RATE": the store's own review form, opened natively (GameView.swift /
+            // MainActivity.kt). Never the system review sheet - that one is not a button.
+            if (_settingsRateBtnRect && inRect(cx, cy, _settingsRateBtnRect)) {
+                sfxUiTap();
+                appEvent('review_link', {});
+                window.webkit?.messageHandlers?.review?.postMessage({ action: 'write' });
+                return;
+            }
             // Tap outside the panel closes it; a tap inside on empty space does nothing.
             if (!_settingsPanelRect || !inRect(cx, cy, _settingsPanelRect)) { showSettings = false; sfxUiClose(); }
             return;
         }
         if (showShop) {
-            if (_removeAdsBtnRect && inRect(cx, cy, _removeAdsBtnRect)) {
+            // Each product card is one button (draw.js shop); an owned card has no rect.
+            // iap_tap / iap_restore with shopSrc read the shop's funnel per entry point.
+            const buy = (rect, product) => {
+                if (!rect || !inRect(cx, cy, rect)) return false;
                 sfxUiTap();
-                window.webkit?.messageHandlers?.iap?.postMessage({ action: 'purchase', product: 'remove_ads' });
-                return;
-            }
-            if (_unlockAllShipsBtnRect && inRect(cx, cy, _unlockAllShipsBtnRect)) {
-                sfxUiTap();
-                window.webkit?.messageHandlers?.iap?.postMessage({ action: 'purchase', product: 'unlock_all_ships' });
-                return;
-            }
-            if (_unlockAllPaintsBtnRect && inRect(cx, cy, _unlockAllPaintsBtnRect)) {
-                sfxUiTap();
-                window.webkit?.messageHandlers?.iap?.postMessage({ action: 'purchase', product: 'unlock_all_paints' });
-                return;
-            }
+                appEvent('iap_tap', { product: product, src: shopSrc });
+                window.webkit?.messageHandlers?.iap?.postMessage({ action: 'purchase', product: product });
+                return true;
+            };
+            if (buy(_removeAdsBtnRect, 'remove_ads')) return;
+            if (buy(_unlockAllShipsBtnRect, 'unlock_all_ships')) return;
+            if (buy(_unlockAllPaintsBtnRect, 'unlock_all_paints')) return;
             if (_restoreBtnRect && inRect(cx, cy, _restoreBtnRect)) {
                 sfxUiTap();
+                appEvent('iap_restore', { src: shopSrc });
                 window.webkit?.messageHandlers?.iap?.postMessage({ action: 'restore' });
                 return;
             }
@@ -210,6 +216,13 @@ function onDown(e) {
         }
         if (showShipPicker && showPaint) { paintSheetTap(cx, cy); return; }
         if (showShipPicker) {
+            // "All now" chip (apps only, draw.js): the shop opens on top of the sheet, and
+            // closing it lands back here.
+            if (_shipsShopBtnRect && inRect(cx, cy, _shipsShopBtnRect)) {
+                showShop = true; shopSrc = 'ships'; sfxUiTap();
+                appEvent('shop_open', { src: shopSrc });
+                return;
+            }
             if (_stardustBtnRect && inRect(cx, cy, _stardustBtnRect)) {
                 showStardustPath = true; sfxUiTap(); return;
             }
@@ -245,7 +258,8 @@ function onDown(e) {
             sfxUiTap();
             // Web: no IAP bridge, every purchase is app-only -> the "in the app" sheet.
             if (isWeb()) { appOnlyKey = 'shop'; return; }
-            showShop = true;
+            showShop = true; shopSrc = 'title';
+            appEvent('shop_open', { src: shopSrc });
             return;
         }
         if (_missionsBtnRect && inCircle(cx, cy, _missionsBtnRect)) {

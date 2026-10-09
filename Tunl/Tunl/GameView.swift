@@ -169,6 +169,15 @@ struct GameView: UIViewRepresentable {
                     self?.webView?.evaluateJavaScript("window._tunlNativeUpdate && window._tunlNativeUpdate(\(json))")
                 }
             }
+            // Shop price buttons (src/state.js iapPrices). JSONSerialization: a price string
+            // is store-formatted text (currency signs, non-breaking spaces), not a number.
+            iap.onPrices = { [weak self] prices in
+                guard let data = try? JSONSerialization.data(withJSONObject: ["iapPrices": prices]),
+                      let json = String(data: data, encoding: .utf8) else { return }
+                DispatchQueue.main.async {
+                    self?.webView?.evaluateJavaScript("window._tunlNativeUpdate && window._tunlNativeUpdate(\(json))")
+                }
+            }
             ads.onWillPresent = { [weak self] in
                 DispatchQueue.main.async {
                     self?.webView?.evaluateJavaScript("window._pauseAudioForAd && window._pauseAudioForAd()")
@@ -504,6 +513,7 @@ struct GameView: UIViewRepresentable {
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             GameView.killPressInteractions(in: webView)
             Task { await self.iap.refreshEntitlements() }
+            Task { await self.iap.loadPrices() }
             ads.start()
             // Belt-and-braces alongside TunlWebView.onSafeAreaChange: that fires on
             // every layout pass including the first, but pushing here too costs
@@ -569,12 +579,20 @@ struct GameView: UIViewRepresentable {
                 return
             }
             if message.name == "review" {
-                // The only caller (update.js maybeRequestReview) already gates on a new
-                // all-time best + score floor + a local cooldown, so no further
-                // throttling here -- AppStore.requestReview itself is a silent no-op
+                // The only caller of "request" (update.js maybeRequestReview) already gates
+                // on a calm title after a record, a new ship or a week streak, plus a
+                // stardust floor and a local cooldown, so no further throttling here -- AppStore.requestReview itself is a silent no-op
                 // once the system has shown it 3 times in the trailing 365 days, same
                 // as SKStoreReviewController before it, just without the deprecated
                 // #available(iOS 14) branch since deployment target is already 16.4.
+                // action "write" (2026-10-09): the Settings panel's "★ RATE" row, a tap the
+                // player makes - open the App Store's own review form, never the system sheet.
+                if let body = message.body as? [String: Any], body["action"] as? String == "write" {
+                    if let url = URL(string: "https://apps.apple.com/app/id6789721765?action=write-review") {
+                        UIApplication.shared.open(url)
+                    }
+                    return
+                }
                 if let scene = webView?.window?.windowScene {
                     AppStore.requestReview(in: scene)
                 }

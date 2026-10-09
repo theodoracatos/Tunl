@@ -7,7 +7,9 @@ window._tunlNativeUpdate = function (state) {
     if (typeof state.removeAdsOwned === 'boolean') {
         // Fires the purchase-success chime only on the false->true transition, never on
         // the entitlement-sync call every launch makes for a player who already owns it.
-        if (state.removeAdsOwned && !removeAdsOwned) sfxUiPurchaseSuccess();
+        // Same transition logs iap_owned (state.js appEvent); in_shop 0 is a restore on a
+        // fresh install or a purchase finished outside the shop (a promoted IAP).
+        if (state.removeAdsOwned && !removeAdsOwned) { sfxUiPurchaseSuccess(); appEvent('iap_owned', { product: 'remove_ads', in_shop: showShop ? 1 : 0 }); }
         removeAdsOwned = state.removeAdsOwned;
         localStorage.setItem('tunnel_remove_ads', removeAdsOwned ? '1' : '0');
     }
@@ -15,7 +17,7 @@ window._tunlNativeUpdate = function (state) {
     // current SKINS bit here, not just remembering the flag, means a purchase takes
     // effect immediately without waiting for the next die()/unlock-loop pass or a reload.
     if (typeof state.allShipsOwned === 'boolean') {
-        if (state.allShipsOwned && !allShipsOwned) sfxUiPurchaseSuccess();
+        if (state.allShipsOwned && !allShipsOwned) { sfxUiPurchaseSuccess(); appEvent('iap_owned', { product: 'unlock_all_ships', in_shop: showShop ? 1 : 0 }); }
         allShipsOwned = state.allShipsOwned;
         localStorage.setItem('tunnel_all_ships', allShipsOwned ? '1' : '0');
         if (allShipsOwned) {
@@ -26,10 +28,12 @@ window._tunlNativeUpdate = function (state) {
     // Lackiermeister IAP (state.js's allPaintsOwned doc comment). paintPartOwned() reads the
     // flag live, so the Paint sheet shows every part for sale as owned from the next frame.
     if (typeof state.allPaintsOwned === 'boolean') {
-        if (state.allPaintsOwned && !allPaintsOwned) sfxUiPurchaseSuccess();
+        if (state.allPaintsOwned && !allPaintsOwned) { sfxUiPurchaseSuccess(); appEvent('iap_owned', { product: 'unlock_all_paints', in_shop: showShop ? 1 : 0 }); }
         allPaintsOwned = state.allPaintsOwned;
         localStorage.setItem('tunnel_all_paints', allPaintsOwned ? '1' : '0');
     }
+    // Shop prices (state.js iapPrices): the store's localized strings, validated there.
+    if (state.iapPrices) setIapPrices(state.iapPrices);
     // Pushed once per launch after AdsManager's consent-info update resolves
     // (see AdsManager.kt/.swift) - not persisted, see state.js's declaration.
     if (typeof state.privacyOptionsRequired === 'boolean') {
