@@ -174,6 +174,10 @@ const TITLE_BGM_LOOP_XFADE = 4.0;
 // band +1.3 dB against Nebula at BGM_GAIN. Decoded only once a run reaches DEPTH_LOAD_FROM
 // (most runs end before S4 and never pay for 90s of decoded stereo); a run that reaches S4
 // before it is ready stays on Nebula until the next sector.
+// A rebuilt context (_reviveAudioContext: a rewarded continue's ad, backgrounding) drops both
+// buffers and resets the track to Nebula. A run past S4 that starts its bed again on it waits for
+// the depth track instead of restarting Nebula (_bgmPendingPlay; 2026-10-09, user: after the ad
+// "ertönt plötzlich wieder das 1. Lied").
 const DEPTH_MUSIC_FROM  = 4;
 const DEPTH_LOAD_FROM   = 2;
 const DEPTH_BAR         = 4 * 60 / 86.67;
@@ -218,11 +222,28 @@ function _startBgMusic() {
         _bgmGain.gain.linearRampToValueAtTime(BGM_GAIN, t + MUSIC_FADE_SEC);
     }
     _bgmOpenFilter();
-    if (_bgmBuf) { _playBgmBuffer(); return; }
-    // Not loaded yet - mark pending and kick the loader (no-op if already in flight);
-    // it starts playback itself once the buffer lands.
+    // Mark pending and kick the loaders (no-ops once loaded or in flight); whichever
+    // buffer the run needs starts playback once it lands, or right here if it already has.
     _bgmPending = true;
+    _loadRunBgm();
+    _bgmPendingPlay();
+}
+// The run's beds: Nebula always (the next run opens on it), the depth track once the run is deep.
+function _loadRunBgm() {
     _loadBgmBuffer();
+    if (_bgmSectorK >= DEPTH_LOAD_FROM) _loadDepthBuffer();
+}
+// Start the waiting bed if its buffer is in. Past DEPTH_MUSIC_FROM that is the depth track while
+// it is still decoding (see "Depth music"); Nebula only if it failed to load.
+function _bgmPendingPlay() {
+    if (!_bgmPending || !_bgmActive) return;
+    if (_bgmSectorK >= DEPTH_MUSIC_FROM) {
+        if (_depthLoading && !_depthBuf) return;
+        _bgmFollowDepth(true);
+    }
+    if (!_bgmBuf) return;
+    _bgmPending = false;
+    _playBgmBuffer();
 }
 
 // `offset` (seconds into _bgmBuf) resumes the bed where a star held it (bgmSetFrenzy).
@@ -758,7 +779,7 @@ function _initAC() {
     // Only re-kick whatever was already playing when the context was torn down
     // (_reviveAudioContext sets these), so backgrounding still recovers exactly as before.
     if (_titleBgmPending) _loadTitleBgmBuffer();
-    if (_bgmPending)      _loadBgmBuffer();
+    if (_bgmPending)      _loadRunBgm();
 }
 
 // ── Lazy music loading ────────────────────────────────────────────────
@@ -839,7 +860,7 @@ function _loadBgmBuffer() {
             _nebBuf = _bakeBgmLoop(buf, BGM_LOOP_START, BGM_LOOP_END, BGM_LOOP_XFADE);
             _nebOutroBuf = _sliceOutro(buf, BGM_OUTRO_START);
             if (_bgmTrack === 'nebula') { _bgmBuf = _nebBuf; _bgmOutroBuf = _nebOutroBuf; }
-            if (_bgmPending && _bgmActive) { _bgmPending = false; _playBgmBuffer(); }
+            _bgmPendingPlay();
         })
         .catch(err => {
             _bgmLoading = false;
@@ -861,9 +882,11 @@ function _loadDepthBuffer() {
             if (_ac !== ctx) return;
             _depthBuf = _bakeBgmLoop(buf, DEPTH_LOOP_START, DEPTH_LOOP_END, DEPTH_LOOP_XFADE);
             _depthOutroBuf = _sliceOutro(buf, DEPTH_OUTRO_START);
+            _bgmPendingPlay();
         })
         .catch(err => {
             _depthLoading = false;
+            _bgmPendingPlay();
             console.error('[audio]', _bgmUrl('the_mountain_motivational'), 'load/decode failed:', err);
         });
 }

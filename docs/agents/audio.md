@@ -87,6 +87,10 @@ a "Knallfrosch" twice. Method, metrics and traps: `reference_audio_method` memor
   Files phase, `build-play.mjs` copies its `.web.m4a`, gradle takes `audio/*.mp3`. Every bed
   source feeds `_bgmIn` (the playing track's trim); `_bgmBarNow` and the star's hold use the
   playing track's grid (`_bgmT()`). Rendered offline in the real chain, not ear-checked on a device.
+  Trap (2026-10-09, player report): a rebuilt context (`_reviveAudioContext`, e.g. the rewarded
+  continue's ad) drops both buffers and resets the track to Nebula, so a deep revive restarted
+  Nebula. A waiting bed starts through `_bgmPendingPlay()` only, which waits for the depth track
+  past S4; `test-sim.js` section 14 guards it.
 - **A star can pause the music** (`bgmSetFrenzy`, `_fzMusGen`, rule in `frenzy.md`): the play
   track is held on its bar (`_bgmBarNow`, `BGM_BAR`) and resumes there while the star's own
   generated music plays. No third music file: an mp3 excerpt was tried and removed. The

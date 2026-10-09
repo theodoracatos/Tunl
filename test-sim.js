@@ -2137,6 +2137,23 @@ const FAKE_AC = `(() => {
     const back = h(`({ track: _bgmTrack, at: _bgmNode && _bgmNode.started[1] })`);
     check(`S4 reached during a star: the star hands back into the depth track's entry (${JSON.stringify(back)})`,
         back.track === 'depth' && Math.abs(back.at - h('DEPTH_ENTRY')) < 1e-9);
+
+    // A rewarded continue in the deep: the ad's interruption rebuilds the context (real
+    // _reviveAudioContext), which drops both buffers and resets the track to Nebula. The revive
+    // waits for the depth track, even when Nebula's buffer lands first (2026-10-09 player report).
+    const r = fzCave(`${SETUP}; _ac.currentTime = 30; bgmSetSector(5); nb = _nebBuf; db = _depthBuf; dob = _depthOutroBuf;
+        fetch = () => new Promise(() => {});   // both loads stay in flight; the test lands them
+        _fadeBgMusic(); phase = 'dead'; const ac = _ac; ac.state = 'suspended';
+        window.AudioContext = function () { ac.state = 'running'; return ac; };
+        _reviveAudioContext(); grantRevive();`);
+    const wait = r(`({ track: _bgmTrack, node: _bgmNode, depthLoading: _depthLoading })`);
+    r(`_nebBuf = nb; _nebOutroBuf = { duration: 10 }; _bgmBuf = _nebBuf; _bgmPendingPlay();`);
+    const nebFirst = r('_bgmNode');
+    r(`_depthLoading = false; _depthBuf = db; _depthOutroBuf = dob; _bgmPendingPlay();`);
+    const rev = r(`({ track: _bgmTrack, at: _bgmNode && _bgmNode.started[1], outro: _bgmOutroBuf === _depthOutroBuf })`);
+    check(`a revive past S4 after a context rebuild resumes the depth track, never Nebula (${JSON.stringify(rev)})`,
+        wait.track === 'nebula' && wait.node === null && wait.depthLoading === true && nebFirst === null
+        && rev.track === 'depth' && Math.abs(rev.at - r('DEPTH_ENTRY')) < 1e-9 && rev.outro);
 }
 
 if (failed) { console.log(`\n${failed} check(s) failed.`); process.exit(1); }
