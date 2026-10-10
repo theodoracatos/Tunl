@@ -47,7 +47,11 @@ Study: https://claude.ai/artifact/QPvLrDmGiU6przXNwXLV9y
 - **Dark stretch** (sector motif `dark`, `drawMotifDark`, `MOTIF_DARK_*`): a radial darkness
   drawn after the wall rims, under every free hazard, coin and the ship, centred a little ahead
   of the ship. Under the rims it was invisible (the void is near black from S4). Same "never
-  bright ahead" spirit as the depth light: it only takes light away. Not device-tested.
+  bright ahead" spirit as the depth light: it only takes light away. Made darker on
+  2026-10-10 at the user's request: smaller pool, darker edge (`MOTIF_DARK_*`), step "C" picked
+  from six renders (https://claude.ai/artifact/N6KQdyFiVXoMWz8A12BoyS). Darker steps hid the
+  crystals half a screen ahead - judge any further step by render, the pilot cannot see the
+  dark. Not device-tested.
 
 ## HUD instrument, web frame (2026-09-16 design pass, proposals 3, 4, 6)
 

@@ -415,7 +415,8 @@ function warpScrollFactor() {
 // or easier across the board.
 // Since 2026-10-08 (variety concept C, "Tageslage") the day type is named on the title
 // screen (i18n key `name`) and doubles the draw weight of its sector motif from
-// MOTIF_FROM_SECTOR on (`motif`, see SECTOR_MOTIFS below). Classic biases nothing.
+// MOTIF_FROM_SECTOR on (`motif`, see SECTOR_MOTIFS below), and since 2026-10-10 that motif
+// always opens sector MOTIF_FROM_SECTOR. Classic biases nothing.
 const DAY_ARCHETYPES = [
     { stal: 1,    coin: 1,    mine: 1,    chic: 1,    name: 'dayBalanced', motif: null      }, // Classic
     { stal: 0.85, coin: 1,    mine: 1,    chic: 1.35, name: 'dayZigzag',   motif: 'crystal' }, // Chicane Day
@@ -489,6 +490,8 @@ function sectorMotif(k) {
         if (mixedRun < MOTIF_MIXED_RUN) { pool.unshift([MOTIF_NONE, wSum]); wSum *= 2; }
         let r = _deepHash(0x5000 + s) * wSum, pick = pool[pool.length - 1][0];
         for (const [m, w] of pool) { if (r < w) { pick = m; break; } r -= w; }
+        // The day type keeps the title's promise: its motif opens the first motif sector.
+        if (i === 0 && bias) { const own = SECTOR_MOTIFS.find(m => m.id === bias); if (s >= own.from) pick = own; }
         _motifSeq.push(pick);
     }
     return _motifSeq[k - MOTIF_FROM_SECTOR];

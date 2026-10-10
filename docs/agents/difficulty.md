@@ -188,6 +188,9 @@ https://claude.ai/artifact/NAo9YoDCyADcWXiCfFCEcy
   experiment at half weight from S6. The pilot cannot see it, so its density cut is a guess -
   take it out of `SECTOR_MOTIFS` if a device test reads it as unfair.
 - **Day type** (concept C): `DAY_ARCHETYPES` entries carry a `name` (shown on the title,
-  "TODAY: MINE BELT", `visuals.md`) and a `motif` whose draw weight doubles on that day.
-  Classic biases nothing. The archetype's own density nudges are unchanged.
+  "TODAY: MINE BELT", `visuals.md`) and a `motif` whose draw weight doubles on that day
+  **and which always opens S4** (2026-10-10: on a GOLD RUSH day the hash put a dark stretch in
+  S6 and the first gold vein in S9, past most runs - the title's name went unseen). Other
+  motifs stay in the pool; the day only biases. Classic biases nothing. The archetype's own
+  density nudges are unchanged.
 - **`_motifsOn`** is the kill switch for all of it (the title line stays).

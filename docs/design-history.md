@@ -2566,3 +2566,27 @@ next calm title, and add a "★ RATE" link in Settings. Not built: R6 (loosen th
 the title's appearance, so closing a panel after a while fired the sheet at once; the test
 caught it and the calm now restarts whenever anything is open.
 
+
+## Day type opens S4, a darker dark stretch (2026-10-10)
+
+The user, on a GOLD RUSH day: "wieso ist trotzdem die Dunkelstrecke zu sehen?" The day type only
+doubled its motif's draw weight; that day's hash put the dark stretch in S6 and the first gold
+vein in S9, past most runs, so the title's name went unseen as a motif (the archetype's own
+nudges, e.g. GOLD RUSH's denser coins from S0, were always there). Options: A the day's motif
+opens S4; B also keep the dark stretch off typed days. Built A only, the dark stretch stays a
+motif of its own.
+
+- **Bench** (a copy of `tools/device-fair-sim.js` pilot, same screen, with vs without the new
+  line, 40 days x 8 runs): average never reaches S4 (x1.00 on every day type). Expert: classic
+  x1.000, chicane day x1.057, mine belt x0.994, gold rush x0.943 (5 days, noise: the gold gap
+  shifts the sequence after S4). Deaths in S4 among runs reaching it: crystal 34 vs 33, mines
+  16 vs 19, gold 1 vs 6 - the feared crystal-forest S4 did not show.
+- **Dark stretch**: the user said it may be darker. Raising only the edge alpha (0.70 -> 0.85)
+  barely read: the pool kept its size. Six steps rendered through the real `draw.js` in headless
+  Chrome (https://claude.ai/artifact/N6KQdyFiVXoMWz8A12BoyS); the user picked "C Laterne"
+  (smaller pool, darker edge, `MOTIF_DARK_*`). The two darker steps hid crystals half a screen
+  ahead. The player's own bullets are drawn before the overlay and dim with it (not a hazard).
+- **test-sim**: the new S4 pick shifted the pinned day's flight path and broke three autopilot
+  checks (hull smoke under a shield, two wing-sweep checks) - the day flakes of 2026-09-27.
+  Fixed at the root: those loops clear hazards, coins and portals each frame (`KEEP_QUIET`);
+  mutation-checked (smoke through a shield, wings back after the pill both fail).

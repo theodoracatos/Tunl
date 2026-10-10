@@ -1796,7 +1796,15 @@ let _lastBgStr = '';
 // The pool sits a little ahead of the ship (hazards come from the right). Eases in and out over MOTIF_DARK_EASE seconds of game time around the
 // sector boundary the ship crosses. Draw-only: no gameplay value moves, same on every device.
 // Unproven on a device: if it reads as unfair, take 'dark' out of SECTOR_MOTIFS (its weight).
-const MOTIF_DARK_ALPHA = 0.70;   // darkness at the screen's far edge
+// 2026-10-10 the user asked for darker and picked "C Laterne" from six rendered steps
+// (https://claude.ai/artifact/N6KQdyFiVXoMWz8A12BoyS): a smaller pool, a darker edge. The two
+// darker steps lost the crystals half a screen ahead of the ship - reaction time the bench's
+// pilot cannot measure, since it does not see the dark.
+const MOTIF_DARK_ALPHA = 0.90;   // darkness at the screen's far edge
+const MOTIF_DARK_MID   = 0.65;   // ... at MOTIF_DARK_MID_AT of the way out, as a share of it
+const MOTIF_DARK_MID_AT = 0.35;
+const MOTIF_DARK_R_IN  = 0.06;   // pool radii, in screen widths
+const MOTIF_DARK_R_OUT = 0.48;
 const MOTIF_DARK_EASE  = 0.6;
 let _motifDarkVis = 0, _motifDarkT = 0;
 function drawMotifDark() {
@@ -1810,9 +1818,9 @@ function drawMotifDark() {
     if (_motifDarkVis <= 0.003) return;
     const e = _motifDarkVis * _motifDarkVis * (3 - 2 * _motifDarkVis);
     const cx = PX + W * 0.12, cy = py;
-    const g = ctx.createRadialGradient(cx, cy, W * 0.07, cx, cy, W * 0.62);
+    const g = ctx.createRadialGradient(cx, cy, W * MOTIF_DARK_R_IN, cx, cy, W * MOTIF_DARK_R_OUT);
     g.addColorStop(0,    'rgba(0,0,0,0)');
-    g.addColorStop(0.35, `rgba(0,0,0,${(MOTIF_DARK_ALPHA * 0.55 * e).toFixed(3)})`);
+    g.addColorStop(MOTIF_DARK_MID_AT, `rgba(0,0,0,${(MOTIF_DARK_ALPHA * MOTIF_DARK_MID * e).toFixed(3)})`);
     g.addColorStop(1,    `rgba(0,0,0,${(MOTIF_DARK_ALPHA * e).toFixed(3)})`);
     ctx.fillStyle = g;
     ctx.fillRect(-20, -20, W + 40, H + 40);

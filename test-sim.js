@@ -123,6 +123,10 @@ function flyTo(wx, dt = 1 / 60) {
     return g;
 }
 
+// Per frame inside a measuring loop: nothing the autopilot could pick up or hit by chance
+// (a blue coin, a warp ring, a shield hit), so what the loop measures does not depend on the day.
+const KEEP_QUIET = 'stalactites = []; mines = []; boulders = []; cannons = []; cannonShots = []; coins = []; chicaneCoins = []; portals = [];';
+
 // A quiet, deterministic moment in the tunnel for state tests: past the safe opening,
 // nothing near the ship, no timers running. Wall tests need `deep`: until the
 // onboarding widen runs out (EARLY_WIDEN_WX) the corridor edge lies OFF screen, so a
@@ -266,7 +270,7 @@ function quietCave(deep = false) {
         g('phase') === 'play' && g('hullScratches') === g('HULL_SCRATCHES') - 1);
     // Catches: a scratched hull that shows nothing, smoke through a shield, or a draw that throws.
     const smoke = sh => g(`(() => { invulnT = 0; wallGraceT = 1; hullScratches = 0; shieldCount = ${sh}; parts = [];
-        for (let i = 0; i < 60; i++) { _pilot(); update(1 / 60); } draw(); return parts.filter(p => p.smoke).length; })()`);
+        for (let i = 0; i < 60; i++) { ${KEEP_QUIET} _pilot(); update(1 / 60); } draw(); return parts.filter(p => p.smoke).length; })()`);
     const bare = smoke(0), shielded = smoke(1);
     check(`a scratched hull smokes and draws its damage (${bare} puffs alive after 1 s)`,
         g('phase') === 'play' && bare > 5);
@@ -685,26 +689,26 @@ function touchCoin(type, setup) {
     const g = quietCave(true);
     const r = g(`(() => {
         const out = {};
-        for (let i = 0; i < 240; i++) { shieldCount = 9; _pilot(); update(1 / 60); }
+        for (let i = 0; i < 240; i++) { ${KEEP_QUIET} shieldCount = 9; _pilot(); update(1 / 60); }
         out.cruise = shipSweep;
         slowTime = slowTimeMax = 4;
         // A fifth of a second: the wings swing out fast, the pill has barely moved
-        for (let i = 0; i < 12; i++) { shieldCount = 9; _pilot(); update(1 / 60); }
+        for (let i = 0; i < 12; i++) { ${KEEP_QUIET} shieldCount = 9; _pilot(); update(1 / 60); }
         out.coin = shipSweep;
-        for (let i = 0; i < 180 && slowTime > 1; i++) { shieldCount = 9; _pilot(); update(1 / 60); }
+        for (let i = 0; i < 180 && slowTime > 1; i++) { ${KEEP_QUIET} shieldCount = 9; _pilot(); update(1 / 60); }
         out.quarter = shipSweep;
         slowTime = slowTimeMax = 0;
-        for (let i = 0; i < 240; i++) { shieldCount = 9; _pilot(); update(1 / 60); }
+        for (let i = 0; i < 240; i++) { ${KEEP_QUIET} shieldCount = 9; _pilot(); update(1 / 60); }
         out.back = shipSweep;
         warpTime = warpMax = 3;
-        for (let i = 0; i < 30; i++) { shieldCount = 9; _pilot(); update(1 / 60); }
+        for (let i = 0; i < 30; i++) { ${KEEP_QUIET} shieldCount = 9; _pilot(); update(1 / 60); }
         out.warp = shipSweep;
         // A warp beats a live blue coin: the ship really is going fast
         slowTime = slowTimeMax = 4;
-        for (let i = 0; i < 30; i++) { shieldCount = 9; _pilot(); update(1 / 60); }
+        for (let i = 0; i < 30; i++) { ${KEEP_QUIET} shieldCount = 9; _pilot(); update(1 / 60); }
         out.warpWins = shipSweep;
         warpTime = warpMax = 0;
-        for (let i = 0; i < 300; i++) { shieldCount = 9; _pilot(); update(1 / 60); }
+        for (let i = 0; i < 300; i++) { ${KEEP_QUIET} shieldCount = 9; _pilot(); update(1 / 60); }
         out.after = shipSweep;
         out.cruiseK = SHIP3D_SWEEP_CRUISE;
         return out;

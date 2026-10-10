@@ -706,6 +706,13 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
         if (!(s.hit / s.n > 1.4 * (classic[id] || 0) / nClassic)) biasOk = false;
     }
     check('a day type draws its own motif clearly more often than a Classic day does', biasOk);
+    // ... and its motif opens the first motif sector, so the title's day name shows early.
+    let openOk = true;
+    for (const d of days) for (let a = 1; a < w.DAY_ARCHETYPES.length; a++) {
+        w.setDeepDay(d); w.setDayArchetype(a);
+        if (w.sectorMotif(w.MOTIF_FROM_SECTOR).id !== w.DAY_ARCHETYPES[a].motif) openOk = false;
+    }
+    check('a day type\'s own motif opens the first motif sector', openOk);
 
     // Intro sectors never thin their hazard; mines never below half; floors hold in every motif.
     let introOk = true, mineOk = true, floorOk = true;
