@@ -1,0 +1,46 @@
+# Pending: Russian Google Play listing (ru-RU)
+
+Queued 2026-10-11 (user OK). Unlike App Store Connect, a Play store listing can be edited and published at any
+time without an app release (it goes through Play's own listing review). Apply together with or right after the
+App Store change in `aso-ru.md`, so both stores say the same thing.
+
+## Why
+
+Same finding as `aso-ru.md`: Russian-speaking players convert well on iOS (8 of 21 iOS downloads in 30 days, 42%
+of page viewers install) but TUNL is only found by its own name. Android has had no Russian downloads yet, so this
+is a cheap bet on the same demand, not a measured gap. Google Play indexes the full description too, and the
+current Russian text (1602 of 4000 characters) never says самолёт, аркада, вертолёт, истребитель or офлайн.
+
+## Current (live, from `store-metadata/18.5/`)
+
+| Field | Value | Length |
+|---|---|---|
+| Title | TUNL: Полёт в пещере | 20/30 |
+| Short description | Коснись - прыжок, держи - подъём. Одна пещера в день, общая для всего мира. | 75/80 |
+| Full description | 18.5 text, 1602 characters | 1602/4000 |
+
+## New
+
+| Field | Value | Length |
+|---|---|---|
+| Title | TUNL: Самолёт в пещере | 22/30 |
+| Short description | Аркада на одну кнопку: самолёт, пещера дня и мировой рейтинг. Можно офлайн. | 75/80 |
+| Full description | the 18.5 text plus the paragraph below, appended after the first paragraph | about 1870/4000 |
+
+Paragraph to add (natural sentences only - Play rejects keyword lists):
+
+> Аркада на одну кнопку в духе классической игры с вертолётом: твой самолёт-истребитель летит сквозь пещеру,
+> а ты решаешь только одно - держать или отпустить. Без интернета игра тоже работает: пещера дня строится прямо
+> на телефоне, сеть нужна для мирового рейтинга.
+
+Before applying:
+- "офлайн" / "без интернета" under the same condition as iOS: the code check (see `aso-ru.md`) covers Android
+  (`WebViewAssetLoader` serves the bundled game); one airplane-mode run on an Android device or the
+  `Tunl_Pixel` emulator before publishing.
+- Have a native Russian speaker read the new lines if possible.
+- No em dashes (hyphen-minus only, as in the existing text).
+
+## Measure
+
+Play Console -> Mehr Nutzer gewinnen -> Geräteakquisitionen by Land/Region: Russia, Kazakhstan, Belarus, Ukraine
+(baseline 2026-10-11: 0 in 28 days), plus store-listing visitors by country, 3-4 weeks after publishing.
