@@ -226,6 +226,7 @@ class AdsManager(private val activity: Activity) {
                     if (formError != null) {
                         Log.w(TAG, "Consent form error: ${formError.message}")
                     }
+                    enableAnalytics()
                     onPrivacyOptionsRequiredChange?.invoke(
                         consentInformation.privacyOptionsRequirementStatus ==
                             ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
@@ -253,8 +254,37 @@ class AdsManager(private val activity: Activity) {
             },
             { requestConsentError ->
                 Log.w(TAG, "Consent info update failed: ${requestConsentError.message}")
+                enableAnalytics()
             }
         )
+    }
+
+    // AndroidManifest starts Firebase collection switched off, so nothing is logged while the
+    // consent answer is still on its way (see the manifest comment). Switched on here once the
+    // state is settled: granted above where GDPR does not apply, the form's choice forwarded by
+    // UMP elsewhere, still denied after a failed request (cookieless, as before the switch-off).
+    // The SDK logs first_open on the first enable and keeps the setting for later launches.
+    private fun enableAnalytics() {
+        if (analyticsReady) return
+        FirebaseAnalytics.getInstance(activity).setAnalyticsCollectionEnabled(true)
+        analyticsReady = true
+        val held = pendingEvents.toList()
+        pendingEvents.clear()
+        held.forEach { (name, params) -> FirebaseAnalytics.getInstance(activity).logEvent(name, params) }
+    }
+
+    // The game's own events (MainActivity.logAppEvent, logInterstitial below) are held until
+    // enableAnalytics() runs: with collection still off they would be dropped, and the first
+    // title's funnel step (src/state.js appFunnel) fires before the consent answer is back.
+    // UI thread only (the JS bridge and the UMP callbacks both run there), so no locking.
+    private var analyticsReady = false
+    private val pendingEvents = mutableListOf<Pair<String, android.os.Bundle>>()
+    fun logEvent(name: String, params: android.os.Bundle) {
+        if (!analyticsReady) {
+            if (pendingEvents.size < 50) pendingEvents.add(name to params)
+            return
+        }
+        FirebaseAnalytics.getInstance(activity).logEvent(name, params)
     }
 
     // Reopens the same UMP consent form the player saw once at launch, invoked
@@ -275,7 +305,8 @@ class AdsManager(private val activity: Activity) {
         val count = prefs.getInt(DEATH_COUNT_KEY, 0) + 1
         prefs.edit().putInt(DEATH_COUNT_KEY, count).apply()
 
-        if (removeAdsOwned || count % DEATHS_PER_AD != 0) return
+        if (count % DEATHS_PER_AD != 0) return
+        if (removeAdsOwned) { logInterstitial("remove_ads"); return }
 
         // Wall-clock floor. When it blocks, roll the counter back one so the very
         // next death re-tests instead of waiting out another full DEATHS_PER_AD
@@ -285,16 +316,19 @@ class AdsManager(private val activity: Activity) {
         val lastAd = prefs.getLong(LAST_AD_TIME_KEY, 0L)
         if (lastAd > 0L && now - lastAd < MIN_INTERVAL_MS) {
             prefs.edit().putInt(DEATH_COUNT_KEY, count - 1).apply()
+            logInterstitial("cooldown")
             return
         }
 
         val ad = interstitialAd
         if (ad == null) {
             prefs.edit().putInt(DEATH_COUNT_KEY, count - 1).apply()
+            logInterstitial("not_loaded")
             loadInterstitial()
             return
         }
         prefs.edit().putLong(LAST_AD_TIME_KEY, now).apply()
+        logInterstitial("shown")
         ad.fullScreenContentCallback = fullScreenContentCallback
         // MainActivity runs edge-to-edge with the system bars hidden (see its
         // setDecorFitsSystemWindows(false) + hideSystemBars()). The GMA SDK's
@@ -309,6 +343,18 @@ class AdsManager(private val activity: Activity) {
         // iOS is unaffected -- its interstitial respects the safe area natively.
         ad.setImmersiveMode(true)
         ad.show(activity)
+    }
+
+    // Analytics (2026-10-11), mirror of AdsManager.swift's logInterstitial: one ad_result per
+    // death that was the interstitial's turn (DEATHS_PER_AD), with what stopped it if anything.
+    // Deaths below MIN_SCORE_FOR_AD or between turns log nothing; run_end already carries them.
+    private fun logInterstitial(how: String) {
+        val params = android.os.Bundle().apply {
+            putString("format", "interstitial")
+            putLong("granted", if (how == "shown") 1L else 0L)
+            putString("how", how)
+        }
+        logEvent("ad_result", params)
     }
 
     private fun loadInterstitial() {

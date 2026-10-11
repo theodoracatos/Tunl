@@ -638,7 +638,7 @@ struct GameView: UIViewRepresentable {
                         if let s = v as? String { return String(s.prefix(100)) }
                         return nil
                     }
-                    Analytics.logEvent(name, parameters: params)
+                    ads.logEvent(name, params)   // held until consent is settled (AdsManager)
                 default: break
                 }
                 return

@@ -231,7 +231,7 @@ function approachStep(dt, canHold = false) {
     else { approachLeft = Math.max(0, approachLeft - d); if (tutorBeads.length) _tutorBeadsScroll(d); }
     _approachBumpT = Math.max(0, _approachBumpT - dt);
     // The ship is in the mouth (same line approachUpdate's lethal-wall rule uses): cut the wind.
-    if (!_approachWindIn && approachLeft <= PX + APPROACH_LIP) { _approachWindIn = true; approachWindEnter(); }
+    if (!_approachWindIn && approachLeft <= PX + APPROACH_LIP) { _approachWindIn = true; approachWindEnter(); appFunnel('cave'); }
     // The mouth has passed the middle of the screen: the world banner starts, as "ENTERING THE
     // TUNL" finishes fading (2026-09-29, user's call; it used to wait for world-x 0 to reach the
     // left edge). A share of the start speed's seconds, so the same moment on every width.
@@ -682,7 +682,7 @@ function tutorPracticeMove(d) {
     }
     const last = tutorBeadLog.slice(-TUTOR_PASS_OF);
     if (tutorBeadLog.length >= TUTOR_PASS_MIN && last.filter(Boolean).length >= TUTOR_PASS_NEED) {
-        if (!tutorPracPassed) { tutorPracPassed = true; localStorage.setItem(TUTOR_PRAC_PASSED_KEY, '1'); }
+        if (!tutorPracPassed) { tutorPracPassed = true; localStorage.setItem(TUTOR_PRAC_PASSED_KEY, '1'); appFunnel('practice'); }
         _tutorPracEnd();
     }
 }
@@ -752,6 +752,7 @@ function tutorStep(dt) {
     if (!tutorWaitOver) {
         if (thrusting()) {
             tutorWaitOver = true;
+            appFunnel('press');   // apps' first-contact funnel (state.js), once per install
             bgmIntroHold(false);   // the track runs on from the intro into its beat
             // The wind stays held through the practice flight; _tutorPracEnd() re-aims it.
             if (approachLeft > 0 && startRamp >= 1) {

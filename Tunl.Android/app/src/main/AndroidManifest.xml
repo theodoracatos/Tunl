@@ -38,6 +38,15 @@
              initialised by FirebaseInitProvider before AdsManager.start() runs
              the UMP SDK. ad_user_data / ad_personalization can be region scoped,
              so they deny for EEA only and need no runtime grant elsewhere. -->
+        <!-- Collection starts switched off (2026-10-11). With it on, Firebase logged
+             first_open, session_start and screen_view at launch, before the consent
+             answer arrived, so they left as cookieless pings: GA4 counted each one as a
+             new user who never came back (Android D1 read 0 of 141, 97 users with no
+             events). AdsManager.start() switches collection on once the consent state is
+             settled, and the SDK keeps that setting for later launches. -->
+        <meta-data
+            android:name="firebase_analytics_collection_enabled"
+            android:value="false" />
         <meta-data
             android:name="google_analytics_default_allow_analytics_storage"
             android:value="false" />

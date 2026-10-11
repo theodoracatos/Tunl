@@ -310,7 +310,7 @@ class MainActivity : ComponentActivity() {
                 is String -> bundle.putString(k, v.take(100))
             }
         }
-        FirebaseAnalytics.getInstance(this).logEvent(name, bundle)
+        ads.logEvent(name, bundle)   // held until the consent state is settled (AdsManager)
     }
 
     // Mirrors the iOS wrapper's WKScriptMessageHandler bridge: the game code calls
@@ -460,20 +460,16 @@ class MainActivity : ComponentActivity() {
 
         // Analytics-only: no Firebase Auth/Firestore/Crashlytics, same scope as
         // iOS (Tunl/Tunl/TunlApp.swift). The google-services plugin + FirebaseInitProvider
-        // auto-initialise the SDK from app/google-services.json before onCreate;
-        // this call just gives the automatic events (first_open, session_start,
-        // user_engagement) somewhere to land and makes collection explicit rather
-        // than relying on the platform default. It exists to feed first_open to
-        // GA4/Firebase, which Google Ads imports as its Play install-conversion
-        // signal -- no in-game feature depends on it, and TUNL has no account for
-        // the data to attach to.
+        // auto-initialise the SDK from app/google-services.json before onCreate.
+        // It feeds first_open, sessions and the game's own events (logAppEvent) to
+        // GA4/Firebase - no in-game feature depends on it, and TUNL has no account
+        // for the data to attach to.
         //
-        // Collection being enabled is not the same as data leaving the device: as
-        // of 8.3 consent mode gates it. AndroidManifest defaults every consent
-        // signal to denied; AdsManager.start() (run from onPageFinished below)
-        // grants them for users where GDPR does not apply and lets the UMP SDK
-        // forward the consent-form choice for everyone else.
-        FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(true)
+        // Collection is NOT switched on here any more (2026-10-11): AndroidManifest starts it
+        // off and AdsManager.start() (run from onPageFinished below) enables it once the
+        // consent state is settled - granted for users where GDPR does not apply, the UMP
+        // form's choice for everyone else. Enabling it at launch sent the first session's
+        // automatic events before that answer, as cookieless pings GA4 could not tie to a user.
 
         signIntoPlayGames()
         requestAudioFocus()

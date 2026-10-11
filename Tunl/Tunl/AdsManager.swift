@@ -149,6 +149,7 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
                     .adPersonalization: .granted,
                 ])
             }
+            self.analyticsSettled()
 
             self.onPrivacyOptionsRequiredChange?(
                 ConsentInformation.shared.privacyOptionsRequirementStatus == .required
@@ -197,7 +198,8 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
         let count = defaults.integer(forKey: Self.deathCountKey) + 1
         defaults.set(count, forKey: Self.deathCountKey)
 
-        guard !removeAdsOwned, count % Self.deathsPerAd == 0 else { return }
+        guard count % Self.deathsPerAd == 0 else { return }
+        guard !removeAdsOwned else { logInterstitial("remove_ads"); return }
 
         // Wall-clock floor. When it blocks, roll the counter back one so the very
         // next death re-tests instead of waiting out another full deathsPerAd
@@ -207,16 +209,51 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
         let lastAd = defaults.double(forKey: Self.lastAdTimeKey)
         if lastAd > 0, now - lastAd < Self.minInterval {
             defaults.set(count - 1, forKey: Self.deathCountKey)
+            logInterstitial("cooldown")
             return
         }
 
         guard let interstitial, let root = rootViewController() else {
             defaults.set(count - 1, forKey: Self.deathCountKey)
+            logInterstitial("not_loaded")
             Task { await loadInterstitial() }
             return
         }
         defaults.set(now, forKey: Self.lastAdTimeKey)
+        logInterstitial("shown")
         interstitial.present(from: root)
+    }
+
+    // Analytics (2026-10-11): one ad_result per death that was the interstitial's turn
+    // (deathsPerAd), so GA4 shows how often the cadence rule fires and what stopped it -
+    // the same event and keys the game's continue/shards ads use (src/state.js appEvent).
+    // Deaths below minScoreForAd or between turns log nothing; run_end already carries them.
+    private func logInterstitial(_ how: String) {
+        logEvent("ad_result", [
+            "format": "interstitial", "granted": how == "shown" ? 1 : 0, "how": how,
+        ])
+    }
+
+    // The game's own events (GameView's "event" case, logInterstitial above) are held until
+    // the consent state is settled in start(): sent while analytics_storage is still denied
+    // they leave as cookieless pings GA4 cannot tie to a player, and the first title's funnel
+    // step (src/state.js appFunnel) fires right at launch. Main thread only (the script
+    // message handler and start()'s MainActor task), so no locking.
+    private var analyticsReady = false
+    private var pendingEvents: [(String, [String: Any]?)] = []
+    func logEvent(_ name: String, _ params: [String: Any]?) {
+        guard analyticsReady else {
+            if pendingEvents.count < 50 { pendingEvents.append((name, params)) }
+            return
+        }
+        Analytics.logEvent(name, parameters: params)
+    }
+    private func analyticsSettled() {
+        guard !analyticsReady else { return }
+        analyticsReady = true
+        let held = pendingEvents
+        pendingEvents = []
+        for (name, params) in held { Analytics.logEvent(name, parameters: params) }
     }
 
     private func loadInterstitial() async {

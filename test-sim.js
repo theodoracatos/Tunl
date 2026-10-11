@@ -1878,6 +1878,36 @@ const FAKE_AC = `(() => {
         shown(80) === true && shown(cap - 1) === true && shown(cap) === false);
 }
 
+// ── First-contact funnel (state.js appFunnel, 2026-10-11) ────────────────────
+// A fresh install logs ob_title, ob_press, ob_practice and ob_cave once each, in that order,
+// through the real titleScreen()/startPlay()/onDown()/update(); a player who updates into the
+// version with runs already played logs none. Catches: a step that never fires, one that fires
+// twice, and existing players polluting the new-install funnel.
+{
+    const funnel = (seed) => {
+        const f = boot(956, 440, seed);
+        f(FAKE_AC);
+        f(AUTOPILOT);
+        f(`_startTitleMusic = () => {}; _ob = []; window.webkit.messageHandlers.ads = { postMessage(m) { if (m.action === 'event' && m.name.startsWith('ob_')) _ob.push(m.name + ':' + m.params.run); } };`);
+        return f(`(() => {
+            titleScreen(); titleScreen();
+            startPlay();
+            for (let i = 0; i < 60 * 45 && approachLeft > 0; i++) {
+                if (startRamp >= 1 && tutorTTap <= 0.02 && !thrusting() && tutorInZone()) { onDown(); onUp(); }
+                if (tutorPracDone && tutorWaitOver) { shieldCount = 9; hullScratches = HULL_SCRATCHES; _pilot(); }
+                update(1 / 60);
+            }
+            titleScreen(); startPlay();
+            for (let i = 0; i < 60 * 30 && approachLeft > 0; i++) { onDown(); onUp(); shieldCount = 9; _pilot(); update(1 / 60); }
+            return _ob.join(' ');
+        })()`);
+    };
+    const fresh = funnel({}), old = funnel({ tunnel_total_runs: '12' });
+    check(`a fresh install logs each funnel step once, in order (${fresh})`,
+        fresh === 'ob_title:0 ob_press:1 ob_practice:1 ob_cave:1');
+    check(`a player with runs before this version logs no funnel step ("${old}")`, old === '');
+}
+
 // ── Ads: continue by runs, app events, shards chip (2026-10-01) ─────────────
 // constants.js CONTINUE_RUN_FROM doc, state.js appEvent, draw.js reward chips. Real die(),
 // onDown(), update() and drawDeathScreen(); the ads bridge records what reaches native.

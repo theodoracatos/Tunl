@@ -323,6 +323,23 @@ function appEvent(name, params) {
     if (isWeb()) return;
     window.webkit?.messageHandlers?.ads?.postMessage({ action: 'event', name: name, params: params || {} });
 }
+// First-contact funnel (2026-10-11, GA4 read: most new iOS installs never tapped start, and
+// those who did rarely finished the first run, with nothing saying where they left). Each step
+// fires once per install as `ob_<step>` - 'title', 'press' (first press over the city), 'practice'
+// (practice flight passed), 'cave' (ship in the mouth) - with the run number and the seconds
+// since the app opened. Only installs whose first title came with no run played are tracked,
+// so players who update into this version never log a step. Telemetry only: nothing in play reads it.
+const OB_NEW_KEY = 'tunl_ob_new';
+function appFunnel(step) {
+    if (isWeb()) return;
+    try {
+        if (step === 'title' && totalRuns === 0 && !localStorage.getItem(OB_NEW_KEY)) localStorage.setItem(OB_NEW_KEY, '1');
+        const k = 'tunl_ob_' + step;
+        if (localStorage.getItem(OB_NEW_KEY) !== '1' || localStorage.getItem(k)) return;
+        localStorage.setItem(k, '1');
+    } catch (e) { return; }
+    appEvent('ob_' + step, { run: totalRuns, app_sec: Math.round(performance.now() / 1000) });
+}
 let activeSkin    = parseInt(localStorage.getItem('tunnel_skin')  || '0');
 if (!(unlockedSkins & (1 << activeSkin))) activeSkin = 0;
 // Per-ship mastery XP (constants.js masteryLevel/masteryLerp), index-aligned with SKINS.

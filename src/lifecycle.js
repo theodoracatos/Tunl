@@ -186,6 +186,7 @@ function titleScreen() {
     // Web build: refresh today's world rank (no-op without a leaderboard API set,
     // and self-throttled to once per 20s). The app gets this from Game Center.
     if (typeof webFetchRank === 'function') webFetchRank();
+    appFunnel('title');   // apps' first-contact funnel (state.js), once per install
 }
 
 function startPlay() {
