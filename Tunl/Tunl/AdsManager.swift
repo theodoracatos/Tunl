@@ -99,14 +99,14 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
     var onShardsAdDeclined: (() -> Void)?
 
     // Called once the WKWebView content is visible (see GameView.swift's
-    // webView(_:didFinish:)) so both the UMP consent form and Apple's ATT
-    // prompt fire while the window is key/active, not during Coordinator
-    // construction.
+    // webView(_:didFinish:)) so the UMP consent form fires while the window is
+    // key/active, not during Coordinator construction.
     //
-    // GDPR (EEA/UK) consent is requested before Apple's ATT prompt and before
-    // the Mobile Ads SDK starts, per Google's documented ordering - consent
-    // gates ad requests independently of the ATT decision, so both must be
-    // resolved before any ad is requested.
+    // GDPR (EEA/UK) consent is requested before the Mobile Ads SDK starts, per
+    // Google's documented ordering. Apple's ATT prompt no longer comes here
+    // (2026-10-11): it waits for the end of the first run, see
+    // requestTrackingAfterFirstRun(). Ads requested before that answer simply
+    // carry no IDFA.
     func start() {
         guard !started else { return }
         started = true
@@ -157,7 +157,6 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
 
             guard ConsentInformation.shared.canRequestAds else { return }
 
-            _ = await ATTrackingManager.requestTrackingAuthorization()
             // TUNL carries a 9+ / PEGI 7 content rating and is sold as a
             // kid-appropriate game - without this, the Mobile Ads SDK applies no
             // content restriction of its own and ad networks can serve creative
@@ -242,12 +241,33 @@ final class AdsManager: NSObject, FullScreenContentDelegate {
     private var analyticsReady = false
     private var pendingEvents: [(String, [String: Any]?)] = []
     func logEvent(_ name: String, _ params: [String: Any]?) {
+        if name == "run_end" { requestTrackingAfterFirstRun() }
         guard analyticsReady else {
             if pendingEvents.count < 50 { pendingEvents.append((name, params)) }
             return
         }
         Analytics.logEvent(name, parameters: params)
     }
+    // Apple's ATT prompt, moved from launch to the end of the first finished run
+    // (2026-10-11, user's call): at launch it was a system dialog in front of the
+    // title, and most new US installs never tapped start (GA4 read the same day).
+    // Keyed on the game's run_end event (src/update.js commitDeath), so no JS
+    // change; the delay lets the crash freeze frame (DEATH_REPLAY_SEC) play before
+    // the dialog and lands it before PLAY AGAIN takes taps (DEATH_INTERACTIVE_SEC).
+    // An app that was not active gets .notDetermined back with no dialog, so the
+    // next run_end asks again; once answered, iOS never shows it a second time.
+    private var trackingAsk = false
+    private func requestTrackingAfterFirstRun() {
+        guard !trackingAsk, ATTrackingManager.trackingAuthorizationStatus == .notDetermined else { return }
+        trackingAsk = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
+            Task { @MainActor in
+                let status = await ATTrackingManager.requestTrackingAuthorization()
+                if status == .notDetermined { self?.trackingAsk = false }
+            }
+        }
+    }
+
     private func analyticsSettled() {
         guard !analyticsReady else { return }
         analyticsReady = true

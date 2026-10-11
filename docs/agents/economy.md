@@ -81,6 +81,16 @@ the forced interstitial, not a video the player actively taps):
   MainActivity - pausing timers in `onPause` froze every Android ad mid-countdown with no
   close button from 2026-07-13 to 18.6.4. Test ad changes on the emulator
   (`reference_android_emulator` memory): show the ad and check the countdown moves.
+- **Consent and analytics order (2026-10-11, GA4 read).** The UMP form stays at launch (it
+  gates ad requests). **Apple's ATT prompt waits for the end of the first finished run**
+  (`AdsManager.swift` `requestTrackingAfterFirstRun()`, keyed on the game's `run_end` event,
+  ~0.8 s after the death so it lands between the freeze frame and PLAY AGAIN): at launch it was
+  a system dialog in front of the title, and most new US installs never tapped start. Ads before
+  that answer carry no IDFA. **Android Firebase collection starts off** (manifest) and is switched
+  on only once consent is settled; enabled at launch, the first session's automatic events left
+  as cookieless pings that GA4 counted as phantom new users. Both apps hold the game's own
+  events (`appEvent`) until consent is settled. Interstitial turns log `ad_result` with
+  `format: interstitial` and `how` (shown / cooldown / not_loaded / remove_ads).
 - **Android Play Games sign-in needs the app-signing-key SHA-1** on a Play Console credential;
   the upload key alone fails every Play install with `DEVELOPER_ERROR`. Sign-in at launch is
   automatic only; the manual `signIn()` runs from the leaderboard tap.

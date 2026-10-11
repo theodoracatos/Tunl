@@ -2606,3 +2606,23 @@ the HUD that pauses to explain (unlimited thinking time on a shared leaderboard,
 `DEV_PAUSE_KEY` lesson), tutorial pages before the first run. The hull icon swap (ship
 silhouette) was left open and not done. `run_end` gained `stars` and `scrapes` (apps) to see
 whether new players start stars more often. Shipped in 19.5.
+
+## ATT after the first run, Android analytics after consent (2026-10-11)
+
+GA4 read (apps, 13.09-10.10): iOS D1 4 of 61, D7 0; of 20 new iOS installs in the last week
+only ~11 tapped start and ~4 finished a run (US: 14 -> 5 -> 1). Android read D1 0 of 141 with
+97 users that had no events at all. On the emulator (FA verbose log) Android logged
+first_open, session_start and screen_view at launch with consent still denied (G100): they
+leave as cookieless pings and GA4 counts each as a new user who never returns. iOS showed no
+such gap and its automatic events were left alone.
+
+Decisions (user: "ja, committen und ATT nach dem ersten Run"):
+- Android Firebase collection starts off and is enabled once the UMP state is settled; both
+  apps hold the game's own events until then (94fe93d).
+- First-contact funnel ob_title / ob_press / ob_practice / ob_cave, once per new install.
+- Apple's ATT prompt moved from launch (right after the UMP form, before the title) to the end
+  of the first finished run. Rejected: asking on the title after the first run (players mostly
+  go straight to PLAY AGAIN from the death screen and would never see the title) and asking
+  inside the run (covers play). Ads before the answer run without IDFA; with ~0.7 cent per
+  player per month the eCPM cost is negligible next to losing installs at the first screen.
+Read ob_* and D1 per platform about a week after the release that carries this.
