@@ -205,5 +205,11 @@
  "97ae5b8": "Quand une courte vidéo te donne une seconde vie dans les applis, la musique de la grotte profonde continue maintenant au lieu de revenir au premier morceau.",
  "cb23b39": "19.4 : Le jour tient parole",
  "4ca96c0": "Le nom du jour sur l'écran titre se voit maintenant dans la grotte : un jour RUÉE VERS L'OR, CEINTURE DE MINES ou ZIGZAG, le secteur 4 s'ouvre sur le tronçon du jour.",
- "da7b98b": "La ZONE OBSCURE est plus sombre : ton vaisseau porte un halo plus petit, et le bord de l'écran devient presque noir."
+ "da7b98b": "La ZONE OBSCURE est plus sombre : ton vaisseau porte un halo plus petit, et le bord de l'écran devient presque noir.",
+ "556fbfe": "Changelog &middot; mis à jour le 11 octobre 2026 &middot; la version actuelle est la <span class=\"tunl-ver\"></span>",
+ "c1d4f55": "19.5 : Le HUD s'explique tout seul",
+ "30df08a": "Les premières fois que la jauge étoile, ta coque ou une barre de bonus apparaît, son nom s'affiche juste à côté, puis s'efface.",
+ "c61618a": "La jauge étoile est découpée en une case par pièce, chaque éraflure te dit combien de plaques de coque il reste, et la dernière plaque brille en rouge.",
+ "b0b8551": "Meurs avec la jauge étoile au moins à moitié pleine et le bilan te dit combien de pièces il manquait.",
+ "f55c5ad": "Nouveau panneau TES INSTRUMENTS : il explique chaque jauge en bas de l'écran. Ouvre-le depuis COMMENT CA MARCHE, ou depuis le bilan tant que tu apprends."
 }

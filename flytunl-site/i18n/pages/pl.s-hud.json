@@ -1,0 +1,21 @@
+{
+ "0564cdb": "Czytanie przyrządów",
+ "959dcb9": "Gracz nie potrafił odczytać ikon na dole ekranu TUNL. Jak wersja 19.5 sprawia, że HUD sam się tłumaczy, nie zamieniając się w stronę podpisów.",
+ "c2b6b89": "Jeden z graczy napisał mi, że nie potrafi odczytać ikon na dole ekranu. Miał rację. W wersji 19.5 HUD sam się tłumaczy i nie zamienia się w stronę podpisów.",
+ "8748e77": "Devlog &middot; 11 października 2026 &middot; <a href=\"/devlog/\">wszystkie wpisy</a>",
+ "89e5690": "Co widzi nowy pilot",
+ "a280cb7": "W pierwszej minucie lotu lewy dolny róg ekranu pokazuje biały pasek z gwiazdą u góry, klucz i dwa sześciokąty. Nic nie mówi, czym są. Słowa takie jak +SPOWOLNIENIE pojawiały się tam, gdzie zebrano monetę, a nie przy jej wskaźniku, a złoto i wskaźnik gwiazdy nie miały żadnego słowa. Jedyne wyjaśnienie było w ustawieniach, trzy dotknięcia dalej.",
+ "6452d8f": "Jedno słowo, kilka pierwszych razy",
+ "3cba175": "Teraz każda część dolnego HUD dostaje swoją nazwę, gdy pierwszy raz pojawi się w locie: WSKAŹNIK GWIAZDY z napisem MONET NA GWIAZDĘ: 8 pod spodem, KADŁUB &middot; ZOSTAŁO 2 przy wlocie do tunelu, SPOWOLNIENIE obok niebieskiego wskaźnika, gdy dotrze iskra tej monety. Po trzech lotach dana część nigdy więcej nie dostaje podpisu na tym urządzeniu.",
+ "3f92ecb": "Stałe podpisy zapchałyby mały poziomy ekran w 16 językach, więc słowo jest gościem, nie lokatorem. Ikoną pozostaje sama moneta.",
+ "0a149c6": "Wskaźniki, które pokazują własne zasady",
+ "5d5298c": "Wskaźnik gwiazdy jest podzielony na pola po jednym na monetę, więc czyta się go jak coś do wypełnienia. Przegapiona moneta zabiera pole, co tłumaczy tę zasadę bez jednego zdania. Płyty kadłuba straciły ciemną szczelinę, przez którą wyglądały jak przyciski minusa. Ostatnia płyta świeci na czerwono, pusty rząd pulsuje na czerwono, a każda rysa mówi, ile zostało: RYSA! &middot; ZOSTAŁO 1.",
+ "0879a52": "Wyjaśnione tam, gdzie jest czas na czytanie",
+ "05d7c1c": "W locie nie ma czasu na czytanie, a pauza na wyjaśnienia dałaby nieograniczony czas do namysłu we wspólnym rankingu, więc jej nie ma. Spokojnym momentem jest ekran podsumowania. Rozbij się ze wskaźnikiem gwiazdy pełnym co najmniej w połowie, a powie, ilu monet zabrakło. Dopóki się uczysz, przycisk w tym miejscu otwiera TWOJE PRZYRZĄDY, jeden ekran objaśniający każdy wskaźnik. Prowadzi do niego też JAK TO DZIAŁA.",
+ "51b2244": "<strong>Nic z tego nie zmienia gry.</strong> Jaskinia, punktacja i cena gwiazdy są takie same dla wszystkich. To wszystko kwestia prezentacji.",
+ "c798b55": "Aplikacje zgłaszają teraz, ile gwiazd i rys miał lot, więc zobaczę, czy nowi piloci częściej docierają do gwiazdy, gdy wiedzą, do czego służy pasek. Dzięki graczowi, który powiedział to na głos.",
+ "ed052c6": "Gracz nie potrafił odczytać ikon na dole ekranu. Teraz każdy wskaźnik podaje swoją nazwę kilka pierwszych razy, pokazuje własne zasady i ma przewodnik na jednym ekranie.",
+ "85ab8dd": "Devlog &middot; 12 wpisów",
+ "ccb9bdb": "<a class=\"post\" href=\"/devlog/reading-the-instruments/\"> <span class=\"when\">11 października 2026</span>",
+ "7028efb": "</a> <a class=\"post\" href=\"/devlog/shop-and-ratings/\"> <span class=\"when\">9 października 2026</span>"
+}

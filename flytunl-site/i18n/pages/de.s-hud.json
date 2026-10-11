@@ -1,0 +1,21 @@
+{
+ "0564cdb": "Die Instrumente lesen",
+ "959dcb9": "Ein Spieler konnte die Symbole am unteren Rand von TUNL nicht lesen. Wie Version 19.5 das HUD sich selbst erklären lässt, ohne daraus eine Seite voller Beschriftungen zu machen.",
+ "c2b6b89": "Ein Spieler schrieb mir, dass er die Symbole am unteren Bildschirmrand nicht lesen konnte. Er hatte recht. Version 19.5 lässt das HUD sich selbst erklären, ohne daraus eine Seite voller Beschriftungen zu machen.",
+ "8748e77": "Devlog &middot; 11. Oktober 2026 &middot; <a href=\"/devlog/\">alle Beiträge</a>",
+ "89e5690": "Was ein neuer Pilot sieht",
+ "a280cb7": "In der ersten Minute eines Laufs zeigt die linke untere Ecke einen weißen Balken mit einem Stern darüber, einen Schraubenschlüssel und zwei Sechsecke. Nichts sagt, was das ist. Wörter wie +LANGSAM erschienen dort, wo die Münze eingesammelt wurde, nicht bei ihrer Anzeige, und Gold und der Stern-Tank hatten nie ein Wort. Die einzige Erklärung lag in den Einstellungen, drei Tipps entfernt.",
+ "6452d8f": "Ein Wort, die ersten paar Male",
+ "3cba175": "Jetzt bekommt jeder Teil des unteren HUD seinen Namen, wenn er in einem Lauf zum ersten Mal auftaucht: STERN-TANK mit 8 MÜNZEN = STERN darunter, HÜLLE &middot; NOCH 2 beim Einflug in den Tunnel, ZEITLUPE neben der blauen Anzeige, wenn der Funke dieser Münze ankommt. Nach drei Läufen wird ein Teil auf diesem Gerät nie wieder beschriftet.",
+ "3f92ecb": "Dauerhafte Beschriftungen hätten einen kleinen Querformat-Bildschirm in 16 Sprachen zugestellt, also ist das Wort ein Gast, kein Mieter. Das Symbol bleibt die Münze selbst.",
+ "0a149c6": "Anzeigen, die ihre eigenen Regeln zeigen",
+ "5d5298c": "Der Stern-Tank ist in ein Feld pro Münze geteilt und liest sich so als etwas, das man füllt. Eine verpasste Münze nimmt ein Feld weg, das erklärt diese Regel ohne einen Satz. Die Hüllenplatten haben den dunklen Schlitz verloren, der sie wie Minus-Knöpfe aussehen ließ. Die letzte Platte leuchtet rot, eine leere Reihe pulsiert rot, und jeder Kratzer sagt, wie viele noch übrig sind: KRATZER! &middot; NOCH 1.",
+ "0879a52": "Erklärt, wo Zeit zum Lesen ist",
+ "05d7c1c": "Mitten im Flug ist keine Zeit zum Lesen, und eine Pause zum Erklären gäbe unbegrenzte Bedenkzeit auf einer gemeinsamen Rangliste, also gibt es keine. Der Todesbildschirm ist der ruhige Moment. Stirbst du mit mindestens halb vollem Stern-Tank, sagt er dir, wie viele Münzen gefehlt haben. Solange du noch lernst, öffnet dort ein Chip DEINE INSTRUMENTE, einen Bildschirm, der jede Anzeige erklärt. SO FUNKTIONIERT ES verlinkt ebenfalls darauf.",
+ "51b2244": "<strong>Nichts davon ändert das Spiel.</strong> Die Höhle, die Wertung und der Preis eines Sterns sind für alle gleich. Es ist alles Darstellung.",
+ "c798b55": "Die Apps melden jetzt, wie viele Sterne und Kratzer ein Lauf hatte. So sehe ich, ob neue Piloten den Stern öfter erreichen, wenn sie wissen, wofür der Balken da ist. Danke an den Spieler, der es ausgesprochen hat.",
+ "ed052c6": "Ein Spieler konnte die Symbole am unteren Bildschirmrand nicht lesen. Jetzt sagt jede Anzeige die ersten paar Male ihren Namen, zeigt ihre eigenen Regeln und hat eine Übersicht auf einem Bildschirm.",
+ "85ab8dd": "Devlog &middot; 12 Beiträge",
+ "ccb9bdb": "<a class=\"post\" href=\"/devlog/reading-the-instruments/\"> <span class=\"when\">11. Oktober 2026</span>",
+ "7028efb": "</a> <a class=\"post\" href=\"/devlog/shop-and-ratings/\"> <span class=\"when\">9. Oktober 2026</span>"
+}

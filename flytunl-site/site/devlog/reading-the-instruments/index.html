@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Google AdSense (site verification + ad serving) -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4882203470005029"
+     crossorigin="anonymous"></script>
+<title>Reading the Instruments</title>
+<meta name="description" content="A player could not read the icons at the bottom of TUNL's screen. How version 19.5 makes the HUD explain itself without turning it into a page of labels.">
+<link rel="canonical" href="https://flytunl.ch/devlog/reading-the-instruments/">
+<!-- site-chrome:alt -->
+<link rel="alternate" hreflang="en" href="https://flytunl.ch/devlog/reading-the-instruments/">
+<link rel="alternate" hreflang="de" href="https://flytunl.ch/de/devlog/reading-the-instruments/">
+<link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/devlog/reading-the-instruments/">
+<link rel="alternate" hreflang="it" href="https://flytunl.ch/it/devlog/reading-the-instruments/">
+<link rel="alternate" hreflang="es" href="https://flytunl.ch/es/devlog/reading-the-instruments/">
+<link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/devlog/reading-the-instruments/">
+<link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/devlog/reading-the-instruments/">
+<link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/devlog/reading-the-instruments/">
+<link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/devlog/reading-the-instruments/">
+<link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/devlog/reading-the-instruments/">
+<link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/devlog/reading-the-instruments/">
+<link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/devlog/reading-the-instruments/">
+<link rel="alternate" hreflang="id" href="https://flytunl.ch/id/devlog/reading-the-instruments/">
+<link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/devlog/reading-the-instruments/">
+<link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/devlog/reading-the-instruments/">
+<link rel="alternate" hreflang="el" href="https://flytunl.ch/el/devlog/reading-the-instruments/">
+<link rel="alternate" hreflang="x-default" href="https://flytunl.ch/devlog/reading-the-instruments/">
+<!-- /site-chrome:alt -->
+<meta property="og:type" content="article">
+<meta property="og:title" content="Reading the Instruments">
+<meta property="og:description" content="A player could not read the icons at the bottom of TUNL's screen. How version 19.5 makes the HUD explain itself without turning it into a page of labels.">
+<meta property="og:url" content="https://flytunl.ch/devlog/reading-the-instruments/">
+<meta property="og:image" content="https://flytunl.ch/feature-graphic-1024x500.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon-180.png">
+<link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#04040a">
+<!-- site-chrome:head -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="/day.js?v=20260921a"></script>
+<!-- /site-chrome:head -->
+<link rel="stylesheet" href="/site.css?v=20260923a">
+<style>
+  * { box-sizing:border-box; }
+  body {
+    color:#ddd;
+    font-family:var(--tunl-ui);
+    line-height:1.7;
+    margin:0;
+    padding: 0 20px 80px;
+  }
+  main { max-width:var(--page-w, 1120px); margin:0 auto; }
+  .brand { display:inline-flex; align-items:center; text-decoration:none; margin-bottom:28px; }
+  .brand img { height:28px; width:auto; }
+  h1 { color:var(--sc-accent); font-size:30px; letter-spacing:1px; margin-bottom:10px; line-height:1.25; }
+  .lead { color:#aaa; font-size:17px; margin-top:0; margin-bottom:8px; }
+  .meta { color:#666; font-size:13px; margin-bottom:34px; }
+  h2 { color:var(--sc-accent); font-size:21px; margin-top:44px; margin-bottom:12px; line-height:1.3; }
+  h3 { color:#fff; font-size:16px; margin-top:28px; margin-bottom:8px; }
+  p, li { color:#ccc; font-size:15.5px; }
+  ul, ol { padding-left:22px; }
+  li { margin-bottom:10px; }
+  a { color:var(--sc-accent); }
+  strong { color:#fff; }
+  em { color:#ddd; }
+  code {
+    font-family:var(--tunl-mono);
+    font-size:13.5px; color:var(--sc-accent);
+    background:#12121c; border-radius:4px; padding:1px 5px;
+  }
+  pre {
+    background:#0d0d16; border:1px solid #222; border-radius:10px;
+    padding:16px; overflow-x:auto; margin:18px 0;
+  }
+  pre code { background:none; padding:0; color:#cfe8ff; font-size:13px; line-height:1.6; }
+  .note {
+    background:#0d0d16; border:1px solid #222; border-left:3px solid var(--sc-accent);
+    border-radius:0 10px 10px 0; padding:14px 18px; margin:22px 0;
+  }
+  .note p { margin:0; font-size:14.5px; color:#bbb; }
+  .wrap { overflow-x:auto; margin:18px 0; }
+  table { width:100%; border-collapse:collapse; font-size:14.5px; min-width:480px; }
+  th, td { text-align:left; padding:9px 12px; border-bottom:1px solid #222; vertical-align:top; }
+  th { color:var(--sc-accent); font-weight:600; }
+  td { color:#ccc; }
+  td:first-child { white-space:nowrap; }
+  .cta {
+    display:inline-block; background:var(--sc-accent); color:#05050c; font-weight:700;
+    text-decoration:none; padding:12px 24px; border-radius:10px; margin-top:8px;
+  }
+  .cta:hover { background:color-mix(in srgb, var(--sc-accent) 75%, #fff); }
+  .post { display:block; background:#0d0d16; border:1px solid #222; border-radius:12px;
+    padding:18px 20px; margin:16px 0; text-decoration:none; }
+  .post:hover { border-color:var(--sc-accent); }
+  .post h3 { color:var(--sc-accent); font-size:18px; margin:0 0 6px; }
+  .post p { margin:0; color:#bbb; font-size:14.5px; }
+  .post .when { color:#666; font-size:12.5px; margin-bottom:6px; display:block; }
+  .card { background:#0d0d16; border:1px solid #222; border-radius:10px; padding:20px; margin:22px 0; }
+  .card p { margin:8px 0; }
+  .swatch { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:8px; vertical-align:middle; }
+  footer {
+    margin-top:56px; color:#666; font-size:13px; line-height:1.9;
+    border-top:1px solid #222; padding-top:16px;
+  }
+  footer a { color:#888; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Reading the Instruments",
+  "description": "A player could not read the icons at the bottom of TUNL's screen. How version 19.5 makes the HUD explain itself without turning it into a page of labels.",
+  "author": {
+    "@type": "Person",
+    "name": "Theodoracatos"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "TUNL"
+  },
+  "datePublished": "2026-10-11",
+  "mainEntityOfPage": "https://flytunl.ch/devlog/reading-the-instruments/",
+  "image": "https://flytunl.ch/feature-graphic-1024x500.png"
+}
+</script>
+<!-- Cloudflare Web Analytics (cookieless, no consent banner needed) -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "7783839e84374212b7d76f25e1fb8e87"}'></script>
+</head>
+<body>
+  <!-- site-chrome:nav -->
+  <header class="sitenav">
+    <a class="sn-brand" href="/"><img src="/wordmark.svg" alt="TUNL"></a>
+    <nav class="sn-links" aria-label="Main">
+      <a href="/how-to-play/">How to play</a>
+      <a href="/ships/">Ships</a>
+      <a href="/devlog/" aria-current="page">Devlog</a>
+      <a href="/changelog/">Changelog</a>
+    </nav>
+    <span class="sn-gap"></span>
+    <a class="sn-ver" href="/changelog/">19.4</a>
+    <a class="sn-cta" href="/play/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>Play now</a>
+    <details class="sn-more">
+      <summary aria-label="Menu">&#9776;</summary>
+      <div class="sn-sheet">
+        <a href="/how-to-play/">How to play</a>
+        <a href="/ships/">Ships</a>
+        <a href="/devlog/" aria-current="page">Devlog</a>
+        <a href="/changelog/">Changelog</a>
+        <a href="/about/">About</a>
+        <a href="/support/">Support</a>
+        <a href="/press/">Press</a>
+        <a href="/privacy/">Privacy Policy</a>
+        <a href="/impressum/">Legal notice</a>
+      </div>
+    </details>
+  </header>
+  <!-- /site-chrome:nav -->
+<main>
+  <h1>Reading the Instruments</h1>
+  <p class="lead">A player told me they could not read the icons at the bottom of the screen.
+  They were right. Version 19.5 makes the HUD explain itself, without turning it into a page of labels.</p>
+  <p class="meta">Devlog &middot; 11 October 2026 &middot; <a href="/devlog/">all posts</a></p>
+  <h2>What a new pilot sees</h2>
+  <p>In the first minute of a run, the bottom left of the screen shows a white bar with a star on
+  top, a wrench and two hexagons. Nothing says what they are. Words like +SLOW appeared where the coin
+  was picked up, not where its gauge sits, and gold and the star meter never had a word at all. The
+  only explanation lived in the settings, three taps away.</p>
+  <h2>A word, the first few times</h2>
+  <p>Now each part of the bottom HUD gets its name the first time it shows up in a run: STAR METER
+  with 8 COINS = STAR under it, HULL &middot; 2 LEFT as you enter the tunnel, SLOW TIME beside the blue
+  gauge when that coin's spark lands. After three runs a part is never labelled again on that device.</p>
+  <p>Permanent labels would have crowded a small landscape screen in 16 languages, so the word is a
+  guest, not a tenant. The icon stays the coin itself.</p>
+  <h2>Gauges that show their own rules</h2>
+  <p>The star meter is split into one field per coin, so it reads as something to fill. A missed coin
+  takes a field away, which explains that rule without a sentence. The hull plates lost the dark slot
+  that made them look like minus buttons. The last plate glows red, an empty row pulses red, and every
+  scrape says how many are left: SCRAPE! &middot; 1 LEFT.</p>
+  <h2>Explained where there is time to read</h2>
+  <p>Mid-flight there is no time to read, and a pause to explain would give unlimited thinking time
+  on a shared leaderboard, so there is none. The death screen is the calm moment. Die with the star
+  meter at least half full and it tells you how many coins you were short. While you are still
+  learning, a chip there opens YOUR INSTRUMENTS, one screen that explains every gauge. HOW IT WORKS
+  links to it too.</p>
+  <div class="note"><p><strong>Nothing here changes the game.</strong> The cave, the scoring and the
+  price of a star are the same for everyone. It is all presentation.</p></div>
+  <h2>Measured from now on</h2>
+  <p>The apps now report how many stars and scrapes a run had, so I can see whether new pilots reach
+  the star more often once they know what the bar is for. Thanks to the player who said it out loud.</p>
+  <p><a class="cta" href="/play/">Play today's cave</a></p>
+  <!-- site-chrome:foot -->
+  <footer class="sitefoot">
+    <div class="sf-inner">
+      <div class="sf-cols">
+        <div class="sf-col">
+          <h4>Play TUNL</h4>
+          <a href="/play/">Play in your browser</a>
+          <a href="https://apps.apple.com/us/app/tunl-cave-flyer/id6789721765" target="_blank" rel="noopener">App Store</a>
+          <a href="https://play.google.com/store/apps/details?id=com.theodoracatos.tunl" target="_blank" rel="noopener">Google Play</a>
+        </div>
+        <div class="sf-col">
+          <h4>Learn the cave</h4>
+          <a href="/how-to-play/">How to play</a>
+          <a href="/ships/">Ships</a>
+          <a href="/devlog/">Devlog</a>
+          <a href="/changelog/">Changelog</a>
+        </div>
+        <div class="sf-col">
+          <h4>The project</h4>
+          <a href="/about/">About</a>
+          <a href="/support/">Support</a>
+          <a href="/press/">Press</a>
+          <a href="/privacy/">Privacy Policy</a>
+          <a href="/impressum/">Legal notice</a>
+        </div>
+      </div>
+      <p class="sf-legal">&copy; 2026 Theodoracatos. All rights reserved.<br><span class="langsw"><label for="langsel">Language:</label> <select id="langsel" aria-label="Language"><option value="/devlog/reading-the-instruments/" data-home="/" selected>English</option><option value="/de/devlog/reading-the-instruments/" data-home="/de/">Deutsch</option><option value="/fr/devlog/reading-the-instruments/" data-home="/fr/">Français</option><option value="/it/devlog/reading-the-instruments/" data-home="/it/">Italiano</option><option value="/es/devlog/reading-the-instruments/" data-home="/es/">Español</option><option value="/pt/devlog/reading-the-instruments/" data-home="/pt/">Português</option><option value="/ja/devlog/reading-the-instruments/" data-home="/ja/">日本語</option><option value="/ko/devlog/reading-the-instruments/" data-home="/ko/">한국어</option><option value="/zh/devlog/reading-the-instruments/" data-home="/zh/">繁體中文</option><option value="/ru/devlog/reading-the-instruments/" data-home="/ru/">Русский</option><option value="/ar/devlog/reading-the-instruments/" data-home="/ar/">العربية</option><option value="/tr/devlog/reading-the-instruments/" data-home="/tr/">Türkçe</option><option value="/id/devlog/reading-the-instruments/" data-home="/id/">Bahasa Indonesia</option><option value="/pl/devlog/reading-the-instruments/" data-home="/pl/">Polski</option><option value="/hi/devlog/reading-the-instruments/" data-home="/hi/">हिन्दी</option><option value="/el/devlog/reading-the-instruments/" data-home="/el/">Ελληνικά</option></select></span></p>
+    </div>
+  </footer>
+  <script>(function(){var s=document.getElementById('langsel');if(!s)return;s.addEventListener('change',function(){try{localStorage.setItem('tunl_site_lang',s.options[s.selectedIndex].getAttribute('data-home'));}catch(e){}location.href=s.value;});})();</script>
+  <!-- /site-chrome:foot -->
+</main>
+</body>
+</html>

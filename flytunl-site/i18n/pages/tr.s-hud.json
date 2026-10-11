@@ -1,0 +1,21 @@
+{
+ "0564cdb": "Göstergeleri okumak",
+ "959dcb9": "Bir oyuncu TUNL ekranının altındaki simgeleri okuyamadı. 19.5 sürümü HUD'ı bir etiket sayfasına çevirmeden kendini anlatır hale nasıl getiriyor.",
+ "c2b6b89": "Bir oyuncu bana ekranın altındaki simgeleri okuyamadığını söyledi. Haklıydı. 19.5 sürümünde HUD, bir etiket sayfasına dönüşmeden kendini anlatıyor.",
+ "8748e77": "Geliştirme günlüğü &middot; 11 Ekim 2026 &middot; <a href=\"/devlog/\">tüm yazılar</a>",
+ "89e5690": "Yeni bir pilot ne görüyor",
+ "a280cb7": "Bir turun ilk dakikasında ekranın sol alt köşesinde üstünde yıldız olan beyaz bir çubuk, bir İngiliz anahtarı ve iki altıgen görünür. Ne olduklarını hiçbir şey söylemez. +YAVAŞLATMA gibi kelimeler paranın toplandığı yerde çıkıyordu, göstergesinin olduğu yerde değil; altın ve yıldız göstergesinin ise hiç kelimesi yoktu. Tek açıklama ayarlarda, üç dokunuş ötedeydi.",
+ "6452d8f": "İlk birkaç seferde bir kelime",
+ "3cba175": "Artık alttaki HUD'ın her parçası bir turda ilk kez göründüğünde adını gösteriyor: altında 8 PARA = YILDIZ yazan YILDIZ GÖSTERGESİ, tünele girerken GÖVDE &middot; 2 KALDI, o paranın kıvılcımı ulaştığında mavi göstergenin yanında YAVAŞLATMA. Üç turdan sonra o cihazda bir parça bir daha etiketlenmiyor.",
+ "3f92ecb": "Kalıcı etiketler 16 dilde küçük yatay bir ekranı doldururdu, bu yüzden kelime kiracı değil misafir. Simge paranın kendisi olarak kalıyor.",
+ "0a149c6": "Kendi kurallarını gösteren göstergeler",
+ "5d5298c": "Yıldız göstergesi her para için bir bölmeye ayrıldı, böylece doldurulacak bir şey gibi okunuyor. Kaçırılan bir para bir bölmeyi götürüyor ve bu, kuralı tek cümle kurmadan anlatıyor. Gövde plakaları onları eksi düğmesine benzeten koyu yarığı kaybetti. Son plaka kırmızı parlıyor, boş bir sıra kırmızı atıyor ve her çizik kaç tane kaldığını söylüyor: ÇİZİK! &middot; 1 KALDI.",
+ "0879a52": "Okumaya zaman olan yerde açıklamak",
+ "05d7c1c": "Uçuşun ortasında okumaya zaman yok, açıklamak için bir duraklama ise ortak bir lider tablosunda sınırsız düşünme süresi verirdi, bu yüzden yok. Sakin an sonuç ekranı. Yıldız göstergesi en az yarı doluyken düşersen kaç para eksik kaldığını söylüyor. Öğrenme sürecindeyken oradaki bir düğme, her göstergeyi tek ekranda anlatan GÖSTERGELERİN panelini açıyor. NASIL ÇALIŞIR da oraya bağlanıyor.",
+ "51b2244": "<strong>Bunların hiçbiri oyunu değiştirmiyor.</strong> Mağara, puanlama ve bir yıldızın bedeli herkes için aynı. Hepsi sunum.",
+ "c798b55": "Uygulamalar artık bir turda kaç yıldız ve kaç çizik olduğunu bildiriyor. Böylece yeni pilotların çubuğun ne işe yaradığını bildiklerinde yıldıza daha sık ulaşıp ulaşmadığını görebilirim. Bunu yüksek sesle söyleyen oyuncuya teşekkürler.",
+ "ed052c6": "Bir oyuncu ekranın altındaki simgeleri okuyamadı. Artık her gösterge ilk birkaç seferde adını söylüyor, kendi kurallarını gösteriyor ve tek ekranlık bir rehberi var.",
+ "85ab8dd": "Geliştirici günlüğü &middot; 12 yazı",
+ "ccb9bdb": "<a class=\"post\" href=\"/devlog/reading-the-instruments/\"> <span class=\"when\">11 Ekim 2026</span>",
+ "7028efb": "</a> <a class=\"post\" href=\"/devlog/shop-and-ratings/\"> <span class=\"when\">9 Ekim 2026</span>"
+}

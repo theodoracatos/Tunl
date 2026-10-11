@@ -205,5 +205,11 @@
  "97ae5b8": "Cuando en las apps un vídeo corto te da una segunda vida, la música de la cueva profunda ahora sigue sonando en lugar de volver a la primera pista.",
  "cb23b39": "19.4: El día cumple su palabra",
  "4ca96c0": "El nombre del día en la pantalla de inicio ahora se nota en la cueva: en un día FIEBRE DEL ORO, CINTURÓN DE MINAS o ZIGZAG, el sector 4 empieza con el tramo del día.",
- "da7b98b": "El TRAMO OSCURO es más oscuro: tu nave lleva un halo de luz más pequeño y el borde de la pantalla se vuelve casi negro."
+ "da7b98b": "El TRAMO OSCURO es más oscuro: tu nave lleva un halo de luz más pequeño y el borde de la pantalla se vuelve casi negro.",
+ "556fbfe": "Registro de cambios &middot; actualizado el 11 de octubre de 2026 &middot; la versión actual es la <span class=\"tunl-ver\"></span>",
+ "c1d4f55": "19.5: El HUD se explica solo",
+ "30df08a": "Las primeras veces que aparecen el medidor de estrella, tu casco o una barra de potenciador, su nombre aparece justo al lado y luego se aparta.",
+ "c61618a": "El medidor de estrella está dividido en una casilla por moneda, cada rasguño te dice cuántas placas del casco quedan y la última placa brilla en rojo.",
+ "b0b8551": "Muere con el medidor de estrella al menos a la mitad y el resumen te dice cuántas monedas te faltaron.",
+ "f55c5ad": "Nuevo panel TUS INSTRUMENTOS: explica cada indicador de la parte inferior de la pantalla. Ábrelo desde COMO FUNCIONA, o desde el resumen mientras aprendes."
 }

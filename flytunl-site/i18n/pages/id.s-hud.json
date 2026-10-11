@@ -1,0 +1,21 @@
+{
+ "0564cdb": "Membaca instrumen",
+ "959dcb9": "Seorang pemain tidak bisa membaca ikon di bagian bawah layar TUNL. Bagaimana versi 19.5 membuat HUD menjelaskan dirinya sendiri tanpa mengubahnya menjadi halaman penuh label.",
+ "c2b6b89": "Seorang pemain bilang padaku bahwa ia tidak bisa membaca ikon di bagian bawah layar. Ia benar. Versi 19.5 membuat HUD menjelaskan dirinya sendiri, tanpa mengubahnya menjadi halaman penuh label.",
+ "8748e77": "Devlog &middot; 11 Oktober 2026 &middot; <a href=\"/devlog/\">semua tulisan</a>",
+ "89e5690": "Apa yang dilihat pilot baru",
+ "a280cb7": "Di menit pertama sebuah permainan, sudut kiri bawah layar menampilkan bilah putih dengan bintang di atasnya, sebuah kunci pas, dan dua segi enam. Tidak ada yang menjelaskan apa itu. Kata seperti +LAMBAT muncul di tempat koin diambil, bukan di tempat pengukurnya, dan emas serta meter bintang tidak pernah punya kata sama sekali. Satu-satunya penjelasan ada di pengaturan, tiga ketukan jauhnya.",
+ "6452d8f": "Satu kata, beberapa kali pertama",
+ "3cba175": "Kini setiap bagian HUD bawah mendapat namanya saat pertama kali muncul dalam permainan: METER BINTANG dengan 8 KOIN = BINTANG di bawahnya, LAMBUNG &middot; SISA 2 saat masuk terowongan, LAMBAT di samping pengukur biru saat percikan koin itu tiba. Setelah tiga permainan, bagian itu tidak pernah diberi label lagi di perangkat tersebut.",
+ "3f92ecb": "Label permanen akan memenuhi layar lanskap kecil dalam 16 bahasa, jadi kata itu tamu, bukan penghuni. Ikonnya tetap koin itu sendiri.",
+ "0a149c6": "Pengukur yang menunjukkan aturannya sendiri",
+ "5d5298c": "Meter bintang dibagi menjadi satu kotak per koin, jadi terbaca sebagai sesuatu yang perlu diisi. Koin yang terlewat mengambil satu kotak, dan itu menjelaskan aturannya tanpa satu kalimat pun. Pelat lambung kehilangan celah gelap yang membuatnya mirip tombol minus. Pelat terakhir menyala merah, baris kosong berdenyut merah, dan setiap goresan memberi tahu berapa yang tersisa: TERGORES! &middot; SISA 1.",
+ "0879a52": "Dijelaskan di tempat yang ada waktu untuk membaca",
+ "05d7c1c": "Saat terbang tidak ada waktu untuk membaca, dan jeda untuk menjelaskan akan memberi waktu berpikir tanpa batas di papan peringkat bersama, jadi tidak ada jeda. Layar hasil adalah momen yang tenang. Jatuh dengan meter bintang minimal setengah penuh, dan layar itu memberi tahu berapa koin yang kurang. Selama kamu masih belajar, sebuah tombol di sana membuka INSTRUMENMU, satu layar yang menjelaskan setiap pengukur. CARA KERJANYA juga menautkannya.",
+ "51b2244": "<strong>Tidak ada yang mengubah permainannya.</strong> Gua, skor, dan harga sebuah bintang sama untuk semua orang. Semuanya hanya tampilan.",
+ "c798b55": "Aplikasi kini melaporkan berapa bintang dan goresan dalam satu permainan, jadi aku bisa melihat apakah pilot baru lebih sering mencapai bintang setelah tahu untuk apa bilah itu. Terima kasih untuk pemain yang mengatakannya terang-terangan.",
+ "ed052c6": "Seorang pemain tidak bisa membaca ikon di bagian bawah layar. Kini setiap pengukur menyebut namanya di beberapa kali pertama, menunjukkan aturannya sendiri, dan punya panduan satu layar.",
+ "85ab8dd": "Devlog &middot; 12 postingan",
+ "ccb9bdb": "<a class=\"post\" href=\"/devlog/reading-the-instruments/\"> <span class=\"when\">11 Oktober 2026</span>",
+ "7028efb": "</a> <a class=\"post\" href=\"/devlog/shop-and-ratings/\"> <span class=\"when\">9 Oktober 2026</span>"
+}

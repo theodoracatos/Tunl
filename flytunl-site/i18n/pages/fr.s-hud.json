@@ -1,0 +1,21 @@
+{
+ "0564cdb": "Lire les instruments",
+ "959dcb9": "Un joueur n'arrivait pas à lire les icônes en bas de l'écran de TUNL. Comment la version 19.5 fait que le HUD s'explique tout seul, sans en faire une page d'étiquettes.",
+ "c2b6b89": "Un joueur m'a dit qu'il n'arrivait pas à lire les icônes en bas de l'écran. Il avait raison. La version 19.5 fait que le HUD s'explique tout seul, sans en faire une page d'étiquettes.",
+ "8748e77": "Devlog &middot; 11 octobre 2026 &middot; <a href=\"/devlog/\">tous les articles</a>",
+ "89e5690": "Ce que voit un nouveau pilote",
+ "a280cb7": "Dans la première minute d'une partie, le coin inférieur gauche montre une barre blanche surmontée d'une étoile, une clé et deux hexagones. Rien ne dit ce que c'est. Des mots comme +LENT apparaissaient là où la pièce était ramassée, pas là où se trouve sa jauge, et l'or et la jauge étoile n'avaient jamais eu de mot. La seule explication se trouvait dans les réglages, à trois touchers de là.",
+ "6452d8f": "Un mot, les premières fois",
+ "3cba175": "Désormais, chaque élément du HUD du bas reçoit son nom la première fois qu'il apparaît dans une partie : JAUGE ÉTOILE avec 8 PIÈCES = ÉTOILE en dessous, COQUE &middot; RESTE 2 à l'entrée du tunnel, RALENTI à côté de la jauge bleue quand l'étincelle de cette pièce arrive. Après trois parties, un élément n'est plus jamais étiqueté sur cet appareil.",
+ "3f92ecb": "Des étiquettes permanentes auraient encombré un petit écran en paysage dans 16 langues, alors le mot est un invité, pas un locataire. L'icône reste la pièce elle-même.",
+ "0a149c6": "Des jauges qui montrent leurs propres règles",
+ "5d5298c": "La jauge étoile est découpée en une case par pièce, elle se lit donc comme quelque chose à remplir. Une pièce manquée retire une case, ce qui explique cette règle sans une phrase. Les plaques de coque ont perdu la fente sombre qui les faisait ressembler à des boutons moins. La dernière plaque brille en rouge, une rangée vide pulse en rouge, et chaque éraflure dit combien il en reste : ÉRAFLURE ! &middot; RESTE 1.",
+ "0879a52": "Expliqué là où on a le temps de lire",
+ "05d7c1c": "En plein vol, on n'a pas le temps de lire, et une pause pour expliquer donnerait un temps de réflexion illimité sur un classement partagé, donc il n'y en a pas. L'écran de fin est le moment calme. Meurs avec la jauge étoile au moins à moitié pleine et il te dit combien de pièces il manquait. Tant que tu apprends, une étiquette y ouvre TES INSTRUMENTS, un écran qui explique chaque jauge. COMMENT CA MARCHE y mène aussi.",
+ "51b2244": "<strong>Rien de tout cela ne change le jeu.</strong> La grotte, le score et le prix d'une étoile sont les mêmes pour tous. Tout est dans l'affichage.",
+ "c798b55": "Les applis indiquent désormais combien d'étoiles et d'éraflures une partie a eues. Je peux ainsi voir si les nouveaux pilotes atteignent plus souvent l'étoile une fois qu'ils savent à quoi sert la barre. Merci au joueur qui l'a dit tout haut.",
+ "ed052c6": "Un joueur n'arrivait pas à lire les icônes en bas de l'écran. Désormais chaque jauge dit son nom les premières fois, montre ses propres règles et a un guide sur un seul écran.",
+ "85ab8dd": "Devlog &middot; 12 articles",
+ "ccb9bdb": "<a class=\"post\" href=\"/devlog/reading-the-instruments/\"> <span class=\"when\">11 octobre 2026</span>",
+ "7028efb": "</a> <a class=\"post\" href=\"/devlog/shop-and-ratings/\"> <span class=\"when\">9 octobre 2026</span>"
+}

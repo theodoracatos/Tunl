@@ -1,0 +1,21 @@
+{
+ "0564cdb": "Leggere gli strumenti",
+ "959dcb9": "Un giocatore non riusciva a leggere le icone in fondo allo schermo di TUNL. Come la versione 19.5 fa spiegare l'HUD da solo, senza trasformarlo in una pagina di etichette.",
+ "c2b6b89": "Un giocatore mi ha scritto che non riusciva a leggere le icone in fondo allo schermo. Aveva ragione. La versione 19.5 fa spiegare l'HUD da solo, senza trasformarlo in una pagina di etichette.",
+ "8748e77": "Devlog &middot; 11 ottobre 2026 &middot; <a href=\"/devlog/\">tutti gli articoli</a>",
+ "89e5690": "Cosa vede un nuovo pilota",
+ "a280cb7": "Nel primo minuto di una partita, l'angolo in basso a sinistra mostra una barra bianca con una stella sopra, una chiave inglese e due esagoni. Niente dice cosa siano. Parole come +RALLENTA comparivano dove si raccoglieva la moneta, non dove si trova il suo indicatore, e l'oro e l'indicatore stella non avevano mai avuto una parola. L'unica spiegazione stava nelle impostazioni, a tre tocchi di distanza.",
+ "6452d8f": "Una parola, le prime volte",
+ "3cba175": "Ora ogni parte dell'HUD in basso riceve il suo nome la prima volta che compare in una partita: INDICATORE STELLA con 8 MONETE = STELLA sotto, SCAFO &middot; RESTANO 2 entrando nel tunnel, RALLENTA accanto all'indicatore blu quando arriva la scintilla di quella moneta. Dopo tre partite una parte non viene più etichettata su quel dispositivo.",
+ "3f92ecb": "Etichette permanenti avrebbero affollato un piccolo schermo orizzontale in 16 lingue, quindi la parola è un ospite, non un inquilino. L'icona resta la moneta stessa.",
+ "0a149c6": "Indicatori che mostrano le proprie regole",
+ "5d5298c": "L'indicatore stella è diviso in una casella per moneta, così si legge come qualcosa da riempire. Una moneta mancata toglie una casella, e questo spiega la regola senza una frase. Le piastre dello scafo hanno perso la fessura scura che le faceva sembrare pulsanti meno. L'ultima piastra si illumina di rosso, una fila vuota pulsa di rosso e ogni graffio dice quante ne restano: GRAFFIO! &middot; RESTANO 1.",
+ "0879a52": "Spiegato dove c'è tempo per leggere",
+ "05d7c1c": "In volo non c'è tempo per leggere, e una pausa per spiegare darebbe tempo illimitato per pensare su una classifica condivisa, quindi non c'è. La schermata finale è il momento calmo. Se muori con l'indicatore stella pieno almeno a metà, ti dice quante monete mancavano. Finché stai imparando, lì un'etichetta apre I TUOI STRUMENTI, una schermata che spiega ogni indicatore. Anche COME FUNZIONA rimanda lì.",
+ "51b2244": "<strong>Niente di tutto questo cambia il gioco.</strong> La grotta, il punteggio e il prezzo di una stella sono uguali per tutti. È solo presentazione.",
+ "c798b55": "Le app ora riportano quante stelle e quanti graffi ha avuto una partita, così posso vedere se i nuovi piloti raggiungono la stella più spesso quando sanno a cosa serve la barra. Grazie al giocatore che l'ha detto ad alta voce.",
+ "ed052c6": "Un giocatore non riusciva a leggere le icone in fondo allo schermo. Ora ogni indicatore dice il suo nome le prime volte, mostra le proprie regole e ha una guida su una sola schermata.",
+ "85ab8dd": "Devlog &middot; 12 articoli",
+ "ccb9bdb": "<a class=\"post\" href=\"/devlog/reading-the-instruments/\"> <span class=\"when\">11 ottobre 2026</span>",
+ "7028efb": "</a> <a class=\"post\" href=\"/devlog/shop-and-ratings/\"> <span class=\"when\">9 ottobre 2026</span>"
+}

@@ -1,0 +1,21 @@
+{
+ "0564cdb": "Lendo os instrumentos",
+ "959dcb9": "Um jogador não conseguia ler os ícones na parte de baixo da tela do TUNL. Como a versão 19.5 faz o HUD se explicar sozinho, sem virar uma página cheia de rótulos.",
+ "c2b6b89": "Um jogador me contou que não conseguia ler os ícones na parte de baixo da tela. Ele tinha razão. A versão 19.5 faz o HUD se explicar sozinho, sem virar uma página cheia de rótulos.",
+ "8748e77": "Devlog &middot; 11 de outubro de 2026 &middot; <a href=\"/devlog/\">todos os posts</a>",
+ "89e5690": "O que um piloto novo vê",
+ "a280cb7": "No primeiro minuto de uma partida, o canto inferior esquerdo mostra uma barra branca com uma estrela em cima, uma chave inglesa e dois hexágonos. Nada diz o que são. Palavras como +LENTO apareciam onde a moeda era pega, não onde fica o medidor dela, e o ouro e o medidor de estrela nunca tiveram uma palavra. A única explicação ficava nas configurações, a três toques de distância.",
+ "6452d8f": "Uma palavra, nas primeiras vezes",
+ "3cba175": "Agora cada parte do HUD de baixo ganha seu nome na primeira vez que aparece numa partida: MEDIDOR DE ESTRELA com 8 MOEDAS = ESTRELA embaixo, CASCO &middot; RESTAM 2 ao entrar no túnel, CÂMERA LENTA ao lado do medidor azul quando a faísca dessa moeda chega. Depois de três partidas, uma parte nunca mais recebe rótulo naquele aparelho.",
+ "3f92ecb": "Rótulos permanentes teriam lotado uma tela pequena na horizontal em 16 idiomas, então a palavra é visita, não inquilina. O ícone continua sendo a própria moeda.",
+ "0a149c6": "Medidores que mostram as próprias regras",
+ "5d5298c": "O medidor de estrela é dividido em uma casa por moeda, então ele se lê como algo para encher. Uma moeda perdida tira uma casa, o que explica essa regra sem uma frase. As placas do casco perderam a fenda escura que as fazia parecer botões de menos. A última placa brilha em vermelho, uma fileira vazia pulsa em vermelho e cada arranhão diz quantas restam: ARRANHÃO! &middot; RESTAM 1.",
+ "0879a52": "Explicado onde dá tempo de ler",
+ "05d7c1c": "No meio do voo não dá tempo de ler, e uma pausa para explicar daria tempo ilimitado para pensar num ranking compartilhado, então não tem. A tela final é o momento calmo. Morra com o medidor de estrela pelo menos pela metade e ela diz quantas moedas faltaram. Enquanto você ainda está aprendendo, uma etiqueta ali abre SEUS INSTRUMENTOS, uma tela que explica cada medidor. COMO FUNCIONA também leva até ela.",
+ "51b2244": "<strong>Nada disso muda o jogo.</strong> A caverna, a pontuação e o preço de uma estrela são iguais para todos. É tudo apresentação.",
+ "c798b55": "Os apps agora informam quantas estrelas e arranhões uma partida teve, então consigo ver se pilotos novos chegam à estrela com mais frequência quando sabem para que serve a barra. Valeu ao jogador que falou isso em voz alta.",
+ "ed052c6": "Um jogador não conseguia ler os ícones na parte de baixo da tela. Agora cada medidor diz seu nome nas primeiras vezes, mostra as próprias regras e tem um guia numa tela só.",
+ "85ab8dd": "Devlog &middot; 12 posts",
+ "ccb9bdb": "<a class=\"post\" href=\"/devlog/reading-the-instruments/\"> <span class=\"when\">11 de outubro de 2026</span>",
+ "7028efb": "</a> <a class=\"post\" href=\"/devlog/shop-and-ratings/\"> <span class=\"when\">9 de outubro de 2026</span>"
+}

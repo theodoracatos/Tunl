@@ -205,5 +205,11 @@
  "97ae5b8": "Wenn dir in den Apps ein kurzes Video ein zweites Leben schenkt, spielt die Musik der tiefen Höhle jetzt weiter, statt zum ersten Lied zurückzuspringen.",
  "cb23b39": "19.4: Der Tag hält Wort",
  "4ca96c0": "Der Name des Tages auf dem Titelbildschirm zeigt sich jetzt in der Höhle: An einem GOLDRAUSCH-, MINENGÜRTEL- oder ZICKZACK-Tag beginnt Sektor 4 mit der Strecke des Tages.",
- "da7b98b": "Die DUNKELSTRECKE ist dunkler: Dein Schiff trägt einen kleineren Lichtkegel, und der Rand des Bildschirms wird fast schwarz."
+ "da7b98b": "Die DUNKELSTRECKE ist dunkler: Dein Schiff trägt einen kleineren Lichtkegel, und der Rand des Bildschirms wird fast schwarz.",
+ "556fbfe": "Changelog &middot; aktualisiert am 11. Oktober 2026 &middot; die aktuelle Version ist <span class=\"tunl-ver\"></span>",
+ "c1d4f55": "19.5: Das HUD erklärt sich selbst",
+ "30df08a": "Die ersten Male, wenn Stern-Tank, Hülle oder eine Power-up-Leiste auftauchen, steht ihr Name direkt daneben und verschwindet dann wieder.",
+ "c61618a": "Der Stern-Tank ist in ein Feld pro Münze geteilt, jeder Kratzer sagt dir, wie viele Hüllenplatten noch übrig sind, und die letzte Platte leuchtet rot.",
+ "b0b8551": "Stirbst du mit mindestens halb vollem Stern-Tank, sagt dir die Auswertung, wie viele Münzen gefehlt haben.",
+ "f55c5ad": "Neues Panel DEINE INSTRUMENTE erklärt jede Anzeige am unteren Bildschirmrand. Öffne es über SO FUNKTIONIERT ES oder, solange du noch lernst, in der Auswertung."
 }
