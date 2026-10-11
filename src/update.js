@@ -1223,15 +1223,15 @@ function flushReviewAsk(dt) {
 }
 function maybeRequestReview(why) {
     reviewPending = '';
-    if (stardust < REVIEW_MIN_STARDUST) {
-        appEvent('review_ask', { why: why, sent: 0, stardust: stardust, best: best });
+    if (stardust < REVIEW_MIN_STARDUST && totalRuns < REVIEW_MIN_RUNS) {
+        appEvent('review_ask', { why: why, sent: 0, stardust: stardust, best: best, runs: totalRuns });
         return;
     }
     let lastAskMs = 0;
     try { lastAskMs = parseInt(localStorage.getItem('tunnel_review_last_ts') || '0'); } catch (e) { /* ignore */ }
     if (Date.now() - lastAskMs < REVIEW_COOLDOWN_MS) return;
     try { localStorage.setItem('tunnel_review_last_ts', String(Date.now())); } catch (e) { /* ignore */ }
-    appEvent('review_ask', { why: why, sent: 1, stardust: stardust, best: best });
+    appEvent('review_ask', { why: why, sent: 1, stardust: stardust, best: best, runs: totalRuns });
     window.webkit?.messageHandlers?.review?.postMessage({ action: 'request' });
 }
 

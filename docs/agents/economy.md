@@ -220,9 +220,11 @@ one value line, the price as the button; the whole card is the tap target. Rules
 - Moments: a record of `REVIEW_MIN_SCORE`+ (all-time or today's), a ship unlocked at death, a
   completed 7-day streak (`dayRollover`). The strongest waiting one wins (ship > week > record).
   It used to fire inside `commitDeath`, over the death screen's own record celebration.
-- Same `REVIEW_MIN_STARDUST` gate and `REVIEW_COOLDOWN_MS` for every moment. `review_ask
-  {why, sent}` logs each ask (`sent` 0 = held back by the stardust gate; cooldown skips log
-  nothing). Read it before loosening any gate (concept item R6, not built).
+- Same commitment gate and `REVIEW_COOLDOWN_MS` for every moment. The gate is
+  `REVIEW_MIN_STARDUST` days **or** `REVIEW_MIN_RUNS` started runs (loosened 2026-10-11 on the
+  user's pick: zero `review_ask` in 28 days, ratings only in CH, and Apple counts ratings per
+  country). `review_ask {why, sent, runs}` logs each ask (`sent` 0 = held back by the gate;
+  cooldown skips log nothing). Read it before loosening the gate again (concept item R6, not built).
 - Settings has a quiet "★ RATE" row beside HOW IT WORKS (apps only): the "review" bridge with
   action `write` opens the store's review form (App Store `?action=write-review`, the Play
   listing); logged as `review_link`. **Never bind the system sheet to a button, never reward a

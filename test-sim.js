@@ -1198,6 +1198,14 @@ function touchCoin(type, setup) {
         r.ship = reviewPending;
         toTitle(); calm(REVIEW_TITLE_CALM_SEC + 0.5);
         r.gated = asks.length; r.ev2 = events.join();
+        // REVIEW_MIN_RUNS is the second way past the commitment gate: still day one, enough runs
+        localStorage.removeItem('tunnel_review_last_ts');
+        totalRuns = REVIEW_MIN_RUNS - 2;
+        run(50000, 1000); toTitle(); calm(REVIEW_TITLE_CALM_SEC + 0.5);
+        r.runsHeld = asks.length;
+        totalRuns = REVIEW_MIN_RUNS - 1;
+        run(60000, 1100); toTitle(); calm(REVIEW_TITLE_CALM_SEC + 0.5);
+        r.runsSent = asks.length; r.ev3 = events.slice(-2).join();
         showSettings = true; drawTitleScreen();
         const b = _settingsRateBtnRect;
         if (b) onDown({ clientX: b.x + b.w / 2, clientY: b.y + b.h / 2, pointerId: 1 });
@@ -1213,6 +1221,8 @@ function touchCoin(type, setup) {
         rate.ev1 === 'record:1' && rate.cool === 1);
     check('a new ship outranks the record, and below REVIEW_MIN_STARDUST it is only logged',
         rate.ship === 'ship' && rate.gated === 1 && rate.ev2 === 'record:1,ship:0');
+    check('on day one, REVIEW_MIN_RUNS started runs open the gate: one run short is only logged',
+        rate.runsHeld === 1 && rate.runsSent === 2 && rate.ev3 === 'record:0,record:1');
     check("Settings' RATE row asks native for the store's review form",
         rate.write === 'write');
     const wk = boot(956, 440, { tunnel_lastday: String(_dayInt(1)), tunnel_streak: '6', tunnel_stardust: '6' });

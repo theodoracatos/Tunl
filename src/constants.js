@@ -1294,7 +1294,16 @@ const CONTINUE_EARLY_DECLINE_SEC = 0.4;
 // gate was reaching for and missing. It is strictly stronger than the old
 // first-run exclusion, since REVIEW_MIN_STARDUST days implies returning across
 // that many separate days, and it costs no new state.
-const REVIEW_MIN_STARDUST = 3;
+// **Lowered 3 -> 2 on 2026-10-11, with REVIEW_MIN_RUNS as a second way in.** GA4 showed
+// zero review_ask events in 28 days and ratings only in Switzerland (13; 0 in DE, AT, RU,
+// US): at a day-1 return of ~6%, almost nobody outside the developer's friends reached a
+// third day, and Apple counts ratings per country, so the search cards everywhere else
+// showed no stars at all.
+const REVIEW_MIN_STARDUST = 2;
+// The other commitment test (user's pick 2026-10-11, option B): this many runs started in
+// total (state.js `totalRuns`) also qualify, so a player who plays deep into their first
+// day is not held back until they return. Still only after one of the good moments below.
+const REVIEW_MIN_RUNS = 15;
 // Score floor. Deliberately its own number and stricter than the shared
 // MIN_REAL_RUN_SCORE above: a rating prompt is the single most expensive thing
 // the game can spend a player's goodwill on, so it asks for more than "this was
@@ -1314,7 +1323,7 @@ const REVIEW_COOLDOWN_MS = 90 * 24 * 60 * 60 * 1000;
 // on the spot: over the death screen it covered the record it was meant to celebrate. It
 // fires once the title has shown this long with no card or panel over it (update.js
 // flushReviewAsk). Same stardust gate and cooldown for every moment; each ask is logged as
-// appEvent review_ask {why, sent} (sent 0 = held back by REVIEW_MIN_STARDUST).
+// appEvent review_ask {why, sent} (sent 0 = held back by REVIEW_MIN_STARDUST and REVIEW_MIN_RUNS).
 const REVIEW_TITLE_CALM_SEC = 1.2;
 // The existing gap between a fatal hit and the death screen becoming tappable
 // (input.js's onDown gate, draw.js's button fade-in). Reused, not extended, as
