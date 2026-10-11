@@ -2590,3 +2590,19 @@ motif of its own.
   checks (hull smoke under a shield, two wing-sweep checks) - the day flakes of 2026-09-27.
   Fixed at the root: those loops clear hazards, coins and portals each frame (`KEEP_QUIET`);
   mutation-checked (smoke through a shield, wings back after the pill both fail).
+
+## The HUD explains itself (2026-10-11)
+
+A player on r/playmygame (2026-10-10) "did not understand the bottom-left icons": the star
+meter (a plain white bar with a star) and the hull row (a wrench and two hexagons). Real
+renders of the console showed why: words appeared at the coin ("+SLOW"), never at the HUD;
+gold and the star had no word at all; the hull's icon names the refill, not the thing, and
+its plates' dark slot read as a minus; the meter showed no goal; the only legend was three
+taps deep. Concept page with renders: https://claude.ai/artifact/GnApANcpvJyuNaMeFtsJTr
+(db `picks`), the user took all five: A first-contact tags, B hull reads as lives, C a
+segmented star meter, D a "so close" chip on the death screen, E YOUR INSTRUMENTS. Rejected on
+the page: permanent labels (clutter, 16 languages at 667 px, against the icon rule), a tap on
+the HUD that pauses to explain (unlimited thinking time on a shared leaderboard, the
+`DEV_PAUSE_KEY` lesson), tutorial pages before the first run. The hull icon swap (ship
+silhouette) was left open and not done. `run_end` gained `stars` and `scrapes` (apps) to see
+whether new players start stars more often. Shipped in 19.5.

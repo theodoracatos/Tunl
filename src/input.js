@@ -91,6 +91,13 @@ function onDown(e) {
         // still true underneath) -- otherwise a tap outside this panel would be
         // read as "close Settings" and leave this one orphaned.
         if (showCurrencyInfo) {
+            // YOUR INSTRUMENTS opens on top from the title-row link; a tap outside it
+            // closes it back to this panel.
+            if (showHudInfo) {
+                if (!_hudInfoPanelRect || !inRect(cx, cy, _hudInfoPanelRect)) { showHudInfo = false; sfxUiClose(); }
+                return;
+            }
+            if (_hiwHudRect && inRect(cx, cy, _hiwHudRect)) { showHudInfo = true; sfxUiTap(); return; }
             // Its stardust row opens the stardust path on top; a tap outside that closes
             // it back to this panel.
             if (showStardustPath) {
@@ -312,6 +319,7 @@ function onDown(e) {
     if (phase === 'title') {
         if (appOnlyKey) { appOnlyKey = null; return; }                // web only, on top of everything
         if (showStardustPath) { showStardustPath = false; return; }  // over ALL SHIPS or HOW IT WORKS -- topmost
+        if (showHudInfo) { showHudInfo = false; return; }            // over HOW IT WORKS -- topmost
         if (showCurrencyInfo) { showCurrencyInfo = false; return; }  // layered on top of Settings -- dismiss it first
         if (showSettings) { showSettings = false; return; }
         if (showShop) { showShop = false; return; }
@@ -372,6 +380,18 @@ function onDown(e) {
         return;
     }
     if (phase === 'dead' && deadT > DEATH_INTERACTIVE_SEC) {
+        // YOUR INSTRUMENTS over the death screen (the "?" chip): a tap outside it, or a key,
+        // closes it and does nothing else - never a restart behind the panel.
+        if (showHudInfo) {
+            let inside = false;
+            if (e) {
+                const rect = cv.getBoundingClientRect();
+                inside = !!_hudInfoPanelRect && inRect((e.clientX - rect.left) * (W / rect.width),
+                                                      (e.clientY - rect.top) * (H / rect.height), _hudInfoPanelRect);
+            }
+            if (!inside) { showHudInfo = false; sfxUiClose(); }
+            return;
+        }
         if (!e) {
             window.webkit?.messageHandlers?.ads?.postMessage({ action: 'interstitialRequest', score });
             // No holding/hasHeldThisRun here -- every run, restart included, opens with the
@@ -400,6 +420,7 @@ function onDown(e) {
             }
             return;
         }
+        if (_hudInfoChipRect && inRect(cx, cy, _hudInfoChipRect)) { showHudInfo = true; sfxUiTap(); return; }
         // Share does NOT start a new run or request an interstitial -- it hands the
         // card to the OS share sheet and leaves the death screen up, so the player
         // comes back to the same screen afterwards and can still hit PLAY AGAIN.

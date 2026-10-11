@@ -73,6 +73,21 @@ Study: https://claude.ai/artifact/QPvLrDmGiU6przXNwXLV9y
   active lanes stack without empty rows; spent rounds and lost plates stay as outlines;
   glow is additive gradients, never `shadowBlur`; varying alpha goes through `globalAlpha`
   so `coinTone()`'s cache stays bounded.
+- **The console explains itself** (2026-10-11, HUD legibility concept
+  https://claude.ai/artifact/GnApANcpvJyuNaMeFtsJTr, db `picks`, all five taken; a player could
+  not read the bottom-left icons). Rules:
+  - **First-contact tags** (`hudTag`/`hudLaneTag` in systems.js, `_hudTagsDraw`, `HUD_TAG_*`):
+    a word beside an element when it first shows in a run, only on the device's first
+    `HUD_TAG_TIMES` runs per element. A guest, never a permanent label - the icon stays the
+    coin's object. Lane words are the legend's captions (`T.hiwCoins` via `upperT`), the hull's
+    count is read live, a lane squeezed by the magazine moves above the lane stack.
+  - **Hull plates read as armour**: a light bevel, not the dark slot (it read as a minus sign);
+    the last plate gets a red rim, an empty row pulses red; the scrape notif says what is left
+    (`T.hudLeft`). The wrench icon stays (user's design, not reopened).
+  - **The star meter shows its goal**: one field per coin, never more than 8 (`frenzy.md`).
+  - **YOUR INSTRUMENTS** (`drawHudInfo`): the console's own legend, opened from HOW IT WORKS's
+    title-row link and from the death screen's "?" chip while best < `TUTOR_BEST_MAX`. Any key
+    or a tap outside closes it, never a restart behind it (`test-sim.js`).
 - **No parallax background - tried and removed the same day (do not re-add).** Far rock
   silhouettes read as "extremely confusing" even at near-void contrast: any second set of
   wall-shaped edges moving at another speed competes with the real walls.

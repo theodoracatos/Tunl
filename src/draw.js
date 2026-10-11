@@ -3354,10 +3354,30 @@ function _hudFrenzy(G, dt) {
         }
         ctx.globalCompositeOperation = 'source-over';
     }
+    // One field per coin still to collect (HUD legibility concept C, 2026-10-11), so the bar
+    // reads as "fill it" without a word; never more than 8 - from a cost of 16 a field is
+    // 2 coins. Dark across the fill, the rim's tone across the empty part. A running star
+    // keeps its per-second notches instead.
+    if (s.max === 0) {
+        const per = Math.max(1, Math.ceil(frenzyCost / 8)), segs = Math.ceil(frenzyCost / per);
+        ctx.globalAlpha = _hudFzA;
+        for (let i = 1; i < segs; i++) {
+            const ny = Math.round(yBot - h * (i * per / frenzyCost));
+            ctx.fillStyle = ny > fy + 1 ? 'rgba(0,0,0,0.55)' : coinTone(tk, 0, 0.35);
+            ctx.fillRect(x - w / 2, ny - 1, w, 2);
+        }
+    }
     ctx.globalAlpha = _hudFzA * (warn < 1 ? 0.6 + 0.4 * warn : 1) * dim;
     ctx.translate(x, yTop - G.iconS * 1.6);
     COIN_OBJECTS.frenzy(G.iconS * 1.1, gtime, 0);
     ctx.restore();
+}
+
+// Magazine geometry (_hudMagazine), shared with the tags that must keep clear of it.
+function _hudMagDims(G) {
+    const rw = Math.max(3.75, FS * 0.0069), rh = Math.max(11.5, FS * 0.020), p = Math.max(6.9, FS * 0.013);
+    const x0 = G.rightX - Math.max(19, FS * 0.033) - rw / 2;
+    return { rw, rh, p, x0, left: x0 - (bulletAmmoCap() - 1) * p - rw / 2 };
 }
 
 function _hudMagazine(G) {
@@ -3369,8 +3389,7 @@ function _hudMagazine(G) {
     // Same scale as the hull row it mirrors (_hudHull): icon, element height and icon gap.
     // Right edge since 2026-09-28 (swapped with the hull row to give the star meter room
     // on the left): the icon stays outermost, the rounds run inward from it.
-    const rw = Math.max(3.75, FS * 0.0069), rh = Math.max(11.5, FS * 0.020), p = Math.max(6.9, FS * 0.013);
-    const x0 = G.rightX - Math.max(19, FS * 0.033) - rw / 2, tip = rh * 0.32;
+    const { rw, rh, p, x0 } = _hudMagDims(G), tip = rh * 0.32;
     const fx = hudLaneFx.orange, flashK = fx ? 1 - (gtime - fx.t) / HUD_LANE_FLASH_SEC : 0;
     const round = (x, yy) => {
         ctx.beginPath();
@@ -3416,6 +3435,15 @@ function _hudMagazine(G) {
     ctx.restore();
 }
 
+// One armour plate's outline (half-width w, half-height h): a hexagon with chamfered ends.
+function _hudPlatePath(cx, y, w, h) {
+    const ch = w * 0.35;
+    ctx.beginPath();
+    ctx.moveTo(cx - w + ch, y - h); ctx.lineTo(cx + w - ch, y - h); ctx.lineTo(cx + w, y);
+    ctx.lineTo(cx + w - ch, y + h); ctx.lineTo(cx - w + ch, y + h); ctx.lineTo(cx - w, y);
+    ctx.closePath();
+}
+
 function _hudHull(G) {
     const hitAge = gtime - hudHullHitT;
     const shake = hitAge < 0.3 ? Math.sin(gtime * 90) * FS * 0.004 * (1 - hitAge / 0.3) : 0;
@@ -3424,6 +3452,10 @@ function _hudHull(G) {
     // side rows are the console's frame. Left edge since 2026-09-28, mirrored from the right:
     // icon outermost, lost plates next to it.
     const { pw, ph, p, gap } = _hudHullDims();
+    // No plate left: the next wall ends the run, so the empty row pulses red; one left: that
+    // plate's rim is red (HUD legibility concept B, 2026-10-11).
+    const none = hullScratches <= 0, last = hullScratches === 1 && HULL_SCRATCHES > 1;
+    const pulse = 0.5 + 0.5 * Math.sin(gtime * 8);
     ctx.save();
     ctx.save(); ctx.translate(ix, y); COIN_OBJECTS.repair(G.iconS * 1.25, gtime, 0); ctx.restore();
     ctx.lineWidth = 1;
@@ -3432,22 +3464,25 @@ function _hudHull(G) {
         // A repair kit that refilled the row (systems.js updateRepairKits) swells its plate.
         const swell = i === hullScratches - 1 ? 1 + 0.35 * Math.min(1, hullRepairFlash / 0.8) : 1;
         const w = pw * swell / 2, h = ph * swell / 2, ch = w * 0.35;
-        ctx.beginPath();
-        ctx.moveTo(cx - w + ch, y - h); ctx.lineTo(cx + w - ch, y - h); ctx.lineTo(cx + w, y);
-        ctx.lineTo(cx + w - ch, y + h); ctx.lineTo(cx - w + ch, y + h); ctx.lineTo(cx - w, y);
-        ctx.closePath();
+        _hudPlatePath(cx, y, w, h);
         if (i < hullScratches) {
             const gr = ctx.createLinearGradient(0, y - h, 0, y + h);
             gr.addColorStop(0, coinTone('repair', 0.5)); gr.addColorStop(0.5, coinTone('repair', 0.05)); gr.addColorStop(1, coinTone('repair', -0.35));
             ctx.fillStyle = gr; ctx.fill();
-            ctx.strokeStyle = coinTone('repair', 0.6, 0.9); ctx.stroke();
-            ctx.fillStyle = coinTone('repair', -0.6, 0.8);
-            ctx.fillRect(cx - w * 0.45, y - h * 0.12, w * 0.9, Math.max(1, h * 0.24));
+            // The last plate standing gets a red rim (HUD legibility concept B, 2026-10-11).
+            if (last) { ctx.strokeStyle = `rgba(255,110,110,${0.7 + 0.3 * Math.sin(gtime * 6)})`; ctx.lineWidth = 1.6; }
+            else ctx.strokeStyle = coinTone('repair', 0.6, 0.9);
+            ctx.stroke();
+            ctx.lineWidth = 1;
+            // A bevel highlight along the top edge: an armour plate. The dark slot across the
+            // middle it replaced read as a minus button.
+            ctx.fillStyle = coinTone('repair', 0.8, 0.7);
+            ctx.fillRect(cx - w + ch * 1.4, y - h * 0.62, (w - ch * 1.4) * 2, Math.max(1, h * 0.14));
         } else {
             ctx.setLineDash([2, 2]);
-            ctx.strokeStyle = coinTone('repair', 0, 0.45); ctx.stroke();
+            ctx.strokeStyle = none ? `rgba(255,90,90,${0.55 + 0.4 * pulse})` : coinTone('repair', 0, 0.45); ctx.stroke();
             ctx.setLineDash([]);
-            ctx.strokeStyle = coinTone('repair', -0.2, 0.5);
+            ctx.strokeStyle = none ? `rgba(255,90,90,${0.45 + 0.35 * pulse})` : coinTone('repair', -0.2, 0.5);
             ctx.beginPath();
             ctx.moveTo(cx - w * 0.3, y - h * 0.8); ctx.lineTo(cx + w * 0.05, y - h * 0.05);
             ctx.lineTo(cx - w * 0.1, y + h * 0.2); ctx.lineTo(cx + w * 0.3, y + h * 0.8);
@@ -3513,6 +3548,223 @@ function drawEnergyConsole() {
     _hudMagazine(G);
     if (HULL_SCRATCHES > 0) _hudHull(G);
     _hudLaneSparks(G);
+    _hudTagsDraw(G);
+}
+
+// First-contact tags (constants.js HUD_TAG_* doc): a word beside its element in the
+// element's colour, fading in and out, shrunk to the room the element leaves. A dark
+// outline instead of shadowBlur (the console never uses it); laid out left-aligned from
+// measured width (WebKit dropped textAlign for Devanagari) on the alphabetic baseline from
+// measured ink (visuals.md: WebKit places 'middle' differently).
+function _hudTagsDraw(G) {
+    let any = false;
+    for (const k in hudTags) if (!hudTags[k].done) { any = true; break; }
+    if (!any) return;
+    const fa = FS * 0.019, fb = FS * 0.015, gap = FS * 0.016;
+    const fit = (text, f, bold, maxW) => {
+        ctx.font = `${bold ? 'bold ' : ''}${f}px ${FONT_UI}`;
+        ctx.letterSpacing = bold ? `${f * 0.08}px` : '0px';
+        const w0 = ctx.measureText(text).width;
+        if (maxW > 0 && w0 > maxW) {
+            f *= maxW / w0;
+            ctx.font = `${bold ? 'bold ' : ''}${f}px ${FONT_UI}`;
+            ctx.letterSpacing = bold ? `${f * 0.08}px` : '0px';
+        }
+        const m = ctx.measureText(text);
+        return { w: m.width, asc: m.actualBoundingBoxAscent || f * 0.72 };
+    };
+    const put = (text, x, base) => {
+        ctx.strokeText(text, x, base);
+        ctx.fillText(text, x, base);
+    };
+    ctx.save();
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgba(0,0,0,0.65)';
+    for (const k in hudTags) {
+        const tg = hudTags[k];
+        if (tg.done) continue;
+        const age = gtime - tg.t;
+        if (age < 0) continue;
+        if (age > HUD_TAG_SEC) { tg.done = true; continue; }   // kept, so the run never tags it twice
+        let x, y, maxW, clr, vis = 1, right = false, text = tg.a, lift = false;
+        if (k === 'frenzy') {
+            vis = _hudFzA;
+            const yTop = G.baseY + G.lh / 2 - Math.max(56, H * 0.2);
+            x = G.fzX + G.fzW / 2 + gap; y = yTop - G.iconS * 1.6;
+            maxW = G.x1 - x;
+            clr = coinTone(_fzToneKey(), 0.35);
+        } else if (k === 'hull' || k === 'hull0') {
+            // The hull's count is read live (a scrape inside the tag's life changes it), and
+            // the last-wall warning takes the spot over.
+            if (k === 'hull') {
+                if (hudTags.hull0 && !hudTags.hull0.done && gtime >= hudTags.hull0.t) continue;
+                text = `${T.hull} · ${T.hudLeft.replace('{n}', Math.max(0, hullScratches))}`;
+            }
+            x = G.hullX - G.iconS * 1.25; y = G.baseY - FS * 0.040;
+            maxW = G.iconX - G.iconS * 1.6 - x;
+            clr = k === 'hull0' ? 'rgb(255,110,110)' : coinTone('repair', 0.3);
+        } else if (k === 'orange') {
+            vis = bulletAmmo > 0 ? 1 : 0;
+            x = G.rightX + G.iconS * 1.25; y = G.baseY - FS * 0.040; right = true;
+            maxW = x - G.x1 - gap;
+            clr = coinTone('orange', 0.3);
+        } else {   // a power-up lane: right of its capsule, clear of the magazine on the bottom row
+            vis = _hudLaneA[k] || 0;
+            x = G.x1 + gap; y = G.baseY - (_hudLaneY[k] || 0) * G.pitch;
+            maxW = ((_hudLaneY[k] || 0) < 0.5 && bulletAmmo > 0 ? _hudMagDims(G).left - gap : G.rightX) - x;
+            lift = true;
+            clr = coinTone(k, 0.3);
+        }
+        const a = Math.min(1, age / 0.18) * Math.min(1, (HUD_TAG_SEC - age) / 0.5) * vis;
+        if (a < 0.02 || maxW <= 0) continue;
+        ctx.globalAlpha = a;
+        ctx.fillStyle = clr;
+        let A = fit(text, fa, true, maxW);
+        // Squeezed beside the magazine on the bottom row: above the whole lane stack instead,
+        // clear of the other lanes' tags and of the magazine's own.
+        if (lift && A.w < (fit(text, fa, true, 0).w) * 0.8) {
+            let top = 0;
+            for (const l of _HUD_LANES) if (_hudLaneA[l] > 0.02) top = Math.max(top, _hudLaneY[l]);
+            y = G.baseY - (top + 1) * G.pitch;
+            maxW = G.rightX - G.iconS * 7 - x;
+            A = fit(text, fa, true, maxW);
+        }
+        ctx.lineWidth = Math.max(2, fa * 0.22);
+        const baseA = y + A.asc / 2;
+        put(text, right ? x - A.w : x, baseA);
+        if (tg.b) {
+            const B = fit(tg.b, fb, false, maxW);
+            ctx.globalAlpha = a * 0.85;
+            put(tg.b, right ? x - B.w : x, baseA + B.asc + fb * 0.55);
+        }
+    }
+    ctx.letterSpacing = '0px';
+    ctx.restore();
+}
+
+// ── YOUR INSTRUMENTS (HUD legibility concept E, 2026-10-11) ──────────────────
+// The energy console explained element by element, each next to a small copy of how the
+// console draws it. Opened from HOW IT WORKS's title-row link (_hiwHudRect) and from the
+// death screen's "?" chip while the best is below TUTOR_BEST_MAX (_hudInfoChipRect); a tap
+// outside closes it (input.js). Two columns - what keeps you alive, then the timed
+// power-ups - content-sized and shrunk in steps until it clears the screen, like HOW IT
+// WORKS. Words reuse the legend's captions (T.hiwCoins, T.hiwFrenzy) where they exist.
+function drawHudInfo() {
+    drawMenuBackdrop();
+    const fzKey = _fzToneKey();
+    const rows = [
+        { k: 'frenzy', tk: fzKey,    head: T.hudStarMeter,          body: T.hiwFrenzy },
+        { k: 'hull',   tk: 'repair', head: T.hull,                  body: T.hudHullBody },
+        { k: 'gold',   tk: 'gold',   head: upperT(T.hiwCoins[0]),  body: T.hudGoldBody },
+        { k: 'blue',   tk: 'blue',   head: upperT(T.hiwCoins[1]),  body: T.hudTimeLeft },
+        { k: 'green',  tk: 'green',  head: upperT(T.hiwCoins[4]),  body: T.hudTimeLeft },
+        { k: 'laser',  tk: 'laser',  head: upperT(T.hiwCoins[6]),  body: T.hudTimeLeft },
+        { k: 'orange', tk: 'orange', head: upperT(T.hiwCoins[3]),  body: T.hudAmmoBody },
+    ];
+    const cols = [[0, 1, 2], [3, 4, 5, 6]];
+    const panW = Math.min(W * 0.88, 800);
+    let scale = 1, L;
+    for (let iter = 0; iter < 14; iter++) {
+        const k = scale;
+        const fs = FS * 0.0165 * k, headFs = fs * 0.92, lh = fs * 1.3;
+        const padX = FS * 0.034 * k, padTop = FS * 0.030 * k, titleH = FS * 0.040 * k, gap = FS * 0.018 * k;
+        const colGap = FS * 0.040 * k, colW = (panW - padX * 2 - colGap) / 2;
+        const gW = FS * 0.090 * k, textW = colW - gW - FS * 0.014 * k;
+        ctx.font = `${fs}px ${FONT_UI}`;
+        const lines = rows.map(r => _wrapLines(r.body, textW));
+        const rowH = rows.map((r, i) => headFs * 1.35 + lines[i].length * lh);
+        const colH = cols.map(c => c.reduce((sum, i) => sum + rowH[i], 0) + gap * (c.length - 1));
+        const panH = padTop + titleH + gap * 1.4 + Math.max(...colH) + padTop;
+        L = { fs, headFs, lh, padX, padTop, titleH, gap, colGap, colW, gW, textW, lines, rowH, panH, k };
+        if (panH <= H * 0.92 || scale <= 0.6) break;
+        scale *= 0.94;
+    }
+    const { fs, headFs, lh, padX, padTop, titleH, gap, colGap, colW, gW, textW, lines, rowH, panH, k } = L;
+    const panX = W / 2 - panW / 2, panY = H / 2 - panH / 2;
+    _hudInfoPanelRect = { x: panX, y: panY, w: panW, h: panH };
+    drawMenuPanel(panX, panY, panW, panH, 14);
+
+    ctx.save();
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    // Title, centred by measured width (WebKit dropped textAlign 'center' for Devanagari).
+    let tf = titleH;
+    ctx.font = `bold ${tf}px ${FONT_UI}`;
+    let tw = ctx.measureText(T.hudInfoTitle).width;
+    if (tw > panW - padX * 2) { tf *= (panW - padX * 2) / tw; ctx.font = `bold ${tf}px ${FONT_UI}`; tw = ctx.measureText(T.hudInfoTitle).width; }
+    ctx.fillStyle = 'rgba(255,225,110,0.95)';
+    ctx.fillText(T.hudInfoTitle, W / 2 - tw / 2, panY + padTop + titleH * 0.5);
+
+    const iconS = FS * 0.015 * k, bar = Math.max(4, FS * 0.008 * k);
+    // A small copy of the element as the console draws it, in a gW-wide box at (x, yc).
+    const gauge = (r, x, yc) => {
+        const ix = x + iconS * 1.1, g0 = x + iconS * 2.6, g1 = x + gW - iconS * 0.4;
+        ctx.save(); ctx.translate(ix, yc); COIN_OBJECTS[r.k === 'hull' ? 'repair' : r.k](iconS, gtime, 0); ctx.restore();
+        if (r.k === 'frenzy') {   // the meter, standing, 5 of 8 fields
+            const bw = bar * 1.3, bh = Math.min(rowHMax * 0.8, iconS * 4), bx = g0 + bw / 2, yb = yc + bh / 2;
+            ctx.beginPath(); ctx.roundRect(bx - bw / 2, yb - bh, bw, bh, bw / 2);
+            ctx.fillStyle = coinTone(r.tk, 0, 0.10); ctx.fill();
+            ctx.strokeStyle = coinTone(r.tk, 0, 0.30); ctx.lineWidth = 1; ctx.stroke();
+            ctx.beginPath(); ctx.roundRect(bx - bw / 2, yb - bh * 5 / 8, bw, bh * 5 / 8, bw / 2);
+            ctx.fillStyle = coinTone(r.tk, 0.2); ctx.fill();
+            for (let i = 1; i < 8; i++) {
+                const ny = Math.round(yb - bh * i / 8);
+                ctx.fillStyle = i < 5 ? 'rgba(0,0,0,0.55)' : coinTone(r.tk, 0, 0.35);
+                ctx.fillRect(bx - bw / 2, ny - 0.5, bw, 1);
+            }
+        } else if (r.k === 'hull') {   // two plates, as many as HULL_SCRATCHES gives
+            const pw = Math.max(9, FS * 0.018 * k), ph = pw * 0.8;
+            for (let i = 0; i < Math.max(1, HULL_SCRATCHES); i++) {
+                const cx = g0 + pw / 2 + i * pw * 1.3, w = pw / 2, h = ph / 2, ch = w * 0.35;
+                _hudPlatePath(cx, yc, w, h);
+                ctx.fillStyle = coinTone('repair', 0.05); ctx.fill();
+                ctx.strokeStyle = coinTone('repair', 0.6, 0.9); ctx.lineWidth = 1; ctx.stroke();
+                ctx.fillStyle = coinTone('repair', 0.8, 0.7);
+                ctx.fillRect(cx - w + ch * 1.4, yc - h * 0.62, (w - ch * 1.4) * 2, Math.max(1, h * 0.14));
+            }
+        } else if (r.k === 'orange') {   // a short magazine, three rounds left
+            const rw = Math.max(3, FS * 0.0055 * k), rh = rw * 2.8, p = rw * 1.8;
+            for (let i = 0; i < 5; i++) {
+                const rx = g0 + i * p;
+                ctx.beginPath(); ctx.roundRect(rx, yc - rh / 2, rw, rh, [rw / 2, rw / 2, 0, 0]);
+                if (i >= 2) { ctx.fillStyle = coinTone('orange', 0.1); ctx.fill(); }
+                else { ctx.strokeStyle = coinTone('orange', 0, 0.35); ctx.lineWidth = 1; ctx.stroke(); }
+            }
+        } else {   // a lane: gold opens from the centre, the timed ones run down from the right
+            const tw2 = g1 - g0, fw = tw2 * 0.6, fx = r.k === 'gold' ? g0 + (tw2 - fw) / 2 : g0;
+            _hudCapsule(g0, yc, tw2, bar);
+            ctx.fillStyle = coinTone(r.tk, 0, 0.10); ctx.fill();
+            ctx.strokeStyle = coinTone(r.tk, 0, 0.30); ctx.lineWidth = 1; ctx.stroke();
+            _hudCapsule(fx, yc, fw, bar);
+            ctx.fillStyle = coinTone(r.tk, 0.1); ctx.fill();
+        }
+    };
+    const rowHMax = Math.max(...rowH);
+    let y0 = panY + padTop + titleH + gap * 1.4;
+    cols.forEach((c, ci) => {
+        const x = panX + padX + ci * (colW + colGap);
+        let y = y0;
+        for (const i of c) {
+            const r = rows[i], tx = x + gW + FS * 0.014 * k;
+            gauge(r, x, y + rowH[i] / 2);
+            // Head in the element's colour, shrunk to the text column like the legend's labels.
+            let hf = headFs;
+            ctx.font = `bold ${hf}px ${FONT_UI}`;
+            ctx.letterSpacing = `${hf * 0.1}px`;
+            const hw = ctx.measureText(r.head).width;
+            if (hw > textW) { hf *= textW / hw; ctx.font = `bold ${hf}px ${FONT_UI}`; ctx.letterSpacing = `${hf * 0.1}px`; }
+            ctx.fillStyle = coinTone(r.tk, 0.35, 0.95);
+            ctx.fillText(r.head, tx, y + headFs * 0.6);
+            ctx.letterSpacing = '0px';
+            ctx.font = `${fs}px ${FONT_UI}`;
+            ctx.fillStyle = 'rgba(220,225,245,0.88)';
+            lines[i].forEach((ln, j) => ctx.fillText(ln, tx, y + headFs * 1.35 + lh * (j + 0.5)));
+            y += rowH[i] + gap;
+        }
+    });
+    ctx.restore();
 }
 
 
@@ -5695,7 +5947,7 @@ function drawTitleScreen() {
     // own light); row 3 the two wallets, the stardust half opening the stardust path on top
     // (_hiwStardustRect, input.js). Content-sized, and shrunk in steps until it clears the
     // screen - the line count depends on the locale, so no single scale is known up front.
-    _hiwStardustRect = null;
+    _hiwStardustRect = null; _hiwHudRect = null;
     if (showCurrencyInfo) {
         drawMenuBackdrop();
 
@@ -5811,6 +6063,21 @@ function drawTitleScreen() {
         ctx.fillStyle = 'rgba(255,225,110,0.95)';
         let y = panY + padTop + titleH * 0.5;
         centred(T.howItWorks, W / 2, y);
+        // The console's own legend (YOUR INSTRUMENTS, drawHudInfo) opens on top from a link
+        // in the title row's right half, shrunk to the room the title leaves.
+        {
+            const usedHalf = Math.min(ctx.measureText(T.howItWorks).width, panW - padX * 2) / 2;
+            const linkTxt = `${T.hudInfoTitle} ›`, right = panX + panW - padX;
+            const room = panW / 2 - padX - usedHalf - fs;
+            ctx.font = `bold ${fs}px ${FONT_UI}`;
+            let lw = ctx.measureText(linkTxt).width;
+            if (lw > room && room > 0) { ctx.font = `bold ${fs * room / lw}px ${FONT_UI}`; lw = room; }
+            ctx.fillStyle = 'rgba(160,232,255,0.95)';
+            ctx.textAlign = 'left';
+            ctx.fillText(linkTxt, right - lw, y);
+            ctx.textAlign = 'center';
+            _hiwHudRect = { x: right - lw - fs, y: y - titleH * 0.6, w: lw + fs * 1.6, h: titleH * 1.2 };
+        }
         y += titleH * 0.5 + gap;
 
         // Row 1: the coins.
@@ -5992,6 +6259,10 @@ function drawTitleScreen() {
         }
         ctx.restore();
     }
+
+    // YOUR INSTRUMENTS, opened from HOW IT WORKS's title-row link (_hiwHudRect), on top of it.
+    _hudInfoPanelRect = null;
+    if (showCurrencyInfo && showHudInfo) drawHudInfo();
 
     // ── Arrival card: what this new day granted (2026-09-22) ─────────────
     // The stardust grant used to be a silent `stardust += 1` inside startPlay() with
@@ -6523,6 +6794,12 @@ function drawDeathScreen() {
     if (runFrenzies > 0) {
         rewards.push({ t: `★ ${T.frenzy}${runFrenzies > 1 ? ' ×' + runFrenzies : ''}`, c: (SKINS[activeSkin] || SKINS[0]).shadow });
     }
+    // A star that was close (HUD legibility concept D, 2026-10-11): the meter read back in
+    // words where there is time to read, and a reason for the next run. Only when true and
+    // near - at least half of the cost - and nothing is attached to it.
+    if (frenzyTime <= 0 && frenzyCost > 0 && frenzyMeter >= frenzyCost * 0.5 && frenzyMeter < frenzyCost) {
+        rewards.push({ t: `★ ${T.starShort.replace('{n}', Math.ceil(frenzyCost - frenzyMeter))}`, c: (SKINS[activeSkin] || SKINS[0]).shadow });
+    }
     // The day's stardust, on the first run of that day (dailyRuns is 1 for the run that
     // just ended). `dayGrant` is session-only, so a player who already flew earlier
     // today and relaunches sees nothing - nothing happened this launch.
@@ -6542,16 +6819,20 @@ function drawDeathScreen() {
         // Missions drawer row, which players rarely open. Apps only, only with an ad loaded,
         // gone once claimed. The one tappable chip, so it is drawn as a button (chip's `tap`).
         if (!isWeb() && shardsAdReady && !shardsAdClaimedToday && !shardsAdPending) {
-            rewards.push({ t: `${T.watchAdShards}  +${SHARDS_AD_REWARD} ⧫`, c: [255, 200, 97], tap: true });
+            rewards.push({ t: `${T.watchAdShards}  +${SHARDS_AD_REWARD} ⧫`, c: [255, 200, 97], tap: 'shards' });
         }
     }
-    _shardsChipRect = null;
+    // YOUR INSTRUMENTS (drawHudInfo) while the player is still a beginner - the tap
+    // tutor's band - opened here, where there is time to read (HUD legibility concept E).
+    if (best < TUTOR_BEST_MAX) rewards.push({ t: `? ${T.hudInfoTitle}`, c: [190, 205, 240], tap: 'hud' });
+    _shardsChipRect = null; _hudInfoChipRect = null;
     let cx = L, cy = yRailLbl + step(0.020, DS_LBL, 0.75);
     for (const rw of rewards) {
         const w = chipW(rw.t);
         if (cx > L && cx + w > L + chipMaxW) { cx = L; cy += chipH + step(0.016, DS_LBL, 0.45); }
         chip(rw.t, cx, cy, rw.c, !rw.tap, !!rw.tap);
-        if (rw.tap) _shardsChipRect = { x: cx, y: cy, w: w, h: chipH };
+        if (rw.tap === 'shards') _shardsChipRect = { x: cx, y: cy, w: w, h: chipH };
+        if (rw.tap === 'hud') _hudInfoChipRect = { x: cx, y: cy, w: w, h: chipH };
         cx += w + W * 0.010;
     }
     const leftBottom = rewards.length ? cy + chipH : yRailLbl;
@@ -6886,6 +7167,9 @@ function drawDeathScreen() {
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
     sh(0);
+
+    _hudInfoPanelRect = null;
+    if (showHudInfo) drawHudInfo();   // opened by the "?" chip, on top of everything
 }
 
 // Death freeze frame (constants.js DEATH_REPLAY_SEC, state.js deathHitX/Y/R).

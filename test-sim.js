@@ -1968,6 +1968,128 @@ const FAKE_AC = `(() => {
     g('delete window.webkit.messageHandlers.ads;');
 }
 
+// ── HUD legibility (2026-10-11): tags, the scrape's count, the near-star chip, YOUR INSTRUMENTS ──
+// constants.js HUD_TAG_* doc, systems.js hudTag, update.js hullScratch, draw.js drawHudInfo.
+// Real update(), frenzyFill(), hudLaneTag(), drawEnergyConsole(), die(), draw() and onDown().
+{
+    // Catches: a tag that never fires, fires twice in a run, outlives HUD_TAG_TIMES runs,
+    // or a tag draw that throws in some language.
+    const g = quietCave();
+    const r = g(`(() => {
+        const r = {};
+        r.hull = hudTags.hull ? hudTags.hull.a : null;   // set by the real flight at the tunnel entry
+        r.stored = JSON.parse(localStorage.getItem(HUD_TAG_KEY) || '{}').hull;
+        delete hudTags.frenzy; hudTagSeen.frenzy = 0; frenzyMeter = 0; frenzyTime = 0; frenzyChargeT = 0;
+        frenzyFill(1);
+        r.fz = hudTags.frenzy ? hudTags.frenzy.b : null;
+        r.fzWant = T.hudStarCost.replace('{n}', frenzyCost);
+        const t0 = hudTags.frenzy && hudTags.frenzy.t;
+        frenzyFill(1);
+        r.fzOnce = !!hudTags.frenzy && hudTags.frenzy.t === t0 && hudTagSeen.frenzy === 1;
+        delete hudTags.blue; hudTagSeen.blue = 0; slowTime = 2; slowTimeMax = 4;
+        hudLaneTag('blue');
+        r.blue = hudTags.blue ? hudTags.blue.a : null;
+        r.blueLate = hudTags.blue ? hudTags.blue.t > gtime : false;   // arrives with the spark
+        for (const k in hudTags) hudTags[k].t = gtime - 1;
+        bulletAmmo = 3; hudTag('orange', 'AMMO'); hudTags.orange.t = gtime - 1;
+        for (const code of Object.keys(LANGS)) { setLang(code); drawEnergyConsole(); }
+        setLang('en');
+        const g0 = gtime; gtime += HUD_TAG_SEC + 2; drawEnergyConsole();
+        r.done = !!hudTags.blue.done; gtime = g0;
+        hudLaneTag('blue'); r.noRepeat = hudTagSeen.blue === 1;
+        hudTags = {}; hudTagSeen.hull = HUD_TAG_TIMES; hudTag('hull', 'x'); r.capped = !hudTags.hull;
+        return r;
+    })()`);
+    check(`the hull row is tagged at the tunnel entry with what is left ("${r.hull}"), and counted on the device`,
+        r.hull === 'HULL · 2 LEFT' && r.stored === 1);
+    check(`the star meter's first fill tags it once, with the real cost ("${r.fz}")`, r.fz === r.fzWant && r.fzOnce);
+    check(`a lane's tag is the legend's caption and arrives with its spark ("${r.blue}")`, r.blue === 'SLOW TIME' && r.blueLate);
+    check('tags draw in every language, end after HUD_TAG_SEC and never fire twice in a run', r.done && r.noRepeat);
+    check('after HUD_TAG_TIMES runs an element is never tagged again', r.capped);
+}
+{
+    // Catches: the scrape notif losing its count, the last-wall tag, or run_end losing the fields.
+    const g = quietCave(true);
+    const r = g(`(() => {
+        _posted = []; window.webkit.messageHandlers.ads = { postMessage(m) { _posted.push(m); } };
+        hudTags = {}; hudTagSeen = {}; notifs = [];
+        { const _b = boundsAt(scrollX + PX); py = _b.top - 2; } update(1 / 60);
+        const t1 = notifs.map(n => n.text).filter(t => t.startsWith(T.notifScratch)).pop();
+        wallGraceT = 0; invulnT = 0;
+        { const _b = boundsAt(scrollX + PX); py = _b.top - 2; } update(1 / 60);
+        const t2 = notifs.map(n => n.text).filter(t => t.startsWith(T.notifScratch)).pop();
+        const r = { t1, t2, hull0: !!hudTags.hull0, alive: phase === 'play', scrapes: runScrapes };
+        runFrenzies = 1; shieldCount = 0; invulnT = 0; wallGraceT = 0; rewardedAdReady = false; die(true);
+        const e = _posted.find(m => m.name === 'run_end');
+        r.end = e ? { stars: e.params.stars, scrapes: e.params.scrapes } : null;
+        delete window.webkit.messageHandlers.ads;
+        return r;
+    })()`);
+    check(`each scrape says what is left ("${r.t1}", "${r.t2}") and the last one tags NEXT WALL = END`,
+        r.t1 === 'SCRAPE! · 1 LEFT' && r.t2 === 'SCRAPE! · 0 LEFT' && r.hull0 && r.alive);
+    check(`run_end carries the run's stars and scrapes (${JSON.stringify(r.end)})`,
+        r.end && r.end.stars === 1 && r.end.scrapes === 2);
+}
+{
+    // Catches: the near-star chip missing or lying, the "?" chip not opening YOUR INSTRUMENTS,
+    // or a key on the open panel restarting the run behind it.
+    const g = quietCave();
+    g(`_initAC = function () {}; window.webkit.messageHandlers.ads = { postMessage() {} };`);
+    const dead = (b, meter) => g(`(() => {
+        const texts = []; ctx.fillText = t => { texts.push(String(t)); };
+        phase = 'play'; best = ${b}; frenzyTime = 0; frenzyMeter = ${meter}; shieldCount = 0; invulnT = 0;
+        rewardedAdReady = false; continueOfferPending = false; deadT = 0; die(true);
+        for (let i = 0; i < 60 * 3; i++) { update(1 / 60); draw(); }
+        const r = { near: texts.includes('★ ' + T.starShort.replace('{n}', 3)), chip: _hudInfoChipRect };
+        delete ctx.fillText;
+        return r;
+    })()`);
+    const near = dead(100, 'frenzyCost - 3'), far = dead(100, '1'), vet = dead(400, 'frenzyCost - 3');
+    check('a run that died 3 coins short of a star says so on the death screen, a far one does not',
+        near.near && !far.near);
+    check('the "?" chip shows while the best is below TUTOR_BEST_MAX and not after', !!near.chip && !vet.chip);
+    const r = g(`(() => {
+        best = 100; phase = 'play'; frenzyMeter = 0; rewardedAdReady = false; deadT = 0; die(true);
+        for (let i = 0; i < 60 * 3; i++) { update(1 / 60); draw(); }
+        const c = _hudInfoChipRect, r = {};
+        onDown({ clientX: c.x + c.w / 2, clientY: c.y + c.h / 2, pointerId: 1 });
+        r.open = showHudInfo && phase === 'dead';
+        draw(); const p = _hudInfoPanelRect;
+        r.fits = !!p && p.x >= 0 && p.y >= 0 && p.x + p.w <= W && p.y + p.h <= H;
+        onDown({ clientX: p.x + p.w / 2, clientY: p.y + p.h / 2, pointerId: 1 }); r.staysOnInside = showHudInfo;
+        onDown({ clientX: 2, clientY: 2, pointerId: 1 }); r.closed = !showHudInfo && phase === 'dead';
+        showHudInfo = true; onDown(); r.keyClosed = !showHudInfo && phase === 'dead';
+        return r;
+    })()`);
+    check('the "?" chip opens YOUR INSTRUMENTS on the death screen, inside the screen', r.open && r.fits && r.staysOnInside);
+    check('a tap outside or a key closes it and never starts a run behind it', r.closed && r.keyClosed);
+    // HOW IT WORKS: its title-row link opens the panel on top in every language, both
+    // inside the screen; a tap outside peels it back to HOW IT WORKS.
+    let worst = null;
+    for (const [w, h] of [[956, 440], [667, 375]]) {
+        const q = boot(w, h);
+        q("_initAC = function () {}; phase = 'title'; titleT = 10; dayGrantT = 0;");
+        for (const code of q('Object.keys(LANGS)')) {
+            const t = q(`(() => { setLang('${code}'); showSettings = true; showCurrencyInfo = true; showHudInfo = false; drawTitleScreen();
+                const hp = _currencyInfoPanelRect, l = _hiwHudRect;
+                showHudInfo = true; drawTitleScreen(); const p = _hudInfoPanelRect;
+                return { l, hp, p }; })()`);
+            const inside = (a, b) => a && b && a.x >= b.x - 1 && a.y >= b.y - 1 && a.x + a.w <= b.x + b.w + 1 && a.y + a.h <= b.y + b.h + 1;
+            const bad = !inside(t.l, t.hp) || !inside(t.p, { x: 0, y: 0, w, h });
+            if (bad && !worst) worst = `${code} ${w}x${h} ${JSON.stringify(t)}`;
+        }
+        if (w === 956) {
+            const taps = q(`(() => { setLang('en'); showHudInfo = false; drawTitleScreen(); const l = _hiwHudRect;
+                onDown({ clientX: l.x + l.w / 2, clientY: l.y + l.h / 2, pointerId: 1 }); const opened = showHudInfo;
+                drawTitleScreen(); onDown({ clientX: 2, clientY: 2, pointerId: 1 });
+                return { opened, back: !showHudInfo && showCurrencyInfo }; })()`);
+            check('HOW IT WORKS\'s link opens YOUR INSTRUMENTS on top, a tap outside returns to the legend',
+                taps.opened && taps.back);
+        }
+    }
+    check(`YOUR INSTRUMENTS and its link fit in every language at 956x440 and 667x375${worst ? ' - ' + worst : ''}`, worst === null);
+}
+
 // ── 12. Title FLOWN figure = every run's score summed (state.js lifetimeScore) ──
 // Catches: the title showing distance again (no coin/graze bonus), a run banked twice
 // across a rewarded continue, and an early player's figure dropping when the display

@@ -176,3 +176,6 @@ the live ship on every pitch change.
   the left column so every reward a run earned is visible at once (stacked lines used to
   suppress each other). Ship unlock outranks a mastery level-up (two ship-coloured chips
   read as a glitch); nothing else suppresses anything.
+- **Two teaching chips** (2026-10-11): "★ N COINS TO A STAR" when the run died with the star
+  meter at half its cost or more (true and near only, nothing attached), and "? YOUR
+  INSTRUMENTS" (tappable, `tap: 'hud'`, `_hudInfoChipRect`) while best < `TUTOR_BEST_MAX`.

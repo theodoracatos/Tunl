@@ -409,6 +409,9 @@ let _settingsRateBtnRect = null;
 let _currencyInfoPanelRect = null;
 // Its stardust half: a tap opens the stardust path on top of it (draw.js, input.js).
 let _hiwStardustRect = null;
+// YOUR INSTRUMENTS (draw.js drawHudInfo): open flag, its panel, the HOW IT WORKS link and
+// the death screen's "?" chip that open it.
+let showHudInfo = false, _hudInfoPanelRect = null, _hiwHudRect = null, _hudInfoChipRect = null;
 // The stardust path: the day-0-to-last-ship timeline opened by tapping the ✦ wallet on
 // the ALL SHIPS sheet. Answers "what is this number for?" where the question comes up,
 // instead of the Settings explainer's one line two panels away.
@@ -695,6 +698,11 @@ let hudSparks = [], hudBump = 0, coinComboWindow = 2.0;
 // hudLaneSparks: a power-up pickup's second spark, flying to its lane. hudAmmoEjects:
 // spent rounds leaving the magazine. hudHullHitT: gtime of the last hull scratch.
 let hudLaneFx = {}, hudLaneSparks = [], hudAmmoEjects = [], hudHullHitT = -9;
+// First-contact tags (constants.js HUD_TAG_* doc): this run's tags, key -> { t: gtime it
+// shows from, a: the word, b: a second line or '' }, and how many runs showed each key on
+// this device. runScrapes counts this run's hull scratches for the run_end event.
+let hudTags = {}, runScrapes = 0;
+let hudTagSeen = (() => { try { return JSON.parse(localStorage.getItem(HUD_TAG_KEY) || '{}') || {}; } catch (e) { return {}; } })();
 let bonusScore, milestoneNext, nearMissTimer, coinCombo, coinComboTimer;
 let grazeChain = 0, grazeChainT = 0;   // hazard graze chain (constants.js GRAZE_*)
 let runCoins, runNearMisses, runMaxCombo;

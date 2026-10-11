@@ -524,6 +524,12 @@ function update(dt) {
         pushNotif(PX + PR * 3, py - H * 0.10, 1.8, T.wallsLive, [255, 120, 70]);
         window.webkit?.messageHandlers?.haptic?.postMessage('medium');
     }
+    // The hull row's first-contact tag (constants.js HUD_TAG_* doc) at the same moment: from
+    // here a wall costs a plate. Counted on its own, so a player past WALLS_LIVE_HINT_RUNS
+    // who never had the tag still gets it.
+    if (!hudTags.hull && scrollX > 0 && levelIntroT <= 0 && HULL_SCRATCHES > 0) {
+        hudTag('hull', `${T.hull} · ${T.hudLeft.replace('{n}', hullScratches)}`);
+    }
 
     // Flight plan: announce each new sector from sector 2 on (sector 1 already has the
     // walls-live hint). Keyed to the player's world-x, so it fires at the same spot for
@@ -1020,6 +1026,7 @@ function update(dt) {
 // no blink). It counts as a hit for the No-Hit achievement like every other absorbed collision.
 function hullScratch(top, bot, r) {
     hullScratches--;
+    runScrapes++;
     markRunSector(runHitSectors);
     hudHullHitT = gtime;   // the HUD plate breaks (draw.js drawEnergyConsole)
     runHitCount++;
@@ -1029,7 +1036,10 @@ function hullScratch(top, bot, r) {
     if (hitTop ? vy < 0 : vy > 0) vy = -vy * 0.35;
     burst(PX, hitTop ? top : bot, 22);
     shake = Math.max(shake, 8);
-    pushNotif(PX + PR * 3, py - H * 0.08, 1.3, T.notifScratch, [255, 170, 90]);
+    // What is left, said where the eye is (HUD legibility concept B, 2026-10-11).
+    pushNotif(PX + PR * 3, py - H * 0.08, 1.3, `${T.notifScratch} · ${T.hudLeft.replace('{n}', hullScratches)}`, [255, 170, 90]);
+    hudTag('hull', `${T.hull} · ${T.hudLeft.replace('{n}', hullScratches)}`);
+    if (hullScratches === 0) hudTag('hull0', T.hudLastWall, '', 0.3);
     sfxHullScratch();
     window.webkit?.messageHandlers?.haptic?.postMessage('medium');
 }
@@ -1207,7 +1217,7 @@ function queueReviewAsk(why) {
 let _reviewCalmT = 0;
 function flushReviewAsk(dt) {
     const busy = dayGrantT > 0 || challengeInboxT > 0 || appOnlyKey || showNotifPrompt
-        || showSettings || showShop || showMissions || showShipPicker || showCurrencyInfo || showStardustPath;
+        || showSettings || showShop || showMissions || showShipPicker || showCurrencyInfo || showStardustPath || showHudInfo;
     _reviewCalmT = busy ? 0 : _reviewCalmT + dt;
     if (reviewPending && _reviewCalmT >= REVIEW_TITLE_CALM_SEC) maybeRequestReview(reviewPending);
 }
@@ -1270,6 +1280,7 @@ function commitDeath() {
         score: score, run: totalRuns, day_run: dailyRuns, best: best, new_best: newBest ? 1 : 0,
         sec: Math.round((performance.now() - _webRunStartMs) / 1000),
         cause: deathWhat || '', wx: Math.round(scrollX + PX - approachLeft),
+        stars: runFrenzies, scrapes: runScrapes,   // did the HUD tags teach the star and the hull (2026-10-11)
     });
     if (typeof window !== 'undefined' && window._tunlGA) {
         window._tunlGA('run_end', { score: score, run: totalRuns, cause: deathWhat || '', wx: Math.round(scrollX + PX - approachLeft) });

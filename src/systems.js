@@ -610,6 +610,7 @@ function checkCoinCollection() {
                 burstCoin(sx, coin.y, 195, 26);
                 shake += 3;
                 hudLaneSpark('blue', sx, coin.y);
+                hudLaneTag('blue');
                 pushNotif(sx, coin.y - 34, 1.1, T.notifSlow, [60,210,255]);
                 sfxSlow();
                 // Music only sags when the effect actually starts; a banked one would
@@ -652,6 +653,7 @@ function checkCoinCollection() {
                 magnetTimeMax = magnetTime;   // the HUD lane's full length (state.js)
                 hudLaneFx.green = { t: gtime, from: _magWas / magnetTime };
                 hudLaneSpark('green', sx, coin.y);
+                hudLaneTag('green');
                 burstCoin(sx, coin.y, 120, 26);
                 shake += 3;
                 pushNotif(sx, coin.y - 34, 1.1, T.notifMagnet, [80,255,130]);
@@ -667,6 +669,7 @@ function checkCoinCollection() {
                 bulletAmmo = Math.min(bulletAmmo + (activeSkin === 6 ? Math.round(masteryLerp(6, 3, 5)) : 5),
                                        bulletAmmoCap());
                 hudLaneSpark('orange', sx, coin.y);
+                hudLaneTag('orange');
                 bulletFireTimer = 0;
                 burstCoin(sx, coin.y, 28, 26);
                 shake += 3;
@@ -680,6 +683,7 @@ function checkCoinCollection() {
                 laserTimeMax = laserTime;
                 hudLaneFx.laser = { t: gtime, from: _lasWas / laserTime };
                 hudLaneSpark('laser', sx, coin.y);
+                hudLaneTag('laser');
                 burstCoin(sx, coin.y, 350, 26);
                 shake += 4;
                 pushNotif(sx, coin.y - 34, 1.1, T.notifLaser, HUD_SPARK_COLOR.laser);
@@ -702,6 +706,7 @@ function checkCoinCollection() {
                 // none of it carries into the first hazards (constants.js
                 // SAFE_GOLD_DRAIN_WX).
                 hudLaneFx.gold = { t: gtime, from: gapBonusVisual / gapBonusMax() };
+                hudLaneTag('gold');
                 gapBonus = Math.min(gapBonusMax(), gapBonus + gapPerCoin() * (activeSkin === 4 ? masteryLerp(4, 2.0, 2.5) : 1));
                 burstCoin(sx, coin.y, 44);
                 // Stack offset computed once and shared by both notifs below: they
@@ -730,6 +735,22 @@ function bulletAmmoCap() { return activeSkin === 6 ? Math.round(masteryLerp(6, 6
 // score as for every coin). Presentation only.
 function hudLaneSpark(k, x, y) {
     if (hudLaneSparks.length < HUD_LANE_SPARK_MAX) hudLaneSparks.push({ k, x, y, t: 0 });
+}
+
+// First-contact tag (constants.js HUD_TAG_* doc): a word beside a console element, once per
+// run per element and only on this device's first HUD_TAG_TIMES runs that showed it.
+// `delay` lets a lane's word arrive with its spark. Presentation only.
+function hudTag(k, a, b = '', delay = 0) {
+    if (hudTags[k] || (hudTagSeen[k] || 0) >= HUD_TAG_TIMES) return;
+    hudTags[k] = { t: gtime + delay, a, b };
+    hudTagSeen[k] = (hudTagSeen[k] || 0) + 1;
+    try { localStorage.setItem(HUD_TAG_KEY, JSON.stringify(hudTagSeen)); } catch (e) {}
+}
+// A lane's word is the legend's own caption for its coin (T.hiwCoins, in COINS order there).
+const _HUD_TAG_CAP = { gold: 0, blue: 1, orange: 3, green: 4, laser: 6 };
+function hudLaneTag(k) {
+    if (hudTags[k]) return;
+    hudTag(k, upperT(T.hiwCoins[_HUD_TAG_CAP[k]]), '', k === 'gold' ? 0 : HUD_SPARK_SEC);
 }
 
 // Points + a spark flying to the score for a bullet hit (same spark as a coin pickup).
@@ -1692,6 +1713,7 @@ function frenzyFill(n) {
     const was = frenzyMeter, ready = FRENZY_READY_FRAC * frenzyCost;
     frenzyMeter = Math.max(0, frenzyMeter + n);
     if (n > 0) hudLaneFx.frenzy = { t: gtime, from: Math.min(1, was / Math.max(1, frenzyCost)) };   // the new segment flashes
+    if (n > 0) hudTag('frenzy', T.hudStarMeter, T.hudStarCost.replace('{n}', frenzyCost));   // the meter's first showing
     if (was < ready && frenzyMeter >= ready && frenzyMeter < frenzyCost) sfxFrenzyReady();
 }
 

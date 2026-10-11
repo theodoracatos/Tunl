@@ -123,6 +123,7 @@ window._tunlReviveDeclined = function () {
 // settings panel and reports true if one was open, so back dismisses the
 // panel first instead of always exiting the app.
 window._tunlCloseSettingsIfOpen = function () {
+    if (showHudInfo) { showHudInfo = false; return true; }            // over HOW IT WORKS or the death screen -- topmost
     if (showStardustPath) { showStardustPath = false; return true; }  // over ALL SHIPS or HOW IT WORKS -- topmost
     if (showCurrencyInfo) { showCurrencyInfo = false; return true; }  // layered on top of Settings -- dismiss it first
     if (showSettings) { showSettings = false; return true; }

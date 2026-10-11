@@ -87,6 +87,11 @@ scratch), the shield is not spent. Speed is unchanged - that is what separates i
   (`_hudFrenzy` in `draw.js`, state from `_hudLaneState('frenzy')`). A key added to
   `_HUD_LANES` also needs its seed in `_hudLaneY`/`_hudLaneA`, or it draws at NaN and throws in
   the browser's `createLinearGradient` - `test-sim.js`'s fake context cannot see that.
+- **The meter is segmented** (2026-10-11): one field per coin of `frenzyCost`, at most 8 (from
+  16 a field is 2 coins), so it reads as "fill it"; a running star keeps its per-second notches.
+  Its first fill in a run tags it "STAR METER / 8 COINS = STAR" (visuals.md), and a death at
+  half the cost or more shows "★ N COINS TO A STAR" on the death screen (screens.md). Display
+  only - the cost and the duty cycle are untouched.
 
 ## Making it unmistakable (2026-09-27)
 

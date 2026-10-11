@@ -36,6 +36,9 @@ const LANGS = {
         notifClose: '+CLOSE',
         wallsLive: 'WALLS NOW DEADLY!',
         hull: 'HULL',   notifScratch: 'SCRAPE!',   sector: 'SECTOR',   entering: 'ENTERING THE TUNL',
+        // HUD legibility (2026-10-11): energy console tags, death-screen chip, YOUR INSTRUMENTS panel
+        hudStarMeter: 'STAR METER',  hudStarCost: '{n} COINS = STAR',  hudLeft: '{n} LEFT',  hudLastWall: 'NEXT WALL = END',  starShort: '{n} COINS TO A STAR',
+        hudInfoTitle: 'YOUR INSTRUMENTS',  hudHullBody: 'Each plate forgives one wall touch.',  hudGoldBody: 'Gold widens the tunnel; it narrows again over time.',  hudTimeLeft: 'The bar is the time left.',  hudAmmoBody: 'Fires by itself, one round per shot.',
         motifCrystal: 'CRYSTAL FOREST',   motifMines: 'MINEFIELD',   motifGold: 'GOLD VEIN',   motifRocks: 'BOULDER FIELD',   motifCannons: 'CANNON ALLEY',   motifRockfall: 'ROCKFALL',   motifDark: 'DARK STRETCH',
         dayBalanced: 'BALANCED',   dayZigzag: 'ZIGZAG',   dayMineBelt: 'MINE BELT',   dayGoldRush: 'GOLD RUSH',
         ghostPassed: '+AHEAD',   onFire: 'ON FIRE', frenzy: 'FRENZY',   pbPassed: '+RECORD',
@@ -150,6 +153,9 @@ const LANGS = {
         notifClose: '+KNAPP',
         wallsLive: 'WÄNDE JETZT TÖDLICH!',
         hull: 'HÜLLE',   notifScratch: 'KRATZER!',   sector: 'SEKTOR',   entering: 'EINFLUG IN DEN TUNL',
+        // HUD legibility (2026-10-11): energy console tags, death-screen chip, YOUR INSTRUMENTS panel
+        hudStarMeter: 'STERN-TANK',  hudStarCost: '{n} MÜNZEN = STERN',  hudLeft: 'NOCH {n}',  hudLastWall: 'NÄCHSTE WAND = ENDE',  starShort: 'NOCH {n} MÜNZEN ZUM STERN',
+        hudInfoTitle: 'DEINE INSTRUMENTE',  hudHullBody: 'Jede Platte verzeiht eine Wandberührung.',  hudGoldBody: 'Gold macht den Tunnel weiter, mit der Zeit wird er wieder enger.',  hudTimeLeft: 'Der Balken ist die verbleibende Zeit.',  hudAmmoBody: 'Feuert von selbst, eine Patrone pro Schuss.',
         motifCrystal: 'KRISTALLWALD',   motifMines: 'MINENFELD',   motifGold: 'GOLDADER',   motifRocks: 'FELSENMEER',   motifCannons: 'KANONENGASSE',   motifRockfall: 'STEINSCHLAG',   motifDark: 'DUNKELSTRECKE',
         dayBalanced: 'AUSGEWOGEN',   dayZigzag: 'ZICKZACK',   dayMineBelt: 'MINENGÜRTEL',   dayGoldRush: 'GOLDRAUSCH',
         ghostPassed: '+VORAUS',   onFire: 'HEISSER LAUF', frenzy: 'RASEREI',   pbPassed: '+REKORD',
@@ -264,6 +270,9 @@ const LANGS = {
         notifClose: '+PRES',
         wallsLive: 'MURS MORTELS !',
         hull: 'COQUE',   notifScratch: 'ÉRAFLURE !',   sector: 'SECTEUR',   entering: 'ENTRÉE DANS LE TUNL',
+        // HUD legibility (2026-10-11): energy console tags, death-screen chip, YOUR INSTRUMENTS panel
+        hudStarMeter: 'JAUGE ÉTOILE',  hudStarCost: '{n} PIÈCES = ÉTOILE',  hudLeft: 'RESTE {n}',  hudLastWall: 'MUR SUIVANT = FIN',  starShort: '{n} PIÈCES AVANT L\'ÉTOILE',
+        hudInfoTitle: 'TES INSTRUMENTS',  hudHullBody: 'Chaque plaque pardonne un contact avec un mur.',  hudGoldBody: 'L\'or élargit le tunnel ; il se resserre avec le temps.',  hudTimeLeft: 'La barre montre le temps restant.',  hudAmmoBody: 'Tire tout seul, une balle par tir.',
         motifCrystal: 'FORÊT DE CRISTAL',   motifMines: 'CHAMP DE MINES',   motifGold: 'FILON D\'OR',   motifRocks: 'MER DE ROCHERS',   motifCannons: 'ALLÉE DES CANONS',   motifRockfall: 'ÉBOULEMENT',   motifDark: 'ZONE OBSCURE',
         dayBalanced: 'ÉQUILIBRÉ',   dayZigzag: 'ZIGZAG',   dayMineBelt: 'CEINTURE DE MINES',   dayGoldRush: 'RUÉE VERS L\'OR',
         ghostPassed: '+DEVANT',   onFire: 'EN FEU', frenzy: 'FRÉNÉSIE',   pbPassed: '+RECORD',
@@ -378,6 +387,9 @@ const LANGS = {
         notifClose: '+VICINO',
         wallsLive: 'ORA I MURI UCCIDONO!',
         hull: 'SCAFO',   notifScratch: 'GRAFFIO!',   sector: 'SETTORE',   entering: 'INGRESSO NEL TUNL',
+        // HUD legibility (2026-10-11): energy console tags, death-screen chip, YOUR INSTRUMENTS panel
+        hudStarMeter: 'INDICATORE STELLA',  hudStarCost: '{n} MONETE = STELLA',  hudLeft: 'RESTANO {n}',  hudLastWall: 'PROSSIMO MURO = FINE',  starShort: '{n} MONETE ALLA STELLA',
+        hudInfoTitle: 'I TUOI STRUMENTI',  hudHullBody: 'Ogni piastra perdona un tocco del muro.',  hudGoldBody: 'L\'oro allarga il tunnel; col tempo si restringe di nuovo.',  hudTimeLeft: 'La barra è il tempo rimasto.',  hudAmmoBody: 'Spara da solo, un colpo per sparo.',
         motifCrystal: 'FORESTA DI CRISTALLI',   motifMines: 'CAMPO MINATO',   motifGold: 'VENA D\'ORO',   motifRocks: 'MARE DI ROCCE',   motifCannons: 'VICOLO DEI CANNONI',   motifRockfall: 'FRANA',   motifDark: 'TRATTO BUIO',
         dayBalanced: 'EQUILIBRATO',   dayZigzag: 'ZIGZAG',   dayMineBelt: 'CINTURA DI MINE',   dayGoldRush: 'CORSA ALL\'ORO',
         ghostPassed: '+AVANTI',   onFire: 'IN FIAMME', frenzy: 'FRENESIA',   pbPassed: '+RECORD',
@@ -492,6 +504,9 @@ const LANGS = {
         notifClose: '+CERCA',
         wallsLive: '¡MUROS LETALES!',
         hull: 'CASCO',   notifScratch: '¡RASGUÑO!',   sector: 'SECTOR',   entering: 'ENTRANDO EN EL TUNL',
+        // HUD legibility (2026-10-11): energy console tags, death-screen chip, YOUR INSTRUMENTS panel
+        hudStarMeter: 'MEDIDOR DE ESTRELLA',  hudStarCost: '{n} MONEDAS = ESTRELLA',  hudLeft: 'QUEDAN {n}',  hudLastWall: 'PRÓXIMO MURO = FIN',  starShort: '{n} MONEDAS PARA LA ESTRELLA',
+        hudInfoTitle: 'TUS INSTRUMENTOS',  hudHullBody: 'Cada placa perdona un roce con el muro.',  hudGoldBody: 'El oro ensancha el túnel; con el tiempo se estrecha de nuevo.',  hudTimeLeft: 'La barra es el tiempo restante.',  hudAmmoBody: 'Dispara solo, una bala por disparo.',
         motifCrystal: 'BOSQUE DE CRISTAL',   motifMines: 'CAMPO MINADO',   motifGold: 'VETA DE ORO',   motifRocks: 'MAR DE ROCAS',   motifCannons: 'CALLEJÓN DE CAÑONES',   motifRockfall: 'DERRUMBE',   motifDark: 'TRAMO OSCURO',
         dayBalanced: 'EQUILIBRADO',   dayZigzag: 'ZIGZAG',   dayMineBelt: 'CINTURÓN DE MINAS',   dayGoldRush: 'FIEBRE DEL ORO',
         ghostPassed: '+DELANTE',   onFire: 'EN LLAMAS', frenzy: 'FRENESÍ',   pbPassed: '+RECORD',
@@ -606,6 +621,9 @@ const LANGS = {
         notifClose: '+PERTO',
         wallsLive: 'PAREDES LETAIS!',
         hull: 'CASCO',   notifScratch: 'ARRANHÃO!',   sector: 'SETOR',   entering: 'ENTRANDO NO TUNL',
+        // HUD legibility (2026-10-11): energy console tags, death-screen chip, YOUR INSTRUMENTS panel
+        hudStarMeter: 'MEDIDOR DE ESTRELA',  hudStarCost: '{n} MOEDAS = ESTRELA',  hudLeft: 'RESTAM {n}',  hudLastWall: 'PRÓXIMA PAREDE = FIM',  starShort: '{n} MOEDAS PARA A ESTRELA',
+        hudInfoTitle: 'SEUS INSTRUMENTOS',  hudHullBody: 'Cada placa perdoa um toque na parede.',  hudGoldBody: 'O ouro alarga o túnel; com o tempo ele volta a estreitar.',  hudTimeLeft: 'A barra é o tempo restante.',  hudAmmoBody: 'Dispara sozinho, uma bala por tiro.',
         motifCrystal: 'FLORESTA DE CRISTAL',   motifMines: 'CAMPO MINADO',   motifGold: 'VEIO DE OURO',   motifRocks: 'MAR DE ROCHAS',   motifCannons: 'BECO DOS CANHÕES',   motifRockfall: 'DESMORONAMENTO',   motifDark: 'TRECHO ESCURO',
         dayBalanced: 'EQUILIBRADO',   dayZigzag: 'ZIGUE-ZAGUE',   dayMineBelt: 'CINTURÃO DE MINAS',   dayGoldRush: 'CORRIDA DO OURO',
         ghostPassed: '+A FRENTE',   onFire: 'EM CHAMAS', frenzy: 'FRENESI',   pbPassed: '+RECORDE',
@@ -720,6 +738,9 @@ const LANGS = {
         notifClose: '+ニアミス',
         wallsLive: '壁に触れるとアウト！',
         hull: '装甲',   notifScratch: 'かすった！',   sector: 'セクター',   entering: 'TUNLへ突入',
+        // HUD legibility (2026-10-11): energy console tags, death-screen chip, YOUR INSTRUMENTS panel
+        hudStarMeter: 'スターメーター',  hudStarCost: 'コイン{n}枚でスター',  hudLeft: '残り{n}',  hudLastWall: '次の壁でアウト',  starShort: 'スターまであとコイン{n}枚',
+        hudInfoTitle: '計器の見かた',  hudHullBody: '装甲1枚で壁への接触を1回防ぐ。',  hudGoldBody: 'ゴールドでトンネルが広がる。時間とともに元に戻る。',  hudTimeLeft: 'バーは残り時間。',  hudAmmoBody: '自動で発射。1発ごとに弾を1つ使う。',
         motifCrystal: '結晶の森',   motifMines: '地雷原',   motifGold: '金鉱脈',   motifRocks: '岩の海',   motifCannons: '砲台通り',   motifRockfall: '落石',   motifDark: '暗闇区間',
         dayBalanced: 'バランス',   dayZigzag: 'ジグザグ',   dayMineBelt: '地雷ベルト',   dayGoldRush: 'ゴールドラッシュ',
         ghostPassed: '+リード',   onFire: '絶好調', frenzy: 'フィーバー',   pbPassed: '+新記録',
@@ -834,6 +855,9 @@ const LANGS = {
         notifClose: '+아슬아슬',
         wallsLive: '이제 벽은 위험!',
         hull: '선체',   notifScratch: '긁혔다!',   sector: '섹터',   entering: 'TUNL 진입',
+        // HUD legibility (2026-10-11): energy console tags, death-screen chip, YOUR INSTRUMENTS panel
+        hudStarMeter: '스타 게이지',  hudStarCost: '코인 {n}개 = 스타',  hudLeft: '{n}개 남음',  hudLastWall: '다음 벽 = 끝',  starShort: '스타까지 코인 {n}개',
+        hudInfoTitle: '계기판',  hudHullBody: '판 하나가 벽 충돌을 한 번 막아 준다.',  hudGoldBody: '골드는 터널을 넓힌다. 시간이 지나면 다시 좁아진다.',  hudTimeLeft: '막대는 남은 시간이다.',  hudAmmoBody: '자동 발사, 한 발에 탄 하나.',
         motifCrystal: '수정 숲',   motifMines: '지뢰밭',   motifGold: '금맥',   motifRocks: '바위 바다',   motifCannons: '대포 골목',   motifRockfall: '낙석',   motifDark: '어둠 구간',
         dayBalanced: '균형',   dayZigzag: '지그재그',   dayMineBelt: '지뢰 벨트',   dayGoldRush: '골드 러시',
         ghostPassed: '+앞섬',   onFire: '불타는 중', frenzy: '피버',   pbPassed: '+신기록',
@@ -948,6 +972,9 @@ const LANGS = {
         notifClose: '+驚險',
         wallsLive: '小心牆壁！',
         hull: '船體',   notifScratch: '擦傷！',   sector: '區段',   entering: '進入 TUNL',
+        // HUD legibility (2026-10-11): energy console tags, death-screen chip, YOUR INSTRUMENTS panel
+        hudStarMeter: '星星量表',  hudStarCost: '{n} 枚金幣 = 星星',  hudLeft: '剩 {n}',  hudLastWall: '再撞牆 = 結束',  starShort: '再 {n} 枚金幣就有星星',
+        hudInfoTitle: '你的儀表',  hudHullBody: '每片護板可抵擋一次撞牆。',  hudGoldBody: '金幣讓隧道變寬,之後會慢慢變窄。',  hudTimeLeft: '長條代表剩餘時間。',  hudAmmoBody: '自動射擊,每發用掉一顆子彈。',
         motifCrystal: '水晶森林',   motifMines: '雷區',   motifGold: '金脈',   motifRocks: '岩海',   motifCannons: '砲台巷',   motifRockfall: '落石',   motifDark: '黑暗區段',
         dayBalanced: '均衡',   dayZigzag: '之字',   dayMineBelt: '雷帶',   dayGoldRush: '淘金熱',
         ghostPassed: '+領先',   onFire: '火力全開', frenzy: '狂熱',   pbPassed: '+新紀錄',
@@ -1062,6 +1089,9 @@ const LANGS = {
         notifClose: '+РЯДОМ',
         wallsLive: 'СТЕНЫ ОПАСНЫ!',
         hull: 'КОРПУС',   notifScratch: 'ЦАРАПИНА!',   sector: 'СЕКТОР',   entering: 'ВХОД В TUNL',
+        // HUD legibility (2026-10-11): energy console tags, death-screen chip, YOUR INSTRUMENTS panel
+        hudStarMeter: 'ШКАЛА ЗВЕЗДЫ',  hudStarCost: 'МОНЕТ ДЛЯ ЗВЕЗДЫ: {n}',  hudLeft: 'ОСТАЛОСЬ {n}',  hudLastWall: 'СЛЕДУЮЩАЯ СТЕНА = КОНЕЦ',  starShort: 'ДО ЗВЕЗДЫ ЕЩЁ {n}',
+        hudInfoTitle: 'ТВОИ ПРИБОРЫ',  hudHullBody: 'Каждая пластина прощает одно касание стены.',  hudGoldBody: 'Золото расширяет тоннель, со временем он снова сужается.',  hudTimeLeft: 'Полоса - оставшееся время.',  hudAmmoBody: 'Стреляет сам, один патрон за выстрел.',
         motifCrystal: 'КРИСТАЛЬНЫЙ ЛЕС',   motifMines: 'МИННОЕ ПОЛЕ',   motifGold: 'ЗОЛОТАЯ ЖИЛА',   motifRocks: 'МОРЕ КАМНЕЙ',   motifCannons: 'АЛЛЕЯ ПУШЕК',   motifRockfall: 'КАМНЕПАД',   motifDark: 'ТЁМНЫЙ УЧАСТОК',
         dayBalanced: 'БАЛАНС',   dayZigzag: 'ЗИГЗАГ',   dayMineBelt: 'МИННЫЙ ПОЯС',   dayGoldRush: 'ЗОЛОТАЯ ЛИХОРАДКА',
         ghostPassed: '+ВПЕРЕДИ',   onFire: 'В ОГНЕ', frenzy: 'ЯРОСТЬ',   pbPassed: '+РЕКОРД',
@@ -1176,6 +1206,9 @@ const LANGS = {
         notifClose: '+قريب',
         wallsLive: 'الجدران قاتلة الآن!',
         hull: 'الهيكل',   notifScratch: 'خدش!',   sector: 'القطاع',   entering: 'الدخول إلى TUNL',
+        // HUD legibility (2026-10-11): energy console tags, death-screen chip, YOUR INSTRUMENTS panel
+        hudStarMeter: 'عداد النجمة',  hudStarCost: '{n} عملة = نجمة',  hudLeft: 'تبقى {n}',  hudLastWall: 'الجدار التالي = النهاية',  starShort: 'باقي {n} للنجمة',
+        hudInfoTitle: 'أجهزتك',  hudHullBody: 'كل صفيحة تغفر لمسة جدار واحدة.',  hudGoldBody: 'الذهب يوسّع النفق، ويضيق مجددًا مع الوقت.',  hudTimeLeft: 'الشريط هو الوقت المتبقي.',  hudAmmoBody: 'يطلق تلقائيًا، رصاصة لكل طلقة.',
         motifCrystal: 'غابة الكريستال',   motifMines: 'حقل ألغام',   motifGold: 'عرق ذهب',   motifRocks: 'بحر الصخور',   motifCannons: 'ممر المدافع',   motifRockfall: 'انهيار صخري',   motifDark: 'مقطع مظلم',
         dayBalanced: 'متوازن',   dayZigzag: 'متعرج',   dayMineBelt: 'حزام الألغام',   dayGoldRush: 'حمى الذهب',
         ghostPassed: '+متقدم',   onFire: 'مشتعل', frenzy: 'هيجان',   pbPassed: '+رقم قياسي',
@@ -1290,6 +1323,9 @@ const LANGS = {
         notifClose: '+YAKIN',
         wallsLive: 'DUVARLAR ARTIK ÖLÜMCÜL!',
         hull: 'GÖVDE',   notifScratch: 'ÇİZİK!',   sector: 'SEKTÖR',   entering: 'TUNL\'A GİRİŞ',
+        // HUD legibility (2026-10-11): energy console tags, death-screen chip, YOUR INSTRUMENTS panel
+        hudStarMeter: 'YILDIZ GÖSTERGESİ',  hudStarCost: '{n} PARA = YILDIZ',  hudLeft: '{n} KALDI',  hudLastWall: 'SONRAKİ DUVAR = SON',  starShort: 'YILDIZA {n} PARA KALDI',
+        hudInfoTitle: 'GÖSTERGELERİN',  hudHullBody: 'Her plaka bir duvar temasını affeder.',  hudGoldBody: 'Altın tüneli genişletir; zamanla yeniden daralır.',  hudTimeLeft: 'Çubuk kalan süredir.',  hudAmmoBody: 'Kendiliğinden ateş eder, atış başına bir mermi.',
         motifCrystal: 'KRİSTAL ORMANI',   motifMines: 'MAYIN TARLASI',   motifGold: 'ALTIN DAMARI',   motifRocks: 'KAYA DENİZİ',   motifCannons: 'TOP SOKAĞI',   motifRockfall: 'KAYA DÜŞMESİ',   motifDark: 'KARANLIK BÖLÜM',
         dayBalanced: 'DENGELİ',   dayZigzag: 'ZİKZAK',   dayMineBelt: 'MAYIN KUŞAĞI',   dayGoldRush: 'ALTIN HÜCUMU',
         ghostPassed: '+ONDE',   onFire: 'ATEŞTE', frenzy: 'ÇILGINLIK',   pbPassed: '+REKOR',
@@ -1404,6 +1440,9 @@ const LANGS = {
         notifClose: '+DEKAT',
         wallsLive: 'DINDING KINI MEMATIKAN!',
         hull: 'LAMBUNG',   notifScratch: 'TERGORES!',   sector: 'SEKTOR',   entering: 'MEMASUKI TUNL',
+        // HUD legibility (2026-10-11): energy console tags, death-screen chip, YOUR INSTRUMENTS panel
+        hudStarMeter: 'METER BINTANG',  hudStarCost: '{n} KOIN = BINTANG',  hudLeft: 'SISA {n}',  hudLastWall: 'DINDING BERIKUTNYA = TAMAT',  starShort: '{n} KOIN LAGI KE BINTANG',
+        hudInfoTitle: 'INSTRUMENMU',  hudHullBody: 'Tiap pelat memaafkan satu sentuhan dinding.',  hudGoldBody: 'Emas melebarkan terowongan; lama-lama menyempit lagi.',  hudTimeLeft: 'Bilah ini adalah sisa waktu.',  hudAmmoBody: 'Menembak sendiri, satu peluru per tembakan.',
         motifCrystal: 'HUTAN KRISTAL',   motifMines: 'LADANG RANJAU',   motifGold: 'URAT EMAS',   motifRocks: 'LAUTAN BATU',   motifCannons: 'LORONG MERIAM',   motifRockfall: 'BATU LONGSOR',   motifDark: 'LINTASAN GELAP',
         dayBalanced: 'SEIMBANG',   dayZigzag: 'ZIGZAG',   dayMineBelt: 'SABUK RANJAU',   dayGoldRush: 'DEMAM EMAS',
         ghostPassed: '+DI DEPAN',   onFire: 'LAGI PANAS', frenzy: 'MENGAMUK',   pbPassed: '+REKOR',
@@ -1518,6 +1557,9 @@ const LANGS = {
         notifClose: '+BLISKO',
         wallsLive: 'ŚCIANY ZABIJAJĄ!',
         hull: 'KADŁUB',   notifScratch: 'RYSA!',   sector: 'SEKTOR',   entering: 'WLOT DO TUNL',
+        // HUD legibility (2026-10-11): energy console tags, death-screen chip, YOUR INSTRUMENTS panel
+        hudStarMeter: 'WSKAŹNIK GWIAZDY',  hudStarCost: 'MONET NA GWIAZDĘ: {n}',  hudLeft: 'ZOSTAŁO {n}',  hudLastWall: 'NASTĘPNA ŚCIANA = KONIEC',  starShort: 'DO GWIAZDY JESZCZE {n}',
+        hudInfoTitle: 'TWOJE PRZYRZĄDY',  hudHullBody: 'Każda płyta wybacza jedno otarcie o ścianę.',  hudGoldBody: 'Złoto poszerza tunel; z czasem znów się zwęża.',  hudTimeLeft: 'Pasek to pozostały czas.',  hudAmmoBody: 'Strzela sam, jeden nabój na strzał.',
         motifCrystal: 'KRYSZTAŁOWY LAS',   motifMines: 'POLE MINOWE',   motifGold: 'ŻYŁA ZŁOTA',   motifRocks: 'MORZE GŁAZÓW',   motifCannons: 'ALEJA DZIAŁ',   motifRockfall: 'LAWINA KAMIENI',   motifDark: 'CIEMNY ODCINEK',
         dayBalanced: 'RÓWNOWAGA',   dayZigzag: 'ZYGZAK',   dayMineBelt: 'PAS MIN',   dayGoldRush: 'GORĄCZKA ZŁOTA',
         ghostPassed: '+WYPRZEDZASZ', onFire: 'W OGNIU', frenzy: 'SZAŁ', pbPassed: '+REKORD',
@@ -1632,6 +1674,9 @@ const LANGS = {
         notifClose: '+ΠΑΡΑ ΤΡΙΧΑ',
         wallsLive: 'ΟΙ ΤΟΙΧΟΙ ΣΚΟΤΩΝΟΥΝ!',
         hull: 'ΑΤΡΑΚΤΟΣ',   notifScratch: 'ΓΡΑΤΖΟΥΝΙΑ!',   sector: 'ΤΟΜΕΑΣ',   entering: 'ΕΙΣΟΔΟΣ ΣΤΟ TUNL',
+        // HUD legibility (2026-10-11): energy console tags, death-screen chip, YOUR INSTRUMENTS panel
+        hudStarMeter: 'ΜΕΤΡΗΤΗΣ ΑΣΤΕΡΙΟΥ',  hudStarCost: '{n} ΝΟΜΙΣΜΑΤΑ = ΑΣΤΕΡΙ',  hudLeft: 'ΑΠΟΜΕΝΟΥΝ: {n}',  hudLastWall: 'ΕΠΟΜΕΝΟΣ ΤΟΙΧΟΣ = ΤΕΛΟΣ',  starShort: '{n} ΝΟΜΙΣΜΑΤΑ ΩΣ ΤΟ ΑΣΤΕΡΙ',
+        hudInfoTitle: 'ΤΑ ΟΡΓΑΝΑ ΣΟΥ',  hudHullBody: 'Κάθε πλάκα συγχωρεί ένα άγγιγμα τοίχου.',  hudGoldBody: 'Ο χρυσός φαρδαίνει το τούνελ· με τον χρόνο στενεύει ξανά.',  hudTimeLeft: 'Η μπάρα είναι ο χρόνος που μένει.',  hudAmmoBody: 'Πυροβολεί μόνο του, μία σφαίρα ανά βολή.',
         motifCrystal: 'ΚΡΥΣΤΑΛΛΙΝΟ ΔΑΣΟΣ',   motifMines: 'ΝΑΡΚΟΠΕΔΙΟ',   motifGold: 'ΦΛΕΒΑ ΧΡΥΣΟΥ',   motifRocks: 'ΘΑΛΑΣΣΑ ΒΡΑΧΩΝ',   motifCannons: 'ΔΙΑΔΡΟΜΟΣ ΚΑΝΟΝΙΩΝ',   motifRockfall: 'ΚΑΤΟΛΙΣΘΗΣΗ',   motifDark: 'ΣΚΟΤΕΙΝΟ ΤΜΗΜΑ',
         dayBalanced: 'ΙΣΟΡΡΟΠΙΑ',   dayZigzag: 'ΖΙΚ ΖΑΚ',   dayMineBelt: 'ΖΩΝΗ ΝΑΡΚΩΝ',   dayGoldRush: 'ΠΥΡΕΤΟΣ ΧΡΥΣΟΥ',
         ghostPassed: '+ΜΠΡΟΣΤΑ',  onFire: 'ΦΩΤΙΑ', frenzy: 'ΜΑΝΙΑ',   pbPassed: '+ΡΕΚΟΡ',
@@ -1746,6 +1791,9 @@ const LANGS = {
         notifClose: '+नज़दीक',
         wallsLive: 'अब दीवारें घातक हैं!',
         hull: 'कवच',   notifScratch: 'खरोंच!',   sector: 'सेक्टर',   entering: 'TUNL में प्रवेश',
+        // HUD legibility (2026-10-11): energy console tags, death-screen chip, YOUR INSTRUMENTS panel
+        hudStarMeter: 'तारा मीटर',  hudStarCost: '{n} सिक्के = तारा',  hudLeft: '{n} बाकी',  hudLastWall: 'अगली दीवार = अंत',  starShort: 'तारे तक {n} सिक्के',
+        hudInfoTitle: 'तुम्हारे यंत्र',  hudHullBody: 'हर प्लेट एक बार दीवार छूना माफ़ करती है।',  hudGoldBody: 'सोना सुरंग चौड़ी करता है; समय के साथ वह फिर सँकरी होती है।',  hudTimeLeft: 'पट्टी बचा हुआ समय है।',  hudAmmoBody: 'खुद चलता है, हर शॉट पर एक गोली।',
         motifCrystal: 'क्रिस्टल वन',   motifMines: 'बारूदी सुरंगें',   motifGold: 'सोने की नस',   motifRocks: 'चट्टानों का सागर',   motifCannons: 'तोपों की गली',   motifRockfall: 'भूस्खलन',   motifDark: 'अंधेरा हिस्सा',
         dayBalanced: 'संतुलित',   dayZigzag: 'ज़िगज़ैग',   dayMineBelt: 'सुरंग पट्टी',   dayGoldRush: 'सोने की होड़',
         ghostPassed: '+आगे',   onFire: 'आग में', frenzy: 'उन्माद',   pbPassed: '+रिकॉर्ड',
@@ -1842,9 +1890,10 @@ let activeLang = localStorage.getItem('tunnel_lang') || detectLang();
 let T = LANGS[activeLang] || LANGS.en;
 
 // Uppercase for a translated string. Greek drops the tonos in all caps ("νέο" -> "ΝΕΟ",
-// not "ΝΈΟ"), which String.toUpperCase() keeps; every other script is untouched.
+// not "ΝΈΟ"), which String.toUpperCase() keeps; every other script is untouched. Turkish
+// keeps its dotted capital ("geniş" -> "GENİŞ", not "GENIŞ").
 function upperT(s) {
-    return s.toUpperCase().normalize('NFD').replace(/([\u0391-\u03A9])\u0301/g, '$1').normalize('NFC');
+    return (activeLang === 'tr' ? s.toLocaleUpperCase('tr') : s.toUpperCase()).normalize('NFD').replace(/([\u0391-\u03A9])\u0301/g, '$1').normalize('NFC');
 }
 
 function setLang(code) {

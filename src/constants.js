@@ -1355,14 +1355,25 @@ const HUD_SPARK_COLOR = {
 };
 
 // ── Energy console (2026-09-26, concept https://claude.ai/artifact/Cm7MGTKfpRqtNmfvSZ77mN) ──
-// The bottom HUD as one instrument (draw.js drawEnergyConsole): the magazine on the left,
-// the power-up lanes in the centre, the hull plates on the right. Presentation only.
+// The bottom HUD as one instrument (draw.js drawEnergyConsole): the star meter and hull
+// plates on the left, the power-up lanes in the centre, the magazine on the right.
+// Presentation only.
 // HUD_LANE_FLASH_SEC: how long a top-up's new segment (or new rounds) flashes.
 // HUD_LANE_WARN_SEC: a timed lane (slow, magnet) pulses at the combo chip's rate once
 // this little is left. HUD_LANE_SPARK_MAX caps hudLaneSparks (state.js).
 const HUD_LANE_FLASH_SEC  = 0.45;
 const HUD_LANE_WARN_SEC   = 1.0;
 const HUD_LANE_SPARK_MAX  = 4;
+// First-contact tags (systems.js hudTag, draw.js _hudTagsDraw; 2026-10-11, HUD legibility
+// concept https://claude.ai/artifact/GnApANcpvJyuNaMeFtsJTr, after a player could not read
+// the bottom-left icons): when an element of the console first shows in a run, a word
+// stands beside it for HUD_TAG_SEC ("STAR METER", "HULL · 2 LEFT", "SLOW TIME"). Once per
+// run per element, and only for the first HUD_TAG_TIMES runs that showed it on this
+// device (counts in localStorage HUD_TAG_KEY). A guest, never a permanent label: the
+// lane's icon stays the coin's own object. Presentation only.
+const HUD_TAG_TIMES = 3;
+const HUD_TAG_SEC   = 2.6;
+const HUD_TAG_KEY   = 'tunl_hud_tags';
 // Points for a bullet hit (systems.js updateBullets). Flat, no combo: ammo is capped and
 // bullets auto-fire, so this is a small bonus for a shot that landed, not a score engine.
 // Also what the laser, the star and a bomb pickup pay per hazard they break (a shield-hit
