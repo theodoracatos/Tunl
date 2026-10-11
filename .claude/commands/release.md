@@ -118,6 +118,11 @@ Deliver both as one markdown file (one section per language, per field -- see
 not just inline chat text -- it needs to survive being copy-pasted into two different
 consoles across 15+ locale fields each.
 
+**4.3 Queued store-listing changes** -- check `store-metadata/pending/` every release. Each file
+there is a name/subtitle/keyword/description change that waited for a version (ASC locks those
+fields while a version is in review). Apply what its "Before applying" list allows, then move the
+file into this version's `store-metadata/<version>/` folder so `pending/` only holds what is still open.
+
 ## 5. Check flytunl.ch
 
 The marketing site lives in **this repo**, at `flytunl-site/` -- never the Schedly repo
