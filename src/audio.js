@@ -780,6 +780,7 @@ function _initAC() {
     // (_reviveAudioContext sets these), so backgrounding still recovers exactly as before.
     if (_titleBgmPending) _loadTitleBgmBuffer();
     if (_bgmPending)      _loadRunBgm();
+    _warmVerbs();
 }
 
 // ── Lazy music loading ────────────────────────────────────────────────
@@ -1049,7 +1050,17 @@ const CAVE_VERB_SEC = 0.9;
 const CAVE_VERB_WET = 0.7;
 let _caveIn = null, _caveAC = null;
 function _caveSend(node, amt) {
-    if (!_ac || !_master) return;
+    if (!_caveReady()) return;
+    const g = _ac.createGain();
+    g.gain.value = amt;
+    node.connect(g); g.connect(_caveIn);
+}
+// Builds the cave hall for the current context if it has none yet. Also called ahead of
+// time by _warmVerbs, because generating the IR costs ~10 ms of main thread (measured
+// 2026-10-11 on an M4, several times that on a phone) - a dropped frame when it happened on
+// the first crack or crash of a run.
+function _caveReady() {
+    if (!_ac || !_master) return false;
     if (!_caveIn || _caveAC !== _ac) {
         const sr = _ac.sampleRate, n = Math.ceil(sr * CAVE_VERB_SEC);
         const buf = _ac.createBuffer(2, n, sr);
@@ -1079,9 +1090,7 @@ function _caveSend(node, amt) {
         _caveIn.connect(cv); cv.connect(wet); wet.connect(_master);
         _caveAC = _ac;
     }
-    const g = _ac.createGain();
-    g.gain.value = amt;
-    node.connect(g); g.connect(_caveIn);
+    return true;
 }
 
 function _distortionCurve(amount) {
@@ -1684,21 +1693,44 @@ function _getBombVerb() {
     return buf;
 }
 
+// One hall per context, shared by every bomb, like _caveIn. Each call used to build its own
+// ConvolverNode, and setting a 2.2 s buffer on one partitions the IR on the main thread:
+// 4-10 ms per pickup on an M4 (2026-10-11), a dropped frame on a phone. The return carries
+// the per-call `out` level (BOMB_OUT) as a constant, so the sum is the same signal as before.
+const BOMB_OUT = 0.12, BOMB_WET = 0.9;
+let _bombIn = null, _bombInAC = null;
+function _bombHall() {
+    if (!_ac || !_master) return null;
+    if (!_bombIn || _bombInAC !== _ac) {
+        const rv = _ac.createConvolver();
+        rv.buffer = _getBombVerb();
+        const wet = _ac.createGain(); wet.gain.value = BOMB_WET * BOMB_OUT;
+        _bombIn = _ac.createGain();
+        _bombIn.connect(rv); rv.connect(wet); wet.connect(_master);
+        _bombInAC = _ac;
+    }
+    return _bombIn;
+}
+
+// Builds both halls shortly after the context starts (from _initAC, so again after a
+// revive), off the frame that first needs them. Lazy building stays as the fallback, and
+// it is what an OfflineAudioContext render relies on.
+function _warmVerbs() {
+    const ac = _ac;
+    setTimeout(() => { if (_ac === ac) { _caveReady(); _bombHall(); } }, 300);
+}
+
 function sfxBomb() {
     if (!_ac || !fxOn) return;
     const t = _ac.currentTime + 0.02;
     const b = t;
     const out = _ac.createGain();
-    out.gain.value = 0.12;
+    out.gain.value = BOMB_OUT;
     out.connect(_master);
     const dry = _ac.createGain();
     dry.connect(out);
-    const rv = _ac.createConvolver();
-    rv.buffer = _getBombVerb();
-    const wet = _ac.createGain(); wet.gain.value = 0.9;
-    rv.connect(wet); wet.connect(out);
     const send = _ac.createGain(); send.gain.value = 0.7;
-    send.connect(rv);
+    send.connect(_bombHall());
     const both = _ac.createGain();   // the boom goes dry and into the hall
     both.gain.value = 3.8;           // +11.5 dB over the first version (asked louder three times, 2026-09-19)
     both.connect(dry); both.connect(send);

@@ -112,6 +112,12 @@ a "Knallfrosch" twice. Method, metrics and traps: `reference_audio_method` memor
   so `CAVE_VERB_WET` is the level (not ear-checked on a device yet - that is the knob).
   Sends only from impacts, blasts, cracks, cannon, creak, shield break, hull scratch and the
   death crash; coins, UI, pickups and the thruster stay dry; the bomb keeps `_bombVerb`.
+- **Halls are built once per context, never per sound** (2026-10-11): the bomb's hall is
+  one shared convolver too (`_bombHall`, like `_caveIn`), and `_warmVerbs` (from `_initAC`)
+  generates both IRs shortly after the context starts. A per-call `ConvolverNode` with a
+  2.2 s IR cost 4-10 ms of main thread on every bomb (M4), and the lazy first build ~10 ms -
+  dropped frames mid-flight. Offline render: identical to the per-call version (-133 dB).
+  The lazy `_ac` check stays, for revive and the OfflineAudioContext harness.
 - **Approach wind** (`approachWindOn`/`approachWindEnter`/`approachWindOff`, 2026-09-24): a
   wind bed over the city, cut where the ship passes the rock mouth (the lowpass closes to
   `APPROACH_WIND_DULL_HZ`, the level drops, and the wind's last moment rings out through
