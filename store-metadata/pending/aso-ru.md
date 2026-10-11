@@ -40,3 +40,22 @@ Before applying:
 
 Re-run the rank check about 2 weeks after the version is live (same terms, `country=ru`) and compare
 ASC downloads for Russia (Kennzahlen -> Nach Datum -> App Store -> Territorium) against the 8 per 30 days baseline.
+
+## Also: en-GB keywords reach the Russian-speaking storefronts (added 2026-10-11)
+
+Apple's storefront table: Kazakhstan, Uzbekistan, Kyrgyzstan, Belarus, Armenia, Azerbaijan, Moldova, Georgia,
+Tajikistan and Turkmenistan index **only English (U.K.)**; Russia indexes Russian **plus English (U.K.)**; Ukraine
+English (U.K.) + Russian + Ukrainian. TUNL's ru listing is therefore invisible to search in those countries, and
+Russian queries there return almost nothing (iTunes search API, 2026-10-11: "пещера" = 2 apps in KZ/UZ/BY/...,
+TUNL not among them). ASC since 2026-08-01: KZ 148 impressions / 6 page views / 1 download, UZ 105 / 0 / 1,
+KG 30, UA 101 / 1 / 0, AM 13, AZ 10.
+
+Today en-GB keywords are a copy of en-US (`copter,helicopter,classic,tunnel,endless,flappy,button,finger,jet,plane,
+retro,gravity,reflex,hold`). New en-GB keywords, keeping the strongest English terms and adding the core Russian ones
+(98 characters):
+
+`copter,helicopter,tunnel,flappy,jet,plane,endless,пещера,самолет,вертолет,аркада,полет,игра,офлайн`
+
+Trade-off: en-GB is the default in most smaller storefronts (UK included), so the weak English words (classic,
+button, finger, retro, gravity, reflex, hold) leave those storefronts. "офлайн" under the same device-test condition
+as the ru subtitle. Measure with the rank script (`country=kz`, terms "пещера", "самолет игра") two weeks after release.
