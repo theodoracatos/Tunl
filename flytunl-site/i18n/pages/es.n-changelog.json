@@ -211,5 +211,9 @@
  "30df08a": "Las primeras veces que aparecen el medidor de estrella, tu casco o una barra de potenciador, su nombre aparece justo al lado y luego se aparta.",
  "c61618a": "El medidor de estrella está dividido en una casilla por moneda, cada rasguño te dice cuántas placas del casco quedan y la última placa brilla en rojo.",
  "b0b8551": "Muere con el medidor de estrella al menos a la mitad y el resumen te dice cuántas monedas te faltaron.",
- "f55c5ad": "Nuevo panel TUS INSTRUMENTOS: explica cada indicador de la parte inferior de la pantalla. Ábrelo desde COMO FUNCIONA, o desde el resumen mientras aprendes."
+ "f55c5ad": "Nuevo panel TUS INSTRUMENTOS: explica cada indicador de la parte inferior de la pantalla. Ábrelo desde COMO FUNCIONA, o desde el resumen mientras aprendes.",
+ "453e492": "Registro de cambios &middot; actualizado el 12 de octubre de 2026 &middot; la versión actual es la <span class=\"tunl-ver\"></span>",
+ "49dfd62": "19.6: Directo a la cueva",
+ "ea50e5b": "En la app de iPhone, la pregunta de Apple sobre el seguimiento ahora llega después de tu primer vuelo en lugar de antes de la pantalla de título, así un piloto nuevo está primero en el aire.",
+ "cc0e5d5": "Las bombas explotan sin tirones: el eco de la explosión ahora se prepara antes del vuelo y no en el momento en que recoges una."
 }

@@ -1,0 +1,21 @@
+{
+  "_note": "19.6 = iOS: Apple's ATT prompt after the first finished run instead of at launch (da47f29); all: bomb hall shared, no stutter on a bomb (9a5284c). Not in the notes: Android analytics after consent, first-run funnel, interstitial events (94fe93d), rating ask from day 2 / 15 runs (9b8b642). ASC text names the tracking question, Play text does not (Android has no ATT). Werbetexte: copy 19.5's (evergreen; ASC does not carry it over).",
+  "en-US": "Bombs go off cleaner now: no more stutter when the blast hits.\n\nPlus fixes under the hood.",
+  "en-GB": "Bombs go off cleaner now: no more stutter when the blast hits.\n\nPlus fixes under the hood.",
+  "es-MX": "Las bombas explotan más limpias: ya no se traba la imagen cuando llega la explosión.\n\nY mejoras internas.",
+  "de-DE": "Bomben zünden jetzt sauberer: kein Ruckeln mehr, wenn die Explosion einschlägt.\n\nDazu Verbesserungen unter der Haube.",
+  "fr-FR": "Les bombes explosent plus proprement : plus de saccade au moment de la déflagration.\n\nEt des corrections sous le capot.",
+  "it": "Le bombe esplodono in modo più pulito: niente più scatti quando arriva l'esplosione.\n\nE correzioni sotto il cofano.",
+  "es-ES": "Las bombas explotan más limpias: se acabaron los tirones cuando llega la explosión.\n\nY arreglos bajo el capó.",
+  "pt-BR": "As bombas explodem mais limpas: sem travadas quando a explosão chega.\n\nE ajustes por baixo do capô.",
+  "ja": "爆弾の爆発がなめらかに。爆風の瞬間のカクつきがなくなった。\n\nほかにも内部を改善。",
+  "ko": "폭탄이 더 깔끔하게 터집니다. 폭발 순간의 끊김이 사라졌어요.\n\n그 밖의 내부 개선도 담았습니다.",
+  "zh-Hant": "炸彈爆炸更俐落：爆炸瞬間不再卡頓。\n\n另有多項內部修正。",
+  "ru": "Бомбы взрываются чище: больше никаких подтормаживаний в момент взрыва.\n\nИ исправления под капотом.",
+  "ar-SA": "القنابل تنفجر بسلاسة أكبر: لا مزيد من التقطع لحظة الانفجار.\n\nوإصلاحات أخرى تحت الغطاء.",
+  "tr": "Bombalar artık daha temiz patlıyor: patlama anında takılma yok.\n\nAyrıca arka planda düzeltmeler.",
+  "id": "Bom meledak lebih mulus: tak ada lagi patah-patah saat ledakan terjadi.\n\nPlus perbaikan di balik layar.",
+  "pl": "Bomby wybuchają płynniej: koniec z przycięciami w chwili wybuchu.\n\nDo tego poprawki pod maską.",
+  "hi": "बम अब ज़्यादा साफ़ फटते हैं: धमाके के पल में अब कोई अटकन नहीं।\n\nसाथ में अंदरूनी सुधार भी।",
+  "el": "Οι βόμβες εκρήγνυνται πιο καθαρά: τέλος τα κολλήματα τη στιγμή της έκρηξης.\n\nΚαι διορθώσεις κάτω από το καπό."
+}
