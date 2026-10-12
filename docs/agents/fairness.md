@@ -117,8 +117,8 @@ a model, not players.
 - Reading: survival time is about W-independent, points per second are not (world-px per
   second scale with W). Only a change that gives every width the same world per second AND
   the same lookahead time can be fair at every tier: drawing the world at scale W/956 on a
-  narrower screen (game logic at W 956, H scaled by 956/W). Not built - a rendering change
-  for its own release.
+  narrower screen (game logic at W 956, H scaled by 956/W). **Built 2026-10-12** (user's call
+  "B", `_ZOOM` in constants.js, all three targets).
 - **That zoom, measured as its logic screens** (678x440 -> 956x620, SE 667x375 -> 956x538,
   Duo outer 678x466 -> 956x657): beginner x1.13-1.17, average x0.95-0.97, expert x0.77-0.91.
   It closes most of the gap, but a taller logic screen still helps beginners and costs
@@ -126,3 +126,15 @@ a model, not players.
   to fit) is equal by construction; that letterboxes tall screens, against the 19.0 call to
   fill the Duo.
 
+## The zoom (`_ZOOM`, 2026-10-12)
+A screen narrower than 956 runs the game at W 956 and H x `_ZOOM` (956 / innerWidth, H caps
+still apply to the zoomed H) and draws the canvas at 1 / `_ZOOM` (`_DISPLAY_SCALE`). So W is
+956 on every device and `scrollSpd()` no longer differs by width. Display-only plumbing:
+input maps through `getBoundingClientRect`; native safe-area insets arrive in CSS px and are
+multiplied by `_ZOOM` (main.js); `UI_H`'s floor is `600 * _ZOOM` so FS and every FS/UI_H-sized
+label keep their on-screen size; a literal px floor or cap in UI code is a screen px and needs
+`* _ZOOM` (the title rail's 46/27 do). Measured with `tools/device-fair-sim.js` (8 days x 6
+runs, paired vs 956x440): 874x402 (iPhone 18 Pro, zooms to 956x440) x1.00 at every tier, was
+up to -16%; 667x375 (SE) 1.17 / 0.94 / 0.84; 678x466 (Duo folded) 1.13 / 0.95 / 0.75; 800x440
+1.16 / 1.00 / 0.81 (beginner/average/expert). What is left is the height residual: a less wide
+aspect than 956:440 gets a taller logic screen, which helps beginners and costs experts.

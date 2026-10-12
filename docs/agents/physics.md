@@ -7,7 +7,8 @@ Rules, constants and traps for this area. CLAUDE.md keeps a one-line version of 
 fairness (`fairness.md`); `H` capped at 670 in the iOS app (600 until 19.0; raised so the
 unfolded iPhone Duo fills its inner display, measured in `fairness.md` "Screen sizes"), 520
 in the Android app, 440 on the web, for consistent difficulty. Wider devices letterbox. H also
-drives `_FEEL_SCALE`.
+drives `_FEEL_SCALE`. A narrower screen zooms (`_ZOOM`, fairness.md "The zoom"): W is 956 on
+every device, H is innerHeight x `_ZOOM` (then capped), the canvas draws at 1 / `_ZOOM`.
 `W`/`H` are frozen from `innerWidth`/`innerHeight` at script load: a page loaded into a 0x0
 WebView never recovers (0x0 canvas, a flat `bgStr` screen). Android loads only once the
 WebView is laid out (`MainActivity.loadWhenSized`); keep any new native load path behind it.

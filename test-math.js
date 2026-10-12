@@ -18,8 +18,8 @@ const worldSrc      = fs.readFileSync(path.join(__dirname, 'src', 'world.js'), '
 // (and everything derived from them) once at load time, so a new size needs a new
 // vm context, not just new arguments.
 function makeWorld(innerWidth, innerHeight) {
-    const fakeCtx = {};
-    const fakeCanvas = { getContext: () => fakeCtx, width: 0, height: 0 };
+    const fakeCtx = { scale() {} };
+    const fakeCanvas = { getContext: () => fakeCtx, width: 0, height: 0, style: {} };
     const sandbox = {
         // Stub the iOS message-handler bridge so web.js's isWeb() returns false:
         // this suite validates the *app's* feel constants (GRAVITY/THRUST, the W/H
@@ -92,7 +92,7 @@ function check(name, cond) {
 // at _H_REF (440) and every device multiplies by _FEEL_SCALE = H/_H_REF. So the checks
 // divide the scaled value back down to the base before comparing.
 {
-    const w  = makeWorld(600, 600);              // app path; H caps at 600
+    const w  = makeWorld(956, 600);              // app path, H 600 (a narrower screen would zoom)
     const w2 = makeWorld(956, 440);              // reference height -> _FEEL_SCALE == 1
     check('_H_REF is 440 (iPhone 17 Pro Max landscape height)', w.H_REF === 440);
     check('_FEEL_SCALE = H/_H_REF', Math.abs(w.FEEL_SCALE - 600 / 440) < 1e-9 && w2.FEEL_SCALE === 1);
@@ -113,11 +113,15 @@ function check(name, cond) {
 // screen would scroll the shared daily cave past faster at a given score. W must clamp.
 {
     check('W caps at 956 on a wide screen', makeWorld(1512, 700).W === 956 && makeWorld(2000, 900).W === 956);
-    check('W is untouched below the cap', makeWorld(812, 375).W === 812);
+    // Zoom (2026-10-12, fairness.md "Screen sizes"): a narrower screen plays at W 956 with
+    // H scaled by the same factor, drawn shrunk to fit.
+    const z = makeWorld(812, 375);
+    check('a narrow screen plays at W 956, H zoomed by 956/W', z.W === 956 && z.H === Math.round(375 * 956 / 812));
+    check('the zoom keeps the app H cap', makeWorld(667, 600).H === 670);
     const narrow = makeWorld(667, 375), wide = makeWorld(1400, 375);
     narrow.scrollX = wide.scrollX = 8000; narrow.refreshWave(); wide.refreshWave();
-    check('two screens at the same score never scroll the cave more than the 956/667 width ratio apart',
-        wide.scrollSpd() / narrow.scrollSpd() <= 956 / 667 + 1e-9);
+    check('a narrow and a wide screen scroll the cave at the same speed at the same score',
+        Math.abs(wide.scrollSpd() - narrow.scrollSpd()) < 1e-9);
 }
 
 // ── Corridor bounds (src/world.js boundsBase/halfGapAt) ──────────────────────
@@ -438,10 +442,10 @@ for (const [iw, ih] of [[600, 600], [844, 390], [1512, 823]]) {
         wNarrow.scrollX = wx; wNarrow.refreshWave();
         wWide.scrollX   = wx; wWide.refreshWave();
         if (Math.abs(wNarrow.worldPxForSec(2.2) - wWide.worldPxForSec(2.2)) > 1e-9) wIndep = false;
-        // ...while scrollSpd itself is deliberately W-scaled, so this is a real distinction.
-        if (wNarrow.scrollSpd() >= wWide.scrollSpd()) wIndep = false;
+        // Since the zoom W is 956 on every screen, so scrollSpd matches as well.
+        if (Math.abs(wNarrow.scrollSpd() - wWide.scrollSpd()) > 1e-9) wIndep = false;
     }
-    check('worldPxForSec is W-independent (shared cave) while scrollSpd stays W-scaled', wIndep);
+    check('worldPxForSec and scrollSpd match on a narrow and a wide screen', wIndep);
 
     // The chicane gate converts to a bounded coins/sec at every depth, forever. A
     // fixed world-px gate cannot do this: scrollSpd never plateaus, so any constant

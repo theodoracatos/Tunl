@@ -2115,7 +2115,7 @@ const FAKE_AC = `(() => {
                 showHudInfo = true; drawTitleScreen(); const p = _hudInfoPanelRect;
                 return { l, hp, p }; })()`);
             const inside = (a, b) => a && b && a.x >= b.x - 1 && a.y >= b.y - 1 && a.x + a.w <= b.x + b.w + 1 && a.y + a.h <= b.y + b.h + 1;
-            const bad = !inside(t.l, t.hp) || !inside(t.p, { x: 0, y: 0, w, h });
+            const bad = !inside(t.l, t.hp) || !inside(t.p, { x: 0, y: 0, w: q('W'), h: q('H') });   // logic px (zoom)
             if (bad && !worst) worst = `${code} ${w}x${h} ${JSON.stringify(t)}`;
         }
         if (w === 956) {

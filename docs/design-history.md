@@ -2626,3 +2626,11 @@ Decisions (user: "ja, committen und ATT nach dem ersten Run"):
   inside the run (covers play). Ads before the answer run without IDFA; with ~0.7 cent per
   player per month the eCPM cost is negligible next to losing installs at the first screen.
 Read ob_* and D1 per platform about a week after the release that carries this.
+
+## Narrow-screen zoom (2026-10-12)
+Decision: narrow screens lost points roughly in proportion to W/956 (fairness.md "Screen sizes").
+Options put to the user: A leave it, B zoom (logic at W 956, H scaled, drawn shrunk), C one fixed
+956x440 logic screen letterboxed everywhere. User picked B. C was the only one equal by
+construction but would have put bars on the iPhone Duo, against the 19.0 call to fill it. B
+makes every 956:440-shaped phone exactly equal and leaves a height residual on squarer screens
+(numbers in fairness.md "The zoom").

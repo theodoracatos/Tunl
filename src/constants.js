@@ -47,11 +47,19 @@ const _WEB = (typeof isWeb === 'function' && isWeb());
 // scores like the 956x440 reference or lower at every tier but the opening-wall
 // beginner, whether H is 520, 600 or 669 - a taller corridor did not turn into points.
 // No other iPhone is taller than 440 in landscape, so this only moves the Duo.
+//
+// ZOOM (2026-10-12, user's call "B", docs/agents/fairness.md "Screen sizes"): a screen
+// NARROWER than 956 no longer plays a narrower world. Narrow phones scored ~W/956 of a
+// Pro Max (same survival time, fewer world-px per second). Now the game runs at the
+// reference width (W 956, H scaled by the same factor) and the canvas is drawn shrunk
+// by 1/_ZOOM to fit, so every width sees the same world per second and the same
+// lookahead time. Display only below this line: input maps through
+// getBoundingClientRect, SAFE_L/SAFE_R arrive in CSS px and are multiplied by _ZOOM
+// (main.js). All three targets; 1 on any screen 956 wide or wider.
 const _ANDROID_APP = (typeof isAndroidApp === 'function' && isAndroidApp());
-const W  = Math.min(window.innerWidth, 956);
-const H  = _WEB ? Math.min(window.innerHeight, 440)
-         : _ANDROID_APP ? Math.min(window.innerHeight, 520)
-         : Math.min(window.innerHeight, 670);
+const _ZOOM = Math.max(1, 956 / window.innerWidth);
+const W  = Math.min(Math.round(window.innerWidth * _ZOOM), 956);
+const H  = Math.min(Math.round(window.innerHeight * _ZOOM), _WEB ? 440 : _ANDROID_APP ? 520 : 670);
 // UI_H/FS drive text AND UI element sizing (ship icons, spacing) -- deliberately NOT the
 // real H 1:1: H is capped per platform for corridor-difficulty reasons (CLAUDE.md) but virtually
 // never gets near that cap on an actual landscape phone (~400-450pt tall, vs. desktop
@@ -64,7 +72,9 @@ const H  = _WEB ? Math.min(window.innerHeight, 440)
 // picker's per-icon text to overflow past the canvas edge when only FS got this fix
 // initially, so use UI_H for icon geometry too, not just text. This floor only affects
 // UI sizing, never H itself, so corridor width/difficulty is completely unaffected.
-const UI_H = Math.max(H, 600);
+// The floor is in screen px, so it grows with _ZOOM: text and icons keep their on-screen
+// size on a zoomed narrow screen (FS below scales by exactly _ZOOM).
+const UI_H = Math.max(H, 600 * _ZOOM);
 const FS = Math.sqrt(W * UI_H);   // font scale: ~603 in landscape, matches old 600x600 sizes
 
 // Web-only, display size only - never touches W/H (the logical/physics coordinate
@@ -80,20 +90,21 @@ const FS = Math.sqrt(W * UI_H);   // font scale: ~603 in landscape, matches old 
 // crisp instead of a blurry upscale of the 956x440 raster. Mobile web and both
 // native apps are unaffected (scale locks to 1).
 const _DPR = window.devicePixelRatio || 1;
-const _DISPLAY_SCALE = _WEB
-    ? Math.min(1.4, Math.max(1, Math.min(window.innerWidth / W, window.innerHeight / H)))
+// A zoomed narrow screen (_ZOOM above) draws below 1 on every target.
+const _DISPLAY_SCALE = _ZOOM > 1 ? 1 / _ZOOM
+    : _WEB ? Math.min(1.4, Math.max(1, Math.min(window.innerWidth / W, window.innerHeight / H)))
     : 1;
 const _RASTER_SCALE = _DISPLAY_SCALE * _DPR;
 cv.width = W * _RASTER_SCALE;
 cv.height = H * _RASTER_SCALE;
-if (_RASTER_SCALE !== 1) {
+if (_RASTER_SCALE !== 1 || _DISPLAY_SCALE !== 1) {
     cv.style.width = (W * _DISPLAY_SCALE) + 'px';
     cv.style.height = (H * _DISPLAY_SCALE) + 'px';
     ctx.scale(_RASTER_SCALE, _RASTER_SCALE);
 }
 
-// Dynamic Island / notch clearance, in canvas px (1:1 with CSS px -- W/H above are
-// already window.innerWidth/innerHeight, not scaled by devicePixelRatio). Pushed
+// Dynamic Island / notch clearance, in canvas px (CSS px times _ZOOM -- W/H above are
+// window.innerWidth/innerHeight times _ZOOM, not scaled by devicePixelRatio). Pushed
 // from native (GameView.swift's TunlWebView.onSafeAreaChange, via the existing
 // _tunlNativeUpdate bridge in main.js) rather than read from CSS env(safe-area-
 // inset-*) here -- confirmed by an on-screen debug readout that env() always

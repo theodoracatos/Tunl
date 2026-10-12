@@ -4862,7 +4862,7 @@ function drawTitleScreen() {
         const reach = 2.3 + 0.55 * 0.5;
         const margin = FS * 0.02;
         const lo = titleColRight + margin;
-        const hi = W - Math.max(W * 0.06, 46) - SAFE_R - 27 - margin;   // the rail's left edge (iconR <= 27)
+        const hi = W - Math.max(W * 0.06, 46 * _ZOOM) - SAFE_R - 27 * _ZOOM - margin;   // the rail's left edge (iconR <= 27 screen px)
         if (shipStageX - heroR * reach < lo) {
             heroR = Math.min(heroR, (hi - lo) / (2 * reach));
             shipStageX = Math.min(Math.max(shipStageX, lo + heroR * reach), hi - heroR * reach);
@@ -5069,7 +5069,7 @@ function drawTitleScreen() {
         // without it this rail sat far enough right to land under the island on
         // real hardware (only ever visible on an actual device/Simulator, a
         // desktop browser has no island to hide it).
-        const railCX  = LAND ? W - Math.max(W * 0.06, 46) - SAFE_R : W / 2;
+        const railCX  = LAND ? W - Math.max(W * 0.06, 46 * _ZOOM) - SAFE_R : W / 2;
         // App landscape: iconR and the gap both key off UI_H, which never drops below
         // 600, so a 5-icon rail is 365px tall on every device - 5px of margin top and
         // bottom at H=375 (12 mini / SE), with the last icon under the home indicator
@@ -5079,7 +5079,8 @@ function drawTitleScreen() {
         // desktop window (H 277 measured) would otherwise push them off the canvas.
         const _railFit = LAND;
         const railPad  = Math.max(H * 0.06, 20);
-        const iconR   = LAND ? Math.min(UI_H * 0.040, 27, _railFit ? H * 0.062 : Infinity) : Math.min(H * 0.036, 22);
+        // Literal px are screen px, so they scale with _ZOOM (constants.js) like UI_H does.
+        const iconR   = LAND ? Math.min(UI_H * 0.040, 27 * _ZOOM, _railFit ? H * 0.062 : Infinity) : Math.min(H * 0.036, 22);
         const iconGap = _railFit && items.length > 1
             ? Math.min(iconR * 3.3, (H - 2 * railPad - 2 * iconR) / (items.length - 1))
             : iconR * 3.3;

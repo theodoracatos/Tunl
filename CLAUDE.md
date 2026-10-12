@@ -86,6 +86,7 @@ Outside `src/`: `branding/` -> ship-render; native ad/IAP code -> economy.
 
 ### Physics and canvas -> `docs/agents/physics.md`
 - W capped at 956 on every platform, H at 670 (iOS app, fills the iPhone Duo; 520 Android app, 440 web): leaderboard fairness.
+- A screen narrower than 956 zooms (`_ZOOM`, 2026-10-12): the game runs at W 956, H scaled by the same factor, drawn shrunk to fit. W is 956 everywhere; a literal px size in UI code is a screen px, so multiply it by `_ZOOM`.
 - iPhone Duo fold/unfold resizes the app live: iOS fit-scales the canvas, pauses a run, reloads at the next safe point (`main.js` "Fold / unfold").
 - **THRUST has been walked back twice on player feedback** - read the tuning history before touching it. Thrust is an acceleration ramp, not an impulse; **every press is a hop** (`TAP_BURST_SEC`, 2026-09-29), holding keeps thrusting. The burst ends inside the frame - `test-sim.js` guards it.
 - **Trapezoid integration** in `update.js` (`py += (vyPrev + vy) * 0.5 * dt`) - do not revert; `test-sim.js` guards it.

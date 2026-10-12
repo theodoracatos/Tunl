@@ -73,8 +73,9 @@ window._tunlNativeUpdate = function (state) {
     // every safe-area change (rotation between LandscapeLeft/LandscapeRight
     // included), not just once, since which edge is unsafe can flip without W/H
     // changing at all.
-    if (typeof state.safeInsetLeft === 'number') SAFE_L = state.safeInsetLeft;
-    if (typeof state.safeInsetRight === 'number') SAFE_R = state.safeInsetRight;
+    // CSS px from native; canvas px are _ZOOM times larger on a zoomed narrow screen.
+    if (typeof state.safeInsetLeft === 'number') SAFE_L = state.safeInsetLeft * _ZOOM;
+    if (typeof state.safeInsetRight === 'number') SAFE_R = state.safeInsetRight * _ZOOM;
     // Rewarded-ad load state (see AdsManager.swift/.kt's rewarded manager), pushed
     // whenever it changes -- load success, consumption, a failed reload. Gates the
     // continue offer (update.js die()) so it's never shown with nothing behind it.
@@ -290,7 +291,7 @@ if (!isWeb() && !isAndroidApp()) {
         if (Math.abs(window.innerWidth - _bootW) < 4 && Math.abs(window.innerHeight - _bootH) < 4) {
             // Back at the boot size (unfolded and folded again): nothing to reload.
             _resizeReloadPending = false;
-            cv.style.width = W + 'px'; cv.style.height = H + 'px';
+            cv.style.width = (W * _DISPLAY_SCALE) + 'px'; cv.style.height = (H * _DISPLAY_SCALE) + 'px';
             return;
         }
         _fitCanvas();
