@@ -1,4 +1,14 @@
-# Pending: Russian App Store listing (ru) - apply with the next iOS version after 19.5
+# Applied with 19.6 (2026-10-12): Russian App Store listing (ru) + en-GB keywords
+
+**Applied on the 19.6 ASC version (submitted 2026-10-12), read back identical:**
+- ru name `TUNL: Самолёт в пещере` (22), subtitle `Аркада: одна пещера в день` (26, the variant WITHOUT "офлайн":
+  no airplane-mode device test yet), keywords `вертолет,коптер,туннель,джет,истребитель,флаппи,flappy,бесконечная,раннер,реакция,ретро,игра,полет` (98).
+- en-GB keywords `copter,helicopter,tunnel,flappy,jet,plane,endless,пещера,самолет,вертолет,аркада,полет,игра` (91, "офлайн" dropped).
+- Open: after an airplane-mode test, "офлайн" can go into the subtitle and the en-GB keywords with a later version.
+
+---
+
+Original queue note (2026-10-11):
 
 Queued 2026-10-11 (user OK). 19.5 was WAITING_FOR_REVIEW, which locks name/subtitle (appInfo) and keywords (version).
 Apply in App Store Connect, locale `ru`, then move this file into that version's `store-metadata/<version>/` folder.
