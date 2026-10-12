@@ -411,7 +411,33 @@ for (const l of OTHER) {
 }
 
 // sitemap
+// <lastmod> is the day a page's content last changed, not the build day: stamping every
+// URL with today on each deploy taught Google to ignore lastmod (Search Console 2026-10-12,
+// new devlog posts sat in "Discovered - currently not indexed"). Each URL's built file is
+// hashed without the version stamps (tunl-ver spans, the homepage's tunl:version meta and
+// sn-ver pill) and the generated site-chrome regions (nav, footer, hreflang), which change on
+// every release or new page; the date moves only when that hash does. The hash + date per
+// URL live in sitemap-lastmod.json (committed, outside site/), one line per URL.
 const today = new Date().toISOString().slice(0, 10);
+const LASTMOD_FILE = path.join(HERE, 'sitemap-lastmod.json');
+const lastmodPrev = existsSync(LASTMOD_FILE) ? JSON.parse(rd(LASTMOD_FILE)) : {};
+const lastmodNext = {};
+const contentHash = (html) => createHash('sha1')
+  .update(blankVer(html)
+    .replace(/<!-- site-chrome:([\w-]+) -->[\s\S]*?<!-- \/site-chrome:\1 -->/g, '')
+    .replace(/(<meta name="tunl:version" content=")[^"]*/, '$1')
+    .replace(/(<a class="sn-ver"[^>]*>)[^<]*/, '$1')
+    .replace(/\s+/g, ' '))
+  .digest('hex').slice(0, 12);
+const lastmodFor = (url, file) => {
+  const prev = lastmodPrev[url];
+  // site/play/ only exists after build:play (deploy.sh runs it first); keep what we had
+  if (!existsSync(file)) return (lastmodNext[url] = prev || { hash: '', date: today }).date;
+  const hash = contentHash(rd(file));
+  lastmodNext[url] = { hash, date: prev && prev.hash === hash ? prev.date : today };
+  return lastmodNext[url].date;
+};
+const fileFor = (l, page) => path.join(SITE, l === 'en' ? '' : l, page, 'index.html');
 const PRI = { '': ['weekly', 1.0], 'play': ['daily', 0.9], 'how-to-play': ['monthly', 0.8], 'ships': ['monthly', 0.8],
   'devlog': ['weekly', 0.7], 'devlog/run-pacing': ['yearly', 0.7], 'devlog/same-ship-every-screen': ['yearly', 0.7],
   'devlog/thrust-retune': ['yearly', 0.7], 'devlog/three-quarter-ship': ['yearly', 0.7],
@@ -427,14 +453,16 @@ const add = (page, langs) => {
     .concat(`    <xhtml:link rel="alternate" hreflang="x-default" href="${urlFor('en', page)}"/>`).join('\n');
   for (const l of langs) {
     const p = l === 'en' ? pri : Math.max(0.1, Math.round((pri - 0.1) * 10) / 10);
-    entries.push(`  <url>\n    <loc>${urlFor(l, page)}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>${freq}</changefreq>\n    <priority>${p.toFixed(1)}</priority>\n${alts}\n  </url>`);
+    entries.push(`  <url>\n    <loc>${urlFor(l, page)}</loc>\n    <lastmod>${lastmodFor(urlFor(l, page), fileFor(l, page))}</lastmod>\n    <changefreq>${freq}</changefreq>\n    <priority>${p.toFixed(1)}</priority>\n${alts}\n  </url>`);
   }
 };
 add('', LANGS);
-entries.push(`  <url>\n    <loc>${ORIGIN}/play/</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.9</priority>\n  </url>`);
+entries.push(`  <url>\n    <loc>${ORIGIN}/play/</loc>\n    <lastmod>${lastmodFor(`${ORIGIN}/play/`, path.join(SITE, 'play', 'index.html'))}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.9</priority>\n  </url>`);
 for (const p of PAGES) add(p, LANGS.filter(l => l === 'en' || GENERATED.has(`${l}:${p}`)));
 writeFileSync(path.join(SITE, 'sitemap.xml'),
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${entries.join('\n')}\n</urlset>\n`);
+writeFileSync(LASTMOD_FILE, '{\n' + Object.entries(lastmodNext)
+  .map(([u, v]) => `  ${JSON.stringify(u)}: ${JSON.stringify(v)}`).join(',\n') + '\n}\n');
 
 const totalPairs = OTHER.length * PAGES.length;
 console.log(`pages built: ${written}/${totalPairs} localized guide pages (${PAGES.length} English pages re-chromed), sitemap ${entries.length} urls`);
