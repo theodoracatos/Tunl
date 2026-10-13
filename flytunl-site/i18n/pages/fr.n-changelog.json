@@ -212,10 +212,13 @@
  "c61618a": "La jauge étoile est découpée en une case par pièce, chaque éraflure te dit combien de plaques de coque il reste, et la dernière plaque brille en rouge.",
  "b0b8551": "Meurs avec la jauge étoile au moins à moitié pleine et le bilan te dit combien de pièces il manquait.",
  "f55c5ad": "Nouveau panneau TES INSTRUMENTS : il explique chaque jauge en bas de l'écran. Ouvre-le depuis COMMENT CA MARCHE, ou depuis le bilan tant que tu apprends.",
- "453e492": "Changelog &middot; mis à jour le 12 octobre 2026 &middot; la version actuelle est la <span class=\"tunl-ver\"></span>",
  "49dfd62": "19.6 : Droit dans la grotte",
  "ea50e5b": "Dans l'app iPhone, la question d'Apple sur le suivi arrive maintenant après ton premier vol au lieu d'avant l'écran titre : un nouveau pilote est d'abord en l'air.",
  "cc0e5d5": "Les bombes explosent sans saccade : l'écho de la déflagration est maintenant préparé avant le vol, et non au moment où tu en ramasses une.",
  "5423603": "19.7 : La même grotte sur chaque écran",
- "8f1f126": "Sur un écran plus étroit que les téléphones les plus larges, le jeu dézoome désormais au lieu de montrer un morceau plus court de la grotte : chaque pilote voit aussi loin devant lui, et les vols du classement sont équitables d'un appareil à l'autre. Les boutons et le texte gardent leur taille."
+ "8f1f126": "Sur un écran plus étroit que les téléphones les plus larges, le jeu dézoome désormais au lieu de montrer un morceau plus court de la grotte : chaque pilote voit aussi loin devant lui, et les vols du classement sont équitables d'un appareil à l'autre. Les boutons et le texte gardent leur taille.",
+ "9809ac2": "Changelog &middot; mis à jour le 13 octobre 2026 &middot; la version actuelle est la <span class=\"tunl-ver\"></span>",
+ "37e2c99": "19.8 : un débriefing mieux rangé",
+ "83de697": "Sur les petits téléphones, un vol riche en récompenses ne les empile plus sur les boutons de l'écran de résultats : ce qui ne tient pas passe dans l'espace libre à droite.",
+ "646a5c7": "Ton premier vol du jour ne s'annonce plus comme record du jour. Il n'y avait encore rien à battre."
 }

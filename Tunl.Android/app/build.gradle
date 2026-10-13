@@ -20,8 +20,8 @@ android {
         applicationId 'com.theodoracatos.tunl'
         minSdk 24
         targetSdk 36
-        versionCode 76
-        versionName '19.7'
+        versionCode 77
+        versionName '19.8'
     }
 
     signingConfigs {

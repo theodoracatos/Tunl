@@ -212,10 +212,13 @@
  "c61618a": "Der Stern-Tank ist in ein Feld pro Münze geteilt, jeder Kratzer sagt dir, wie viele Hüllenplatten noch übrig sind, und die letzte Platte leuchtet rot.",
  "b0b8551": "Stirbst du mit mindestens halb vollem Stern-Tank, sagt dir die Auswertung, wie viele Münzen gefehlt haben.",
  "f55c5ad": "Neues Panel DEINE INSTRUMENTE erklärt jede Anzeige am unteren Bildschirmrand. Öffne es über SO FUNKTIONIERT ES oder, solange du noch lernst, in der Auswertung.",
- "453e492": "Changelog &middot; aktualisiert am 12. Oktober 2026 &middot; die aktuelle Version ist <span class=\"tunl-ver\"></span>",
  "49dfd62": "19.6: Direkt in die Höhle",
  "ea50e5b": "In der iPhone-App kommt Apples Frage zum Tracking jetzt nach deinem ersten Flug statt vor dem Titelbildschirm, so ist ein neuer Pilot zuerst in der Luft.",
  "cc0e5d5": "Bomben zünden ohne Ruckeln: Das Echo der Explosion wird jetzt vor dem Flug vorbereitet statt in dem Moment, in dem du eine einsammelst.",
  "5423603": "19.7: Dieselbe Höhle auf jedem Bildschirm",
- "8f1f126": "Auf einem Bildschirm, der schmaler ist als die breitesten Handys, zoomt das Spiel jetzt heraus, statt ein kürzeres Stück der Höhle zu zeigen. So sieht jeder Pilot gleich weit voraus, und Flüge in der Bestenliste sind über alle Geräte fair. Knöpfe und Text behalten ihre Größe."
+ "8f1f126": "Auf einem Bildschirm, der schmaler ist als die breitesten Handys, zoomt das Spiel jetzt heraus, statt ein kürzeres Stück der Höhle zu zeigen. So sieht jeder Pilot gleich weit voraus, und Flüge in der Bestenliste sind über alle Geräte fair. Knöpfe und Text behalten ihre Größe.",
+ "9809ac2": "Changelog &middot; aktualisiert am 13. Oktober 2026 &middot; die aktuelle Version ist <span class=\"tunl-ver\"></span>",
+ "37e2c99": "19.8: Eine aufgeräumtere Auswertung",
+ "83de697": "Auf kleineren Handys legt ein Flug mit vielen Belohnungen diese nicht mehr über die Knöpfe des Ergebnisbildschirms: Was nicht passt, rückt in den freien Platz rechts.",
+ "646a5c7": "Dein erster Flug des Tages nennt sich nicht mehr Tagesrekord. Es gab ja noch nichts zu schlagen."
 }

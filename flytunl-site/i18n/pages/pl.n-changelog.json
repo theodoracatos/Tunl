@@ -212,10 +212,13 @@
  "c61618a": "Wskaźnik gwiazdy jest podzielony na pola po jednym na monetę, każda rysa mówi, ile płyt kadłuba zostało, a ostatnia płyta świeci na czerwono.",
  "b0b8551": "Rozbij się ze wskaźnikiem gwiazdy pełnym co najmniej w połowie, a podsumowanie powie, ilu monet zabrakło.",
  "f55c5ad": "Nowy panel TWOJE PRZYRZĄDY objaśnia każdy wskaźnik na dole ekranu. Otwórz go z JAK TO DZIAŁA albo z podsumowania, dopóki się uczysz.",
- "453e492": "Lista zmian &middot; zaktualizowana 12 października 2026 &middot; obecna wersja to <span class=\"tunl-ver\"></span>",
  "49dfd62": "19.6: Prosto do jaskini",
  "ea50e5b": "W aplikacji na iPhone'a pytanie Apple o śledzenie pojawia się teraz po twoim pierwszym locie zamiast przed ekranem tytułowym, więc nowy pilot najpierw jest w powietrzu.",
  "cc0e5d5": "Bomby wybuchają bez przycięć: echo wybuchu jest teraz przygotowywane przed lotem, a nie w chwili, gdy zbierasz bombę.",
  "5423603": "19.7: Ta sama jaskinia na każdym ekranie",
- "8f1f126": "Na ekranie węższym niż najszersze telefony gra teraz oddala widok, zamiast pokazywać krótszy odcinek jaskini, więc każdy pilot widzi równie daleko, a loty w rankingu są uczciwe na wszystkich urządzeniach. Przyciski i tekst zachowują swój rozmiar."
+ "8f1f126": "Na ekranie węższym niż najszersze telefony gra teraz oddala widok, zamiast pokazywać krótszy odcinek jaskini, więc każdy pilot widzi równie daleko, a loty w rankingu są uczciwe na wszystkich urządzeniach. Przyciski i tekst zachowują swój rozmiar.",
+ "9809ac2": "Lista zmian &middot; zaktualizowana 13 października 2026 &middot; obecna wersja to <span class=\"tunl-ver\"></span>",
+ "37e2c99": "19.8: Porządniejsze podsumowanie lotu",
+ "83de697": "Na mniejszych telefonach lot pełen nagród nie układa ich już na przyciskach ekranu wyników: to, co się nie mieści, trafia na wolne miejsce po prawej.",
+ "646a5c7": "Twój pierwszy lot dnia nie ogłasza się już rekordem dnia. Nie było jeszcze czego pobić."
 }
