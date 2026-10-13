@@ -1,0 +1,93 @@
+{
+ "_note": "Queued 2026-10-13 (user: 'tiefe Analyse ... setze die besten Vorschlaege direkt um'). ASC name/subtitle on appInfoLocalizations, keywords on the version localization. Rationale and measurements: aso-names-2026-10-13.md next to this file.",
+ "en-US": {
+  "name": "TUNL: Fighter Jet Arcade",
+  "subtitle": "Offline Plane Game, One Tap",
+  "keywords": "games,airplane,aeroplane,helicopter,copter,flying,flappy,reflex,skill,cave,wifi,internet,flyer,pilot"
+ },
+ "en-GB": {
+  "name": "TUNL: Fighter Jet Arcade",
+  "subtitle": "Offline Plane Game, One Tap",
+  "keywords": "games,aeroplane,airplane,helicopter,copter,flying,timepass,wifi,flappy,reflex,cave,самолет,игра"
+ },
+ "de-DE": {
+  "name": "TUNL: Kampfjet Flugzeug Spiel",
+  "subtitle": "Arcade offline, jeden Tag neu",
+  "keywords": "spiele,ohne,internet,helikopter,hubschrauber,jet,flieger,fliegen,flappy,reaktionsspiel,kampfflugzeug"
+ },
+ "fr-FR": {
+  "name": "TUNL : Jeu d'avion de chasse",
+  "subtitle": "Arcade hors ligne, sans wifi",
+  "keywords": "jeux,avions,internet,offline,hélicoptère,jet,grotte,caverne,réflexe,adresse,flappy,rétro,pilote,vol"
+ },
+ "it": {
+  "name": "TUNL: Gioco aereo da caccia",
+  "subtitle": "Arcade offline senza internet",
+  "keywords": "giochi,aerei,guerra,elicottero,jet,grotta,caverna,riflessi,abilità,flappy,passatempo,retro,volo"
+ },
+ "es-ES": {
+  "name": "TUNL: Juego de aviones arcade",
+  "subtitle": "Avión de combate sin internet",
+  "keywords": "juegos,guerra,offline,helicoptero,helicopteros,jet,cueva,tunel,reflejos,habilidad,flappy,retro"
+ },
+ "es-MX": {
+  "name": "TUNL: Juego de aviones arcade",
+  "subtitle": "Aviones de guerra sin internet",
+  "keywords": "juegos,combate,avion,offline,helicoptero,helicopteros,jet,cueva,tunel,reflejos,habilidad,flappy"
+ },
+ "pt-BR": {
+  "name": "TUNL: Jogo de avião de caça",
+  "subtitle": "Arcade offline, sem internet",
+  "keywords": "jogos,aviões,jato,guerra,helicóptero,caverna,túnel,reflexo,habilidade,flappy,retro,voar,passatempo"
+ },
+ "ja": {
+  "name": "TUNL: 飛行機ゲーム 戦闘機アーケード",
+  "subtitle": "オフラインで遊べる暇つぶしゲーム",
+  "keywords": "飛行機,ゲーム,戦闘機,ヘリコプターゲーム,ヘリコプター,ヘリ,ジェット,洞窟,ワンタップ,反射神経,レトロ,シンプル,無料,オフラインゲーム,暇つぶし,フライト"
+ },
+ "ko": {
+  "name": "TUNL: 비행기 게임 전투기 아케이드",
+  "subtitle": "와이파이 없이 즐기는 오프라인",
+  "keywords": "비행기게임,전투기게임,헬리콥터,헬리콥터게임,헬기,제트기,동굴,터널,원터치,반사신경,레트로,킬링타임,무료,비행,간단한"
+ },
+ "zh-Hant": {
+  "name": "TUNL：飛機遊戲・戰鬥機街機",
+  "subtitle": "離線也能玩的打發時間小遊戲",
+  "keywords": "飛機,遊戲,戰鬥機,直升機遊戲,直升機,噴射機,洞穴,隧道,一鍵,反應,復古,單機遊戲,單機,休閒,飛行,免費,離線遊戲"
+ },
+ "ru": {
+  "name": "TUNL: Самолёт в пещере",
+  "subtitle": "Офлайн аркада: истребитель",
+  "keywords": "самолеты,игры,игра,без,интернета,вертолет,коптер,джет,флаппи,реакция,ретро,полет,пещера"
+ },
+ "ar-SA": {
+  "name": "TUNL: العاب طيارات حربية",
+  "subtitle": "لعبة طيارة بدون نت",
+  "keywords": "طائرات,طائرة,حربيه,هليكوبتر,اوفلاين,انترنت,اركيد,كهف,فلابي,نفاثة,طيار"
+ },
+ "tr": {
+  "name": "TUNL: Savaş Uçağı Oyunu",
+  "subtitle": "İnternetsiz jet arcade",
+  "keywords": "uçak,oyunları,oyun,helikopter,mağara,tünel,refleks,flappy,çevrimdışı,tek,dokunuş,retro,uçuş,pilot"
+ },
+ "id": {
+  "name": "TUNL: Game Pesawat Tempur",
+  "subtitle": "Arcade offline tanpa internet",
+  "keywords": "jet,helikopter,gua,terowongan,refleks,flappy,santai,seru,terbang,pilot,retro,kuota,wifi,games"
+ },
+ "pl": {
+  "name": "TUNL: Gra w samoloty offline",
+  "subtitle": "Myśliwiec arcade bez internetu",
+  "keywords": "gry,samolot,helikopter,jaskinia,tunel,odrzutowiec,refleks,flappy,retro,lot,latanie,zręcznościowa"
+ },
+ "el": {
+  "name": "TUNL: Παιχνίδι με αεροπλάνα",
+  "subtitle": "Arcade χωρίς ίντερνετ, offline",
+  "keywords": "παιχνίδια,αεροπλάνο,μαχητικό,ελικόπτερο,σπηλιά,τούνελ,flappy,ρετρό,πτήση,τζετ,plane,games,helicopter"
+ },
+ "hi": {
+  "name": "TUNL: फाइटर जेट प्लेन गेम",
+  "subtitle": "ऑफ़लाइन आर्केड, बिना इंटरनेट",
+  "keywords": "aeroplane,plane,game,games,offline,fighter,jet,helicopter,jahaj,hawai,timepass,flappy,cave"
+ }
+}
