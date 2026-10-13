@@ -395,6 +395,8 @@ let _homeBtnRect = null, _playBtnRect = null, _shareBtnRect = null, _cardBtnRect
 let _continueBtnRect = null;
 // Death-screen shards-ad chip (draw.js reward chips, constants.js SHARDS_AD_REWARD), null when not drawn.
 let _shardsChipRect = null;
+// Every reward chip the death screen drew last frame, { t, x, y, w, h } (draw.js), for test-sim.
+let _deadChipRects = [];
 // Web app-pitch store buttons (draw.js drawWebContinuePromo), null while it is not up.
 let _promoAppleBtnRect = null, _promoPlayBtnRect = null;
 // >0 while the death-screen SHARE (or CARD) button should read "link copied" instead

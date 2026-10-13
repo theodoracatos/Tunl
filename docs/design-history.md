@@ -2634,3 +2634,11 @@ Options put to the user: A leave it, B zoom (logic at W 956, H scaled, drawn shr
 construction but would have put bars on the iPhone Duo, against the 19.0 call to fill it. B
 makes every 956:440-shaped phone exactly equal and leaves a height residual on squarer screens
 (numbers in fairness.md "The zoom").
+
+## Death-screen chips get a floor; no first-run daily best (2026-10-13)
+A 12 mini screenshot showed the shards-offer chip (fifth chip row) over MENU: the chip loop
+was the one block never measured against `btnTop`. Overflow now continues in the right
+column's empty lower half rather than shrinking chips (fonts are keyed to `UI_H`, shrinking
+would break the type steps); hints, then the offer, give way before any reward. Same
+screenshot: DAILY BEST! on the day's first run next to a one-row TODAY TOP - praise for
+beating nothing, so it now needs `dailyRuns > 1`.

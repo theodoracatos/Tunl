@@ -6576,7 +6576,10 @@ function drawDeathScreen() {
     // belongs to no palette at all. A record now pulses in the DAY's own accent, which
     // is the same colour the rail, the panel edge and PLAY AGAIN already carry, so the
     // record reads as this cave's record rather than as a rainbow.
-    const isRecord = (newBest || newDailyBest) && score > 0;
+    // A daily best on the day's first run (dailyRuns is 1 for the run that just ended) is
+    // no record: there was nothing to beat, so neither the pulse nor the chip claims one
+    // (12 mini screenshot, 2026-10-13: DAILY BEST! next to a TODAY TOP of one row).
+    const isRecord = (newBest || (newDailyBest && dailyRuns > 1)) && score > 0;
     const yScore   = yHair + step(0.200, DS_HERO, 0.98);
 
     num(DS_HERO);
@@ -6799,7 +6802,8 @@ function drawDeathScreen() {
     // words where there is time to read, and a reason for the next run. Only when true and
     // near - at least half of the cost - and nothing is attached to it.
     if (frenzyTime <= 0 && frenzyCost > 0 && frenzyMeter >= frenzyCost * 0.5 && frenzyMeter < frenzyCost) {
-        rewards.push({ t: `★ ${T.starShort.replace('{n}', Math.ceil(frenzyCost - frenzyMeter))}`, c: (SKINS[activeSkin] || SKINS[0]).shadow });
+        // `drop` 2: a hint, the first chip to go when the screen runs out of room.
+        rewards.push({ t: `★ ${T.starShort.replace('{n}', Math.ceil(frenzyCost - frenzyMeter))}`, c: (SKINS[activeSkin] || SKINS[0]).shadow, drop: 2 });
     }
     // The day's stardust, on the first run of that day (dailyRuns is 1 for the run that
     // just ended). `dayGrant` is session-only, so a player who already flew earlier
@@ -6819,24 +6823,16 @@ function drawDeathScreen() {
         // revenue options page, option d): the same once-per-day SHARDS_AD_REWARD as the
         // Missions drawer row, which players rarely open. Apps only, only with an ad loaded,
         // gone once claimed. The one tappable chip, so it is drawn as a button (chip's `tap`).
+        // `drop` 1: an offer, not a reward - the Missions drawer row still carries it.
         if (!isWeb() && shardsAdReady && !shardsAdClaimedToday && !shardsAdPending) {
-            rewards.push({ t: `${T.watchAdShards}  +${SHARDS_AD_REWARD} ⧫`, c: [255, 200, 97], tap: 'shards' });
+            rewards.push({ t: `${T.watchAdShards}  +${SHARDS_AD_REWARD} ⧫`, c: [255, 200, 97], tap: 'shards', drop: 1 });
         }
     }
     // YOUR INSTRUMENTS (drawHudInfo) while the player is still a beginner - the tap
     // tutor's band - opened here, where there is time to read (HUD legibility concept E).
-    if (best < TUTOR_BEST_MAX) rewards.push({ t: `? ${T.hudInfoTitle}`, c: [190, 205, 240], tap: 'hud' });
-    _shardsChipRect = null; _hudInfoChipRect = null;
-    let cx = L, cy = yRailLbl + step(0.020, DS_LBL, 0.75);
-    for (const rw of rewards) {
-        const w = chipW(rw.t);
-        if (cx > L && cx + w > L + chipMaxW) { cx = L; cy += chipH + step(0.016, DS_LBL, 0.45); }
-        chip(rw.t, cx, cy, rw.c, !rw.tap, !!rw.tap);
-        if (rw.tap === 'shards') _shardsChipRect = { x: cx, y: cy, w: w, h: chipH };
-        if (rw.tap === 'hud') _hudInfoChipRect = { x: cx, y: cy, w: w, h: chipH };
-        cx += w + W * 0.010;
-    }
-    const leftBottom = rewards.length ? cy + chipH : yRailLbl;
+    if (best < TUTOR_BEST_MAX) rewards.push({ t: `? ${T.hudInfoTitle}`, c: [190, 205, 240], tap: 'hud', drop: 2 });
+    // Placed, not drawn, here: chips that would cross the button row continue in the right
+    // column under the run stats, so they are drawn once that column is done.
 
     // ── right column: the world ───────────────────────────────────────────────
     let ry = PY0 + step(0.125, DS_LBL, 3.6);
@@ -6988,6 +6984,50 @@ function drawDeathScreen() {
                 sx += ctx.measureText(sep).width;
             }
         }
+    }
+
+    // ── reward chips, placed ─────────────────────────────────────────────────
+    // They wrap inside the left column under the rail. The button row is their floor like
+    // everyone else's: a 12 mini run that earned nearly everything (2026-10-13 screenshot)
+    // wrapped a fifth row straight over MENU, because this loop alone never measured it.
+    // What does not fit on the left continues in the right column under the run stats,
+    // the card's emptiest corner. If even that runs out, hints go first (`drop` 2), then
+    // the shards offer (`drop` 1), and only then the last reward - never an overlap.
+    const chipFloor = btnTop - bandGap;
+    const chipGap   = step(0.016, DS_LBL, 0.45);
+    const placeChips = list => {
+        const out = [];
+        let col = 0, x0 = L, maxW = chipMaxW, cx = L, cy = yRailLbl + step(0.020, DS_LBL, 0.75);
+        for (const rw of list) {
+            const w = chipW(rw.t);
+            for (;;) {
+                if (cx > x0 && cx + w > x0 + maxW) { cx = x0; cy += chipH + chipGap; }
+                // Left, a chip wider than the column keeps its own row as it always did;
+                // right, it would run off the card.
+                if (cy + chipH <= chipFloor && (col === 0 || w <= maxW)) break;
+                if (col === 1) return null;
+                col = 1; x0 = RX; maxW = R - RX; cx = RX; cy = ry + step(0.020, DS_LBL, 0.75);
+            }
+            out.push({ rw: rw, x: cx, y: cy, w: w, col: col });
+            cx += w + W * 0.010;
+        }
+        return out;
+    };
+    let shown = rewards.slice(), placed = placeChips(shown);
+    while (!placed && shown.length) {
+        let k = -1;
+        for (let i = shown.length - 1; i >= 0; i--) if ((shown[i].drop || 0) > (k < 0 ? 0 : shown[k].drop)) k = i;
+        shown.splice(k < 0 ? shown.length - 1 : k, 1);
+        placed = placeChips(shown);
+    }
+    _shardsChipRect = null; _hudInfoChipRect = null; _deadChipRects = [];
+    let leftBottom = yRailLbl;
+    for (const p of placed || []) {
+        chip(p.rw.t, p.x, p.y, p.rw.c, !p.rw.tap, !!p.rw.tap);
+        _deadChipRects.push({ t: p.rw.t, x: p.x, y: p.y, w: p.w, h: chipH });
+        if (p.rw.tap === 'shards') _shardsChipRect = { x: p.x, y: p.y, w: p.w, h: chipH };
+        if (p.rw.tap === 'hud') _hudInfoChipRect = { x: p.x, y: p.y, w: p.w, h: chipH };
+        if (p.col === 0) leftBottom = Math.max(leftBottom, p.y + chipH);
     }
 
     // ── the run itself ───────────────────────────────────────────────────────

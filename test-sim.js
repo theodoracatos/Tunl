@@ -1998,13 +1998,48 @@ const FAKE_AC = `(() => {
            for (let i = 0; i < 60 * 3; i++) update(1 / 60);`);
         for (const code of q('Object.keys(LANGS)')) {
             const r = q(`(() => { setLang('${code}'); draw(); const c = _shardsChipRect, p = _playBtnRect;
-                return c ? { right: (c.x + c.w) / W, bottom: c.y + c.h, btn: p.y } : null; })()`);
-            const bad = !r || r.right > 0.5705 || r.bottom > r.btn;
+                return c ? { left: c.x / W, right: (c.x + c.w) / W, bottom: c.y + c.h, btn: p.y } : null; })()`);
+            // Left of the column rule, or wholly right of it when the left column is full.
+            const bad = !r || (r.right > 0.5705 && r.left < 0.5705) || r.bottom > r.btn;
             if (bad && !worst) worst = `${code} ${w}x${h} ${JSON.stringify(r)}`;
         }
         q("setLang('en')");
     }
-    check(`in every language the shards chip fits the left column above the buttons${worst ? ' - ' + worst : ''}`, worst === null);
+    check(`in every language the shards chip stays inside one column above the buttons${worst ? ' - ' + worst : ''}`, worst === null);
+    g('delete window.webkit.messageHandlers.ads;');
+
+    // A run that earned nearly every chip at once, on short screens (12 mini screenshot,
+    // 2026-10-13: a fifth chip row ran over MENU). Catches: a chip crossing the button row,
+    // the column rule or another chip, or a reward dropped while a hint or the offer stayed.
+    let crowd = null, crowdKept = null, movedRight = false;
+    for (const [w, h] of [[956, 440], [808, 371], [780, 360]]) {
+        const q = boot(w, h);
+        q(AUTOPILOT); q('startPlay()');
+        q(`for (let i = 0; i < 20000 && (scrollX < 4200 || approachLeft > 0 || startRamp < 1); i++) { shieldCount = 9; hullScratches = HULL_SCRATCHES; _pilot(); update(1 / 60); }`);
+        q(`window.webkit.messageHandlers.ads = { postMessage() {} }; shieldCount = 0; invulnT = 0; rewardedAdReady = false;
+           die(true); for (let i = 0; i < 60 * 3; i++) update(1 / 60);
+           score = 123456; newBest = true; best = 100; skinUnlockIdx = 1; missionRewardWon = 80; runFrenzies = 1;
+           frenzyTime = 0; frenzyCost = 20; frenzyMeter = 13; dailyRuns = 1; dayGrant = { dust: 1, streak: 34, bonus: false };
+           runCoins = 23; runShardsBanked = 23; shardsAdReady = true; shardsAdClaimedToday = false; shardsAdPending = false;`);
+        for (const code of q('Object.keys(LANGS)')) {
+            const r = q(`(() => { setLang('${code}'); draw();
+                const btn = Math.min(_homeBtnRect.y, _playBtnRect.y);
+                const rs = _deadChipRects.map(c => ({ t: c.t, x: c.x / W, r: (c.x + c.w) / W, y: c.y, b: c.y + c.h }));
+                const has = p => rs.some(c => c.t.includes(p));
+                const want = [SKINS[1].name, T.missionDone, '★ ' + T.frenzy, T.streakDay.replace('{n}', 34), '+23 '];
+                return { rs, btn, kept: want.every(has), miss: want.filter(p => !has(p)),
+                         hint: has('★ ' + T.starShort.replace('{n}', 7)) || has('? ' + T.hudInfoTitle), offer: has(T.watchAdShards) }; })()`);
+            const over = r.rs.some(c => c.b > r.btn || c.x < 0 || c.r > 0.95 || (c.r > 0.571 && c.x < 0.570)
+                || r.rs.some(d => d !== c && c.x < d.r && d.x < c.r && c.y < d.b && d.y < c.b));
+            if (over && !crowd) crowd = `${code} ${w}x${h} btn ${r.btn} ${JSON.stringify(r.rs)}`;
+            if ((!r.kept || (r.hint && !r.offer)) && !crowdKept) crowdKept = `${code} ${w}x${h} missing ${r.miss} - ${r.rs.map(c => c.t).join(' | ')}`;
+            if (r.rs.some(c => c.x >= 0.5705)) movedRight = true;
+        }
+        q("setLang('en')");
+    }
+    check(`with every chip earned, no chip crosses the buttons, the column rule or another chip${crowd ? ' - ' + crowd : ''}`, crowd === null);
+    check(`short of room the chips continue in the right column, hints go before the offer and every reward stays${crowdKept ? ' - ' + crowdKept : ''}`,
+        crowdKept === null && movedRight);
     g('delete window.webkit.messageHandlers.ads;');
 }
 
@@ -2103,6 +2138,18 @@ const FAKE_AC = `(() => {
     })()`);
     check('the "?" chip opens YOUR INSTRUMENTS on the death screen, inside the screen', r.open && r.fits && r.staysOnInside);
     check('a tap outside or a key closes it and never starts a run behind it', r.closed && r.keyClosed);
+    // A daily best on the day's first run is no record: no chip, no pulse claim (2026-10-13).
+    const rec = (runs) => g(`(() => {
+        const texts = []; ctx.fillText = t => { texts.push(String(t)); };
+        best = 1e9; phase = 'play'; frenzyMeter = 0; shieldCount = 0; invulnT = 0; rewardedAdReady = false; deadT = 0;
+        dailyBest = 0; die(true); for (let i = 0; i < 60 * 3; i++) update(1 / 60);
+        dailyRuns = ${runs}; texts.length = 0; draw();
+        delete ctx.fillText;
+        return { daily: newDailyBest && !newBest, shown: texts.some(t => t.includes(upperT(T.newDailyBest))) };
+    })()`);
+    const first = rec(1), second = rec(2);
+    check('a daily best on the day\'s first run shows no DAILY BEST chip, on a later run it does',
+        first.daily && !first.shown && second.daily && second.shown);
     // HOW IT WORKS: its title-row link opens the panel on top in every language, both
     // inside the screen; a tap outside peels it back to HOW IT WORKS.
     let worst = null;
