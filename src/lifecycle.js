@@ -103,7 +103,10 @@ function dayRollover() {
     // What the arrival card (title) and the stardust chip (death screen) report. Session
     // -only: a fresh launch later the same day shows nothing, because nothing happened.
     dayGrant = { dust: STARDUST_PER_DAY + (weekDone ? 1 : 0), bonus: weekDone, crate: crate, grace: graceUsed, streak: streak };
-    dayGrantT = DAY_GRANT_SEC;
+    // No arrival card before the first run ever (2026-10-14 audit, user's pick): "DAY 1 IN A ROW"
+    // means nothing yet and crowded the one screen that has to say "tap". The first death screen's
+    // stardust chip (draw.js, dailyRuns 1) still reports the grant, so it is never silent.
+    dayGrantT = totalRuns === 0 ? 0 : DAY_GRANT_SEC;
     // A completed week queues a rating ask; it waits until this arrival card is gone.
     if (weekDone) queueReviewAsk('week');
     // Reuses the mission-complete chime rather than adding a sound: this sits at the
@@ -111,7 +114,7 @@ function dayRollover() {
     // audio.js already proved that mix. On the very first launch of a day the
     // AudioContext is usually still suspended, exactly like sfxBoot() next to it, so
     // this is the card's accent when it can be, never something it waits for.
-    if (typeof sfxMissionDone === 'function') sfxMissionDone();
+    if (dayGrantT > 0 && typeof sfxMissionDone === 'function') sfxMissionDone();
 
     dailyBest = 0; dailyRuns = 0; dailyShardsEarned = 0;
     localStorage.setItem('tunnel_daily_best', '0');

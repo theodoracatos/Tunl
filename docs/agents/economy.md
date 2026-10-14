@@ -59,11 +59,11 @@ the forced interstitial, not a video the player actively taps):
   `DAILY_SHARD_CAP` like a mission reward. Native plumbing
   (`shardsAdRequest` / `_tunlShardsRewardGranted` / `_tunlShardsRewardDeclined` /
   `shardsAdReady`) mirrors the continue's 1:1. With no native bridge (browser) the row
-  stays inert. **Since 2026-10-01 the same video also sits on the death screen** as the one
-  outlined (tappable) reward chip, next to the shards chip of a run that banked shards, until
-  claimed (`_shardsChipRect`, label `T.watchAdShards` + the amount, no new string). Same
-  amount, same once per day, so the shard ladder is untouched; a second video or "double the
-  run's shards" would change the economy and needs the numbers re-run first.
+  stays inert. **It is offered nowhere else.** From 2026-10-01 to 2026-10-14 the same video
+  also sat on the death screen as a tappable reward chip; the user removed it ("fühlt sich
+  falsch platziert an"), so `ad_result` `src` is 'missions' only from 19.10 on. Don't put it
+  back on the death screen. A second video or "double the run's shards" would change the
+  economy and needs the numbers re-run first.
 - **App analytics** (2026-10-01): `appEvent()` (state.js) sends Firebase custom events through
   the ads bridge (`{action:'event'}`, GameView.swift / MainActivity.kt): `run_start`,
   `run_end` (score, run, day_run, best, new_best, sec, cause and wx as on web), `ad_offer` and `ad_result`
@@ -125,7 +125,8 @@ streak, the crate, the rest day and `bestStreak` against the real function.
 days" instead of `3/5 ✦`, tapping ✦ opens the **stardust path** (`showStardustPath`, the full
 day-0-to-last-ship track with the earned paints on it), and the day's grant is reported once
 on the title (`dayGrant` / `DAY_GRANT_SEC`) and once as a chip on the first death screen of
-the day. The 19:00 reminder swaps one text variant for the streak line from
+the day. Exception: before the first run ever there is no arrival card (2026-10-14, the title
+has to say "TAP TO FLY" instead); the first death screen's chip still reports day 1. The 19:00 reminder swaps one text variant for the streak line from
 `NOTIF_STREAK_MIN` on - never as a threat.
 
 **The shard ladder (`SKINS[].cost`) is set just under what each tier's stardust gate implies,

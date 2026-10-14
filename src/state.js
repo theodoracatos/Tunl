@@ -312,7 +312,8 @@ let shardsAdReady = false;
 // cleared by _tunlShardsRewardGranted/_tunlShardsRewardDeclined in main.js) -- guards
 // the grant callback against a stray second fire.
 let shardsAdPending = false;
-// Where the pending shards ad was asked for ('missions' | 'death'), for appEvent's ad_result.
+// Where the pending shards ad was asked for, for appEvent's ad_result: 'missions' only since the
+// death-screen chip was removed (2026-10-14); 'death' appears in events up to 19.9.
 let shardsAdSource = 'missions';
 // App analytics (2026-10-01, ad revenue options page, measurement step m3): a Firebase
 // custom event through the ads bridge (GameView.swift / MainActivity.kt "event"), so run
@@ -393,8 +394,6 @@ let planetsFlown = parseInt(localStorage.getItem('tunnel_planets_flown') || '0')
 let stardust = parseInt(localStorage.getItem('tunnel_stardust') || '0');
 let _homeBtnRect = null, _playBtnRect = null, _shareBtnRect = null, _cardBtnRect = null;
 let _continueBtnRect = null;
-// Death-screen shards-ad chip (draw.js reward chips, constants.js SHARDS_AD_REWARD), null when not drawn.
-let _shardsChipRect = null;
 // Every reward chip the death screen drew last frame, { t, x, y, w, h } (draw.js), for test-sim.
 let _deadChipRects = [];
 // Web app-pitch store buttons (draw.js drawWebContinuePromo), null while it is not up.

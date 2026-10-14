@@ -2912,22 +2912,30 @@ function drawWorld() {
     // The tap tutor's circle (approach.js) replaces the words while it shows, except while the
     // city waits for a first press: then both show.
     drawTapTutor();
+    let tapWordsA = 0;
     if (phase === 'play' && !hasHeldThisRun && (!(tutorOn && tutorA > 0) || tutorWaiting())) {
         const IDLE_HINT_DELAY = 1.0, IDLE_HINT_FADE = 0.4;
-        const ia = Math.max(0, Math.min(1, (idleHoldTimer - IDLE_HINT_DELAY) / IDLE_HINT_FADE));
-        if (ia > 0) {
-            const pulse = 0.80 + 0.20 * Math.sin(gtime * 6);
-            ctx.save();
-            ctx.textAlign    = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.font         = `bold ${FS*0.026}px ${FONT_UI}`;
-            ctx.shadowColor  = `rgba(140,190,255,${ia * 0.85 * pulse})`;
-            ctx.shadowBlur   = 16;
-            ctx.fillStyle    = `rgba(220,235,255,${ia * pulse})`;
-            ctx.fillText(T.tap, PX, py - PR * 3.4);
-            ctx.shadowBlur   = 0;
-            ctx.restore();
-        }
+        tapWordsA = Math.max(0, Math.min(1, (idleHoldTimer - IDLE_HINT_DELAY) / IDLE_HINT_FADE));
+    }
+    // A long press in the tutor zone brings the words back too (approach.js tutorHoldHintA).
+    if (phase === 'play') tapWordsA = Math.max(tapWordsA, tutorHoldHintA);
+    if (tapWordsA > 0) {
+        const ia = tapWordsA;
+        const pulse = 0.80 + 0.20 * Math.sin(gtime * 6);
+        // Above the ship; when a holder is pinned under the top edge, below the tap circle
+        // (approach.js drawTapTutor: centred py + 2.8 PR, outer ring ~1.8 PR).
+        const wy = py - PR * 3.4 < FS * 0.04 ? py + PR * 6.2 : py - PR * 3.4;
+        ctx.save();
+        // Left-aligned from measured width: WebKit dropped textAlign 'center' for Devanagari.
+        ctx.textAlign    = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.font         = `bold ${FS*0.026}px ${FONT_UI}`;
+        ctx.shadowColor  = `rgba(140,190,255,${ia * 0.85 * pulse})`;
+        ctx.shadowBlur   = 16;
+        ctx.fillStyle    = `rgba(220,235,255,${ia * pulse})`;
+        ctx.fillText(T.tap, Math.max(FS * 0.01, PX - ctx.measureText(T.tap).width / 2), wy);
+        ctx.shadowBlur   = 0;
+        ctx.restore();
     }
 
     // Per-skin effects (draw)
@@ -5021,6 +5029,34 @@ function drawTitleScreen() {
         _shipPickerBtnRect = { x: pillX - 8, y: pillY - 8, w: pillW + 16, h: pillH + 16 };
     }
 
+    // First contact (2026-10-14 audit, https://claude.ai/artifact/59mKs8pwHjJieqXTXd7NrS): a
+    // fresh install's title said nowhere that a tap starts the game (GA4: most new installs
+    // never tapped). Until the first run, "TAP TO FLY" pulses under the ship, in the slot the
+    // ALL SHIPS pill takes later (that pill waits for a played run). A start prompt, not a
+    // control hint: the HOLD/RELEASE line stays gone (docs/agents/onboarding.md). All targets.
+    if (totalRuns === 0) {
+        const fsz   = FS * 0.026;
+        const pulse = 0.72 + 0.28 * Math.sin(gtime * 4);
+        // Alphabetic baseline (WebKit places 'middle' differently, docs/agents/visuals.md).
+        const top   = showShipPanel ? _shipPickerBtnRect.y + _shipPickerBtnRect.h : (LAND ? pillAnchorY : heroNameY) + FS * 0.026;
+        const ty    = top + fsz * 0.9;
+        ctx.save();
+        // Centred by measured width, left-aligned (WebKit dropped textAlign 'center' for Devanagari).
+        let f = fsz;
+        ctx.font = `bold ${f}px ${FONT_UI}`;
+        const w0 = ctx.measureText(T.tap).width, maxW = heroR * 4.2;
+        if (w0 > maxW) { f *= maxW / w0; ctx.font = `bold ${f}px ${FONT_UI}`; }
+        const tw = Math.min(w0, maxW);
+        ctx.textAlign    = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.shadowColor  = `rgba(140,190,255,${a * 0.85 * pulse})`;
+        ctx.shadowBlur   = 16;
+        ctx.fillStyle    = `rgba(220,235,255,${a * pulse})`;
+        ctx.fillText(T.tap, shipStageX - tw / 2, ty);
+        ctx.shadowBlur   = 0;
+        ctx.restore();
+    }
+
     // ── Icon rail ────────────────────────────────────────────────────────
     // Same destinations the old two button rows opened, plus Missions (newly
     // given its own icon + progress badge instead of a permanently-visible
@@ -6819,14 +6855,8 @@ function drawDeathScreen() {
         let s = `+${runShardsBanked} ⧫  ·  ${disp} ⧫`;
         if (runShardsBanked < runCoins) s += `  (${T.dailyCap})`;
         rewards.push({ t: s, c: [255, 200, 97] });
-        // The day's shards video, offered where the shards just landed (2026-10-01, ad
-        // revenue options page, option d): the same once-per-day SHARDS_AD_REWARD as the
-        // Missions drawer row, which players rarely open. Apps only, only with an ad loaded,
-        // gone once claimed. The one tappable chip, so it is drawn as a button (chip's `tap`).
-        // `drop` 1: an offer, not a reward - the Missions drawer row still carries it.
-        if (!isWeb() && shardsAdReady && !shardsAdClaimedToday && !shardsAdPending) {
-            rewards.push({ t: `${T.watchAdShards}  +${SHARDS_AD_REWARD} ⧫`, c: [255, 200, 97], tap: 'shards', drop: 1 });
-        }
+        // No shards-video offer here (removed 2026-10-14, user: "fühlt sich falsch platziert
+        // an"): the day's video lives in the Missions drawer only.
     }
     // YOUR INSTRUMENTS (drawHudInfo) while the player is still a beginner - the tap
     // tutor's band - opened here, where there is time to read (HUD legibility concept E).
@@ -6991,8 +7021,8 @@ function drawDeathScreen() {
     // everyone else's: a 12 mini run that earned nearly everything (2026-10-13 screenshot)
     // wrapped a fifth row straight over MENU, because this loop alone never measured it.
     // What does not fit on the left continues in the right column under the run stats,
-    // the card's emptiest corner. If even that runs out, hints go first (`drop` 2), then
-    // the shards offer (`drop` 1), and only then the last reward - never an overlap.
+    // the card's emptiest corner. If even that runs out, hints go first (`drop` 2), and only
+    // then the last reward - never an overlap.
     const chipFloor = btnTop - bandGap;
     const chipGap   = step(0.016, DS_LBL, 0.45);
     const placeChips = list => {
@@ -7020,12 +7050,11 @@ function drawDeathScreen() {
         shown.splice(k < 0 ? shown.length - 1 : k, 1);
         placed = placeChips(shown);
     }
-    _shardsChipRect = null; _hudInfoChipRect = null; _deadChipRects = [];
+    _hudInfoChipRect = null; _deadChipRects = [];
     let leftBottom = yRailLbl;
     for (const p of placed || []) {
         chip(p.rw.t, p.x, p.y, p.rw.c, !p.rw.tap, !!p.rw.tap);
         _deadChipRects.push({ t: p.rw.t, x: p.x, y: p.y, w: p.w, h: chipH });
-        if (p.rw.tap === 'shards') _shardsChipRect = { x: p.x, y: p.y, w: p.w, h: chipH };
         if (p.rw.tap === 'hud') _hudInfoChipRect = { x: p.x, y: p.y, w: p.w, h: chipH };
         if (p.col === 0) leftBottom = Math.max(leftBottom, p.y + chipH);
     }

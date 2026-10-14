@@ -1737,11 +1737,28 @@ const TUTOR_BEAD_SEC         = 0.4;    // seconds of flight between beads
 const TUTOR_BEAD_FLAT        = 6;      // flat beads before the waves
 const TUTOR_BEAD_WAVE        = 8;      // beads per wave period
 const TUTOR_BEAD_AMP         = 0.10;   // wave amplitude, fraction of H
-const TUTOR_BEAD_TOL         = 0.075;  // a bead lights within this fraction of H of its height
+const TUTOR_BEAD_TOL         = 0.075;  // a bead lights within this fraction of H above its height
+// Late taps (first-contact audit 2026-10-14, https://claude.ai/artifact/59mKs8pwHjJieqXTXd7NrS):
+// the planner put each hop's TOP on the line, so even taps right on the circle passed the beads
+// ~0.05 H below it and a tap 25 ms late lit almost none - real fingers plus touch latency
+// never passed, and the 12 s flight came back before every run. The practice planner now aims
+// the top TUTOR_PRAC_AIM above the line (the hover band is centred on it) and a bead forgives
+// more below than above, so a tap up to ~0.1 s late still lights it. Holding (ceiling) and
+// not tapping (floor) still light nothing.
+const TUTOR_PRAC_AIM         = 0.05;   // fraction of H: the practice planner's hop tops out this far above the bead line
+const TUTOR_BEAD_TOL_LOW     = 0.16;   // fraction of H: a bead lights down to this far below its height
 const TUTOR_PASS_OF          = 8;
 const TUTOR_PASS_NEED        = 6;
 const TUTOR_PASS_MIN         = 12;
 const TUTOR_PRACTICE_MAX_SEC = 12;     // real seconds; then the tunnel comes anyway (30 until 2026-10-01: a player tapping ~0.15 s off the circle sat the full 30 s before every retry)
+const TUTOR_HOLD_HINT_SEC    = 0.5;    // a press held this long in the tutor zone brings back the TAP TO FLY words (draw.js)
+const TUTOR_HOLD_HINT_OUT    = 1.5;    // seconds those words take to fade after the release
+const TUTOR_PRAC_MAX_TRIES   = 2;      // timed-out flights per device; then it never comes again, like a pass (2026-10-14 audit)
+// After the practice flight the camera flies to the mountain this many times faster, easing
+// back to scrollSpd() before the mouth (approach.js approachStep): the flight had pushed the
+// mountain a whole screen off, and the 3.2 s back to the mouth came on top of the practice
+// (2026-10-14; now ~2 s).
+const TUTOR_AFTER_BOOST      = 2.5;
 
 // Launch ramp (update.js): the run opens with the ship flying up into frame from below
 // and levelling out, with py/vy/shipPitch driven by the ramp rather than by the player.

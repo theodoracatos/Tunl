@@ -1139,7 +1139,7 @@ function die(bypassShield = false) {
     bgmSetWarp(false);
     phase = 'dead'; deadT = 0; flashA = 1.0; shake = 14; holding = false; tapBurstT = 0;
     _shareCopiedT = 0;
-    _homeBtnRect = null; _playBtnRect = null; _shareBtnRect = null; _cardBtnRect = null; _continueBtnRect = null; _shardsChipRect = null;
+    _homeBtnRect = null; _playBtnRect = null; _shareBtnRect = null; _cardBtnRect = null; _continueBtnRect = null;
     _promoAppleBtnRect = null; _promoPlayBtnRect = null;
     // Impact feedback fires now, unconditionally -- a hit should always feel like a
     // hit, whether or not a rewarded continue ends up saving the run a moment later

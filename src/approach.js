@@ -79,6 +79,7 @@ let approachT = 0;             // seconds since the approach started (camera eas
 let approachFull = 0;          // approachLeft at the start, for the banner's fade
 let _approachGoT = -1;         // approachT when a tutor hold ended (camera eases in from 0); -1: no hold this run
 let _approachBannerT0 = 0;     // subtracted from approachT for the entering banner; moved on a tutor run (_tutorPracEnd)
+let _tutorPracEndT = -1;       // approachT when this run's practice flight ended; -1: none flown (TUTOR_AFTER_BOOST)
 function _approachBannerAt() { return approachT - _approachBannerT0; }
 let cityScroll = 0;            // camera distance flown over the city (title drift included, never reset)
 let _approachBumpT = 0;        // throttles the city bump's haptic
@@ -199,6 +200,7 @@ function approachStart() {
     approachT = 0;
     _approachGoT = -1;
     _approachBannerT0 = 0;
+    _tutorPracEndT = -1;
     approachLeft = approachFull = scrollSpd() * APPROACH_SEC;
     _approachBumpT = 0;
     levelIntroT = 0;   // the world banner waits for the mouth (approachStep)
@@ -225,6 +227,8 @@ function approachStep(dt, canHold = false) {
         const e = Math.min(1, approachT / APPROACH_EASE_SEC);
         d = lerp(APPROACH_TITLE_SPD, scrollSpd(), e * e * (3 - 2 * e)) * dt;
     }
+    // After a practice flight the camera hurries back to the mountain (TUTOR_AFTER_BOOST).
+    if (!(canHold && tutorPracticing())) d *= approachBoostAt(approachLeft, approachT - _tutorPracEndT);
     cityScroll += d;
     // The practice flight flies over the city; the mountain stays out of view until it is passed.
     if (canHold && tutorPracticing()) tutorPracticeMove(d);
@@ -236,6 +240,25 @@ function approachStep(dt, canHold = false) {
     // TUNL" finishes fading (2026-09-29, user's call; it used to wait for world-x 0 to reach the
     // left edge). A share of the start speed's seconds, so the same moment on every width.
     if (!_approachIntroOn && approachLeft - APPROACH_LIP <= W / 2) { _approachIntroOn = true; levelIntroT = LEVEL_INTRO_DUR; }
+}
+
+// Camera speed factor after a practice flight (constants.js TUTOR_AFTER_BOOST): eases in over
+// a moment from the flight's end, holds while the mouth is far, and eases back to 1 well before
+// the mouth, so the ship enters it at the normal speed. 1 on runs without a flown practice.
+const _BOOST_IN_SEC = 0.4, _BOOST_FAR = 0.65, _BOOST_NEAR = 0.30;   // seconds; mouth distance, x W
+function approachBoostAt(left, sinceEnd) {
+    if (_tutorPracEndT < 0) return 1;
+    const smooth = e => { e = Math.max(0, Math.min(1, e)); return e * e * (3 - 2 * e); };
+    const far = smooth((left - PX - APPROACH_LIP - W * _BOOST_NEAR) / (W * (_BOOST_FAR - _BOOST_NEAR)));
+    return 1 + (TUTOR_AFTER_BOOST - 1) * far * smooth(sinceEnd / _BOOST_IN_SEC);
+}
+// Seconds until the mouth reaches the ship from camera position `left` at the full camera speed,
+// boost included (the wind swell is aimed with it).
+function approachSecToMouth(left, sinceEnd) {
+    const h = 1 / 240, spd = scrollSpd();
+    let t = 0;
+    while (left > PX + APPROACH_LIP && t < 60) { left -= spd * approachBoostAt(left, sinceEnd + t) * h; t += h; }
+    return t;
 }
 
 // The whole play frame while approaching, called from update.js right after the physics
@@ -619,10 +642,18 @@ let tutorBeadGap = 0;     // px between beads (fixed at the start of the flight)
 let tutorBeads = [];      // { k, x, y, passed, lit }
 let tutorBeadNext = 0;    // index of the next bead to create
 let tutorBeadLog = [];    // lit (true/false) per passed bead, oldest first
+let tutorHoldT = 0;       // real seconds the current press has been held inside the tutor zone
+let tutorHoldHintA = 0;   // alpha of the "TAP TO FLY" words a long press brings back (draw.js)
 // The practice flight was passed once on this device: it never comes again (2026-10-01, retention
 // audit: it ran on every tutor run, 6-30 s before each retry). A timeout does not count.
 const TUTOR_PRAC_PASSED_KEY = 'tunl_tutor_practice_passed';
 let tutorPracPassed = localStorage.getItem(TUTOR_PRAC_PASSED_KEY) === '1';
+// Timed-out flights on this device (2026-10-14 audit): after TUTOR_PRAC_MAX_TRIES of them the
+// flight is skipped like a passed one, so a player who never lights the beads no longer pays
+// TUTOR_PRACTICE_MAX_SEC before every run until TUTOR_BEST_MAX.
+const TUTOR_PRAC_TRIES_KEY = 'tunl_tutor_practice_tries';
+let tutorPracTries = parseInt(localStorage.getItem(TUTOR_PRAC_TRIES_KEY) || '0') || 0;
+function tutorPracSkip() { return tutorPracPassed || tutorPracTries >= TUTOR_PRAC_MAX_TRIES; }
 
 function tutorStart() {
     bgmIntroHold(false, true);
@@ -631,6 +662,7 @@ function tutorStart() {
     tutorTaps = 0; tutorHitT = 0; tutorRippleT = 0; tutorClock = 0;
     tutorWaitOver = !tutorOn; tutorWaited = false;
     tutorPracDone = !tutorOn; tutorPracT = 0; tutorPracX = 0; tutorBeads = []; tutorBeadNext = 0; tutorBeadLog = [];
+    tutorHoldT = 0; tutorHoldHintA = 0;
 }
 
 // "The city waits" (2026-09-30, /tt/ telemetry: 35% of first runs never pressed at all, and
@@ -677,7 +709,8 @@ function tutorPracticeMove(d) {
     for (const b of tutorBeads) {
         if (b.passed || b.x > tutorPracX) continue;   // screen x = PX + (b.x - tutorPracX)
         b.passed = true;
-        b.lit = Math.abs(py - b.y) <= H * TUTOR_BEAD_TOL;
+        const off = py - b.y;   // + = below the bead
+        b.lit = off >= -H * TUTOR_BEAD_TOL && off <= H * TUTOR_BEAD_TOL_LOW;
         tutorBeadLog.push(b.lit);
     }
     const last = tutorBeadLog.slice(-TUTOR_PASS_OF);
@@ -694,7 +727,8 @@ function _tutorPracEnd() {
     // The entering banner starts now, as it would a moment after a normal launch.
     _approachBannerT0 = approachT - START_RAMP_SEC * 0.6;
     const ease = tutorPracX === 0 && _approachGoT >= 0 ? APPROACH_EASE_SEC / 2 : 0;
-    approachWindRetime((approachLeft - PX - APPROACH_LIP) / scrollSpd() + ease);
+    if (tutorPracX > 0) _tutorPracEndT = approachT;
+    approachWindRetime(approachSecToMouth(approachLeft, 0) + ease);
 }
 
 // The ship's position on the approach+cave line: negative over the city, world-x in the cave.
@@ -735,10 +769,12 @@ function tutorPlan() {
     if (holding) return TUTOR_LOOKAHEAD;
     const spd = scrollSpd(), u0 = tutorShipU(), h = 1 / 60;
     const s = { p: py, v: vy, b: tapBurstT };
+    // Over the beads the hop tops out above the line, so the hover band is centred on it.
+    const aim = tutorPracticing() ? H * TUTOR_PRAC_AIM : 0;
     for (let t = 0; t <= TUTOR_LOOKAHEAD; t += h) {
         if (s.b <= 0) {
             const ap = _tutorApex(s.p, s.v, 0);
-            if (ap.y >= tutorRouteY(u0 + (t + ap.t) * spd)) return t;
+            if (ap.y >= tutorRouteY(u0 + (t + ap.t) * spd) - aim) return t;
         }
         _tutorStep(s, s.b > 0, h);
     }
@@ -757,7 +793,7 @@ function tutorStep(dt) {
             // The wind stays held through the practice flight; _tutorPracEnd() re-aims it.
             if (approachLeft > 0 && startRamp >= 1) {
                 if (!tutorWaited) approachWindHold();
-                if (tutorPracPassed) _tutorPracEnd(); else _tutorPracStart();
+                if (tutorPracSkip()) _tutorPracEnd(); else _tutorPracStart();
             }
             else tutorPracDone = true;
         } else if (tutorWaiting() && !tutorWaited) {
@@ -767,8 +803,21 @@ function tutorStep(dt) {
         }
     }
     if (tutorWaiting()) bgmIntroHoldTick();
-    if (tutorPracticing()) { tutorPracT += dt; if (tutorPracT >= TUTOR_PRACTICE_MAX_SEC) _tutorPracEnd(); }
+    if (tutorPracticing()) {
+        tutorPracT += dt;
+        if (tutorPracT >= TUTOR_PRACTICE_MAX_SEC) {
+            tutorPracTries++;
+            localStorage.setItem(TUTOR_PRAC_TRIES_KEY, String(tutorPracTries));
+            _tutorPracEnd();
+        }
+    }
     const live = tutorInZone();
+    // Holding instead of tapping (2026-10-14 audit: a holder lit 0 of 27 beads in 12 s with no
+    // word about it, then died in the mouth): a press held past TUTOR_HOLD_HINT_SEC brings the
+    // "TAP TO FLY" words back by the ship; they stay a moment after the release to be read.
+    tutorHoldT = live && holding && tutorWaitOver ? tutorHoldT + dt : 0;
+    tutorHoldHintA = tutorHoldT > TUTOR_HOLD_HINT_SEC ? Math.min(1, tutorHoldHintA + dt / 0.25)
+                                                     : Math.max(0, tutorHoldHintA - dt / TUTOR_HOLD_HINT_OUT);
     tutorA = live ? Math.min(1, tutorA + dt / 0.3) : Math.max(0, tutorA - dt / TUTOR_FADE_SEC);
     tutorHitT = Math.max(0, tutorHitT - dt);
     tutorRippleT = Math.max(0, tutorRippleT - dt);

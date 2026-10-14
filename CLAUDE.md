@@ -156,17 +156,17 @@ Read it and run `test-cave.js` after touching any `maintain*()` / `make*()` / di
 - SHARE sends text + challenge link, CARD the picture ("link first"). No link carries a ghost: `?c` names a worker row that holds it; `?d`/`?s`/`?r` stay. The challenge code is not `isWeb()`-gated (like the link parser); the text's pure block is tested by slicing (`share.md`).
 - Ghost is indexed by `scrollX` and scoped to the calendar day.
 - Hazard grazes pay on the way **out** of the zone, never on entry; wall near-misses never feed the graze chain.
-- The day's stardust is reported twice and never silently: the title's arrival card (`dayGrant`, `DAY_GRANT_SEC`) and a chip on the first death screen of the day. Stardust reads as **days**, not fractions - "in N days", and the ✦ wallet opens the stardust path.
+- The day's stardust is reported twice and never silently: the title's arrival card (`dayGrant`, `DAY_GRANT_SEC`; none before the first run ever) and a chip on the first death screen of the day. Stardust reads as **days**, not fractions - "in N days", and the ✦ wallet opens the stardust path.
 
 ### Approach and onboarding -> `docs/agents/onboarding.md`
 - The city lies before world-x 0 (camera offset), never in it. No soft walls.
-- Safe opening flight to `SAFE_START_WX`; opening coins teach RELEASE. Tap tutor: a circle (iPhone touch button) shows each tap to `SAFE_START_WX` while the best is below `TUTOR_BEST_MAX`; only the player's tap moves the ship. Over the city it waits for the first press, then a bead practice flight gates the tunnel until it has been passed once on the device.
-- `START_RAMP_SEC` stays 1.3s (user's call). **No title-screen control hint.**
+- Safe opening flight to `SAFE_START_WX`; opening coins teach RELEASE. Tap tutor: a circle (iPhone touch button) shows each tap to `SAFE_START_WX` while the best is below `TUTOR_BEST_MAX`; only the player's tap moves the ship. Over the city it waits for the first press, then a bead practice flight gates the tunnel until passed once or timed out `TUTOR_PRAC_MAX_TRIES` times on the device; its planner aims above the beads so late taps still pass. A long press in the tutor zone brings back "TAP TO FLY".
+- `START_RAMP_SEC` stays 1.3s (user's call). **No title-screen control hint**; the one start prompt is "TAP TO FLY" on the title until the first run (2026-10-14).
 
 ### Ads, economy, liveries -> `docs/agents/economy.md`
 - Ad floor `MIN_REAL_RUN_SCORE` is mirrored in `AdsManager.swift`/`.kt` and `ads-web.js` - keep all four in sync.
 - Rewarded continue repairs the hull, no extra shield. Web's offer slot pitches the app and **never grants a revive**.
-- The continue also comes by runs (`CONTINUE_RUN_FROM`/`_EVERY`, apps only, no score number); such an early offer is declined by a tap off the ring. The day's shards video is also a death-screen chip. Apps log run/ad events via `appEvent()` - read them before changing an ad rule.
+- The continue also comes by runs (`CONTINUE_RUN_FROM`/`_EVERY`, apps only, no score number); such an early offer is declined by a tap off the ring. The day's shards video is in the Missions drawer only - never on the death screen (user, 2026-10-14). Apps log run/ad events via `appEvent()` - read them before changing an ad rule.
 - Shard ladder is set so stardust binds at every tier - re-run the numbers before changing either side.
 - The day rolls over in `dayRollover()` (`lifecycle.js`), called from the title **and** from `startPlay()`. Every 7th unbroken day pays a bonus ✦, `STREAK_WEEK_SHARDS` outside the cap and one rest day; a rest day absorbs a single missed day, banked ✦ is never taken away, `bestStreak` only grows.
 - Hangar paint (`paint.js`) is a kit (hull colour, pattern, accent, finish, effect): purely visual, parts bought once, combined per ship. The hull may change hue; the ship's **light** (glow, nozzles, strobes) never does.

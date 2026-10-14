@@ -2642,3 +2642,22 @@ column's empty lower half rather than shrinking chips (fonts are keyed to `UI_H`
 would break the type steps); hints, then the offer, give way before any reward. Same
 screenshot: DAILY BEST! on the day's first run next to a one-row TODAY TOP - praise for
 beating nothing, so it now needs `dailyRuns > 1`.
+
+## First contact: a title that says tap, a practice flight late taps pass (2026-10-14)
+Audit (https://claude.ai/artifact/59mKs8pwHjJieqXTXd7NrS): a fresh iOS install played in
+headless WebKit 852x393 with the app bridge faked, pilots tapping at a fixed offset from the
+tap circle. Findings: the title had no start prompt since v5.1 (7216194, no reason recorded;
+GA4: 5 of 14 US installs tapped start); the practice planner put each hop's top on the bead
+line, so on-time taps passed ~0.05 H below and +25 ms lit almost nothing - every realistic
+player timed out and paid 12 s before every run until best 233; after the flight 3.2 s more to
+the mouth; a holder lit 0/27 beads without a word and died at score 6. User picked all six
+proposals ("setze alles um") and added: remove the shards-video chip from the death screen
+("fühlt sich falsch platziert an").
+Built: A "TAP TO FLY" under the hero ship while totalRuns is 0; B practice aim + asymmetric
+bead tolerance (lags 0-0.15 s pass, 0.2 s and holding/no tap/spam fail); C two timeouts then
+skip; D long press -> TAP TO FLY words in the tutor zone (whole zone, since C hides the beads
+from holders); E camera boost after the practice, back to 1 before the mouth, wind aimed with
+it (3.2 -> 2.1 s; first try at 2x saved only 0.8 s - the audit's "4.5 s" measured to world-x 0,
+not to the mouth); F no arrival card before the first run, the death chip still reports day 1.
+WebKit real time after: tapping 0-100 ms late -> cave 10.7-11.2 s (was 11.8 / 18.2), PLAY AGAIN
+-> cave 6.1 s at +100 ms (was 18 s). Rejected nothing; all targets, no isWeb gate.

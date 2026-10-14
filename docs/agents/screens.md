@@ -182,7 +182,9 @@ the live ship on every pitch change.
 - **The button row is the chips' floor too** (2026-10-13, 12 mini screenshot: a fifth chip
   row over MENU). Chips are placed after the right column; what does not fit on the left
   continues in the right column under the run stats. Still short: hints go first (`drop` 2:
-  near-star, "?"), then the shards offer (`drop` 1), then the last chip - never an overlap.
+  near-star, "?"), then the last chip - never an overlap.
+- **No shards-video offer on the death screen** (removed 2026-10-14, user's call): every chip
+  there is something the run earned or a hint; the day's video lives in the Missions drawer.
   `_deadChipRects` holds what was drawn; `test-sim.js` fills every chip at 780x360.
 - **A daily best on the day's first run is no record**: no DAILY BEST chip and no score pulse
   while `dailyRuns` is 1 (nothing to beat yet). An all-time best still shows. The share card

@@ -984,7 +984,7 @@ function touchCoin(type, setup) {
     // The three surfaces the day feeds: the arrival card over the title, the stardust
     // wallet on the ALL SHIPS sheet and the path panel it opens. Drawn through the real
     // drawTitleScreen(), so a missing i18n key or a bad rect fails here.
-    const ui = boot(956, 440, { tunnel_lastday: YESTERDAY, tunnel_streak: '6', tunnel_stardust: '6' });
+    const ui = boot(956, 440, { tunnel_lastday: YESTERDAY, tunnel_streak: '6', tunnel_stardust: '6', tunnel_total_runs: '40' });
     const surfaces = ui(`(() => {
         titleScreen();                       // rolls the day over and arms the card
         const carded = { grant: !!dayGrant, t: dayGrantT, week: dayGrant.bonus };
@@ -1004,6 +1004,24 @@ function touchCoin(type, setup) {
         surfaces.carded.grant && surfaces.carded.t > 0 && surfaces.carded.week === true);
     check('the ALL SHIPS wallet carries a stardust tap target and opens the path panel',
         surfaces.wallet && surfaces.panel);
+
+    // First contact (2026-10-14): before the first run ever there is no arrival card (the title
+    // has to say "tap" instead), but the grant is not silent - the first death screen's chip
+    // reports it. Catches: the card coming back on a fresh install, and the chip going with it.
+    const fresh = boot(956, 440);
+    fresh(AUTOPILOT);
+    const first = fresh(`(() => {
+        titleScreen();
+        const card = dayGrantT;
+        startPlay();
+        for (let i = 0; i < 60 * 30 && phase === 'play' && (approachLeft > 0 || scrollX < 600); i++) {
+            shieldCount = 9; hullScratches = HULL_SCRATCHES; _pilot(); update(1 / 60); }
+        shieldCount = 0; invulnT = 0; die(true);
+        for (let i = 0; i < 60 * 3; i++) { update(1 / 60); draw(); }
+        return { card, grant: !!dayGrant, chip: _deadChipRects.some(c => c.t.includes(T.streakDay.replace('{n}', 1))) };
+    })()`);
+    check('a fresh install shows no arrival card on its first title, and the first death screen reports the day',
+        first.card === 0 && first.grant && first.chip);
     check('the next goal is the first locked tier whose gate is still ahead, and nothing once every gate is met',
         surfaces.goal && surfaces.goal.gate > 6 && surfaces.done === null);
 
@@ -1225,7 +1243,7 @@ function touchCoin(type, setup) {
         rate.runsHeld === 1 && rate.runsSent === 2 && rate.ev3 === 'record:0,record:1');
     check("Settings' RATE row asks native for the store's review form",
         rate.write === 'write');
-    const wk = boot(956, 440, { tunnel_lastday: String(_dayInt(1)), tunnel_streak: '6', tunnel_stardust: '6' });
+    const wk = boot(956, 440, { tunnel_lastday: String(_dayInt(1)), tunnel_streak: '6', tunnel_stardust: '6', tunnel_total_runs: '40' });
     const weekAsk = wk(`(() => {
         const asks = [];
         window.webkit.messageHandlers.review = { postMessage: m => asks.push(m.action) };
@@ -1783,6 +1801,86 @@ const FAKE_AC = `(() => {
     check('passing the practice flight is remembered on the device; a timeout is not',
         good.flag === '1' && good.mem === true && bad.flag === null && bad.mem === false);
 
+    // First-contact audit (2026-10-14, constants.js TUTOR_PRAC_AIM / TUTOR_BEAD_TOL_LOW): a player
+    // who taps a steady 0.1 s after the circle still passes - before, 25 ms late lit almost no
+    // bead. Catches: the planner aiming the hop's top back onto the line, the tolerance below
+    // shrinking back to the one above.
+    const lagged = (lag) => {
+        const p = boot();
+        p(FAKE_AC);
+        p('startPlay()');
+        return p(`(() => {
+            let t = 0, dueAt = -1;
+            for (let i = 0; i < 60 * 30 && approachLeft > 0 && !(tutorWaitOver && tutorPracDone); i++) {
+                if (startRamp >= 1 && !tutorWaitOver) { onDown(); onUp(); }
+                else if (tutorPracticing() && !thrusting()) {
+                    if (tutorTTap <= 0 && dueAt < 0) dueAt = t;
+                    if (dueAt >= 0 && t - dueAt >= ${lag} - 1e-9) { onDown(); onUp(); dueAt = -1; }
+                }
+                update(1 / 60); t += 1 / 60;
+            }
+            return { passed: tutorPracPassed, t: tutorPracT, lit: tutorBeadLog.filter(Boolean).length, n: tutorBeadLog.length };
+        })()`);
+    };
+    const late1 = lagged(0.1);
+    check(`tapping a steady 0.1 s after the circle still passes the practice flight (${late1.lit}/${late1.n} beads, ${late1.t.toFixed(1)} s)`,
+        late1.passed && late1.t < 9);
+
+    // At most TUTOR_PRAC_MAX_TRIES timed-out flights per device, then the flight is skipped like a
+    // passed one; a holder is told to tap (tutorHoldHintA, the TAP TO FLY words by the ship).
+    // Catches: timeouts not counted, the count not read back on the next launch, the flight
+    // coming back forever, a long press that gets no words.
+    const holdRun = (seed) => {
+        const p = boot(956, 440, seed);
+        p(FAKE_AC);
+        p(`_tapSeen = 0; ctx.fillText = function (s) { if (s === T.tap && tutorWaitOver) _tapSeen++; }; startPlay();`);
+        return p(`(() => {
+            let prac = false, hint = 0;
+            for (let i = 0; i < 60 * 30 && approachLeft > 0; i++) {
+                if (startRamp >= 1 && !tutorWaitOver) { onDown(); onUp(); }
+                else if (tutorWaitOver) holding = true;
+                update(1 / 60); if (i % 4 === 0) draw();
+                if (tutorPracticing()) prac = true;
+                hint = Math.max(hint, tutorHoldHintA);
+            }
+            return { prac, hint, words: _tapSeen, tries: localStorage.getItem(TUTOR_PRAC_TRIES_KEY), key: TUTOR_PRAC_TRIES_KEY };
+        })()`);
+    };
+    const h1 = holdRun({});
+    const h2 = holdRun({ [h1.key]: h1.tries });
+    const h3 = holdRun({ [h1.key]: h2.tries });
+    check(`two timed-out practice flights on a device, then the flight is skipped (tries ${h1.tries}, ${h2.tries}; third run practises: ${h3.prac})`,
+        h1.prac && h2.prac && !h3.prac && h1.tries === '1' && h2.tries === '2');
+    check('a press held over the practice beads brings back the TAP TO FLY words',
+        h1.hint === 1 && h1.words > 10);
+
+    // After the practice flight the camera hurries back to the mountain (TUTOR_AFTER_BOOST) and
+    // eases back before the mouth. Catches: no boost (the 4.5 s back), a boost still on in the mouth.
+    const back = boot();
+    back(FAKE_AC);
+    back('startPlay()');
+    const after = back(`(() => {
+        let t = 0, endAt = -1, mouthAt = -1, kAtMouth = -1;
+        for (let i = 0; i < 60 * 40 && approachLeft > 0; i++) {
+            const due = startRamp >= 1 && tutorTTap <= 0.02 && !thrusting();
+            if (due || (startRamp >= 1 && !tutorWaitOver)) { onDown(); onUp(); }
+            update(1 / 60); t += 1 / 60;
+            if (endAt < 0 && tutorWaitOver && tutorPracDone) endAt = t;
+            if (mouthAt < 0 && approachLeft <= PX + APPROACH_LIP) { mouthAt = t; kAtMouth = approachBoostAt(approachLeft, approachT - _tutorPracEndT); }
+        }
+        return { sec: mouthAt - endAt, k: kAtMouth };
+    })()`);
+    check(`after the practice flight the mountain comes in ${after.sec.toFixed(1)} s and the ship enters the mouth at normal speed`,
+        after.sec > 1 && after.sec < 2.6 && after.k === 1);
+
+    // A fresh install's title says "TAP TO FLY"; once a run was played it does not.
+    const titleTap = (seed) => { const q = boot(956, 440, seed);
+        return q(`(() => { let n = 0; ctx.fillText = function (s) { if (s === T.tap) n++; };
+            titleScreen(); titleT = 1; drawTitleScreen(); return n; })()`); };
+    const tFresh = titleTap({}), tPlayed = titleTap({ tunnel_total_runs: '1', tunnel_best: '12' });
+    check(`a fresh install's title says TAP TO FLY (${tFresh}x); after a run it does not (${tPlayed}x)`,
+        tFresh > 0 && tPlayed === 0);
+
     // Passed once, the flight never comes again (approach.js tutorPracPassed, 2026-10-01): the
     // first press after the wait goes straight to the mountain, with the entering banner and the
     // wind swell retimed for the camera's ease-in from a standstill. Catches: the flight coming
@@ -1972,45 +2070,18 @@ const FAKE_AC = `(() => {
         return e ? e.params : null; })()`);
     check('startPlay sends run_start with the lifetime and day run counts', start && start.run > 0 && start.day_run > 0);
 
-    // The day's shards video as a reward chip on the death screen, and a real tap on it.
-    const chip = (setup) => g(`(() => { _reset(1, 10); rewardedAdReady = false; ${setup} die(true);
+    // The day's shards video is NOT on the death screen (removed 2026-10-14, user's call; it
+    // lives in the Missions drawer only). Catches: the offer chip coming back with an ad loaded.
+    const noOffer = g(`(() => { _reset(1, 10); rewardedAdReady = false;
+        runCoins = 5; runShardsBanked = 5; shardsAdReady = true; shardsAdClaimedToday = false; shardsAdPending = false; die(true);
         for (let i = 0; i < 60 * 3; i++) { update(1 / 60); draw(); }
-        const c = _shardsChipRect, play = _playBtnRect; let tap = null;
-        if (c) { _posted = []; onDown({ clientX: c.x + c.w / 2, clientY: c.y + c.h / 2, pointerId: 1 });
-                 tap = { req: _posted.some(m => m.action === 'shardsAdRequest'), pending: shardsAdPending, src: shardsAdSource, phase: phase }; }
-        shardsAdPending = false;
-        return { c, play: play ? { y: play.y } : null, tap, W: W }; })()`);
-    const on = chip('runCoins = 5; shardsAdReady = true; shardsAdClaimedToday = false; shardsAdPending = false;');
-    const claimed = chip('runCoins = 5; shardsAdReady = true; shardsAdClaimedToday = true;');
-    const noCoins = chip('runCoins = 0; shardsAdReady = true; shardsAdClaimedToday = false;');
-    check('a run that banked shards shows the shards-video chip while the day\'s video is unclaimed',
-        on.c !== null && claimed.c === null && noCoins.c === null);
-    check('a tap on the chip asks native for the shards video, from the death screen, and starts no run',
-        on.tap && on.tap.req && on.tap.pending && on.tap.src === 'death' && on.tap.phase === 'dead');
-    // Every language, and a short phone: the chip stays left of the world column and above the buttons.
-    let worst = null;
-    for (const [w, h] of [[956, 440], [808, 371]]) {
-        const q = boot(w, h);
-        q(AUTOPILOT); q('startPlay()');
-        q(`for (let i = 0; i < 20000 && (scrollX < 4200 || approachLeft > 0 || startRamp < 1); i++) { shieldCount = 9; hullScratches = HULL_SCRATCHES; _pilot(); update(1 / 60); }`);
-        q(`window.webkit.messageHandlers.ads = { postMessage() {} }; shieldCount = 0; invulnT = 0; rewardedAdReady = false;
-           runCoins = 5; shardsAdReady = true; shardsAdClaimedToday = false; die(true);
-           for (let i = 0; i < 60 * 3; i++) update(1 / 60);`);
-        for (const code of q('Object.keys(LANGS)')) {
-            const r = q(`(() => { setLang('${code}'); draw(); const c = _shardsChipRect, p = _playBtnRect;
-                return c ? { left: c.x / W, right: (c.x + c.w) / W, bottom: c.y + c.h, btn: p.y } : null; })()`);
-            // Left of the column rule, or wholly right of it when the left column is full.
-            const bad = !r || (r.right > 0.5705 && r.left < 0.5705) || r.bottom > r.btn;
-            if (bad && !worst) worst = `${code} ${w}x${h} ${JSON.stringify(r)}`;
-        }
-        q("setLang('en')");
-    }
-    check(`in every language the shards chip stays inside one column above the buttons${worst ? ' - ' + worst : ''}`, worst === null);
-    g('delete window.webkit.messageHandlers.ads;');
+        return { n: _deadChipRects.length, offer: _deadChipRects.some(c => c.t.includes(T.watchAdShards)) }; })()`);
+    check('with the day\'s shards video loaded and unclaimed, the death screen offers no shards video',
+        noOffer.n > 0 && noOffer.offer === false);
 
     // A run that earned nearly every chip at once, on short screens (12 mini screenshot,
     // 2026-10-13: a fifth chip row ran over MENU). Catches: a chip crossing the button row,
-    // the column rule or another chip, or a reward dropped while a hint or the offer stayed.
+    // the column rule or another chip, or a reward dropped while a hint stayed.
     let crowd = null, crowdKept = null, movedRight = false;
     for (const [w, h] of [[956, 440], [808, 371], [780, 360]]) {
         const q = boot(w, h);
@@ -2028,17 +2099,17 @@ const FAKE_AC = `(() => {
                 const has = p => rs.some(c => c.t.includes(p));
                 const want = [SKINS[1].name, T.missionDone, '★ ' + T.frenzy, T.streakDay.replace('{n}', 34), '+23 '];
                 return { rs, btn, kept: want.every(has), miss: want.filter(p => !has(p)),
-                         hint: has('★ ' + T.starShort.replace('{n}', 7)) || has('? ' + T.hudInfoTitle), offer: has(T.watchAdShards) }; })()`);
+                         hint: has('★ ' + T.starShort.replace('{n}', 7)) || has('? ' + T.hudInfoTitle) }; })()`);
             const over = r.rs.some(c => c.b > r.btn || c.x < 0 || c.r > 0.95 || (c.r > 0.571 && c.x < 0.570)
                 || r.rs.some(d => d !== c && c.x < d.r && d.x < c.r && c.y < d.b && d.y < c.b));
             if (over && !crowd) crowd = `${code} ${w}x${h} btn ${r.btn} ${JSON.stringify(r.rs)}`;
-            if ((!r.kept || (r.hint && !r.offer)) && !crowdKept) crowdKept = `${code} ${w}x${h} missing ${r.miss} - ${r.rs.map(c => c.t).join(' | ')}`;
+            if (!r.kept && !crowdKept) crowdKept = `${code} ${w}x${h} missing ${r.miss} - ${r.rs.map(c => c.t).join(' | ')}`;
             if (r.rs.some(c => c.x >= 0.5705)) movedRight = true;
         }
         q("setLang('en')");
     }
     check(`with every chip earned, no chip crosses the buttons, the column rule or another chip${crowd ? ' - ' + crowd : ''}`, crowd === null);
-    check(`short of room the chips continue in the right column, hints go before the offer and every reward stays${crowdKept ? ' - ' + crowdKept : ''}`,
+    check(`short of room the chips continue in the right column and every reward stays${crowdKept ? ' - ' + crowdKept : ''}`,
         crowdKept === null && movedRight);
     g('delete window.webkit.messageHandlers.ads;');
 }

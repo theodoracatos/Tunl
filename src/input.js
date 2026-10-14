@@ -407,19 +407,6 @@ function onDown(e) {
             window.webkit?.messageHandlers?.ads?.postMessage({ action: 'interstitialRequest', score });
             titleScreen(); return;
         }
-        // The day's shards video as a reward chip (draw.js, constants.js SHARDS_AD_REWARD):
-        // the same once-per-day grant as the Missions drawer row, only where players look.
-        if (_shardsChipRect && inRect(cx, cy, _shardsChipRect)) {
-            if (shardsAdReady && !shardsAdClaimedToday && !shardsAdPending) {
-                sfxUiTap();
-                shardsAdPending = true;
-                shardsAdSource = 'death';
-                window.webkit?.messageHandlers?.ads?.postMessage({ action: 'shardsAdRequest' });
-            } else {
-                sfxUiDenied();
-            }
-            return;
-        }
         if (_hudInfoChipRect && inRect(cx, cy, _hudInfoChipRect)) { showHudInfo = true; sfxUiTap(); return; }
         // Share does NOT start a new run or request an interstitial -- it hands the
         // card to the OS share sheet and leaves the death screen up, so the player

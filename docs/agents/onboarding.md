@@ -177,9 +177,39 @@ https://claude.ai/artifact/VVhDdo7T4gCd4HmEqDYECQ (db `picks`), all six recommen
   `SAFE_START_WX` with no wall touch (29 taps, ~15 px mean off the route at H 440). It also checks
   that a pass is stored and a timeout is not, and that a run with the flag skips the flight with
   banner and wind on the mouth (each mutation-tested).
+- **First-contact fixes (2026-10-14, audit https://claude.ai/artifact/59mKs8pwHjJieqXTXd7NrS,
+  user: "setze alles um")**. A fresh install played in headless WebKit with pilots tapping at a
+  fixed offset from the circle showed: the planner put each hop's TOP on the bead line, so even
+  on-time taps passed the beads ~0.05 H below it, a tap 25 ms late lit almost none, and the 12 s
+  flight timed out and came back before every run - real fingers plus touch latency are late.
+  - The practice planner aims the hop's top `TUTOR_PRAC_AIM` above the line (`tutorPlan`, only
+    while `tutorPracticing()`; the tunnel route is unchanged) and a bead lights from
+    `TUTOR_BEAD_TOL` above to `TUTOR_BEAD_TOL_LOW` below. Measured: steady lags 0 to 0.15 s pass,
+    0.2 s does not; holding, not tapping and spamming still light nothing.
+  - At most `TUTOR_PRAC_MAX_TRIES` timed-out flights per device (`TUTOR_PRAC_TRIES_KEY`,
+    `tutorPracSkip()`), then it is skipped like a pass. `ob_practice` still fires on a pass only.
+  - A press held past `TUTOR_HOLD_HINT_SEC` anywhere in the tutor zone brings the "TAP TO FLY"
+    words back by the ship (`tutorHoldHintA`, draw.js), below the tap circle when the holder is
+    pinned under the top edge, fading over `TUTOR_HOLD_HINT_OUT` after the release. The whole
+    zone, not only the beads: after two timeouts a holder no longer sees the beads.
+  - After a flown practice the camera hurries back to the mountain (`TUTOR_AFTER_BOOST`,
+    `approachBoostAt()`), easing in over a moment and back to 1 well before the mouth, so the
+    ship enters it at the normal speed; the wind swell is aimed with the boost
+    (`approachSecToMouth()`). Practice end -> mouth 3.2 s -> 2.1 s. Normal runs and a skipped
+    flight are unchanged (`_tutorPracEndT` stays -1).
+  - All targets, no `isWeb()` gate. `test-sim.js` checks each (late tapper passes, two timeouts
+    then skip, hold words, boost off in the mouth, title prompt), every one mutation-tested.
+
+**The title says "TAP TO FLY" until the first run (2026-10-14, same audit)**: a fresh install's
+title said nowhere that a tap starts the game, and GA4 showed most new installs never tapped
+(`drawTitleScreen`, `totalRuns === 0`, in the slot the ALL SHIPS pill takes once a run was
+played; centred by measured width for Devanagari). It is a start prompt, gone after the first
+run, not a control hint. The same title shows no arrival card before the first run (economy.md
+"Stardust says what it is"). All targets.
 
 **Do not re-add a title-screen control hint.** A "HOLD to climb / RELEASE to fall" line was
 removed the same day it shipped: redundant next to HOLD TO FLY, crowded the row below, and
 the attract ship flies through that line. The runway teaches it by feel. The `T.hold`
-string is deleted from all locales - don't reintroduce it.
+string is deleted from all locales - don't reintroduce it. (The first-run "TAP TO FLY" above
+is the one exception, and it is a start prompt.)
 
