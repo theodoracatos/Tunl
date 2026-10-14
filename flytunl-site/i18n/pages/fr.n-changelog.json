@@ -217,12 +217,17 @@
  "cc0e5d5": "Les bombes explosent sans saccade : l'écho de la déflagration est maintenant préparé avant le vol, et non au moment où tu en ramasses une.",
  "5423603": "19.7 : La même grotte sur chaque écran",
  "8f1f126": "Sur un écran plus étroit que les téléphones les plus larges, le jeu dézoome désormais au lieu de montrer un morceau plus court de la grotte : chaque pilote voit aussi loin devant lui, et les vols du classement sont équitables d'un appareil à l'autre. Les boutons et le texte gardent leur taille.",
- "9809ac2": "Changelog &middot; mis à jour le 13 octobre 2026 &middot; la version actuelle est la <span class=\"tunl-ver\"></span>",
  "37e2c99": "19.8 : un débriefing mieux rangé",
  "83de697": "Sur les petits téléphones, un vol riche en récompenses ne les empile plus sur les boutons de l'écran de résultats : ce qui ne tient pas passe dans l'espace libre à droite.",
  "646a5c7": "Ton premier vol du jour ne s'annonce plus comme record du jour. Il n'y avait encore rien à battre.",
  "94b7a41": "19.9 : Plus facile à trouver",
  "3790cc1": "TUNL a de nouveaux noms sur l'App Store et Google Play dans les 16 langues, pour apparaître quand tu cherches des jeux d'avion ou d'avion de chasse.",
  "f72dd10": "Vole partout : les applis n'ont besoin d'aucune connexion. La grotte du jour est créée sur ton téléphone à partir de la date, donc en avion, dans un tunnel ou en mode avion, c'est la même grotte pour tout le monde.",
- "196123d": "Rien d'autre ne change. Tes vaisseaux et ta progression restent exactement les mêmes."
+ "196123d": "Rien d'autre ne change. Tes vaisseaux et ta progression restent exactement les mêmes.",
+ "d27c248": "Changelog &middot; mis à jour le 15 octobre 2026 &middot; la version actuelle est la <span class=\"tunl-ver\"></span>",
+ "d9858b0": "19.10 : Un premier vol plus doux",
+ "7bd6a32": "Les nouveaux pilotes voient maintenant TOUCHE POUR VOLER sur l'écran d'accueil jusqu'à leur premier vol.",
+ "0e1d295": "Le vol d'entraînement au-dessus de la ville compte les touches que fait vraiment ton pouce, revient au plus deux fois et t'amène ensuite plus vite à la grotte.",
+ "6b2ebac": "Tu maintiens au lieu de toucher pendant tes premiers vols ? TOUCHE POUR VOLER apparaît pour te le dire.",
+ "fea8929": "La vidéo quotidienne d'éclats se trouve désormais uniquement dans les Missions du jour, plus sur le débriefing."
 }

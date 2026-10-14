@@ -217,12 +217,17 @@
  "cc0e5d5": "Las bombas explotan sin tirones: el eco de la explosión ahora se prepara antes del vuelo y no en el momento en que recoges una.",
  "5423603": "19.7: La misma cueva en cada pantalla",
  "8f1f126": "En una pantalla más estrecha que los teléfonos más anchos, el juego ahora se aleja en lugar de mostrar un tramo más corto de la cueva, así que cada piloto ve igual de lejos y los vuelos de la clasificación son justos en todos los dispositivos. Los botones y el texto conservan su tamaño.",
- "9809ac2": "Registro de cambios &middot; actualizado el 13 de octubre de 2026 &middot; la versión actual es la <span class=\"tunl-ver\"></span>",
  "37e2c99": "19.8: Un informe más ordenado",
  "83de697": "En móviles pequeños, un vuelo que gana muchas recompensas ya no las amontona sobre los botones de la pantalla de resultados: lo que no cabe pasa al espacio libre de la derecha.",
  "646a5c7": "Tu primer vuelo del día ya no se presenta como récord del día. Aún no había nada que superar.",
  "94b7a41": "19.9: Más fácil de encontrar",
  "3790cc1": "TUNL tiene nombres nuevos en la App Store y Google Play en los 16 idiomas, para aparecer cuando buscas juegos de aviones o de aviones de combate.",
  "f72dd10": "Vuela donde quieras: las apps no necesitan conexión. La cueva del día se crea en tu móvil a partir de la fecha, así que un vuelo en avión, en un túnel o en modo avión es la misma cueva para todos.",
- "196123d": "Nada más cambia. Tus naves y tu progreso siguen exactamente igual."
+ "196123d": "Nada más cambia. Tus naves y tu progreso siguen exactamente igual.",
+ "d27c248": "Registro de cambios &middot; actualizado el 15 de octubre de 2026 &middot; la versión actual es la <span class=\"tunl-ver\"></span>",
+ "d9858b0": "19.10: Un primer vuelo más suave",
+ "7bd6a32": "Los nuevos pilotos ven ahora TOCA PARA VOLAR en la pantalla de inicio hasta su primer vuelo.",
+ "0e1d295": "El vuelo de práctica sobre la ciudad cuenta los toques que de verdad hace tu pulgar, vuelve como mucho dos veces y después te lleva antes a la cueva.",
+ "6b2ebac": "¿Mantienes en vez de tocar en tus primeros vuelos? Aparece TOCA PARA VOLAR para decírtelo.",
+ "fea8929": "El vídeo diario de fragmentos ahora está solo en Misiones diarias, ya no en el informe."
 }

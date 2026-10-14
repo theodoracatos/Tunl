@@ -217,12 +217,17 @@
  "cc0e5d5": "Bomby wybuchają bez przycięć: echo wybuchu jest teraz przygotowywane przed lotem, a nie w chwili, gdy zbierasz bombę.",
  "5423603": "19.7: Ta sama jaskinia na każdym ekranie",
  "8f1f126": "Na ekranie węższym niż najszersze telefony gra teraz oddala widok, zamiast pokazywać krótszy odcinek jaskini, więc każdy pilot widzi równie daleko, a loty w rankingu są uczciwe na wszystkich urządzeniach. Przyciski i tekst zachowują swój rozmiar.",
- "9809ac2": "Lista zmian &middot; zaktualizowana 13 października 2026 &middot; obecna wersja to <span class=\"tunl-ver\"></span>",
  "37e2c99": "19.8: Porządniejsze podsumowanie lotu",
  "83de697": "Na mniejszych telefonach lot pełen nagród nie układa ich już na przyciskach ekranu wyników: to, co się nie mieści, trafia na wolne miejsce po prawej.",
  "646a5c7": "Twój pierwszy lot dnia nie ogłasza się już rekordem dnia. Nie było jeszcze czego pobić.",
  "94b7a41": "19.9: Łatwiej znaleźć",
  "3790cc1": "TUNL ma nowe nazwy w App Store i Google Play we wszystkich 16 językach, żeby pojawiał się, gdy szukasz gier w samoloty lub myśliwce.",
  "f72dd10": "Lataj wszędzie: aplikacje nie potrzebują połączenia. Jaskinia dnia powstaje na twoim telefonie z daty, więc lot w samolocie, w tunelu czy w trybie samolotowym to ta sama jaskinia dla wszystkich.",
- "196123d": "Nic więcej się nie zmienia. Twoje statki i postępy zostają dokładnie takie, jakie są."
+ "196123d": "Nic więcej się nie zmienia. Twoje statki i postępy zostają dokładnie takie, jakie są.",
+ "d27c248": "Lista zmian &middot; zaktualizowana 15 października 2026 &middot; obecna wersja to <span class=\"tunl-ver\"></span>",
+ "d9858b0": "19.10: Łagodniejszy pierwszy lot",
+ "7bd6a32": "Nowi piloci widzą teraz STUKNIJ, BY LECIEĆ na ekranie startowym aż do pierwszego lotu.",
+ "0e1d295": "Lot próbny nad miastem liczy stuknięcia, które naprawdę robi twój kciuk, pojawia się najwyżej dwa razy, a potem szybciej prowadzi do jaskini.",
+ "6b2ebac": "Trzymasz zamiast stukać w pierwszych lotach? Pojawi się STUKNIJ, BY LECIEĆ i ci to powie.",
+ "fea8929": "Codzienne wideo za odłamki jest teraz tylko w Dzisiejszych misjach, już nie w podsumowaniu lotu."
 }
