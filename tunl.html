@@ -155,6 +155,42 @@ body.web-framed canvas {
 }
 #rec-panel button.ghost { background:transparent; border-color:rgba(255,255,255,0.24); color:#9fb3d6; }
 #rec-panel a:focus-visible, #rec-panel button:focus-visible { outline:2px solid #4fd6e0; outline-offset:2px; }
+
+/* The pilot-name form - open web only (src/web.js webOpenNamePanel, opened from the
+   leaderboard panel's name pill). Real DOM so a phone gets its own keyboard; the same
+   modal layer and buttons as #rec-panel. The input is 16px or more: iOS Safari zooms
+   the page into any smaller field. */
+#name-panel {
+    position:fixed; inset:0; z-index:110; background:rgba(2,3,9,0.86);
+    display:none; align-items:center; justify-content:center; padding:16px;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; color:#d4f0f3;
+}
+#name-panel.show { display:flex; }
+#name-form {
+    display:flex; flex-direction:column; align-items:center; gap:12px;
+    width:min(92vw,380px); padding:20px 22px; border-radius:14px;
+    background:linear-gradient(rgba(26,32,64,0.92),rgba(10,12,30,0.96));
+    border:1px solid rgba(120,160,255,0.32); box-shadow:0 8px 24px rgba(0,0,0,0.45);
+}
+#name-ttl { font-weight:700; font-size:15px; letter-spacing:.08em; color:#a5beff; text-align:center; }
+#name-in {
+    width:100%; box-sizing:border-box; padding:10px 14px; border-radius:10px;
+    font:inherit; font-size:17px; color:#f0f5ff; background:rgba(255,255,255,0.06);
+    border:1px solid rgba(120,160,255,0.42); outline:none; text-align:center;
+}
+#name-in:focus { border-color:#4fd6e0; }
+#name-msg { font-size:12px; line-height:1.35; color:#8b98bd; text-align:center; min-height:1.35em; }
+#name-msg.bad { color:#ff9c9c; }
+#name-form .rec-actions { display:flex; gap:12px; justify-content:center; }
+#name-form button {
+    font:inherit; font-weight:700; letter-spacing:.06em; font-size:13px;
+    padding:10px 22px; border-radius:999px; cursor:pointer;
+    background:rgba(120,160,255,0.16); border:1px solid rgba(120,160,255,0.42); color:#eaf3ff;
+    -webkit-appearance:none; appearance:none;
+}
+#name-form button:disabled { opacity:.5; cursor:default; }
+#name-form button.ghost { background:transparent; border-color:rgba(255,255,255,0.24); color:#9fb3d6; }
+#name-form button:focus-visible { outline:2px solid #4fd6e0; outline-offset:2px; }
 </style>
 </head>
 <body>
@@ -183,6 +219,17 @@ body.web-framed canvas {
         <button id="rec-share" type="button" hidden><span id="rec-share-lbl">SHARE</span></button>
         <button id="rec-close" type="button" class="ghost">&times;</button>
     </div>
+</div>
+<div id="name-panel" aria-hidden="true">
+    <form id="name-form" autocomplete="off">
+        <div id="name-ttl">PILOT NAME</div>
+        <input id="name-in" type="text" maxlength="14" spellcheck="false" autocapitalize="words" autocorrect="off" enterkeyhint="done">
+        <div id="name-msg"></div>
+        <div class="rec-actions">
+            <button id="name-save" type="submit">SAVE</button>
+            <button id="name-close" type="button" class="ghost">&times;</button>
+        </div>
+    </form>
 </div>
 <script src="src/web.js"></script>
 <script src="src/fonts.js"></script>

@@ -12,6 +12,16 @@ CREATE TABLE IF NOT EXISTS scores (
 
 CREATE INDEX IF NOT EXISTS idx_scores_day_score ON scores (day, score DESC);
 
+-- Public pilot names for the web leaderboard view (GET /top, POST /n, src/index.js
+-- "Pilot names"). Optional and per player, not per day. banned = 1 is set by hand
+-- (worker/README.md) and outlives the daily prune.
+CREATE TABLE IF NOT EXISTS names (
+  pid    TEXT    PRIMARY KEY,         -- the same anonymous id as scores.pid
+  name   TEXT,                        -- NULL = cleared
+  banned INTEGER NOT NULL DEFAULT 0,
+  ts     INTEGER NOT NULL             -- last change, epoch ms
+);
+
 -- Campaign click tracking (GET /go/<source>/<campaign>, see src/index.js).
 -- One row per click, not a pre-aggregated counter, so /clicks can group by
 -- any of source/campaign/medium/day later without having predicted the

@@ -445,6 +445,14 @@ let _missionsPanelRect = null;
 // The rewarded-ad shard-bonus row at the bottom of the Missions drawer (draw.js /
 // constants.js SHARDS_AD_REWARD). Hit-tested in input.js while showMissions is open.
 let _shardsAdBtnRect = null;
+// Web only: today's top list with pilot names (draw.js, web.js webFetchBoard), opened
+// from the rail's leaderboard icon, which the apps hand to Game Center / Play Games.
+// webBoard is the worker's last /top answer, 'err' when it failed, null while loading.
+let showWebBoard = false;
+let webBoard = null;
+let _webBoardPanelRect = null;
+let _webBoardNameBtnRect = null;
+let _webBoardAppBtnRect = null;
 let showShipPicker = false;
 let _shipPickerBtnRect = null;
 let _shipPrevBtnRect = null;

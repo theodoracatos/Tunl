@@ -178,7 +178,7 @@ function _syncWebCta() {
     // Hidden while any title-screen panel is open (ALL SHIPS / shop, ship
     // picker, settings, missions, currency info) - it otherwise floats over the
     // panel content.
-    const _panelOpen = showShop || showShipPicker || showSettings || showMissions || showCurrencyInfo || appOnlyKey;
+    const _panelOpen = showShop || showShipPicker || showSettings || showMissions || showCurrencyInfo || appOnlyKey || showWebBoard;
     const show = isWeb() && phase === 'title' && !_portraitCovered && !_panelOpen;
     // The pill sits top-centre, where the day's arrival card (dayGrantT) and the
     // challenge inbox card (challengeInboxT) are drawn: it waits them out. The legal

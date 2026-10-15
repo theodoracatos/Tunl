@@ -321,6 +321,92 @@ function webSubmitScore(score, playSec) {
     }).catch(() => {});
 }
 
+// ── Today's top list + pilot name (web leaderboard view, 2026-10-15) ──
+// The rail's leaderboard icon opens draw.js's board panel on web (the apps open Game
+// Center / Play Games). webFetchBoard() fills state.js webBoard from the worker's
+// GET /top; the name is optional and public, set through the #name-panel DOM modal
+// (tunl.html) so a phone gets its real keyboard. The worker filters and can ban a name
+// (worker/README.md "Pilot names"); its copy wins over the one cached here.
+// The last answer stays on screen while a newer one loads; 'err' gives way to loading.
+let _webBoardFetchTs = 0;
+function webFetchBoard(force) {
+    if (!_webLbOn()) { webBoard = 'err'; return; }
+    if (!force && Date.now() - _webBoardFetchTs < 5000) return;
+    _webBoardFetchTs = Date.now();
+    if (webBoard === 'err') webBoard = null;
+    fetch(WEB_LEADERBOARD_API + '/top?d=' + _tunlActiveDayInt() + '&id=' + encodeURIComponent(webPlayerId()))
+        .then(r => r.json())
+        .then(j => {
+            if (!j || !Array.isArray(j.top)) { webBoard = 'err'; return; }
+            webBoard = j;
+            _webPilotNameStore(j.name || '');
+        })
+        .catch(() => { webBoard = 'err'; });
+}
+
+function webPilotName() {
+    try { return localStorage.getItem('tunl_web_name') || ''; } catch (e) { return ''; }
+}
+function _webPilotNameStore(n) {
+    try { n ? localStorage.setItem('tunl_web_name', n) : localStorage.removeItem('tunl_web_name'); } catch (e) {}
+}
+
+let _namePanel = null, _nameIn = null, _nameMsg = null;
+function webOpenNamePanel() {
+    if (!_webLbOn()) return;
+    if (!_namePanel) {
+        _namePanel = document.getElementById('name-panel');
+        _nameIn    = document.getElementById('name-in');
+        _nameMsg   = document.getElementById('name-msg');
+        if (!_namePanel || !_nameIn) return;
+        document.getElementById('name-form').addEventListener('submit', e => { e.preventDefault(); _webSaveName(); });
+        document.getElementById('name-close').addEventListener('click', webCloseNamePanel);
+        _nameIn.addEventListener('keydown', e => { if (e.key === 'Escape') webCloseNamePanel(); });
+    }
+    document.getElementById('name-ttl').textContent  = T.nameTitle;
+    document.getElementById('name-save').textContent = T.nameSave;
+    _nameIn.placeholder = T.namePlaceholder;
+    _nameMsg.textContent = T.nameHint;
+    _nameMsg.classList.remove('bad');
+    _nameIn.value = webPilotName();
+    _namePanel.classList.add('show');
+    _namePanel.setAttribute('aria-hidden', 'false');
+    try { _nameIn.focus(); } catch (e) {}
+}
+function webCloseNamePanel() {
+    if (!_namePanel) return;
+    _namePanel.classList.remove('show');
+    _namePanel.setAttribute('aria-hidden', 'true');
+    try { _nameIn.blur(); } catch (e) {}
+}
+function webNamePanelOpen() {
+    return !!(_namePanel && _namePanel.classList.contains('show'));
+}
+let _nameSaving = false;
+function _webSaveName() {
+    if (_nameSaving) return;   // Enter and a tap on SAVE together are one save
+    _nameSaving = true;
+    const save = document.getElementById('name-save');
+    save.disabled = true;
+    const done = () => { _nameSaving = false; save.disabled = false; };
+    const name = _nameIn.value;
+    const bad = msg => { _nameMsg.textContent = msg; _nameMsg.classList.add('bad'); };
+    fetch(WEB_LEADERBOARD_API + '/n', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: webPlayerId(), name }),
+    }).then(r => r.json()).then(j => {
+        done();
+        if (j && typeof j.name === 'string') {
+            _webPilotNameStore(j.name);
+            webCloseNamePanel();
+            webFetchBoard(true);
+            return;
+        }
+        bad(j && j.error === 'soon' ? T.nameSoon : j && (j.error === 'name' || j.error === 'banned') ? T.nameBad : T.boardOffline);
+    }).catch(() => { done(); bad(T.boardOffline); });
+}
+
 // ── Referral reward ──────────────────────────────────────────────────
 // The two-sided half of the share loop: share.js's shareRunUrl() already gets
 // a friend playing (the daily-seed hook), this is what rewards the sharer for

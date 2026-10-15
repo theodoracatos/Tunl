@@ -55,6 +55,8 @@ a live daily world rank, same as the app's Game Center number.
 | `GET /t` | `{ t }` - a signed token, valid 8 s .. 15 min. The client fetches one per session and sends it with each submit. |
 | `GET /r?d=<YYYYMMDD>&id=<uuid>` | `{ rank, total, best }` for that player that day (rank is `null` if they haven't submitted). |
 | `POST /s` `{ d, s, p, id, tok }` | records the score (best-per-day-per-player), returns `{ rank, total, best }`. Past-day `?d=` replays send `d != today` and are silently not recorded, mirroring the app (which only ever submits today). |
+| `GET /top?d=<YYYYMMDD>[&id=<uuid>]` | `{ total, top: [{ r, s, n, me }], me: { rank, best } \| null, name }` - the day's top 10 with pilot names (`n` null = nameless), the caller's own rank and name. No pid is returned. |
+| `POST /n` `{ id, name }` | sets this player's public pilot name, `''` clears it. `422 name` (filter), `403 banned`, `429 soon` (a double submit within 2 s). See "Pilot names". |
 | `GET /go/<source>/<campaign>[?m=<medium>][&to=play]` | redirects to `flytunl.ch` (or `flytunl.ch/play/` with `to=play`) with `?utm_source=<source>&utm_medium=<medium or "social">&utm_campaign=<campaign>` appended, and logs one click row. No pre-registration - any slug (`[a-z0-9_-]{1,40}`) just works. |
 | `GET /clicks?key=<REPORT_KEY>[&since=<YYYYMMDD>]` | `{ since, rows: [{ source, campaign, medium, clicks, lastClick }] }` - the developer's own dashboard, gated by `REPORT_KEY` (the CORS origin lock above only applies to fetch()/XHR, not a plain browser tab hitting this directly). |
 
@@ -62,6 +64,25 @@ Anti-abuse is intentionally light: CORS locked to `https://flytunl.ch`, the sign
 token, a `score <= play_seconds * 12 + 25` sanity check, a `score <= 50000` clamp, and
 a 5 s floor between one player's submissions. Enough to stop drive-by curl spam, not a
 determined cheater - acceptable for a free casual daily.
+
+### Pilot names
+
+Added 2026-10-15 for the web leaderboard view (`src/draw.js` `drawWebBoard`). A name is
+optional, per player (not per day) and public. `nameAllowed()` in `src/index.js` takes 2-14
+letters, digits, spaces, `_` and `-`, and refuses block-listed roots in the main game
+languages (digit look-alikes folded: "sh1t") plus impersonation (tunl, admin, ...). A filter
+never catches everything, so names can be removed by hand:
+
+```
+# what is on today's board
+npx wrangler@4 d1 execute tunl_scores --remote --command "SELECT n.name, s.score FROM scores s JOIN names n ON n.pid = s.pid WHERE s.day = strftime('%Y%m%d','now') ORDER BY s.score DESC"
+# ban a name: it is never served again and its player cannot pick a new one
+npx wrangler@4 d1 execute tunl_scores --remote --command "UPDATE names SET banned = 1 WHERE name = 'TheName'"
+```
+
+A name is pruned with its player's last score (45 days); a ban is kept. After a change to
+`schema.sql`, re-apply it (`d1 execute tunl_scores --remote --file=schema.sql`, every
+statement is `IF NOT EXISTS`).
 
 ### Campaign links (`/go/...`)
 

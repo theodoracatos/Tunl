@@ -190,6 +190,14 @@ function onDown(e) {
             if (!_shopPanelRect || !inRect(cx, cy, _shopPanelRect)) { showShop = false; sfxUiClose(); }
             return;
         }
+        // Web only: today's top list (draw.js drawWebBoard). The name pill opens the
+        // #name-panel modal, the all-time pill the "in the app" sheet over the board.
+        if (showWebBoard) {
+            if (_webBoardNameBtnRect && inRect(cx, cy, _webBoardNameBtnRect)) { sfxUiTap(); webOpenNamePanel(); return; }
+            if (_webBoardAppBtnRect && inRect(cx, cy, _webBoardAppBtnRect)) { sfxUiTap(); appOnlyKey = 'leaderboard'; return; }
+            if (!_webBoardPanelRect || !inRect(cx, cy, _webBoardPanelRect)) { showWebBoard = false; sfxUiClose(); }
+            return;
+        }
         // CONCEPT A: Missions drawer. The 3 mission rows complete themselves, but the
         // bonus row at the bottom is a real button (watch a rewarded ad for a
         // once-per-day shard grant, constants.js SHARDS_AD_REWARD).
@@ -274,11 +282,12 @@ function onDown(e) {
             sfxUiTap();
             return;
         }
-        // On web these two are the greyed app-only icons (draw.js rail): no native
-        // bridge behind them, so they open the "in the app" sheet instead.
+        // On web the leaderboard opens today's top list (draw.js drawWebBoard) and the
+        // challenge is a greyed app-only icon: no native bridge behind it, so it opens
+        // the "in the app" sheet instead.
         if (_leaderboardBtnRect && inCircle(cx, cy, _leaderboardBtnRect)) {
             sfxUiTap();
-            if (isWeb()) { appOnlyKey = 'leaderboard'; return; }
+            if (isWeb()) { showWebBoard = true; webFetchBoard(); return; }
             window.webkit?.messageHandlers?.gameCenter?.postMessage({ action: 'show' });
             return;
         }
@@ -324,6 +333,7 @@ function onDown(e) {
         if (showSettings) { showSettings = false; return; }
         if (showShop) { showShop = false; return; }
         if (showMissions) { showMissions = false; return; }
+        if (showWebBoard) { showWebBoard = false; return; }
         if (showPaint) { showPaint = false; paintPreview = -1; return; }
         if (showShipPicker) { showShipPicker = false; return; }
         if (showNotifPrompt) _notifPromptResolve(false);   // keyboard start also dismisses it
@@ -460,13 +470,14 @@ function onCancel(e) {
 // onDown/onUp starts a run behind the overlay. In the app builds none of these
 // elements exist, so this is always false there and nothing changes.
 function _fromWebOverlay(e) {
-    return !!(e && e.target && e.target.closest && e.target.closest('#cta,#legal,#rot,#rec-btn,#rec-panel'));
+    return !!(e && e.target && e.target.closest && e.target.closest('#cta,#legal,#rot,#rec-btn,#rec-panel,#name-panel'));
 }
 
 window.addEventListener('pointerdown',   e => { if (_fromWebOverlay(e)) return; e.preventDefault(); onDown(e); });
 window.addEventListener('pointerup',     e => { if (_fromWebOverlay(e)) return; e.preventDefault(); onUp(e);   });
 window.addEventListener('pointercancel', e => { if (_fromWebOverlay(e)) return; onCancel(e); });
 window.addEventListener('keydown', e => {
+    if (_fromWebOverlay(e)) return;   // typing a pilot name (#name-panel) is not thrust
     if (['Space','ArrowUp'].includes(e.code)) { e.preventDefault(); onDown(); }
     // Gated behind DEV_PAUSE_KEY (constants.js, ships false) -- this used to be a bare
     // 'P' shortcut that froze a live run indefinitely, world/physics/audio and all,
@@ -478,6 +489,7 @@ window.addEventListener('keydown', e => {
     }
 });
 window.addEventListener('keyup', e => {
+    if (_fromWebOverlay(e)) return;
     if (['Space','ArrowUp'].includes(e.code)) { e.preventDefault(); onUp(); }
 });
 

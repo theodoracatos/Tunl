@@ -5097,11 +5097,13 @@ function drawTitleScreen() {
         items.push({ key: 'missions', badge: `${doneCount}/${missionSlots}`, showBadge: true, badgeDone: allMissionsDone });
         if (hasGameCenter) items.push({ key: 'leaderboard', badge: hasRank ? (worldRankTotal > 0 ? `${worldRank}/${worldRankTotal}` : `${worldRank}`) : null, showBadge: hasRank });
         if (hasChallenge)  items.push({ key: 'challenge', badge: activeChallenges > 0 ? `${activeChallenges}` : null, showBadge: activeChallenges > 0 });
-        // Web: the app's own controls stay on the rail, greyed out, and a tap opens the
-        // "in the app" sheet (drawAppOnlySheet) instead of doing nothing visible. The
-        // challenge is iOS-only (GameView.swift), so an Android browser is not shown one.
+        // Web: the leaderboard opens today's top list (drawWebBoard) and carries the same
+        // rank badge. The app's other controls stay on the rail, greyed out, and a tap
+        // opens the "in the app" sheet (drawAppOnlySheet) instead of doing nothing
+        // visible. The challenge is iOS-only (GameView.swift), so an Android browser is
+        // not shown one.
         if (isWeb()) {
-            items.push({ key: 'leaderboard', locked: true });
+            items.push({ key: 'leaderboard', badge: hasRank ? (worldRankTotal > 0 ? `${worldRank}/${worldRankTotal}` : `${worldRank}`) : null, showBadge: hasRank });
             if (!/Android/.test(navigator.userAgent)) items.push({ key: 'challenge', locked: true });
         }
         // Web has no IAP bridge, so the shop is greyed out too and opens the same sheet.
@@ -6308,7 +6310,7 @@ function drawTitleScreen() {
     // and what the next ship is waiting for, for DAY_GRANT_SEC. It never blocks input
     // (no backdrop, no rects): a tap through it starts the run as usual.
     if (dayGrantT > 0 && dayGrant && !showSettings && !showShop && !showMissions
-        && !showShipPicker && !showCurrencyInfo && !showStardustPath) {
+        && !showShipPicker && !showCurrencyInfo && !showStardustPath && !showWebBoard) {
         ctx.save();
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -6367,7 +6369,7 @@ function drawTitleScreen() {
     // Someone flew a challenge this player sent. Same slot and panel as the arrival card
     // above, after it has gone; one line, never blocks a tap.
     if (challengeInboxT > 0 && challengeInbox && dayGrantT <= 0 && !showSettings && !showShop
-        && !showMissions && !showShipPicker && !showCurrencyInfo && !showStardustPath) {
+        && !showMissions && !showShipPicker && !showCurrencyInfo && !showStardustPath && !showWebBoard) {
         ctx.save();
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -6468,6 +6470,7 @@ function drawTitleScreen() {
         ctx.restore();
     }
 
+    if (showWebBoard) drawWebBoard();
     // Web only, on top of every title panel (it can open over the ALL SHIPS sheet).
     if (appOnlyKey) drawAppOnlySheet();
 }
@@ -7710,6 +7713,141 @@ function drawAppOnlySheet() {
     // An unknown device gets both, outlined.
     if (_appOnlyAppleBtnRect) storeBtn(_appOnlyAppleBtnRect, 'APP STORE', !!only);
     if (_appOnlyPlayBtnRect)  storeBtn(_appOnlyPlayBtnRect,  'GOOGLE PLAY', !!only);
+
+    ctx.restore();
+}
+
+// ── Web only: today's top list (2026-10-15) ──────────────────────────
+// The rail's leaderboard icon opens this on web (input.js); the apps hand that icon to
+// Game Center / Play Games. Rows come from state.js webBoard (web.js webFetchBoard):
+// rank, pilot name, score. The player's own row is lit in the day colour, and appended
+// under a gap when it ranks below the list. Footer: the name pill (web.js
+// webOpenNamePanel) and the all-time pitch, which opens the old "in the app" sheet.
+// Every size steps down together until the panel fits H, as in drawAppOnlySheet.
+function drawWebBoard() {
+    const day  = getTheme().wallBase;
+    const DAY  = al => rgb(day, al);
+    const font = (sz, w, fam) => { ctx.font = `${w ? w + ' ' : ''}${sz}px ${fam || FONT_UI}`; };
+    const b    = webBoard && webBoard !== 'err' ? webBoard : null;
+    const rows = b ? b.top : [];
+    const own  = b && b.me && !rows.some(r => r.me) ? { r: b.me.rank, s: b.me.best, n: b.name || null, me: true } : null;
+    const msg  = webBoard === 'err' ? T.boardOffline : !b ? '…' : rows.length === 0 ? T.boardEmpty : '';
+    const named = !!webPilotName();
+
+    drawMenuBackdrop();
+    ctx.save();
+    ctx.textBaseline = 'alphabetic';
+
+    const panW = Math.min(W * 0.62, FS * 0.78);
+    const padX = panW * 0.07;
+    const innerW = panW - padX * 2;
+    let sc = 1, ttl, txt, lbl, rowH, btnH, padY, listH, panH;
+    for (let i = 0; i < 14; i++) {
+        ttl = FS * 0.030 * sc; txt = FS * 0.023 * sc; lbl = FS * 0.017 * sc;
+        rowH = txt * 1.72; btnH = lbl * 2.5; padY = Math.max(14, ttl * 0.85);
+        listH = Math.max(rows.length, 3) * rowH + (own ? rowH * 1.45 : 0);
+        panH = padY + ttl + lbl * 1.9 + txt * 0.7 + listH + txt * 0.8 + btnH + padY;
+        if (panH <= H * 0.92 || sc <= 0.55) break;
+        sc *= 0.93;
+    }
+    const panX = (W - panW) / 2, panY = (H - panH) / 2;
+    _webBoardPanelRect = { x: panX, y: panY, w: panW, h: panH };
+    drawMenuPanel(panX, panY, panW, panH, 14);
+
+    // ── title + field size ──
+    let y = panY + padY + ttl * 0.80;
+    ctx.textAlign = 'center';
+    font(ttl, 'bold');
+    ctx.fillStyle   = 'rgba(165,190,255,0.96)';
+    ctx.shadowColor = 'rgba(0,0,0,0.90)';
+    ctx.shadowBlur  = 5;
+    ctx.fillText(T.boardTitle, W / 2, y);
+    ctx.shadowBlur  = 0;
+    y += ttl * 0.20 + lbl * 1.55;
+    if (b && b.total > 0) {
+        font(lbl, 'bold');
+        try { ctx.letterSpacing = trackPx(Math.max(1, lbl * 0.11)); } catch (e) {}
+        ctx.fillStyle = 'rgba(132,146,184,0.75)';
+        ctx.fillText(T.boardPilots.replace('{n}', b.total), W / 2, y);
+        try { ctx.letterSpacing = '0px'; } catch (e) {}
+    }
+    y += lbl * 0.35 + txt * 0.7;
+
+    // ── rows ──
+    const listTop = y;
+    const x0 = panX + padX, x1 = panX + panW - padX;
+    font(txt, 'bold', FONT_NUM);
+    const rankW = ctx.measureText('#000').width;
+    const scoreW = ctx.measureText('00000').width;
+    const nameX = x0 + rankW + txt * 0.8, nameMax = x1 - scoreW - txt * 0.8 - nameX;
+    const MEDAL = ['rgba(255,225,110,0.98)', 'rgba(214,224,240,0.95)', 'rgba(232,168,110,0.95)'];
+    const drawRow = (row, top) => {
+        const base = top + rowH / 2 + txt * 0.36;
+        if (row.me) {
+            ctx.beginPath(); ctx.roundRect(x0 - txt * 0.45, top + rowH * 0.08, (x1 - x0) + txt * 0.9, rowH * 0.84, rowH * 0.28);
+            ctx.fillStyle = DAY(0.16); ctx.fill();
+            ctx.strokeStyle = DAY(0.50); ctx.lineWidth = 1; ctx.stroke();
+        }
+        ctx.textAlign = 'right';
+        font(txt, 'bold', FONT_NUM);
+        ctx.fillStyle = row.r <= 3 ? MEDAL[row.r - 1] : 'rgba(150,162,196,0.85)';
+        ctx.fillText('#' + row.r, x0 + rankW, base);
+        ctx.textAlign = 'left';
+        font(txt, row.me ? 'bold' : '');
+        let name = row.n || (row.me ? T.boardYou : T.boardPilot);
+        if (ctx.measureText(name).width > nameMax) {
+            while (name.length > 1 && ctx.measureText(name + '…').width > nameMax) name = name.slice(0, -1);
+            name += '…';
+        }
+        ctx.fillStyle = row.me ? 'rgba(240,245,255,0.98)' : row.n ? 'rgba(210,218,240,0.90)' : 'rgba(150,162,196,0.62)';
+        ctx.fillText(name, nameX, base);
+        ctx.textAlign = 'right';
+        font(txt, 'bold', FONT_NUM);
+        ctx.fillStyle = row.me ? 'rgba(255,255,255,0.98)' : 'rgba(225,232,250,0.92)';
+        ctx.fillText(String(row.s), x1, base);
+    };
+    if (msg) {
+        ctx.textAlign = 'center';
+        font(txt);
+        ctx.fillStyle = 'rgba(175,190,225,0.80)';
+        const lines = _wrapLines(msg, innerW);
+        let my = listTop + listH / 2 - (lines.length - 1) * txt * 0.72 + txt * 0.36;
+        for (const ln of lines) { ctx.fillText(ln, W / 2, my); my += txt * 1.45; }
+    } else {
+        rows.forEach((row, i) => drawRow(row, listTop + i * rowH));
+        if (own) {
+            const gapY = listTop + Math.max(rows.length, 3) * rowH;
+            ctx.textAlign = 'center';
+            font(txt, 'bold');
+            ctx.fillStyle = 'rgba(132,146,184,0.55)';
+            ctx.fillText('···', W / 2, gapY + rowH * 0.30);
+            drawRow(own, gapY + rowH * 0.45);
+        }
+    }
+
+    // ── footer: name pill + all-time pitch ──
+    const by = listTop + listH + txt * 0.8;
+    const gapB = Math.max(8, panW * 0.03);
+    const bw = (innerW - gapB) / 2;
+    _webBoardNameBtnRect = { x: x0, y: by, w: bw, h: btnH };
+    _webBoardAppBtnRect  = { x: x0 + bw + gapB, y: by, w: bw, h: btnH };
+    const pill = (r, label, filled) => {
+        ctx.beginPath(); ctx.roundRect(r.x, r.y, r.w, r.h, r.h * 0.30);
+        ctx.fillStyle = filled ? DAY(0.92) : 'rgba(255,255,255,0.05)';
+        ctx.fill();
+        ctx.strokeStyle = filled ? DAY(1) : DAY(0.45);
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        let sz = lbl * 1.05;
+        font(sz, 'bold');
+        const maxW = r.w * 0.88, lw = ctx.measureText(label).width;
+        if (lw > maxW) { sz = Math.max(sz * maxW / lw, lbl * 0.7); font(sz, 'bold'); }
+        ctx.textAlign = 'center';
+        ctx.fillStyle = filled ? 'rgba(8,8,16,1)' : 'rgba(232,238,255,0.92)';
+        ctx.fillText(label, r.x + r.w / 2, r.y + r.h / 2 + sz * 0.35);
+    };
+    pill(_webBoardNameBtnRect, named ? T.boardChangeName : T.boardSetName, !named);
+    pill(_webBoardAppBtnRect, T.boardAllTime, false);
 
     ctx.restore();
 }

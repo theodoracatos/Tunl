@@ -99,6 +99,15 @@ both already return rank *and* total count. Both fire after a submit resolves, a
 at auth to prime the first death of a session. The delta is computed in
 `main.js _tunlNativeUpdate`, not natively - only the page knows what rank it last showed.
 
+**Web: today's top list** (2026-10-15). On web the rail's leaderboard icon is live (it was
+a greyed app-only icon) and opens `drawWebBoard`: the worker's top 10 of the day
+(`GET /top`) with optional public pilot names, the player's own row lit in the day colour
+and appended below the list when it ranks lower. The name is entered in the `#name-panel`
+DOM modal (`tunl.html`, `web.js webOpenNamePanel`) so a phone gets its keyboard; the
+worker filters and an operator bans (`flytunl-site/worker/README.md` "Pilot names"). The
+all-time pill opens the old app-only sheet. Apps are untouched: `hasGameCenter` there,
+`isWeb()` gates everything here.
+
 That local list is `top5`, which is **wiped at the UTC day boundary** (`lifecycle.js`),
 so it is labelled `T.todayTop`, never "TOP 5" - the old label made it look like lost data
 every morning.

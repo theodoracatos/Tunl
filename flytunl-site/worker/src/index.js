@@ -8,6 +8,8 @@
 //    GET  /t                 -> { t } a short-lived signed token
 //    GET  /r?d=<day>&id=<id> -> { rank, total, best, rivals } for one player on one day
 //    POST /s   { d, s, p, id, tok } -> records the score, returns { rank, total, best, rivals }
+//    GET  /top?d=<day>&id=<id> -> today's top 10 with pilot names (see "Pilot names")
+//    POST /n   { id, name }     -> sets or clears this player's public pilot name
 //    POST /ga  { cid, sid, dl, dt } -> relays one page_view to GA4
 //    POST /c, GET /c/<id>, POST /c/<id>/run, POST /c/inbox, GET /c/stats
 //              -> the challenge link (see that section)
@@ -15,8 +17,8 @@
 //  `rivals` (added for the client's rival-death-dots feature, see src/state.js
 //  rivalDeaths doc) is up to 20 other players' scores for that day, numbers only -
 //  no pid ever leaves this table, matching the web build's no-login, anonymous-by-
-//  design identity model (see schema.sql: `pid` is a random per-browser id, no name
-//  field exists). Native (iOS/Android) gets real display names for the same feature
+//  design identity model (see schema.sql: `pid` is a random per-browser id). The only
+//  name is the optional public pilot name of GET /top (see "Pilot names"). Native (iOS/Android) gets real display names for the same feature
 //  from Game Center/Play Games directly - this endpoint has no equivalent to offer.
 //
 //  Storage: D1 (see schema.sql). One row per (day, player); the best score wins.
@@ -583,6 +585,105 @@ async function handleChallengeStats(url, db, reportKey) {
   return json({ since, rows: [...days.values()].sort((x, y) => x.day - y.day) });
 }
 
+// ── Pilot names + today's top list (web leaderboard view, 2026-10-15) ──
+// GET /top?d=<day>[&id=<pid>] -> { total, top: [{ r, s, n, me }], me: { rank, best } | null, name }
+// POST /n { id, name }        -> { name } (name '' clears it) | { error: 'name' | 'banned' | 'soon' }
+// A name is per player, not per day, and optional: a row without one is drawn as a
+// nameless pilot by the client. No pid ever leaves the worker; `me` marks the caller's
+// own row. Names are public, so they pass nameAllowed() and an operator can ban one
+// (worker/README.md "Pilot names"): a banned player's name is never served again and
+// /n refuses them.
+const TOP_N = 10;
+const NAME_MIN = 2, NAME_MAX = 14;                  // code points, after normalizeName()
+const NAME_CHARS_RE = /^[\p{L}\p{N}][\p{L}\p{N}\p{M} _-]*$/u;
+// Only against a double submit: a player fixing a typo right after saving must not hit it
+// (10 s did, 2026-10-15). Resaving the same name never counts.
+const NAME_CHANGE_FLOOR_MS = 2000;
+
+// Matched against nameKey() (lowercase, accents and separators stripped, digit look-alikes
+// folded), anywhere in the name. Only roots that hardly occur inside innocent names belong
+// here; short or common ones go in NAME_BLOCK_WORDS, which must match a whole word.
+const NAME_BLOCK_ROOTS = [
+  'fuck', 'shit', 'cunt', 'nigg', 'faggot', 'hitler', 'whore', 'slut',
+  'bitch', 'pussy', 'penis', 'vagina', 'porn', 'kike', 'retard', 'tranny', 'wanker', 'blowjob', 'dildo',
+  'fick', 'fotze', 'wichs', 'schlampe', 'nutte', 'hurens', 'schwuchtel', 'judensau', 'kanake', 'arschloch',
+  'salope', 'connard', 'encule', 'putain', 'cazzo', 'troia', 'puttana', 'stronzo', 'vaffanc',
+  'mierda', 'cabron', 'pendejo', 'maricon', 'caralho', 'buceta', 'kurwa', 'chuj', 'jebac', 'pierdol',
+  'orospu', 'siktir', 'kontol', 'memek', 'ngentot', 'bangsat',
+  'хуй', 'хуе', 'пизд', 'бляд', 'блят', 'ебат', 'ебан', 'пидор', 'пидар', 'сука', 'шлюх',
+  'tunl', 'flytunl', 'admin', 'moderator', 'theodoracatos',
+].map(nameKey);
+const NAME_BLOCK_WORDS = new Set([
+  'ass', 'arse', 'dick', 'cock', 'cum', 'sex', 'fag', 'kys', 'rape', 'nazi', 'fuk', 'wank', 'heil', 'hure',
+  'arsch', 'pute', 'merde', 'nique', 'puta', 'porra', 'viado', 'amk', 'anjing', 'official', 'staff', 'mod',
+].map(nameKey));
+
+function normalizeName(raw) {
+  return String(raw == null ? '' : raw).normalize('NFKC').replace(/\s+/g, ' ').trim();
+}
+// What the block lists are matched against: the letters a reader sees, with the usual
+// digit and symbol stand-ins read as letters ("sh1t", "f.u.c.k").
+function nameKey(s) {
+  const leet = { '0': 'o', '1': 'i', '3': 'e', '4': 'a', '5': 's', '7': 't', '8': 'b', '@': 'a', '$': 's', '!': 'i' };
+  return s.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()
+    .replace(/[0-9@$!]/g, c => leet[c]).replace(/[^\p{L}]/gu, '');
+}
+function nameAllowed(name) {
+  const len = [...name].length;
+  if (len < NAME_MIN || len > NAME_MAX || !NAME_CHARS_RE.test(name)) return false;
+  const key = nameKey(name);
+  if (key.length < 1) return false;
+  if (NAME_BLOCK_ROOTS.some(r => key.includes(r))) return false;
+  const words = name.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase().split(/[\s_-]+/).map(nameKey);
+  return !words.some(w => NAME_BLOCK_WORDS.has(w)) && !NAME_BLOCK_WORDS.has(key);
+}
+
+async function handleTop(url, db) {
+  const day = +url.searchParams.get('d');
+  const id = url.searchParams.get('id') || '';
+  if (!Number.isInteger(day) || day < DAY_MIN || (id && !PID_RE.test(id))) return json({ error: 'params' }, 400);
+  const rows = (await db.prepare(
+    'SELECT s.pid AS pid, s.score AS score, n.name AS name, n.banned AS banned FROM scores s ' +
+    'LEFT JOIN names n ON n.pid = s.pid WHERE s.day = ?1 ORDER BY s.score DESC, s.ts ASC LIMIT ?2'
+  ).bind(day, TOP_N).all()).results || [];
+  // Competition ranking ("1, 2, 2, 4"), the same rule rankFor() uses for one player.
+  const top = [];
+  rows.forEach((row, i) => {
+    const r = i > 0 && row.score === rows[i - 1].score ? top[i - 1].r : i + 1;
+    top.push({ r, s: row.score, n: row.banned ? null : (row.name || null), me: !!id && row.pid === id });
+  });
+  const total = (await db.prepare('SELECT COUNT(*) AS c FROM scores WHERE day = ?1').bind(day).first())?.c || 0;
+  let me = null, name = '';
+  if (id) {
+    const own = await db.prepare('SELECT score FROM scores WHERE day = ?1 AND pid = ?2').bind(day, id).first();
+    if (own) {
+      const above = (await db.prepare('SELECT COUNT(*) AS c FROM scores WHERE day = ?1 AND score > ?2').bind(day, own.score).first())?.c || 0;
+      me = { rank: above + 1, best: own.score };
+    }
+    const nm = await db.prepare('SELECT name, banned FROM names WHERE pid = ?1').bind(id).first();
+    if (nm && !nm.banned) name = nm.name || '';
+  }
+  return json({ total, top, me, name });
+}
+
+async function handleName(request, db) {
+  const body = await request.json().catch(() => null);
+  if (!body) return json({ error: 'body' }, 400);
+  const id = String(body.id || '');
+  if (!PID_RE.test(id)) return json({ error: 'id' }, 400);
+  const name = normalizeName(body.name);
+  if (name && !nameAllowed(name)) return json({ error: 'name' }, 422);
+  const prev = await db.prepare('SELECT name, banned, ts FROM names WHERE pid = ?1').bind(id).first();
+  if (prev && prev.banned) return json({ error: 'banned' }, 403);
+  if (prev && (prev.name || '') === name) return json({ name });
+  if (prev && Date.now() - prev.ts < NAME_CHANGE_FLOOR_MS) return json({ error: 'soon' }, 429);
+  await db.prepare(
+    'INSERT INTO names (pid, name, banned, ts) VALUES (?1, ?2, 0, ?3) ' +
+    'ON CONFLICT(pid) DO UPDATE SET name = excluded.name, ts = excluded.ts'
+  ).bind(id, name || null, Date.now()).run();
+  return json({ name });
+}
+
 export default {
   async fetch(request, env) {
     return withCors(await route(request, env), request.headers.get('origin'));
@@ -640,6 +741,13 @@ async function route(request, env) {
     if (cm && !cm[2] && request.method === 'GET') return await handleChallengeGet(url, db, cm[1]);
     if (cm && cm[2] && request.method === 'POST') return await handleChallengeRun(request, db, secret, cm[1]);
 
+    if (request.method === 'GET' && url.pathname === '/top') {
+      return await handleTop(url, db);
+    }
+    if (request.method === 'POST' && url.pathname === '/n') {
+      return await handleName(request, db);
+    }
+
     if (request.method === 'GET' && url.pathname === '/t') {
       return json({ t: await issueToken(secret) });
     }
@@ -690,6 +798,8 @@ async function prune(env) {
   const d = new Date(Date.now() - PRUNE_DAYS * 86400000);
   const cutoff = d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
   await env.DB.prepare('DELETE FROM scores WHERE day < ?1').bind(cutoff).run();
+  // A name lives as long as its player still has a score on the board; a ban is kept.
+  await env.DB.prepare('DELETE FROM names WHERE banned = 0 AND pid NOT IN (SELECT pid FROM scores)').run();
 
   const clickD = new Date(Date.now() - CLICK_PRUNE_DAYS * 86400000);
   const clickCutoff = clickD.getUTCFullYear() * 10000 + (clickD.getUTCMonth() + 1) * 100 + clickD.getUTCDate();
