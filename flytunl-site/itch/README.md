@@ -11,13 +11,18 @@ keep the `https://flytunl.ch` origin, so the worker's `ALLOWED_ORIGINS` needs no
 
 ## Project settings
 
-- Kind: HTML. Classification: Games. Release status: Released. Pricing: No payments.
+- Title: `TUNL: Fighter Jet Arcade` (the store name since 19.9), URL tunl.itch.io/tunl.
+- Kind: HTML. Classification: Games. Release status: Released. Pricing: $0 or donate, $2 suggested
+  (user, 2026-10-15; money arrives only once payouts are set up in the itch account).
 - Embed: in the page, viewport 960 x 540, "Fullscreen button" on, "Mobile friendly" on,
   orientation Landscape. No scrollbars.
 - Genre: Action. Tags: arcade, one-button, endless, flying, cave, daily, leaderboard,
   hypercasual, singleplayer, 2d.
-- Cover 630 x 500: laser crop of `Screenshots/ppo-B-2026-10/raw/capture-laser-mars.png` + wordmark.
-- Screenshots: `Screenshots/iOS_18.4/en/play-tablet-16x9/` 03, 04, 05, 06, 02.
+- Cover 630 x 500: `cover.png` from `make-cover.py` (the Play feature graphic re-cropped, wordmark top-left).
+  Gameplay crops read as a dark empty box at itch's 315 x 250 grid size; the brand art does not.
+- Screenshots: fresh `Screenshots/capture/capture.mjs` frames (2026-10-15, current HUD and hull), 1912 x 880,
+  in this order: star mode, flight, deep, debriefing, title. The city frame is left out. Recapture after
+  any visible HUD or hull change.
 - Trailer: the 18.0 cut, https://www.youtube.com/watch?v=6MpAWIDzXp4 (unlisted - never set it private
   while this listing links it).
 - AI disclosure: yes, code (user's call, 2026-10-15).
