@@ -18,6 +18,11 @@ keep the `https://flytunl.ch` origin, so the worker's `ALLOWED_ORIGINS` needs no
   hypercasual, singleplayer, 2d.
 - Cover 630 x 500: laser crop of `Screenshots/ppo-B-2026-10/raw/capture-laser-mars.png` + wordmark.
 - Screenshots: `Screenshots/iOS_18.4/en/play-tablet-16x9/` 03, 04, 05, 06, 02.
+- Trailer: the 18.0 cut, https://www.youtube.com/watch?v=6MpAWIDzXp4 (unlisted - never set it private
+  while this listing links it).
+- AI disclosure: yes, code (user's call, 2026-10-15).
+- Project: https://tunl.itch.io/tunl (edit: itch.io/game/edit/5164268). Making it Public is the user's
+  click - the auto-mode classifier refuses it for Claude.
 - App link: `https://flytunl.ch/get/?utm_source=itch&utm_campaign=itch` (ASC campaign `ct=itch`,
   Play referrer `utm_source=itch`).
 
@@ -35,7 +40,7 @@ there is a new one.
 
 - One touch controls, played with mouse, Space or Up arrow
 - A new cave every day, the same for every player
-- Daily and all-time leaderboards
+- Today's top 10 with pilot names
 - Shields, lasers, bombs, magnets and a star mode that smashes through everything
 - Eight ships to unlock, each with its own feel
 - Gets faster the deeper you go: easy to start, hard to master
