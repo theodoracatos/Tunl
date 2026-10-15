@@ -1,0 +1,21 @@
+{
+ "_note": "19.11 = Hindi alignment fix on every screen (WebKit dropped textAlign center/right for Devanagari; 47200fa, c63cf56, 5dac41b) and no letter spacing for Arabic/Hindi labels. Same text on ASC and Play; no stat numbers. Werbetexte: copied unchanged from 19.10 (evergreen; ASC does not carry them over).",
+ "en-US": "Hindi and Arabic, done right. Every centred Hindi line now sits where it belongs, from the start screen to the debriefing, and Hindi and Arabic labels read as whole words again instead of letters pulled apart.",
+ "en-GB": "Hindi and Arabic, done right. Every centred Hindi line now sits where it belongs, from the start screen to the debriefing, and Hindi and Arabic labels read as whole words again instead of letters pulled apart.",
+ "es-MX": "Hindi y árabe, por fin bien. Cada línea centrada en hindi está ahora en su lugar, desde la pantalla de inicio hasta el resumen, y las etiquetas en hindi y árabe vuelven a leerse como palabras enteras, no como letras separadas.",
+ "de-DE": "Hindi und Arabisch, endlich richtig. Jede zentrierte Hindi-Zeile sitzt jetzt dort, wo sie hingehört, vom Startbildschirm bis zur Auswertung, und Beschriftungen auf Hindi und Arabisch lesen sich wieder als ganze Wörter statt als auseinandergezogene Buchstaben.",
+ "fr-FR": "L'hindi et l'arabe, enfin comme il faut. Chaque ligne centrée en hindi est désormais à sa place, de l'écran d'accueil au débriefing, et les libellés en hindi et en arabe se lisent de nouveau comme des mots entiers, plus comme des lettres écartées.",
+ "it": "Hindi e arabo, finalmente giusti. Ogni riga centrata in hindi ora sta al suo posto, dalla schermata iniziale al debriefing, e le etichette in hindi e arabo si leggono di nuovo come parole intere, non come lettere sparpagliate.",
+ "es-ES": "Hindi y árabe, por fin bien. Cada línea centrada en hindi está ahora en su sitio, desde la pantalla de inicio hasta el resumen, y las etiquetas en hindi y árabe vuelven a leerse como palabras enteras, no como letras separadas.",
+ "pt-BR": "Hindi e árabe, enfim do jeito certo. Cada linha centralizada em hindi agora fica no lugar certo, da tela inicial ao resumo da partida, e os rótulos em hindi e árabe voltam a ser lidos como palavras inteiras, não como letras separadas.",
+ "ja": "ヒンディー語とアラビア語の表示を修正しました。中央揃えのヒンディー語の行が、スタート画面から結果画面まで正しい位置に表示されます。ヒンディー語とアラビア語のラベルも、文字がばらばらにならず、ひとつの単語として読めるようになりました。",
+ "ko": "힌디어와 아랍어 표시를 바로잡았어요. 가운데 정렬된 힌디어 줄이 시작 화면부터 결과 화면까지 제자리에 표시돼요. 힌디어와 아랍어 라벨도 글자가 흩어지지 않고 온전한 단어로 읽혀요.",
+ "zh-Hant": "印地語與阿拉伯語顯示修正。置中的印地語文字現在都在正確的位置，從開始畫面到結算畫面都一樣；印地語與阿拉伯語的標籤也不再被拆成分散的字母，重新讀起來是完整的字詞。",
+ "ru": "Хинди и арабский, наконец как надо. Каждая строка на хинди по центру теперь стоит на своём месте, от стартового экрана до итогов забега, а подписи на хинди и арабском снова читаются целыми словами, а не разбросанными буквами.",
+ "ar-SA": "الهندية والعربية كما يجب. كل سطر هندي في المنتصف أصبح في مكانه الصحيح، من شاشة البداية حتى ملخص الجولة، وعادت التسميات بالهندية والعربية تُقرأ كلمات كاملة لا حروفاً متباعدة.",
+ "tr": "Hintçe ve Arapça artık doğru görünüyor. Ortalanmış her Hintçe satır, başlangıç ekranından koşu özetine kadar yerinde duruyor; Hintçe ve Arapça etiketler de dağılmış harfler yerine yeniden bütün kelimeler olarak okunuyor.",
+ "id": "Bahasa Hindi dan Arab, kini tampil benar. Setiap baris Hindi yang rata tengah sekarang ada di tempatnya, dari layar awal sampai ringkasan run, dan label berbahasa Hindi dan Arab kembali terbaca sebagai kata utuh, bukan huruf yang terpencar.",
+ "pl": "Hindi i arabski wreszcie jak trzeba. Każda wyśrodkowana linia po hindi stoi teraz na swoim miejscu, od ekranu startowego po podsumowanie lotu, a etykiety po hindi i arabsku znów czyta się jak całe słowa, a nie rozstrzelone litery.",
+ "hi": "हिंदी और अरबी अब सही दिखती हैं। बीच में रखी हर हिंदी पंक्ति अब स्टार्ट स्क्रीन से लेकर रन के सारांश तक अपनी सही जगह पर है, और हिंदी व अरबी लेबल फिर से बिखरे अक्षरों की जगह पूरे शब्दों की तरह पढ़े जाते हैं।",
+ "el": "Χίντι και αραβικά, επιτέλους σωστά. Κάθε κεντραρισμένη γραμμή στα χίντι κάθεται πλέον στη θέση της, από την αρχική οθόνη μέχρι τη σύνοψη της πτήσης, και οι ετικέτες σε χίντι και αραβικά διαβάζονται ξανά ως ολόκληρες λέξεις, όχι ως σκόρπια γράμματα."
+}
