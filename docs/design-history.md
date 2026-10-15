@@ -2661,3 +2661,17 @@ it (3.2 -> 2.1 s; first try at 2x saved only 0.8 s - the audit's "4.5 s" measure
 not to the mouth); F no arrival card before the first run, the death chip still reports day 1.
 WebKit real time after: tapping 0-100 ms late -> cave 10.7-11.2 s (was 11.8 / 18.2), PLAY AGAIN
 -> cave 6.1 s at +100 ms (was 18 s). Rejected nothing; all targets, no isWeb gate.
+
+## Hindi title centred by measured width (2026-10-15)
+
+The first-contact audit noted the Hindi world line running into the hero ring at 874x402.
+Cause, measured in Playwright `webkit`: WebKit ignores `textAlign 'center'`/`'right'` for
+Devanagari (every font stack, every baseline, with or without maxWidth; Thai too, not a game
+language) and draws from x, so each centred Hindi line sat half its width too far right.
+`measureText` widths are right, and Chromium centres correctly. The hero-stage clearance
+(`titleColRight`) was computed for the centred line, so it never moved the ring. Fix:
+`fillTextCentred()` for the title's left column, stat labels, ALL SHIPS pill and the arrival
+and inbox cards; English renders pixel-identical. Not `isWeb()`-gated: it changes nothing
+where the engine centres, and Safari web had the same fault. The same renders showed
+letter-spaced labels (the stat plate's REKORD label) pulling Hindi conjuncts and Arabic joins
+apart into single letters: every spaced label now takes `trackPx()`, zero for `ar`/`hi`.

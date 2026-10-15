@@ -1896,6 +1896,13 @@ function upperT(s) {
     return (activeLang === 'tr' ? s.toLocaleUpperCase('tr') : s.toUpperCase()).normalize('NFD').replace(/([\u0391-\u03A9])\u0301/g, '$1').normalize('NFC');
 }
 
+// Letter spacing for a spaced label, as a ctx.letterSpacing value. Arabic and Devanagari
+// are joined scripts: tracking pulls a word apart into single letters ("كل الأوقات" lost
+// its joins, Hindi its conjuncts, 2026-10-15), so those two languages get none.
+function trackPx(px) {
+    return (activeLang === 'ar' || activeLang === 'hi') ? '0px' : `${px}px`;
+}
+
 function setLang(code) {
     activeLang = code;
     T = LANGS[code] || LANGS.en;

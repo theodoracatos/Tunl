@@ -26,6 +26,14 @@ Study: https://claude.ai/artifact/QPvLrDmGiU6przXNwXLV9y
 - **HUD score, BEST and the world intro banner sit on the ALPHABETIC baseline from measured
   ink**, never `textBaseline 'top'`/`'middle'` (WebKit puts the em-box top lower than
   Chromium). The banner never sits above the HUD stack (`hudY`).
+- **Centre Devanagari by measured width, never by `textAlign 'center'`/`'right'`.** WebKit
+  ignores the alignment for Devanagari (any font, any baseline; Arabic, CJK, Cyrillic, Greek
+  are fine) and starts the text at x - the Hindi world line ran into the hero ring at 874x402.
+  `fillTextCentred()` (draw.js) draws left-aligned at `x - width/2`; the title, ALL SHIPS
+  pill, arrival and inbox cards use it. Other screens still have local copies (`centred`).
+  Chromium renders correctly, so check Hindi on Playwright `webkit`.
+- **Letter spacing goes through `trackPx()`** (i18n.js): Arabic and Devanagari get none,
+  tracking breaks their joins and conjuncts. No literal `letterSpacing` px value elsewhere.
 - **No `shadowBlur` on text filled with a gradient or pattern.** WebKit draws that shadow as a
   blurred copy of the whole line well below the text, cut off hard (the approach banner's
   glint, iPhone 2026-09-29; Chrome looks right). Put the glow on a solid-colour pass instead.

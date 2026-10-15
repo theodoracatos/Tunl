@@ -817,7 +817,7 @@ function _shareCardCanvas(portrait) {
             g.textBaseline = 'alphabetic';
             g.font = F(15, true);
             g.fillStyle = 'rgba(132,146,184,0.62)';
-            try { g.letterSpacing = '1.6px'; } catch (e) {}
+            try { g.letterSpacing = trackPx(1.6); } catch (e) {}
             g.fillText(`${T.flown}  ·  ${T.sector} ${runDeathScene.k}`, L, bandLblY);
             try { g.letterSpacing = '0px'; } catch (e) {}
         }

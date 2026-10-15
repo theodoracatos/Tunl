@@ -3571,12 +3571,12 @@ function _hudTagsDraw(G) {
     const fa = FS * 0.019, fb = FS * 0.015, gap = FS * 0.016;
     const fit = (text, f, bold, maxW) => {
         ctx.font = `${bold ? 'bold ' : ''}${f}px ${FONT_UI}`;
-        ctx.letterSpacing = bold ? `${f * 0.08}px` : '0px';
+        ctx.letterSpacing = bold ? trackPx(f * 0.08) : '0px';
         const w0 = ctx.measureText(text).width;
         if (maxW > 0 && w0 > maxW) {
             f *= maxW / w0;
             ctx.font = `${bold ? 'bold ' : ''}${f}px ${FONT_UI}`;
-            ctx.letterSpacing = bold ? `${f * 0.08}px` : '0px';
+            ctx.letterSpacing = bold ? trackPx(f * 0.08) : '0px';
         }
         const m = ctx.measureText(text);
         return { w: m.width, asc: m.actualBoundingBoxAscent || f * 0.72 };
@@ -3760,9 +3760,9 @@ function drawHudInfo() {
             // Head in the element's colour, shrunk to the text column like the legend's labels.
             let hf = headFs;
             ctx.font = `bold ${hf}px ${FONT_UI}`;
-            ctx.letterSpacing = `${hf * 0.1}px`;
+            ctx.letterSpacing = trackPx(hf * 0.1);
             const hw = ctx.measureText(r.head).width;
-            if (hw > textW) { hf *= textW / hw; ctx.font = `bold ${hf}px ${FONT_UI}`; ctx.letterSpacing = `${hf * 0.1}px`; }
+            if (hw > textW) { hf *= textW / hw; ctx.font = `bold ${hf}px ${FONT_UI}`; ctx.letterSpacing = trackPx(hf * 0.1); }
             ctx.fillStyle = coinTone(r.tk, 0.35, 0.95);
             ctx.fillText(r.head, tx, y + headFs * 0.6);
             ctx.letterSpacing = '0px';
@@ -4350,6 +4350,16 @@ function nextStardustGoal() {
     return null;
 }
 
+// Centred by measured width, drawn left-aligned: WebKit drops textAlign 'center' for
+// Devanagari and starts the text at x instead (all fonts, all baselines; Chromium is right).
+// On the Hindi title the world line ran into the hero ring and the ALL SHIPS label out of
+// its pill (874x402, 2026-10-15). Restores textAlign 'center' for the caller.
+function fillTextCentred(text, x, y) {
+    ctx.textAlign = 'left';
+    ctx.fillText(text, x - ctx.measureText(text).width / 2, y);
+    ctx.textAlign = 'center';
+}
+
 function drawTitleScreen() {
     // In landscape (W > H*1.15) use a two-column layout to avoid vertical crowding.
     // In portrait keep a centered stack but anchor the skin picker to the bottom.
@@ -4626,7 +4636,7 @@ function drawTitleScreen() {
     const colGap = Math.max(FS * 0.010, 4);
     const levelY = Math.max(LAND ? H * 0.395 - 11 : H/2 - H*0.038,
                             ulY + 1.5 + colGap + (ctx.measureText(levelLine).actualBoundingBoxAscent || levelFsz * 0.5));
-    ctx.fillText(levelLine, titleX, levelY);
+    fillTextCentred(levelLine, titleX, levelY);
     // Right ink edge of the left column (logo, world, planet, stat plate), so the hero
     // stage below can keep its chevrons clear of it (Hero ship stage, iPhone Duo).
     let titleColRight = Math.max(titleX + logoW / 2, titleX + ctx.measureText(levelLine).width / 2);
@@ -4667,7 +4677,7 @@ function drawTitleScreen() {
         planetBaselineY = Math.max(planetBaselineY + planetFsz * 1.5,
                                    levelInkBottom + colGap + (pm.actualBoundingBoxAscent || planetFsz * 0.5));
         planetInkBottom = planetBaselineY + (pm.actualBoundingBoxDescent || planetFsz * 0.5);
-        ctx.fillText(planetLine, titleX, planetBaselineY);
+        fillTextCentred(planetLine, titleX, planetBaselineY);
         titleColRight = Math.max(titleColRight, titleX + pm.width / 2);
 
         // Day type (world.js DAY_ARCHETYPES, variety concept C 2026-10-08): "TODAY: MINE BELT".
@@ -4689,7 +4699,7 @@ function drawTitleScreen() {
         planetBaselineY = Math.max(planetBaselineY + dayFsz * 1.45,
                                    planetInkBottom + colGap + (dm.actualBoundingBoxAscent || dayFsz * 0.5));
         planetInkBottom = planetBaselineY + (dm.actualBoundingBoxDescent || dayFsz * 0.5);
-        ctx.fillText(dayLine, titleX, planetBaselineY);
+        fillTextCentred(dayLine, titleX, planetBaselineY);
         titleColRight = Math.max(titleColRight, titleX + dm.width / 2);
         ctx.shadowBlur  = 0;
     }
@@ -4738,7 +4748,7 @@ function drawTitleScreen() {
         if (hasFlown) cells.push({ lbl: T.lifetimeTotal, val: Math.floor(lifetimeScore).toLocaleString(), big: false });
 
         let lblFsz = FS * 0.016, bigFsz = FS * 0.046, smlFsz = FS * 0.034;
-        const setLbl = () => { ctx.font = `bold ${lblFsz}px ${FONT_UI}`; try { ctx.letterSpacing = `${lblFsz * 0.22}px`; } catch (e) {} };
+        const setLbl = () => { ctx.font = `bold ${lblFsz}px ${FONT_UI}`; try { ctx.letterSpacing = trackPx(lblFsz * 0.22); } catch (e) {} };
         const setVal = (c) => { ctx.font = `bold ${c.big ? bigFsz : smlFsz}px ${FONT_NUM}`; try { ctx.letterSpacing = '0px'; } catch (e) {} };
         const gap = FS * 0.034;
         const measure = () => cells.map(c => {
@@ -4769,7 +4779,7 @@ function drawTitleScreen() {
             ctx.shadowColor = 'rgba(0,0,0,0.85)';
             ctx.shadowBlur  = 2;
             ctx.fillStyle   = rgb(accent, a * (c.big ? 0.85 : 0.60));
-            ctx.fillText(c.lbl, mid, lblY);
+            fillTextCentred(c.lbl, mid, lblY);
             setVal(c);
             ctx.shadowColor = c.big ? rgb(getTheme().wallBase, a * 0.55) : 'rgba(0,0,0,0.85)';
             ctx.shadowBlur  = c.big ? 10 : 3;
@@ -5024,7 +5034,7 @@ function drawTitleScreen() {
         ctx.fillStyle   = rgb(inkLogo, a * 0.95);
         ctx.shadowColor = 'rgba(0,0,0,0.85)';
         ctx.shadowBlur  = 3;
-        ctx.fillText(linkText, shipStageX, linkY);
+        fillTextCentred(linkText, shipStageX, linkY);
         ctx.shadowBlur  = 0;
         _shipPickerBtnRect = { x: pillX - 8, y: pillY - 8, w: pillW + 16, h: pillH + 16 };
     }
@@ -6030,7 +6040,7 @@ function drawTitleScreen() {
                 const gW = ctx.measureText(wl.glyph).width + fs * 0.6;
                 const textW = halfW - gW - fs;
                 ctx.font = `bold ${headFs}px ${FONT_UI}`;
-                ctx.letterSpacing = `${headFs * 0.1}px`;   // as label() draws it
+                ctx.letterSpacing = trackPx(headFs * 0.1);   // as label() draws it
                 const headW = ctx.measureText(wl.head).width + fs * 0.7;
                 ctx.letterSpacing = '0px';
                 ctx.font = `${fs}px ${FONT_UI}`;
@@ -6067,9 +6077,9 @@ function drawTitleScreen() {
         // Uppercase label with a little tracking, shrunk to fit maxW.
         const label = (text, x, y, sz, maxW) => {
             ctx.font = `bold ${sz}px ${FONT_UI}`;
-            ctx.letterSpacing = `${sz * 0.1}px`;
+            ctx.letterSpacing = trackPx(sz * 0.1);
             const w = ctx.measureText(text).width;
-            if (w > maxW) { ctx.font = `bold ${sz * maxW / w}px ${FONT_UI}`; ctx.letterSpacing = `${sz * maxW / w * 0.1}px`; }
+            if (w > maxW) { ctx.font = `bold ${sz * maxW / w}px ${FONT_UI}`; ctx.letterSpacing = trackPx(sz * maxW / w * 0.1); }
             if (ctx.textAlign === 'center') centred(text, x, y); else ctx.fillText(text, x, y);
             ctx.letterSpacing = '0px';
         };
@@ -6357,7 +6367,7 @@ function drawTitleScreen() {
             cy += gapL + ln.fs * 0.5;
             ctx.font      = `bold ${ln.fs}px ${FONT_UI}`;
             ctx.fillStyle = ln.c;
-            ctx.fillText(ln.t, W / 2, cy);
+            fillTextCentred(ln.t, W / 2, cy);
             cy += ln.fs * 0.5;
         }
         ctx.restore();
@@ -6387,7 +6397,7 @@ function drawTitleScreen() {
         ctx.lineWidth   = 1.5;
         ctx.beginPath(); ctx.roundRect(cardX, cardY, cardW, cardH, 12); ctx.stroke();
         ctx.fillStyle = 'rgba(236,242,255,0.96)';
-        ctx.fillText(txt, W / 2, cardY + cardH / 2);
+        fillTextCentred(txt, W / 2, cardY + cardH / 2);
         ctx.restore();
     }
 
@@ -6547,7 +6557,7 @@ function drawDeathScreen() {
         // Letterspacing is what makes an all-caps label read as a label rather than as
         // shouted body text. Guarded: ctx.letterSpacing is unsupported on older
         // WKWebView, where it degrades to normal tracking rather than throwing.
-        try { ctx.letterSpacing = `${Math.max(1, DS_LBL * 0.11)}px`; } catch (e) {}
+        try { ctx.letterSpacing = trackPx(Math.max(1, DS_LBL * 0.11)); } catch (e) {}
         ctx.textAlign = align || 'left';
         ctx.fillStyle = col || FNT();
         sh(0);
@@ -7674,7 +7684,7 @@ function drawAppOnlySheet() {
     // ── store buttons ─────────────────────────────────────────────────────────
     y += lbl * 0.35;
     font(lbl);
-    try { ctx.letterSpacing = `${Math.max(1, lbl * 0.11)}px`; } catch (e) {}
+    try { ctx.letterSpacing = trackPx(Math.max(1, lbl * 0.11)); } catch (e) {}
     ctx.fillStyle = 'rgba(132,146,184,0.70)';
     ctx.fillText(T.getTheApp, W / 2, y);
     try { ctx.letterSpacing = '0px'; } catch (e) {}
