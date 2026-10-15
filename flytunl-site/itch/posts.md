@@ -31,9 +31,10 @@ Body:
 
 Title:
 
-    One cave for everyone, and no level file
+    How every player gets the same daily cave, built from nothing but the date
 
-Type: Article. Body:
+Type: Tech Discussion, tags procedural-generation, game-design, javascript, leaderboard; cover
+`devlog-cover.jpg` (make-cover.py); a flight screenshot embedded after the first paragraph. Body:
 
     Every player of TUNL flies the same cave on the same day, and at midnight UTC it becomes
     a different one. There is no level file behind that. No server hands out a map and the
