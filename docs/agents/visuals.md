@@ -29,8 +29,9 @@ Study: https://claude.ai/artifact/QPvLrDmGiU6przXNwXLV9y
 - **Centre Devanagari by measured width, never by `textAlign 'center'`/`'right'`.** WebKit
   ignores the alignment for Devanagari (any font, any baseline; Arabic, CJK, Cyrillic, Greek
   are fine) and starts the text at x - the Hindi world line ran into the hero ring at 874x402.
-  `fillTextCentred()` (draw.js) draws left-aligned at `x - width/2`; the title, ALL SHIPS
-  pill, arrival and inbox cards use it. Other screens still have local copies (`centred`).
+  `fillTextCentred()` (draw.js) draws left-aligned at `x - width/2`; use it for any centred
+  translated string. Inline left-aligned maths remains where a line also clamps to an edge
+  (tap tutor words) or its panel keeps drawing left-aligned (YOUR INSTRUMENTS title).
   Chromium renders correctly, so check Hindi on Playwright `webkit`.
 - **Letter spacing goes through `trackPx()`** (i18n.js): Arabic and Devanagari get none,
   tracking breaks their joins and conjuncts. No literal `letterSpacing` px value elsewhere.

@@ -5051,18 +5051,15 @@ function drawTitleScreen() {
         const top   = showShipPanel ? _shipPickerBtnRect.y + _shipPickerBtnRect.h : (LAND ? pillAnchorY : heroNameY) + FS * 0.026;
         const ty    = top + fsz * 0.9;
         ctx.save();
-        // Centred by measured width, left-aligned (WebKit dropped textAlign 'center' for Devanagari).
         let f = fsz;
         ctx.font = `bold ${f}px ${FONT_UI}`;
         const w0 = ctx.measureText(T.tap).width, maxW = heroR * 4.2;
         if (w0 > maxW) { f *= maxW / w0; ctx.font = `bold ${f}px ${FONT_UI}`; }
-        const tw = Math.min(w0, maxW);
-        ctx.textAlign    = 'left';
         ctx.textBaseline = 'alphabetic';
         ctx.shadowColor  = `rgba(140,190,255,${a * 0.85 * pulse})`;
         ctx.shadowBlur   = 16;
         ctx.fillStyle    = `rgba(220,235,255,${a * pulse})`;
-        ctx.fillText(T.tap, shipStageX - tw / 2, ty);
+        fillTextCentred(T.tap, shipStageX, ty);
         ctx.shadowBlur   = 0;
         ctx.restore();
     }
@@ -6080,15 +6077,8 @@ function drawTitleScreen() {
             ctx.letterSpacing = trackPx(sz * 0.1);
             const w = ctx.measureText(text).width;
             if (w > maxW) { ctx.font = `bold ${sz * maxW / w}px ${FONT_UI}`; ctx.letterSpacing = trackPx(sz * maxW / w * 0.1); }
-            if (ctx.textAlign === 'center') centred(text, x, y); else ctx.fillText(text, x, y);
+            if (ctx.textAlign === 'center') fillTextCentred(text, x, y); else ctx.fillText(text, x, y);
             ctx.letterSpacing = '0px';
-        };
-        // Centred by measured width, drawn left-aligned: WebKit dropped textAlign 'center'
-        // for Devanagari (system fallback face) and started the text at x instead.
-        const centred = (text, x, yy) => {
-            ctx.textAlign = 'left';
-            ctx.fillText(text, x - ctx.measureText(text).width / 2, yy);
-            ctx.textAlign = 'center';
         };
         const rule = yy => {
             ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1;
@@ -6109,7 +6099,7 @@ function drawTitleScreen() {
         }
         ctx.fillStyle = 'rgba(255,225,110,0.95)';
         let y = panY + padTop + titleH * 0.5;
-        centred(T.howItWorks, W / 2, y);
+        fillTextCentred(T.howItWorks, W / 2, y);
         // The console's own legend (YOUR INSTRUMENTS, drawHudInfo) opens on top from a link
         // in the title row's right half, shrunk to the room the title leaves.
         {
@@ -6140,7 +6130,7 @@ function drawTitleScreen() {
             coinIcon(type, cx, iy, iconS * (COIN_SIZE_MULT[type] > 1.2 ? 1.12 : 1));
             ctx.font = `${capFs}px ${FONT_UI}`;
             ctx.fillStyle = bad ? 'rgba(255,190,200,0.85)' : 'rgba(220,225,245,0.85)';
-            caps[i].forEach((ln, j) => centred(ln, cx, iy + iconS * 1.5 + capFs * 0.6 + j * capLh));
+            caps[i].forEach((ln, j) => fillTextCentred(ln, cx, iy + iconS * 1.5 + capFs * 0.6 + j * capLh));
         });
         const sepX = x0 + colW * N_GOOD + sepW / 2;
         ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 1;
