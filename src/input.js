@@ -477,7 +477,10 @@ window.addEventListener('pointerdown',   e => { if (_fromWebOverlay(e)) return; 
 window.addEventListener('pointerup',     e => { if (_fromWebOverlay(e)) return; e.preventDefault(); onUp(e);   });
 window.addEventListener('pointercancel', e => { if (_fromWebOverlay(e)) return; onCancel(e); });
 window.addEventListener('keydown', e => {
-    if (_fromWebOverlay(e)) return;   // typing a pilot name (#name-panel) is not thrust
+    // While the pilot-name form (#name-panel) is up, keys are typing, not thrust - also
+    // after a click on its backdrop moved focus to the body. Only this overlay: a Space
+    // with focus on #rec-btn must still fly (preventDefault keeps it from toggling REC).
+    if (webNamePanelOpen()) return;
     if (['Space','ArrowUp'].includes(e.code)) { e.preventDefault(); onDown(); }
     // Gated behind DEV_PAUSE_KEY (constants.js, ships false) -- this used to be a bare
     // 'P' shortcut that froze a live run indefinitely, world/physics/audio and all,
@@ -489,7 +492,6 @@ window.addEventListener('keydown', e => {
     }
 });
 window.addEventListener('keyup', e => {
-    if (_fromWebOverlay(e)) return;
     if (['Space','ArrowUp'].includes(e.code)) { e.preventDefault(); onUp(); }
 });
 
