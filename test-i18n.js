@@ -58,6 +58,34 @@ for (const langCode of LANG_ORDER) {
     }
 }
 
+// The Devanagari alignment wrapper (i18n.js, WebKit drops textAlign for Devanagari): load
+// i18n.js again with a recording canvas prototype and check what reaches the real fillText.
+{
+    const calls = [];
+    class Ctx2D {
+        constructor() { this.textAlign = 'center'; }
+        measureText(t) { return { width: t.length * 10 }; }
+        fillText(t, x, y, mw) { calls.push({ t, x, al: this.textAlign, mw }); }
+        strokeText(t, x, y, mw) { calls.push({ t, x, al: this.textAlign, mw, stroke: true }); }
+    }
+    const sb = { localStorage: { getItem: k => (k === 'tunnel_lang' ? 'hi' : null), setItem() {} },
+                 navigator: { language: 'en' }, CanvasRenderingContext2D: Ctx2D };
+    vm.createContext(sb);
+    vm.runInContext(src, sb, { filename: file });
+    const c = new Ctx2D();
+    const hi = 'दुनिया';                           // 6 code units -> width 60
+    const check = (name, ok) => { if (ok) console.log(`✓ ${name}`); else { console.error(`✗ ${name} ${JSON.stringify(calls)}`); failed = true; } };
+    calls.length = 0; c.textAlign = 'center'; c.fillText(hi, 100, 0);
+    check('hi centred Devanagari drawn left from x - w/2', calls[0].al === 'left' && calls[0].x === 70 && c.textAlign === 'center');
+    calls.length = 0; c.textAlign = 'right'; c.strokeText(hi, 100, 0, 40);
+    check('hi right-aligned stroke drawn left from x - min(w, maxWidth)', calls[0].al === 'left' && calls[0].x === 60 && calls[0].mw === 40 && c.textAlign === 'right');
+    calls.length = 0; c.textAlign = 'center'; c.fillText('WORLD', 100, 0);
+    check('hi Latin-only line keeps textAlign', calls[0].al === 'center' && calls[0].x === 100);
+    vm.runInContext("setLang('de')", sb);
+    calls.length = 0; c.textAlign = 'center'; c.fillText(hi, 100, 0);
+    check('other languages untouched', calls[0].al === 'center' && calls[0].x === 100);
+}
+
 if (failed) {
     console.error('\ni18n check FAILED');
     process.exit(1);

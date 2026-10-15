@@ -1903,6 +1903,34 @@ function trackPx(px) {
     return (activeLang === 'ar' || activeLang === 'hi') ? '0px' : `${px}px`;
 }
 
+// WebKit ignores textAlign 'center'/'right'/'end' for Devanagari (any font, any baseline)
+// and draws from x, so every centred Hindi label sat half its width to the right: the
+// world line in the hero ring, PLAY AGAIN out of its button, the death screen's right-
+// aligned planet line off the canvas (2026-10-15). While Hindi is active, a line that holds
+// Devanagari is drawn left-aligned from its measured width instead - the same pixels
+// Chromium draws. Every canvas, share card included. fillTextCentred() (draw.js) predates it.
+(function () {
+    const P = typeof CanvasRenderingContext2D !== 'undefined' && CanvasRenderingContext2D.prototype;
+    if (!P || P._tunlDevaAlign) return;
+    P._tunlDevaAlign = true;
+    const DEVA = /[ऀ-ॿ]/;
+    for (const name of ['fillText', 'strokeText']) {
+        const orig = P[name];
+        P[name] = function (text, x, y, maxWidth) {
+            const al = this.textAlign;
+            if (activeLang !== 'hi' || al === 'left' || al === 'start' || !DEVA.test(text)) {
+                return maxWidth === undefined ? orig.call(this, text, x, y) : orig.call(this, text, x, y, maxWidth);
+            }
+            let w = this.measureText(text).width;
+            if (maxWidth !== undefined) w = Math.min(w, maxWidth);
+            this.textAlign = 'left';
+            const dx = al === 'center' ? x - w / 2 : x - w;   // 'right' / 'end' (ltr)
+            if (maxWidth === undefined) orig.call(this, text, dx, y); else orig.call(this, text, dx, y, maxWidth);
+            this.textAlign = al;
+        };
+    }
+})();
+
 function setLang(code) {
     activeLang = code;
     T = LANGS[code] || LANGS.en;

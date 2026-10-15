@@ -2675,3 +2675,12 @@ and inbox cards; English renders pixel-identical. Not `isWeb()`-gated: it change
 where the engine centres, and Safari web had the same fault. The same renders showed
 letter-spaced labels (the stat plate's REKORD label) pulling Hindi conjuncts and Arabic joins
 apart into single letters: every spaced label now takes `trackPx()`, zero for `ar`/`hi`.
+
+Same day, a WebKit pass over the other screens in Hindi showed the fault everywhere a line is
+centred or right-aligned: PLAY AGAIN out of its button, HOME off-centre, the death header's
+right-aligned planet line off the canvas, shop card titles, settings buttons, missions title.
+Rather than ~35 per-site fixes, i18n.js now wraps `fillText`/`strokeText` on the canvas
+prototype: while Hindi is active, a centre/right/end line holding Devanagari is drawn
+left-aligned from its measured width. Latin-only lines and every other language take the
+untouched path (one string compare). `test-i18n.js` checks the wrapper with a recording
+prototype; a mutation of the right-align offset fails it.

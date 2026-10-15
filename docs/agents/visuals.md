@@ -28,10 +28,12 @@ Study: https://claude.ai/artifact/QPvLrDmGiU6przXNwXLV9y
   Chromium). The banner never sits above the HUD stack (`hudY`).
 - **Centre Devanagari by measured width, never by `textAlign 'center'`/`'right'`.** WebKit
   ignores the alignment for Devanagari (any font, any baseline; Arabic, CJK, Cyrillic, Greek
-  are fine) and starts the text at x - the Hindi world line ran into the hero ring at 874x402.
-  `fillTextCentred()` (draw.js) draws left-aligned at `x - width/2`; use it for any centred
-  translated string. Inline left-aligned maths remains where a line also clamps to an edge
-  (tap tutor words) or its panel keeps drawing left-aligned (YOUR INSTRUMENTS title).
+  are fine) and starts the text at x - the Hindi world line ran into the hero ring at 874x402,
+  PLAY AGAIN out of its button. **The fix is global**: i18n.js wraps `fillText`/`strokeText`
+  on `CanvasRenderingContext2D.prototype` and, while Hindi is active, draws a centre/right/end
+  line holding Devanagari left-aligned from its measured width (maxWidth respected). Plain
+  `textAlign 'center'` is therefore safe again; `fillTextCentred()` (draw.js) and the inline
+  measured-width maths predate the wrapper and stay as they are.
   Chromium renders correctly, so check Hindi on Playwright `webkit`.
 - **Letter spacing goes through `trackPx()`** (i18n.js): Arabic and Devanagari get none,
   tracking breaks their joins and conjuncts. No literal `letterSpacing` px value elsewhere.
