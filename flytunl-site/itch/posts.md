@@ -49,9 +49,11 @@ Type: Article. Body:
     a ghost of your best run that costs a few hundred bytes; and a link you can send a friend
     so they race exactly your cave.
 
-    It also turned out to be easy to break. Anything that draws from the same random stream
-    as the cave can shift every mine and coin behind it, so a harmless-looking feature can
-    quietly give two players two different caves. That happened twice before tests caught it.
+    The rule underneath is strict: where an object goes may depend on its place in the cave
+    and the day, and on nothing else. Not your screen size, not your score, not a power-up.
+    Break it and nothing crashes, the cave just quietly stops being the same cave. I broke it
+    twice. The first time, obstacle spacing read the difficulty at the player's position
+    instead of where the obstacle sat, and six devices flew six different caves.
     The full story, with the code: https://flytunl.ch/devlog/daily-cave/
 
     Today's cave is waiting: tap to hop, hold to climb, and see where you land on the top 10.
