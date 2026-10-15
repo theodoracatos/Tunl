@@ -317,7 +317,7 @@ function webSubmitScore(score, playSec) {
                 d: todayInt, s: score | 0, p: Math.round(playSec || 0),
                 id: webPlayerId(), tok,
             }),
-        }).then(r => r.json()).then(_webApplyRank);
+        }).then(r => r.json()).then(j => { _webApplyRank(j); _webMaybeAskName(j); });
     }).catch(() => {});
 }
 
@@ -351,8 +351,24 @@ function _webPilotNameStore(n) {
     try { n ? localStorage.setItem('tunl_web_name', n) : localStorage.removeItem('tunl_web_name'); } catch (e) {}
 }
 
+// A run that lands in today's top 10 without a pilot name asks for one (user,
+// 2026-10-15): once per day, a beat after the death screen is up, never during a run.
+// The rank is the worker's answer to this run's own submit.
+const NAME_ASK_RANK = 10, NAME_ASK_DELAY_MS = 1200;
+function _webMaybeAskName(j) {
+    if (!j || !(j.rank > 0 && j.rank <= NAME_ASK_RANK) || webPilotName()) return;
+    const day = String(_tunlActiveDayInt());
+    try { if (localStorage.getItem('tunl_name_asked') === day) return; } catch (e) {}
+    setTimeout(() => {
+        if (phase !== 'dead' || webNamePanelOpen() || webPilotName()) return;
+        try { localStorage.setItem('tunl_name_asked', day); } catch (e) {}
+        webOpenNamePanel(j.rank);
+    }, NAME_ASK_DELAY_MS);
+}
+
 let _namePanel = null, _nameIn = null, _nameMsg = null;
-function webOpenNamePanel() {
+// rank: set when the top-10 ask opens it (headline names the place), else undefined.
+function webOpenNamePanel(rank) {
     if (!_webLbOn()) return;
     if (!_namePanel) {
         _namePanel = document.getElementById('name-panel');
@@ -363,10 +379,10 @@ function webOpenNamePanel() {
         document.getElementById('name-close').addEventListener('click', webCloseNamePanel);
         _nameIn.addEventListener('keydown', e => { if (e.key === 'Escape') webCloseNamePanel(); });
     }
-    document.getElementById('name-ttl').textContent  = T.nameTitle;
+    document.getElementById('name-ttl').textContent  = rank ? T.nameTop10Title.replace('{n}', rank) : T.nameTitle;
     document.getElementById('name-save').textContent = T.nameSave;
     _nameIn.placeholder = T.namePlaceholder;
-    _nameMsg.textContent = T.nameHint;
+    _nameMsg.textContent = rank ? T.nameTop10Hint : T.nameHint;
     _nameMsg.classList.remove('bad');
     _nameIn.value = webPilotName();
     _namePanel.classList.add('show');

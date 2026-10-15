@@ -105,7 +105,9 @@ a greyed app-only icon) and opens `drawWebBoard`: the worker's top 10 of the day
 and appended below the list when it ranks lower. The name is entered in the `#name-panel`
 DOM modal (`tunl.html`, `web.js webOpenNamePanel`) so a phone gets its keyboard; the
 worker filters and an operator bans (`flytunl-site/worker/README.md` "Pilot names"). The
-all-time pill opens the old app-only sheet. Apps are untouched: `hasGameCenter` there,
+all-time pill opens the old app-only sheet. A run that lands in today's top 10 without
+a name opens the same modal by itself (`web.js _webMaybeAskName`, user 2026-10-15): once per
+day, `NAME_ASK_DELAY_MS` after the rank comes back, only while `phase === 'dead'`. Apps are untouched: `hasGameCenter` there,
 `isWeb()` gates everything here.
 
 That local list is `top5`, which is **wiped at the UTC day boundary** (`lifecycle.js`),
