@@ -30,6 +30,10 @@ keep the `https://flytunl.ch` origin, so the worker's `ALLOWED_ORIGINS` needs no
   click - the auto-mode classifier refuses it for Claude.
 - App link: `https://flytunl.ch/get/?utm_source=itch&utm_campaign=itch` (ASC campaign `ct=itch`,
   Play referrer `utm_source=itch`).
+- App store links (the page's store buttons): App Store `...id6789721765?pt=93838800&ct=itch&mt=8`,
+  Google Play `...details?id=com.theodoracatos.tunl&referrer=utm_source%3Ditch%26utm_campaign%3Ditch`.
+- Metadata tab: inputs keyboard/mouse/touchscreen, session "a few seconds", 16 languages (pt-BR,
+  zh_Hant), accessibility "one button".
 
 ## Short description
 
