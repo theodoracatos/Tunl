@@ -34,7 +34,8 @@ base = swap(base, '<rect width="1024" height="500" fill="url(#bgGrd)"/>',
 base = swap(base, '<rect width="1024" height="500" fill="url(#halo)"/>',
     '<rect x="-1500" y="-1500" width="4000" height="3500" fill="url(#halo)"/>');
 
-// CrazyGames lays labels over a cover's top-left corner, so the wordmark sits below it.
+// CrazyGames lays labels over a cover's top-left corner (about a third of the square one),
+// so the wordmark sits below it, or right of it on the square.
 // view: the frame in feature-graphic units; ship: the ship group's transform (the master's
 // is translate(790,255) rotate(-34) scale(1.25)); mark: the wordmark group's transform.
 const COVERS = [
@@ -46,7 +47,7 @@ const COVERS = [
     { file: 'video-cover-portrait.png', w: 1080, h: 1620, view: [600, -160, 400, 600],
       ship: 'translate(800,250) rotate(-34) scale(1.1)', mark: 'translate(626,-60) scale(0.42)' },
     { file: 'cover-square.png', w: 800, h: 800, view: [560, -110, 500, 500],
-      ship: 'translate(815,225) rotate(-34) scale(1.05)', mark: 'translate(628,-62) scale(0.44)' },
+      ship: 'translate(815,225) rotate(-34) scale(1.05)', mark: 'translate(737,-107) scale(0.38)' },
 ];
 
 const tmp = mkdtempSync(join(tmpdir(), 'tunl-cg-'));
