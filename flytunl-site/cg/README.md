@@ -29,8 +29,12 @@ Storage inside the frame is partitioned by the portal: a CrazyGames player start
   the "Also free on iPhone and Android" line, which goes into the portal's store-link fields:
   App Store `https://apps.apple.com/app/id6789721765?pt=93838800&ct=crazygames&mt=8`,
   Google Play `https://play.google.com/store/apps/details?id=com.theodoracatos.tunl&referrer=utm_source%3Dcrazygames%26utm_campaign%3Dcrazygames`.
-- Covers: CrazyGames asks for its own sizes; generate them from the feature graphic like
-  `../itch/make-cover.py`.
+- Covers: `cover-landscape.png` 1920x1080, `cover-portrait.png` 800x1200, `cover-square.png`
+  800x800 from `make-covers.mjs` (feature graphic re-framed, ship re-rendered sharp; title is
+  the only text, as CrazyGames requires). Re-run after the feature graphic changes.
+- Preview videos: `preview-landscape-1920x1080.mp4` and `preview-portrait-1080x1620.mp4` from
+  `make-videos.sh`: 17.9 s, no sound, no bars, opening on the cover. Source is the 18.0 store
+  cut (older HUD); recut from a fresh run when the next store video is made.
 - Analytics: GA4 `utm_source=crazygames`, ASC campaign `ct=crazygames`, Play referrer
   `utm_source=crazygames`, plus the CrazyGames developer dashboard (players, playtime,
   retention) - the reason this listing exists.
