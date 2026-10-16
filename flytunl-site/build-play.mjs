@@ -28,6 +28,7 @@
 import { readFile, writeFile, mkdir, copyFile, rm, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { minify } from 'terser';
 
@@ -257,6 +258,7 @@ async function build() {
 
   await buildTT(stripped, sources, TUNL_VERSION);
   await buildPortal(stripped, v, TUNL_VERSION);
+  await buildOffline(stripped, min.code, TUNL_VERSION);
 
   const kb = (min.code.length / 1024).toFixed(0);
   console.log(`play/ built - tunl.bundle.js ${kb} KB (from ${SCRIPTS.length} files), version ${TUNL_VERSION}`);
@@ -417,6 +419,42 @@ async function buildPortal(stripped, v, version) {
   await mkdir(out, { recursive: true });
   await writeFile(path.join(out, 'index.html'), html, 'utf8');
   console.log(`cg/ built - portal page ${(html.length / 1024).toFixed(0)} KB on /play/'s bundle`);
+}
+
+// ============================================================
+//  dist/ng/ - the Newgrounds upload (flytunl-site/ng/README.md)
+// ============================================================
+//  A portal page like /cg/, but shipped as files: Newgrounds hosts the game on its own
+//  domain and asks for no third-party calls without an opt-out notice. So the page sets
+//  window._tunlOffline too (src/web.js webOffline: no leaderboard, referral or challenge
+//  calls) and carries no analytics beacon and no ad script; it uploads from dist/, never
+//  deploys to flytunl.ch. Zip with index.html at the root: dist/tunl-ng.zip.
+async function buildOffline(stripped, code, version) {
+  const out = path.join(root, 'flytunl-site/dist/ng');
+  const head = `<meta name="theme-color" content="#04040a">
+<script>window._tunlPortal = 'ng'; window._tunlOffline = true;</script>
+<meta name="tunl:version" content="${version}">`;
+  let html = stripped.replace(/<meta name="viewport"[^>]*>\r?\n/, m => m + head + '\n');
+  if (!html.includes('_tunlOffline')) throw new Error('ng: <meta name="viewport"> not found in tunl.html');
+  html = html.replace('</body>', `<script src="tunl.bundle.js"></script>\n</body>`);
+  if (/adsbygoogle|gpt\.js|googletagmanager|cloudflareinsights|workers\.dev/.test(html)) {
+    throw new Error('ng: a network script reached the offline page');
+  }
+  await rm(out, { recursive: true, force: true });
+  await mkdir(path.join(out, 'branding/web'), { recursive: true });
+  await mkdir(path.join(out, 'audio'), { recursive: true });
+  await writeFile(path.join(out, 'index.html'), html, 'utf8');
+  await writeFile(path.join(out, 'tunl.bundle.js'), code, 'utf8');
+  for (const f of ['favicon.svg', 'favicon-32.png', 'apple-touch-icon-180.png']) {
+    await copyFile(path.join(root, 'branding/web', f), path.join(out, 'branding/web', f));
+  }
+  for (const track of ['the_mountain.web.m4a', 'the_mountain_documentary.web.m4a', 'the_mountain_motivational.web.m4a']) {
+    await copyFile(path.join(root, 'audio', track), path.join(out, 'audio', track));
+  }
+  const zip = path.join(root, 'flytunl-site/dist/tunl-ng.zip');
+  await rm(zip, { force: true });
+  execFileSync('zip', ['-qr', zip, '.'], { cwd: out });
+  console.log(`dist/ng/ built - offline portal, zipped to dist/tunl-ng.zip`);
 }
 
 build().catch(err => { console.error('[build-play] failed:', err); process.exit(1); });

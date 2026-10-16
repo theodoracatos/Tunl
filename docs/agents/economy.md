@@ -60,7 +60,9 @@ the forced interstitial, not a video the player actively taps):
   PAINT pill, the "in the app" shard-ad row, the board's all-time pill, the continue slot's app
   card and SHARE - a portal forbids store links, app pitches and links to a playable web
   version. It loads no ad script. /play/ keeps the greyed controls (the rule above);
-  `test-sim.js` checks /play/, /cg/ and the apps.
+  `test-sim.js` checks /play/, /cg/ and the apps. The Newgrounds upload (`buildOffline`,
+  `flytunl-site/ng/README.md`) is a zip, not a frame, and also sets `window._tunlOffline`:
+  `webOffline()` keeps the leaderboard, referral and challenge calls off and the board off the rail.
 - **Rewarded shard bonus** (8.2) - a row at the bottom of the Missions drawer: watch an
   ad once per UTC day for a flat `SHARDS_AD_REWARD` (20) shards, exempt from
   `DAILY_SHARD_CAP` like a mission reward. Native plumbing

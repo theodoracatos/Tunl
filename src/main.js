@@ -162,7 +162,9 @@ let _legalLangShown = null;
 function _syncWebLegalLabels() {
     if (!_legalEl || typeof T === 'undefined' || !T.legalLink || _legalLangShown === activeLang) return;
     _legalLangShown = activeLang;
-    const base = activeLang === 'en' || !LANGS[activeLang] ? '/' : '/' + activeLang + '/';
+    // An offline portal build (web.js webOffline) is served from the portal's host, not flytunl.ch.
+    const host = webOffline() ? 'https://flytunl.ch' : '';
+    const base = host + (activeLang === 'en' || !LANGS[activeLang] ? '/' : '/' + activeLang + '/');
     const imp = document.getElementById('legal-imp'), priv = document.getElementById('legal-priv');
     if (imp)  { imp.textContent  = T.legalLink;   imp.href  = base + 'impressum/'; }
     if (priv) { priv.textContent = T.privacyLink; priv.href = base + 'privacy/'; }

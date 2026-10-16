@@ -5101,9 +5101,10 @@ function drawTitleScreen() {
         // rank badge. The app's other controls stay on the rail, greyed out, and a tap
         // opens the "in the app" sheet (drawAppOnlySheet) instead of doing nothing
         // visible. The challenge is iOS-only (GameView.swift), so an Android browser is
-        // not shown one. A portal page (web.js webPortal) leaves the greyed icons out.
+        // not shown one. A portal page (web.js webPortal) leaves the greyed icons out, an
+        // offline one (webOffline) the board too.
         if (isWeb()) {
-            items.push({ key: 'leaderboard', badge: hasRank ? (worldRankTotal > 0 ? `${worldRank}/${worldRankTotal}` : `${worldRank}`) : null, showBadge: hasRank });
+            if (!webOffline()) items.push({ key: 'leaderboard', badge: hasRank ? (worldRankTotal > 0 ? `${worldRank}/${worldRankTotal}` : `${worldRank}`) : null, showBadge: hasRank });
             if (!/Android/.test(navigator.userAgent) && !webPortal()) items.push({ key: 'challenge', locked: true });
         }
         // Web has no IAP bridge, so the shop is greyed out too and opens the same sheet.

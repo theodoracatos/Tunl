@@ -2481,6 +2481,29 @@ const FAKE_AC = `(() => {
     check('a portal page has no SHARE and no continue slot (it would pitch the app)', !cg.share && !cg.offer);
     check('the apps never take the portal path, even with window._tunlPortal set',
         !app.portal && app.shop && !app.offer);
+
+    // The offline portal build (Newgrounds, web.js webOffline): no call reaches the worker
+    // and the rail has no board. The online portal is the control: the same calls fetch.
+    const net = (web, offline) => {
+        const g = boot(956, 440, {}, '?r=someoneelse&c=AbCdEfGhIj', web);
+        g("window._tunlPortal = 'ng'");
+        if (offline) g('window._tunlOffline = true');
+        return g(`(() => {
+            const calls = [];
+            fetch = (u) => { calls.push(String(u)); return new Promise(() => {}); };
+            phase = 'title'; titleT = 10; drawTitleScreen();
+            const board = !!_leaderboardBtnRect;
+            webPrefetchToken(); webFetchRank(); webSubmitScore(500, 60); webFetchBoard(true);
+            submitReferral(500); checkReferralReward(); challengeFetch(); checkChallengeInbox();
+            return { offline: webOffline(), board, calls: calls.length };
+        })()`);
+    };
+    const online = net(true, false), ng = net(true, true), appNg = net(false, true);
+    check(`the online portal still reaches the worker and shows the board (${JSON.stringify(online)})`,
+        !online.offline && online.board && online.calls > 3);
+    check(`the offline portal makes no network call and has no board (${JSON.stringify(ng)})`,
+        ng.offline && !ng.board && ng.calls === 0);
+    check('the apps never go offline, even with window._tunlOffline set', !appNg.offline && appNg.calls > 0);
 }
 
 if (failed) { console.log(`\n${failed} check(s) failed.`); process.exit(1); }

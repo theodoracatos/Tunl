@@ -162,6 +162,15 @@ function webPortal() {
     return isWeb() && !!window._tunlPortal;
 }
 
+// webOffline() - a portal build shipped as files on the portal's own host that talks to
+// no server: Newgrounds asks a game to make no third-party calls without an opt-out notice
+// (game guidelines, read 2026-10-16), so build-play.mjs buildOffline() also sets
+// window._tunlOffline. The leaderboard, referral and challenge calls stay off and the rail
+// has no board; the daily cave is seeded locally, so it is the same cave without a rank.
+function webOffline() {
+    return webPortal() && !!window._tunlOffline;
+}
+
 // Epoch for the compact ?d= day-offset encoding. Never move this once links using
 // it are live - it would silently repoint every already-shared short link at the
 // wrong cave. 2025-01-01 matches the ?d range floor above.
@@ -246,7 +255,7 @@ let _webRunStartMs = 0;   // set in lifecycle.js startPlay(), read at death
 let _webLbTok = null, _webLbTokTs = 0, _webRankFetchTs = 0;
 
 function _webLbOn() {
-    return WEB_LEADERBOARD_API && typeof isWeb === 'function' && isWeb() && typeof fetch === 'function';
+    return WEB_LEADERBOARD_API && typeof isWeb === 'function' && isWeb() && typeof fetch === 'function' && !webOffline();
 }
 
 function webPlayerId() {
@@ -448,7 +457,7 @@ function _webSaveName() {
 // for exactly this reason, and since 2026-10-08 also answers each with its own
 // origin (withCors there) - before that the WebViews dropped every reply.
 function _referralOn() {
-    return !!WEB_LEADERBOARD_API && typeof fetch === 'function';
+    return !!WEB_LEADERBOARD_API && typeof fetch === 'function' && !webOffline();
 }
 
 // Called once from update.js commitDeath(), only on this player's own first
@@ -504,7 +513,7 @@ function checkReferralReward() {
 // three targets, and the link parses the same everywhere. Every call is best-effort:
 // with the worker down a recipient gets ?d + ?s exactly as before, never an error.
 function _challengeOn() {
-    return !!WEB_LEADERBOARD_API && typeof fetch === 'function';
+    return !!WEB_LEADERBOARD_API && typeof fetch === 'function' && !webOffline();
 }
 
 // 10 chars of base62 from crypto.getRandomValues. Bytes from 248 up are thrown away
