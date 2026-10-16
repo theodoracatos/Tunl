@@ -34,18 +34,19 @@ base = swap(base, '<rect width="1024" height="500" fill="url(#bgGrd)"/>',
 base = swap(base, '<rect width="1024" height="500" fill="url(#halo)"/>',
     '<rect x="-1500" y="-1500" width="4000" height="3500" fill="url(#halo)"/>');
 
+// CrazyGames lays labels over a cover's top-left corner, so the wordmark sits below it.
 // view: the frame in feature-graphic units; ship: the ship group's transform (the master's
 // is translate(790,255) rotate(-34) scale(1.25)); mark: the wordmark group's transform.
 const COVERS = [
     { file: 'cover-landscape.png', w: 1920, h: 1080, view: [95, 0, 889, 500],
       ship: 'translate(790,255) rotate(-34) scale(1.25)', mark: 'translate(125,186) scale(0.50)' },
     { file: 'cover-portrait.png', w: 800, h: 1200, view: [600, -160, 400, 600],
-      ship: 'translate(800,250) rotate(-34) scale(1.1)', mark: 'translate(626,-134) scale(0.42)' },
+      ship: 'translate(800,250) rotate(-34) scale(1.1)', mark: 'translate(626,-60) scale(0.42)' },
     // The preview videos open on their cover (make-videos.sh): the portrait one at 1080x1620.
     { file: 'video-cover-portrait.png', w: 1080, h: 1620, view: [600, -160, 400, 600],
-      ship: 'translate(800,250) rotate(-34) scale(1.1)', mark: 'translate(626,-134) scale(0.42)' },
+      ship: 'translate(800,250) rotate(-34) scale(1.1)', mark: 'translate(626,-60) scale(0.42)' },
     { file: 'cover-square.png', w: 800, h: 800, view: [560, -110, 500, 500],
-      ship: 'translate(815,215) rotate(-34) scale(1.05)', mark: 'translate(628,-110) scale(0.44)' },
+      ship: 'translate(815,225) rotate(-34) scale(1.05)', mark: 'translate(628,-62) scale(0.44)' },
 ];
 
 const tmp = mkdtempSync(join(tmpdir(), 'tunl-cg-'));
