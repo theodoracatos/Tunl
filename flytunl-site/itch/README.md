@@ -32,6 +32,10 @@ keep the `https://flytunl.ch` origin, so the worker's `ALLOWED_ORIGINS` needs no
   Play referrer `utm_source=itch`).
 - App store links (the page's store buttons): App Store `...id6789721765?pt=93838800&ct=itch&mt=8`,
   Google Play `...details?id=com.theodoracatos.tunl&referrer=utm_source%3Ditch%26utm_campaign%3Ditch`.
+- Theme (user saved 2026-10-16): BG #07060f, BG2 #14122c, text #d6dcef, link #b98cff, header text #ffffff,
+  button #8b4dff, header font Chakra Petch. Fixed brand violet on purpose, not the day palette (no theme API;
+  the day's colour shows once the game runs). Embed BG: the title-screen capture letterboxed to 960x540 at
+  75 % brightness (shows a sample day, World 626 - accepted by the user).
 - Metadata tab: inputs keyboard/mouse/touchscreen, session "a few seconds", 16 languages (pt-BR,
   zh_Hant), accessibility "one button".
 
