@@ -182,8 +182,8 @@ function _syncWebCta() {
     const show = isWeb() && phase === 'title' && !_portraitCovered && !_panelOpen;
     // The pill sits top-centre, where the day's arrival card (dayGrantT) and the
     // challenge inbox card (challengeInboxT) are drawn: it waits them out. The legal
-    // links do not.
-    const showCta = show && dayGrantT <= 0 && !(challengeInboxT > 0);
+    // links do not. A portal page (web.js webPortal) never shows the pill.
+    const showCta = show && dayGrantT <= 0 && !(challengeInboxT > 0) && !webPortal();
     if (showCta && _ctaLbl && typeof T !== 'undefined' && T.getApp && _ctaLangShown !== T.getApp) {
         _ctaLbl.textContent = T.getApp;
         _ctaLangShown = T.getApp;

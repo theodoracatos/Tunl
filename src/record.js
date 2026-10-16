@@ -178,7 +178,8 @@ function _recShowPanel(blob, type) {
     // exists, not only whenever the video file specifically is shareable - see
     // _recShare()'s fallback chain below, which always has somewhere to land.
     if (_recShareBtn) {
-        _recShareBtn.hidden = !(navigator.share
+        // A portal page has no SHARE (share.js shareAvailable): the text carries the link.
+        _recShareBtn.hidden = webPortal() || !(navigator.share
             || (navigator.clipboard && navigator.clipboard.writeText));
     }
     if (_recPanel) { _recPanel.classList.add('show'); _recPanel.setAttribute('aria-hidden', 'false'); }

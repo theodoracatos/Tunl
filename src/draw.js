@@ -5101,13 +5101,13 @@ function drawTitleScreen() {
         // rank badge. The app's other controls stay on the rail, greyed out, and a tap
         // opens the "in the app" sheet (drawAppOnlySheet) instead of doing nothing
         // visible. The challenge is iOS-only (GameView.swift), so an Android browser is
-        // not shown one.
+        // not shown one. A portal page (web.js webPortal) leaves the greyed icons out.
         if (isWeb()) {
             items.push({ key: 'leaderboard', badge: hasRank ? (worldRankTotal > 0 ? `${worldRank}/${worldRankTotal}` : `${worldRank}`) : null, showBadge: hasRank });
-            if (!/Android/.test(navigator.userAgent)) items.push({ key: 'challenge', locked: true });
+            if (!/Android/.test(navigator.userAgent) && !webPortal()) items.push({ key: 'challenge', locked: true });
         }
         // Web has no IAP bridge, so the shop is greyed out too and opens the same sheet.
-        items.push({ key: 'shop', locked: isWeb() });
+        if (!webPortal()) items.push({ key: 'shop', locked: isWeb() });
         items.push({ key: 'settings' });
 
         // SAFE_R (constants.js) clears the Dynamic Island/notch in landscape --
@@ -5173,7 +5173,8 @@ function drawTitleScreen() {
 
         // Rewarded-ad shard bonus row: only where the ads bridge exists (iOS/Android).
         // The open web build has no ad SDK, so drop the row and the divider entirely.
-        const _hasAdRow = !!window.webkit?.messageHandlers?.ads;
+        // A portal page (web.js webPortal) also drops the "in the app" version of it.
+        const _hasAdRow = !!window.webkit?.messageHandlers?.ads && !(webPortal() && shardsAdAppOnly());
 
         const panW   = Math.min(W * 0.62, 380);
         const rewStrFor = m => `+${MISSION_REWARD_BY_TIER[MISSION_DEFS[dailyMissionIdx[m]].tier]} ⧫`;
@@ -5369,8 +5370,9 @@ function drawTitleScreen() {
         // IAP is (a buyer must reach what they paid for).
         // Web: the Lackiererei is app-only, so the pill is drawn greyed out and its tap
         // opens the "in the app" sheet (input.js); same gate and place as in the apps.
+        // A portal page (web.js webPortal) does not draw it.
         _paintBtnRect = null;
-        if ((unlockedSkins & (1 << LIVERY_GATE_SKIN)) || allPaintsOwned) {
+        if (((unlockedSkins & (1 << LIVERY_GATE_SKIN)) || allPaintsOwned) && !webPortal()) {
             const [pr, pg, pb] = isWeb() ? [150, 158, 180] : SKINS[activeSkin].shadow;
             const _pk = isWeb() ? 0.45 : 1;
             ctx.font = `bold ${FS * 0.020}px ${FONT_UI}`;
@@ -7826,11 +7828,13 @@ function drawWebBoard() {
     }
 
     // ── footer: name pill + all-time pitch ──
+    // A portal page (web.js webPortal) has no all-time pitch: the name pill takes the row.
+    const allTime = !webPortal();
     const by = listTop + listH + txt * 0.8;
     const gapB = Math.max(8, panW * 0.03);
-    const bw = (innerW - gapB) / 2;
+    const bw = allTime ? (innerW - gapB) / 2 : innerW;
     _webBoardNameBtnRect = { x: x0, y: by, w: bw, h: btnH };
-    _webBoardAppBtnRect  = { x: x0 + bw + gapB, y: by, w: bw, h: btnH };
+    _webBoardAppBtnRect  = allTime ? { x: x0 + bw + gapB, y: by, w: bw, h: btnH } : null;
     const pill = (r, label, filled) => {
         ctx.beginPath(); ctx.roundRect(r.x, r.y, r.w, r.h, r.h * 0.30);
         ctx.fillStyle = filled ? DAY(0.92) : 'rgba(255,255,255,0.05)';
@@ -7847,7 +7851,7 @@ function drawWebBoard() {
         ctx.fillText(label, r.x + r.w / 2, r.y + r.h / 2 + sz * 0.35);
     };
     pill(_webBoardNameBtnRect, named ? T.boardChangeName : T.boardSetName, !named);
-    pill(_webBoardAppBtnRect, T.boardAllTime, false);
+    if (allTime) pill(_webBoardAppBtnRect, T.boardAllTime, false);
 
     ctx.restore();
 }

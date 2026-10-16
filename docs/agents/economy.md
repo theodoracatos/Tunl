@@ -54,6 +54,13 @@ the forced interstitial, not a video the player actively taps):
   its own (`shardsAdAppOnly()` in `ads-web.js`, keyed to the `ADS_WEB_NETWORK_CODE`
   placeholder): label `T.watchAdShardsApp`, tap opens the sheet, and the rail badge counts
   N/3 since the row cannot be done there. Filling in a real network code reverts all of it.
+- **A portal page hides what /play/ greys** (2026-10-16): `flytunl.ch/cg/`, the page CrazyGames
+  frames (`build-play.mjs buildPortal`, `flytunl-site/cg/README.md`), sets `window._tunlPortal`,
+  and `web.js webPortal()` then drops the install pill, the greyed challenge/shop icons, the
+  PAINT pill, the "in the app" shard-ad row, the board's all-time pill, the continue slot's app
+  card and SHARE - a portal forbids store links, app pitches and links to a playable web
+  version. It loads no ad script. /play/ keeps the greyed controls (the rule above);
+  `test-sim.js` checks /play/, /cg/ and the apps.
 - **Rewarded shard bonus** (8.2) - a row at the bottom of the Missions drawer: watch an
   ad once per UTC day for a flat `SHARDS_AD_REWARD` (20) shards, exempt from
   `DAILY_SHARD_CAP` like a mission reward. Native plumbing

@@ -1,0 +1,26 @@
+<!doctype html>
+<!-- TUNL. Copyright (c) 2026 Theodoracatos. All rights reserved. https://flytunl.ch -->
+<!-- CrazyGames HTML5 upload: zip this file alone (see README.md). It frames the portal
+     page flytunl.ch/cg/ (no store links, no app pitch, no SHARE, no ad script), so every
+     flytunl.ch deploy reaches CrazyGames with no re-upload, and the leaderboard and
+     analytics keep their own https://flytunl.ch origin. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TUNL</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #04040a; overflow: hidden; }
+  iframe { display: block; width: 100%; height: 100%; border: 0; }
+</style>
+</head>
+<body>
+<iframe id="game" title="TUNL"
+  src="https://flytunl.ch/cg/?utm_source=crazygames&amp;utm_medium=embed&amp;utm_campaign=crazygames_basic"
+  allow="autoplay; fullscreen; gamepad" allowfullscreen></iframe>
+<script>
+  // A click on the portal's frame lands here first; hand the keyboard to the game.
+  window.addEventListener('focus', function () { try { document.getElementById('game').focus(); } catch (e) {} });
+</script>
+</body>
+</html>

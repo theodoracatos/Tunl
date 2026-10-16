@@ -66,7 +66,10 @@ function shareWorthy() {
 // True when there's somewhere for the card to actually go: the native share sheet on
 // iOS/Android, the Web Share API on mobile browsers, or - on a desktop browser with
 // neither - a clipboard copy of the deep link (shareRun() handles that fallback).
+// A portal page (web.js webPortal) has no SHARE: every share carries a flytunl.ch/play
+// link, and a portal forbids links to a playable web version outside it.
 function shareAvailable() {
+    if (typeof webPortal === 'function' && webPortal()) return false;
     return !!(window.webkit?.messageHandlers?.share)
         || (typeof navigator !== 'undefined' && !!navigator.share)
         || (typeof isWeb === 'function' && isWeb()

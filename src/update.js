@@ -1160,12 +1160,13 @@ function die(bypassShield = false) {
     // player most wants what the app has is not silent there. A web landing page may
     // lower that floor for the pitch (window._tunlWebPitchFloor, set only by
     // flytunl-site/tt/tt-tail.js, for a first run); the apps never read it.
+    // A portal page (web.js webPortal) may not pitch the app, so it has no such slot.
     const offerFloor = (isWeb() && typeof window._tunlWebPitchFloor === 'number')
         ? window._tunlWebPitchFloor : CONTINUE_MIN_SCORE;
     // Second route, by runs (constants.js CONTINUE_RUN_FROM doc): apps only, tunnel only.
     const earlyOffer = score < offerFloor && continueRunTurn();
     if (continuesUsedThisRun < MAX_CONTINUES_PER_RUN && (score >= offerFloor || earlyOffer)
-        && (rewardedAdReady || isWeb())) {
+        && (rewardedAdReady || (isWeb() && !webPortal()))) {
         continueOfferPending = true;
         continueOfferEarly = earlyOffer;
         appEvent('ad_offer', { format: 'continue', score: score, early: earlyOffer ? 1 : 0, day_run: dailyRuns });

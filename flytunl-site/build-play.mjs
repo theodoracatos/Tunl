@@ -256,6 +256,7 @@ async function build() {
   }
 
   await buildTT(stripped, sources, TUNL_VERSION);
+  await buildPortal(stripped, v, TUNL_VERSION);
 
   const kb = (min.code.length / 1024).toFixed(0);
   console.log(`play/ built - tunl.bundle.js ${kb} KB (from ${SCRIPTS.length} files), version ${TUNL_VERSION}`);
@@ -386,6 +387,36 @@ ${css.trim()}
   await mkdir(path.join(ttOut, 'diag', 'ping'), { recursive: true });
   await writeFile(path.join(ttOut, 'diag', 'ping', 'index.html'), TT_STEP_PAGE('diag-ping'), 'utf8');
   console.log(`tt/ built - landing ${(html.length / 1024).toFixed(0)} KB, bundle ${(ttMin.code.length / 1024).toFixed(0)} KB (${TT_BUNDLE_PATCHES.length} patches) + ${TT_STEPS.length} counters + diag`);
+}
+
+// ============================================================
+//  /cg/ - the page a web game portal frames (CrazyGames, flytunl-site/cg/README.md)
+//
+// /play/'s own bundle and assets (via <base>), so a /play/ deploy updates it too. What
+// differs is the head: window._tunlPortal (src/web.js webPortal) hides the app pitch, the
+// store links and SHARE, and NO ad script loads - a portal allows only its own ads. Its
+// GA4 sessions are credited to the portal. noindex: the page is reached through the portal.
+const PORTAL_GA_DEFAULT = { source: 'crazygames', medium: 'embed', campaign: 'crazygames' };
+
+async function buildPortal(stripped, v, version) {
+  const out = path.join(root, 'flytunl-site/site/cg');
+  const head = `<base href="/play/">
+<meta name="robots" content="noindex">
+<meta name="description" content="Fly today's cave. Every player on Earth gets the same one.">
+<meta name="theme-color" content="#04040a">
+<link rel="canonical" href="https://flytunl.ch/play/">
+<script>window._tunlPortal = 'cg';</script>` + CF_BEACON + gaHead(PORTAL_GA_DEFAULT) + `
+<meta name="tunl:version" content="${version}">`;
+  let html = stripped;
+  // Right after the viewport meta, as on /tt/: <base> must precede every relative URL.
+  html = html.replace(/<meta name="viewport"[^>]*>\r?\n/, m => m + head + '\n');
+  if (!html.includes('<base href="/play/">')) throw new Error('cg: <meta name="viewport"> not found in tunl.html');
+  html = html.replace('</body>', `<script src="tunl.bundle.js?v=${v}"></script>\n</body>`);
+  if (/adsbygoogle|gpt\.js/.test(html)) throw new Error('cg: an ad script reached the portal page');
+  await rm(out, { recursive: true, force: true });
+  await mkdir(out, { recursive: true });
+  await writeFile(path.join(out, 'index.html'), html, 'utf8');
+  console.log(`cg/ built - portal page ${(html.length / 1024).toFixed(0)} KB on /play/'s bundle`);
 }
 
 build().catch(err => { console.error('[build-play] failed:', err); process.exit(1); });

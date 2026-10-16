@@ -149,6 +149,19 @@ let webParamGhostScore = 0;  // int, or 0 if absent
 let webParamReferrer = null; // full UUID string (unpacked if arrived packed), or null
 let webParamChallenge = null; // 10-char challenge id, or null
 
+// webPortal() - true when the open web build runs inside a web game portal. Such a portal
+// frames its own page, flytunl.ch/cg/ for CrazyGames (flytunl-site/build-play.mjs
+// buildPortal), which sets window._tunlPortal before the bundle and loads no ad script.
+// Portals forbid app-store links, cross-promotion and links that lead to a playable web
+// version outside them (CrazyGames requirements, 2026-10-16), so a portal page HIDES what
+// /play/ draws greyed with an "in the app" sheet (the challenge and shop icons, the PAINT
+// pill, the shard-ad row, the all-time pill), has no install pill, no app card behind the
+// continue ring and no SHARE. The store links belong in the portal's own listing fields.
+// isWeb() first, so an app can never take this path.
+function webPortal() {
+    return isWeb() && !!window._tunlPortal;
+}
+
 // Epoch for the compact ?d= day-offset encoding. Never move this once links using
 // it are live - it would silently repoint every already-shared short link at the
 // wrong cave. 2025-01-01 matches the ?d range floor above.

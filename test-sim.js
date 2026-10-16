@@ -57,7 +57,8 @@ class PinnedDate extends Date {
     static now() { return SIM_NOW; }
 }
 
-function boot(innerWidth = 956, innerHeight = 440, seed = {}, search = '') {
+// web = true boots the open web build instead: no native bridge, so isWeb() is true.
+function boot(innerWidth = 956, innerHeight = 440, seed = {}, search = '', web = false) {
     const ctx = fakeContext();
     const canvas = () => ({ getContext: () => ctx, width: 0, height: 0, style: {}, addEventListener() {},
         getBoundingClientRect: () => ({ left: 0, top: 0, width: innerWidth, height: innerHeight }),
@@ -68,7 +69,7 @@ function boot(innerWidth = 956, innerHeight = 440, seed = {}, search = '') {
     const sb = {
         // The iOS message-handler bridge makes isWeb() false: this suite runs the APP.
         window: { innerWidth, innerHeight, devicePixelRatio: 1, location, navigator,
-                  webkit: { messageHandlers: { haptic: { postMessage() {} } } },
+                  webkit: web ? undefined : { messageHandlers: { haptic: { postMessage() {} } } },
                   addEventListener() {}, removeEventListener() {},
                   matchMedia: () => ({ matches: false, addEventListener() {} }) },
         document: { getElementById: canvas, createElement: canvas, addEventListener() {}, querySelector: () => null,
@@ -84,6 +85,9 @@ function boot(innerWidth = 956, innerHeight = 440, seed = {}, search = '') {
         Uint8Array, Uint8ClampedArray, Float32Array, Int16Array, ArrayBuffer,
     };
     sb.globalThis = sb; sb.self = sb;
+    // In a browser window is the global object; here it is not, so the one global ads-web.js
+    // reaches both ways (window.googletag, then bare googletag) is shared by hand.
+    if (web) sb.googletag = sb.window.googletag = { cmd: [] };
     vm.createContext(sb);
     for (const f of FILES) vm.runInContext(fs.readFileSync(path.join(__dirname, f), 'utf8'), sb, { filename: f });
     // Top-level let/const are not properties of the sandbox; every read and write of
@@ -2438,6 +2442,45 @@ const FAKE_AC = `(() => {
     check(`a revive past S4 after a context rebuild resumes the depth track, never Nebula (${JSON.stringify(rev)})`,
         wait.track === 'nebula' && wait.node === null && wait.depthLoading === true && nebFirst === null
         && rev.track === 'depth' && Math.abs(rev.at - r('DEPTH_ENTRY')) < 1e-9 && rev.outro);
+}
+
+// ── Portal page (flytunl.ch/cg/, web.js webPortal), 2026-10-16 ─────────────
+// A web game portal forbids store links, app pitches and links to a playable web version
+// outside it. The real drawTitleScreen(), drawWebBoard(), shareAvailable() and die() on the
+// web build, with and without the page's window._tunlPortal, and once in the app.
+{
+    const probe = (web, portal) => {
+        const g = boot(956, 440, {}, '', web);
+        if (portal) g("window._tunlPortal = 'cg'");
+        return g(`(() => {
+            navigator.clipboard = { writeText: () => Promise.resolve() };
+            const r = { portal: webPortal() };
+            phase = 'title'; titleT = 10; drawTitleScreen();
+            r.shop = !!_shopBtnRect; r.challenge = !!_challengeBtnRect;
+            unlockedSkins |= (1 << LIVERY_GATE_SKIN); showShipPicker = true; drawTitleScreen();
+            r.paint = !!_paintBtnRect; showShipPicker = false;
+            showMissions = true; drawTitleScreen(); r.shardsRow = !!_shardsAdBtnRect; showMissions = false;
+            showWebBoard = true; drawTitleScreen();
+            r.allTime = !!_webBoardAppBtnRect; r.nameW = _webBoardNameBtnRect ? _webBoardNameBtnRect.w : 0;
+            showWebBoard = false;
+            r.share = shareAvailable();
+            startPlay(); phase = 'play'; approachLeft = 0; score = CONTINUE_MIN_SCORE + 50;
+            continueOfferPending = false; continuesUsedThisRun = 0; shieldCount = 0; invulnT = 0;
+            rewardedAdReady = false; die(true);
+            r.offer = continueOfferPending;
+            return r;
+        })()`);
+    };
+    const web = probe(true, false), cg = probe(true, true), app = probe(false, true);
+    check(`plain /play/ keeps the greyed app controls, SHARE and the continue slot (${JSON.stringify(web)})`,
+        !web.portal && web.shop && web.challenge && web.paint && web.shardsRow && web.allTime && web.share && web.offer);
+    check(`a portal page shows no shop or challenge icon, PAINT pill or shard-ad row (${JSON.stringify(cg)})`,
+        cg.portal && !cg.shop && !cg.challenge && !cg.paint && !cg.shardsRow);
+    check('a portal page has no all-time pitch on the board, the name pill takes the row',
+        !cg.allTime && cg.nameW > web.nameW);
+    check('a portal page has no SHARE and no continue slot (it would pitch the app)', !cg.share && !cg.offer);
+    check('the apps never take the portal path, even with window._tunlPortal set',
+        !app.portal && app.shop && !app.offer);
 }
 
 if (failed) { console.log(`\n${failed} check(s) failed.`); process.exit(1); }
