@@ -40,3 +40,13 @@ How TUNL was made: I designed, tuned and playtested it, and wrote its code toget
 an AI coding assistant (Claude). The graphics are drawn by the game's own code and the
 sound effects are synthesized in code; the music is "The Mountain" (Pixabay license).
 No AI-generated images, music or voices.
+
+## Game Jolt (same zip)
+
+`gamejolt.com/dashboard/games/1108057`, package "TUNL: Fighter Jet Arcade" (free, public), browser
+build = this zip, 960 x 540, HTTPS on, fit-to-screen off. Version number = `TUNL_VERSION` (MAJOR.MINOR.PATCH).
+Header `../cg/header-gamejolt.png` (2000 x 500, `make-covers.mjs`), thumbnail `../cg/cover-landscape.png`,
+screenshots from `Screenshots/capture/capture.mjs` (title, flight, star, deep; not the debrief, which shows a
+world rank and SHARE this build does not have). Description = the Newgrounds author comments + hashtags
+(#arcade #action #scifi #onebutton #endless #flying), app link `utm_source=gamejolt`. Maturity: All Ages,
+every category None. A web release means a new release with a new zip here too.

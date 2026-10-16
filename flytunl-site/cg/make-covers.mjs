@@ -48,6 +48,10 @@ const COVERS = [
       ship: 'translate(800,250) rotate(-34) scale(1.1)', mark: 'translate(626,-60) scale(0.42)' },
     { file: 'cover-square.png', w: 800, h: 800, view: [560, -110, 500, 500],
       ship: 'translate(815,225) rotate(-34) scale(1.05)', mark: 'translate(737,-107) scale(0.38)' },
+    // Game Jolt page header (4:1, cropped toward the centre on small screens): wordmark and
+    // ship both near the middle.
+    { file: 'header-gamejolt.png', w: 2000, h: 500, view: [0, 100, 1200, 300],
+      ship: 'translate(760,250) rotate(-34) scale(0.85)', mark: 'translate(250,205) scale(0.40)' },
 ];
 
 const tmp = mkdtempSync(join(tmpdir(), 'tunl-cg-'));
