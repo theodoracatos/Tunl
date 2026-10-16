@@ -32,7 +32,7 @@ const BOX = { x0: -420, x1: 240, y0: -230, y1: 230 };
 // to top-down, the boldest silhouette), wings SPREAD, a long plume that runs off the icon's
 // edge. The long plume needs a bigger box. The iOS launch logo and the Play feature graphic
 // follow the icon.
-const ICON_POSE = { sweep: 0, roll: 82, skin: 1, jet: 3.4, box: { x0: -640, x1: 240, y0: -250, y1: 250 } };
+export const ICON_POSE = { sweep: 0, roll: 82, skin: 1, jet: 3.4, box: { x0: -640, x1: 240, y0: -250, y1: 250 } };
 // The launch logo floats on the dark launch screen, so its plumes must end inside the square.
 const LAUNCH_POSE = { ...ICON_POSE, jet: 1.6 };
 
