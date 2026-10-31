@@ -2504,6 +2504,20 @@ const FAKE_AC = `(() => {
     check(`the offline portal makes no network call and has no board (${JSON.stringify(ng)})`,
         ng.offline && !ng.board && ng.calls === 0);
     check('the apps never go offline, even with window._tunlOffline set', !appNg.offline && appNg.calls > 0);
+
+    // VOID's hangar line names its every-3rd-shield-double perk on web only: the apps keep
+    // the old string until a release carries it (systems.js shield pickup).
+    const perkLine = (web, skin) => boot(956, 440, {}, '', web)(`(() => {
+        phase = 'title'; titleT = 10; unlockedSkins = 255; activeSkin = ${skin}; showShipPicker = true;
+        const t = []; ctx.fillText = x => t.push(String(x)); drawTitleScreen(); delete ctx.fillText;
+        const want = skinPerkValue(${skin});
+        return { web: t.includes(T.webSkinPerkVoid.replace('{v}', want)),
+                 app: t.includes((T.skinPerks[${skin}] || '').replace('{v}', want)) };
+    })()`);
+    const perkWeb = perkLine(true, 5), perkApp = perkLine(false, 5), perkOther = perkLine(true, 4);
+    check('web names VOID\'s double shield in the hangar', perkWeb.web && !perkWeb.app);
+    check('the apps keep VOID\'s old perk line', perkApp.app && !perkApp.web);
+    check('web leaves the other ships\' perk lines alone', perkOther.app && !perkOther.web);
 }
 
 if (failed) { console.log(`\n${failed} check(s) failed.`); process.exit(1); }

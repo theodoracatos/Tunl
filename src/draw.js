@@ -5559,7 +5559,8 @@ function drawTitleScreen() {
         // (rowY2-rowY1 above) is sized generously enough that this always
         // clears row 2 even when row 1's ship is selected; clamped horizontally
         // so a wide string doesn't run off-screen for an edge-column ship.
-        const activePerkTpl = T.skinPerks && T.skinPerks[activeSkin];
+        // Web only: VOID's line also names its every-3rd-shield-double perk (systems.js shield pickup).
+        const activePerkTpl = isWeb() && activeSkin === 5 ? T.webSkinPerkVoid : T.skinPerks && T.skinPerks[activeSkin];
         const activePerk = activePerkTpl && activePerkTpl.replace('{v}', skinPerkValue(activeSkin));
         if (activePerk) {
             const [sr, sg, sb] = SKINS[activeSkin].shadow;
