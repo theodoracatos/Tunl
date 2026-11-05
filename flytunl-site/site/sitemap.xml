@@ -370,7 +370,7 @@
   </url>
   <url>
     <loc>https://flytunl.ch/play/</loc>
-    <lastmod>2026-10-16</lastmod>
+    <lastmod>2026-11-05</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
@@ -3685,6 +3685,374 @@
     <xhtml:link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/impressum/"/>
     <xhtml:link rel="alternate" hreflang="el" href="https://flytunl.ch/el/impressum/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://flytunl.ch/impressum/"/>
+  </url>
+  <url>
+    <loc>https://flytunl.ch/terms/</loc>
+    <lastmod>2026-11-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://flytunl.ch/terms/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://flytunl.ch/de/terms/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://flytunl.ch/it/terms/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://flytunl.ch/es/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/terms/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/terms/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://flytunl.ch/id/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/terms/"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/terms/"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://flytunl.ch/el/terms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://flytunl.ch/terms/"/>
+  </url>
+  <url>
+    <loc>https://flytunl.ch/de/terms/</loc>
+    <lastmod>2026-11-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.1</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://flytunl.ch/terms/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://flytunl.ch/de/terms/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://flytunl.ch/it/terms/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://flytunl.ch/es/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/terms/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/terms/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://flytunl.ch/id/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/terms/"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/terms/"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://flytunl.ch/el/terms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://flytunl.ch/terms/"/>
+  </url>
+  <url>
+    <loc>https://flytunl.ch/fr/terms/</loc>
+    <lastmod>2026-11-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.1</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://flytunl.ch/terms/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://flytunl.ch/de/terms/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://flytunl.ch/it/terms/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://flytunl.ch/es/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/terms/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/terms/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://flytunl.ch/id/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/terms/"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/terms/"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://flytunl.ch/el/terms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://flytunl.ch/terms/"/>
+  </url>
+  <url>
+    <loc>https://flytunl.ch/it/terms/</loc>
+    <lastmod>2026-11-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.1</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://flytunl.ch/terms/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://flytunl.ch/de/terms/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://flytunl.ch/it/terms/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://flytunl.ch/es/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/terms/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/terms/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://flytunl.ch/id/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/terms/"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/terms/"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://flytunl.ch/el/terms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://flytunl.ch/terms/"/>
+  </url>
+  <url>
+    <loc>https://flytunl.ch/es/terms/</loc>
+    <lastmod>2026-11-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.1</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://flytunl.ch/terms/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://flytunl.ch/de/terms/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://flytunl.ch/it/terms/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://flytunl.ch/es/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/terms/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/terms/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://flytunl.ch/id/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/terms/"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/terms/"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://flytunl.ch/el/terms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://flytunl.ch/terms/"/>
+  </url>
+  <url>
+    <loc>https://flytunl.ch/pt/terms/</loc>
+    <lastmod>2026-11-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.1</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://flytunl.ch/terms/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://flytunl.ch/de/terms/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://flytunl.ch/it/terms/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://flytunl.ch/es/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/terms/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/terms/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://flytunl.ch/id/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/terms/"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/terms/"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://flytunl.ch/el/terms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://flytunl.ch/terms/"/>
+  </url>
+  <url>
+    <loc>https://flytunl.ch/ja/terms/</loc>
+    <lastmod>2026-11-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.1</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://flytunl.ch/terms/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://flytunl.ch/de/terms/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://flytunl.ch/it/terms/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://flytunl.ch/es/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/terms/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/terms/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://flytunl.ch/id/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/terms/"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/terms/"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://flytunl.ch/el/terms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://flytunl.ch/terms/"/>
+  </url>
+  <url>
+    <loc>https://flytunl.ch/ko/terms/</loc>
+    <lastmod>2026-11-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.1</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://flytunl.ch/terms/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://flytunl.ch/de/terms/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://flytunl.ch/it/terms/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://flytunl.ch/es/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/terms/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/terms/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://flytunl.ch/id/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/terms/"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/terms/"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://flytunl.ch/el/terms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://flytunl.ch/terms/"/>
+  </url>
+  <url>
+    <loc>https://flytunl.ch/zh/terms/</loc>
+    <lastmod>2026-11-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.1</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://flytunl.ch/terms/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://flytunl.ch/de/terms/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://flytunl.ch/it/terms/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://flytunl.ch/es/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/terms/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/terms/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://flytunl.ch/id/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/terms/"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/terms/"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://flytunl.ch/el/terms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://flytunl.ch/terms/"/>
+  </url>
+  <url>
+    <loc>https://flytunl.ch/ru/terms/</loc>
+    <lastmod>2026-11-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.1</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://flytunl.ch/terms/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://flytunl.ch/de/terms/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://flytunl.ch/it/terms/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://flytunl.ch/es/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/terms/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/terms/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://flytunl.ch/id/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/terms/"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/terms/"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://flytunl.ch/el/terms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://flytunl.ch/terms/"/>
+  </url>
+  <url>
+    <loc>https://flytunl.ch/ar/terms/</loc>
+    <lastmod>2026-11-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.1</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://flytunl.ch/terms/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://flytunl.ch/de/terms/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://flytunl.ch/it/terms/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://flytunl.ch/es/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/terms/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/terms/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://flytunl.ch/id/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/terms/"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/terms/"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://flytunl.ch/el/terms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://flytunl.ch/terms/"/>
+  </url>
+  <url>
+    <loc>https://flytunl.ch/tr/terms/</loc>
+    <lastmod>2026-11-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.1</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://flytunl.ch/terms/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://flytunl.ch/de/terms/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://flytunl.ch/it/terms/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://flytunl.ch/es/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/terms/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/terms/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://flytunl.ch/id/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/terms/"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/terms/"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://flytunl.ch/el/terms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://flytunl.ch/terms/"/>
+  </url>
+  <url>
+    <loc>https://flytunl.ch/id/terms/</loc>
+    <lastmod>2026-11-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.1</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://flytunl.ch/terms/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://flytunl.ch/de/terms/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://flytunl.ch/it/terms/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://flytunl.ch/es/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/terms/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/terms/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://flytunl.ch/id/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/terms/"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/terms/"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://flytunl.ch/el/terms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://flytunl.ch/terms/"/>
+  </url>
+  <url>
+    <loc>https://flytunl.ch/pl/terms/</loc>
+    <lastmod>2026-11-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.1</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://flytunl.ch/terms/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://flytunl.ch/de/terms/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://flytunl.ch/it/terms/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://flytunl.ch/es/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/terms/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/terms/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://flytunl.ch/id/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/terms/"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/terms/"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://flytunl.ch/el/terms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://flytunl.ch/terms/"/>
+  </url>
+  <url>
+    <loc>https://flytunl.ch/hi/terms/</loc>
+    <lastmod>2026-11-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.1</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://flytunl.ch/terms/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://flytunl.ch/de/terms/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://flytunl.ch/it/terms/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://flytunl.ch/es/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/terms/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/terms/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://flytunl.ch/id/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/terms/"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/terms/"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://flytunl.ch/el/terms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://flytunl.ch/terms/"/>
+  </url>
+  <url>
+    <loc>https://flytunl.ch/el/terms/</loc>
+    <lastmod>2026-11-05</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.1</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://flytunl.ch/terms/"/>
+    <xhtml:link rel="alternate" hreflang="de" href="https://flytunl.ch/de/terms/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://flytunl.ch/fr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="it" href="https://flytunl.ch/it/terms/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://flytunl.ch/es/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://flytunl.ch/pt/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://flytunl.ch/ja/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ko" href="https://flytunl.ch/ko/terms/"/>
+    <xhtml:link rel="alternate" hreflang="zh-Hant" href="https://flytunl.ch/zh/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://flytunl.ch/ru/terms/"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://flytunl.ch/ar/terms/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://flytunl.ch/tr/terms/"/>
+    <xhtml:link rel="alternate" hreflang="id" href="https://flytunl.ch/id/terms/"/>
+    <xhtml:link rel="alternate" hreflang="pl" href="https://flytunl.ch/pl/terms/"/>
+    <xhtml:link rel="alternate" hreflang="hi" href="https://flytunl.ch/hi/terms/"/>
+    <xhtml:link rel="alternate" hreflang="el" href="https://flytunl.ch/el/terms/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://flytunl.ch/terms/"/>
   </url>
   <url>
     <loc>https://flytunl.ch/devlog/daily-cave/</loc>

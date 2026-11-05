@@ -1044,6 +1044,24 @@
     "hi": "कानूनी सूचना",
     "el": "Νομική σημείωση"
   },
+  "footer.terms": {
+    "en": "Terms of use",
+    "de": "Nutzungsbedingungen",
+    "fr": "Conditions d'utilisation",
+    "it": "Condizioni d'uso",
+    "es": "Condiciones de uso",
+    "pt": "Termos de uso",
+    "ja": "利用規約",
+    "ko": "이용 약관",
+    "zh": "使用條款",
+    "ru": "Условия использования",
+    "ar": "شروط الاستخدام",
+    "tr": "Kullanım koşulları",
+    "id": "Ketentuan penggunaan",
+    "pl": "Warunki korzystania",
+    "hi": "उपयोग की शर्तें",
+    "el": "Όροι χρήσης"
+  },
   "footer.press": {
     "en": "Press",
     "de": "Presse",
